@@ -910,16 +910,16 @@ async function findUserRecordByGoogleSub(googleSub) {
 }
 
 function normalizeGoogleProfile(profile = {}) {
-  const sub = normalizeUserId(profile.sub);
+  const sub = normalizeUserId(profile.sub || profile.googleSub || profile.userId);
   if (!sub) return null;
   return {
     userId: sub,
     googleSub: sub,
     email: normalizeCustomerEmail(profile.email || ''),
-    emailVerified: !!profile.email_verified,
+    emailVerified: !!(profile.email_verified ?? profile.emailVerified),
     name: String(profile.name || '').trim(),
-    givenName: String(profile.given_name || '').trim(),
-    familyName: String(profile.family_name || '').trim(),
+    givenName: String(profile.given_name || profile.givenName || '').trim(),
+    familyName: String(profile.family_name || profile.familyName || '').trim(),
     picture: String(profile.picture || '').trim(),
     locale: String(profile.locale || '').trim(),
   };
