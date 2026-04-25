@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html lang="ja">
 
@@ -103,101 +103,87 @@ body{
 
   align-items:center;justify-content:flex-start;
 
-  background:#05040f;
+  background:radial-gradient(ellipse at 50% 20%,#1a0a30 0%,#08051a 60%,#04030a 100%);
 
-  min-height:100vh;text-align:center;padding:0 0 88px;position:relative;overflow:hidden;
+  min-height:100vh;text-align:center;padding:72px 20px 88px;position:relative;
 
 }
-
-#s-top > *{position:relative;z-index:1;}
 
 .top-hero-shell{
 
-  width:100%;min-height:100vh;min-height:100svh;margin:0 auto 0;position:relative;z-index:1;display:grid;place-items:center;padding:32px 24px 48px;isolation:isolate;
+  width:100%;max-width:680px;margin:0 auto 0;position:relative;z-index:1;
 
-}
-
-.top-hero-shell::before{
-  content:'';position:absolute;inset:0;z-index:-2;pointer-events:none;
-  background:
-    linear-gradient(180deg,rgba(4,3,10,.08),rgba(4,3,10,.22) 48%,rgba(4,3,10,.48) 82%,rgba(7,5,18,.82) 100%),
-    linear-gradient(90deg,rgba(4,3,10,.72),rgba(4,3,10,.08) 43%,rgba(4,3,10,.56));
-}
-
-.top-hero-shell::after{
-  content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;
-  background:
-    linear-gradient(90deg,rgba(219,177,82,.2) 1px,transparent 1px) 0 0/120px 120px,
-    linear-gradient(0deg,rgba(120,177,200,.1) 1px,transparent 1px) 0 0/120px 120px;
-  mask-image:linear-gradient(180deg,rgba(0,0,0,.65),transparent 70%);
 }
 
 .top-main{
 
-  position:relative;overflow:visible;text-align:center;width:min(820px,100%);
+  position:relative;overflow:hidden;text-align:center;
 
-  padding:20px 0 0;border:0;
+  padding:48px 40px 40px;border:1px solid rgba(201,149,42,.16);
 
-  background:transparent;
+  background:
 
-  box-shadow:none;
+    radial-gradient(circle at 50% 0%,rgba(201,149,42,.12),transparent 44%),
+
+    linear-gradient(180deg,rgba(255,255,255,.03),rgba(201,149,42,.02) 60%,rgba(255,255,255,.01));
+
+  box-shadow:0 18px 60px rgba(0,0,0,.24), inset 0 0 40px rgba(201,149,42,.04);
 
 }
 
-.top-main > *{position:relative;z-index:1;}
+.top-main > :not(.top-guide-character){position:relative;z-index:1;}
+.top-guide-character{
+  position:absolute;
+  right:-18%;
+  bottom:-12%;
+  width:86%;
+  height:112%;
+  object-fit:cover;
+  object-position:right bottom;
+  opacity:.34;
+  pointer-events:none;
+  filter:drop-shadow(0 22px 38px rgba(0,0,0,.34));
+}
 
 .top-main::before{
 
-  content:none;
+  content:'';position:absolute;left:28px;right:28px;top:0;height:1px;
 
-}
+  background:linear-gradient(90deg,transparent,rgba(228,184,74,.55),transparent);
 
-.top-main::after{
-  content:none;
-}
-
-@media(min-width:900px){
-  .top-main{transform:none;}
-}
-
-@media(min-width:1100px){
-  .top-hero-shell::before{
-    background:
-      linear-gradient(180deg,rgba(4,3,10,.08),rgba(4,3,10,.22) 48%,rgba(4,3,10,.48) 82%,rgba(7,5,18,.82) 100%),
-      linear-gradient(90deg,rgba(4,3,10,.72),rgba(4,3,10,.08) 43%,rgba(4,3,10,.56));
-  }
 }
 
 .top-seal{
 
-  width:112px;height:112px;margin:0 auto 18px;
+  width:120px;height:120px;margin:0 auto 32px;
 
-  border:1px solid rgba(229,184,86,.42);
+  border:1px solid rgba(201,149,42,.4);
 
   border-radius:50%;display:flex;align-items:center;justify-content:center;
 
-  font-size:0;position:relative;background:rgba(5,4,15,.38);
+  font-size:52px;position:relative;
 
   animation:sealPulse 4s ease-in-out infinite;
-  box-shadow:0 0 55px rgba(229,184,86,.24), inset 0 0 28px rgba(229,184,86,.16);
 
 }
 
 .top-seal::before{
 
-  content:'';position:absolute;left:50%;top:50%;width:50px;height:50px;transform:translate(-50%,-50%) rotate(45deg);border:6px solid #f3d36f;border-radius:50% 50% 50% 0;
+  content:'';position:absolute;inset:-8px;border-radius:50%;
 
-  box-shadow:0 0 20px rgba(243,211,111,.42);
+  border:1px solid rgba(201,149,42,.15);
+
+  animation:sealPulse 4s ease-in-out infinite .5s;
 
 }
 
 .top-seal::after{
 
-  content:'';position:absolute;left:50%;top:50%;width:86px;height:86px;transform:translate(-50%,-50%);border-radius:50%;
+  content:'';position:absolute;inset:-16px;border-radius:50%;
 
-  background:
-    linear-gradient(90deg,transparent calc(50% - .5px),rgba(243,211,111,.52) 50%,transparent calc(50% + .5px)),
-    linear-gradient(0deg,transparent calc(50% - .5px),rgba(243,211,111,.52) 50%,transparent calc(50% + .5px));
+  border:1px solid rgba(201,149,42,.07);
+
+  animation:sealPulse 4s ease-in-out infinite 1s;
 
 }
 
@@ -207,24 +193,7 @@ body{
 
 
 #s-top::before{
-  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background:
-    linear-gradient(180deg,rgba(5,4,15,.04),rgba(5,4,15,.16) 54%,rgba(5,4,15,.36) 100%),
-    linear-gradient(90deg,rgba(4,3,10,.62),rgba(4,3,10,.04) 45%,rgba(4,3,10,.42)),
-    url('images/ui/app-thumbnail.jpg') center 35%/cover no-repeat;
-}
-
-@media(min-width:1100px){
-  #s-top::before{
-    background:
-      linear-gradient(180deg,rgba(5,4,15,.04),rgba(5,4,15,.14) 58%,rgba(5,4,15,.32) 100%),
-      linear-gradient(90deg,rgba(4,3,10,.62),rgba(4,3,10,.04) 45%,rgba(4,3,10,.42)),
-      url('images/ui/app-wide.jpg') center center/cover no-repeat;
-  }
-}
-
-#s-top::after{
-  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
   background-image:
     radial-gradient(1px 1px at 12% 18%,rgba(228,184,74,.5) 0%,transparent 100%),
     radial-gradient(1px 1px at 28% 72%,rgba(228,184,74,.35) 0%,transparent 100%),
@@ -243,29 +212,23 @@ body{
 
   font-family:'Cinzel Decorative',serif;
 
-  font-size:clamp(56px,10vw,116px);
+  font-size:clamp(28px,6vw,52px);
 
-  color:#e9bd55;letter-spacing:.14em;
+  color:var(--gold-l);letter-spacing:.1em;
 
-  margin-bottom:18px;line-height:1;
+  margin-bottom:10px;
 
   text-shadow:0 0 60px rgba(201,149,42,.4);
 
-}
-
-.top-kicker{
-  display:block;margin-bottom:12px;color:#92d2cf;font-size:12px;letter-spacing:.18em;text-transform:uppercase;
-  text-shadow:0 2px 14px rgba(4,3,10,.9);
 }
 
 .top-sub{
 
   font-family:'Shippori Mincho',serif;
 
-  font-size:clamp(17px,2vw,25px);letter-spacing:.12em;line-height:1.9;
+  font-size:12px;letter-spacing:.3em;
 
-  color:rgba(247,240,221,.92);margin-bottom:0;
-  text-shadow:0 3px 18px rgba(4,3,10,.88);
+  color:var(--muted);margin-bottom:28px;
 
 }
 
@@ -273,19 +236,19 @@ body{
 
   font-family:'Shippori Mincho',serif;
 
-  font-size:14px;line-height:2.05;
+  font-size:16px;line-height:2.12;
 
-  color:rgba(240,234,216,.78);max-width:660px;margin:18px auto 0;
+  color:rgba(240,234,216,.68);max-width:480px;margin:0 auto 34px;
 
-  letter-spacing:.05em;
+  letter-spacing:.08em;
 
 }
 
-.top-btns{display:flex;flex-wrap:wrap;gap:14px;max-width:none;margin:34px 0 0;justify-content:center;}
+.top-btns{display:flex;flex-wrap:wrap;gap:12px;max-width:none;margin:0;justify-content:center;}
 
 .btn-top{
 
-  min-width:224px;height:56px;padding:0 28px;border:none;border-radius:2px;
+  min-width:238px;padding:18px 28px;border:none;border-radius:1px;
 
   font-family:'Shippori Mincho',serif;
 
@@ -303,20 +266,18 @@ body{
 
 .btn-free{
 
-  width:300px;max-width:100%;min-width:238px;
-  background:linear-gradient(90deg,var(--gold-d),var(--gold-l),#fffaec,var(--gold),var(--gold-d));
-  background-size:200% auto;
+  min-width:238px;
+  background:linear-gradient(135deg,var(--gold-d),var(--gold));
 
   color:#04030a;font-weight:700;
   font-size:15px;
-  letter-spacing:.12em;
-  box-shadow:0 0 30px rgba(201,149,42,.5),0 18px 38px rgba(201,149,42,.3),inset 0 1px 0 rgba(255,255,255,.3);
-  border:1px solid rgba(228,184,74,.78);
-  animation:ctaShimmer 5s linear infinite;
+  letter-spacing:.22em;
+  box-shadow:0 16px 34px rgba(201,149,42,.24), inset 0 1px 0 rgba(255,255,255,.18);
+  border:1px solid rgba(228,184,74,.5);
 
 }
 
-.btn-free:hover{animation-duration:2.3s;border-color:rgba(228,184,74,.95);box-shadow:0 0 42px rgba(201,149,42,.62),0 22px 44px rgba(201,149,42,.34),inset 0 1px 0 rgba(255,255,255,.34);transform:translateY(-1px);}
+.btn-free:hover{box-shadow:0 20px 42px rgba(201,149,42,.32), inset 0 1px 0 rgba(255,255,255,.22);transform:translateY(-1px);}
 
 .btn-sample{
 
@@ -331,154 +292,9 @@ body{
 
 .btn-sample:hover{background:rgba(255,255,255,.055);border-color:rgba(228,184,74,.48);color:var(--gold-l);}
 
-.btn-paid{
-  width:300px;max-width:100%;min-width:238px;
-  background:linear-gradient(180deg,rgba(10,17,35,.72),rgba(5,7,18,.78));
-  border:1px solid rgba(228,184,74,.58);
-  color:#e9bd55;
-  font-size:14px;
-  letter-spacing:.12em;
-  font-weight:600;
-  box-shadow:0 12px 30px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.055);
-}
-
-.btn-paid:hover{
-  background:linear-gradient(180deg,rgba(14,22,45,.82),rgba(6,8,20,.86));
-  border-color:rgba(233,189,85,.82);
-  color:#f4d875;
-  box-shadow:0 0 24px rgba(201,149,42,.24),0 18px 38px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.08);
-  transform:translateY(-1px);
-}
-
-.deep-premium-button{
-  position:relative;
-  isolation:isolate;
-  overflow:hidden;
-  color:#f5d77a;
-  font-weight:700;
-  text-decoration:none;
-  background:
-    radial-gradient(circle at 50% 0%,rgba(255,216,112,.15),transparent 38%),
-    linear-gradient(135deg,rgba(8,10,24,.96),rgba(18,22,45,.92) 48%,rgba(28,22,35,.95));
-  border:1px solid rgba(245,211,112,.66);
-  box-shadow:
-    inset 0 0 0 1px rgba(255,239,180,.06),
-    inset 0 0 22px rgba(245,211,112,.07),
-    0 0 13px rgba(245,211,112,.1),
-    0 16px 36px rgba(0,0,0,.36);
-  text-shadow:0 0 8px rgba(245,211,112,.2);
-  transition:transform .24s ease,border-color .24s ease,box-shadow .24s ease,background .24s ease,color .24s ease;
-  animation:deepPremiumGlow 5.4s ease-in-out infinite;
-}
-.btn-top.deep-premium-button{
-  width:300px;
-  max-width:100%;
-  min-width:238px;
-  min-height:56px;
-  letter-spacing:.08em;
-}
-.plan-compare-action.deep-premium-button{
-  min-height:46px;
-  letter-spacing:.08em;
-}
-.plan-compare-action.deep.deep-premium-button{
-  background:
-    radial-gradient(circle at 50% 0%,rgba(255,216,112,.18),transparent 40%),
-    linear-gradient(135deg,rgba(8,10,24,.96),rgba(18,22,45,.92) 48%,rgba(28,22,35,.95));
-  color:#f5d77a;
-  border-color:rgba(245,211,112,.7);
-}
-.deep-premium-button::before{
-  content:'';
-  position:absolute;
-  inset:1px;
-  z-index:-1;
-  background:linear-gradient(120deg,transparent 0%,rgba(255,230,150,.045) 35%,rgba(255,230,150,.16) 50%,rgba(255,230,150,.045) 65%,transparent 100%);
-  transform:translateX(-130%);
-  opacity:0;
-  animation:deepPremiumSheen 7s ease-in-out infinite;
-}
-.btn-top.deep-premium-button::before,
-.plan-compare-action.deep-premium-button::before{
-  content:'';
-  position:absolute;
-  inset:1px;
-  z-index:-1;
-  background:linear-gradient(120deg,transparent 0%,rgba(255,230,150,.045) 35%,rgba(255,230,150,.16) 50%,rgba(255,230,150,.045) 65%,transparent 100%);
-  transform:translateX(-130%);
-  opacity:0;
-  transition:none;
-  animation:deepPremiumSheen 7s ease-in-out infinite;
-}
-.btn-top.deep-premium-button:hover::before,
-.plan-compare-action.deep-premium-button:hover::before{
-  transform:translateX(-130%);
-}
-.deep-premium-button::after{
-  content:'';
-  position:absolute;
-  inset:-30%;
-  z-index:-2;
-  background:radial-gradient(circle,rgba(245,211,112,.16),transparent 58%);
-  opacity:.12;
-  animation:deepPremiumAura 5.4s ease-in-out infinite;
-}
-.deep-premium-button:hover{
-  color:#ffe9a3;
-  border-color:rgba(255,232,158,.88);
-  background:
-    radial-gradient(circle at 50% 0%,rgba(255,225,135,.2),transparent 42%),
-    linear-gradient(135deg,rgba(10,12,28,.98),rgba(22,26,54,.95) 48%,rgba(35,26,42,.96));
-  box-shadow:
-    inset 0 0 0 1px rgba(255,239,180,.09),
-    inset 0 0 28px rgba(245,211,112,.1),
-    0 0 20px rgba(245,211,112,.2),
-    0 18px 42px rgba(0,0,0,.42);
-  transform:translateY(-1px);
-}
-.deep-premium-button:active{
-  transform:translateY(0);
-  box-shadow:
-    inset 0 0 18px rgba(245,211,112,.08),
-    0 0 10px rgba(245,211,112,.12),
-    0 10px 24px rgba(0,0,0,.34);
-}
-.deep-premium-button:focus-visible{
-  outline:2px solid rgba(255,232,158,.95);
-  outline-offset:4px;
-}
-@keyframes deepPremiumGlow{
-  0%,100%{
-    box-shadow:
-      inset 0 0 0 1px rgba(255,239,180,.06),
-      inset 0 0 22px rgba(245,211,112,.07),
-      0 0 12px rgba(245,211,112,.1),
-      0 16px 36px rgba(0,0,0,.36);
-  }
-  50%{
-    box-shadow:
-      inset 0 0 0 1px rgba(255,239,180,.09),
-      inset 0 0 30px rgba(245,211,112,.11),
-      0 0 18px rgba(245,211,112,.16),
-      0 18px 42px rgba(0,0,0,.42);
-  }
-}
-@keyframes deepPremiumSheen{
-  0%{transform:translateX(-130%);opacity:0;}
-  18%{opacity:.48;}
-  38%{transform:translateX(130%);opacity:0;}
-  100%{transform:translateX(130%);opacity:0;}
-}
-@keyframes deepPremiumAura{
-  0%,100%{opacity:.1;transform:scale(.96);}
-  50%{opacity:.2;transform:scale(1.02);}
-}
-
 .top-note{
-  display:none;
-  max-width:none;margin-top:22px;padding-top:0;border-top:0;
-  font-size:13px;color:rgba(244,238,220,.72);letter-spacing:.08em;line-height:1.85;
-  text-shadow:0 2px 14px rgba(4,3,10,.9);
+  max-width:none;margin-top:18px;padding-top:18px;border-top:1px solid rgba(201,149,42,.12);
+  font-size:11px;color:var(--muted);letter-spacing:.1em;line-height:1.85;
 }
 .runtime-status{
   margin:14px auto 0;padding:12px 14px;max-width:520px;
@@ -614,125 +430,40 @@ body{
 
 
 
-.feature-carousel{width:100%;max-width:1120px;margin:28px auto 42px;user-select:none;position:relative;z-index:1;}
-.feature-carousel::before{
-  content:'ABOUT';display:block;margin:0 auto 22px;color:#92d2cf;font-size:12px;letter-spacing:.18em;text-align:center;
-}
-.feature-carousel-window{overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.28);}
+.feature-carousel{width:100%;max-width:1120px;margin:0 auto 28px;user-select:none;position:relative;z-index:1;}
+.feature-carousel-window{overflow:hidden;}
 .feature-carousel-track{display:flex;transition:transform .4s cubic-bezier(.4,0,.2,1);}
 .feature-slide{
-  flex:0 0 100%;padding:clamp(32px,5vw,58px) clamp(72px,6vw,86px);
-  border:1px solid rgba(233,189,85,.18);
-  background:
-    linear-gradient(135deg,rgba(25,18,44,.92),rgba(7,6,18,.94)),
-    url('images/ui/app-thumbnail.jpg') center/cover no-repeat;
-  box-sizing:border-box;min-height:430px;
-  display:grid;grid-template-columns:minmax(0,1.08fr) minmax(280px,.92fr);gap:34px;align-items:center;position:relative;overflow:hidden;text-align:left;
+  flex:0 0 100%;padding:30px 28px 26px;
+  border:1px solid rgba(201,149,42,.12);
+  background:rgba(255,255,255,.025);
+  box-sizing:border-box;min-height:170px;
 }
-.feature-slide::before{
-  content:'';position:absolute;inset:0;pointer-events:none;
-  background:
-    linear-gradient(90deg,transparent,rgba(233,189,85,.2),transparent) top/100% 1px no-repeat,
-    linear-gradient(180deg,rgba(13,8,31,.42),rgba(13,8,31,.84));
-}
-.feature-slide-copygroup,.feature-visual{position:relative;z-index:1;}
 .feature-slide-num{
-  font-family:'Cinzel Decorative',serif;font-size:13px;color:#78c1ca;
-  letter-spacing:.18em;margin-bottom:16px;
+  font-family:'Cinzel Decorative',serif;font-size:11px;color:var(--gold-d);
+  letter-spacing:.12em;margin-bottom:14px;
 }
 .feature-slide-title{
-  font-family:'Shippori Mincho',serif;font-size:clamp(26px,4vw,42px);line-height:1.45;
-  color:#f3d36f;letter-spacing:.1em;margin-bottom:18px;
+  font-family:'Shippori Mincho',serif;font-size:20px;line-height:1.6;
+  color:var(--gold-l);letter-spacing:.08em;margin-bottom:14px;
 }
 .feature-slide-tag{
   display:inline-block;border:1px solid rgba(201,149,42,.28);
   padding:3px 12px;font-size:10px;letter-spacing:.16em;
   color:rgba(228,184,74,.72);margin-bottom:14px;
 }
-.feature-slide-copy{font-size:16px;line-height:2.15;color:rgba(246,239,219,.88);letter-spacing:.04em;}
-.feature-visual{min-height:320px;display:grid;place-items:center;position:relative;}
-.feature-compass{
-  width:96px;height:96px;border:14px solid #f3d36f;border-radius:50% 50% 50% 0;transform:rotate(45deg);
-  filter:drop-shadow(0 0 28px rgba(243,211,111,.42));position:relative;
-}
-.feature-compass::before,.feature-compass::after{
-  content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-45deg);border-radius:50%;pointer-events:none;
-}
-.feature-compass::before{width:230px;height:230px;border:1px solid rgba(243,211,111,.32);}
-.feature-compass::after{width:310px;height:310px;border:1px solid rgba(120,193,202,.22);}
-.feature-card-pair{min-height:320px;position:relative;width:100%;}
-.feature-card-pair img{
-  position:absolute;top:50%;width:min(39%,190px);aspect-ratio:2/3;object-fit:cover;
-  border:1px solid rgba(245,204,102,.34);box-shadow:0 26px 70px rgba(0,0,0,.42);
-}
-.feature-card-pair .lenormand{left:12%;transform:translateY(-50%) rotate(-7deg);z-index:2;}
-.feature-card-pair .oracle{right:12%;transform:translateY(-48%) rotate(7deg);z-index:1;}
-.feature-ritual img{width:min(76%,300px);opacity:.78;filter:drop-shadow(0 0 38px rgba(243,211,111,.26));}
-.feature-ritual-steps{position:absolute;inset:auto 0 32px;display:flex;justify-content:center;gap:18px;}
-.feature-ritual-steps span{
-  min-height:52px;padding:0 22px;display:grid;place-items:center;border:1px solid rgba(243,211,111,.38);
-  background:rgba(5,4,15,.64);color:#f3d36f;font-family:'Shippori Mincho',serif;
-  letter-spacing:.08em;box-shadow:0 12px 34px rgba(0,0,0,.28);
-}
-.feature-carousel-nav{display:flex;align-items:center;justify-content:center;gap:14px;padding:22px 0 0;}
+.feature-slide-copy{font-size:15px;line-height:2.1;color:rgba(240,234,216,.75);letter-spacing:.03em;}
+.feature-carousel-nav{display:flex;align-items:center;justify-content:center;gap:14px;padding:12px 0;}
 .feature-carousel-btn{
-  position:absolute;
-  top:calc(50% - 2px);
-  z-index:5;
-  background:rgba(5,9,24,.58);border:1px solid rgba(233,189,85,.38);color:#e9bd55;
-  width:48px;height:48px;cursor:pointer;font-size:24px;line-height:1;
-  display:flex;align-items:center;justify-content:center;transition:transform .22s ease,border-color .22s ease,background .22s ease,color .22s ease,box-shadow .22s ease;
-  transform:translateY(-50%);
-  box-shadow:0 14px 34px rgba(0,0,0,.24),inset 0 0 16px rgba(233,189,85,.045);
+  background:none;border:1px solid rgba(201,149,42,.22);color:rgba(228,184,74,.65);
+  width:30px;height:30px;cursor:pointer;font-size:18px;line-height:1;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;
 }
-.feature-carousel-btn:first-child{left:18px;}
-.feature-carousel-btn:last-child{right:18px;}
-.feature-carousel-btn:hover{border-color:rgba(233,189,85,.72);background:rgba(13,18,42,.76);color:var(--gold-l);transform:translateY(-50%) scale(1.02);box-shadow:0 16px 38px rgba(0,0,0,.3),0 0 18px rgba(233,189,85,.12),inset 0 0 18px rgba(233,189,85,.07);}
-.feature-carousel-btn:focus-visible{outline:2px solid rgba(245,211,112,.92);outline-offset:4px;}
+.feature-carousel-btn:hover{border-color:rgba(201,149,42,.55);background:rgba(201,149,42,.06);color:var(--gold-l);}
 .feature-carousel-dots{display:flex;gap:8px;align-items:center;}
 .feature-carousel-dot{width:6px;height:6px;border-radius:50%;background:rgba(201,149,42,.22);cursor:pointer;transition:all .3s;}
-.feature-carousel-dot.active{background:#e9bd55;width:30px;border-radius:3px;}
-.top-disclosure{
-  width:100%;max-width:1120px;margin:0 auto 24px;border:1px solid rgba(201,149,42,.22);
-  background:
-    linear-gradient(135deg,rgba(244,206,112,.045),rgba(255,255,255,.012) 36%,rgba(10,7,18,.72)),
-    rgba(8,6,15,.78);
-  box-shadow:0 24px 80px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.03);
-  position:relative;overflow:hidden;
-}
-.top-disclosure::before{
-  content:'';position:absolute;left:24px;right:24px;top:0;height:1px;
-  background:linear-gradient(90deg,transparent,rgba(233,189,85,.54),transparent);
-}
-.top-disclosure[open],
-.top-disclosure.plan-static{
-  border-color:rgba(233,189,85,.34);
-  background:
-    linear-gradient(145deg,rgba(244,206,112,.07),rgba(255,255,255,.018) 42%,rgba(8,6,15,.82)),
-    rgba(8,6,15,.86);
-  box-shadow:0 28px 90px rgba(0,0,0,.3),0 0 0 1px rgba(233,189,85,.04),inset 0 1px 0 rgba(255,255,255,.045);
-}
-.top-disclosure summary,
-.top-disclosure-summary{
-  list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:18px;
-  padding:24px 28px;font-family:'Shippori Mincho',serif;color:#f3d36f;font-size:18px;letter-spacing:.1em;
-  position:relative;z-index:1;transition:background .2s,color .2s;
-}
-.top-disclosure summary:hover,
-.top-disclosure-summary:hover{background:rgba(233,189,85,.035);color:#ffe09a;}
-.top-disclosure summary::-webkit-details-marker{display:none;}
-.top-disclosure-kicker{
-  display:block;margin-bottom:6px;font-family:'Noto Sans JP',sans-serif;font-size:10px;letter-spacing:.2em;color:#92d2cf;text-transform:uppercase;
-}
-.top-disclosure-arrow{font-size:22px;color:rgba(228,184,74,.5);transition:transform .25s;flex-shrink:0;}
-.top-disclosure[open] .top-disclosure-arrow{transform:rotate(90deg);color:#e9bd55;}
-.top-disclosure-body{border-top:1px solid rgba(201,149,42,.14);padding:24px 28px 30px;position:relative;z-index:1;}
-.plan-compare{
-  width:100%;max-width:1120px;margin:0 auto;
-  border:1px solid rgba(201,149,42,.2);
-  background:linear-gradient(180deg,rgba(14,11,8,.72),rgba(6,5,12,.82));
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
-}
+.feature-carousel-dot.active{background:var(--gold-l);width:20px;border-radius:3px;}
+.plan-compare{width:100%;max-width:1120px;margin:0 auto 32px;border:1px solid rgba(201,149,42,.18);background:rgba(14,11,8,.6);}
 .plan-compare-head{display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid rgba(201,149,42,.15);}
 .plan-compare-head-cell{padding:14px 16px;font-size:10px;letter-spacing:.18em;color:var(--muted);text-align:center;}
 .plan-compare-head-cell.highlight{background:rgba(201,149,42,.07);color:var(--gold-l);font-size:11px;}
@@ -746,228 +477,6 @@ body{
 .plan-compare-yes{color:#7ecf8e;font-size:15px;}
 .plan-compare-no{color:rgba(240,234,216,.2);font-size:13px;}
 .plan-compare-val{color:var(--gold-l);font-size:12px;font-weight:600;}
-.plan-compare-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
-.plan-compare-card{
-  border:1px solid rgba(201,149,42,.16);
-  background:rgba(255,255,255,.018);
-  padding:22px;
-  display:flex;
-  flex-direction:column;
-  gap:16px;
-  min-height:100%;
-}
-.plan-compare-card.deep{
-  border-color:rgba(201,149,42,.36);
-  background:
-    radial-gradient(circle at 70% 0%,rgba(201,149,42,.12),transparent 34%),
-    linear-gradient(180deg,rgba(10,17,35,.62),rgba(5,7,18,.72));
-  box-shadow:0 18px 52px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.055);
-}
-.plan-compare-kicker{font-size:10px;letter-spacing:.22em;color:#92d2cf;text-transform:uppercase;}
-.plan-compare-title{font-family:'Shippori Mincho',serif;font-size:21px;letter-spacing:.1em;color:var(--gold-l);}
-.plan-compare-price{
-  width:max-content;
-  max-width:100%;
-  margin-top:-8px;
-  font-family:'Shippori Mincho',serif;
-  font-size:15px;
-  line-height:1.45;
-  letter-spacing:.08em;
-  color:#f1d784;
-  text-shadow:0 0 10px rgba(245,211,112,.16);
-}
-.plan-compare-trial{
-  width:max-content;
-  max-width:100%;
-  margin-top:-12px;
-  font-size:12px;
-  line-height:1.55;
-  letter-spacing:.06em;
-  color:rgba(246,239,219,.78);
-  text-shadow:0 0 10px rgba(245,211,112,.1);
-}
-.plan-compare-trial + .plan-compare-badge{margin-top:-6px;}
-.plan-compare-badge{
-  width:max-content;
-  max-width:100%;
-  padding:6px 12px;
-  border:1px solid rgba(245,211,112,.42);
-  background:linear-gradient(180deg,rgba(8,12,28,.78),rgba(5,7,18,.7));
-  color:#f1d784;
-  font-size:11px;
-  line-height:1.45;
-  letter-spacing:.07em;
-  box-shadow:inset 0 0 14px rgba(245,211,112,.055),0 0 12px rgba(245,211,112,.07);
-}
-.plan-compare-list{display:grid;gap:8px;margin:0 auto;padding:0;list-style:none;max-width:340px;width:100%;}
-.plan-compare-list li{
-  position:relative;
-  padding-left:18px;
-  font-size:13px;
-  line-height:1.8;
-  color:rgba(240,234,216,.75);
-  letter-spacing:.04em;
-  text-align:left;
-}
-.plan-compare-list li::before{
-  content:'';
-  position:absolute;
-  left:0;
-  top:.78em;
-  width:6px;
-  height:6px;
-  border-radius:50%;
-  background:#92d2cf;
-  box-shadow:0 0 10px rgba(146,210,207,.28);
-}
-.plan-compare-summary{
-  margin-top:auto;
-  max-width:31em;
-  padding-top:14px;
-  border-top:1px solid rgba(201,149,42,.12);
-  font-size:13px;
-  line-height:1.85;
-  letter-spacing:.025em;
-  color:rgba(240,234,216,.66);
-}
-.plan-compare-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:2px;}
-.plan-compare-action{
-  width:100%;
-  min-height:46px;
-  padding:0 18px;
-  border-radius:2px;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  text-decoration:none;
-  font-family:'Shippori Mincho',serif;
-  font-size:13px;
-  letter-spacing:.1em;
-  box-sizing:border-box;
-}
-.plan-compare-action.free{
-  background:linear-gradient(90deg,var(--gold-d),var(--gold-l),#fffaec,var(--gold),var(--gold-d));
-  background-size:200% auto;
-  color:#04030a;
-  border:1px solid rgba(228,184,74,.78);
-  font-weight:700;
-  box-shadow:0 14px 32px rgba(201,149,42,.24);
-}
-.plan-compare-action.deep{
-  background:linear-gradient(180deg,rgba(10,17,35,.72),rgba(5,7,18,.78));
-  color:var(--gold-l);
-  border:1px solid rgba(228,184,74,.58);
-  box-shadow:0 12px 30px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.055);
-}
-
-.flow-analysis-modal{
-  display:none;
-  position:fixed;
-  inset:0;
-  z-index:9050;
-  padding:22px;
-  background:rgba(2,2,8,.82);
-  backdrop-filter:blur(10px);
-  align-items:center;
-  justify-content:center;
-}
-.flow-analysis-modal.on{display:flex;}
-.flow-analysis-window{
-  width:min(96vw,760px);
-  max-height:min(88vh,780px);
-  overflow:auto;
-  border:1px solid rgba(201,149,42,.34);
-  background:
-    linear-gradient(180deg,rgba(11,9,19,.84),rgba(7,5,13,.92)),
-    radial-gradient(circle at 50% 0%,rgba(201,149,42,.14),transparent 44%);
-  box-shadow:0 34px 100px rgba(0,0,0,.72), inset 0 1px 0 rgba(255,255,255,.06);
-  padding:18px;
-}
-.flow-analysis-title{
-  border:1px solid rgba(201,149,42,.26);
-  padding:13px 18px;
-  text-align:center;
-  font-family:'Shippori Mincho',serif;
-  font-size:15px;
-  letter-spacing:.28em;
-  color:var(--gold-l);
-  margin-bottom:18px;
-}
-.flow-analysis-body{
-  font-family:'Shippori Mincho',serif;
-  font-size:16px;
-  line-height:2.05;
-  color:rgba(240,234,216,.86);
-}
-.flow-analysis-section{margin:0 0 18px;}
-.flow-analysis-section-title{
-  font-size:13px;
-  line-height:1.6;
-  letter-spacing:.16em;
-  color:#92d2cf;
-  margin:0 0 10px;
-}
-.flow-analysis-summary-card,
-.flow-analysis-detail{
-  border:1px solid rgba(201,149,42,.18);
-  background:rgba(6,8,20,.42);
-  padding:16px 18px;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
-}
-.flow-analysis-points{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:18px;}
-.flow-analysis-point{
-  border:1px solid rgba(146,210,207,.18);
-  background:rgba(8,12,28,.48);
-  padding:14px;
-}
-.flow-analysis-point-title{
-  font-size:11px;
-  letter-spacing:.12em;
-  color:#f1d784;
-  margin-bottom:8px;
-}
-.flow-analysis-point-body{
-  font-size:13px;
-  line-height:1.85;
-  color:rgba(240,234,216,.78);
-}
-.flow-analysis-body p{margin:0 0 22px;}
-.flow-analysis-body p:last-child{margin-bottom:0;}
-.flow-analysis-mark{
-  color:#f4d875;
-  font-size:1.05em;
-  text-decoration:underline;
-  text-decoration-color:rgba(244,216,117,.58);
-  text-underline-offset:.22em;
-  text-decoration-thickness:1px;
-}
-.flow-analysis-step{
-  color:#92d2cf;
-  font-size:1.08em;
-  font-weight:700;
-}
-.flow-analysis-key{
-  color:#f0ead8;
-  background:linear-gradient(transparent 58%,rgba(201,149,42,.26) 58%);
-  font-weight:700;
-}
-.flow-analysis-close{
-  position:sticky;
-  top:0;
-  margin-left:auto;
-  margin-bottom:10px;
-  width:34px;
-  height:34px;
-  border-radius:50%;
-  border:1px solid rgba(201,149,42,.38);
-  background:rgba(8,6,16,.86);
-  color:var(--gold-l);
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:18px;
-}
 
 .sample-reading{
   display:grid;grid-template-columns:minmax(0,.78fr) minmax(0,1.22fr);gap:0;
@@ -980,48 +489,32 @@ body{
 .sample-reading-note{font-size:12px;line-height:1.9;color:rgba(240,234,216,.55);}
 .sample-reading-body{padding:22px 24px;font-size:13px;line-height:2;color:rgba(240,234,216,.76);letter-spacing:.035em;}
 .sample-reading-body strong{color:rgba(228,184,74,.9);font-weight:500;}
-.vault-btn-pair{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;align-items:start;}
+.vault-btn-pair{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
 .vault-btn-card{
-  border:1px solid rgba(201,149,42,.24);
-  background:
-    linear-gradient(135deg,rgba(5,4,12,.82),rgba(9,7,18,.66) 58%,rgba(5,4,12,.74)),
-    rgba(5,4,12,.78);
-  box-shadow:0 18px 54px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.04);
-  backdrop-filter:blur(2px);
+  border:1px solid rgba(201,149,42,.12);background:rgba(255,255,255,.02);
   cursor:pointer;text-align:left;position:relative;overflow:hidden;
-  transition:border-color .2s,background .2s,box-shadow .2s;
+  transition:border-color .2s;
 }
 .vault-btn-card::before{
   content:'';position:absolute;left:20px;right:20px;top:0;height:1px;
   background:linear-gradient(90deg,transparent,rgba(228,184,74,.38),transparent);
 }
-.vault-btn-card:hover{border-color:rgba(201,149,42,.42);background:linear-gradient(135deg,rgba(7,5,15,.86),rgba(12,9,22,.72) 58%,rgba(7,5,15,.78));box-shadow:0 22px 64px rgba(0,0,0,.36), inset 0 1px 0 rgba(255,255,255,.05);}
+.vault-btn-card:hover{border-color:rgba(201,149,42,.3);}
 .vault-btn-head{padding:20px 20px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
-.vault-btn-eyebrow{font-size:9px;letter-spacing:.16em;color:rgba(240,234,216,.66);text-transform:uppercase;margin-bottom:7px;text-shadow:0 2px 12px rgba(0,0,0,.78);}
-.vault-btn-title{font-family:'Shippori Mincho',serif;font-size:18px;color:var(--gold-l);letter-spacing:.1em;text-shadow:0 2px 14px rgba(0,0,0,.82);}
+.vault-btn-eyebrow{font-size:9px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;margin-bottom:7px;}
+.vault-btn-title{font-family:'Shippori Mincho',serif;font-size:18px;color:var(--gold-l);letter-spacing:.1em;}
 .vault-btn-arrow{font-size:20px;color:rgba(228,184,74,.32);transition:transform .3s;flex-shrink:0;margin-top:3px;}
 .vault-btn-card.open .vault-btn-arrow{transform:rotate(90deg);color:rgba(228,184,74,.65);}
 .vault-btn-body{max-height:0;overflow:hidden;transition:max-height .4s ease;padding:0 20px;}
 .vault-btn-card.open .vault-btn-body{max-height:700px;padding-bottom:20px;}
-.pattern-value{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:flex-end;}
-.pattern-chip{
-  display:inline-flex;
-  align-items:center;
-  min-height:25px;
-  padding:3px 9px;
-  border:1px solid rgba(201,149,42,.18);
-  background:rgba(8,10,24,.42);
-  color:rgba(240,234,216,.78);
-  line-height:1.45;
-}
 
 
-.top-faq{width:100%;max-width:1120px;margin:0 auto;border:1px solid rgba(201,149,42,.16);background:rgba(5,4,12,.38);}
-.top-faq-eyebrow{font-size:10px;letter-spacing:.22em;color:var(--muted);text-align:center;padding:22px 0 14px;border-bottom:1px solid rgba(201,149,42,.08);}
-.top-faq-item{border-bottom:1px solid rgba(201,149,42,.1);padding:0 20px;}
+.top-faq{width:100%;max-width:1120px;margin:32px auto 0;border-top:1px solid rgba(201,149,42,.1);}
+.top-faq-eyebrow{font-size:10px;letter-spacing:.22em;color:var(--muted);text-align:center;padding:24px 0 16px;}
+.top-faq-item{border-bottom:1px solid rgba(201,149,42,.1);}
 .top-faq-q{
   width:100%;text-align:left;background:none;border:none;cursor:pointer;
-  padding:18px 0;display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:16px 4px;display:flex;align-items:center;justify-content:space-between;gap:16px;
 }
 .top-faq-q-text{
   font-family:'Shippori Mincho',serif;font-size:14px;letter-spacing:.06em;
@@ -1030,20 +523,18 @@ body{
 .top-faq-arrow{font-size:16px;color:rgba(228,184,74,.4);transition:transform .3s;flex-shrink:0;}
 .top-faq-item.open .top-faq-arrow{transform:rotate(90deg);}
 .top-faq-a{
-  max-height:0;overflow:hidden;transition:max-height .45s ease;
-  max-width:820px;text-align:left;
-  font-size:13px;line-height:2;color:rgba(240,234,216,.68);letter-spacing:.04em;
+  max-height:0;overflow:hidden;transition:max-height .35s ease;
+  font-size:13px;line-height:2;color:rgba(240,234,216,.6);letter-spacing:.04em;
 }
-.top-faq-item.open .top-faq-a{max-height:520px;padding-bottom:20px;}
+.top-faq-item.open .top-faq-a{max-height:280px;padding-bottom:16px;}
 .paid-band{
   width:100%;max-width:1120px;margin:0 auto 28px;
-  border:1px solid rgba(201,149,42,.42);
-  background:linear-gradient(135deg,rgba(201,149,42,.11),rgba(201,149,42,.02),rgba(201,149,42,.08));
+  border:1px solid rgba(201,149,42,.18);
+  background:linear-gradient(135deg,rgba(201,149,42,.06),rgba(201,149,42,.02));
   padding:28px 32px;
-  box-shadow:0 0 36px rgba(201,149,42,.12),inset 0 1px 0 rgba(201,149,42,.18);
 }
 .paid-band-inner{
-  display:flex;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap;
+  display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;
 }
 .paid-band-eyebrow{
   font-size:10px;letter-spacing:.22em;color:var(--muted);margin-bottom:8px;text-transform:uppercase;
@@ -1052,19 +543,7 @@ body{
   font-family:'Shippori Mincho',serif;font-size:18px;line-height:1.7;
   color:var(--gold-l);letter-spacing:.06em;max-width:480px;
 }
-.paid-band-actions{display:flex;gap:14px;flex-wrap:wrap;flex-shrink:0;justify-content:center;}
-.paid-band-actions-center{width:100%;}
-.paid-band-note{
-  width:100%;
-  margin-top:-8px;
-  text-align:center;
-  font-size:11px;
-  line-height:1.7;
-  letter-spacing:.08em;
-  color:rgba(240,234,216,.62);
-}
-.today-cta-free{background:rgba(255,255,255,.025);border-color:rgba(228,184,74,.5);color:var(--gold-l);box-shadow:0 12px 28px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.06);}
-.today-cta-paid{background:linear-gradient(90deg,var(--gold-d),var(--gold-l),#fffaec,var(--gold),var(--gold-d));background-size:200% auto;color:#04030a;border-color:rgba(228,184,74,.72);box-shadow:0 0 26px rgba(201,149,42,.48),0 16px 34px rgba(201,149,42,.28),inset 0 1px 0 rgba(255,255,255,.3);animation:ctaShimmer 5s linear infinite;font-weight:700;letter-spacing:.06em;}
+.paid-band-actions{display:flex;gap:12px;flex-wrap:wrap;flex-shrink:0;}
 
 .guide-stage{
 
@@ -1245,17 +724,13 @@ body{
 
 .vault-card{
 
-  position:relative;overflow:hidden;
-  background:
-    linear-gradient(135deg,rgba(5,4,12,.84),rgba(9,7,18,.7) 58%,rgba(5,4,12,.78)),
-    rgba(5,4,12,.8);
+  position:relative;overflow:hidden;background:linear-gradient(180deg,rgba(255,255,255,.032),rgba(255,255,255,.018));
 
-  border:1px solid rgba(201,149,42,.24);
+  border:1px solid rgba(201,149,42,.12);
 
   padding:24px 22px 22px;text-align:left;min-height:100%;
 
-  box-shadow:0 18px 58px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.04);
-  backdrop-filter:blur(2px);
+  box-shadow:0 10px 40px rgba(0,0,0,.16);
 
 }
 
@@ -1268,16 +743,14 @@ body{
 }
 
 .vault-eyebrow{
-  font-size:9px;letter-spacing:.16em;color:rgba(240,234,216,.64);
+  font-size:9px;letter-spacing:.16em;color:var(--muted);
   text-transform:uppercase;margin-bottom:8px;
-  text-shadow:0 2px 12px rgba(0,0,0,.78);
 }
 .vault-title{
 
   font-family:'Shippori Mincho',serif;
 
   font-size:18px;color:var(--gold-l);letter-spacing:.12em;
-  text-shadow:0 2px 14px rgba(0,0,0,.82);
 
   margin-bottom:10px;
 
@@ -1285,19 +758,17 @@ body{
 
 .vault-desc{
 
-  font-size:14px;line-height:1.9;color:rgba(240,234,216,.74);
+  font-size:14px;line-height:1.9;color:rgba(240,234,216,.6);
 
   letter-spacing:.05em;margin-bottom:14px;
-  text-shadow:0 2px 12px rgba(0,0,0,.72);
 
 }
 
 .vault-empty{
 
-  font-size:12px;line-height:1.8;color:rgba(240,234,216,.62);
+  font-size:12px;line-height:1.8;color:rgba(240,234,216,.42);
 
   padding:10px 0 4px;
-  text-shadow:0 2px 12px rgba(0,0,0,.72);
 
 }
 
@@ -1414,18 +885,6 @@ body{
 }
 
 .vault-link:hover{border-color:rgba(201,149,42,.45);background:rgba(201,149,42,.06);}
-.history-deep-link{
-  margin-top:10px;
-  padding-top:10px;
-  border-top:1px solid rgba(201,149,42,.08);
-}
-.history-deep-link-copy{
-  font-size:11px;
-  line-height:1.8;
-  color:rgba(240,234,216,.58);
-  letter-spacing:.04em;
-}
-.history-deep-link .vault-link{margin-top:8px;}
 
 .pattern-list{display:flex;flex-direction:column;gap:10px;}
 
@@ -1449,12 +908,7 @@ body{
 
 }
 
-.member-card{
-  border-color:rgba(201,149,42,.28);
-  background:
-    linear-gradient(135deg,rgba(5,4,12,.88),rgba(12,9,20,.74) 54%,rgba(201,149,42,.06)),
-    rgba(5,4,12,.84);
-}
+.member-card{border-color:rgba(201,149,42,.18);background:linear-gradient(180deg,rgba(201,149,42,.05),rgba(255,255,255,.02));}
 
 .member-state{
 
@@ -1468,16 +922,15 @@ body{
 
 .member-state.active{color:#efd37d;background:rgba(201,149,42,.12);}
 
-.member-state.inactive{color:rgba(240,234,216,.66);background:rgba(255,255,255,.045);}
+.member-state.inactive{color:var(--muted);background:rgba(255,255,255,.03);}
 
 .member-benefits{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
 
 .member-benefit{
 
-  font-size:12px;line-height:1.8;color:rgba(240,234,216,.82);
+  font-size:12px;line-height:1.8;color:rgba(240,234,216,.7);
 
   padding-left:14px;position:relative;
-  text-shadow:0 2px 12px rgba(0,0,0,.72);
 
 }
 
@@ -2237,29 +1690,6 @@ body{
 
 .result-card:hover{transform:translateY(-8px) scale(1.03);box-shadow:0 16px 48px rgba(0,0,0,.6),0 0 20px rgba(201,149,42,.2);}
 
-.result-card.card-type-len{box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 18px rgba(201,149,42,.28),0 0 40px rgba(201,149,42,.12);border-color:rgba(201,149,42,.5);}
-.result-card.card-type-orc{box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 18px rgba(120,80,220,.32),0 0 40px rgba(80,100,220,.14);border-color:rgba(130,90,220,.42);}
-@keyframes cardGlowLen{
-  0%,100%{box-shadow:0 16px 52px rgba(0,0,0,.75),0 0 28px rgba(201,149,42,.22),0 0 56px rgba(201,149,42,.08);}
-  50%{box-shadow:0 24px 72px rgba(0,0,0,.9),0 0 64px rgba(201,149,42,.52),0 0 100px rgba(201,149,42,.22);}
-}
-@keyframes cardGlowOrc{
-  0%,100%{box-shadow:0 16px 52px rgba(0,0,0,.75),0 0 28px rgba(120,80,220,.28),0 0 56px rgba(80,100,220,.1);}
-  50%{box-shadow:0 24px 72px rgba(0,0,0,.9),0 0 64px rgba(120,80,220,.58),0 0 100px rgba(80,100,220,.24);}
-}
-.card-glow.card-type-len{animation:cardReveal .9s ease-out both,cardGlowLen 4s ease-in-out infinite .9s !important;}
-.card-glow.card-type-orc{animation:cardReveal .9s ease-out both,cardGlowOrc 4s ease-in-out infinite .9s !important;}
-@keyframes cardRainbow{
-  0%  {box-shadow:0 12px 40px rgba(0,0,0,.6),0 0 0 2px rgba(255,80,80,.8),0 0 28px 6px rgba(255,80,80,.4);}
-  17% {box-shadow:0 12px 40px rgba(0,0,0,.6),0 0 0 2px rgba(255,180,0,.8),0 0 28px 6px rgba(255,180,0,.4);}
-  33% {box-shadow:0 12px 40px rgba(0,0,0,.6),0 0 0 2px rgba(80,220,80,.8),0 0 28px 6px rgba(80,220,80,.4);}
-  50% {box-shadow:0 12px 40px rgba(0,0,0,.6),0 0 0 2px rgba(0,200,240,.8),0 0 28px 6px rgba(0,200,240,.4);}
-  67% {box-shadow:0 12px 40px rgba(0,0,0,.6),0 0 0 2px rgba(100,80,255,.8),0 0 28px 6px rgba(100,80,255,.4);}
-  83% {box-shadow:0 12px 40px rgba(0,0,0,.6),0 0 0 2px rgba(220,80,220,.8),0 0 28px 6px rgba(220,80,220,.4);}
-  100%{box-shadow:0 12px 40px rgba(0,0,0,.6),0 0 0 2px rgba(255,80,80,.8),0 0 28px 6px rgba(255,80,80,.4);}
-}
-.result-card:hover{animation:cardRainbow 2.4s linear infinite !important;}
-
 @keyframes cardReveal{
 
   from{opacity:0;transform:translateY(24px) rotateY(-20deg) scale(.9);}
@@ -2352,10 +1782,9 @@ body{
 
 
 
-.result-card-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .45s cubic-bezier(.25,.46,.45,.94);}
+.result-card-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s ease;}
 
-.result-card:hover .result-card-img{transform:scale(1.1);}
-.result-card:hover{cursor:zoom-in;}
+.result-card:hover .result-card-img{transform:scale(1.05);}
 
 
 
@@ -2545,34 +1974,26 @@ body{
 
 #s-result{
 
-  background:
-    linear-gradient(180deg,rgba(4,3,10,.62) 0%,rgba(4,3,10,.72) 100%),
-    url('images/ui/result-bg.png') center top / cover no-repeat fixed;
+  background:linear-gradient(180deg,#080514 0%,#04030a 100%);
 
   padding:0 0 80px;
 
 }
 
 .result-wrap{
-  width:100%;
   max-width:960px;
   margin:0 auto;
-  padding-left:clamp(16px,4vw,40px);
-  padding-right:clamp(16px,4vw,40px);
   padding:48px 20px;
   display:flex;
   flex-direction:column;
 }
 #result-progress-card{order:1;}
-#rs-animal-reveal{order:2;}
-#rs-integration{order:3;}
-#rs-foundation-mini{order:4;}
-#rs-len{order:5;}
-#rs-orc{order:6;}
-#rs-basis{order:7;}
-#result-actions{order:8;}
-#rs-dossier{order:9;}
-#result-upgrade-panel{order:10;}
+#rs-integration{order:2;}
+#rs-len{order:3;}
+#rs-orc{order:4;}
+#rs-basis{order:5;}
+#rs-dossier{order:6;}
+#result-upgrade-panel{order:7;}
 
 
 
@@ -2586,23 +2007,8 @@ body{
   margin-bottom:20px;padding-bottom:14px;
   border-bottom:1px solid var(--border);
   display:flex;align-items:center;gap:10px;
-  text-shadow:0 1px 6px rgba(0,0,0,.55),0 0 20px rgba(201,149,42,.18);
 }
 .rs-icon{font-family:'Cinzel Decorative',serif;font-size:22px;color:var(--gold);}
-.rs-conclusion-accent{
-  border-left:4px solid rgba(228,184,74,.8);
-  padding-left:22px;
-  position:relative;
-}
-.rs-conclusion-accent::before{
-  content:'';position:absolute;left:-4px;top:8%;bottom:8%;width:4px;
-  background:linear-gradient(180deg,transparent,rgba(228,184,74,.9),rgba(201,149,42,1),rgba(228,184,74,.9),transparent);
-  border-radius:2px;
-}
-
-.key-phrase{color:var(--gold-l);font-weight:700;font-style:normal;}
-.highlight-name{color:var(--gold-l);font-weight:600;}
-
 .rs-copy{
   margin:-8px 0 18px;
   font-size:14px;
@@ -2613,53 +2019,6 @@ body{
 .rs-animal-reveal{text-align:center;padding:16px 0 28px;border-bottom:1px solid var(--border);margin-bottom:32px;}
 .rs-animal-reveal-eyebrow{font-size:10px;letter-spacing:.22em;color:var(--muted);margin-bottom:12px;}
 .rs-animal-reveal-name{font-family:'Shippori Mincho',serif;font-size:26px;letter-spacing:.2em;color:var(--gold-l);}
-.rs-animal-reveal-copy{
-  width:min(100%,680px);
-  margin:12px auto 0;
-  font-size:13px;
-  line-height:1.9;
-  color:rgba(240,234,216,.72);
-  letter-spacing:.04em;
-}
-
-.foundation-mini-grid{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:12px;
-}
-.foundation-mini-card{
-  padding:18px 18px 20px;
-  border:1px solid rgba(201,149,42,.16);
-  background:
-    radial-gradient(circle at top right,rgba(201,149,42,.12),transparent 38%),
-    rgba(5,8,20,.66);
-  box-shadow:0 14px 42px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.035);
-  text-align:left;
-}
-.foundation-mini-title{
-  font-family:'Shippori Mincho',serif;
-  font-size:16px;
-  line-height:1.6;
-  letter-spacing:.08em;
-  color:var(--gold-l);
-  margin-bottom:8px;
-}
-.foundation-mini-copy{
-  font-size:13px;
-  line-height:1.85;
-  color:rgba(240,234,216,.74);
-  letter-spacing:.035em;
-}
-.basis-summary-card{
-  grid-column:1 / -1;
-  order:1;
-  padding:18px 20px;
-  border:1px solid rgba(201,149,42,.2);
-  background:
-    radial-gradient(circle at top right,rgba(201,149,42,.1),transparent 38%),
-    rgba(3,7,18,.84);
-  text-align:left;
-}
 
 .basis-grid{
   display:grid;
@@ -2669,17 +2028,14 @@ body{
 .basis-panel.wide{
   grid-column:1 / -1;
 }
-#basis-consultation-panel{order:2;}
-#basis-animal-panel{order:3;}
-#basis-namebirth-panel{order:4;}
 .basis-panel{
   padding:22px 22px 24px;
   background:
     radial-gradient(circle at top right, rgba(201,149,42,.12), transparent 38%),
-    rgba(3,7,18,.8);
+    rgba(255,255,255,.025);
   border:1px solid rgba(201,149,42,.16);
 
-  box-shadow:0 12px 36px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.035);
+  box-shadow:0 12px 36px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.03);
 
 }
 
@@ -2706,60 +2062,8 @@ body{
 .basis-panel-copy{
   font-size:12px;
   line-height:1.9;
-  color:rgba(240,234,216,.72);
+  color:rgba(240,234,216,.62);
   margin-bottom:18px;
-}
-.basis-panel #r-reaction-content,
-.basis-panel #r-namejudge-content,
-.basis-panel #r-meimei-content{
-  max-height:none;
-  overflow-y:visible;
-  padding-right:6px;
-  scrollbar-width:thin;
-  scrollbar-color:rgba(201,149,42,.44) rgba(3,7,18,.35);
-}
-.basis-readmore{
-  margin-top:12px;
-  border-top:1px solid rgba(201,149,42,.12);
-  padding-top:12px;
-}
-.basis-readmore > summary{
-  list-style:none;
-  cursor:pointer;
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  min-height:34px;
-  padding:7px 12px;
-  border:1px solid rgba(201,149,42,.28);
-  background:rgba(4,8,20,.56);
-  color:var(--gold-l);
-  font-size:11px;
-  line-height:1.5;
-  letter-spacing:.12em;
-}
-.basis-readmore > summary::-webkit-details-marker{display:none;}
-.basis-readmore > summary::after{
-  content:'+';
-  color:rgba(240,234,216,.58);
-  font-size:13px;
-}
-.basis-readmore[open] > summary::after{content:'-';}
-.basis-readmore-body{
-  margin-top:14px;
-  font-size:13px;
-  line-height:2.05;
-  color:rgba(240,234,216,.78);
-}
-.basis-panel #r-reaction-content::-webkit-scrollbar,
-.basis-panel #r-namejudge-content::-webkit-scrollbar,
-.basis-panel #r-meimei-content::-webkit-scrollbar{
-  width:6px;
-}
-.basis-panel #r-reaction-content::-webkit-scrollbar-thumb,
-.basis-panel #r-namejudge-content::-webkit-scrollbar-thumb,
-.basis-panel #r-meimei-content::-webkit-scrollbar-thumb{
-  background:rgba(201,149,42,.44);
 }
 .reaction-basis-title{
   font-family:'Shippori Mincho',serif;
@@ -2785,7 +2089,7 @@ body{
 
   padding:14px 14px 16px;
 
-  background:rgba(3,7,18,.58);
+  background:rgba(255,255,255,.02);
 
   border:1px solid rgba(201,149,42,.12);
 
@@ -3226,12 +2530,10 @@ body{
 }
 .reading-rich-hero{
   padding:20px 22px 22px;
-  border:1px solid rgba(201,149,42,.22);
+  border:1px solid rgba(201,149,42,.18);
   background:
-    radial-gradient(circle at top right, rgba(201,149,42,.14), transparent 36%),
-    rgba(8,5,20,.62);
-  backdrop-filter:blur(8px);
-  -webkit-backdrop-filter:blur(8px);
+    radial-gradient(circle at top right, rgba(201,149,42,.12), transparent 36%),
+    rgba(255,255,255,.025);
   position:relative;
   overflow:hidden;
 }
@@ -3261,8 +2563,7 @@ body{
   font-family:'Shippori Mincho',serif;
   font-size:18px;
   line-height:2;
-  color:rgba(244,239,228,.96);
-  text-shadow:0 1px 4px rgba(0,0,0,.7);
+  color:rgba(244,239,228,.92);
 }
 .reading-rich-copy{
   margin-top:12px;
@@ -3275,8 +2576,7 @@ body{
   margin:0;
   font-size:13px;
   line-height:2;
-  color:rgba(240,234,216,.88);
-  text-shadow:0 1px 3px rgba(0,0,0,.6);
+  color:rgba(240,234,216,.74);
 }
 .reading-rich-grid{
   display:grid;
@@ -3285,19 +2585,17 @@ body{
 }
 .reading-rich-card{
   padding:18px 18px 20px;
-  border:1px solid rgba(201,149,42,.15);
-  background:rgba(8,5,20,.58);
-  backdrop-filter:blur(6px);
-  -webkit-backdrop-filter:blur(6px);
-  border-top:2px solid rgba(201,149,42,.28);
+  border:1px solid rgba(201,149,42,.12);
+  background:rgba(255,255,255,.018);
+  border-top:2px solid rgba(201,149,42,.22);
 }
 .reading-rich-card.card-warning{
-  border-top-color:rgba(214,120,80,.6);
-  background:rgba(18,8,5,.62);
+  border-top-color:rgba(214,120,80,.55);
+  background:rgba(214,120,80,.04);
 }
 .reading-rich-card.card-structure{
-  border-top-color:rgba(122,155,201,.5);
-  background:rgba(5,10,18,.62);
+  border-top-color:rgba(122,155,201,.45);
+  background:rgba(122,155,201,.04);
 }
 .reading-rich-card-title{
   font-family:'Shippori Mincho',serif;
@@ -3346,45 +2644,11 @@ body{
     rgba(255,255,255,.024);
 }
 .kind-orc .reading-rich-title{color:#c8d7f5;}
-.oracle-advice-grid{
-  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-}
-.oracle-next-actions{
-  border-top-color:rgba(228,184,74,.48);
-  background:
-    radial-gradient(circle at top right,rgba(228,184,74,.12),transparent 36%),
-    rgba(4,9,20,.68);
-}
-.oracle-next-actions .reading-rich-card-title{
-  color:var(--gold-l);
-}
-.oracle-next-actions .reading-rich-list-item{
-  color:rgba(246,239,219,.82);
-}
 .kind-integration .reading-rich-hero{
-  border-color:rgba(229,185,79,.45);
-  border-left:4px solid rgba(228,184,74,.85);
+  border-color:rgba(229,185,79,.3);
   background:
-    radial-gradient(circle at top right, rgba(229,185,79,.22), transparent 34%),
-    linear-gradient(180deg,rgba(201,149,42,.14),rgba(8,5,20,.7));
-  position:relative;
-}
-.kind-integration .reading-rich-hero::before{
-  content:'';
-  position:absolute;
-  left:0;top:8%;bottom:8%;width:4px;
-  background:linear-gradient(180deg,transparent,rgba(228,184,74,1),rgba(255,220,100,.9),rgba(228,184,74,1),transparent);
-  border-radius:0 2px 2px 0;
-}
-.kind-integration .reading-rich-title{
-  font-size:19px;
-  color:var(--gold-l);
-  text-shadow:0 1px 8px rgba(201,149,42,.4);
-}
-.kind-integration .reading-rich-lead{
-  font-size:19px;
-  color:rgba(248,242,228,.98);
-  text-shadow:0 1px 5px rgba(0,0,0,.7);
+    radial-gradient(circle at top right, rgba(229,185,79,.18), transparent 34%),
+    linear-gradient(180deg,rgba(201,149,42,.09),rgba(255,255,255,.02));
 }
 .kind-foundationdeep .reading-rich-hero{
   border-color:rgba(214,178,92,.26);
@@ -4146,26 +3410,28 @@ body{
 .cursor2{display:inline-block;width:1.5px;height:14px;background:var(--gold);animation:blink .8s infinite;vertical-align:middle;margin-left:1px;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 .result-progress-card{
-  width:100%;
   margin-bottom:28px;
-  padding:0;
-  border:1px solid rgba(201,149,42,.22);
-  background:#05040f;
+  padding:22px 24px;
+  border:1px solid rgba(201,149,42,.18);
+  background:
+    linear-gradient(135deg,rgba(201,149,42,.08),transparent 60%),
+    rgba(255,255,255,.025);
   border-radius:2px;
   position:relative;
   overflow:hidden;
-  min-height:min(72vh,560px);
-  box-shadow:0 28px 90px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.04);
 }
-.result-progress-card::before{
+.result-progress-card::after{
   content:'';
-  position:absolute;inset:0;
-  background:
-    radial-gradient(circle at 50% 50%,rgba(233,189,85,.22),transparent 34%),
-    linear-gradient(180deg,rgba(4,3,10,.08),rgba(4,3,10,.42));
-  z-index:1;pointer-events:none;
+  position:absolute;
+  right:-34px;
+  top:-40px;
+  width:164px;
+  height:164px;
+  background:url('images/ui/reading-seal.png') center/contain no-repeat;
+  opacity:.08;
+  pointer-events:none;
 }
-.result-progress-card > *{position:relative;z-index:2;}
+.result-progress-card > *{position:relative;z-index:1;}
 .dossier-shell::after{
   content:'';
   position:absolute;
@@ -4179,69 +3445,48 @@ body{
   filter:drop-shadow(0 10px 20px rgba(0,0,0,.35));
 }
 .result-progress-visual{
-  position:absolute;
-  inset:0;
-  z-index:2;
-  min-height:100%;
-  margin:0;
-  border:none;
-  background:#05040f;
+  position:relative;
+  min-height:168px;
+  margin:-6px -4px 18px;
+  border:1px solid rgba(201,149,42,.12);
+  background:#080814;
   overflow:hidden;
 }
 .reading-effect-frame,
 .reading-effect-character{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
-.reading-effect-frame{display:block;opacity:0;animation:readingFrame 3s steps(1,end) infinite;filter:saturate(1.12) contrast(1.08);}
+.reading-effect-frame{opacity:0;animation:readingFrame 4.8s steps(1,end) infinite;}
 .reading-effect-frame:nth-child(1){animation-delay:0s;}
-.reading-effect-frame:nth-child(2){animation-delay:.75s;}
-.reading-effect-frame:nth-child(3){animation-delay:1.5s;}
-.reading-effect-frame:nth-child(4){animation-delay:2.25s;}
+.reading-effect-frame:nth-child(2){animation-delay:1.2s;}
+.reading-effect-frame:nth-child(3){animation-delay:2.4s;}
+.reading-effect-frame:nth-child(4){animation-delay:3.6s;}
 .reading-effect-character{
-  display:none;
-  object-fit:contain;
-  object-position:center center;
-  opacity:.14;
-  filter:drop-shadow(0 0 40px rgba(201,149,42,.3)) drop-shadow(0 20px 34px rgba(0,0,0,.42));
+  object-position:right bottom;
+  opacity:.38;
+  filter:drop-shadow(0 20px 34px rgba(0,0,0,.42));
   mix-blend-mode:screen;
-}
-.result-progress-visual::before{
-  content:'鑑定中';
-  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-  z-index:4;
-  font-family:'Shippori Mincho',serif;
-  font-size:clamp(32px,7vw,72px);
-  letter-spacing:.32em;
-  color:#f3d36f;
-  text-shadow:0 0 24px rgba(243,211,111,.58),0 0 72px rgba(201,149,42,.38);
-  animation:readingPulse 1.45s ease-in-out infinite;
-  white-space:nowrap;
 }
 .result-progress-visual::after{
   content:'';
-  position:absolute;inset:-42%;z-index:3;
-  background:none;
-  opacity:0;
-  animation:none;
+  position:absolute;inset:0;
+  background:
+    linear-gradient(90deg,rgba(7,5,14,.9),rgba(7,5,14,.28) 50%,rgba(7,5,14,.62)),
+    linear-gradient(180deg,transparent,rgba(7,5,14,.74));
 }
 @keyframes readingFrame{
-  0%,24.99%{opacity:.96;}
+  0%,24.99%{opacity:.72;}
   25%,100%{opacity:0;}
 }
-@keyframes readingAuraSpin{
-  from{transform:rotate(0deg) scale(1);}
-  to{transform:rotate(360deg) scale(1);}
-}
-.result-progress-eyebrow{display:none;font-size:10px;letter-spacing:.14em;color:rgba(240,234,216,.42);margin-bottom:8px;}
+.result-progress-eyebrow{font-size:10px;letter-spacing:.14em;color:rgba(240,234,216,.42);margin-bottom:8px;}
 .result-progress-title{
-  display:none;
   font-family:'Shippori Mincho',serif;
   font-size:19px;
   color:var(--gold-l);
   letter-spacing:.12em;
   margin-bottom:6px;
 }
-.result-progress-copy{display:none;font-size:12px;line-height:1.9;color:rgba(240,234,216,.62);}
+.result-progress-copy{font-size:12px;line-height:1.9;color:rgba(240,234,216,.62);}
 .result-progress-steps{
-  display:none;
+  display:grid;
   grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
   gap:10px;
   margin-top:18px;
@@ -4270,10 +3515,6 @@ body{
 }
 .result-progress-step.is-done .result-progress-step-status{color:rgba(178,229,196,.72);}
 .result-progress-step.is-done .result-progress-step-label{color:rgba(226,244,232,.88);}
-@keyframes readingPulse{
-  0%,100%{opacity:.68;filter:blur(.2px);}
-  50%{opacity:1;filter:blur(0);}
-}
 .result-presenter{
   display:grid;
   grid-template-columns:minmax(0,120px) minmax(0,1fr);
@@ -4298,15 +3539,6 @@ body{
   object-fit:cover;
   object-position:right bottom;
 }
-.result-presenter-figure--seal img{
-  inset:5%;
-  width:90%;
-  height:90%;
-  object-fit:contain;
-  object-position:center;
-  filter:drop-shadow(0 0 12px rgba(201,149,42,.35));
-  opacity:.85;
-}
 .result-presenter-kicker{
   font-size:10px;
   letter-spacing:.22em;
@@ -4321,14 +3553,19 @@ body{
   letter-spacing:.06em;
 }
 @media (max-width:720px){
-  .result-progress-card{padding:0;min-height:58vh;}
-  .result-progress-visual{min-height:100%;margin:0;}
-  .reading-effect-character{opacity:.12;}
-  .result-progress-visual::before{font-size:34px;letter-spacing:.24em;}
+  .top-guide-character{
+    right:-32%;
+    bottom:-18%;
+    width:116%;
+    height:98%;
+    opacity:.2;
+  }
+  .result-progress-card{padding:18px 16px;}
+  .result-progress-visual{min-height:128px;margin:-2px 0 16px;}
+  .reading-effect-character{opacity:.3;}
   .result-presenter{grid-template-columns:78px minmax(0,1fr);gap:12px;padding:12px;}
   .result-presenter-copy{font-size:13px;}
   .result-progress-steps{grid-template-columns:1fr;}
-  .foundation-mini-grid{grid-template-columns:1fr;}
   .reading-error-state{grid-template-columns:72px minmax(0,1fr);gap:12px;padding:12px;}
   .reading-error-visual{width:72px;}
   .reading-error-title{font-size:14px;}
@@ -4336,9 +3573,6 @@ body{
   .reading-rich-lead{font-size:16px;}
   .reading-rich-grid,
   .foundation-grid{grid-template-columns:1fr;}
-  .basis-panel #r-reaction-content,
-  .basis-panel #r-namejudge-content,
-  .basis-panel #r-meimei-content{max-height:none;overflow-y:visible;}
   .result-detail-accordion > summary,
   .result-detail-content{padding-left:16px;padding-right:16px;}
 }
@@ -4356,90 +3590,11 @@ body{
 
   position:relative;cursor:pointer;
 
-  background:#04030a;
-
-  box-shadow:0 6px 18px rgba(0,0,0,.35);
-
-  transition:transform .2s,box-shadow .2s,border-color .2s;
+  transition:transform .2s;
 
 }
 
-.card-sm::before{
-
-  content:'';
-
-  position:absolute;inset:-45%;
-
-  background:conic-gradient(from 0deg,rgba(255,74,112,.0),rgba(255,74,112,.72),rgba(255,199,65,.7),rgba(88,230,128,.68),rgba(70,198,255,.72),rgba(145,110,255,.72),rgba(255,94,210,.7),rgba(255,74,112,.0));
-
-  opacity:0;
-
-  z-index:2;
-
-  pointer-events:none;
-
-  mix-blend-mode:screen;
-
-  transition:opacity .18s ease;
-
-}
-
-.card-sm::after{
-
-  content:'';
-
-  position:absolute;inset:1px;
-
-  border-radius:3px;
-
-  border:1px solid rgba(255,255,255,.0);
-
-  box-shadow:inset 0 0 18px rgba(255,255,255,.0);
-
-  z-index:3;
-
-  pointer-events:none;
-
-  transition:border-color .18s ease,box-shadow .18s ease;
-
-}
-
-.card-sm:hover,
-.card-sm:focus-visible{
-
-  transform:translateY(-4px);
-
-  border-color:rgba(255,255,255,.58);
-
-  box-shadow:0 12px 32px rgba(0,0,0,.55),0 0 12px rgba(255,85,160,.42),0 0 24px rgba(65,205,255,.32),0 0 36px rgba(255,214,75,.22);
-
-}
-
-.card-sm:hover::before,
-.card-sm:focus-visible::before{
-
-  opacity:.82;
-
-  animation:cardThumbRainbow 2.8s linear infinite;
-
-}
-
-.card-sm:hover::after,
-.card-sm:focus-visible::after{
-
-  border-color:rgba(255,255,255,.38);
-
-  box-shadow:inset 0 0 16px rgba(255,255,255,.2),0 0 14px rgba(255,255,255,.18);
-
-}
-
-@keyframes cardThumbRainbow{
-
-  from{transform:rotate(0deg)}
-
-  to{transform:rotate(360deg)}
-
-}
+.card-sm:hover{transform:translateY(-4px);}
 
 .card-sm-ph{
 
@@ -4454,21 +3609,6 @@ body{
 .card-sm-num{font-family:'Cinzel Decorative',serif;font-size:14px;color:var(--gold-l);}
 
 .card-sm-name{font-size:6px;color:rgba(240,234,216,.5);margin-top:2px;text-align:center;padding:0 2px;}
-.card-sm-role{
-  position:absolute;
-  left:4px;
-  top:4px;
-  z-index:4;
-  padding:2px 5px;
-  border:1px solid rgba(146,210,207,.38);
-  background:rgba(3,8,18,.76);
-  color:#9ddbd8;
-  font-size:9px;
-  line-height:1.2;
-  letter-spacing:.12em;
-  pointer-events:none;
-  box-shadow:0 0 10px rgba(146,210,207,.12);
-}
 
 
 
@@ -4502,141 +3642,29 @@ body{
 
 .nav-btn-primary:hover{box-shadow:0 4px 20px rgba(201,149,42,.3);color:#04030a;}
 
-.result-deep-cta{
-  order:-1;
-  width:100%;
-  display:flex;
-  flex-direction:column;
-  align-items:flex-start;
-  gap:12px;
-  margin:0 0 12px;
-  padding:22px 24px;
-  border:1px solid rgba(201,149,42,.24);
-  background:
-    radial-gradient(circle at top right,rgba(201,149,42,.14),transparent 38%),
-    linear-gradient(135deg,rgba(3,7,18,.86),rgba(8,12,28,.76));
-  box-shadow:0 18px 48px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.04);
-}
-.result-deep-cta-title{
-  font-family:'Shippori Mincho',serif;
-  font-size:20px;
-  line-height:1.65;
-  letter-spacing:.1em;
-  color:var(--gold-l);
-}
-.result-deep-cta-copy{
-  max-width:760px;
-  font-size:13px;
-  line-height:2;
-  color:rgba(240,234,216,.76);
-  text-align:left;
-}
-.result-deep-cta-btn{
-  width:min(100%,360px);
-  min-height:54px;
-}
-.result-deep-cta-note{
-  font-size:11px;
-  line-height:1.7;
-  letter-spacing:.08em;
-  color:rgba(240,234,216,.62);
-  padding-left:2px;
-}
-.checkout-disclosure{
-  width:100%;
-  max-width:760px;
-  margin:12px auto 0;
-  padding:12px 14px;
-  border:1px solid rgba(201,149,42,.18);
-  background:rgba(5,8,18,.42);
-  color:rgba(240,234,216,.68);
-  font-size:11px;
-  line-height:1.85;
-  text-align:left;
-}
-.checkout-disclosure a{color:var(--gold-l);text-decoration:none;border-bottom:1px solid rgba(201,149,42,.35);}
-.result-deep-cta .checkout-disclosure{margin:2px 0 0;}
-
 
 
 .today-cta{
 
   display:inline-flex;align-items:center;justify-content:center;text-decoration:none;
 
-  min-width:238px;height:56px;padding:0 28px;
+  padding:10px 28px;
 
-  background:rgba(255,255,255,.025);
+  background:linear-gradient(135deg,var(--gold-d),var(--gold));
 
-  border:1px solid rgba(228,184,74,.5);border-radius:2px;
+  border:none;border-radius:1px;
 
   font-family:'Shippori Mincho',serif;
 
-  font-size:15px;letter-spacing:.18em;
+  font-size:13px;letter-spacing:.25em;
 
-  color:var(--gold-l);font-weight:600;cursor:pointer;
+  color:#04030a;font-weight:600;cursor:pointer;
 
-  transition:all .25s;box-sizing:border-box;
+  transition:all .25s;
 
 }
 
-.today-cta:hover{box-shadow:0 18px 38px rgba(201,149,42,.18), inset 0 1px 0 rgba(255,255,255,.08);transform:translateY(-1px);}
-.today-cta.today-cta-free{background:linear-gradient(90deg,var(--gold-d),var(--gold-l),#fffaec,var(--gold),var(--gold-d));background-size:200% auto;color:#04030a;border-color:rgba(228,184,74,.72);box-shadow:0 0 26px rgba(201,149,42,.48),0 16px 34px rgba(201,149,42,.28),inset 0 1px 0 rgba(255,255,255,.3);animation:ctaShimmer 5s linear infinite;font-weight:700;letter-spacing:.06em;}
-.today-cta.today-cta-paid{background:rgba(255,255,255,.025);border-color:rgba(228,184,74,.5);color:var(--gold-l);box-shadow:0 12px 28px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.06);}
-.today-cta.today-cta-free:hover{animation-duration:2.3s;box-shadow:0 0 40px rgba(201,149,42,.65),0 20px 44px rgba(201,149,42,.38),inset 0 1px 0 rgba(255,255,255,.32);color:#04030a;}
-.today-cta.today-cta-paid:hover{background:rgba(201,149,42,.08);border-color:rgba(228,184,74,.8);}
-.today-cta.today-cta-paid.deep-premium-button{
-  min-width:238px;
-  height:56px;
-  min-height:56px;
-  color:#f5d77a;
-  border-color:rgba(245,211,112,.68);
-  background:
-    radial-gradient(circle at 50% 0%,rgba(255,216,112,.16),transparent 38%),
-    linear-gradient(135deg,rgba(8,10,24,.96),rgba(18,22,45,.92) 48%,rgba(28,22,35,.95));
-  box-shadow:
-    inset 0 0 0 1px rgba(255,239,180,.06),
-    inset 0 0 22px rgba(245,211,112,.07),
-    0 0 14px rgba(245,211,112,.12),
-    0 16px 36px rgba(0,0,0,.36);
-  text-shadow:0 0 8px rgba(245,211,112,.22);
-  animation:deepPremiumGlow 5.4s ease-in-out infinite;
-}
-.today-cta.today-cta-paid.deep-premium-button:hover{
-  color:#ffe9a3;
-  border-color:rgba(255,232,158,.9);
-  background:
-    radial-gradient(circle at 50% 0%,rgba(255,225,135,.22),transparent 42%),
-    linear-gradient(135deg,rgba(10,12,28,.98),rgba(22,26,54,.95) 48%,rgba(35,26,42,.96));
-  box-shadow:
-    inset 0 0 0 1px rgba(255,239,180,.1),
-    inset 0 0 28px rgba(245,211,112,.1),
-    0 0 20px rgba(245,211,112,.22),
-    0 18px 42px rgba(0,0,0,.42);
-  transform:translateY(-1px);
-}
-.today-cta:disabled{opacity:.46;cursor:not-allowed;transform:none;box-shadow:none;animation:none;}
-@keyframes ctaShimmer{
-  0%{background-position:200% center;}
-  100%{background-position:-200% center;}
-}
-
-@media (prefers-reduced-motion: reduce){
-  .deep-premium-button,
-  .deep-premium-button::before,
-  .deep-premium-button::after,
-  .btn-top.deep-premium-button::before,
-  .plan-compare-action.deep-premium-button::before{
-    animation:none;
-  }
-  .feature-carousel-track,
-  .feature-carousel-btn,
-  .feature-carousel-dot{
-    transition:none;
-  }
-  .feature-carousel-btn:hover{
-    transform:translateY(-50%);
-  }
-}
+.today-cta:hover{box-shadow:0 4px 20px rgba(201,149,42,.4);transform:translateY(-1px);}
 
 
 
@@ -4707,44 +3735,17 @@ body{
 
 @media(max-width:600px){
 
-  .top-hero-shell{min-height:100vh;min-height:100svh;padding:24px 18px 40px;}
+  .top-main{padding:32px 22px 28px;}
 
-  .top-main{padding:0;}
+  .top-seal{margin:0 auto 24px;}
 
-  .top-hero-shell::before{background:
-    linear-gradient(180deg,rgba(4,3,10,.1),rgba(4,3,10,.28) 56%,rgba(4,3,10,.56) 86%,rgba(7,5,18,.84) 100%),
-    linear-gradient(90deg,rgba(4,3,10,.48),rgba(4,3,10,.08) 48%,rgba(4,3,10,.48));}
-  #s-top::before{background:
-    linear-gradient(180deg,rgba(5,4,15,.04),rgba(5,4,15,.16) 54%,rgba(5,4,15,.34) 100%),
-    linear-gradient(90deg,rgba(4,3,10,.42),rgba(4,3,10,.04) 48%,rgba(4,3,10,.42)),
-    url('images/ui/app-thumbnail.jpg') center 24%/cover no-repeat;}
-  .top-hero-shell::after{background:
-    linear-gradient(90deg,rgba(219,177,82,.18) 1px,transparent 1px) 0 0/96px 96px,
-    linear-gradient(0deg,rgba(120,177,200,.08) 1px,transparent 1px) 0 0/96px 96px;}
+  .top-sub{letter-spacing:.24em;}
 
-  .top-seal{width:84px;height:84px;margin:0 auto 18px;}
+  .top-desc{font-size:15px;}
 
-  .top-seal::before{width:40px;height:40px;border-width:5px;}
-
-  .top-seal::after{width:66px;height:66px;}
-
-  .top-title{font-size:clamp(48px,18vw,72px);letter-spacing:.1em;}
-
-  .top-sub{letter-spacing:.06em;font-size:16px;line-height:1.85;}
-
-  .top-desc{font-size:13px;line-height:1.9;}
-
-  .top-btns{flex-direction:column;max-width:360px;margin:30px auto 0;}
+  .top-btns{flex-direction:column;max-width:320px;margin:0 auto;}
 
   .btn-top{width:100%;min-width:0;}
-  .deep-premium-button,
-  .btn-top.deep-premium-button{
-    width:100%;
-    min-height:52px;
-    padding:0 1.4rem;
-    font-size:15px;
-    letter-spacing:.06em;
-  }
 
   .top-note{margin:18px auto 0;}
 
@@ -4753,50 +3754,20 @@ body{
   .plan-compare-cell{font-size:11px;padding:9px 10px;}
   .plan-compare-head-cell{font-size:9px;padding:12px 10px;}
   .plan-compare-head-price{font-size:15px;}
-  .plan-compare-grid{grid-template-columns:1fr;}
-  .plan-compare-card{padding:18px;}
-  .plan-compare-title{font-size:19px;}
-  .plan-compare-price{font-size:14px;letter-spacing:.06em;}
-  .plan-compare-trial{font-size:11.5px;letter-spacing:.05em;}
-  .plan-compare-badge{font-size:10.5px;letter-spacing:.05em;}
-  .plan-compare-list li{font-size:13px;}
-  .plan-compare-summary{max-width:28em;font-size:13px;line-height:1.8;}
-  .plan-compare-action{width:100%;}
   .sample-reading{grid-template-columns:1fr;}
   .sample-reading-side{border-right:none;border-bottom:1px solid rgba(201,149,42,.12);}
   .sample-modal-box{max-height:88vh;padding:22px 18px;}
   .sample-modal-head{grid-template-columns:1fr auto;}
   .paid-band{padding:20px;}
-  .paid-band-inner{flex-direction:column;align-items:center;}
-  .paid-band-actions{width:100%;}
-  .today-cta{width:100%;min-width:0;}
-  .top-disclosure summary{padding:20px 18px;}
-  .top-disclosure-body{padding:18px 16px 22px;}
-  .top-faq-item{padding:0 14px;}
+  .paid-band-inner{flex-direction:column;align-items:flex-start;}
   .top-point-list{grid-template-columns:1fr;}
   .narr-grid{grid-template-columns:1fr;}
   .grid33{gap:6px;}
   .vault-grid{grid-template-columns:1fr;}
-  .feature-slide{min-height:auto;grid-template-columns:1fr;padding:28px 22px;text-align:left;}
-  .feature-slide-title{font-size:clamp(24px,8vw,34px);}
-  .feature-slide-copy{font-size:14px;line-height:2;}
-  .feature-visual,.feature-card-pair{min-height:260px;}
-  .feature-card-pair img{width:min(42%,160px);}
-  .feature-card-pair .lenormand{left:8%;}
-  .feature-card-pair .oracle{right:8%;}
-  .feature-carousel-btn{
-    position:static;
-    width:42px;
-    height:42px;
-    transform:none;
-    background:rgba(5,9,24,.58);
-  }
-  .feature-carousel-btn:hover{transform:translateY(-1px);}
+  .feature-slide{min-height:auto;}
   .pattern-row{flex-direction:column;gap:4px;}
 
-  .pattern-value{text-align:left;justify-content:flex-start;}
-  .flow-analysis-points{grid-template-columns:1fr;}
-  .flow-analysis-summary-card,.flow-analysis-detail{padding:14px;}
+  .pattern-value{text-align:left;}
 
   .member-panel-head{align-items:flex-start;}
 
@@ -5224,26 +4195,22 @@ body{
   <div class="modal-box">
     <div class="modal-title">深掘り鑑定の確認</div>
     <div class="modal-desc" id="member-access-desc">
-      公開環境では、深掘り鑑定の利用状態を確認できたときだけ開きます。</div>
+      公開環境では、会員状態を確認できたときだけ有料鑑定を開きます。</div>
     <div class="runtime-status warn" id="member-access-status">
       <div class="runtime-status-title">確認待ち</div>
       <div class="runtime-status-detail">確認コード入力で進めます。</div>
     </div>
     <div class="modal-guide" id="member-access-guide">公開環境では運営側の確認コードが必要です。</div>
-      <div id="google-auth-shell" style="display:none;margin:14px 0 18px;">
-        <div class="modal-label" style="margin-bottom:10px;">GOOGLE LOGIN</div>
-        <div id="google-auth-copy" style="font-size:12px;color:var(--muted);line-height:1.8;margin-bottom:12px;">Googleアカウントでログインすると、月額登録の状態をこの端末で確認できます。</div>
-        <div id="google-signin-btn" style="display:flex;justify-content:center;"></div>
-        <div class="key-status" id="google-auth-error" style="display:none;margin-top:10px;"></div>
-      </div>
-      <div class="checkout-disclosure">
-        深掘り鑑定は月額1,200円、1週間のお試しあり。お試し終了後は月額課金に移行します。解約は請求管理（Stripeカスタマーポータル）から行えます。返金可否は利用規約とStripeの処理状況に従います。提供内容はルノルマン9枚、数秘オラクル3枚、追加質問、鑑定履歴の流れの読み解きです。占いは娯楽・自己理解支援であり、医療・法律・投資などの専門判断ではありません。
-        <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a>
-      </div>
+    <div id="google-auth-shell" style="display:none;margin:14px 0 18px;">
+      <div class="modal-label" style="margin-bottom:10px;">GOOGLE LOGIN</div>
+      <div id="google-auth-copy" style="font-size:12px;color:var(--muted);line-height:1.8;margin-bottom:12px;">Googleアカウントでログインすると、月額登録の状態をこの端末で確認できます。</div>
+      <div id="google-signin-btn" style="display:flex;justify-content:center;"></div>
+      <div class="key-status" id="google-auth-error" style="display:none;margin-top:10px;"></div>
+    </div>
     <div id="developer-access-shell" style="display:none;margin:14px 0 18px;">
       <div class="modal-label" style="margin-bottom:10px;">確認用アクセス</div>
-      <div id="developer-access-copy" style="font-size:12px;color:var(--muted);line-height:1.8;margin-bottom:12px;">確認用アクセスで深掘り鑑定フローを確認できます。</div>
-      <input class="modal-input" type="email" id="developer-email-input" placeholder="開発確認用メール" autocomplete="email">
+      <div id="developer-access-copy" style="font-size:12px;color:var(--muted);line-height:1.8;margin-bottom:12px;">確認用アクセスで有料フローを確認できます。</div>
+      <input class="modal-input" type="email" id="developer-email-input" placeholder="tekechannnel@gmail.com" autocomplete="email">
       <div class="key-status" id="developer-access-error" style="display:none;margin-top:10px;"></div>
       <div style="display:flex;justify-content:center;margin-top:12px;">
         <button class="modal-save" type="button" id="developer-access-btn" onclick="submitDeveloperAccess()">確認用アクセスで進む</button>
@@ -5266,7 +4233,7 @@ body{
       <div>
         <div class="sample-modal-kicker">鑑定サンプル</div>
         <div class="sample-modal-title" id="sample-modal-title">鑑定サンプルは準備中です</div>
-        <div class="sample-modal-copy">実際の深掘り鑑定を検査し、十分な品質を確認できたものだけを掲載します。</div>
+        <div class="sample-modal-copy">実際の有料鑑定を検査し、十分な品質を確認できたものだけを掲載します。</div>
       </div>
       <button class="sample-modal-close" type="button" onclick="closeSampleModal()" aria-label="閉じる">×</button>
     </div>
@@ -5275,11 +4242,11 @@ body{
         <div class="sample-reading-side">
           <div class="sample-reading-label">品質確認中</div>
           <div class="sample-reading-theme">弱いサンプルは出しません</div>
-          <div class="sample-reading-note">短く作った見本ではなく、深掘り鑑定と同じ条件で出した結果を確認します。</div>
+          <div class="sample-reading-note">短く作った見本ではなく、有料鑑定と同じ条件で出した結果を確認します。</div>
         </div>
         <div class="sample-reading-body">
           <strong>現在の状態：</strong>サンプルは一時的に非公開です。鑑定文の量、具体性、相談内容との一致、過去日付の混入、言い切りすぎの表現を確認してから公開します。<br>
-          <strong>公開する条件：</strong>実際の深掘り鑑定として使える品質に達したものだけを、恋愛・仕事・お金の3種類で掲載します。
+          <strong>公開する条件：</strong>実際の有料鑑定として使える品質に達したものだけを、恋愛・仕事・お金の3種類で掲載します。
         </div>
       </div>
     </div>
@@ -5295,17 +4262,17 @@ body{
   <!-- HERO -->
   <div class="top-hero-shell">
     <div class="top-main">
-      <div class="top-seal" aria-hidden="true"></div>
-      <div class="top-kicker">姓名判断・四柱推命・動物タイプ診断・カード占い</div>
+      <img class="top-guide-character" src="images/ui/tenki-guide-display.png" alt="" loading="eager" decoding="async">
+      <div class="top-seal">🔮</div>
       <div class="top-title" id="brand-app-name">羅針占術</div>
-      <div class="top-sub" id="brand-app-subtitle">本質、本音、いまの現実。<br>3つの層から、次に進む方角を読み解きます。</div>
-      <div class="top-desc">無料鑑定でも、本質・本音・現実・次の一手まで読み解けます。</div>
+      <div class="top-sub" id="brand-app-subtitle">迷ったときの道しるべを見つける</div>
       <div class="top-btns">
-        <a class="btn-top btn-free" href="?flow=free" data-flow-target="free" onclick="if(window.startFlow){startFlow('free');return false;}">無料で羅針鑑定をはじめる</a>
-        <a class="btn-top btn-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定を見る</a>
+        <a class="btn-top btn-free" href="?flow=free" data-flow-target="free" onclick="if(window.startFlow){startFlow('free');return false;}">無料鑑定を試す</a>
         <button class="btn-top btn-sample" type="button" onclick="openSampleModal()" style="display:none">サンプルを見る</button>
       </div>
-      <div class="top-note"></div>
+      <div class="top-note">
+        まずは無料で、今どうすればいいかを確認できます。
+      </div>
       <div class="runtime-status warn" id="top-ai-status" style="display:none">
         <div class="runtime-status-title">鑑定の準備を確認しています</div>
         <div class="runtime-status-detail">鑑定を始められる状態か確認しています。</div>
@@ -5318,158 +4285,140 @@ body{
     <div class="feature-carousel-window">
       <div class="feature-carousel-track" id="feature-carousel-track">
         <div class="feature-slide">
-          <div class="feature-slide-copygroup">
-            <div class="feature-slide-num">01</div>
-            <div class="feature-slide-title">羅針占術とは</div>
-            <div class="feature-slide-copy">姓名判断と四柱推命で、<br>あなた自身の性質や運気の流れを読み解きます。<br><br>動物タイプ診断では、<br>表には出にくい本音や行動傾向を探ります。<br><br>さらにカード占いを重ねることで、<br>いまの現実、注意すべきこと、次に取るべき行動を見つけます。</div>
-          </div>
-          <div class="feature-visual" aria-hidden="true">
-            <div class="feature-compass"></div>
-          </div>
+          <div class="feature-slide-num">01</div>
+          <div class="feature-slide-title">迷いを、そのまま書けます</div>
+          <div class="feature-slide-copy">きれいに整理できていなくても大丈夫です。<br>名前・生年月日・いま気になっていることから、あなたの状況に合わせて読みます。<br>答えを急がせず、まず悩みの中心を言葉にします。</div>
         </div>
         <div class="feature-slide">
-          <div class="feature-slide-copygroup">
-            <div class="feature-slide-num">02</div>
-            <div class="feature-slide-title">無料鑑定でわかること</div>
-            <div class="feature-slide-copy">無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、<br>ルノルマンカード2枚と数秘オラクルカード1枚を使用します。<br><br>ルノルマンカードは、<br>いまの現実と見落としやすい注意点を読み解きます。<br><br>数秘オラクルカードは、<br>次に進むためのアドバイスを示します。</div>
-          </div>
-          <div class="feature-visual" aria-hidden="true">
-            <div class="feature-card-pair">
-              <img class="lenormand" src="images/ui/lenormand-card-back.jpg" alt="">
-              <img class="oracle" src="images/ui/oracle-card-back.jpg" alt="">
-            </div>
-          </div>
+          <div class="feature-slide-num">02</div>
+          <div class="feature-slide-title">カードを、わかる言葉に変えます</div>
+          <div class="feature-slide-copy">カード名を並べるだけでは終わりません。<br>恋愛・仕事・お金・人間関係など、相談内容に合わせて読みます。<br>いま何が起きていて、どこを見ればいいかをはっきりさせます。</div>
         </div>
         <div class="feature-slide">
-          <div class="feature-slide-copygroup">
-            <div class="feature-slide-num">03</div>
-            <div class="feature-slide-title">最高品質の深掘り鑑定</div>
-            <div class="feature-slide-copy">深掘り鑑定では、<br>ルノルマンカード9枚、数秘オラクルカード3枚へと展開します。<br><br>さらに、これまでの鑑定履歴と追加質問をもとに、<br>悩みの変化、見落としやすい注意点、<br>次に取るべき選択をより具体的に読み解きます。</div>
-          </div>
-          <div class="feature-visual feature-ritual" aria-hidden="true">
-            <img src="images/ui/reading-seal.png" alt="">
-            <div class="feature-ritual-steps">
-              <span>履歴解析＋追加質問</span>
-            </div>
-          </div>
+          <div class="feature-slide-num">03</div>
+          <div class="feature-slide-title">無料でも、次の一手まで</div>
+          <div class="feature-slide-copy">無料鑑定でも、ルノルマン2枚とオラクル1枚で今の向きを見ます。<br>結果は雰囲気で終わらせず、注意点と今日からできる行動まで残します。<br>迷った日に、次にすることを決めやすくします。</div>
         </div>
       </div>
     </div>
     <div class="feature-carousel-nav">
-      <button class="feature-carousel-btn" onclick="featureCarouselPrev()" aria-label="前の説明を見る">‹</button>
+      <button class="feature-carousel-btn" onclick="featureCarouselPrev()" aria-label="前へ">‹</button>
       <div class="feature-carousel-dots">
         <div class="feature-carousel-dot active" onclick="featureCarouselGo(0)"></div>
         <div class="feature-carousel-dot" onclick="featureCarouselGo(1)"></div>
         <div class="feature-carousel-dot" onclick="featureCarouselGo(2)"></div>
       </div>
-      <button class="feature-carousel-btn" onclick="featureCarouselNext()" aria-label="次の説明を見る">›</button>
+      <button class="feature-carousel-btn" onclick="featureCarouselNext()" aria-label="次へ">›</button>
     </div>
   </div>
 
   <!-- PLAN COMPARISON -->
-  <details class="top-disclosure plan-disclosure">
-    <summary>
-      <span><span class="top-disclosure-kicker">PLAN</span>無料鑑定と深掘り鑑定の違い</span>
-      <span class="top-disclosure-arrow">›</span>
-    </summary>
-    <div class="top-disclosure-body">
-      <div class="plan-compare-grid">
-        <div class="plan-compare-card">
-          <div class="plan-compare-kicker">FREE</div>
-          <div class="plan-compare-title">無料鑑定</div>
-          <ul class="plan-compare-list">
-            <li>姓名判断</li>
-            <li>四柱推命</li>
-            <li>動物タイプ診断</li>
-            <li>ルノルマンカード2枚</li>
-            <li>数秘オラクルカード1枚</li>
-          </ul>
-          <div class="plan-compare-summary">本質・本音・現実を知り、次の一手を受け取る鑑定です。</div>
-          <div class="plan-compare-actions">
-            <a class="plan-compare-action free" href="?flow=free" data-flow-target="free" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
-          </div>
-        </div>
-        <div class="plan-compare-card deep">
-          <div class="plan-compare-kicker">DEEP READING</div>
-          <div class="plan-compare-title">深掘り鑑定</div>
-          <div class="plan-compare-price">月額1,200円</div>
-          <div class="plan-compare-trial">1週間のお試しあり</div>
-          <div class="plan-compare-badge">無料鑑定の内容をすべて含む</div>
-          <ul class="plan-compare-list">
-            <li>姓名判断・四柱推命・動物タイプ診断</li>
-            <li>ルノルマンカード2枚 → 9枚</li>
-            <li>数秘オラクルカード1枚 → 3枚</li>
-            <li>追加質問で悩みを深掘り</li>
-            <li>鑑定履歴がある場合は流れも解析</li>
-          </ul>
-          <div class="plan-compare-summary">迷いの変化を追い、注意点と次の選択を具体的に読み解きます。</div>
-          <div class="plan-compare-actions">
-            <a class="plan-compare-action deep deep-premium-button" href="?flow=paid" data-flow-target="paid" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定を見る</a>
-          </div>
-        </div>
+  <div class="plan-compare">
+    <div class="plan-compare-head">
+      <div class="plan-compare-head-cell"></div>
+      <div class="plan-compare-head-cell">無料</div>
+      <div class="plan-compare-head-cell highlight">
+        有料会員
+        <span class="plan-compare-head-price">¥1,200 <span style="font-size:11px;font-family:sans-serif;">/月</span></span>
+        <span class="plan-compare-head-sub">1週間お試し無料</span>
       </div>
     </div>
-  </details>
+    <div class="plan-compare-row">
+      <div class="plan-compare-cell">星詠み</div>
+      <div class="plan-compare-cell"><span class="plan-compare-yes">✓</span></div>
+      <div class="plan-compare-cell highlight"><span class="plan-compare-yes">✓</span></div>
+    </div>
+    <div class="plan-compare-row">
+      <div class="plan-compare-cell">動物タイプ診断</div>
+      <div class="plan-compare-cell"><span class="plan-compare-yes">✓</span></div>
+      <div class="plan-compare-cell highlight"><span class="plan-compare-yes">✓</span></div>
+    </div>
+    <div class="plan-compare-row">
+      <div class="plan-compare-cell">ルノルマンカード</div>
+      <div class="plan-compare-cell"><span class="plan-compare-val">2枚</span></div>
+      <div class="plan-compare-cell highlight"><span class="plan-compare-val">9枚</span></div>
+    </div>
+    <div class="plan-compare-row">
+      <div class="plan-compare-cell">オラクルカード</div>
+      <div class="plan-compare-cell"><span class="plan-compare-val">1枚</span></div>
+      <div class="plan-compare-cell highlight"><span class="plan-compare-val">3枚</span></div>
+    </div>
+    <div class="plan-compare-row">
+      <div class="plan-compare-cell">追加質問</div>
+      <div class="plan-compare-cell"><span class="plan-compare-no">—</span></div>
+      <div class="plan-compare-cell highlight"><span class="plan-compare-yes">✓</span></div>
+    </div>
+    <div class="plan-compare-row">
+      <div class="plan-compare-cell">占いの記録</div>
+      <div class="plan-compare-cell"><span class="plan-compare-yes">✓</span></div>
+      <div class="plan-compare-cell highlight"><span class="plan-compare-yes">✓</span></div>
+    </div>
+    <div class="plan-compare-row">
+      <div class="plan-compare-cell">行動マップ</div>
+      <div class="plan-compare-cell"><span class="plan-compare-yes">✓</span></div>
+      <div class="plan-compare-cell highlight"><span class="plan-compare-yes">✓</span></div>
+    </div>
+    <div class="plan-compare-row">
+      <div class="plan-compare-cell">鑑定の流れを見直す</div>
+      <div class="plan-compare-cell"><span class="plan-compare-no">—</span></div>
+      <div class="plan-compare-cell highlight"><span class="plan-compare-yes">✓</span></div>
+    </div>
+  </div>
 
   <!-- VAULT (returning users) -->
-  <div class="vault-grid" id="home-vault-grid">
+  <div class="vault-grid is-hidden" id="home-vault-grid" hidden>
     <!-- compact action buttons -->
     <div class="vault-btn-pair" style="grid-column:1/-1">
       <div class="vault-btn-card" id="vault-record-card" onclick="toggleVaultCard('vault-record-card',event)">
         <div class="vault-btn-head">
           <div>
             <div class="vault-btn-eyebrow">鑑定の記録</div>
-            <div class="vault-btn-title">過去の占いを読み返す</div>
+            <div class="vault-btn-title">占いの記録</div>
           </div>
           <div class="vault-btn-arrow">›</div>
         </div>
         <div class="vault-btn-body">
           <div class="history-list" id="recent-history-list"></div>
-          <div class="vault-empty" id="recent-history-empty">鑑定を重ねるほど、あなたの迷いの流れが見えてきます。まずは無料鑑定から、あなたの記録を作りましょう。</div>
-          <button class="vault-link" id="continue-reading-btn" onclick="openLatestHistory()" style="display:none">鑑定を読む</button>
+          <div class="vault-empty" id="recent-history-empty">最初の鑑定が終わると、ここに前回の流れが残ります。</div>
+          <button class="vault-link" id="continue-reading-btn" onclick="openLatestHistory()" style="display:none">前回の続きを開く</button>
         </div>
       </div>
       <div class="vault-btn-card" id="vault-map-card" onclick="toggleVaultCard('vault-map-card',event)">
         <div class="vault-btn-head">
           <div>
-            <div class="vault-btn-eyebrow">変化の軌跡</div>
+            <div class="vault-btn-eyebrow">行動の軌跡</div>
             <div class="vault-btn-title">行動マップ</div>
           </div>
           <div class="vault-btn-arrow">›</div>
         </div>
         <div class="vault-btn-body">
           <div class="pattern-list" id="pattern-summary-list"></div>
-          <div class="vault-empty" id="pattern-summary-empty">鑑定を重ねるほど、繰り返し出るカードや相談テーマから、迷いの流れが見えてきます。</div>
+          <div class="vault-empty" id="pattern-summary-empty">鑑定が増えると、繰り返し出るカードやテーマから「迷いの癖」がここに見えてきます。</div>
           <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(201,149,42,.1);">
-            <button class="vault-link" id="flow-analysis-btn" type="button" onclick="runFlowAnalysis()" style="width:100%;justify-content:center;">鑑定履歴の流れを読み解く ✦</button>
+            <button class="vault-link" id="flow-analysis-btn" type="button" onclick="runFlowAnalysis()" style="width:100%;justify-content:center;">鑑定の流れを見直す ✦</button>
             <div id="flow-analysis-result" style="display:none;margin-top:14px;font-size:13px;line-height:2;color:rgba(240,234,216,.8);white-space:pre-wrap;"></div>
           </div>
         </div>
       </div>
     </div>
-    <!-- continuation entry is integrated into the latest history card -->
-    <div class="vault-card member-card" style="grid-column:1/-1" hidden>
-      <div class="vault-eyebrow">累計記録</div>
-      <div class="vault-title">前回の続きから読む</div>
+    <!-- member card (untouched) -->
+    <div class="vault-card member-card" style="grid-column:1/-1">
+      <div class="vault-eyebrow">あとから使えること</div>
+      <div class="vault-title">読み返しと記録</div>
       <div id="member-status-block">
-        <div class="vault-desc">前回の鑑定内容を引き継いで、今回の迷いをさらに深く読み解けます。</div>
+        <div class="member-state inactive">Googleログイン / 月額登録</div>
+        <div class="vault-desc">会員になると、読み返し・記録・深掘り鑑定の入口がここに並びます。</div>
         <div class="member-benefits">
-          <div class="member-benefit">前回のテーマを引き継いで深掘り</div>
+          <div class="member-benefit">前回の続きから再開できる</div>
           <div class="member-benefit">前回との変化を見比べられる</div>
-          <div class="member-benefit">鑑定履歴が積み上がるほど傾向が見える</div>
+          <div class="member-benefit">鑑定書をPDFやコピーで残せる</div>
         </div>
-        <button class="vault-link" type="button" data-member-intent="start-paid" onclick="openMemberAccessModal('start-paid')">深掘り鑑定をはじめる</button>
+        <button class="vault-link" type="button" data-member-intent="start-paid" onclick="openMemberAccessModal('start-paid')">会員登録へ進む</button>
       </div>
     </div>
   </div>
 
   <!-- FAQ -->
-  <details class="top-disclosure faq-disclosure">
-    <summary>
-      <span><span class="top-disclosure-kicker">Q&A</span>よくある質問を見る</span>
-      <span class="top-disclosure-arrow">›</span>
-    </summary>
-    <div class="top-disclosure-body">
   <div class="top-faq">
     <div class="top-faq-eyebrow">よくある質問</div>
     <div class="top-faq-item">
@@ -5477,69 +4426,54 @@ body{
         <span class="top-faq-q-text">ルノルマンカードって何ですか？</span>
         <span class="top-faq-arrow">›</span>
       </button>
-      <div class="top-faq-a">36枚の絵柄カードで、いま起きている状況や相手との関係、注意点を具体的に読み解くカードです。<br>羅針占術では、現実と見落としやすいサインを読むために使います。</div>
+      <div class="top-faq-a">36枚の絵柄カードで現実の状況をストレートに読み取るカードです。タロットより具体的で、恋愛・仕事・人間関係など、いま起きていることをそのまま映し出します。</div>
     </div>
     <div class="top-faq-item">
       <button class="top-faq-q" onclick="toggleFaq(this)">
         <span class="top-faq-q-text">数秘オラクルカードって何ですか？</span>
         <span class="top-faq-arrow">›</span>
       </button>
-      <div class="top-faq-a">誕生日などの数字の意味と、直感で選ぶカードを合わせて読むアドバイスカードです。<br>あなたの強み、背中を押す言葉、次の一手を示します。</div>
+      <div class="top-faq-a">誕生日の数字と、直感で選ぶカードを合わせて読みます。あなたの強みや、次にどう動くとよいかが見えてきます。</div>
     </div>
     <div class="top-faq-item">
       <button class="top-faq-q" onclick="toggleFaq(this)">
         <span class="top-faq-q-text">AIがどうやって占うのですか？</span>
         <span class="top-faq-arrow">›</span>
       </button>
-      <div class="top-faq-a">相談内容・名前・生年月日・カード結果をもとに、設計された占術ロジックに沿って鑑定文を生成します。<br>同じカードでも、相談内容やこれまでの流れによって読み方が変わります。</div>
+      <div class="top-faq-a">カードの組み合わせ・相談内容・名前・生年月日をもとに、AIが鑑定文を作ります。同じカードでも、相談内容によって違う読み方になります。</div>
     </div>
     <div class="top-faq-item">
       <button class="top-faq-q" onclick="toggleFaq(this)">
-        <span class="top-faq-q-text">無料鑑定では何ができますか？</span>
+        <span class="top-faq-q-text">どんな鑑定か見られますか？</span>
         <span class="top-faq-arrow">›</span>
       </button>
-      <div class="top-faq-a">無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。<br>自分自身の本質、本音、いまの現実、次に進むためのアドバイスを確認できます。</div>
+      <div class="top-faq-a">サンプルで確認できます。無料鑑定でも、カード名を並べるだけでなく、相談内容に合わせて、気をつけることと次にすることまで出します。</div>
     </div>
     <div class="top-faq-item">
       <button class="top-faq-q" onclick="toggleFaq(this)">
-        <span class="top-faq-q-text">無料鑑定と深掘り鑑定の違いは？</span>
+        <span class="top-faq-q-text">無料と会員（深掘り鑑定）の違いは？</span>
         <span class="top-faq-arrow">›</span>
       </button>
-      <div class="top-faq-a">無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。<br>深掘り鑑定では、無料鑑定の内容をすべて含み、ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>深掘り鑑定は月額1,200円で、1週間のお試しがあります。</div>
+      <div class="top-faq-a">無料は1回のカード鑑定（ルノルマン2枚＋オラクル1枚）です。会員（月額¥1,200・1週間お試し無料）になると、ルノルマン9枚＋オラクル3枚の深掘り鑑定・追加質問・鑑定結果の保存・鑑定の流れの見直しが使えます。</div>
     </div>
     <div class="top-faq-item">
       <button class="top-faq-q" onclick="toggleFaq(this)">
-        <span class="top-faq-q-text">過去の鑑定は読み返せますか？</span>
+        <span class="top-faq-q-text">「鑑定の流れを見直す」って何ですか？</span>
         <span class="top-faq-arrow">›</span>
       </button>
-      <div class="top-faq-a">はい。これまでの鑑定は「過去の占いを読み返す」から確認できます。<br>前回のテーマやカードの流れを見返すことで、同じ悩みの続きや変化を確認しやすくなります。</div>
-    </div>
-    <div class="top-faq-item">
-      <button class="top-faq-q" onclick="toggleFaq(this)">
-        <span class="top-faq-q-text">「鑑定履歴の流れを読み解く」って何ですか？</span>
-        <span class="top-faq-arrow">›</span>
-      </button>
-      <div class="top-faq-a">これまでの鑑定をまとめて、よく出るカード、相談テーマの変化、くり返し向き合っている悩みを時系列で読み解く機能です。<br>鑑定履歴があるほど、変化の流れが見えやすくなります。</div>
+      <div class="top-faq-a">これまでの鑑定をまとめて、よく出るカード、相談テーマの変化、今くり返している悩みを見直します。2回以上鑑定した会員が使えます。</div>
     </div>
   </div>
-    </div>
-  </details>
 
   <!-- PAID CTA BAND -->
   <div class="paid-band" id="premium-entry">
     <div class="paid-band-inner">
-      <div style="text-align:center;margin-bottom:18px;">
-        <div style="font-size:10px;letter-spacing:.36em;color:rgba(228,184,74,.75);text-transform:uppercase;margin-bottom:6px;">✦ 深掘り鑑定 ✦</div>
-        <div style="font-family:'Shippori Mincho',serif;font-size:15px;color:rgba(240,234,216,.7);letter-spacing:.08em;">無料で見えた流れを、次にすることまで深く読む</div>
+      <div>
+        <div class="paid-band-eyebrow">深掘り鑑定 — 月額 ¥1,200（1週間お試し無料）</div>
+        <div class="paid-band-title">無料で見えたことを、次にすることまで深く読む</div>
       </div>
-      <div class="paid-band-actions paid-band-actions-center">
-        <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
-        <a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定を見る</a>
-      </div>
-      <div class="paid-band-note">月額1,200円 / 1週間のお試しあり</div>
-      <div class="checkout-disclosure">
-        深掘り鑑定は月額1,200円、1週間のお試しあり。お試し終了後は月額課金に移行します。解約は請求管理（Stripeカスタマーポータル）から行えます。返金可否は利用規約とStripeの処理状況に従います。提供内容はルノルマン9枚、数秘オラクル3枚、追加質問、鑑定履歴の流れの読み解きです。占いは娯楽・自己理解支援であり、医療・法律・投資などの専門判断ではありません。
-        <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a>
+      <div class="paid-band-actions">
+        <a class="today-cta" href="?flow=paid" data-member-intent="start-paid" onclick="if(window.openMemberAccessModal){openMemberAccessModal('start-paid');return false;}">会員登録へ進む</a>
       </div>
     </div>
   </div>
@@ -5585,23 +4519,11 @@ body{
 
     <div class="field-group">
 
-      <label class="field-label">姓名</label>
+      <label class="field-label">お名前（本名がおすすめ）</label>
 
-      <div style="display:grid;grid-template-columns:1fr 1.5fr;gap:10px;">
+      <input class="field-input" type="text" id="f-fullname" placeholder="例：山田 花子">
 
-        <div>
-          <span class="date-label">姓</span>
-          <input class="field-input" type="text" id="f-sei" placeholder="例：山田" autocomplete="family-name">
-        </div>
-
-        <div>
-          <span class="date-label">名</span>
-          <input class="field-input" type="text" id="f-mei" placeholder="例：花子" autocomplete="given-name">
-        </div>
-
-      </div>
-
-      <div class="field-note">※姓名判断のため、姓と名の両方を入力してください。</div>
+      <div class="field-note">※名前から伝わる印象も見るため、本名での入力がおすすめです。スペースなしでも推定できますが、「姓 名」で区切ると安定します。</div>
     </div>
 
 
@@ -5693,8 +4615,7 @@ body{
 
     <div class="field-group">
       <label class="field-label">いま、いちばん気になっていること</label>
-      <textarea class="field-input field-textarea" id="f-theme" maxlength="1200" placeholder="例：今の仕事を続けるべきか迷っています。上司との関係もしんどく、このままでいいのか不安です。まとまっていなくても、そのまま書いて大丈夫です。"></textarea>
-      <div class="field-note" id="f-theme-counter">0 / 1200文字</div>
+      <textarea class="field-input field-textarea" id="f-theme" placeholder="例：今の仕事を続けるべきか迷っています。上司との関係もしんどく、このままでいいのか不安です。まとまっていなくても、そのまま書いて大丈夫です。"></textarea>
     </div>
 
     <div class="field-group">
@@ -5903,11 +4824,11 @@ body{
   <div class="result-wrap">
     <div class="result-progress-card" id="result-progress-card">
       <div class="result-progress-visual" aria-hidden="true">
-        <img class="reading-effect-frame" src="images/ui/reading-effect-1.png" alt="" loading="eager" decoding="async">
-        <img class="reading-effect-frame" src="images/ui/reading-effect-2.png" alt="" loading="eager" decoding="async">
-        <img class="reading-effect-frame" src="images/ui/reading-effect-3.png" alt="" loading="eager" decoding="async">
-        <img class="reading-effect-frame" src="images/ui/reading-effect-4.png" alt="" loading="eager" decoding="async">
-        <img class="reading-effect-character" src="images/ui/monsho.png" alt="" loading="eager" decoding="async">
+        <img class="reading-effect-frame" src="images/ui/reading-effect-1.png" alt="" loading="lazy" decoding="async">
+        <img class="reading-effect-frame" src="images/ui/reading-effect-2.png" alt="" loading="lazy" decoding="async">
+        <img class="reading-effect-frame" src="images/ui/reading-effect-3.png" alt="" loading="lazy" decoding="async">
+        <img class="reading-effect-frame" src="images/ui/reading-effect-4.png" alt="" loading="lazy" decoding="async">
+        <img class="reading-effect-character" src="images/ui/tenki-guide-display.png" alt="" loading="lazy" decoding="async">
       </div>
       <div class="result-progress-eyebrow">鑑定の進み</div>
       <div class="result-progress-title" id="result-progress-title">結果をまとめています</div>
@@ -5918,13 +4839,6 @@ body{
     <div id="rs-animal-reveal" class="rs-animal-reveal" style="display:none">
       <div class="rs-animal-reveal-eyebrow">あなたの魂の形は</div>
       <div class="rs-animal-reveal-name" id="rs-animal-reveal-name"></div>
-      <div class="rs-animal-reveal-copy" id="rs-animal-reveal-copy"></div>
-    </div>
-
-    <div class="rs" id="rs-foundation-mini" style="display:none">
-      <div class="rs-eyebrow">土台の要約</div>
-      <div class="rs-title"><span class="rs-icon">✧</span>この答えを支える、あなたの土台</div>
-      <div class="foundation-mini-grid" id="foundation-mini-grid"></div>
     </div>
 
     <div class="rs" id="rs-basis" style="display:none">
@@ -5932,43 +4846,25 @@ body{
         <summary>
           <div>
             <div class="result-detail-kicker">詳細を見る</div>
-            <div class="result-detail-title">あなたの土台を詳しく見る</div>
-            <div class="result-detail-copy">姓名判断・四柱推命・動物タイプ診断</div>
+            <div class="result-detail-title">星詠みと動物タイプ診断から見える傾向を見る</div>
+            <div class="result-detail-copy">カード結果を読んだあと、必要なときだけ土台を開ける形にしています。</div>
           </div>
           <div class="result-detail-indicator" aria-hidden="true"></div>
         </summary>
         <div class="result-detail-content">
           <div class="basis-grid">
-            <div class="basis-summary-card">
-              <div class="basis-panel-head">土台診断の要約</div>
-              <div class="basis-panel-title">今回の判断に効いている土台</div>
-              <div class="basis-panel-copy" id="basis-summary-copy">あなたの性質と今回の相談を重ねて、判断の軸を整理します。</div>
+            <div class="basis-panel">
+              <div class="basis-panel-head">星詠み</div>
+              <div class="basis-panel-title">名前と生まれが示す傾向</div>
+              <div class="basis-panel-copy">姓名判断と四柱推命から見える性質・力の出し方・揺れやすい場面をまとめます。</div>
+              <div id="r-namejudge-content"></div>
+              <div id="r-meimei-content" style="margin-top:20px"></div>
             </div>
-            <div class="basis-panel" id="basis-animal-panel">
-              <div class="basis-panel-head">動物タイプ診断</div>
-              <div class="basis-panel-title" id="basis-animal-title">動物タイプ診断から見える傾向</div>
-              <div class="basis-panel-copy" id="basis-animal-copy">本音・強み・注意点を整理します。</div>
-              <details class="basis-readmore">
-                <summary>詳しく読む</summary>
-                <div class="basis-readmore-body" id="r-reaction-content"></div>
-              </details>
-            </div>
-            <div class="basis-panel" id="basis-namebirth-panel">
-              <div class="basis-panel-head">姓名判断・四柱推命</div>
-              <div class="basis-panel-title">名前と生まれが示す性質・運気の流れ</div>
-              <div class="basis-panel-copy" id="basis-namebirth-copy">名前と生まれから、力の出し方と流れをまとめます。</div>
-              <details class="basis-readmore">
-                <summary>詳しく読む</summary>
-                <div class="basis-readmore-body">
-                  <div id="r-namejudge-content"></div>
-                  <div id="r-meimei-content" style="margin-top:20px"></div>
-                </div>
-              </details>
-            </div>
-            <div class="basis-panel wide" id="basis-consultation-panel">
-              <div class="basis-panel-head">今回の相談でどう読むか</div>
-              <div class="basis-panel-title">恋愛・距離感・次に取る行動</div>
-              <div class="basis-panel-copy" id="basis-consultation-copy">今回の相談に合わせて、どこを見ると判断しやすいかを整理します。</div>
+            <div class="basis-panel">
+              <div class="basis-panel-head">動物タイプ</div>
+              <div class="basis-panel-title">動物タイプ診断から見える傾向</div>
+              <div class="basis-panel-copy">答え方のクセから、しんどくなりやすい場面と元気が出やすい動き方を整理します。</div>
+              <div id="r-reaction-content"></div>
             </div>
           </div>
         </div>
@@ -5979,7 +4875,7 @@ body{
     <div class="rs" id="rs-len">
       <div class="rs-eyebrow">カード鑑定 01</div>
       <div class="rs-title"><span class="rs-icon">⚜</span>ルノルマンカード鑑定</div>
-      <div class="rs-copy">ルノルマンカードは、いまの現実と見落としやすい注意点を読み解きます。</div>
+      <div class="rs-copy">現状の流れ・気をつけるポイント・あなたが引き寄せている好機をルノルマンカードから整理します。</div>
       <div class="cards-row-sm" id="r-len-cards"></div>
       <!-- 通常モード：AIリーディングテキスト -->
       <div class="reading-block" id="r-len-block">
@@ -5993,7 +4889,7 @@ body{
     <div class="rs" id="rs-orc">
       <div class="rs-eyebrow">カード鑑定 02</div>
       <div class="rs-title"><span class="rs-icon">✦</span>オラクルカード鑑定</div>
-      <div class="rs-copy">数秘オラクルカードは、次に進むためのアドバイスを示します。</div>
+      <div class="rs-copy">あなたの強みと、これから整えるとよいことをカードから読みます。</div>
       <div class="cards-row-sm" id="r-orc-cards"></div>
       <!-- 通常モード：AIリーディングテキスト -->
       <div class="reading-block" id="r-orc-block">
@@ -6001,13 +4897,33 @@ body{
       </div>
       <!-- 占いモード：カード参照表 -->
       <div id="r-orc-ref" style="display:none"></div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:20px;align-items:center;">
+        <button class="nav-btn" onclick="gotoTop()">最初に戻る</button>
+        <button class="nav-btn nav-btn-primary" onclick="gotoTop()">もう一度占う</button>
+        <button class="nav-btn" onclick="goToHistory()">履歴へ</button>
+        <button class="share-x-btn" id="dossier-save-btn" onclick="printDossier()" style="display:none">PDF保存</button>
+        <button class="share-x-btn" id="dossier-copy-inline-btn" onclick="copyDossier()" style="display:none">鑑定書コピー</button>
+        <button class="share-x-btn" id="share-x-btn" onclick="shareToX()" style="display:none">
+          <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          Xでシェア
+        </button>
+      </div>
     </div>
 
     <!-- 統合メッセージ -->
-    <div class="rs rs-conclusion-accent" id="rs-integration">
+    <div class="rs" id="rs-integration">
       <div class="rs-eyebrow">最終結論</div>
       <div class="rs-title"><span class="rs-icon">✧</span>いまの答え</div>
       <div class="rs-copy">迷ったときにここだけ読み返せば、優先順位と次の一歩がわかる形にまとめます。</div>
+      <div class="result-presenter" aria-hidden="true">
+        <div class="result-presenter-figure">
+          <img src="images/ui/tenki-guide-display.png" alt="" loading="lazy" decoding="async">
+        </div>
+        <div>
+          <div class="result-presenter-kicker">TENKI GUIDE</div>
+          <div class="result-presenter-copy">出た答えを、いま動ける言葉まで落とし込みます。</div>
+        </div>
+      </div>
       <div class="integration">
         <div class="ai-load" id="r-aiload">
           <div class="ai-dots"><span></span><span></span><span></span></div>
@@ -6049,28 +4965,6 @@ body{
 
     </div>
 
-    <div class="rs" id="result-actions" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:20px;align-items:center;">
-      <div class="result-deep-cta" id="result-deep-cta" style="display:none">
-        <div class="result-deep-cta-title">この結果をさらに深く読み解けます</div>
-        <div class="result-deep-cta-copy">無料鑑定では、いまの答えと次の一手まで整理しました。深掘り鑑定では、この結果を土台に、追加質問とカード展開で「なぜそうなるのか」「どこで止まりやすいのか」「次に何を確認すべきか」まで具体的に読み解きます。</div>
-        <button class="result-deep-cta-btn deep-premium-button" type="button" onclick="upgradeCurrentReadingToPaid()">この結果を深掘りする</button>
-        <div class="result-deep-cta-note">月額1,200円 / 1週間のお試しあり</div>
-        <div class="checkout-disclosure">
-          お試し終了後は月額課金に移行します。解約は請求管理から行えます。返金可否は利用規約に従います。占いは娯楽・自己理解支援であり、医療・法律・投資などの専門判断ではありません。
-          <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a>
-        </div>
-      </div>
-      <button class="nav-btn" onclick="gotoTop()">最初に戻る</button>
-      <button class="nav-btn nav-btn-primary" onclick="gotoTop()">もう一度占う</button>
-      <button class="nav-btn" onclick="goToHistory()">過去の占いへ</button>
-      <button class="share-x-btn" id="dossier-save-btn" onclick="printDossier()" style="display:none">PDF保存</button>
-      <button class="share-x-btn" id="dossier-copy-inline-btn" onclick="copyDossier()" style="display:none">鑑定書コピー</button>
-      <button class="share-x-btn" id="share-x-btn" onclick="shareToX()" style="display:none">
-        <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-        Xでシェア
-      </button>
-    </div>
-
     <div class="upgrade-panel" id="result-upgrade-panel" style="display:none"></div>
 
 
@@ -6081,26 +4975,5 @@ body{
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="app.js"></script>
-
-<!-- Flow Analysis Modal -->
-<div class="flow-analysis-modal" id="flow-analysis-modal" onclick="if(event.target===this)closeFlowAnalysisModal()">
-  <div class="flow-analysis-window" onclick="event.stopPropagation()">
-    <button class="flow-analysis-close" type="button" onclick="closeFlowAnalysisModal()" aria-label="閉じる">×</button>
-    <div class="flow-analysis-title">鑑定履歴の流れを読み解く ✦</div>
-    <div class="flow-analysis-body" id="flow-analysis-modal-body"></div>
-  </div>
-</div>
-
-<!-- Card Lightbox -->
-<div id="card-lightbox" onclick="closeCardLightbox()" style="display:none;position:fixed;inset:0;z-index:9100;background:rgba(0,0,0,.9);align-items:center;justify-content:center;padding:24px;">
-  <div onclick="event.stopPropagation()" style="max-width:min(88vw,400px);position:relative;text-align:center;">
-    <img id="card-lightbox-img" src="" alt="" style="width:100%;height:auto;border-radius:10px;box-shadow:0 0 60px rgba(201,149,42,.3),0 32px 80px rgba(0,0,0,.85);display:block;">
-    <div id="card-lightbox-name" style="font-family:'Shippori Mincho',serif;color:#e4b84a;margin-top:18px;font-size:17px;letter-spacing:.22em;"></div>
-    <div id="card-lightbox-kw" style="display:none"></div>
-    <button onclick="closeCardLightbox()" style="position:absolute;top:-14px;right:-14px;width:34px;height:34px;border-radius:50%;background:rgba(201,149,42,.85);border:none;color:#04030a;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;">✕</button>
-  </div>
-</div>
 </body>
 </html>
-
-

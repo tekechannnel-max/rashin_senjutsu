@@ -1125,23 +1125,23 @@ function buildNameJudgeInsights(nameJudge){
     .map(item=>`${item.sei} ${item.mei}`)
     .join(' / ');
   return{
-    core:`${power?.label||'姓名判断の中心'}。人格${jin.num}画は ${NAME_ELEMENT_COPY[jinElem]} を司る格で、${NAME_ELEMENT_DETAIL[jinElem]}傾向があります。${getLuckTone(jinLuck.lbl)}ので、この名前では「どう芯を出すか」が重要になります。`,
-    timing:`地格${chi.num}画は ${NAME_ELEMENT_COPY[chiElem]} の出方を示し、${getLuckTone(chiLuck.lbl)}ため、若い時期や新しい環境での立ち上がり方に特徴が出やすいです。`,
-    advice:`総格${sou.num}画は ${NAME_ELEMENT_COPY[souElem]} を人生後半へ運びます。${getLuckTone(souLuck.lbl)}ので、長期では ${NAME_ELEMENT_DETAIL[souElem]}動き方が名前の強みを活かしやすくします。${power?.risk?` 注意点は${power.risk.name}${power.risk.num}画・${power.risk.luck.lbl}の負荷で、ここを整えるほど全体が安定します。`:''}`,
+    core:`${power?.label||'名前から見える傾向'}。名前の中心には「${NAME_ELEMENT_COPY[jinElem]}」のテーマがあり、${NAME_ELEMENT_DETAIL[jinElem]}タイプです。${power?.summary||'場面ごとに出し方を整えるほど持ち味が出ます。'}`,
+    timing:`人との距離感や第一印象では「${NAME_ELEMENT_COPY[gaiElem]}」が出やすく、${NAME_ELEMENT_DETAIL[gaiElem]}場面で強みが見えます。新しい場所では、早めに自分の役割を決めると動きやすくなります。`,
+    advice:`長く活かすなら「${NAME_ELEMENT_COPY[souElem]}」の動きを意識してください。${NAME_ELEMENT_DETAIL[souElem]}動き方が名前の良さを引き出します。${power?.risk?` 負荷が出やすいのは、${NAME_ELEMENT_DETAIL[power.risk.element]||'無理に押し切る'}場面です。先に整えるほど安定します。`:''}`,
     insightCards:[
-      {kicker:'TOTAL',title:'五格全体の強さ',body:`${power?.summary||'五格を総合して、名前の使い方を見ています。'} 総合スコア ${power?.score??0}。`},
-      {kicker:'PERSONA',title:'名前から見える大事な点',body:`人格${jin.num}画・${jinLuck.lbl}。${NAME_ELEMENT_DETAIL[jinElem]}ため、この名前では「自分の軸の出し方」が最も重要になります。`},
-      {kicker:'SOCIAL',title:'外格が示す対人面',body:`外格${gai.num}画・${gaiLuck.lbl}。${NAME_ELEMENT_DETAIL[gaiElem]}ため、第一印象や人との距離感にこの傾向が出やすくなります。`},
-      {kicker:'THREE TALENTS',title:'三才配置の流れ',body:`${threeTalent.pattern}の${threeTalent.label}。${threeTalent.summary}`},
-      {kicker:'YIN / YANG',title:'陰陽の並び',body:`陽${yinYang.odd} / 陰${yinYang.even} の${yinYang.label}。${yinYang.summary}`},
-      ...(precisionNote?[{kicker:'PRECISION',title:'画数判定の精度',body:precisionNote}]:[]),
+      {kicker:'TOTAL',title:'名前全体から見える使い方',body:power?.summary||'場面ごとに出し方を整えるほど名前の良さが出ます。'},
+      {kicker:'PERSONA',title:'自分の軸',body:`${NAME_ELEMENT_DETAIL[jinElem]}ため、自分の考えをどう出すかが大事になります。`},
+      {kicker:'SOCIAL',title:'人との距離感',body:`${NAME_ELEMENT_DETAIL[gaiElem]}ため、第一印象や相手との距離感にこの傾向が出やすくなります。`},
+      {kicker:'FLOW',title:'流れの作り方',body:threeTalent.summary},
+      {kicker:'BALANCE',title:'整え方',body:yinYang.summary},
+      ...(precisionNote?[{kicker:'NOTE',title:'入力確認メモ',body:precisionNote}]:[]),
     ],
     tags:[
       power?.label||'姓名判断',
-      `人格${jin.num}画 ${jinLuck.lbl}`,
-      `総格${sou.num}画 ${souLuck.lbl}`,
-      `三才 ${threeTalent.pattern} ${threeTalent.label}`,
-      `陰陽 ${yinYang.label}`,
+      `中心テーマ ${NAME_ELEMENT_COPY[jinElem]}`,
+      `長く活きる動き ${NAME_ELEMENT_COPY[souElem]}`,
+      `対人面 ${NAME_ELEMENT_COPY[gaiElem]}`,
+      `整え方 ${yinYang.label}`,
       precisionNote,
     ].filter(Boolean),
     splitNote:[splitNotes[nameJudge.split?.source]||'',alternativeText?`別候補: ${alternativeText}`:''].filter(Boolean).join(' '),
@@ -1212,9 +1212,9 @@ function buildNamePlainInsight(nameJudge){
   else if(nameJudge.split?.confidence==='medium') notes.push('名字候補が複数あるため、スペースで区切るとさらに安定します。');
   if(nameJudge.approxChars.length) notes.push('一部の珍しい字は、近い数え方で補っています。');
   return{
-    overview:`${power?.label||'名前から見える傾向'}です。人格${nameJudge.kakus[1].num}画・${jinLuck.lbl}が中心にあり、${NAME_ELEMENT_DETAIL[jinElem]}傾向が本人の軸として出やすくなります。`,
-    timing:`第一印象や人との距離感では、外格${nameJudge.kakus[3].num}画・${gaiLuck.lbl}の影響で、${NAME_ELEMENT_DETAIL[gaiElem]}出方が前に出やすいです。${threeTalent.summary}`,
-    advice:`長く見ると総格${nameJudge.kakus[4].num}画・${souLuck.lbl}が効き、${NAME_ELEMENT_DETAIL[souElem]}動き方が名前の良さを活かしやすくします。全体としては、${yinYang.summary}${power?.risk?` 弱点としては${power.risk.name}${power.risk.num}画が出す負荷を先に整えることです。`:''}${notes.length?` ${notes.join(' ')}`:''}`,
+    overview:`${power?.label||'名前から見える傾向'}です。名前からは、${NAME_ELEMENT_DETAIL[jinElem]}軸が出やすく、人からは「${NAME_ELEMENT_COPY[jinElem]}」の印象で受け取られやすいです。`,
+    timing:`第一印象や人との距離感では、${NAME_ELEMENT_DETAIL[gaiElem]}出方が前に出やすいです。${threeTalent.summary}`,
+    advice:`長く見ると、${NAME_ELEMENT_DETAIL[souElem]}動き方が名前の良さを活かしやすくします。全体としては、${yinYang.summary}${power?.risk?` つまずきやすい場面は、無理に押し切って負荷をためるときです。先に条件を整えるほど安定します。`:''}${notes.length?` ${notes.join(' ')}`:''}`,
   };
 }
 
@@ -1532,6 +1532,20 @@ const VAULT_QUERY_ENDPOINT='/api/vault/history/query';
 const VAULT_SAVE_ENDPOINT='/api/vault/history/save';
 const VAULT_CLEAR_ENDPOINT='/api/vault/history/clear';
 const CLIENT_LOG_ENDPOINT='/api/client-log';
+const AUDIO_ASSETS={
+  shuffle:'音素材/ヒンズーシャッフル.mp3',
+  lenDraw:'音素材/カードをめくる_ルノルマンだけ.mp3',
+  flip:'音素材/カードを裏返す音_ルノルマンとオラクル.mp3',
+  complete:'音素材/鑑定完了音.mp3',
+};
+const CARD_DRAW_STEP_MS=430;
+const CARD_FLIP_AFTER_DRAW_MS=760;
+const AUDIO_VOLUME={
+  shuffle:.36,
+  lenDraw:.62,
+  flip:.58,
+  complete:.66,
+};
 const INPUT_STORAGE_KEY='uranai-input';
 const INPUT_SAVE_PREF_KEY='uranai-input-autosave-v1';
 const HISTORY_STORAGE_KEY='uranai-history-v1';
@@ -1843,6 +1857,8 @@ let FOLLOWUP_LOADING=false;
 let DOSSIER_LOADING=false;
 let LAST_OUTPUTS={about:'',foundationDeep:'',len:'',orc:'',integration:'',dossier:'',followups:{}};
 let GOOGLE_SIGNIN_RENDER_TIMER=0;
+const AUDIO_CACHE={};
+let ACTIVE_SHUFFLE_SOUND='';
 let HISTORY_SYNC_STATE={
   loading:false,
   lastScope:'',
@@ -2786,7 +2802,9 @@ function getServerErrorMessage(data,fallback='処理に失敗しました'){
   if(code==='ACCESS_CODE_REQUIRED') return'確認コードを入力してください';
   if(code==='GOOGLE_CLIENT_ID_MISSING') return'Googleログインが未設定です';
   if(code==='GOOGLE_PROFILE_INVALID') return'Googleアカウント情報を確認できませんでした';
-  if(code==='GOOGLE_AUTH_FAILED'||code.startsWith('GOOGLE_')) return'Googleログインを確認できませんでした';
+  if(code==='GOOGLE_ID_TOKEN_AUDIENCE_INVALID') return'Googleログイン設定のクライアントIDまたは公開ドメインが一致していません';
+  if(code==='GOOGLE_AUTH_SESSION_FAILED') return'Google認証は通りましたが、ログイン状態を保存できませんでした。運営側でサーバーログを確認してください';
+  if(code==='GOOGLE_AUTH_FAILED'||code.startsWith('GOOGLE_')) return'Googleログインを確認できませんでした。検証中の環境では、OAuthテストユーザーに登録されたGoogleアカウントでログインしてください';
   if(code==='DEVELOPER_LOCAL_ONLY') return'この操作は今は使えません';
   if(code==='DEVELOPER_EMAIL_REQUIRED') return'メールアドレスを入力してください';
   if(code==='DEVELOPER_EMAIL_DENIED') return'このメールアドレスは許可されていません';
@@ -3062,6 +3080,14 @@ function setGoogleAuthError(message){
   el.style.display='block';
 }
 
+function getGoogleClientErrorMessage(response={}){
+  const raw=String(response?.error||response?.error_description||response?.type||'').trim();
+  if(/access_denied|unauthorized|not.*test|未承認|許可/i.test(raw)){
+    return'このGoogleアカウントは検証用ユーザーに登録されていない可能性があります。Google CloudのOAuthテストユーザーに追加されたアカウントでお試しください';
+  }
+  return'Googleログインを完了できませんでした。検証中の環境では、OAuthテストユーザーに登録されたGoogleアカウントでログインしてください';
+}
+
 function renderGoogleAuthShell(){
   const shell=document.getElementById('google-auth-shell');
   const copy=document.getElementById('google-auth-copy');
@@ -3072,9 +3098,10 @@ function renderGoogleAuthShell(){
     clearGoogleAuthError();
     return;
   }
-  copy.textContent=MEMBER_AUTH.stripeCheckoutReady
+  const baseCopy=MEMBER_AUTH.stripeCheckoutReady
     ?'Googleでログインすると、そのまま月額登録へ進めます。'
     :'Googleでログインしたうえで、深掘り鑑定の利用状態と購入履歴をこの端末にひも付けます。';
+  copy.innerHTML=`${escapeHtml(baseCopy)}<br><span style="color:rgba(240,234,216,.48)">検証中の環境では、Google Cloud側でテストユーザーに追加されたアカウントだけログインできます。</span>`;
   scheduleGoogleSignInRender();
 }
 
@@ -3129,9 +3156,13 @@ function scheduleGoogleSignInRender(retry=0){
 }
 
 async function handleGoogleCredentialResponse(response){
+  if(response?.error||response?.error_description){
+    setGoogleAuthError(getGoogleClientErrorMessage(response));
+    return;
+  }
   const credential=response?.credential||'';
   if(!credential){
-    setGoogleAuthError('Googleの認証情報を受け取れませんでした');
+    setGoogleAuthError(getGoogleClientErrorMessage(response));
     return;
   }
   try{
@@ -3729,8 +3760,8 @@ function repairStaticCopy(){
   setText('#rs-animal-reveal .rs-animal-reveal-eyebrow','あなたの魂の形は');
   setText('#rs-foundation-mini .rs-eyebrow','土台の要約');
   setHtml('#rs-foundation-mini .rs-title','<span class="rs-icon">✧</span>この答えを支える、あなたの土台');
-  setText('#rs-basis .result-detail-title','あなたの土台を詳しく見る');
-  setText('#rs-basis .result-detail-copy','姓名判断・四柱推命・動物タイプ診断');
+  setText('#rs-basis .result-detail-title','判断に使う土台を見る');
+  setText('#rs-basis .result-detail-copy','名前・生まれ・反応タイプを、必要なポイントだけに整理しています');
   const basisSummaryCard=document.querySelector('#rs-basis .basis-summary-card');
   if(basisSummaryCard){
     setWithin(basisSummaryCard,'.basis-panel-head','土台診断の要約');
@@ -3746,9 +3777,9 @@ function repairStaticCopy(){
     setWithin(animalPanel,'.basis-readmore > summary','詳しく読む');
   }
   if(nameBirthPanel){
-    setWithin(nameBirthPanel,'.basis-panel-head','姓名判断・四柱推命');
-    setWithin(nameBirthPanel,'.basis-panel-title','名前と生まれが示す性質・運気の流れ');
-    setWithin(nameBirthPanel,'.basis-panel-copy','名前と生まれから、力の出し方と流れをまとめます。');
+    setWithin(nameBirthPanel,'.basis-panel-head','名前と生まれの見方');
+    setWithin(nameBirthPanel,'.basis-panel-title','印象・流れ・活かし方');
+    setWithin(nameBirthPanel,'.basis-panel-copy','専門用語ではなく、今回の判断に使える形でまとめます。');
     setWithin(nameBirthPanel,'.basis-readmore > summary','詳しく読む');
   }
   if(consultationPanel){
@@ -4498,12 +4529,12 @@ function splitReadingBlocks(text=''){
 }
 
 function stripListMarker(line=''){
-  return String(line||'').replace(/^(\d+[\.\)]|[-・])\s*/,'').trim();
+  return String(line||'').replace(/^(\d+[\.\)]|[-・▶])\s*/,'').trim();
 }
 
 function isListBlock(block=''){
   const lines=String(block||'').split('\n').map(line=>line.trim()).filter(Boolean);
-  return lines.length>1&&lines.every(line=>/^(\d+[\.\)]|[-・])\s*/.test(line));
+  return lines.length>1&&lines.every(line=>/^(\d+[\.\)]|[-・▶])\s*/.test(line));
 }
 
 function renderInlineBold(escaped=''){
@@ -4524,7 +4555,7 @@ function extractListItems(text=''){
   return String(text||'')
     .split('\n')
     .map(line=>line.trim())
-    .filter(line=>/^(\d+[\.\)]|[-・])\s*/.test(line))
+    .filter(line=>/^(\d+[\.\)]|[-・▶])\s*/.test(line))
     .map(stripListMarker)
     .filter(Boolean);
 }
@@ -4532,7 +4563,7 @@ function extractListItems(text=''){
 function removeListLines(text=''){
   return String(text||'')
     .split('\n')
-    .filter(line=>!/^\s*(\d+[\.\)]|[-・])\s*/.test(line))
+    .filter(line=>!/^\s*(\d+[\.\)]|[-・▶])\s*/.test(line))
     .join('\n')
     .replace(/\n{3,}/g,'\n\n')
     .trim();
@@ -4781,8 +4812,11 @@ function buildReadingOutputFormatGuide(kind='len',is9=false){
       '▶ カード全体がネガティブに見えるときも、必ず何らかの好転要素・潜在的な力を見つけて書く。「良い情報がない」とは書かない。',
       '▶ 「〜が引き寄せられやすい」「〜というタイミングが近い」「〜が味方になる」の形で書く。精神論・励ましは禁止。',
       '',
+      '【箇条書き】条件・注意点・行動が複数ある場合は、1行1項目の「・」で書く。長い段落に詰め込まない。',
+      '',
       '【強調マークアップ】最も重要な結論・断言フレーズを1〜2箇所だけ **テキスト** で囲むこと（例：**今は動く時期です**）。多用しない。',
     ].join('\n');
+    return baseLines;
   }
   if(kind==='orc'){
     return [
@@ -4800,7 +4834,7 @@ function buildReadingOutputFormatGuide(kind='len',is9=false){
       '▶ 「次の一手」と同じ文、同じ項目、同じ語尾を繰り返さない。箇条書きは禁止。',
       '',
       '■ 次の一手',
-      '▶ 今日からできる具体的な行動を3つ、箇条書きで書く。',
+      '▶ 今日からできる具体的な行動を3つ、「・」から始める箇条書きで書く。',
       '▶ 各項目は「〜する」「〜を確認する」「〜を止める」のように動詞で終える。',
       '▶ 3項目はそれぞれ別の役割にする（整理する／確認する／止める・始める）。同じ助言の言い換えは禁止。',
       '▶ 「心がけて」「意識して」「感じて」などの抽象動詞は禁止。現実に動けることだけを書く。',
@@ -4823,7 +4857,7 @@ function buildReadingOutputFormatGuide(kind='len',is9=false){
       '▶ 抽象的な「気持ちの変化」ではなく、現実の状況・言葉・出来事を条件にする。',
       '',
       '■ 次にやること',
-      '▶ 今日から7日以内にやることを3つまで、1行ずつ書く。',
+      '▶ 今日から7日以内にやることを3つまで、「・」から始めて1行ずつ書く。',
       '▶ 各行を動詞で完結させる。精神論・励ましは禁止。',
       '',
       '【強調マークアップ】「■ 結論」の最初の断言フレーズを1箇所だけ **テキスト** で囲むこと（例：**今は待つより動く時期です**）。多用しない。',
@@ -5092,12 +5126,11 @@ function buildFoundationDeepSourceContext(){
   const nameText=NAMEJUDGE
     ?[
       namePlain?[namePlain.overview,namePlain.timing,namePlain.advice].filter(Boolean).join(' '):'',
-      `主要格: 人格${NAMEJUDGE.kakus[1].num}画(${getKakuLuck(NAMEJUDGE.kakus[1].num).lbl}) / 地格${NAMEJUDGE.kakus[2].num}画(${getKakuLuck(NAMEJUDGE.kakus[2].num).lbl}) / 外格${NAMEJUDGE.kakus[3].num}画(${getKakuLuck(NAMEJUDGE.kakus[3].num).lbl}) / 総格${NAMEJUDGE.kakus[4].num}画(${getKakuLuck(NAMEJUDGE.kakus[4].num).lbl})`,
       nameProfile?.core?`詳細メモ: ${nameProfile.core}`:'',
       nameProfile?.timing?`対人や立ち上がりのメモ: ${nameProfile.timing}`:'',
       nameProfile?.advice?`長期で活きる形: ${nameProfile.advice}`:'',
-      nameProfile?.threeTalent?`三才: ${nameProfile.threeTalent.pattern} / ${nameProfile.threeTalent.summary}`:'',
-      nameProfile?.yinYang?`陰陽: ${nameProfile.yinYang.summary}`:'',
+      nameProfile?.threeTalent?`流れの作り方: ${nameProfile.threeTalent.summary}`:'',
+      nameProfile?.yinYang?`整え方: ${nameProfile.yinYang.summary}`:'',
       nameProfile?.splitNote?`補足: ${nameProfile.splitNote}`:'',
       summarizeInsightCards(nameProfile?.insightCards)?`姓名判断の補足: ${summarizeInsightCards(nameProfile?.insightCards)}`:'',
     ].filter(Boolean).join('\n')
@@ -6767,10 +6800,92 @@ async function printDossier(){
   },500);
 }
 
+function getAudioElement(key){
+  const src=AUDIO_ASSETS[key];
+  if(!src||typeof Audio==='undefined') return null;
+  if(!AUDIO_CACHE[key]){
+    const audio=new Audio(encodeURI(src));
+    audio.preload='auto';
+    audio.volume=AUDIO_VOLUME[key]??.55;
+    AUDIO_CACHE[key]=audio;
+  }
+  return AUDIO_CACHE[key];
+}
+
+function playAppSound(key,options={}){
+  const audio=getAudioElement(key);
+  if(!audio) return;
+  const restart=options.restart!==false;
+  audio.loop=!!options.loop;
+  audio.volume=options.volume??(AUDIO_VOLUME[key]??audio.volume??.55);
+  if(restart){
+    try{audio.currentTime=0;}catch(e){}
+  }
+  const played=audio.play();
+  if(played&&typeof played.catch==='function') played.catch(()=>{});
+}
+
+function stopAppSound(key){
+  const audio=AUDIO_CACHE[key];
+  if(!audio) return;
+  audio.loop=false;
+  try{audio.pause();audio.currentTime=0;}catch(e){}
+}
+
+function startShuffleSound(){
+  ACTIVE_SHUFFLE_SOUND='shuffle';
+  playAppSound('shuffle',{loop:true,restart:true,volume:AUDIO_VOLUME.shuffle});
+}
+
+function stopShuffleSound(){
+  if(!ACTIVE_SHUFFLE_SOUND) return;
+  stopAppSound(ACTIVE_SHUFFLE_SOUND);
+  ACTIVE_SHUFFLE_SOUND='';
+}
+
+function stopMotionAudioForScreen(screenId=''){
+  if(screenId!=='s-len'&&screenId!=='s-orc') stopShuffleSound();
+}
+
+function playLenDrawSound(){
+  playAppSound('lenDraw',{restart:true,volume:AUDIO_VOLUME.lenDraw});
+}
+
+function playCardFlipSound(){
+  playAppSound('flip',{restart:true,volume:AUDIO_VOLUME.flip});
+}
+
+function playResultCompleteSound(){
+  playAppSound('complete',{restart:true,volume:AUDIO_VOLUME.complete});
+}
+
+function revealResultCard(card){
+  if(!card||!card.isConnected||card.classList.contains('is-flipped')) return;
+  card.classList.add('is-flipped');
+  card.classList.remove('is-face-down');
+  playCardFlipSound();
+}
+
+function armResultCardMotion(card,type,index,options={}){
+  if(!card) return;
+  const drawDelay=Math.max(0,Number(index)||0)*CARD_DRAW_STEP_MS;
+  card.style.setProperty('--draw-delay',`${drawDelay}ms`);
+  if(options.drawSound){
+    setTimeout(()=>{if(card.isConnected) playLenDrawSound();},drawDelay+120);
+  }
+  if(options.autoFlip!==false){
+    setTimeout(()=>revealResultCard(card),drawDelay+CARD_FLIP_AFTER_DRAW_MS);
+  }
+  if(options.glow){
+    setTimeout(()=>{if(card.isConnected) card.classList.add('card-glow');},drawDelay+CARD_FLIP_AFTER_DRAW_MS+780);
+  }
+}
+
 // ══════════════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════════════
 function showScreen(id,progress){
+  stopMotionAudioForScreen(id);
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   document.getElementById('progress').style.width=progress+'%';
@@ -6954,11 +7069,9 @@ function startLenShuffle(){
   deck.style.display='';
   deck.classList.add('shuffling');
   deck.querySelectorAll('.shuffle-card').forEach(c=>c.classList.add('shuffling'));
-  lenInterval=setInterval(()=>{
-    deck.querySelectorAll('.shuffle-card').forEach(c=>{
-      c.style.transform=`rotate(${(Math.random()-0.5)*12}deg) translate(${(Math.random()-0.5)*20}px,${(Math.random()-0.5)*10}px)`;
-    });
-  },400);
+  clearInterval(lenInterval);
+  lenInterval=null;
+  startShuffleSound();
   document.getElementById('len-stop-btn').style.display='block';
   document.getElementById('len-cards-full').classList.remove('on');
   document.getElementById('len-inst').textContent='シャッフル中です。止めたところで、上から順にカードを引きます';
@@ -6966,8 +7079,11 @@ function startLenShuffle(){
 
 function stopLen(){
   clearInterval(lenInterval);
+  lenInterval=null;
   lenShuffling=false;
+  stopShuffleSound();
   const deck=document.getElementById('len-deck');
+  deck.classList.remove('shuffling');
   deck.querySelectorAll('.shuffle-card').forEach(c=>{c.style.transform='';c.classList.remove('shuffling');});
   deck.style.display='none';
   document.getElementById('len-stop-btn').style.display='none';
@@ -6981,7 +7097,11 @@ function stopLen(){
 
 function showLenCards(){
   document.getElementById('len-deck').style.display='none';
-  document.getElementById('len-inst').textContent='いま出たカード';
+  const lenInst=document.getElementById('len-inst');
+  if(lenInst) lenInst.textContent=`${SEL_LEN.length}枚を順番に引いて、裏向きからめくっています`;
+  setTimeout(()=>{
+    if(lenInst) lenInst.textContent='いま出たカード';
+  },Math.max(1,SEL_LEN.length)*CARD_DRAW_STEP_MS+CARD_FLIP_AFTER_DRAW_MS+260);
   const full=document.getElementById('len-cards-full');
   full.classList.add('on');
 
@@ -6996,7 +7116,7 @@ function showLenCards(){
     preLbl.style.cssText='font-size:10px;letter-spacing:.3em;color:rgba(201,149,42,.7);margin-bottom:10px;';
     preLbl.textContent=`あなたを表すカード（事前配置）— No.${FIXED_GENDER_CARD} ${LENORMAND[FIXED_GENDER_CARD].name}`;
     preWrap.appendChild(preLbl);
-    preWrap.appendChild(makeResultCard(FIXED_GENDER_CARD,'len','clamp(90px,22vw,130px)','clamp(135px,33vw,195px)',0));
+    preWrap.appendChild(makeResultCard(FIXED_GENDER_CARD,'len','clamp(90px,22vw,130px)','clamp(135px,33vw,195px)',0,{drawSound:false}));
     grid.appendChild(preWrap);
   }
 
@@ -7014,7 +7134,7 @@ function showLenCards(){
       const cell=document.createElement('div');
       cell.className='grid33-cell';
       // 画面幅に合わせてカードサイズを計算（3列・gap考慮）
-      const card=makeResultCard(id,'len','clamp(104px,31.5vw,200px)','clamp(156px,47.2vw,300px)',i*0.08);
+      const card=makeResultCard(id,'len','clamp(104px,31.5vw,200px)','clamp(156px,47.2vw,300px)',i*(CARD_DRAW_STEP_MS/1000),{drawSound:true});
       if(i===4){
         card.style.border='2px solid rgba(201,149,42,.7)';
         card.style.boxShadow='0 0 20px rgba(201,149,42,.35),0 8px 32px rgba(0,0,0,.6)';
@@ -7039,7 +7159,7 @@ function showLenCards(){
     SEL_LEN.forEach((id,i)=>{
       const cell=document.createElement('div');
       cell.className='grid33-cell';
-      const card=makeResultCard(id,'len','clamp(112px,29vw,180px)','clamp(168px,43.5vw,270px)',i*0.08);
+      const card=makeResultCard(id,'len','clamp(112px,29vw,180px)','clamp(168px,43.5vw,270px)',i*(CARD_DRAW_STEP_MS/1000),{drawSound:true});
       if(i===1){
         card.style.border='2px solid rgba(201,149,42,.7)';
         card.style.boxShadow='0 0 18px rgba(201,149,42,.28),0 8px 28px rgba(0,0,0,.55)';
@@ -7057,8 +7177,7 @@ function showLenCards(){
     // 旧データ互換：1枚 大表示
     const wrap=document.createElement('div');
     wrap.className='card-single-wrap';
-    const card=makeResultCard(SEL_LEN[0],'len','clamp(240px,78vw,380px)','clamp(360px,117vw,570px)',0);
-    card.classList.add('card-glow');
+    const card=makeResultCard(SEL_LEN[0],'len','clamp(240px,78vw,380px)','clamp(360px,117vw,570px)',0,{drawSound:true,glow:true});
     wrap.appendChild(card);
     grid.appendChild(wrap);
   }
@@ -7077,12 +7196,12 @@ function startOrcShuffle(){
   orcSelCards=[];
   const deck=document.getElementById('orc-deck');
   deck.style.display='';
+  deck.classList.add('shuffling');
   deck.querySelectorAll('.shuffle-card').forEach(c=>{c.style.display='flex';});
-  orcInterval=setInterval(()=>{
-    deck.querySelectorAll('.shuffle-card').forEach(c=>{
-      c.style.transform=`rotate(${(Math.random()-0.5)*12}deg) translate(${(Math.random()-0.5)*20}px,${(Math.random()-0.5)*10}px)`;
-    });
-  },400);
+  deck.querySelectorAll('.shuffle-card').forEach(c=>c.classList.add('shuffling'));
+  clearInterval(orcInterval);
+  orcInterval=null;
+  startShuffleSound();
   document.getElementById('orc-stop-btn').style.display='block';
   document.getElementById('orc-select-area').classList.remove('on');
   document.getElementById('orc-cards-full').classList.remove('on');
@@ -7091,9 +7210,12 @@ function startOrcShuffle(){
 
 function stopOrc(){
   clearInterval(orcInterval);
+  orcInterval=null;
   orcShuffling=false;
+  stopShuffleSound();
   const deck=document.getElementById('orc-deck');
-  deck.querySelectorAll('.shuffle-card').forEach(c=>{c.style.transform='';});
+  deck.classList.remove('shuffling');
+  deck.querySelectorAll('.shuffle-card').forEach(c=>{c.style.transform='';c.classList.remove('shuffling');});
   deck.style.display='none';
   document.getElementById('orc-stop-btn').style.display='none';
 
@@ -7148,7 +7270,11 @@ function confirmOrcSelection(){
 
 function showOrcCards(){
   document.getElementById('orc-deck').style.display='none';
-  document.getElementById('orc-inst').textContent='いま出たカード';
+  const orcInst=document.getElementById('orc-inst');
+  if(orcInst) orcInst.textContent=`${SEL_ORC.length}枚を裏向きからめくっています`;
+  setTimeout(()=>{
+    if(orcInst) orcInst.textContent='いま出たカード';
+  },Math.max(1,SEL_ORC.length)*CARD_DRAW_STEP_MS+CARD_FLIP_AFTER_DRAW_MS+260);
   const full=document.getElementById('orc-cards-full');
   full.classList.add('on');
   const grid=document.getElementById('orc-cards-grid');
@@ -7158,14 +7284,13 @@ function showOrcCards(){
     // 無料：1枚 大表示
     const wrap=document.createElement('div');
     wrap.className='card-single-wrap';
-    const card=makeResultCard(SEL_ORC[0],'orc','clamp(240px,78vw,380px)','clamp(360px,117vw,570px)',0);
-    card.classList.add('card-glow');
+    const card=makeResultCard(SEL_ORC[0],'orc','clamp(240px,78vw,380px)','clamp(360px,117vw,570px)',0,{glow:true});
     wrap.appendChild(card);
     grid.appendChild(wrap);
   }else{
     // 深掘り鑑定：3枚 大表示
     SEL_ORC.forEach((id,i)=>{
-      const card=makeResultCard(id,'orc','clamp(104px,31.5vw,200px)','clamp(156px,47.2vw,300px)',i*0.1);
+      const card=makeResultCard(id,'orc','clamp(104px,31.5vw,200px)','clamp(156px,47.2vw,300px)',i*(CARD_DRAW_STEP_MS/1000));
       grid.appendChild(card);
     });
   }
@@ -7796,14 +7921,21 @@ function renderMeimei(){
   if(MEIMEI.useApproxSolarTerms) noteLines.push('一部はおおまかな時期として読んでいます。');
   const noteHTML=noteLines.length?`<div class="dm-note">${noteLines.join('<br>')}</div>`:'';
   const lpCard=LP?ORACLE[LP]:null;
-  const cards=buildPlainInsightGrid([
-    {kicker:'土台',title:'生まれから見える土台',body:birthPlain?.overview||'生まれから見える土台を読み取れませんでした。'},
-    {kicker:'流れ',title:'今の流れ',body:birthPlain?.timing||'今の流れはまだ十分に読み取れていません。'},
-    {kicker:'活かし方',title:'力が出やすい動き',body:birthPlain?.advice||'力が出やすい動きはまだ十分に読み取れていません。'},
-    ...(lpCard?[{kicker:'くせ',title:'誕生日から見える動きのくせ',body:lpCard.msg||''}]:[])
-  ]);
+  const items=[
+    {label:'生まれから見える土台',body:birthPlain?.overview||'生まれから見える土台を読み取れませんでした。'},
+    {label:'今の流れ',body:birthPlain?.timing||'今の流れはまだ十分に読み取れていません。'},
+    {label:'力が出やすい動き',body:birthPlain?.advice||'力が出やすい動きはまだ十分に読み取れていません。'},
+    ...(lpCard?[{label:'動き方のくせ',body:lpCard.msg||''}]:[])
+  ].filter(item=>item.body);
 
-  wrap.innerHTML=noteHTML+cards;
+  wrap.innerHTML=noteHTML+`
+    <div class="basis-simple-list">
+      ${items.map(item=>`
+        <div class="basis-simple-item">
+          <div class="basis-simple-label">${escapeHtml(item.label)}</div>
+          <div class="basis-simple-copy">${escapeHtml(item.body)}</div>
+        </div>`).join('')}
+    </div>`;
 }
 
 function renderNameJudge(){
@@ -7817,28 +7949,29 @@ function renderNameJudge(){
   }
   const plain=buildNamePlainInsight(NAMEJUDGE);
   const profile=buildNameJudgeInsights(NAMEJUDGE);
-  const fiveGrid=NAMEJUDGE.kakus
-    .map(kaku=>`${kaku.name}${kaku.num}画(${getKakuLuck(kaku.num).lbl})`)
-    .join(' / ');
   const nameHead=`
     <div style="font-family:'Shippori Mincho',serif;font-size:18px;letter-spacing:.25em;color:var(--gold-l);text-align:center;margin-bottom:20px">
       ${escapeHtml(NAMEJUDGE.sei)} <span style="font-size:12px;color:var(--muted);letter-spacing:.1em">✦</span> ${escapeHtml(NAMEJUDGE.mei)}
     </div>`;
   const metaNotes=[];
-  if(NAMEJUDGE.strokePolicy?.label) metaNotes.push(`基準：${NAMEJUDGE.strokePolicy.label}`);
-  if(NAMEJUDGE.precision?.label) metaNotes.push(`画数精度：${NAMEJUDGE.precision.label}`);
-  if(NAMEJUDGE.approxChars.length) metaNotes.push(`推定文字：${NAMEJUDGE.approxChars.join('・')}`);
+  if(NAMEJUDGE.approxChars.length) metaNotes.push(`一部の文字は近い数え方で補っています：${NAMEJUDGE.approxChars.join('・')}`);
   if(NAMEJUDGE.split?.confidence==='low') metaNotes.push('名字と名前の切れ目があいまいなので、おおまかに見ています。');
   else if(NAMEJUDGE.split?.confidence==='medium') metaNotes.push('名字候補が複数あります。スペースで区切るとさらに正確です。');
   const noteHTML=metaNotes.length?`<div class="dm-note">${metaNotes.join('<br>')}</div>`:'';
-  const cards=buildPlainInsightGrid([
-    {kicker:'五格',title:'画数の骨格',body:`${fiveGrid}。${profile?.power?.summary||'五格全体から名前の使い方を見ています。'}`},
-    {kicker:'印象',title:'人にどう伝わりやすいか',body:plain?.overview||'名前から伝わる印象はまだ読み取れていません。'},
-    {kicker:'場面',title:'新しい場所で出やすい傾向',body:plain?.timing||'新しい場所で出やすい傾向はまだ読み取れていません。'},
-    {kicker:'活かし方',title:'長く見ると活きやすい動き',body:plain?.advice||'長く見ると活きやすい動きはまだ読み取れていません。'},
-  ]);
+  const items=[
+    {label:'人から見える印象',body:plain?.overview||'名前から伝わる印象はまだ読み取れていません。'},
+    {label:'対人面で出やすいこと',body:plain?.timing||'新しい場所で出やすい傾向はまだ読み取れていません。'},
+    {label:'長く活かすコツ',body:plain?.advice||profile?.advice||'長く見ると活きやすい動きはまだ読み取れていません。'},
+  ];
 
-  wrap.innerHTML=nameHead+noteHTML+cards;
+  wrap.innerHTML=nameHead+noteHTML+`
+    <div class="basis-simple-list">
+      ${items.map(item=>`
+        <div class="basis-simple-item">
+          <div class="basis-simple-label">${escapeHtml(item.label)}</div>
+          <div class="basis-simple-copy">${escapeHtml(item.body)}</div>
+        </div>`).join('')}
+    </div>`;
 }
 
 function updateAnimalReveal(){
@@ -8141,6 +8274,7 @@ async function completeResultGenerationUI(){
   renderMemberFollowupSection();
   renderReturnRitual();
   document.getElementById('progress').style.width='100%';
+  playResultCompleteSound();
   setTimeout(()=>{
     const shareBtn=document.getElementById('share-x-btn');
     if(shareBtn) shareBtn.style.display='inline-flex';
@@ -8620,7 +8754,7 @@ OK「相手に合わせすぎていることが消耗の根本原因です。次
 迷ったときに何を基準に判断すればよいかを書く。気持ち、現実条件、相手や環境の反応を分け、1〜2段落でまとめる。ここには箇条書きも行動リストも書かない。「次の一手」と同じ文を繰り返さない。
 
 ■ 次の一手
-今日からできる具体的な行動を3つ、箇条書きで書く。「〜する」「〜を確認する」「〜を止める」のように動詞で終える。「心がけて」「意識して」などの抽象動詞は禁止。3項目は互いに違う行動にし、同じ助言の言い換えは禁止。
+今日からできる具体的な行動を3つ、「・」から始める箇条書きで書く。「〜する」「〜を確認する」「〜を止める」のように動詞で終える。「心がけて」「意識して」などの抽象動詞は禁止。3項目は互いに違う行動にし、同じ助言の言い換えは禁止。
 
 合計${is3?'820字前後':'460字前後'}。冒頭だけは短く締め、その後は脱線しない範囲で必要なら深く書いてよい。1文は短く、難しい言葉は禁止。`;
 
@@ -8736,7 +8870,7 @@ ${buildDecisionSupportPromptGuide(cat,theme)}
 ${focus.isDualConcern?`恋愛と仕事が両方あるので、「恋愛では〜、仕事では〜」と分けて整理する。`:''}
 
 ■ 次にやること
-今日から7日以内にやることを3つまで、1行ずつ、「〜する」「〜を確認する」「〜を止める」の動詞形で書く。精神論は禁止。
+今日から7日以内にやることを3つまで、「・」から始めて1行ずつ、「〜する」「〜を確認する」「〜を止める」の動詞形で書く。精神論は禁止。
 
 合計700字前後。1文は短く、難しい言葉は禁止。`;
 
@@ -10129,20 +10263,39 @@ function typeText(id,text,delay=0){
 // ══════════════════════════════════════════════════
 // UTILS
 // ══════════════════════════════════════════════════
-function makeResultCard(id,type,w,h,delay=0){
+function makeResultCard(id,type,w,h,delay=0,options={}){
   const data=type==='len'?LENORMAND[id]:ORACLE[id];
   const imgSrc=type==='len'?`images/cards/lenormand/${String(id).padStart(2,'0')}.jpg`:`images/cards/oracle/${String(id).padStart(2,'0')}.jpg`;
   const el=document.createElement('div');
-  el.className=`result-card card-type-${type}`;
-  el.style.cssText=`width:${w};height:${h};animation-delay:${delay}s;`;
+  el.className=`result-card card-type-${type} card-draw-in is-face-down`;
+  el.style.cssText=`width:${w};height:${h};`;
+  el.style.setProperty('--draw-delay',`${Math.max(0,Number(delay)||0)*1000}ms`);
+  const safeName=escapeHtml(data.name||'');
+  const safeKw=escapeHtml((data.kw||data.msg||'').slice(0,18));
   el.innerHTML=`
-    <img src="${imgSrc}" class="result-card-img" onerror="this.style.display='none'" alt="">
-    <div class="result-card-placeholder ${type}-placeholder">
-      <div class="rc-num">${id}</div>
-      <div class="rc-name">${data.name}</div>
-      <div class="rc-kw">${(data.kw||data.msg||'').slice(0,18)}</div>
+    <div class="result-card-flipper">
+      <div class="result-card-face result-card-back result-card-placeholder ${type}-placeholder" aria-hidden="true">
+        <div class="rc-num">${id}</div>
+        <div class="rc-name">${safeName}</div>
+        <div class="rc-kw">${safeKw}</div>
+      </div>
+      <div class="result-card-face result-card-front">
+        <img src="${imgSrc}" class="result-card-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="">
+        <div class="result-card-placeholder ${type}-placeholder">
+          <div class="rc-num">${id}</div>
+          <div class="rc-name">${safeName}</div>
+          <div class="rc-kw">${safeKw}</div>
+        </div>
+      </div>
     </div>`;
-  el.onclick=()=>openCardLightbox(imgSrc,id,data.name,data.kw||data.msg||'');
+  el.onclick=()=>{
+    if(!el.classList.contains('is-flipped')){
+      revealResultCard(el);
+      return;
+    }
+    openCardLightbox(imgSrc,id,data.name,data.kw||data.msg||'');
+  };
+  armResultCardMotion(el,type,delay/(CARD_DRAW_STEP_MS/1000),options);
   return el;
 }
 
