@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "Bash(npx --version)",
+      "mcp__Claude_Preview__preview_start",
+      "Read(//c/Users/tf547/Downloads/**)",
+      "Bash(python3 -c \":*)",
+      "Bash(python -c \"import pandas; print\\(pandas.__version__\\)\")",
+      "Bash(python -c \"import openpyxl; print\\(openpyxl.__version__\\)\")",
+      "Bash(python -c \":*)",
+      "Bash(python -c \"import sys; sys.stdout.buffer.write\\(sys.stdin.buffer.read\\(\\)\\)\" 2)",
+      "Bash(1 echo:*)",
+      "Bash(python:*)",
+      "Bash(python3 -:*)",
+      "Read(//c/Users/tf547/uranai/**)",
+      "Read(//c//**)",
+      "Bash(python3:*)"
+    ]
+  }
+}
