@@ -1,0 +1,13 @@
+.env
+node_modules/
+data/
+*.log
+*.bak
+.tmp*
+.tmp-*
+*素材*/
+*触らないこと*/
+images/lenormand/*.png
+images/oracle/*.png
+images/lenormand/
+images/oracle/
