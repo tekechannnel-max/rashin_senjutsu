@@ -5225,14 +5225,14 @@ function buildCardImageRefs(kind='all',taskKey=''){
   if(kind==='all'||kind==='len'){
     if(FIXED_GENDER_CARD&&LENORMAND[FIXED_GENDER_CARD]){
       refs.push({
-        path:`images/lenormand/${String(FIXED_GENDER_CARD).padStart(2,'0')}.png`,
+        path:`images/cards/lenormand/${String(FIXED_GENDER_CARD).padStart(2,'0')}.jpg`,
         detail,
         label:`相談者カード No.${FIXED_GENDER_CARD} ${LENORMAND[FIXED_GENDER_CARD].name}`,
       });
     }
     SEL_LEN.forEach((id,index)=>{
       refs.push({
-        path:`images/lenormand/${String(id).padStart(2,'0')}.png`,
+        path:`images/cards/lenormand/${String(id).padStart(2,'0')}.jpg`,
         detail,
         label:`ルノルマン ${index+1}枚目 No.${id} ${LENORMAND[id]?.name||''}`,
       });
@@ -5241,7 +5241,7 @@ function buildCardImageRefs(kind='all',taskKey=''){
   if(kind==='all'||kind==='orc'){
     SEL_ORC.forEach((id,index)=>{
       refs.push({
-        path:`images/oracle/${String(id).padStart(2,'0')}.png`,
+        path:`images/cards/oracle/${String(id).padStart(2,'0')}.jpg`,
         detail,
         label:`オラクル ${index+1}枚目 No.${id} ${ORACLE[id]?.name||''}`,
       });
@@ -7915,7 +7915,7 @@ function renderCards(){
 
 function makeSmCard(id,type,roleLabel=''){
   const d=type==='len'?LENORMAND[id]:ORACLE[id];
-  const imgSrc=type==='len'?`images/lenormand/${String(id).padStart(2,'0')}.png`:`images/oracle/${String(id).padStart(2,'0')}.png`;
+  const imgSrc=type==='len'?`images/cards/lenormand/${String(id).padStart(2,'0')}.jpg`:`images/cards/oracle/${String(id).padStart(2,'0')}.jpg`;
   return`<div class="card-sm" title="No.${id} ${escapeHtml(d.name)}" role="button" tabindex="0" data-card-type="${type}" data-card-id="${id}" onclick="openCardLightboxFromThumb(this)" onkeydown="handleCardThumbKey(event,this)">
     ${roleLabel?`<div class="card-sm-role">${escapeHtml(roleLabel)}</div>`:''}
     <img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'" alt="">
@@ -7931,7 +7931,7 @@ function openCardLightboxFromThumb(el){
   const type=el?.dataset?.cardType==='orc'?'orc':'len';
   const data=type==='len'?LENORMAND[id]:ORACLE[id];
   if(!id||!data) return;
-  const imgSrc=type==='len'?`images/lenormand/${String(id).padStart(2,'0')}.png`:`images/oracle/${String(id).padStart(2,'0')}.png`;
+  const imgSrc=type==='len'?`images/cards/lenormand/${String(id).padStart(2,'0')}.jpg`:`images/cards/oracle/${String(id).padStart(2,'0')}.jpg`;
   openCardLightbox(imgSrc,id,data.name,data.kw||data.msg||'');
 }
 
@@ -10131,7 +10131,7 @@ function typeText(id,text,delay=0){
 // ══════════════════════════════════════════════════
 function makeResultCard(id,type,w,h,delay=0){
   const data=type==='len'?LENORMAND[id]:ORACLE[id];
-  const imgSrc=type==='len'?`images/lenormand/${String(id).padStart(2,'0')}.png`:`images/oracle/${String(id).padStart(2,'0')}.png`;
+  const imgSrc=type==='len'?`images/cards/lenormand/${String(id).padStart(2,'0')}.jpg`:`images/cards/oracle/${String(id).padStart(2,'0')}.jpg`;
   const el=document.createElement('div');
   el.className=`result-card card-type-${type}`;
   el.style.cssText=`width:${w};height:${h};animation-delay:${delay}s;`;
