@@ -1542,7 +1542,7 @@ const CARD_DRAW_STEP_MS=430;
 const CARD_FLIP_AFTER_DRAW_MS=760;
 const LIVE_SHUFFLE_CARD_COUNT=14;
 const LIVE_SHUFFLE_MOBILE_CARD_COUNT=10;
-const LIVE_SHUFFLE_SPEED_SCALE=2;
+const LIVE_SHUFFLE_SPEED_SCALE=1.43;
 const AUDIO_VOLUME={shuffle:.36,lenDraw:.62,flip:.58,complete:.66};
 const INPUT_STORAGE_KEY='uranai-input';
 const INPUT_SAVE_PREF_KEY='uranai-input-autosave-v1';
@@ -6951,6 +6951,13 @@ function installLiveCardMotionStyles(){
     }
     .result-card-back.len-placeholder{
       box-shadow:inset 0 0 0 1px rgba(201,149,42,.24), inset 0 0 28px rgba(0,0,0,.38);
+    }
+    .result-card.card-type-len .result-card-front .result-card-img{
+      width:108% !important;
+      height:108% !important;
+      max-width:none !important;
+      margin:-4% !important;
+      object-fit:cover !important;
     }
     .result-card:hover .result-card-img,
     .result-card.is-flipped:hover .result-card-img{
