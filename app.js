@@ -8749,7 +8749,7 @@ ${orcFull}
       const retryPrompt=`${prompt}
 
 【前回出力の不合格理由】
-${qualityIssues.map(issue=>`- ${issue}`).join('\n')}
+${qualityResult.issues.map(issue=>`- ${issue}`).join('\n')}
 
 上の不合格理由をすべて直し、同じ出力形式で最初から書き直してください。`;
       const retryRes=await callAI(retryPrompt,7000,retrySystemPrompt,{
