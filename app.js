@@ -1542,6 +1542,7 @@ const CARD_DRAW_STEP_MS=430;
 const CARD_FLIP_AFTER_DRAW_MS=760;
 const LIVE_SHUFFLE_CARD_COUNT=14;
 const LIVE_SHUFFLE_MOBILE_CARD_COUNT=10;
+const LIVE_SHUFFLE_SPEED_SCALE=2;
 const AUDIO_VOLUME={shuffle:.36,lenDraw:.62,flip:.58,complete:.66};
 const INPUT_STORAGE_KEY='uranai-input';
 const INPUT_SAVE_PREF_KEY='uranai-input-autosave-v1';
@@ -6951,6 +6952,14 @@ function installLiveCardMotionStyles(){
     .result-card-back.len-placeholder{
       box-shadow:inset 0 0 0 1px rgba(201,149,42,.24), inset 0 0 28px rgba(0,0,0,.38);
     }
+    .result-card:hover .result-card-img,
+    .result-card.is-flipped:hover .result-card-img{
+      transform:none !important;
+    }
+    .result-card:hover,
+    .result-card.is-flipped:hover{
+      transform:translateY(-6px) scale(1.035) !important;
+    }
     @media (max-width:520px){
       .shuffle-area.live-shuffling{
         width:min(92vw,260px) !important;
@@ -7042,8 +7051,8 @@ function runLiveShuffleCycle(deck){
     const peelY=-lift-packetIndex*3;
     const slideY=-8+packetIndex*8;
     const settleY=dropY-packetIndex*5;
-    const duration=920+packetIndex*58;
-    const delay=inPacket?packetIndex*74:packetSize*82+index*12;
+    const duration=(920+packetIndex*58)*LIVE_SHUFFLE_SPEED_SCALE;
+    const delay=(inPacket?packetIndex*74:packetSize*82+index*12)*LIVE_SHUFFLE_SPEED_SCALE;
     card.getAnimations?.().forEach(anim=>anim.cancel());
     card.style.zIndex=String(inPacket?120+packetIndex:index+1);
     const keyframes=inPacket?[
@@ -7058,7 +7067,7 @@ function runLiveShuffleCycle(deck){
       {transform:`translate3d(${rest.x}px,${rest.y}px,${rest.z}px) rotate(${rest.r}deg)`,opacity:1,offset:1},
     ];
     const animation=card.animate(keyframes,{
-      duration:inPacket?duration:720,
+      duration:inPacket?duration:720*LIVE_SHUFFLE_SPEED_SCALE,
       delay,
       easing:inPacket?'cubic-bezier(.2,.78,.22,1)':'cubic-bezier(.2,.7,.22,1)',
       fill:'forwards',
@@ -7069,7 +7078,7 @@ function runLiveShuffleCycle(deck){
       card.style.zIndex=String(nextIndex+1);
     };
   });
-  setTimeout(()=>rotateLiveShufflePackets(deck,cards,packetSize),1050);
+  setTimeout(()=>rotateLiveShufflePackets(deck,cards,packetSize),1050*LIVE_SHUFFLE_SPEED_SCALE);
 }
 
 function startLiveCardShuffle(deck){
@@ -7083,7 +7092,7 @@ function startLiveCardShuffle(deck){
   const cycle=()=>{
     if(!state.running||!deck.isConnected) return;
     runLiveShuffleCycle(deck);
-    state.timer=setTimeout(cycle,1360);
+    state.timer=setTimeout(cycle,1360*LIVE_SHUFFLE_SPEED_SCALE);
   };
   LIVE_SHUFFLE_STATE[key]=state;
   cycle();
