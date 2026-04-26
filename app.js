@@ -1125,23 +1125,21 @@ function buildNameJudgeInsights(nameJudge){
     .map(item=>`${item.sei} ${item.mei}`)
     .join(' / ');
   return{
-    core:`${power?.label||'姓名判断の中心'}。人格${jin.num}画は ${NAME_ELEMENT_COPY[jinElem]} を司る格で、${NAME_ELEMENT_DETAIL[jinElem]}傾向があります。${getLuckTone(jinLuck.lbl)}ので、この名前では「どう芯を出すか」が重要になります。`,
-    timing:`地格${chi.num}画は ${NAME_ELEMENT_COPY[chiElem]} の出方を示し、${getLuckTone(chiLuck.lbl)}ため、若い時期や新しい環境での立ち上がり方に特徴が出やすいです。`,
-    advice:`総格${sou.num}画は ${NAME_ELEMENT_COPY[souElem]} を人生後半へ運びます。${getLuckTone(souLuck.lbl)}ので、長期では ${NAME_ELEMENT_DETAIL[souElem]}動き方が名前の強みを活かしやすくします。${power?.risk?` 注意点は${power.risk.name}${power.risk.num}画・${power.risk.luck.lbl}の負荷で、ここを整えるほど全体が安定します。`:''}`,
+    core:`${power?.label||'名前から見える傾向'}です。${NAME_ELEMENT_DETAIL[jinElem]}傾向が本人の軸として出やすくなります。`,
+    timing:`新しい環境や人との距離感では、${NAME_ELEMENT_DETAIL[gaiElem]}出方が前に出やすいです。`,
+    advice:`長く見ると、${NAME_ELEMENT_DETAIL[souElem]}動き方が名前の強みを活かしやすくします。${power?.risk?'負担が出やすい部分は、早めに条件を整理することで安定します。':''}`,
     insightCards:[
-      {kicker:'TOTAL',title:'五格全体の強さ',body:`${power?.summary||'五格を総合して、名前の使い方を見ています。'} 総合スコア ${power?.score??0}。`},
-      {kicker:'PERSONA',title:'名前から見える大事な点',body:`人格${jin.num}画・${jinLuck.lbl}。${NAME_ELEMENT_DETAIL[jinElem]}ため、この名前では「自分の軸の出し方」が最も重要になります。`},
-      {kicker:'SOCIAL',title:'外格が示す対人面',body:`外格${gai.num}画・${gaiLuck.lbl}。${NAME_ELEMENT_DETAIL[gaiElem]}ため、第一印象や人との距離感にこの傾向が出やすくなります。`},
-      {kicker:'THREE TALENTS',title:'三才配置の流れ',body:`${threeTalent.pattern}の${threeTalent.label}。${threeTalent.summary}`},
-      {kicker:'YIN / YANG',title:'陰陽の並び',body:`陽${yinYang.odd} / 陰${yinYang.even} の${yinYang.label}。${yinYang.summary}`},
+      {kicker:'IMPRESSION',title:'人に伝わりやすい印象',body:`${NAME_ELEMENT_DETAIL[jinElem]}傾向が本人の軸として出やすくなります。`},
+      {kicker:'RELATION',title:'人との距離感',body:`${NAME_ELEMENT_DETAIL[gaiElem]}ため、第一印象や人との距離感にこの傾向が出やすくなります。`},
+      {kicker:'FLOW',title:'流れの作り方',body:`${threeTalent.summary}`},
+      {kicker:'BALANCE',title:'整え方',body:`${yinYang.summary}`},
       ...(precisionNote?[{kicker:'PRECISION',title:'画数判定の精度',body:precisionNote}]:[]),
     ],
     tags:[
-      power?.label||'姓名判断',
-      `人格${jin.num}画 ${jinLuck.lbl}`,
-      `総格${sou.num}画 ${souLuck.lbl}`,
-      `三才 ${threeTalent.pattern} ${threeTalent.label}`,
-      `陰陽 ${yinYang.label}`,
+      power?.label||'名前から見える傾向',
+      '人に伝わる印象',
+      '距離感',
+      '整え方',
       precisionNote,
     ].filter(Boolean),
     splitNote:[splitNotes[nameJudge.split?.source]||'',alternativeText?`別候補: ${alternativeText}`:''].filter(Boolean).join(' '),
@@ -1212,9 +1210,9 @@ function buildNamePlainInsight(nameJudge){
   else if(nameJudge.split?.confidence==='medium') notes.push('名字候補が複数あるため、スペースで区切るとさらに安定します。');
   if(nameJudge.approxChars.length) notes.push('一部の珍しい字は、近い数え方で補っています。');
   return{
-    overview:`${power?.label||'名前から見える傾向'}です。人格${nameJudge.kakus[1].num}画・${jinLuck.lbl}が中心にあり、${NAME_ELEMENT_DETAIL[jinElem]}傾向が本人の軸として出やすくなります。`,
-    timing:`第一印象や人との距離感では、外格${nameJudge.kakus[3].num}画・${gaiLuck.lbl}の影響で、${NAME_ELEMENT_DETAIL[gaiElem]}出方が前に出やすいです。${threeTalent.summary}`,
-    advice:`長く見ると総格${nameJudge.kakus[4].num}画・${souLuck.lbl}が効き、${NAME_ELEMENT_DETAIL[souElem]}動き方が名前の良さを活かしやすくします。全体としては、${yinYang.summary}${power?.risk?` 弱点としては${power.risk.name}${power.risk.num}画が出す負荷を先に整えることです。`:''}${notes.length?` ${notes.join(' ')}`:''}`,
+    overview:`名前から見ると、${NAME_ELEMENT_DETAIL[jinElem]}傾向が本人の軸として出やすくなります。${power?.label?`${power.label}として見ています。`:''}`,
+    timing:`第一印象や人との距離感では、${NAME_ELEMENT_DETAIL[gaiElem]}出方が前に出やすいです。${threeTalent.summary}`,
+    advice:`長く見ると、${NAME_ELEMENT_DETAIL[souElem]}動き方が名前の良さを活かしやすくします。${yinYang.summary}${power?.risk?' 負担が出やすい部分は、早めに条件を整理することで軽くなります。':''}${notes.length?` ${notes.join(' ')}`:''}`,
   };
 }
 
@@ -5176,7 +5174,7 @@ function buildFoundationDeepSourceContext(){
   const nameText=NAMEJUDGE
     ?[
       namePlain?[namePlain.overview,namePlain.timing,namePlain.advice].filter(Boolean).join(' '):'',
-      `主要格: 人格${NAMEJUDGE.kakus[1].num}画(${getKakuLuck(NAMEJUDGE.kakus[1].num).lbl}) / 地格${NAMEJUDGE.kakus[2].num}画(${getKakuLuck(NAMEJUDGE.kakus[2].num).lbl}) / 外格${NAMEJUDGE.kakus[3].num}画(${getKakuLuck(NAMEJUDGE.kakus[3].num).lbl}) / 総格${NAMEJUDGE.kakus[4].num}画(${getKakuLuck(NAMEJUDGE.kakus[4].num).lbl})`,
+      `名前メモ: ${nameProfile?.core||''} ${nameProfile?.timing||''} ${nameProfile?.advice||''}`.trim(),
       nameProfile?.core?`詳細メモ: ${nameProfile.core}`:'',
       nameProfile?.timing?`対人や立ち上がりのメモ: ${nameProfile.timing}`:'',
       nameProfile?.advice?`長期で活きる形: ${nameProfile.advice}`:'',
@@ -8191,10 +8189,10 @@ function renderMeimei(){
   const noteHTML=noteLines.length?`<div class="dm-note">${noteLines.join('<br>')}</div>`:'';
   const lpCard=LP?ORACLE[LP]:null;
   const cards=buildPlainInsightGrid([
-    {kicker:'土台',title:'生まれから見える土台',body:birthPlain?.overview||'生まれから見える土台を読み取れませんでした。'},
-    {kicker:'流れ',title:'今の流れ',body:birthPlain?.timing||'今の流れはまだ十分に読み取れていません。'},
-    {kicker:'活かし方',title:'力が出やすい動き',body:birthPlain?.advice||'力が出やすい動きはまだ十分に読み取れていません。'},
-    ...(lpCard?[{kicker:'くせ',title:'誕生日から見える動きのくせ',body:lpCard.msg||''}]:[])
+    {kicker:'性質',title:'もともと力が出やすい場面',body:birthPlain?.overview||'生まれから見える土台を読み取れませんでした。'},
+    {kicker:'流れ',title:'今の時期に意識したいこと',body:birthPlain?.timing||'今は大きく決める前に、状況を整理する時間を取ると判断しやすくなります。'},
+    {kicker:'整え方',title:'疲れにくく進むための動き',body:birthPlain?.advice||'力が出やすい動きはまだ十分に読み取れていません。'},
+    ...(lpCard?[{kicker:'行動',title:'自然に出やすい動き方',body:lpCard.msg||''}]:[])
   ]);
 
   wrap.innerHTML=noteHTML+cards;
@@ -8209,27 +8207,24 @@ function renderNameJudge(){
     </div>`;
     return;
   }
-  const plain=buildNamePlainInsight(NAMEJUDGE);
-  const profile=buildNameJudgeInsights(NAMEJUDGE);
-  const fiveGrid=NAMEJUDGE.kakus
-    .map(kaku=>`${kaku.name}${kaku.num}画(${getKakuLuck(kaku.num).lbl})`)
-    .join(' / ');
+  const jinElem=getNameElement(NAMEJUDGE.kakus[1].num);
+  const gaiElem=getNameElement(NAMEJUDGE.kakus[3].num);
+  const souElem=getNameElement(NAMEJUDGE.kakus[4].num);
+  const power=evaluateNameJudgePower(NAMEJUDGE);
   const nameHead=`
     <div style="font-family:'Shippori Mincho',serif;font-size:18px;letter-spacing:.25em;color:var(--gold-l);text-align:center;margin-bottom:20px">
       ${escapeHtml(NAMEJUDGE.sei)} <span style="font-size:12px;color:var(--muted);letter-spacing:.1em">✦</span> ${escapeHtml(NAMEJUDGE.mei)}
     </div>`;
   const metaNotes=[];
-  if(NAMEJUDGE.strokePolicy?.label) metaNotes.push(`基準：${NAMEJUDGE.strokePolicy.label}`);
-  if(NAMEJUDGE.precision?.label) metaNotes.push(`画数精度：${NAMEJUDGE.precision.label}`);
-  if(NAMEJUDGE.approxChars.length) metaNotes.push(`推定文字：${NAMEJUDGE.approxChars.join('・')}`);
   if(NAMEJUDGE.split?.confidence==='low') metaNotes.push('名字と名前の切れ目があいまいなので、おおまかに見ています。');
   else if(NAMEJUDGE.split?.confidence==='medium') metaNotes.push('名字候補が複数あります。スペースで区切るとさらに正確です。');
+  if(NAMEJUDGE.approxChars.length) metaNotes.push('一部の珍しい字は、近い数え方で補っています。');
   const noteHTML=metaNotes.length?`<div class="dm-note">${metaNotes.join('<br>')}</div>`:'';
   const cards=buildPlainInsightGrid([
-    {kicker:'五格',title:'画数の骨格',body:`${fiveGrid}。${profile?.power?.summary||'五格全体から名前の使い方を見ています。'}`},
-    {kicker:'印象',title:'人にどう伝わりやすいか',body:plain?.overview||'名前から伝わる印象はまだ読み取れていません。'},
-    {kicker:'場面',title:'新しい場所で出やすい傾向',body:plain?.timing||'新しい場所で出やすい傾向はまだ読み取れていません。'},
-    {kicker:'活かし方',title:'長く見ると活きやすい動き',body:plain?.advice||'長く見ると活きやすい動きはまだ読み取れていません。'},
+    {kicker:'印象',title:'人にどう伝わりやすいか',body:`名前から見ると、${NAME_ELEMENT_DETAIL[jinElem]}傾向が本人の軸として出やすくなります。${power?.label?`${power.label}として見ています。`:''}`},
+    {kicker:'距離感',title:'人との関わりで出やすいこと',body:`第一印象や人との距離感では、${NAME_ELEMENT_DETAIL[gaiElem]}出方が前に出やすいです。無理に合わせるより、自分のペースを保つほうが安定します。`},
+    {kicker:'活かし方',title:'長く見ると活きやすい動き',body:`長く見ると、${NAME_ELEMENT_DETAIL[souElem]}動き方が名前の良さを活かしやすくします。続けるほど力になる形を選ぶことが大切です。`},
+    {kicker:'注意点',title:'負担になりやすいところ',body:power?.risk?`負担が出やすい部分は、早めに条件を整理することで軽くなります。抱え込みすぎず、確認すべきことを言葉にするのが有効です。`:'疲れたまま結論を急ぐより、確認することを分けてから判断すると安定します。'},
   ]);
 
   wrap.innerHTML=nameHead+noteHTML+cards;
