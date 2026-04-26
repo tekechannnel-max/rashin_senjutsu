@@ -6915,8 +6915,8 @@ function installLiveCardMotionStyles(){
   style.id='live-card-motion-style';
   style.textContent=`
     .shuffle-area.live-shuffling{
-      width:min(92vw,420px) !important;
-      height:286px !important;
+      width:min(88vw,300px) !important;
+      height:300px !important;
       perspective:1200px !important;
       transform-style:preserve-3d !important;
     }
@@ -6953,8 +6953,8 @@ function installLiveCardMotionStyles(){
     }
     @media (max-width:520px){
       .shuffle-area.live-shuffling{
-        width:min(94vw,330px) !important;
-        height:252px !important;
+        width:min(92vw,260px) !important;
+        height:268px !important;
       }
       .shuffle-area.live-shuffling .shuffle-card{
         width:122px !important;
@@ -7017,15 +7017,10 @@ function setLiveShuffleRestPose(deck){
   });
 }
 
-function interleaveLiveShuffleDeck(deck,cards){
+function rotateLiveShufflePackets(deck,cards,packetSize){
   if(!deck||!cards?.length) return;
-  const split=Math.ceil(cards.length/2);
-  const next=[];
-  for(let i=0;i<split;i++){
-    if(cards[i]) next.push(cards[i]);
-    if(cards[i+split]) next.push(cards[i+split]);
-  }
-  next.forEach(card=>deck.appendChild(card));
+  const moved=cards.slice(0,packetSize);
+  moved.forEach(card=>deck.appendChild(card));
 }
 
 function runLiveShuffleCycle(deck){
@@ -7033,43 +7028,48 @@ function runLiveShuffleCycle(deck){
   const total=cards.length;
   if(!total) return;
   const mobile=window.matchMedia?.('(max-width:520px)')?.matches;
-  const spread=mobile?58:82;
-  const lift=mobile?42:58;
-  const split=Math.ceil(total/2);
+  const packetSize=mobile?3:4;
+  const lift=mobile?70:84;
+  const gripX=mobile?18:24;
+  const dropY=mobile?56:70;
   cards.forEach((card,index)=>{
-    const left=index<split;
-    const laneIndex=left?index:index-split;
-    const interleaveIndex=laneIndex*2+(left?0:1);
-    const rest=getShuffleRestPose(interleaveIndex,total);
-    const startX=left?-spread:spread;
-    const pullX=left?-spread*1.28:spread*1.28;
-    const handRot=left?-11:11;
-    const bridgeX=(left?-18:18)+(laneIndex%3-1)*5;
-    const bridgeY=-lift+(laneIndex%4)*8;
-    const settleY=10+(interleaveIndex%5)*1.7;
-    const duration=1120+(laneIndex%3)*70;
-    const delay=laneIndex*32+(left?0:58);
+    const inPacket=index<packetSize;
+    const packetIndex=index%packetSize;
+    const nextIndex=inPacket?total-packetSize+index:index-packetSize;
+    const rest=getShuffleRestPose(nextIndex,total);
+    const start=getShuffleRestPose(index,total);
+    const peelX=gripX+(packetIndex-1.5)*3;
+    const peelY=-lift-packetIndex*3;
+    const slideY=-8+packetIndex*8;
+    const settleY=dropY-packetIndex*5;
+    const duration=920+packetIndex*58;
+    const delay=inPacket?packetIndex*74:packetSize*82+index*12;
     card.getAnimations?.().forEach(anim=>anim.cancel());
-    card.style.zIndex=String(100+interleaveIndex);
-    const animation=card.animate([
-      {transform:`translate3d(${startX}px,${laneIndex*2-8}px,${10+index}px) rotate(${handRot}deg) rotateY(${left?-14:14}deg) scale(1)`,opacity:1,offset:0},
-      {transform:`translate3d(${pullX}px,${-lift-laneIndex*1.4}px,${78+index}px) rotate(${handRot*1.4}deg) rotateY(${left?-22:22}deg) scale(1.035)`,opacity:1,offset:.2},
-      {transform:`translate3d(${bridgeX}px,${bridgeY}px,${112+interleaveIndex}px) rotate(${left?-4:4}deg) rotateY(${left?10:-10}deg) scale(1.025)`,opacity:1,offset:.46},
-      {transform:`translate3d(${rest.x*.65}px,${settleY}px,${36+interleaveIndex}px) rotate(${rest.r*1.4}deg) rotateX(${left?5:-5}deg) scale(1.01)`,opacity:1,offset:.72},
-      {transform:`translate3d(${rest.x}px,${rest.y}px,${rest.z}px) rotate(${rest.r}deg) rotateX(0) rotateY(0) scale(1)`,opacity:1,offset:1},
-    ],{
-      duration,
+    card.style.zIndex=String(inPacket?120+packetIndex:index+1);
+    const keyframes=inPacket?[
+      {transform:`translate3d(${start.x}px,${start.y}px,${start.z}px) rotate(${start.r}deg) rotateX(0deg) scale(1)`,opacity:1,offset:0},
+      {transform:`translate3d(${peelX}px,${peelY}px,${86+packetIndex*5}px) rotate(${4+packetIndex*1.2}deg) rotateX(8deg) scale(1.02)`,opacity:1,offset:.24},
+      {transform:`translate3d(${peelX*.42}px,${slideY}px,${58+packetIndex*3}px) rotate(${-3+packetIndex}deg) rotateX(-5deg) scale(1.01)`,opacity:1,offset:.58},
+      {transform:`translate3d(${rest.x*.55}px,${settleY}px,${34+packetIndex}px) rotate(${rest.r*1.2}deg) rotateX(2deg) scale(1.005)`,opacity:1,offset:.82},
+      {transform:`translate3d(${rest.x}px,${rest.y}px,${rest.z}px) rotate(${rest.r}deg) rotateX(0deg) scale(1)`,opacity:1,offset:1},
+    ]:[
+      {transform:`translate3d(${start.x}px,${start.y}px,${start.z}px) rotate(${start.r}deg)`,opacity:1,offset:0},
+      {transform:`translate3d(${start.x*.74}px,${start.y-6}px,${start.z+10}px) rotate(${start.r*.9}deg)`,opacity:1,offset:.38},
+      {transform:`translate3d(${rest.x}px,${rest.y}px,${rest.z}px) rotate(${rest.r}deg)`,opacity:1,offset:1},
+    ];
+    const animation=card.animate(keyframes,{
+      duration:inPacket?duration:720,
       delay,
-      easing:'cubic-bezier(.18,.72,.18,1)',
+      easing:inPacket?'cubic-bezier(.2,.78,.22,1)':'cubic-bezier(.2,.7,.22,1)',
       fill:'forwards',
     });
     animation.onfinish=()=>{
       if(!card.isConnected) return;
       card.style.transform=`translate3d(${rest.x}px,${rest.y}px,${rest.z}px) rotate(${rest.r}deg)`;
-      card.style.zIndex=String(interleaveIndex+1);
+      card.style.zIndex=String(nextIndex+1);
     };
   });
-  setTimeout(()=>interleaveLiveShuffleDeck(deck,cards),1180);
+  setTimeout(()=>rotateLiveShufflePackets(deck,cards,packetSize),1050);
 }
 
 function startLiveCardShuffle(deck){
