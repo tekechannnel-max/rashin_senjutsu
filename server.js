@@ -11,11 +11,14 @@ const VAULT_DIR = path.join(DATA_DIR, 'vault-history');
 const MEMBER_DIR = path.join(DATA_DIR, 'member-access');
 const STRIPE_EVENT_DIR = path.join(DATA_DIR, 'stripe-events');
 const STRIPE_CHECKOUT_COMPLETION_DIR = path.join(DATA_DIR, 'stripe-checkout-completions');
+const PURCHASE_ORDER_DIR = path.join(DATA_DIR, 'purchase-orders');
+const PAID_READING_TICKET_DIR = path.join(DATA_DIR, 'paid-reading-tickets');
 const USER_DIR = path.join(DATA_DIR, 'users');
 const INDEX_DIR = path.join(DATA_DIR, 'indexes');
 const LOG_DIR = path.join(DATA_DIR, 'logs');
 const AI_USAGE_LOG_DIR = path.join(LOG_DIR, 'ai-usage');
 const CLIENT_ERROR_LOG_DIR = path.join(LOG_DIR, 'client-errors');
+const AI_EVENT_LOG_DIR = LOG_DIR;
 
 function applyDotEnv(rootDir) {
   const envPath = path.join(rootDir, '.env');
@@ -108,6 +111,7 @@ const GA_TRACKING_ID = isPlaceholderEnvValue(GA_TRACKING_ID_RAW) ? '' : GA_TRACK
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 const STRIPE_PRICE_ID_MONTHLY = process.env.STRIPE_PRICE_ID_MONTHLY || '';
+const STRIPE_PRICE_ID_DEEP_READING_580 = process.env.STRIPE_PRICE_ID_DEEP_READING_580 || '';
 const STRIPE_SUCCESS_PATH = process.env.STRIPE_SUCCESS_PATH || '/uranai-v5.html?stripe_success=1&session_id={CHECKOUT_SESSION_ID}';
 const STRIPE_CANCEL_PATH = process.env.STRIPE_CANCEL_PATH || '/uranai-v5.html?stripe_cancel=1';
 const STRIPE_PORTAL_RETURN_PATH = process.env.STRIPE_PORTAL_RETURN_PATH || '/uranai-v5.html';
@@ -138,6 +142,7 @@ const AUTH_SESSION_COOKIE = 'uranai_auth_session';
 const MEMBER_SESSION_DAYS = Math.max(1, parseInt(process.env.MEMBER_SESSION_DAYS || '30', 10) || 30);
 const AUTH_SESSION_DAYS = Math.max(1, parseInt(process.env.AUTH_SESSION_DAYS || String(MEMBER_SESSION_DAYS), 10) || MEMBER_SESSION_DAYS);
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+const DEV_ACCESS_ENABLED = !IS_PRODUCTION;
 if (IS_PRODUCTION && !isConfiguredAppSecret(process.env.MEMBER_SESSION_SECRET || '')) {
   throw new Error('MEMBER_SESSION_SECRET is required in production.');
 }
@@ -150,6 +155,7 @@ const GOOGLE_CLIENT_CONFIGURED = isConfiguredGoogleClientId(GOOGLE_CLIENT_ID);
 const STRIPE_SECRET_CONFIGURED = isConfiguredStripeSecretKey(STRIPE_SECRET_KEY);
 const STRIPE_WEBHOOK_CONFIGURED = isConfiguredStripeWebhookSecret(STRIPE_WEBHOOK_SECRET);
 const STRIPE_PRICE_CONFIGURED = isConfiguredStripePriceId(STRIPE_PRICE_ID_MONTHLY);
+const STRIPE_DEEP_READING_PRICE_CONFIGURED = isConfiguredStripePriceId(STRIPE_PRICE_ID_DEEP_READING_580);
 const MEMBER_SESSION_PERSISTENT = isConfiguredAppSecret(process.env.MEMBER_SESSION_SECRET || '');
 const AUTH_SESSION_PERSISTENT = isConfiguredAppSecret(process.env.AUTH_SESSION_SECRET || process.env.MEMBER_SESSION_SECRET || '');
 const MAX_JSON_BYTES = 1024 * 1024;
@@ -352,6 +358,10 @@ function makeAbsoluteUrl(req, pathValue) {
 }
 
 function stripeReady() {
+  return !!(STRIPE_SECRET_CONFIGURED && STRIPE_DEEP_READING_PRICE_CONFIGURED);
+}
+
+function stripeSubscriptionReady() {
   return !!(STRIPE_SECRET_CONFIGURED && STRIPE_PRICE_CONFIGURED);
 }
 
@@ -369,7 +379,7 @@ function getRuntimeSetupStatus(req) {
   if (!ANTHROPIC_KEY_CONFIGURED) issues.push('ANTHROPIC_API_KEY');
   if (!GOOGLE_CLIENT_CONFIGURED) issues.push('GOOGLE_CLIENT_ID');
   if (!STRIPE_SECRET_CONFIGURED) issues.push('STRIPE_SECRET_KEY');
-  if (!STRIPE_PRICE_CONFIGURED) issues.push('STRIPE_PRICE_ID_MONTHLY');
+  if (!STRIPE_DEEP_READING_PRICE_CONFIGURED) issues.push('STRIPE_PRICE_ID_DEEP_READING_580');
   if (!STRIPE_WEBHOOK_CONFIGURED) issues.push('STRIPE_WEBHOOK_SECRET');
   if (!MEMBER_SESSION_PERSISTENT) issues.push('MEMBER_SESSION_SECRET');
   if (!AUTH_SESSION_PERSISTENT) issues.push('AUTH_SESSION_SECRET');
@@ -377,6 +387,7 @@ function getRuntimeSetupStatus(req) {
     googleClientConfigured: GOOGLE_CLIENT_CONFIGURED,
     stripeSecretConfigured: STRIPE_SECRET_CONFIGURED,
     stripePriceConfigured: STRIPE_PRICE_CONFIGURED,
+    stripeDeepReadingPriceConfigured: STRIPE_DEEP_READING_PRICE_CONFIGURED,
     stripeWebhookConfigured: STRIPE_WEBHOOK_CONFIGURED,
     memberSessionPersistent: MEMBER_SESSION_PERSISTENT,
     authSessionPersistent: AUTH_SESSION_PERSISTENT,
@@ -560,7 +571,7 @@ function getIsoDayStamp(dateValue = new Date()) {
 function clipText(value, maxLength = 400) {
   const normalized = String(value || '').replace(/\s+/g, ' ').trim();
   if (!normalized) return '';
-  return normalized.length > maxLength ? `${normalized.slice(0, maxLength)}…` : normalized;
+  return normalized.length > maxLength ? `${normalized.slice(0, maxLength)}...` : normalized;
 }
 
 function getMemberFilePath(memberId) {
@@ -960,6 +971,7 @@ function normalizeCustomerEmail(email) {
 }
 
 function readDeveloperEmailFromHeader(req) {
+  if (!DEV_ACCESS_ENABLED) return '';
   if (!isLocalRequest(req)) return '';
   const email = normalizeCustomerEmail(req?.headers?.['x-uranai-developer-email'] || '');
   return emailHasDeveloperAccess(email) ? email : '';
@@ -1089,10 +1101,10 @@ async function buildMemberStatus(req, sessionPayload = null) {
   const headerDeveloperRecord = headerDeveloperEmail ? (await findUserRecordByEmail(headerDeveloperEmail)) : null;
   const stripeStatus = normalizeStripeSubscriptionStatus(userRecord?.stripeSubscriptionStatus || memberRecord?.stripeSubscriptionStatus || '');
   const authLoggedIn = !!(authSession && userRecord) || !!headerDeveloperEmail;
-  const developerAccess = (authLoggedIn && userRecordHasDeveloperAccess(userRecord)) || !!headerDeveloperEmail;
+  const developerAccess = DEV_ACCESS_ENABLED && ((authLoggedIn && userRecordHasDeveloperAccess(userRecord)) || !!headerDeveloperEmail);
   const hasStripeAccess = authLoggedIn && stripeSubscriptionGrantsAccess(stripeStatus);
-  const hasLocalPreview = !!(memberSession && memberSession.source === 'local_preview' && isLocalRequest(req));
-  const hasAccessCode = !!(memberSession && memberSession.source === 'access_code');
+  const hasLocalPreview = DEV_ACCESS_ENABLED && !!(memberSession && memberSession.source === 'local_preview' && isLocalRequest(req));
+  const hasAccessCode = DEV_ACCESS_ENABLED && !!(memberSession && memberSession.source === 'access_code');
   const active = developerAccess || hasLocalPreview || hasAccessCode || hasStripeAccess;
   const source = developerAccess
     ? 'developer'
@@ -1111,8 +1123,9 @@ async function buildMemberStatus(req, sessionPayload = null) {
     active,
     source,
     expiresAt,
-    localTestMode: isLocalRequest(req),
-    codeConfigured: MEMBER_ACCESS_CODES.size > 0,
+    production: IS_PRODUCTION,
+    localTestMode: DEV_ACCESS_ENABLED && isLocalRequest(req),
+    codeConfigured: DEV_ACCESS_ENABLED && MEMBER_ACCESS_CODES.size > 0,
     sessionPersistent: MEMBER_SESSION_PERSISTENT,
     authLoggedIn,
     authProvider: authLoggedIn ? (developerAccess ? 'developer' : 'google') : '',
@@ -1138,16 +1151,16 @@ async function buildMemberStatus(req, sessionPayload = null) {
   };
 }
 
-async function hasPaidAccess(req) {
+async function hasPaidAccess(req, payload = null) {
   if (readDeveloperEmailFromHeader(req)) return true;
   const memberSession = readMemberSession(req);
-  if (memberSession?.source === 'local_preview') return isLocalRequest(req);
-  if (memberSession?.source === 'access_code') return true;
+  if (DEV_ACCESS_ENABLED && memberSession?.source === 'local_preview') return isLocalRequest(req);
+  if (DEV_ACCESS_ENABLED && memberSession?.source === 'access_code') return true;
   const authSession = readAuthSession(req);
-  if (!authSession?.userId) return false;
-  const userRecord = await readUserRecord(authSession.userId);
-  if (userRecordHasDeveloperAccess(userRecord)) return true;
-  return !!(userRecord && stripeSubscriptionGrantsAccess(userRecord.stripeSubscriptionStatus));
+  const userRecord = authSession?.userId ? await readUserRecord(authSession.userId) : null;
+  if (DEV_ACCESS_ENABLED && userRecordHasDeveloperAccess(userRecord)) return true;
+  if (userRecord && stripeSubscriptionGrantsAccess(userRecord.stripeSubscriptionStatus)) return true;
+  return validatePaidReadingTicketAccess(req, payload);
 }
 
 async function ensureDir(dirPath) {
@@ -1157,6 +1170,12 @@ async function ensureDir(dirPath) {
 async function appendJsonlRecord(dirPath, prefix, record) {
   await ensureDir(dirPath);
   const filePath = path.join(dirPath, `${prefix}-${getIsoDayStamp()}.jsonl`);
+  await fsp.appendFile(filePath, `${JSON.stringify(record)}\n`, 'utf8');
+}
+
+async function appendLogRecord(dirPath, prefix, record) {
+  await ensureDir(dirPath);
+  const filePath = path.join(dirPath, `${prefix}-${getIsoDayStamp()}.log`);
   await fsp.appendFile(filePath, `${JSON.stringify(record)}\n`, 'utf8');
 }
 
@@ -1181,8 +1200,41 @@ function extractUsageMetrics(provider, raw) {
   return {};
 }
 
+function estimateInputTokens(payload) {
+  const messageChars = (Array.isArray(payload?.messages) ? payload.messages : [])
+    .reduce((sum, message) => sum + String(message?.content || '').length, 0);
+  const systemChars = String(payload?.system || '').length;
+  return Math.max(0, Math.ceil((messageChars + systemChars) / 4));
+}
+
+function getPayloadReadingType(payload) {
+  return payload?.plan === 'paid' ? 'paid' : 'free';
+}
+
+function getSafePayloadCategory(payload) {
+  const value = String(payload?.category || '').trim();
+  return value ? value.slice(0, 40) : '総合';
+}
+
+function buildAiLogBase(payload, event) {
+  return {
+    timestamp: new Date().toISOString(),
+    event,
+    model: String(payload?.model || '').slice(0, 80),
+    reading_type: getPayloadReadingType(payload),
+    category: getSafePayloadCategory(payload),
+    task_key: String(payload?.task_key || '').slice(0, 40),
+  };
+}
+
 async function writeAiUsageLog(entry) {
   await appendJsonlRecord(AI_USAGE_LOG_DIR, 'ai-usage', entry);
+}
+
+async function writeAiEventLog(entry) {
+  try {
+    await appendLogRecord(AI_EVENT_LOG_DIR, 'ai', entry);
+  } catch (_error) {}
 }
 
 async function writeClientErrorLog(entry) {
@@ -1460,6 +1512,241 @@ function sanitizeVaultRecord(record) {
   return { ...record, id: safeId };
 }
 
+function generateRecordId(prefix) {
+  return `${prefix}_${Date.now().toString(36)}_${crypto.randomBytes(8).toString('hex')}`;
+}
+
+function addDaysIso(days) {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString();
+}
+
+function normalizePurchaseOrderId(value) {
+  const raw = String(value || '').trim();
+  if (!/^po_[A-Za-z0-9_-]{8,96}$/.test(raw)) return '';
+  return raw;
+}
+
+function normalizePaidTicketId(value) {
+  const raw = String(value || '').trim();
+  if (!/^prt_[A-Za-z0-9_-]{8,96}$/.test(raw)) return '';
+  return raw;
+}
+
+function normalizeStripeObjectId(value) {
+  const raw = String(value || '').trim();
+  if (!/^[A-Za-z0-9_]{3,255}$/.test(raw)) return '';
+  return raw;
+}
+
+function getPurchaseOrderPath(orderId) {
+  const safeId = normalizePurchaseOrderId(orderId);
+  return safeId ? path.join(PURCHASE_ORDER_DIR, `${safeId}.json`) : '';
+}
+
+function getPaidReadingTicketPath(ticketId) {
+  const safeId = normalizePaidTicketId(ticketId);
+  return safeId ? path.join(PAID_READING_TICKET_DIR, `${safeId}.json`) : '';
+}
+
+async function readPurchaseOrder(orderId) {
+  const filePath = getPurchaseOrderPath(orderId);
+  if (!filePath) return null;
+  return readJsonFileSafe(filePath, null);
+}
+
+async function writePurchaseOrder(record) {
+  const safeId = normalizePurchaseOrderId(record?.id);
+  if (!safeId) throw new Error('INVALID_PURCHASE_ORDER_ID');
+  await writeJsonFileAtomic(getPurchaseOrderPath(safeId), { ...record, id: safeId });
+}
+
+async function readPaidReadingTicket(ticketId) {
+  const filePath = getPaidReadingTicketPath(ticketId);
+  if (!filePath) return null;
+  return readJsonFileSafe(filePath, null);
+}
+
+async function writePaidReadingTicket(record) {
+  const safeId = normalizePaidTicketId(record?.id);
+  if (!safeId) throw new Error('INVALID_PAID_TICKET_ID');
+  await writeJsonFileAtomic(getPaidReadingTicketPath(safeId), { ...record, id: safeId });
+}
+
+async function listJsonRecords(dirPath) {
+  try {
+    const entries = await fsp.readdir(dirPath, { withFileTypes: true });
+    const records = [];
+    for (const entry of entries) {
+      if (!entry.isFile() || !entry.name.endsWith('.json')) continue;
+      const parsed = await readJsonFileSafe(path.join(dirPath, entry.name), null);
+      if (parsed && typeof parsed === 'object') records.push(parsed);
+    }
+    return records;
+  } catch (error) {
+    if (error && error.code === 'ENOENT') return [];
+    throw error;
+  }
+}
+
+async function findPaidReadingTicketByCheckoutSessionId(sessionId) {
+  const safeSessionId = normalizeStripeObjectId(sessionId);
+  if (!safeSessionId) return null;
+  const tickets = await listJsonRecords(PAID_READING_TICKET_DIR);
+  return tickets.find(ticket => String(ticket?.stripeCheckoutSessionId || '') === safeSessionId) || null;
+}
+
+function isExpiredIso(isoValue) {
+  const time = new Date(isoValue || '').getTime();
+  return Number.isFinite(time) && time > 0 && time <= Date.now();
+}
+
+async function resolvePurchaseOwner(req, identity = null) {
+  const authSession = readAuthSession(req);
+  const authUserId = normalizeUserId(authSession?.userId || '');
+  if (authUserId) {
+    const userRecord = await readUserRecord(authUserId);
+    if (userRecord?.userId) {
+      return {
+        ownerType: 'user',
+        userId: userRecord.userId,
+        vaultId: '',
+      };
+    }
+  }
+  const normalized = normalizeVaultIdentity(identity);
+  if (normalized?.vaultId) {
+    return {
+      ownerType: 'vault',
+      userId: '',
+      vaultId: normalized.vaultId,
+    };
+  }
+  return null;
+}
+
+function ownerMatchesTicket(owner, ticket) {
+  if (!owner || !ticket) return false;
+  if (owner.ownerType !== ticket.ownerType) return false;
+  if (owner.ownerType === 'user') return !!owner.userId && owner.userId === ticket.userId;
+  if (owner.ownerType === 'vault') return !!owner.vaultId && owner.vaultId === ticket.vaultId;
+  return false;
+}
+
+async function findUsablePaidReadingTicket({ owner, sourceReadingId, paidReadingId = '' }) {
+  const sourceId = normalizeVaultRecordId(sourceReadingId);
+  if (!owner || !sourceId) return null;
+  const tickets = await listJsonRecords(PAID_READING_TICKET_DIR);
+  return tickets.find(ticket => {
+    if (!ownerMatchesTicket(owner, ticket)) return false;
+    if (ticket.sourceReadingId !== sourceId) return false;
+    if (ticket.status !== 'unused') return false;
+    if (isExpiredIso(ticket.expiresAt)) return false;
+    if (ticket.lockedReadingId && paidReadingId && ticket.lockedReadingId !== paidReadingId) return false;
+    if (ticket.lockedReadingId && !paidReadingId) return false;
+    return true;
+  }) || null;
+}
+
+async function createPurchaseOrder({ owner, sourceReadingId }) {
+  const sourceId = normalizeVaultRecordId(sourceReadingId);
+  if (!owner || !sourceId) throw new Error('INVALID_PURCHASE_ORDER');
+  const now = new Date().toISOString();
+  const order = {
+    id: generateRecordId('po'),
+    ownerType: owner.ownerType,
+    userId: owner.ownerType === 'user' ? owner.userId : '',
+    vaultId: owner.ownerType === 'vault' ? owner.vaultId : '',
+    sourceReadingId: sourceId,
+    purchaseType: 'deep_reading_once',
+    baseAmount: 580,
+    discountAmount: 0,
+    finalAmount: 580,
+    currency: 'jpy',
+    status: 'created',
+    stripeCheckoutSessionId: '',
+    stripePaymentIntentId: '',
+    createdAt: now,
+    paidAt: '',
+    expiresAt: addDaysIso(1),
+  };
+  await writePurchaseOrder(order);
+  return order;
+}
+
+async function fulfillDeepReadingCheckoutSession(session) {
+  const sessionId = normalizeStripeObjectId(session?.id || '');
+  const purchaseType = String(session?.metadata?.purchaseType || '').trim();
+  const purchaseOrderId = normalizePurchaseOrderId(session?.metadata?.purchaseOrderId || '');
+  const sourceReadingId = normalizeVaultRecordId(session?.metadata?.sourceReadingId || '');
+  if (!sessionId || purchaseType !== 'deep_reading_once' || !purchaseOrderId || !sourceReadingId) {
+    return null;
+  }
+  if (String(session?.payment_status || '').trim() !== 'paid') {
+    return { pending: true, purchaseOrderId, sourceReadingId };
+  }
+  const existingTicket = await findPaidReadingTicketByCheckoutSessionId(sessionId);
+  if (existingTicket) return existingTicket;
+
+  const order = await readPurchaseOrder(purchaseOrderId);
+  if (!order || order.purchaseType !== 'deep_reading_once') {
+    throw new Error('PURCHASE_ORDER_NOT_FOUND');
+  }
+  if (order.sourceReadingId !== sourceReadingId) {
+    throw new Error('PURCHASE_ORDER_SOURCE_MISMATCH');
+  }
+  const now = new Date().toISOString();
+  const paymentIntentId = normalizeStripeObjectId(session?.payment_intent || '');
+  const paidOrder = {
+    ...order,
+    status: 'paid',
+    stripeCheckoutSessionId: sessionId,
+    stripePaymentIntentId: paymentIntentId,
+    paidAt: now,
+  };
+  await writePurchaseOrder(paidOrder);
+
+  const ticket = {
+    id: generateRecordId('prt'),
+    ownerType: order.ownerType,
+    userId: order.ownerType === 'user' ? order.userId : '',
+    vaultId: order.ownerType === 'vault' ? order.vaultId : '',
+    sourceReadingId,
+    stripeCheckoutSessionId: sessionId,
+    stripePaymentIntentId: paymentIntentId,
+    baseAmount: 580,
+    discountAmount: 0,
+    finalAmount: 580,
+    currency: 'jpy',
+    status: 'unused',
+    createdAt: now,
+    usedAt: '',
+    expiresAt: addDaysIso(30),
+    usedReadingId: '',
+    lockedReadingId: '',
+    lockedAt: '',
+  };
+  await writePaidReadingTicket(ticket);
+  return ticket;
+}
+
+async function validatePaidReadingTicketAccess(req, payload = {}) {
+  const ticketId = normalizePaidTicketId(payload?.paid_ticket_id || '');
+  const sourceReadingId = normalizeVaultRecordId(payload?.source_reading_id || '');
+  const paidReadingId = normalizeVaultRecordId(payload?.paid_reading_id || '');
+  if (!ticketId || !sourceReadingId || !paidReadingId) return false;
+  const ticket = await readPaidReadingTicket(ticketId);
+  if (!ticket || ticket.sourceReadingId !== sourceReadingId) return false;
+  if (isExpiredIso(ticket.expiresAt)) return false;
+  const owner = await resolvePurchaseOwner(req, payload?.identity);
+  if (!ownerMatchesTicket(owner, ticket)) return false;
+  if (ticket.status === 'used') return ticket.usedReadingId === paidReadingId;
+  if (ticket.status !== 'unused') return false;
+  if (ticket.lockedReadingId !== paidReadingId) return false;
+  return true;
+}
+
 function sanitizePayload(body) {
   const provider = body && body.provider === 'openai' ? 'openai' : 'anthropic';
   const model = typeof body.model === 'string' ? body.model.trim() : '';
@@ -1468,6 +1755,10 @@ function sanitizePayload(body) {
   const reasoningEffort = typeof body.reasoning_effort === 'string' ? body.reasoning_effort.trim() : '';
   const taskKey = typeof body.task_key === 'string' ? body.task_key.trim().slice(0, 40) : '';
   const plan = typeof body.plan === 'string' ? body.plan.trim().slice(0, 20) : '';
+  const category = typeof body.category === 'string' ? body.category.trim().slice(0, 40) : '';
+  const paidTicketId = normalizePaidTicketId(body.paid_ticket_id || '');
+  const paidReadingId = normalizeVaultRecordId(body.paid_reading_id || '');
+  const sourceReadingId = normalizeVaultRecordId(body.source_reading_id || '');
   const messages = Array.isArray(body.messages) ? body.messages : [];
   const images = Array.isArray(body.images) ? body.images : [];
 
@@ -1500,6 +1791,18 @@ function sanitizePayload(body) {
     messages: safeMessages,
     task_key: taskKey,
     plan,
+    category,
+    paid_ticket_id: paidTicketId,
+    paid_reading_id: paidReadingId,
+    source_reading_id: sourceReadingId,
+    identity: body?.identity && typeof body.identity === 'object' ? {
+      fullname: typeof body.identity.fullname === 'string' ? body.identity.fullname.slice(0, 160) : '',
+      gender: typeof body.identity.gender === 'string' ? body.identity.gender.slice(0, 20) : '',
+      year: body.identity.year,
+      month: body.identity.month,
+      day: body.identity.day,
+      vaultId: typeof body.identity.vaultId === 'string' ? body.identity.vaultId.slice(0, 100) : '',
+    } : null,
     images: images.slice(0, 20).map(image => ({
       path: typeof image?.path === 'string' ? image.path.trim() : '',
       detail: image?.detail === 'high' ? 'high' : 'low',
@@ -2128,7 +2431,7 @@ async function handleAiProxy(req, res) {
     return;
   }
 
-  if (isPaidModel(payload.model) && !(await hasPaidAccess(req))) {
+  if (isPaidModel(payload.model) && !(await hasPaidAccess(req, payload))) {
     sendJson(res, 403, {
       error: isLocalRequest(req) ? 'PAID_SESSION_REQUIRED' : 'PAID_AUTH_REQUIRED',
       provider: payload.provider,
@@ -2136,19 +2439,29 @@ async function handleAiProxy(req, res) {
       localTestMode: isLocalRequest(req),
       message: isLocalRequest(req)
         ? 'Local paid testing requires a signed preview session first.'
-        : 'Paid access requires Google login plus an active subscription.',
+        : 'Paid access requires a valid paid reading ticket.',
     });
     return;
   }
 
   const startedAt = Date.now();
-  const authSession = readAuthSession(req);
   const memberSession = readMemberSession(req);
-  const developerEmail = readDeveloperEmailFromHeader(req);
+  // writeAiEventLog catches its own write errors, so AI logging never blocks a reading.
+  await writeAiEventLog({
+    ...buildAiLogBase(payload, 'ai_request'),
+    tokens_in_est: estimateInputTokens(payload),
+  });
   try {
     const data = payload.provider === 'openai'
       ? await callOpenAI(payload)
       : await callAnthropic(payload);
+    const usageMetrics = extractUsageMetrics(payload.provider, data?.raw);
+    await writeAiEventLog({
+      ...buildAiLogBase(payload, 'ai_complete'),
+      latency_ms: Date.now() - startedAt,
+      tokens_in: usageMetrics.inputTokens || 0,
+      tokens_out: usageMetrics.outputTokens || 0,
+    });
     try {
       await writeAiUsageLog({
         at: new Date().toISOString(),
@@ -2159,15 +2472,18 @@ async function handleAiProxy(req, res) {
         plan: payload.plan || '',
         maxTokens: payload.max_tokens,
         imageCount: Array.isArray(payload.images) ? payload.images.length : 0,
-        userId: authSession?.userId || '',
         memberSource: memberSession?.source || '',
-        developerEmail,
-        ...extractUsageMetrics(payload.provider, data?.raw),
+        ...usageMetrics,
         ok: true,
       });
     } catch (_error) {}
     sendJson(res, 200, data);
   } catch (error) {
+    await writeAiEventLog({
+      ...buildAiLogBase(payload, 'ai_error'),
+      latency_ms: Date.now() - startedAt,
+      error_type: String(error.code || error.message || 'AI_PROXY_ERROR').slice(0, 80),
+    });
     try {
       await writeAiUsageLog({
         at: new Date().toISOString(),
@@ -2178,9 +2494,7 @@ async function handleAiProxy(req, res) {
         plan: payload.plan || '',
         maxTokens: payload.max_tokens,
         imageCount: Array.isArray(payload.images) ? payload.images.length : 0,
-        userId: authSession?.userId || '',
         memberSource: memberSession?.source || '',
-        developerEmail,
         ok: false,
         error: error.code || error.message || 'AI_PROXY_ERROR',
         upstreamStatus: error.upstreamStatus || 0,
@@ -2416,6 +2730,14 @@ async function handleMemberSession(req, res) {
 
   const mode = String(body?.mode || '').trim().toLowerCase();
   if (mode === 'local_preview') {
+    if (!DEV_ACCESS_ENABLED) {
+      sendJson(res, 403, {
+        ok: false,
+        error: 'DEV_ACCESS_DISABLED_IN_PRODUCTION',
+        message: 'Development access is disabled in production.',
+      });
+      return;
+    }
     if (!isLocalRequest(req)) {
       sendJson(res, 403, {
         error: 'LOCAL_ONLY_MEMBER_PREVIEW',
@@ -2432,6 +2754,14 @@ async function handleMemberSession(req, res) {
   }
 
   if (mode === 'developer') {
+    if (!DEV_ACCESS_ENABLED) {
+      sendJson(res, 403, {
+        ok: false,
+        error: 'DEV_ACCESS_DISABLED_IN_PRODUCTION',
+        message: 'Development access is disabled in production.',
+      });
+      return;
+    }
     if (!isLocalRequest(req)) {
       sendJson(res, 403, {
         error: 'DEVELOPER_LOCAL_ONLY',
@@ -2470,6 +2800,14 @@ async function handleMemberSession(req, res) {
   }
 
   const accessCode = String(body?.accessCode || '').trim();
+  if (!DEV_ACCESS_ENABLED) {
+    sendJson(res, 403, {
+      ok: false,
+      error: 'DEV_ACCESS_DISABLED_IN_PRODUCTION',
+      message: 'Development access is disabled in production.',
+    });
+    return;
+  }
   if (!accessCode) {
     sendJson(res, 400, {
       error: 'ACCESS_CODE_REQUIRED',
@@ -2624,6 +2962,159 @@ async function handleGoogleAuth(req, res) {
   }
 }
 
+async function handlePaidReadingTicketPrepare(req, res) {
+  let body;
+  try {
+    body = await readJsonBody(req);
+  } catch (error) {
+    sendJson(res, 400, {
+      error: error.message || 'INVALID_JSON',
+      message: 'Paid reading ticket payload could not be parsed.',
+    });
+    return;
+  }
+  const sourceReadingId = normalizeVaultRecordId(body?.sourceReadingId || body?.source_reading_id || '');
+  const paidReadingId = normalizeVaultRecordId(body?.paidReadingId || body?.paid_reading_id || '');
+  if (!sourceReadingId || !paidReadingId) {
+    sendJson(res, 400, {
+      error: 'READING_ID_REQUIRED',
+      message: 'A source reading id and paid reading id are required.',
+    });
+    return;
+  }
+  const owner = await resolvePurchaseOwner(req, body?.identity);
+  if (!owner) {
+    sendJson(res, 400, {
+      error: 'OWNER_REQUIRED',
+      message: 'A signed-in user or vault identity is required.',
+    });
+    return;
+  }
+  const ticket = await findUsablePaidReadingTicket({ owner, sourceReadingId, paidReadingId });
+  if (!ticket) {
+    sendJson(res, 403, {
+      error: 'PAID_TICKET_REQUIRED',
+      message: 'A paid reading ticket is required for this result.',
+    });
+    return;
+  }
+  const locked = {
+    ...ticket,
+    lockedReadingId: paidReadingId,
+    lockedAt: ticket.lockedAt || new Date().toISOString(),
+  };
+  await writePaidReadingTicket(locked);
+  sendJson(res, 200, {
+    ok: true,
+    ticketId: locked.id,
+    sourceReadingId: locked.sourceReadingId,
+    paidReadingId: locked.lockedReadingId,
+    ticketStatus: locked.status,
+  });
+}
+
+async function handlePaidReadingTicketUse(req, res) {
+  let body;
+  try {
+    body = await readJsonBody(req);
+  } catch (error) {
+    sendJson(res, 400, {
+      error: error.message || 'INVALID_JSON',
+      message: 'Paid reading ticket payload could not be parsed.',
+    });
+    return;
+  }
+  const ticketId = normalizePaidTicketId(body?.ticketId || body?.paid_ticket_id || '');
+  const sourceReadingId = normalizeVaultRecordId(body?.sourceReadingId || body?.source_reading_id || '');
+  const paidReadingId = normalizeVaultRecordId(body?.paidReadingId || body?.paid_reading_id || '');
+  const ticket = await readPaidReadingTicket(ticketId);
+  if (!ticket || ticket.sourceReadingId !== sourceReadingId || ticket.lockedReadingId !== paidReadingId) {
+    sendJson(res, 403, {
+      error: 'PAID_TICKET_INVALID',
+      message: 'The paid reading ticket could not be used for this result.',
+    });
+    return;
+  }
+  const owner = await resolvePurchaseOwner(req, body?.identity);
+  if (!ownerMatchesTicket(owner, ticket)) {
+    sendJson(res, 403, {
+      error: 'PAID_TICKET_OWNER_MISMATCH',
+      message: 'The paid reading ticket does not belong to this user.',
+    });
+    return;
+  }
+  if (ticket.status === 'used' && ticket.usedReadingId === paidReadingId) {
+    sendJson(res, 200, { ok: true, ticketId: ticket.id, ticketStatus: ticket.status });
+    return;
+  }
+  if (ticket.status !== 'unused' || isExpiredIso(ticket.expiresAt)) {
+    sendJson(res, 409, {
+      error: 'PAID_TICKET_NOT_USABLE',
+      message: 'The paid reading ticket is no longer usable.',
+    });
+    return;
+  }
+  const used = {
+    ...ticket,
+    status: 'used',
+    usedAt: new Date().toISOString(),
+    usedReadingId: paidReadingId,
+  };
+  await writePaidReadingTicket(used);
+  sendJson(res, 200, {
+    ok: true,
+    ticketId: used.id,
+    ticketStatus: used.status,
+  });
+}
+
+async function handlePaidReadingTicketRelease(req, res) {
+  let body;
+  try {
+    body = await readJsonBody(req);
+  } catch (error) {
+    sendJson(res, 400, {
+      error: error.message || 'INVALID_JSON',
+      message: 'Paid reading ticket payload could not be parsed.',
+    });
+    return;
+  }
+  const ticketId = normalizePaidTicketId(body?.ticketId || body?.paid_ticket_id || '');
+  const sourceReadingId = normalizeVaultRecordId(body?.sourceReadingId || body?.source_reading_id || '');
+  const paidReadingId = normalizeVaultRecordId(body?.paidReadingId || body?.paid_reading_id || '');
+  const ticket = await readPaidReadingTicket(ticketId);
+  if (!ticket || ticket.sourceReadingId !== sourceReadingId || ticket.lockedReadingId !== paidReadingId) {
+    sendJson(res, 403, {
+      error: 'PAID_TICKET_INVALID',
+      message: 'The paid reading ticket lock could not be released.',
+    });
+    return;
+  }
+  const owner = await resolvePurchaseOwner(req, body?.identity);
+  if (!ownerMatchesTicket(owner, ticket)) {
+    sendJson(res, 403, {
+      error: 'PAID_TICKET_OWNER_MISMATCH',
+      message: 'The paid reading ticket does not belong to this user.',
+    });
+    return;
+  }
+  if (ticket.status !== 'unused') {
+    sendJson(res, 200, { ok: true, ticketId: ticket.id, ticketStatus: ticket.status });
+    return;
+  }
+  const released = {
+    ...ticket,
+    lockedReadingId: '',
+    lockedAt: '',
+  };
+  await writePaidReadingTicket(released);
+  sendJson(res, 200, {
+    ok: true,
+    ticketId: released.id,
+    ticketStatus: released.status,
+  });
+}
+
 function buildStripeCheckoutUrls(req) {
   return {
     successUrl: makeAbsoluteUrl(req, STRIPE_SUCCESS_PATH),
@@ -2658,47 +3149,62 @@ async function handleStripeCheckoutSessionCreate(req, res) {
   }
   const authSession = readAuthSession(req);
   const userRecord = authSession?.userId ? await readUserRecord(authSession.userId) : null;
-  if (!userRecord) {
-    sendJson(res, 403, {
-      error: 'AUTH_REQUIRED',
-      message: 'Google login is required before starting Stripe checkout.',
+  const owner = await resolvePurchaseOwner(req, body?.identity);
+  if (!owner) {
+    sendJson(res, 400, {
+      error: 'OWNER_REQUIRED',
+      message: 'A signed-in user or vault identity is required before starting Stripe checkout.',
+    });
+    return;
+  }
+  const sourceReadingId = normalizeVaultRecordId(body?.sourceReadingId || body?.source_reading_id || '');
+  if (!sourceReadingId) {
+    sendJson(res, 400, {
+      error: 'SOURCE_READING_REQUIRED',
+      message: 'A source reading id is required before starting Stripe checkout.',
     });
     return;
   }
 
   const urls = buildStripeCheckoutUrls(req);
-  const intent = String(body?.intent || '').trim() || 'start-paid';
+  const intent = String(body?.intent || '').trim() || 'upgrade-paid';
+  const purchaseOrder = await createPurchaseOrder({ owner, sourceReadingId });
   const params = new URLSearchParams();
-  params.set('mode', 'subscription');
+  params.set('mode', 'payment');
   params.set('success_url', urls.successUrl);
   params.set('cancel_url', urls.cancelUrl);
   params.set('locale', 'ja');
-  params.set('allow_promotion_codes', 'true');
   params.set('billing_address_collection', 'auto');
-  params.set('line_items[0][price]', STRIPE_PRICE_ID_MONTHLY);
+  params.set('line_items[0][price]', STRIPE_PRICE_ID_DEEP_READING_580);
   params.set('line_items[0][quantity]', '1');
-  params.set('client_reference_id', userRecord.userId);
+  params.set('client_reference_id', purchaseOrder.id);
   params.set('metadata[intent]', intent);
-  params.set('metadata[user_id]', userRecord.userId);
-  params.set('subscription_data[metadata][intent]', intent);
-  params.set('subscription_data[metadata][user_id]', userRecord.userId);
-  params.set('subscription_data[metadata][app]', 'uranai');
-  // Keep the app's "1週間のお試しあり" display aligned with Checkout even when the Stripe Price has no trial configured.
-  if (STRIPE_TRIAL_PERIOD_DAYS > 0) {
-    params.set('subscription_data[trial_period_days]', String(STRIPE_TRIAL_PERIOD_DAYS));
-  }
-  if (userRecord.stripeCustomerId) {
-    params.set('customer', userRecord.stripeCustomerId);
-  } else if (userRecord.email) {
+  params.set('metadata[purchaseOrderId]', purchaseOrder.id);
+  params.set('metadata[sourceReadingId]', purchaseOrder.sourceReadingId);
+  params.set('metadata[purchaseType]', 'deep_reading_once');
+  params.set('metadata[expectedAmount]', '580');
+  params.set('metadata[currency]', 'jpy');
+  params.set('payment_intent_data[metadata][purchaseOrderId]', purchaseOrder.id);
+  params.set('payment_intent_data[metadata][sourceReadingId]', purchaseOrder.sourceReadingId);
+  params.set('payment_intent_data[metadata][purchaseType]', 'deep_reading_once');
+  params.set('payment_intent_data[metadata][expectedAmount]', '580');
+  params.set('payment_intent_data[metadata][currency]', 'jpy');
+  if (userRecord?.email) {
     params.set('customer_email', userRecord.email);
   }
 
   try {
     const session = await stripeApiRequest('POST', '/v1/checkout/sessions', params);
+    await writePurchaseOrder({
+      ...purchaseOrder,
+      status: 'checkout_started',
+      stripeCheckoutSessionId: normalizeStripeObjectId(session?.id || ''),
+    });
     sendJson(res, 200, {
       ok: true,
       url: session?.url || '',
       id: session?.id || '',
+      purchaseOrderId: purchaseOrder.id,
     });
   } catch (error) {
     sendJson(res, error.statusCode || 502, {
@@ -2801,6 +3307,35 @@ async function handleStripeCheckoutComplete(req, res) {
 
   try {
     const session = await retrieveStripeCheckoutSession(sessionId);
+    if (session?.mode === 'payment' && session?.metadata?.purchaseType === 'deep_reading_once') {
+      const ticket = await fulfillDeepReadingCheckoutSession(session);
+      const status = await buildMemberStatus(req, {
+        memberSession: readMemberSession(req),
+        authSession: existingAuth,
+      });
+      if (ticket?.pending) {
+        sendJson(res, 202, {
+          ...status,
+          ok: false,
+          pending: true,
+          error: 'PAYMENT_CONFIRMATION_PENDING',
+          message: 'Payment confirmation is still pending.',
+          purchaseType: 'deep_reading_once',
+          sourceReadingId: ticket.sourceReadingId || '',
+        });
+        return;
+      }
+      sendJson(res, 200, {
+        ...status,
+        ok: true,
+        purchaseType: 'deep_reading_once',
+        ticketReady: !!ticket?.id,
+        ticketId: ticket?.id || '',
+        ticketStatus: ticket?.status || '',
+        sourceReadingId: ticket?.sourceReadingId || '',
+      });
+      return;
+    }
     const subscriptionRaw = session?.subscription;
     const subscription = typeof subscriptionRaw === 'object' && subscriptionRaw?.status
       ? subscriptionRaw
@@ -2914,6 +3449,19 @@ async function handleStripeWebhook(req, res) {
   try {
     const eventType = String(event?.type || '').trim();
     const object = event?.data?.object || {};
+    if (eventType === 'checkout.session.completed' && object?.mode === 'payment' && object?.metadata?.purchaseType === 'deep_reading_once') {
+      await fulfillDeepReadingCheckoutSession(object);
+    }
+    if (eventType === 'payment_intent.succeeded' && object?.metadata?.purchaseType === 'deep_reading_once') {
+      const purchaseOrderId = normalizePurchaseOrderId(object?.metadata?.purchaseOrderId || '');
+      const order = purchaseOrderId ? await readPurchaseOrder(purchaseOrderId) : null;
+      if (order && !order.stripePaymentIntentId) {
+        await writePurchaseOrder({
+          ...order,
+          stripePaymentIntentId: normalizeStripeObjectId(object?.id || ''),
+        });
+      }
+    }
     if (eventType === 'checkout.session.completed' && object?.mode === 'subscription') {
       await upsertMemberRecordFromStripeSession(object);
     }
@@ -2955,8 +3503,9 @@ async function handleRequest(req, res) {
       googleClientConfigured: GOOGLE_CLIENT_CONFIGURED,
       mode: 'provider-router',
       vaultEnabled: true,
-      paidTestMode: isLocalRequest(req),
-      memberCodeConfigured: MEMBER_ACCESS_CODES.size > 0,
+      production: IS_PRODUCTION,
+      paidTestMode: DEV_ACCESS_ENABLED && isLocalRequest(req),
+      memberCodeConfigured: DEV_ACCESS_ENABLED && MEMBER_ACCESS_CODES.size > 0,
       memberSessionPersistent: MEMBER_SESSION_PERSISTENT,
       stripeCheckoutReady: stripeReady(),
       stripePortalReady: stripePortalReady(),
@@ -3003,6 +3552,20 @@ async function handleRequest(req, res) {
 
   if (req.method === 'POST' && req.url.startsWith('/api/stripe/checkout-session')) {
     await handleStripeCheckoutSessionCreate(req, res);
+    return;
+  }
+
+  if (req.method === 'POST' && req.url.startsWith('/api/paid-reading/prepare-ticket')) {
+    await handlePaidReadingTicketPrepare(req, res);
+    return;
+  }
+
+  if (req.method === 'POST' && req.url.startsWith('/api/paid-reading/use-ticket')) {
+    await handlePaidReadingTicketUse(req, res);
+    return;
+  }
+  if (req.method === 'POST' && req.url.startsWith('/api/paid-reading/release-ticket')) {
+    await handlePaidReadingTicketRelease(req, res);
     return;
   }
 

@@ -62,7 +62,7 @@ const ORACLE={
   19:{name:"The Unwavering One",msg:"困難があっても信念を曲げず進むことで道は開かれます。",essence:"意志の勝利・太陽・完成",keywords:["成功","意志力","自信","輝き"],shadow:"傲慢さや自己中心的な態度が、せっかくの勝利を台無しにすることがある。",note:"19（1+9→1）は太陽の輝きと個人の勝利を象徴。謙虚さを保つほど、この数が持つ光は周囲を温め続ける。",master:false},
   20:{name:"The Unifer",msg:"人や意見をつなげることで、新しい可能性が生まれます。",essence:"目覚め・召命・統合",keywords:["判断","更新","変容","浄化"],shadow:"過去の後悔や罪悪感に引きずられ、前へ進む決断が遅れやすい。",note:"20（2+0=2）は審判と再生の数。過去を清算し、より大きな目的のために自分を捧げる覚悟が求められている。",master:false},
   21:{name:"The Completer",msg:"ひとつの流れが完成に近づいているため、最後まで丁寧に仕上げてください。",essence:"完成・統合・成就",keywords:["達成","円満","調和的完結","成就"],shadow:"完成への恐怖や完璧主義が最後の一歩を阻み、終われないループに入る。",note:"21（2+1=3）は完全統合の数。終わりは次の始まりであり、手放すことへの恐れを超えたとき真の完成が訪れる。",master:false},
-  22:{name:"The Charisma",msg:"自分の存在感や影響力を意識し、それを前向きな方向に使ってください。",essence:"大いなる建設・夢の現実化",keywords:["ビジョン","実現力","スケール","影響力"],shadow:"重圧に押しつぶされるか、力を乱用して周囲との信頼を損なうリスクがある。",note:"22はマスターナンバー「マスタービルダー」。4の堅実さを基盤に、大きなビジョンを現実に構築する力を持つ。一歩一歩を着実に積み上げることで真の力が発揮される。",master:true},
+  22:{name:"The Charism",msg:"自分の存在感や影響力を意識し、それを前向きな方向に使ってください。",essence:"大いなる建設・夢の現実化",keywords:["ビジョン","実現力","スケール","影響力"],shadow:"重圧に押しつぶされるか、力を乱用して周囲との信頼を損なうリスクがある。",note:"22はマスターナンバー「マスタービルダー」。4の堅実さを基盤に、大きなビジョンを現実に構築する力を持つ。一歩一歩を着実に積み上げることで真の力が発揮される。",master:true},
   23:{name:"The Flowrider",msg:"状況を無理に変えようとせず、今の流れを上手に乗りこなしてください。",essence:"適応・流動・社交",keywords:["柔軟性","コミュニケーション","直感","親和性"],shadow:"流れに乗りすぎて自分の軸を失い、周囲に振り回されてしまう。",note:"23（2+3=5）は5の自由に社交性が加わった数。流されることと乗りこなすことの違いを意識することが大事です。",master:false},
   24:{name:"The Gracebearer",msg:"優しさと品位ある行動が、周囲の空気を整えていきます。",essence:"愛情・品位・美",keywords:["品位","思いやり","美意識","誠実"],shadow:"愛情の押し付けや過干渉が相手を苦しめ、関係を複雑にしてしまう。",note:"24（2+4=6）は6の愛と責任に実直さが深まった数。美しいものへの感受性と誠実な奉仕が重なるとき影響力が生まれる。",master:false},
   25:{name:"The Wayfarer",msg:"自分のペースで歩み続けることで、本当に進むべき道が見えてきます。",essence:"内省・分析・自己信頼",keywords:["探求","自己信頼","精神的成長","洞察"],shadow:"内向きな分析が過ぎると不安と疑念が積み重なり、行動が止まる。",note:"25（2+5=7）は7の探求心に感受性と変化が組み合わさった数。孤独な旅の中でこそ深い洞察が生まれる。",master:false},
@@ -75,6 +75,42 @@ const ORACLE={
   32:{name:"The Collaborator",msg:"信頼できる仲間と力を合わせることで、成果が大きくなります。",essence:"協力・共創・調和",keywords:["チームワーク","共創","信頼","相互補完"],shadow:"依存や優柔不断さが増すと、グループのエネルギーを下げてしまう。",note:"32（3+2=5）は変化・協調・表現が重なった数。どんな仲間と場を共にするかが人生の質を大きく左右するターニングポイント。",master:false},
   33:{name:"The Awakened",msg:"高い視点から物事を見て、周囲の成長を助ける存在になってください。",essence:"愛の師・奉仕・覚醒",keywords:["無条件の愛","教導","癒し","高次の使命"],shadow:"自己犠牲の限界を超えて燃え尽き、周囲にも重荷を与えてしまうことがある。",note:"33はマスターナンバー「マスターティーチャー」。6の愛が倍化した高次の無条件の愛の数。自分自身が満たされているとき初めてこの使命が正しく機能する。",master:true},
 };
+
+const DAILY_ORACLE_MESSAGES=[
+  {id:1,name:"The Guide",title:"自分で決める日",message:"今日は、自分で決めることが流れを作ります。",action:"人に聞く前に、自分はどうしたいかを一度書き出しましょう。",share:"今日は、自分の本音を確かめる日。"},
+  {id:2,name:"The Supporter",title:"無理なく支える日",message:"今日は、支えることで関係が整いやすい日です。",action:"相手に合わせすぎず、できる範囲だけ手を貸しましょう。",share:"今日は、無理なく支える日。"},
+  {id:3,name:"The Innocent",title:"軽く選ぶ日",message:"今日は、気持ちが軽くなる選び方をして大丈夫です。",action:"難しく考えすぎていることを、少し楽な形に変えましょう。",share:"今日は、気持ちが軽くなる方を選ぶ日。"},
+  {id:4,name:"The Diligent",title:"ひとつ片づける日",message:"今日は、小さな積み重ねが安心につながります。",action:"後回しにしていた用事を1つだけ片づけましょう。",share:"今日は、小さな積み重ねが安心につながる日。"},
+  {id:5,name:"The Adventurer",title:"少し変えてみる日",message:"今日は、少し変えてみることで流れが動きます。",action:"いつもと違う方法を1つ試してみましょう。",share:"今日は、少し変えてみる日。"},
+  {id:6,name:"The Caregiver",title:"自分にも優しくする日",message:"今日は、優しさを向ける相手に自分も入れてください。",action:"誰かのために動く前に、自分の疲れを確認しましょう。",share:"今日は、自分にも優しくする日。"},
+  {id:7,name:"The Artisan",title:"丁寧に仕上げる日",message:"今日は、自分の感覚を丁寧に扱う日です。",action:"ひとつの作業を、いつもより丁寧に仕上げましょう。",share:"今日は、自分の感覚を丁寧に扱う日。"},
+  {id:8,name:"The Warrior",title:"ひとつ決める日",message:"今日は、覚悟を決めると現実が動きやすい日です。",action:"迷っていることを、今日できる範囲で1つ決めましょう。",share:"今日は、ひとつ決めることで流れが動く日。"},
+  {id:9,name:"The Sage",title:"少し引いて見る日",message:"今日は、少し引いて見ると答えが見えやすくなります。",action:"感情だけで決めず、これまでの経験も参考にしましょう。",share:"今日は、少し引いて見る日。"},
+  {id:10,name:"The Great Power",title:"流れを始める日",message:"今日は、新しい流れを始めるきっかけがあります。",action:"無理だと思っていたことを、最初の一歩に分けてみましょう。",share:"今日は、新しい流れを始める日。"},
+  {id:11,name:"The Inspired One",title:"直感を拾う日",message:"今日は、ふと気になることにヒントがあります。",action:"頭で消す前に、気になった言葉や違和感をメモしましょう。",share:"今日は、ふと気になることにヒントがある日。"},
+  {id:12,name:"The Harmonizer",title:"間を整える日",message:"今日は、間に立つことで物事が落ち着きます。",action:"どちらかを責める前に、両方の事情を見てみましょう。",share:"今日は、間を整える日。"},
+  {id:13,name:"The Wise King",title:"見直す日",message:"今日は、続けることと変えることを分ける日です。",action:"今のやり方で無理が出ている部分を1つ見直しましょう。",share:"今日は、続けることと変えることを分ける日。"},
+  {id:14,name:"The Transformer",title:"ちょうどよく整える日",message:"今日は、急に変えるより少し整えるほうがうまくいきます。",action:"極端な判断を避けて、ちょうどいい形を探しましょう。",share:"今日は、少し整えるとうまくいく日。"},
+  {id:15,name:"The Servant",title:"小さく親切にする日",message:"今日は、できる範囲の親切が良い流れを作ります。",action:"見返りを考えずにできることを1つだけ選びましょう。",share:"今日は、できる範囲の親切が流れを作る日。"},
+  {id:16,name:"The Perceptive One",title:"違和感を見る日",message:"今日は、違和感を見過ごさないほうがいい日です。",action:"気になっていることを、なぜ気になるのか確認しましょう。",share:"今日は、違和感を見過ごさない日。"},
+  {id:17,name:"The Benefactor",title:"無理なく親切にする日",message:"今日は、無理のない親切が流れを良くします。",action:"自分が疲れない範囲で、力を貸せることを選びましょう。",share:"今日は、無理のない親切が流れを良くする日。"},
+  {id:18,name:"The Seeker",title:"確かめる日",message:"今日は、答えを急がず確かめる日です。",action:"分からないことをそのままにせず、1つ調べるか聞いてみましょう。",share:"今日は、答えを急がず確かめる日。"},
+  {id:19,name:"The Unwavering One",title:"基準を守る日",message:"今日は、自分の大事な基準を守る日です。",action:"周りの反応より、自分が納得できるかを確認しましょう。",share:"今日は、自分の大事な基準を守る日。"},
+  {id:20,name:"The Unifer",title:"つながりを見つける日",message:"今日は、ばらばらだった話がまとまりやすい日です。",action:"人・情報・気持ちの共通点を1つ探してみましょう。",share:"今日は、ばらばらだったものがまとまりやすい日。"},
+  {id:21,name:"The Completer",title:"区切りをつける日",message:"今日は、区切りをつけることで次に進みやすくなります。",action:"途中で止まっていることに、今日の区切りをつけましょう。",share:"今日は、区切りをつける日。"},
+  {id:22,name:"The Charism",title:"態度が伝わる日",message:"今日は、あなたの態度が周りに伝わりやすい日です。",action:"強く押すより、落ち着いた言葉で伝えましょう。",share:"今日は、態度が周りに伝わりやすい日。"},
+  {id:23,name:"The Flowrider",title:"流れに乗る日",message:"今日は、予定外の流れにもヒントがあります。",action:"思い通りにいかないことを、別の進み方として見てみましょう。",share:"今日は、予定外の流れにもヒントがある日。"},
+  {id:24,name:"The Gracebearer",title:"やわらかく伝える日",message:"今日は、落ち着いた伝え方が関係を整えます。",action:"大事なことほど、少しやわらかい言い方にしましょう。",share:"今日は、落ち着いた伝え方が関係を整える日。"},
+  {id:25,name:"The Wayfarer",title:"自分のペースを守る日",message:"今日は、自分のペースを守ることが大切です。",action:"急かされていることほど、一度立ち止まって考えましょう。",share:"今日は、自分のペースを守る日。"},
+  {id:26,name:"The Trailblazer",title:"自分のやり方を試す日",message:"今日は、自分なりのやり方を試す日です。",action:"正解を待たず、小さく始められる方法を選びましょう。",share:"今日は、自分なりのやり方を試す日。"},
+  {id:27,name:"The Gatewalker",title:"気持ちを整理する日",message:"今日は、次に進むために気持ちを整理する日です。",action:"続けたいことと、もう無理しなくていいことを分けましょう。",share:"今日は、次に進むために気持ちを整理する日。"},
+  {id:28,name:"The Resonator",title:"落ち着く場所を選ぶ日",message:"今日は、一緒にいて落ち着く人や場所を選ぶ日です。",action:"気を使いすぎる相手から少し距離を取りましょう。",share:"今日は、一緒にいて落ち着く人や場所を選ぶ日。"},
+  {id:29,name:"The Visionweaver",title:"理想を一歩にする日",message:"今日は、理想を現実の一歩に変える日です。",action:"こうなったらいいなと思うことを、今日できる行動に分けましょう。",share:"今日は、理想を現実の一歩に変える日。"},
+  {id:30,name:"The Creator",title:"考えを外に出す日",message:"今日は、考えていることを外に出す日です。",action:"アイデアをメモ、言葉、形のどれかにして残しましょう。",share:"今日は、考えていることを外に出す日。"},
+  {id:31,name:"The Architect",title:"段取りを決める日",message:"今日は、勢いより段取りが助けになります。",action:"進めたいことの順番を決めてから動きましょう。",share:"今日は、勢いより段取りが助けになる日。"},
+  {id:32,name:"The Collaborator",title:"ひとりで抱えない日",message:"今日は、ひとりで抱えないほうが進みやすい日です。",action:"相談できる人に、早めに一言だけ声をかけましょう。",share:"今日は、ひとりで抱えないほうが進みやすい日。"},
+  {id:33,name:"The Awakened",title:"余裕を確かめる日",message:"今日は、人のことを考えすぎる前に、自分に余裕があるか確かめる日です。",action:"無理に助けようとせず、できる範囲だけ関わりましょう。",share:"今日は、自分に余裕があるか確かめる日。"},
+];
 
 // ══════════════════════════════════════════════════
 // 四柱推命
@@ -1526,6 +1562,9 @@ const MEMBER_LOGOUT_ENDPOINT='/api/member/logout';
 const STRIPE_CHECKOUT_ENDPOINT='/api/stripe/checkout-session';
 const STRIPE_CHECKOUT_COMPLETE_ENDPOINT='/api/stripe/checkout/complete';
 const STRIPE_PORTAL_ENDPOINT='/api/stripe/portal-session';
+const PAID_READING_PREPARE_ENDPOINT='/api/paid-reading/prepare-ticket';
+const PAID_READING_USE_ENDPOINT='/api/paid-reading/use-ticket';
+const PAID_READING_RELEASE_ENDPOINT='/api/paid-reading/release-ticket';
 const VAULT_QUERY_ENDPOINT='/api/vault/history/query';
 const VAULT_SAVE_ENDPOINT='/api/vault/history/save';
 const VAULT_CLEAR_ENDPOINT='/api/vault/history/clear';
@@ -1534,7 +1573,9 @@ const GA_DEBUG_DEFAULT=DEV_MODE||IS_LOCAL_RUNTIME||PAGE_PARAMS.has('ga_debug');
 const GA_FORBIDDEN_PARAM_KEYS=new Set([
   'fullname','first_name','last_name','name','birthdate','birthday','birth_day',
   'birth_month','birth_year','email','user_id','userid','google_user_id',
-  'theme','consultation','consultation_text','partner','partner_info','body','text','raw',
+  'mail','year','month','day','theme','consultation','consultation_text','partner',
+  'partner_info','body','text','raw','customer_id','stripe_customer_id',
+  'subscription_id','stripe_subscription_id','session_id','checkout_session_id',
 ]);
 const AUDIO_ASSETS={
   shuffle:'音素材/ヒンズーシャッフル.mp3',
@@ -1552,6 +1593,7 @@ const INPUT_STORAGE_KEY='uranai-input';
 const INPUT_SAVE_PREF_KEY='uranai-input-autosave-v1';
 const HISTORY_STORAGE_KEY='uranai-history-v1';
 const VAULT_ID_STORAGE_KEY='uranai-vault-id-v1';
+const DAILY_ORACLE_STORAGE_KEY='uranai-daily-oracle-v1';
 const MEMBER_STORAGE_KEY='uranai-member-preview-v1';
 const STRIPE_RETURN_INTENT_KEY='uranai-stripe-return-intent-v1';
 const FREE_LEN_COUNT=2;
@@ -1792,6 +1834,7 @@ let MEMBER_AUTH={
   active:false,
   source:'',
   expiresAt:'',
+  production:false,
   localTestMode:false,
   codeConfigured:false,
   sessionPersistent:false,
@@ -1851,6 +1894,9 @@ function buildFixedGenderCardPromptText(){
 }
 let MEMBER_PENDING_INTENT='';
 let CURRENT_READING_ID='';
+let PENDING_PAID_READING_ID='';
+let ACTIVE_PAID_READING_TICKET=null;
+let ACTIVE_PAID_SOURCE_READING_ID='';
 let CLIENT_LOGGING_READY=false;
 const SENT_CLIENT_LOG_KEYS=new Set();
 let CURRENT_READING_CREATED_AT='';
@@ -1861,6 +1907,14 @@ let LAST_OUTPUTS={about:'',foundationDeep:'',len:'',orc:'',integration:'',dossie
 let TOP_PAGE_VIEW_TRACKED=false;
 let LAST_DEEPEN_CTA_POSITION='unknown';
 const TRACKED_READING_COMPLETE_KEYS=new Set();
+const TRACKED_RESULT_VIEW_KEYS=new Set();
+const TRACKED_RESULT_TIME_30S_KEYS=new Set();
+const TRACKED_DEEPEN_CTA_VIEW_KEYS=new Set();
+const TRACKED_DEEPEN_CTA_VIEW_LOGICAL_KEYS=new Set();
+const OBSERVED_DEEPEN_CTA_KEYS=new WeakSet();
+let DAILY_ORACLE_VIEW_TRACKED=false;
+let DEEPEN_CTA_VIEW_OBSERVER=null;
+let FORM_START_TRACKED_FOR_SCREEN=false;
 let GOOGLE_SIGNIN_RENDER_TIMER=0;
 const AUDIO_CACHE={};
 let ACTIVE_SHUFFLE_SOUND='';
@@ -1890,6 +1944,7 @@ let RUNTIME_HEALTH={
   openai:false,
   anthropic:false,
   google:false,
+  production:false,
   paidTestMode:false,
   memberCodeConfigured:false,
   stripeCheckoutReady:false,
@@ -1955,7 +2010,7 @@ const BRAND_PROFILE={
     member:{
       badge:'深掘り',
       title:'深掘り鑑定で、進路を自分で選べるようになる',
-      price:'月額1,200円 / 1週間のお試しあり',
+      price:'深掘り鑑定 1回580円',
       items:[
         '具体的な悩みの構造と本音を整理できる',
         '次にどちらへ進むかが現実レベルで具体的に残る',
@@ -1966,7 +2021,7 @@ const BRAND_PROFILE={
 };
 
 const MEMBERSHIP_PLAN={
-  price:'月額1,200円 / 1週間のお試しあり',
+  price:'深掘り鑑定 1回580円',
   status:'読み返しと記録は準備中',
   promise:'無料で見えたことを、次にすることまで深く読む鑑定です',
   description:'無料で見えた「今の状態」をもとに、ここからは悩みをもっと深く読みます。現実を見ながら、次にどう動くかまで残せます。',
@@ -2010,8 +2065,8 @@ const MEMBERSHIP_PLAN={
     },
   ],
 };
-const CHECKOUT_DISCLOSURE_HTML='深掘り鑑定は月額1,200円、1週間のお試しあり。お試し終了後は月額課金に移行します。解約は請求管理（Stripeカスタマーポータル）から行えます。返金可否は利用規約とStripeの処理状況に従います。提供内容はルノルマン9枚、数秘オラクル3枚、追加質問、鑑定履歴の流れの読み解きです。占いは娯楽・自己理解支援であり、医療・法律・投資などの専門判断ではありません。 <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a>';
-const RESULT_CHECKOUT_DISCLOSURE_HTML='お試し終了後は月額課金に移行します。解約は請求管理から行えます。返金可否は利用規約に従います。占いは娯楽・自己理解支援であり、医療・法律・投資などの専門判断ではありません。 <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a>';
+const CHECKOUT_DISCLOSURE_HTML='深掘り鑑定は1回580円の単発課金です。継続課金ではありません。解約手続きは不要です。購入後すぐに、この結果に紐づく1回分の深掘り鑑定を利用できます。提供開始後のキャンセル・返金は、重複決済や技術的な提供不能を除き原則できません。占いは娯楽・自己理解支援であり、医療・法律・投資などの専門判断ではありません。 <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a>';
+const RESULT_CHECKOUT_DISCLOSURE_HTML='深掘り鑑定は1回580円の単発課金です。継続課金ではありません。購入後すぐに、この結果に紐づく深掘り鑑定を利用できます。提供開始後の返金は、重複決済や技術的な提供不能を除き原則できません。 <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a>';
 
 // 全カード・各3問の解釈絞り込みテンプレート
 const CLARIFY_DEF={
@@ -2290,7 +2345,7 @@ function inferDeepenCtaPosition(button){
 
 function checkoutSourceFromPosition(position){
   if(position==='comparison') return'comparison';
-  if(position==='result_panel'||position==='result_bottom') return'result';
+  if(position==='result_panel'||position==='result_bottom'||position==='result_unified') return'result';
   if(position==='top') return'top';
   return'unknown';
 }
@@ -2324,6 +2379,78 @@ function trackFreeStartClick(button){
   });
 }
 
+function trackEntryCardClick(entryType,category,label){
+  trackEvent('entry_card_click',{
+    entry_type:entryType||'unknown',
+    category:category||'総合',
+    label:label||'',
+  });
+}
+
+function hasFreeFormPrefill(){
+  const category=document.getElementById('f-cat')?.value||'総合';
+  const themeLength=(document.getElementById('f-theme')?.value?.trim()||'').length;
+  return category!=='総合'||themeLength>0;
+}
+
+function trackFormStart(){
+  if(PLAN!=='free'||FORM_START_TRACKED_FOR_SCREEN) return;
+  FORM_START_TRACKED_FOR_SCREEN=true;
+  const input=getCurrentInputAnalytics();
+  trackEvent('form_start',{
+    category:input.category||'総合',
+    source:'free_form',
+    has_prefill:hasFreeFormPrefill(),
+  });
+}
+
+function installFormStartTracking(){
+  const formRoot=document.getElementById('free-form')
+    ||document.getElementById('consultation-form')
+    ||document.getElementById('s-input');
+  if(!formRoot||formRoot.dataset.formStartTrackingBound==='1') return;
+  formRoot.dataset.formStartTrackingBound='1';
+  const handler=event=>{
+    if(PLAN!=='free') return;
+    const target=event.target;
+    if(!target||typeof target.closest!=='function') return;
+    if(!target.closest('input, select, textarea, [contenteditable="true"]')) return;
+    trackFormStart();
+  };
+  formRoot.addEventListener('focusin',handler);
+  formRoot.addEventListener('input',handler);
+  formRoot.addEventListener('change',handler);
+}
+
+function setConsultationCategory(category){
+  const catEl=document.getElementById('f-cat');
+  if(!catEl) return;
+  const desired=category||'総合';
+  const exact=[...catEl.options].find(option=>option.value===desired);
+  if(exact){
+    catEl.value=exact.value;
+    return;
+  }
+  const partial=[...catEl.options].find(option=>option.textContent.includes(desired));
+  catEl.value=partial?.value||catEl.options[0]?.value||'';
+}
+
+function applyEntryCardPrefill(card){
+  if(!card) return;
+  const category=card.getAttribute('data-entry-category')||'総合';
+  const label=card.getAttribute('data-entry-label')||card.textContent.trim();
+  setConsultationCategory(category);
+  const themeEl=document.getElementById('f-theme');
+  if(themeEl) themeEl.value=label;
+  updateThemeCounter();
+  trackEntryCardClick(card.getAttribute('data-entry-type')||'unknown',category,label);
+  startFlowUnlocked('free');
+  trackFormStart();
+  window.requestAnimationFrame?.(()=>{
+    document.getElementById('s-input')?.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+}
+
 function trackDeepenCtaClick(button){
   const position=inferDeepenCtaPosition(button);
   LAST_DEEPEN_CTA_POSITION=position;
@@ -2347,6 +2474,272 @@ function trackReadingComplete(){
   });
 }
 
+function getResultTrackingKey(){
+  return CURRENT_READING_ID||`${PLAN}:${SEL_LEN.join('-')}:${SEL_ORC.join('-')}`;
+}
+
+function trackResultView(){
+  const key=getResultTrackingKey();
+  if(TRACKED_RESULT_VIEW_KEYS.has(key)) return;
+  TRACKED_RESULT_VIEW_KEYS.add(key);
+  const input=getCurrentInputAnalytics();
+  const payload={
+    reading_type:getCurrentReadingType(),
+    category:input.category,
+  };
+  trackEvent('result_view',payload);
+  window.setTimeout(()=>{
+    if(TRACKED_RESULT_TIME_30S_KEYS.has(key)) return;
+    if(!document.getElementById('s-result')?.classList.contains('active')) return;
+    if(getResultTrackingKey()!==key) return;
+    TRACKED_RESULT_TIME_30S_KEYS.add(key);
+    trackEvent('result_time_30s',payload);
+  },30000);
+}
+
+function getCtaViewKey(el){
+  if(!el) return'';
+  if(!el.dataset.gaCtaViewKey){
+    el.dataset.gaCtaViewKey=`cta-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
+  }
+  return el.dataset.gaCtaViewKey;
+}
+
+function trackDeepenCtaView(el){
+  const key=getCtaViewKey(el);
+  if(!key||TRACKED_DEEPEN_CTA_VIEW_KEYS.has(key)) return;
+  const position=inferDeepenCtaPosition(el);
+  const logicalKey=`${getResultTrackingKey()||'no-result'}:${getCurrentReadingType()}:${position}`;
+  if(TRACKED_DEEPEN_CTA_VIEW_LOGICAL_KEYS.has(logicalKey)) return;
+  TRACKED_DEEPEN_CTA_VIEW_KEYS.add(key);
+  TRACKED_DEEPEN_CTA_VIEW_LOGICAL_KEYS.add(logicalKey);
+  trackEvent('deepen_cta_view',{
+    cta_position:position,
+  });
+}
+
+function ensureDeepenCtaViewObserver(){
+  if(DEEPEN_CTA_VIEW_OBSERVER||typeof IntersectionObserver!=='function') return DEEPEN_CTA_VIEW_OBSERVER;
+  DEEPEN_CTA_VIEW_OBSERVER=new IntersectionObserver(entries=>{
+    entries.forEach(entry=>{
+      if(!entry.isIntersecting) return;
+      trackDeepenCtaView(entry.target);
+      DEEPEN_CTA_VIEW_OBSERVER.unobserve(entry.target);
+    });
+  },{threshold:.35});
+  return DEEPEN_CTA_VIEW_OBSERVER;
+}
+
+function refreshDeepenCtaViewTracking(root=document){
+  const observer=ensureDeepenCtaViewObserver();
+  if(!observer) return;
+  root.querySelectorAll?.('[data-track-view="deepen_cta_view"], [data-track="deepen_cta_click"]').forEach(el=>{
+    if(el.getAttribute('data-track')==='deepen_cta_click'&&el.closest('[data-track-view="deepen_cta_view"]')) return;
+    if(OBSERVED_DEEPEN_CTA_KEYS.has(el)) return;
+    OBSERVED_DEEPEN_CTA_KEYS.add(el);
+    observer.observe(el);
+  });
+}
+
+function getJstDateKey(date=new Date()){
+  try{
+    return new Intl.DateTimeFormat('en-CA',{
+      timeZone:'Asia/Tokyo',
+      year:'numeric',
+      month:'2-digit',
+      day:'2-digit',
+    }).format(date);
+  }catch(_error){
+    const jst=new Date(date.getTime()+9*60*60*1000);
+    return jst.toISOString().slice(0,10);
+  }
+}
+
+function hashDailyOracleKey(value=''){
+  let hash=2166136261;
+  String(value||'').split('').forEach(char=>{
+    hash^=char.charCodeAt(0);
+    hash=Math.imul(hash,16777619);
+  });
+  return hash>>>0;
+}
+
+function getOrCreateDailyOracleFallbackId(){
+  const key='uranai-daily-oracle-fallback-id-v1';
+  try{
+    const existing=localStorage.getItem(key)||'';
+    if(/^[A-Za-z0-9_-]{12,80}$/.test(existing)) return existing;
+    const id=`do_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,12)}`;
+    localStorage.setItem(key,id);
+    return id;
+  }catch(_error){
+    return'daily-oracle-local';
+  }
+}
+
+function getDailyOracleOwner(){
+  if(MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.userId){
+    return{type:'user',key:`user:${MEMBER_AUTH.userId}`};
+  }
+  const vaultId=getOrCreateVaultId()||getOrCreateDailyOracleFallbackId();
+  return{type:'vault',key:`vault:${vaultId}`};
+}
+
+function getDailyOracleStorage(){
+  try{
+    const parsed=JSON.parse(localStorage.getItem(DAILY_ORACLE_STORAGE_KEY)||'{}');
+    return parsed&&typeof parsed==='object'?parsed:{};
+  }catch(_error){
+    return{};
+  }
+}
+
+function setDailyOracleStorage(store){
+  try{
+    localStorage.setItem(DAILY_ORACLE_STORAGE_KEY,JSON.stringify(store||{}));
+  }catch(_error){}
+}
+
+function getDailyOracleRecordKey(owner=getDailyOracleOwner(),dateJst=getJstDateKey()){
+  return`${owner.key}:${dateJst}`;
+}
+
+function pickDailyOracleCardId(owner=getDailyOracleOwner(),dateJst=getJstDateKey()){
+  const animal=REACTION_PROFILE?.animal||'none';
+  const index=hashDailyOracleKey(`${dateJst}:${owner.key}:${animal}`)%DAILY_ORACLE_MESSAGES.length;
+  return DAILY_ORACLE_MESSAGES[index]?.id||1;
+}
+
+function readDailyOracleRecord(){
+  const owner=getDailyOracleOwner();
+  const dateJst=getJstDateKey();
+  const store=getDailyOracleStorage();
+  const key=getDailyOracleRecordKey(owner,dateJst);
+  let record=store[key]||null;
+  if(!record&&owner.type==='user'){
+    const vaultId=getOrCreateVaultId();
+    const vaultKey=vaultId?getDailyOracleRecordKey({type:'vault',key:`vault:${vaultId}`},dateJst):'';
+    if(vaultKey&&store[vaultKey]){
+      record={...store[vaultKey],ownerType:'user',dateJst};
+      store[key]=record;
+      setDailyOracleStorage(store);
+    }
+  }
+  if(!record||record.dateJst!==dateJst) return null;
+  const card=DAILY_ORACLE_MESSAGES.find(item=>item.id===Number(record.cardId));
+  return card?{...record,card}:null;
+}
+
+function writeDailyOracleRecord(card){
+  const owner=getDailyOracleOwner();
+  const dateJst=getJstDateKey();
+  const store=getDailyOracleStorage();
+  const key=getDailyOracleRecordKey(owner,dateJst);
+  const record={
+    ownerType:owner.type,
+    dateJst,
+    cardId:card.id,
+    drawnAt:new Date().toISOString(),
+  };
+  store[key]=record;
+  setDailyOracleStorage(store);
+  return{...record,card};
+}
+
+function getDailyOracleShareText(card){
+  return[
+    `今日のオラクル：${card?.name||'数秘オラクル'}`,
+    card?.share||'今日は、今の流れを確かめる日。',
+    '#羅針占術',
+  ].filter(Boolean).join('\n');
+}
+
+function renderDailyOracle(){
+  const root=document.getElementById('daily-oracle');
+  if(!root) return;
+  const resultEl=document.getElementById('daily-oracle-result');
+  const drawBtn=document.getElementById('daily-oracle-draw-btn');
+  const introEl=document.getElementById('daily-oracle-intro');
+  const record=readDailyOracleRecord();
+  if(!DAILY_ORACLE_VIEW_TRACKED){
+    DAILY_ORACLE_VIEW_TRACKED=true;
+    trackEvent('daily_oracle_view',{source:'top'});
+  }
+  if(!resultEl||!drawBtn) return;
+  if(!record){
+    if(introEl) introEl.textContent='数秘オラクルカードから、今日の一手を1枚引きます。';
+    resultEl.innerHTML='';
+    resultEl.hidden=true;
+    drawBtn.hidden=false;
+    drawBtn.disabled=false;
+    drawBtn.textContent='今日のカードを引く';
+    return;
+  }
+  const card=record.card;
+  const imageSrc=`images/cards/oracle/${String(card.id).padStart(2,'0')}.jpg`;
+  if(introEl) introEl.textContent='今日のオラクルは引き終わっています。本日のカードをもう一度表示します。';
+  drawBtn.hidden=true;
+  drawBtn.disabled=true;
+  resultEl.hidden=false;
+  resultEl.innerHTML=`
+    <div class="daily-oracle-card-wrap">
+      <img class="daily-oracle-card-img" src="${escapeHtml(imageSrc)}" alt="${escapeHtml(card.name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="daily-oracle-card-fallback" style="display:none">
+        <div class="daily-oracle-card-no">No.${card.id}</div>
+        <div class="daily-oracle-card-name">${escapeHtml(card.name)}</div>
+      </div>
+    </div>
+    <div class="daily-oracle-reading">
+      <div class="daily-oracle-label">今日のオラクル</div>
+      <div class="daily-oracle-name">${escapeHtml(card.name)}</div>
+      <div class="daily-oracle-title">${escapeHtml(card.title)}</div>
+      <div class="daily-oracle-block">
+        <div class="daily-oracle-block-title">今日のひとこと</div>
+        <div class="daily-oracle-block-body">${escapeHtml(card.message)}</div>
+      </div>
+      <div class="daily-oracle-block">
+        <div class="daily-oracle-block-title">今日の一手</div>
+        <div class="daily-oracle-block-body">${escapeHtml(card.action)}</div>
+      </div>
+      <!-- Future: show the daily oracle discount only after ticket storage and Stripe discount application are implemented. -->
+      <div class="daily-oracle-actions">
+        <button class="daily-oracle-share" type="button" onclick="shareDailyOracle('x')">Xでシェア</button>
+        <button class="daily-oracle-share" type="button" onclick="shareDailyOracle('line')">LINEで送る</button>
+      </div>
+    </div>`;
+}
+
+function drawDailyOracle(){
+  const existing=readDailyOracleRecord();
+  if(existing){
+    renderDailyOracle();
+    showToast('今日のオラクルは引き終わっています');
+    return;
+  }
+  const owner=getDailyOracleOwner();
+  const dateJst=getJstDateKey();
+  const cardId=pickDailyOracleCardId(owner,dateJst);
+  const card=DAILY_ORACLE_MESSAGES.find(item=>item.id===cardId)||DAILY_ORACLE_MESSAGES[0];
+  writeDailyOracleRecord(card);
+  trackEvent('daily_oracle_draw',{card_id:card.id,source:'top'});
+  renderDailyOracle();
+}
+
+function shareDailyOracle(channel='x'){
+  const record=readDailyOracleRecord();
+  if(!record?.card){
+    drawDailyOracle();
+    return;
+  }
+  const text=getDailyOracleShareText(record.card);
+  const normalized=String(channel||'x').toLowerCase()==='line'?'line':'x';
+  trackEvent('daily_oracle_share',{channel:normalized,card_id:record.card.id,source:'top'});
+  const url=normalized==='line'
+    ?`https://line.me/R/msg/text/?${encodeURIComponent(text)}`
+    :`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+  window.open(url,'_blank','noopener,noreferrer');
+}
+
 // ══════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════
@@ -2358,13 +2751,16 @@ document.addEventListener('DOMContentLoaded',()=>{
   safeRun('renderBrandLayer',()=>renderBrandLayer());
   safeRun('buildStars',()=>buildStars());
   safeRun('buildDateSelects',()=>buildDateSelects());
+  safeRun('installFormStartTracking',()=>installFormStartTracking());
   safeRun('repairStaticCopy',()=>repairStaticCopy());
   safeRun('loadSaved',()=>loadSaved());
   safeRun('loadApiKey',()=>loadApiKey());
   safeRun('loadServerHealth',()=>loadServerHealth().then(()=>handleStripeReturnFlow()).finally(()=>runRequestedFlowFromQuery()));
   safeRun('loadSolarTermBoundaries',()=>loadSolarTermBoundaries());
   safeRun('renderHomeVault',()=>renderHomeVault());
+  safeRun('renderDailyOracle',()=>renderDailyOracle());
   safeRun('trackTopPageView',()=>trackTopPageView());
+  safeRun('refreshDeepenCtaViewTracking',()=>refreshDeepenCtaViewTracking());
   safeRun('runAutotestFromQuery',()=>runAutotestFromQuery());
 });
 
@@ -2377,6 +2773,12 @@ document.addEventListener('click',event=>{
     const trackName=String(trackBtn.getAttribute('data-track')||'').trim();
     if(trackName==='free_start_click') trackFreeStartClick(trackBtn);
     if(trackName==='deepen_cta_click') trackDeepenCtaClick(trackBtn);
+  }
+  const entryCard=target?.closest?.('[data-entry-card]');
+  if(entryCard){
+    event.preventDefault();
+    applyEntryCardPrefill(entryCard);
+    return;
   }
   const flowBtn=target?.closest?.('[data-flow-target]');
   if(flowBtn){
@@ -3006,8 +3408,16 @@ function bootMemberMode(){
   }
 }
 
+function isProductionRuntime(){
+  return !!(RUNTIME_HEALTH.production||MEMBER_AUTH.production);
+}
+
 function canUsePaidTestMode(){
-  return LOCAL_TEST_RUNTIME||!!RUNTIME_HEALTH.paidTestMode||!!MEMBER_AUTH.localTestMode;
+  return !isProductionRuntime()&&(LOCAL_TEST_RUNTIME||!!RUNTIME_HEALTH.paidTestMode||!!MEMBER_AUTH.localTestMode);
+}
+
+function canUseAccessCode(){
+  return !isProductionRuntime()&&(DEV_MODE||LOCAL_TEST_RUNTIME)&&!!MEMBER_AUTH.codeConfigured;
 }
 
 function rememberMemberPreview(enabled){
@@ -3034,6 +3444,7 @@ function getServerErrorMessage(data,fallback='処理に失敗しました'){
   if(code==='ACCESS_CODE_INVALID') return'確認コードが一致しませんでした';
   if(code==='ACCESS_CODE_DISABLED') return'確認コードが設定されていません';
   if(code==='LOCAL_ONLY_MEMBER_PREVIEW') return'この操作はこの環境からは使えません';
+  if(code==='DEV_ACCESS_DISABLED_IN_PRODUCTION') return'本番環境では確認用アクセスは使えません';
   if(code==='ACCESS_CODE_REQUIRED') return'確認コードを入力してください';
   if(code==='GOOGLE_CLIENT_ID_MISSING') return'Googleログインが未設定です';
   if(code==='GOOGLE_PROFILE_INVALID') return'Googleアカウント情報を確認できませんでした';
@@ -3041,11 +3452,13 @@ function getServerErrorMessage(data,fallback='処理に失敗しました'){
   if(code==='DEVELOPER_LOCAL_ONLY') return'この操作は今は使えません';
   if(code==='DEVELOPER_EMAIL_REQUIRED') return'メールアドレスを入力してください';
   if(code==='DEVELOPER_EMAIL_DENIED') return'このメールアドレスは許可されていません';
-  if(code==='AUTH_REQUIRED'||code==='STRIPE_PORTAL_AUTH_REQUIRED'||code==='PAID_AUTH_REQUIRED') return'Googleでログインし、月額登録を完了してください';
+  if(code==='AUTH_REQUIRED'||code==='STRIPE_PORTAL_AUTH_REQUIRED'||code==='PAID_AUTH_REQUIRED') return'深掘り鑑定の購入確認が必要です';
   if(code==='PAID_SESSION_REQUIRED') return'深掘り鑑定の利用確認が必要です';
-  if(code==='STRIPE_NOT_CONFIGURED') return'月額登録の準備がまだできていません';
-  if(code==='STRIPE_CUSTOMER_NOT_FOUND') return'月額登録の情報がまだ作成されていません';
+  if(code==='STRIPE_NOT_CONFIGURED') return'深掘り鑑定の購入準備がまだできていません';
+  if(code==='STRIPE_CUSTOMER_NOT_FOUND') return'決済情報がまだ作成されていません';
   if(code==='STRIPE_SUBSCRIPTION_NOT_ACTIVE') return'決済は完了しましたが、深掘り鑑定への反映がまだ終わっていません';
+  if(code==='PAID_TICKET_REQUIRED') return'この結果の深掘り鑑定を購入すると利用できます';
+  if(code==='SOURCE_READING_REQUIRED') return'無料鑑定結果を確認してから深掘り鑑定へ進んでください';
   if(code==='SESSION_ID_REQUIRED') return'決済確認に必要な情報が不足しています';
   if(message) return message;
   return fallback;
@@ -3078,7 +3491,7 @@ function getMemberStatusMeta(){
       cls:'inactive',
       label:'',
       copy:'前回の鑑定をもとに、続きの悩みを読み解けます。深掘り鑑定では、追加質問と履歴解析でさらに具体的に見ていきます。',
-      action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openMemberAccessModal('start-paid')">深掘り鑑定をはじめる</button>`,
+      action:`<button class="vault-link" data-track="free_start_click" data-track-position="top" onclick="startFlow('free')">無料鑑定から始める</button>`,
     };
   }
   if(MEMBER_AUTH.manageBillingAvailable){
@@ -3092,38 +3505,42 @@ function getMemberStatusMeta(){
   if(MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn){
     return{
       cls:'inactive',
-      label:'Googleログイン待ち',
-      copy:'前回の鑑定をもとに、続きの悩みを読み解けます。まずGoogleアカウントでログインし、その後に月額登録へ進みます。',
-      action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openMemberAccessModal('start-paid')">Googleでログイン</button>`,
+      label:'深掘り鑑定',
+      copy:'無料鑑定の結果をもとに、1回580円でさらに詳しく読み解けます。継続課金ではありません。',
+      action:`<button class="vault-link" data-track="free_start_click" data-track-position="top" onclick="startFlow('free')">無料鑑定から始める</button>`,
     };
   }
   if(MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.stripeCheckoutReady){
     return{
       cls:'inactive',
-      label:'月額登録待ち',
-      copy:'前回の鑑定をもとに、続きの悩みを読み解けます。月額登録を行うと追加質問と履歴解析でさらに具体的に見ていきます。',
-      action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openStripeCheckout('start-paid')">月額登録へ進む</button>`,
+      label:'深掘り鑑定',
+      copy:'無料鑑定の結果をもとに、1回580円でさらに詳しく読み解けます。継続課金ではありません。',
+      action:`<button class="vault-link" data-track="free_start_click" data-track-position="top" onclick="startFlow('free')">無料鑑定から始める</button>`,
     };
   }
   return{
     cls:'inactive',
-    label:MEMBER_AUTH.codeConfigured?'確認コード待ち':'公開準備中',
-    copy:MEMBER_AUTH.codeConfigured
+    label:canUseAccessCode()?'確認コード待ち':'公開準備中',
+    copy:canUseAccessCode()
       ?'前回の鑑定をもとに、続きの悩みを読み解けます。確認コードを入力すると深掘り鑑定の利用状態を確認できます。'
       :'鑑定を重ねるほど、あなたの迷いの流れが見えてきます。まずは無料鑑定から、あなたの記録を作りましょう。',
-    action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openMemberAccessModal('start-paid')" ${MEMBER_AUTH.codeConfigured?'':'disabled'}>確認コードを入力</button>`,
+    action:canUseAccessCode()
+      ?`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openMemberAccessModal('start-paid')">確認コードを入力</button>`
+      :`<button class="vault-link" data-track="free_start_click" data-track-position="top" onclick="startFlow('free')">無料鑑定から始める</button>`,
   };
 }
 
 function applyMemberAuthData(data,overrides={}){
+  const nextProduction=data?.production??MEMBER_AUTH.production;
   MEMBER_AUTH={
     ...MEMBER_AUTH,
     checked:true,
     active:!!data?.active,
     source:data?.source||'',
     expiresAt:data?.expiresAt||'',
+    production:!!nextProduction,
     localTestMode:!!data?.localTestMode,
-    codeConfigured:!!data?.codeConfigured,
+    codeConfigured:!nextProduction&&!!data?.codeConfigured,
     sessionPersistent:!!data?.sessionPersistent,
     authLoggedIn:!!data?.authLoggedIn,
     authProvider:data?.authProvider||'',
@@ -3165,6 +3582,7 @@ async function loadMemberStatus(options={}){
       stripeCheckoutReady:false,
       stripePortalReady:false,
       stripeWebhookReady:false,
+      production:false,
     },{error:'LOCAL_FILE'});
     if(options.render!==false){
       renderHomeVault();
@@ -3190,7 +3608,8 @@ async function loadMemberStatus(options={}){
       stripeCheckoutReady:!!RUNTIME_HEALTH.stripeCheckoutReady,
       stripePortalReady:!!RUNTIME_HEALTH.stripePortalReady,
       stripeWebhookReady:false,
-      codeConfigured:!!RUNTIME_HEALTH.memberCodeConfigured,
+      production:!!RUNTIME_HEALTH.production,
+      codeConfigured:!RUNTIME_HEALTH.production&&!!RUNTIME_HEALTH.memberCodeConfigured,
     },{error:'FETCH_FAILED'});
   }
   if(syncLocalPreview&&MEMBER_MODE&&canUsePaidTestMode()&&!MEMBER_AUTH.active){
@@ -3302,7 +3721,7 @@ function setDeveloperAccessError(message){
 }
 
 function canUseDeveloperQuickAccess(){
-  return LOCAL_TEST_RUNTIME||DEV_MODE;
+  return !isProductionRuntime()&&(LOCAL_TEST_RUNTIME||DEV_MODE);
 }
 
 function setGoogleAuthError(message){
@@ -3324,7 +3743,7 @@ function renderGoogleAuthShell(){
     return;
   }
   copy.textContent=MEMBER_AUTH.stripeCheckoutReady
-    ?'Googleでログインすると、そのまま月額登録へ進めます。'
+    ?'Googleでログインすると、購入確認と履歴保存が安定します。'
     :'Googleでログインしたうえで、深掘り鑑定の利用状態と購入履歴をこの端末にひも付けます。';
   scheduleGoogleSignInRender();
 }
@@ -3441,43 +3860,142 @@ function cleanupStripeReturnParams(){
   history.replaceState({},'',url.pathname+(url.search||'')+(url.hash||''));
 }
 
-async function openStripeCheckout(intent='start-paid'){
-  if(!canUseProxy()){
-    showToast('月額登録はサービス経由でのアクセスが必要です。直接ファイルを開いている場合は利用できません。');
+function getPaidReadingIdentity(){
+  return buildVaultIdentityFromInput(getCurrentInputSnapshot())||getPreferredVaultIdentity();
+}
+
+async function preparePaidReadingTicket(sourceReadingId='',paidReadingId=''){
+  const sourceId=sourceReadingId||CURRENT_READING_ID;
+  const nextPaidId=paidReadingId||PENDING_PAID_READING_ID||createReadingId();
+  const identity=getPaidReadingIdentity();
+  try{
+    const res=await fetchApi(PAID_READING_PREPARE_ENDPOINT,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        sourceReadingId:sourceId,
+        paidReadingId:nextPaidId,
+        identity,
+      }),
+    });
+    const data=await readJsonSafe(res);
+    if(!res.ok) return{ok:false,error:data?.error||'',message:getServerErrorMessage(data,'深掘り鑑定の購入確認が必要です')};
+    ACTIVE_PAID_READING_TICKET={
+      id:data.ticketId||'',
+      sourceReadingId:data.sourceReadingId||sourceId,
+      paidReadingId:data.paidReadingId||nextPaidId,
+      status:data.ticketStatus||'unused',
+    };
+    ACTIVE_PAID_SOURCE_READING_ID=ACTIVE_PAID_READING_TICKET.sourceReadingId;
+    PENDING_PAID_READING_ID=ACTIVE_PAID_READING_TICKET.paidReadingId;
+    return{ok:true,ticket:ACTIVE_PAID_READING_TICKET};
+  }catch(e){
+    return{ok:false,error:'NETWORK_ERROR',message:'深掘り鑑定の購入確認に失敗しました'};
+  }
+}
+
+async function markPaidReadingTicketUsed(){
+  if(!ACTIVE_PAID_READING_TICKET?.id||!ACTIVE_PAID_SOURCE_READING_ID||!CURRENT_READING_ID) return false;
+  try{
+    const res=await fetchApi(PAID_READING_USE_ENDPOINT,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        ticketId:ACTIVE_PAID_READING_TICKET.id,
+        sourceReadingId:ACTIVE_PAID_SOURCE_READING_ID,
+        paidReadingId:CURRENT_READING_ID,
+        identity:getPaidReadingIdentity(),
+      }),
+    });
+    const data=await readJsonSafe(res);
+    if(res.ok){
+      ACTIVE_PAID_READING_TICKET={...ACTIVE_PAID_READING_TICKET,status:data?.ticketStatus||'used'};
+      trackEvent('deep_ticket_used',{
+        source:'result',
+        price:580,
+        final_amount:580,
+        discount_amount:0,
+        checkout_mode:'payment',
+        purchase_type:'deep_reading_once',
+        ticket_status:ACTIVE_PAID_READING_TICKET.status,
+      });
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+
+async function releasePaidReadingTicketLock(){
+  if(!ACTIVE_PAID_READING_TICKET?.id||!ACTIVE_PAID_SOURCE_READING_ID||!CURRENT_READING_ID) return false;
+  try{
+    const res=await fetchApi(PAID_READING_RELEASE_ENDPOINT,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        ticketId:ACTIVE_PAID_READING_TICKET.id,
+        sourceReadingId:ACTIVE_PAID_SOURCE_READING_ID,
+        paidReadingId:CURRENT_READING_ID,
+        identity:getPaidReadingIdentity(),
+      }),
+    });
+    return res.ok;
+  }catch(e){
     return false;
   }
-  if(!MEMBER_AUTH.authLoggedIn){
-    openMemberAccessModal(intent);
+}
+
+async function openStripeCheckout(intent='start-paid'){
+  if(!canUseProxy()){
+    showToast('深掘り鑑定の購入はサービス経由でのアクセスが必要です。直接ファイルを開いている場合は利用できません。');
+    return false;
+  }
+  const sourceReadingId=CURRENT_READING_ID;
+  if(!sourceReadingId||PLAN!=='free'||!canContinueCurrentReadingToPaid()){
+    showToast('深掘り鑑定は、無料鑑定の結果から購入できます');
     return false;
   }
   try{
     const res=await fetchApi(STRIPE_CHECKOUT_ENDPOINT,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({intent}),
+      body:JSON.stringify({
+        intent,
+        sourceReadingId,
+        identity:getPaidReadingIdentity(),
+      }),
     });
     const data=await readJsonSafe(res);
     if(!res.ok){
-      const message=getServerErrorMessage(data,'月額登録の画面を開けませんでした');
+      const message=getServerErrorMessage(data,'深掘り鑑定の購入画面を開けませんでした');
       showToast(message);
-      if(data?.error==='AUTH_REQUIRED') openMemberAccessModal(intent);
       return false;
     }
     if(!data?.url){
-      showToast('月額登録の画面を取得できませんでした');
+      showToast('深掘り鑑定の購入画面を取得できませんでした');
       return false;
     }
     saveStripeReturnIntent(intent);
     trackEvent('checkout_start',{
-      plan:'monthly',
-      price:1200,
-      trial_days:7,
+      plan:'one_time',
+      price:580,
+      final_amount:580,
+      discount_amount:0,
+      checkout_mode:'payment',
+      purchase_type:'deep_reading_once',
       source:checkoutSourceFromIntent(intent),
+    });
+    trackEvent('deep_payment_start',{
+      source:checkoutSourceFromIntent(intent),
+      price:580,
+      final_amount:580,
+      discount_amount:0,
+      checkout_mode:'payment',
+      purchase_type:'deep_reading_once',
     });
     location.href=data.url;
     return true;
   }catch(e){
-    showToast('月額登録の画面への接続に失敗しました');
+    showToast('深掘り鑑定の購入画面への接続に失敗しました');
     return false;
   }
 }
@@ -3519,7 +4037,7 @@ async function handleStripeReturnFlow(){
   if(canceled){
     consumeStripeReturnIntent();
     cleanupStripeReturnParams();
-    showToast('月額登録をキャンセルしました');
+    showToast('深掘り鑑定の購入をキャンセルしました');
     return;
   }
   if(!succeeded||!sessionId) return;
@@ -3527,7 +4045,11 @@ async function handleStripeReturnFlow(){
     const res=await fetchApi(`${STRIPE_CHECKOUT_COMPLETE_ENDPOINT}?session_id=${encodeURIComponent(sessionId)}`,{cache:'no-store'});
     const data=await readJsonSafe(res);
     if(!res.ok){
-      showToast(getServerErrorMessage(data,'月額登録の完了を確認できませんでした'));
+      if(data?.pending||res.status===202){
+        showToast('決済を確認しています。数秒後に自動で反映されます。反映されない場合は、少し時間をおいて再読み込みしてください。');
+      }else{
+        showToast(getServerErrorMessage(data,'深掘り鑑定の購入完了を確認できませんでした'));
+      }
       cleanupStripeReturnParams();
       consumeStripeReturnIntent();
       return;
@@ -3539,18 +4061,39 @@ async function handleStripeReturnFlow(){
     renderGoogleAuthShell();
     cleanupStripeReturnParams();
     const intent=consumeStripeReturnIntent();
-    showToast('月額登録を確認しました');
-    if(intent==='start-paid'){
-      setTimeout(()=>startFlowUnlocked('paid'),180);
+    if(data?.ticketReady){
+      trackEvent('deep_payment_complete',{
+        source:checkoutSourceFromIntent(intent),
+        price:580,
+        final_amount:580,
+        discount_amount:0,
+        checkout_mode:'payment',
+        purchase_type:'deep_reading_once',
+      });
+      trackEvent('deep_ticket_created',{
+        source:checkoutSourceFromIntent(intent),
+        price:580,
+        final_amount:580,
+        discount_amount:0,
+        checkout_mode:'payment',
+        purchase_type:'deep_reading_once',
+        ticket_status:data.ticketStatus||'unused',
+      });
+      showToast('深掘り鑑定の準備が整いました');
+      if(data.sourceReadingId){
+        const record=getReadingHistory().find(item=>item.id===data.sourceReadingId);
+        if(record&&CURRENT_READING_ID!==record.id) openHistoryItem(record.id);
+      }
+      if(intent==='upgrade-paid'&&canContinueCurrentReadingToPaid()){
+        setTimeout(()=>upgradeCurrentReadingToPaid(),180);
+      }
       return;
     }
-    if(intent==='upgrade-paid'&&canContinueCurrentReadingToPaid()){
-      setTimeout(()=>upgradeCurrentReadingToPaidUnlocked(),180);
-    }
+    showToast('決済を確認しています。数秒後に自動で反映されます。反映されない場合は、少し時間をおいて再読み込みしてください。');
   }catch(e){
     cleanupStripeReturnParams();
     consumeStripeReturnIntent();
-    showToast('月額登録の確認に失敗しました');
+    showToast('深掘り鑑定の購入確認に失敗しました');
   }
 }
 
@@ -3586,15 +4129,15 @@ function openMemberAccessModal(intent=''){
     desc.textContent=canUseDeveloperQuickAccess()
       ?'確認用アクセスは上のボタンから進めます。'
       :(MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn
-        ?'深掘り鑑定は、Googleでログインしてから進みます。'
+        ?'深掘り鑑定は、無料鑑定の結果から1回580円で進めます。'
         :'深掘り鑑定は、利用状態を確認できたときだけ開きます。');
   }
   if(guide){
     guide.textContent=canUseDeveloperQuickAccess()
       ?'確認用アクセスは上のボタン。その他の確認方法は下から選べます。'
       :(MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn
-        ?'Googleログイン後に月額登録へ進みます。'
-        :(MEMBER_AUTH.codeConfigured
+        ?'Googleログインは履歴保存に使えます。深掘り鑑定は無料結果から購入できます。'
+        :(canUseAccessCode()
           ?'確認コードがあるなら下に入れてください。'
           :'深掘り鑑定はGoogleログインを優先しています。'));
   }
@@ -3607,13 +4150,13 @@ function openMemberAccessModal(intent=''){
       :canUsePaidTestMode()
       ?'<div class="runtime-status-title">このまま深掘り鑑定フローへ進めます</div><div class="runtime-status-detail">確認用の状態で深掘り鑑定フローを確認できます。</div>'
       :(usesGoogle
-        ?'<div class="runtime-status-title">Googleログインから始めます</div><div class="runtime-status-detail">ログイン後に月額登録へ進めます。</div>'
-        :`<div class="runtime-status-title">${MEMBER_AUTH.codeConfigured?'確認コードを使えます':'深掘り鑑定の準備中です'}</div><div class="runtime-status-detail">${MEMBER_AUTH.codeConfigured?'確認コードで利用状態を確認できます。':'Googleログインまたは確認コードの設定を確認してください。'}</div>`);
+        ?'<div class="runtime-status-title">Googleログインを使えます</div><div class="runtime-status-detail">ログインすると履歴保存と購入確認が安定します。</div>'
+        :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':'深掘り鑑定の準備中です'}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':'無料鑑定の結果から深掘り鑑定へ進めます。'}</div>`);
   }
   if(localBtn) localBtn.style.display=canUsePaidTestMode()?'inline-flex':'none';
   renderGoogleAuthShell();
   renderDeveloperAccessShell();
-  const showAccess=(MEMBER_AUTH.codeConfigured||canUsePaidTestMode());
+  const showAccess=canUseAccessCode();
   if(accessLabel) accessLabel.style.display=showAccess?'block':'none';
   if(input){
     input.value='';
@@ -3659,6 +4202,10 @@ async function activateLocalPreviewFromModal(){
 }
 
 async function submitMemberAccessCode(){
+  if(!canUseAccessCode()){
+    setMemberAccessError('本番環境では確認コードは使えません');
+    return;
+  }
   const input=document.getElementById('member-access-input');
   const accessCode=input?.value?.trim()||'';
   if(!accessCode){
@@ -3724,6 +4271,14 @@ async function ensurePaidAccess(intent=''){
     openMemberAccessModal(intent);
     return false;
   }
+  if(intent==='upgrade-paid'&&PLAN==='free'&&canContinueCurrentReadingToPaid()){
+    const sourceReadingId=CURRENT_READING_ID;
+    if(!PENDING_PAID_READING_ID) PENDING_PAID_READING_ID=createReadingId();
+    const prepared=await preparePaidReadingTicket(sourceReadingId,PENDING_PAID_READING_ID);
+    if(prepared.ok) return true;
+    await openStripeCheckout(intent);
+    return false;
+  }
   if(canUsePaidTestMode()){
     rememberMemberPreview(true);
     const ok=await activateMemberSession({mode:'local_preview'},{silent:true,render:true});
@@ -3738,7 +4293,7 @@ async function ensurePaidAccess(intent=''){
     return false;
   }
   if(MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.stripeCheckoutReady){
-    await openStripeCheckout(intent||'start-paid');
+    await openStripeCheckout(intent||'upgrade-paid');
     return false;
   }
   openMemberAccessModal(intent);
@@ -3827,7 +4382,16 @@ function repairStaticCopy(){
   setText('#s-top .top-kicker','姓名判断・四柱推命・動物タイプ診断・カード占い');
   setHtml('#s-top .top-desc','無料鑑定でも、本質・本音・現実・次の一手まで読み解けます。');
   setText('#s-top .btn-top.btn-free','無料で羅針鑑定をはじめる');
-  setText('#s-top .btn-top.btn-paid','深掘り鑑定を見る');
+  setText('#s-top .btn-top.btn-paid','無料鑑定後に深掘り');
+  document.querySelectorAll('#s-top [data-flow-target="paid"]').forEach(el=>{
+    el.setAttribute('href','?flow=free');
+    el.setAttribute('data-flow-target','free');
+    el.onclick=function(event){
+      event.preventDefault();
+      startFlow('free');
+      return false;
+    };
+  });
   setText('#s-top .btn-top.btn-sample','サンプルを見る');
   setText('#s-top .top-note','');
   setHtml('.plan-disclosure .top-disclosure-summary > span:first-child, .plan-disclosure summary > span:first-child','<span class="top-disclosure-kicker">PLAN</span>無料鑑定と深掘り鑑定の違い');
@@ -3849,8 +4413,8 @@ function repairStaticCopy(){
   }
   if(planCards[1]){
     setWithin(planCards[1],'.plan-compare-title','深掘り鑑定');
-    setWithin(planCards[1],'.plan-compare-price','月額1,200円');
-    setWithin(planCards[1],'.plan-compare-trial','1週間のお試しあり');
+    setWithin(planCards[1],'.plan-compare-price','1回580円');
+    setWithin(planCards[1],'.plan-compare-trial','継続課金ではありません');
     setWithin(planCards[1],'.plan-compare-badge','無料鑑定の内容をすべて含む');
     const deepItems=planCards[1].querySelectorAll('.plan-compare-list li');
     [
@@ -3861,14 +4425,13 @@ function repairStaticCopy(){
       '鑑定履歴がある場合は、前回からの変化も読む'
     ].forEach((text,index)=>{ if(deepItems[index]) deepItems[index].textContent=text; });
     setWithin(planCards[1],'.plan-compare-summary','深掘り鑑定では、この結果を土台に「なぜそうなるか」「どこで止まりやすいか」「次に何を確認すべきか」まで読み解きます。');
-    setWithin(planCards[1],'.plan-compare-action','深掘り鑑定を見る');
+    setWithin(planCards[1],'.plan-compare-action','無料鑑定後に深掘り');
   }
   document.querySelectorAll('.paid-band-note').forEach(el=>{
-    el.textContent='月額1,200円 / 1週間のお試しあり';
+    el.textContent='深掘り鑑定 1回580円 / 継続課金ではありません';
   });
   document.querySelectorAll('.checkout-disclosure').forEach(el=>{
-    if(el.closest('#result-deep-cta')) el.innerHTML=RESULT_CHECKOUT_DISCLOSURE_HTML;
-    else el.innerHTML=CHECKOUT_DISCLOSURE_HTML;
+    el.innerHTML=CHECKOUT_DISCLOSURE_HTML;
   });
 
   const faqItems=document.querySelectorAll('.top-faq-item');
@@ -3877,7 +4440,7 @@ function repairStaticCopy(){
     ['数秘オラクルカードって何ですか？','誕生日などの数字の意味と、直感で選ぶカードを合わせて読むアドバイスカードです。<br>あなたの強み、背中を押す言葉、次の一手を示します。'],
     ['AIがどうやって占うのですか？','相談内容・名前・生年月日・カード結果をもとに、設計された占術ロジックに沿って鑑定文を生成します。<br>同じカードでも、相談内容やこれまでの流れによって読み方が変わります。'],
     ['無料鑑定では何ができますか？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。<br>自分自身の本質、本音、いまの現実、次に進むためのアドバイスを確認できます。'],
-    ['無料鑑定と深掘り鑑定の違いは？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。<br>深掘り鑑定では、無料鑑定の内容をすべて含み、ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>深掘り鑑定は月額1,200円で、1週間のお試しがあります。'],
+    ['無料鑑定と深掘り鑑定の違いは？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。<br>深掘り鑑定では、無料鑑定の内容をすべて含み、ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>深掘り鑑定は1回580円の単発課金です。継続課金ではありません。'],
     ['過去の鑑定は読み返せますか？','はい。これまでの鑑定は「過去の占いを読み返す」から確認できます。<br>前回のテーマやカードの流れを見返すことで、同じ悩みの続きや変化を確認しやすくなります。'],
     ['「鑑定履歴の流れを読み解く」って何ですか？','これまでの鑑定をまとめて、よく出るカード、相談テーマの変化、くり返し向き合っている悩みを時系列で読み解く機能です。<br>鑑定履歴があるほど、変化の流れが見えやすくなります。']
   ];
@@ -4032,11 +4595,6 @@ function repairStaticCopy(){
   setText('#r-orc-block .ai-load-title','気持ちの整理を進めています');
   setText('#r-orc-block .ai-load-detail','迷った日に戻れる言葉と、今日からできる一歩へ絞ってまとめています。');
   setButtons('#result-actions .nav-btn',['最初に戻る','もう一度占う','過去の占いへ']);
-  setText('#result-deep-cta .result-deep-cta-title','この結果をさらに深く読み解けます');
-  setText('#result-deep-cta .result-deep-cta-copy','無料鑑定では、いまの答えと次の一手まで整理しました。深掘り鑑定では、この結果を土台に、追加質問とカード展開で「なぜそうなるのか」「どこで止まりやすいのか」「次に何を確認すべきか」まで具体的に読み解きます。');
-  setText('#result-deep-cta .result-deep-cta-btn','この結果を深掘りする');
-  setText('#result-deep-cta .result-deep-cta-note','月額1,200円 / 1週間のお試しあり');
-  setHtml('#result-deep-cta .checkout-disclosure',RESULT_CHECKOUT_DISCLOSURE_HTML);
   setText('#rs-integration .rs-eyebrow','最終結論');
   setHtml('#rs-integration .rs-title','<span class="rs-icon">✧</span>いまの答え');
   setText('#rs-integration .rs-copy','迷ったときにここだけ読み返せば、優先順位と次の一歩がわかる形にまとめます。');
@@ -4155,22 +4713,14 @@ function renderTopHeroPanels(){
 function renderPremiumEntrySection(){
   const el=document.getElementById('premium-entry');
   if(!el) return;
-  const paidAction=isMemberActive()
-    ?`<a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="top" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定を見る</a>`
-    :canUsePaidTestMode()
-      ?`<a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="top" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定を見る</a>`
-      :((MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn)
-        ?`<a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-member-intent="start-paid" data-track="deepen_cta_click" data-track-position="top" onclick="if(window.openMemberAccessModal){openMemberAccessModal('start-paid');return false;}">深掘り鑑定を見る</a>`
-        :(MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.stripeCheckoutReady)
-          ?`<button class="today-cta today-cta-paid deep-premium-button" type="button" data-track="deepen_cta_click" data-track-position="top" onclick="openStripeCheckout('start-paid')">深掘り鑑定を見る</button>`
-          :`<button class="today-cta today-cta-paid deep-premium-button" type="button" data-member-intent="start-paid" data-track="deepen_cta_click" data-track-position="top" onclick="openMemberAccessModal('start-paid')" ${MEMBER_AUTH.codeConfigured?'':'disabled'}>${MEMBER_AUTH.codeConfigured?'深掘り鑑定を見る':'公開準備中'}</button>`);
+  const paidAction=`<a class="today-cta today-cta-paid deep-premium-button" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料鑑定後に深掘り</a>`;
   el.innerHTML=`
     <div class="paid-band-inner">
       <div class="paid-band-actions paid-band-actions-center">
         <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
         ${paidAction}
       </div>
-      <div class="paid-band-note">月額1,200円 / 1週間のお試しあり</div>
+      <div class="paid-band-note">深掘り鑑定 1回580円 / 継続課金ではありません</div>
       <div class="checkout-disclosure">${CHECKOUT_DISCLOSURE_HTML}</div>
     </div>`;
 }
@@ -4203,8 +4753,12 @@ function resetLatestOutputs(){
   DOSSIER_LOADING=false;
 }
 
-function beginReadingSession(){
-  CURRENT_READING_ID='rd_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+function createReadingId(){
+  return 'rd_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+}
+
+function beginReadingSession(readingId=''){
+  CURRENT_READING_ID=readingId||createReadingId();
   CURRENT_READING_CREATED_AT=new Date().toISOString();
   resetLatestOutputs();
 }
@@ -5579,8 +6133,10 @@ function renderHomeVault(){
   safeRun('renderPatternSummary',()=>renderPatternSummary());
   safeRun('renderMemberStatusBlock',()=>renderMemberStatusBlock(),()=>renderMemberStatusFallback());
   safeRun('renderPremiumEntrySection',()=>renderPremiumEntrySection(),()=>renderPremiumEntryFallback());
+  safeRun('renderDailyOracle',()=>renderDailyOracle());
   const _flowBtn=document.getElementById('flow-analysis-btn');
   if(_flowBtn){const _isDev=MEMBER_AUTH.source==='developer'||MEMBER_AUTH.developerAccess||IS_LOCAL_RUNTIME;_flowBtn.hidden=!_isDev;}
+  refreshDeepenCtaViewTracking();
 }
 
 function renderMemberStatusFallback(){
@@ -5593,7 +6149,7 @@ function renderMemberStatusFallback(){
       <div class="member-benefit">前回との変化を見比べられる</div>
       <div class="member-benefit">鑑定履歴が積み上がるほど傾向が見える</div>
     </div>
-    <button class="vault-link" type="button" data-member-intent="start-paid" data-track="deepen_cta_click" data-track-position="top" onclick="openMemberAccessModal('start-paid')">深掘り鑑定をはじめる</button>`;
+    <button class="vault-link" type="button" data-track="free_start_click" data-track-position="top" onclick="startFlow('free')">無料鑑定から始める</button>`;
 }
 
 function renderPremiumEntryFallback(){
@@ -5603,9 +6159,9 @@ function renderPremiumEntryFallback(){
     <div class="paid-band-inner">
       <div class="paid-band-actions paid-band-actions-center">
         <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
-        <a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="top" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定を見る</a>
+        <a class="today-cta today-cta-paid deep-premium-button" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料鑑定後に深掘り</a>
       </div>
-      <div class="paid-band-note">月額1,200円 / 1週間のお試しあり</div>
+      <div class="paid-band-note">深掘り鑑定 1回580円 / 継続課金ではありません</div>
       <div class="checkout-disclosure">${CHECKOUT_DISCLOSURE_HTML}</div>
     </div>`;
 }
@@ -5625,13 +6181,14 @@ function renderRecentHistory(){
   emptyEl.style.display='none';
   btnEl.style.display='inline-flex';
   const latestTheme=history[0]?.input?.theme?truncateText(history[0].input.theme,40):'前回のテーマ';
+  const safeLatestRecordId=escapeHtml(JSON.stringify(String(history[0]?.id||'')));
   const latestLead=`
     <div class="vault-insight">
       <div class="vault-insight-label">いちばん新しい記録</div>
       <div class="vault-insight-body">前回のテーマを引き継ぎ、同じ悩みの続きを深く読み解きます。</div>
       <div class="history-deep-link">
         <div class="history-deep-link-copy">前回のテーマを引き継いで、今の迷いをさらに読み解けます。</div>
-        <button class="vault-link" type="button" data-track="deepen_cta_click" data-track-position="top" onclick="event.stopPropagation();startFlow('paid')">この鑑定で深掘りする</button>
+        <button class="vault-link" type="button" data-track="deepen_cta_click" data-track-position="top" onclick="event.stopPropagation();openHistoryItem(${safeLatestRecordId})">結果を開いて深掘りする</button>
       </div>
     </div>`;
   listEl.innerHTML=latestLead+history.slice(0,3).map(record=>{
@@ -6088,10 +6645,10 @@ function updateResultActionState(){
   const homeBtn=navButtons[0]||null;
   const retryBtn=navButtons[1]||null;
   const shouldShowDeep=PLAN==='free'&&canContinueCurrentReadingToPaid();
-  const upgradePanelVisible=!!(upgradePanel&&getComputedStyle(upgradePanel).display!=='none');
-  if(deepCta) deepCta.style.display=(shouldShowDeep&&!upgradePanelVisible)?'flex':'none';
+  if(deepCta) deepCta.style.display='none';
   if(homeBtn) homeBtn.style.display=shouldShowDeep?'none':'inline-flex';
   if(retryBtn) retryBtn.classList.toggle('nav-btn-primary',!shouldShowDeep);
+  refreshDeepenCtaViewTracking(upgradePanel||document);
 }
 
 function getResultProgressSummary(){
@@ -6256,43 +6813,31 @@ function renderResultUpgradePanel(){
     el.innerHTML='';
     return;
   }
-  const items=[
-    {kicker:'深く見る',body:'悩みの中心をはっきりさせる。'},
-    {kicker:'決めやすくする',body:'進むか止まるかの目印を出す。'},
-    {kicker:'残しておく',body:'あとで見返せる形にする。'},
-  ];
   el.style.display='block';
   el.innerHTML=`
-    <div class="upgrade-head">
-      <div>
-        <div class="upgrade-badge">深掘り鑑定</div>
-        <div class="upgrade-title">この結果をさらに深く読み解けます</div>
-        <div class="upgrade-copy">無料鑑定では、いまの答えと次の一手まで整理しました。<br>深掘り鑑定では、この結果を土台に、追加質問とカード展開で「なぜそうなるのか」「どこで止まりやすいのか」「次に何を確認すべきか」まで具体的に読み解きます。</div>
+    <div class="upgrade-unified-shell" data-track-view="deepen_cta_view" data-track-position="result_unified">
+      <div class="upgrade-head">
+        <div>
+          <div class="upgrade-badge">深掘り鑑定</div>
+          <div class="upgrade-title">この結果を、9枚でさらに深く読む</div>
+          <div class="upgrade-copy">無料鑑定では、今の答えと次の一手まで整理しました。<br>深掘り鑑定では、ルノルマン9枚と追加カードで、迷いの原因と次に確認すべきことを詳しく読み解きます。</div>
+        </div>
         <div class="upgrade-meta">
           <div class="upgrade-price">
             <div class="upgrade-price-label">料金</div>
-            <div class="upgrade-price-value">月額1,200円 / 1週間のお試しあり</div>
+            <div class="upgrade-price-value">深掘り鑑定 1回580円</div>
           </div>
-          <div class="upgrade-note">この結果の続きから、そのまま深く読めます。</div>
+          <div class="upgrade-note">継続課金ではありません。解約手続きは不要です。</div>
         </div>
       </div>
-      <div class="upgrade-spotlight">
-        <div class="upgrade-spotlight-label">無料との違い</div>
-        <div class="upgrade-spotlight-value">ふわっと終わらせない</div>
-        <div class="upgrade-spotlight-copy">悩みの中心、決める目印、次にすることまでまとめます。</div>
+      <div class="upgrade-actions">
+        <button class="result-unified-cta-btn deep-premium-button" type="button" data-track="deepen_cta_click" data-track-position="result_unified" onclick="upgradeCurrentReadingToPaid()">580円で深掘りする</button>
+        <div class="checkout-disclosure">${RESULT_CHECKOUT_DISCLOSURE_HTML}</div>
       </div>
     </div>
-    <div class="upgrade-list">
-      ${items.map(item=>`
-        <div class="upgrade-item">
-          <div class="upgrade-item-kicker">${escapeHtml(item.kicker)}</div>
-          <div class="upgrade-item-body">${escapeHtml(item.body)}</div>
-        </div>`).join('')}
-    </div>
-    <div class="upgrade-actions">
-      <button class="nav-btn nav-btn-primary" data-track="deepen_cta_click" data-track-position="result_panel" onclick="upgradeCurrentReadingToPaid()">この結果を深掘りする</button>
-    </div>`;
+    `;
   updateResultActionState();
+  refreshDeepenCtaViewTracking(el);
 }
 
 function buildExpandedLenSpreadFromFree(anchorId){
@@ -6353,7 +6898,14 @@ function upgradeCurrentReadingToPaidUnlocked(){
     return;
   }
 
-  beginReadingSession();
+  const paidReadingId=PENDING_PAID_READING_ID||'';
+  const sourceReadingId=ACTIVE_PAID_SOURCE_READING_ID||CURRENT_READING_ID;
+  beginReadingSession(paidReadingId);
+  if(ACTIVE_PAID_READING_TICKET?.id){
+    ACTIVE_PAID_READING_TICKET={...ACTIVE_PAID_READING_TICKET,paidReadingId:CURRENT_READING_ID};
+    ACTIVE_PAID_SOURCE_READING_ID=sourceReadingId;
+  }
+  PENDING_PAID_READING_ID='';
   PLAN='paid';
   CLARIFY_ANSWERS={};
   CLARIFY_ACTIVE_QUESTIONS=[];
@@ -7338,6 +7890,11 @@ function showScreen(id,progress){
   document.getElementById(id).classList.add('active');
   document.getElementById('progress').style.width=progress+'%';
   if(id==='s-top') trackTopPageView();
+  if(id==='s-input'&&PLAN==='free'){
+    FORM_START_TRACKED_FOR_SCREEN=false;
+    installFormStartTracking();
+  }
+  if(id==='s-result') trackResultView();
   if(typeof window.scrollTo==='function') window.scrollTo(0,0);
 }
 
@@ -7443,6 +8000,7 @@ function goToLen(){
     return;
   }
 
+  // 現時点のファネル計測は無料フォームのみ。有料再鑑定フォームは必要になった時点で別途追加する。
   if(PLAN==='free'){
     trackEvent('form_submit',getCurrentInputAnalytics());
   }
@@ -8959,6 +9517,7 @@ ${qualityResult.issues.map(issue=>`- ${issue}`).join('\n')}
 
   renderPaidCombinedOutputs(parsed,name,cat,theme,{allowFallback:!paidGenerationFailed});
   if(paidGenerationFailed){
+    await releasePaidReadingTicketLock();
     completeFailedResultGenerationUI();
     return;
   }
@@ -8976,6 +9535,7 @@ ${qualityResult.issues.map(issue=>`- ${issue}`).join('\n')}
   await ensureStageMinimumTime('integration',integrationStageStartedAt);
   setResultStageStatus('integration','done');
   await completeResultGenerationUI();
+  await markPaidReadingTicketUsed();
 }
 
 // ─── ②ルノルマンリーディング（完全版ナレッジベース使用）────────────────
@@ -9626,18 +10186,28 @@ function renderMemberFollowupSection(){
   if(!stateEl||!noteEl||!actionsEl||!outputEl||!logEl||!copyEl) return;
 
   const followups=LAST_OUTPUTS.followups||{};
+  if(PLAN==='paid'&&!isMemberActive()){
+    stateEl.className='member-state active';
+    stateEl.textContent='深掘り鑑定済み';
+    copyEl.textContent='この結果は、購入した1回分の深掘り鑑定として作成されています。追加の継続課金や解約手続きはありません。';
+    noteEl.style.display='none';
+    actionsEl.innerHTML='';
+    outputEl.style.display='none';
+    logEl.innerHTML='';
+    return;
+  }
   stateEl.className='member-state '+(isMemberActive()?'active':'inactive');
   stateEl.textContent=isMemberActive()
     ?'追加質問を利用中'
-    :(canUsePaidTestMode()?'':(MEMBER_AUTH.codeConfigured?'確認コード待ち':'公開準備中'));
+    :(canUsePaidTestMode()?'':(canUseAccessCode()?'確認コード待ち':'公開準備中'));
   copyEl.textContent=isMemberActive()
     ?'結果を読んだあとに残る「あと1つだけ聞きたいこと」を追加で見られます。相手の気持ち、この7日でやること、動く時期などを絞って深めるための欄です。'
     :(canUsePaidTestMode()
-      ?'深掘り鑑定では、この結果を土台に追加質問まで進めます。'
-      :((MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn)
-        ?'公開環境ではGoogleでログインし、その後に月額登録へ進むと追加質問が開きます。'
+        ?'深掘り鑑定では、この結果を土台に追加質問まで進めます。'
+        :((MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn)
+        ?'深掘り鑑定を購入すると、この結果の続きから詳しく読み解けます。'
         :((MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.stripeCheckoutReady)
-          ?'ログイン済みです。月額登録が完了すると、この結果の続きから追加質問へ進めます。'
+          ?'深掘り鑑定を購入すると、この結果の続きから詳しく読み解けます。'
           :'深掘り鑑定の準備が整うと、今回の結果を土台に追加質問まで進めます。')));
 
   if(!isMemberActive()){
@@ -9645,21 +10215,23 @@ function renderMemberFollowupSection(){
     noteEl.textContent=canUsePaidTestMode()
       ?'深掘り鑑定では、いまの結果を土台に追加質問まで進めます。'
       :((MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn)
-        ?'まずGoogleでログインし、その後に月額登録へ進んでください。'
+        ?'この結果を深掘りする場合は、1回580円の単発購入へ進んでください。'
         :((MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.stripeCheckoutReady)
-          ?'月額登録が完了すると、この結果の続きから追加質問へ進めます。'
-          :(MEMBER_AUTH.codeConfigured
+          ?'この結果を深掘りする場合は、1回580円の単発購入へ進んでください。'
+          :(canUseAccessCode()
             ?'確認コードがある場合は入力して利用状態を確認できます。'
             :'現在はまだ使えません。')));
     actionsEl.innerHTML=canUsePaidTestMode()
       ?`<button class="followup-btn" data-track="deepen_cta_click" data-track-position="result_bottom" onclick="openMemberAccessModal('upgrade-paid')">深掘り鑑定をはじめる</button>`
       :((MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn)
-        ?`<button class="followup-btn" data-track="deepen_cta_click" data-track-position="result_bottom" onclick="openMemberAccessModal('upgrade-paid')">Googleでログイン</button>`
+        ?`<button class="followup-btn" data-track="deepen_cta_click" data-track-position="result_bottom" onclick="upgradeCurrentReadingToPaid()">580円で深掘りする</button>`
         :((MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.manageBillingAvailable)
           ?`<button class="followup-btn" onclick="openStripeBillingPortal()">請求管理</button>`
           :((MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.stripeCheckoutReady)
-            ?`<button class="followup-btn" data-track="deepen_cta_click" data-track-position="result_bottom" onclick="openStripeCheckout('upgrade-paid')">月額登録へ進む</button>`
-            :`<button class="followup-btn" data-track="deepen_cta_click" data-track-position="result_bottom" onclick="openMemberAccessModal('upgrade-paid')" ${MEMBER_AUTH.codeConfigured?'':'disabled'}>確認コードを入力</button>`)));
+            ?`<button class="followup-btn" data-track="deepen_cta_click" data-track-position="result_bottom" onclick="upgradeCurrentReadingToPaid()">580円で深掘りする</button>`
+            :(canUseAccessCode()
+              ?`<button class="followup-btn" data-track="deepen_cta_click" data-track-position="result_bottom" onclick="openMemberAccessModal('upgrade-paid')">確認コードを入力</button>`
+              :`<button class="followup-btn" data-track="deepen_cta_click" data-track-position="result_bottom" onclick="openMemberAccessModal('upgrade-paid')" ${MEMBER_AUTH.googleClientConfigured?'':'disabled'}>${MEMBER_AUTH.googleClientConfigured?'Googleでログイン':'公開準備中'}</button>`))));
   }else{
     noteEl.style.display='none';
     actionsEl.innerHTML=Object.entries(FOLLOWUP_PRESETS).map(([key,preset])=>
@@ -9682,6 +10254,7 @@ function renderMemberFollowupSection(){
   logEl.innerHTML=followupKeys.map(key=>`
     <button class="followup-log-item" onclick="openSavedFollowup('${key}')">${FOLLOWUP_PRESETS[key]?.label||key} を開く</button>
   `).join('');
+  refreshDeepenCtaViewTracking(actionsEl);
 }
 
 function openSavedFollowup(key){
@@ -9735,39 +10308,32 @@ ${preset.intro}
 }
 
 // ── X（Twitter）シェア ─────────────────────────────────────────────────
-function getFirstReadableSentence(text='',fallback='今は答えを急ぐより、条件を整理して次の一手を決める時期です'){
-  const clean=String(text||'')
-    .replace(/\[\[\/?[A-Z0-9_]+\]\]/g,'')
-    .replace(/^■[^\n]*$/gm,'')
-    .replace(/[\r\n]+/g,' ')
-    .replace(/\s+/g,' ')
-    .trim();
-  const match=clean.match(/^(.{12,72}?[。.!！?？])/);
-  return (match?match[1]:clean.slice(0,72))||fallback;
-}
-
 function buildShareText(){
-  const animal=REACTION_PROFILE?.animal||getAnimalTypeName?.()||'羅針タイプ';
-  const conclusion=getSectionBody(LAST_OUTPUTS.integration,0)||LAST_OUTPUTS.integration||LAST_OUTPUTS.len||'';
-  const personalName=getFullname();
-  const rawSummary=getFirstReadableSentence(conclusion);
-  const summary=personalName?rawSummary.split(personalName).join('あなた'):rawSummary;
-  const nextAction=(getOracleNextActions(LAST_OUTPUTS.orc||'')[0]||buildThemeSpecificActionPlan(analyzeConsultationFocus(document.getElementById('f-cat')?.value||'総合',document.getElementById('f-theme')?.value||''))[0]||'今週やることを1つに絞る')
-    .replace(/[。.]$/,'');
-  return [
-    '今日の羅針占術：',
-    `「${summary.replace(/[「」]/g,'')}」`,
-    `動物タイプ：${animal}`,
-    `次の一手：${nextAction}`,
+  const animal=String(REACTION_PROFILE?.animal||getAnimalTypeName?.()||'').trim();
+  const cardNames=[
+    ...(SEL_LEN||[]).map(id=>LENORMAND[id]?.name||''),
+    ...(SEL_ORC||[]).map(id=>ORACLE[id]?.name||''),
+  ].filter(Boolean).slice(0,4).join(' / ');
+  const lines=[
+    '羅針占術で、いまの流れを見ました。',
+    '',
+  ];
+  if(animal) lines.push(`私のタイプ：${animal}`);
+  if(cardNames) lines.push(`出たカード：${cardNames}`);
+  if(animal||cardNames) lines.push('');
+  lines.push(
+    '迷いを、次の一手に変える占い。',
     '',
     location.origin+location.pathname,
     '',
     '#羅針占術 #カード占い'
-  ].join('\n');
+  );
+  return lines.join('\n');
 }
 
 function shareToX(){
   const text=buildShareText();
+  trackEvent('share_click',{channel:'x',source:'result'});
   window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(text),'_blank','noopener,noreferrer');
 }
 
@@ -10128,6 +10694,7 @@ async function loadServerHealth(silent=false){
       openai:false,
       anthropic:false,
       google:false,
+      production:false,
       paidTestMode:false,
       memberCodeConfigured:false,
       stripeCheckoutReady:false,
@@ -10144,6 +10711,7 @@ async function loadServerHealth(silent=false){
       openai:false,
       anthropic:false,
       google:false,
+      production:false,
       paidTestMode:LOCAL_TEST_RUNTIME,
       memberCodeConfigured:false,
       stripeCheckoutReady:false,
@@ -10180,8 +10748,9 @@ async function loadServerHealth(silent=false){
       openai:!!data?.openaiKeyConfigured,
       anthropic:!!data?.anthropicKeyConfigured,
       google:!!data?.googleClientConfigured,
-      paidTestMode:!!data?.paidTestMode,
-      memberCodeConfigured:!!data?.memberCodeConfigured,
+      production:!!data?.production,
+      paidTestMode:!data?.production&&!!data?.paidTestMode,
+      memberCodeConfigured:!data?.production&&!!data?.memberCodeConfigured,
       stripeCheckoutReady:!!data?.stripeCheckoutReady,
       stripePortalReady:!!data?.stripePortalReady,
       error:'',
@@ -10194,6 +10763,7 @@ async function loadServerHealth(silent=false){
       openai:false,
       anthropic:false,
       google:false,
+      production:false,
       paidTestMode:LOCAL_TEST_RUNTIME,
       memberCodeConfigured:false,
       stripeCheckoutReady:false,
@@ -10259,6 +10829,11 @@ function buildAiPayload(userPrompt,maxTokens,sys,options={}){
     model:options.model||taskCfg.model,
     task_key:options.taskKey||'',
     plan:PLAN,
+    category:document.getElementById('f-cat')?.value||'総合',
+    paid_ticket_id:PLAN==='paid'?(ACTIVE_PAID_READING_TICKET?.id||''):'',
+    paid_reading_id:PLAN==='paid'?CURRENT_READING_ID:'',
+    source_reading_id:PLAN==='paid'?(ACTIVE_PAID_SOURCE_READING_ID||''):'',
+    identity:PLAN==='paid'?getPaidReadingIdentity():null,
     max_tokens:maxTokens,
     system:withPromptSafetyRules(sys),
     messages:[{role:'user',content:userPrompt}],
@@ -10781,6 +11356,8 @@ function showToast(msg){
 if(typeof window!=='undefined'){
   window.trackEvent=trackEvent;
   window.startFlow=startFlow;
+  window.drawDailyOracle=drawDailyOracle;
+  window.shareDailyOracle=shareDailyOracle;
   window.openMemberAccessModal=openMemberAccessModal;
   window.openSampleModal=openSampleModal;
   window.closeSampleModal=closeSampleModal;
