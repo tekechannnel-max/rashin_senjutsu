@@ -1540,6 +1540,8 @@ const AUDIO_ASSETS={
 };
 const CARD_DRAW_STEP_MS=430;
 const CARD_FLIP_AFTER_DRAW_MS=760;
+const LIVE_SHUFFLE_CARD_COUNT=14;
+const LIVE_SHUFFLE_MOBILE_CARD_COUNT=10;
 const AUDIO_VOLUME={shuffle:.36,lenDraw:.62,flip:.58,complete:.66};
 const INPUT_STORAGE_KEY='uranai-input';
 const INPUT_SAVE_PREF_KEY='uranai-input-autosave-v1';
@@ -1854,6 +1856,7 @@ let LAST_OUTPUTS={about:'',foundationDeep:'',len:'',orc:'',integration:'',dossie
 let GOOGLE_SIGNIN_RENDER_TIMER=0;
 const AUDIO_CACHE={};
 let ACTIVE_SHUFFLE_SOUND='';
+const LIVE_SHUFFLE_STATE={len:null,orc:null};
 let HISTORY_SYNC_STATE={
   loading:false,
   lastScope:'',
@@ -2191,6 +2194,7 @@ const CLARIFY_DEF={
 // ══════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded',()=>{
   safeRun('installGlobalClientLogging',()=>installGlobalClientLogging());
+  safeRun('installLiveCardMotionStyles',()=>installLiveCardMotionStyles());
   safeRun('bootMemberMode',()=>bootMemberMode());
   safeRun('installThemeCounter',()=>installThemeCounter());
   safeRun('renderBrandLayer',()=>renderBrandLayer());
@@ -2256,6 +2260,12 @@ function safeRun(label,fn,fallback){
 
 function runAutotestFromQuery(){
   const mode=new URLSearchParams(window.location.search).get('autotest');
+  if(mode==='shuffle'){
+    window.setTimeout(()=>{
+      void runShuffleAutotest();
+    },400);
+    return;
+  }
   if(mode!=='buttons') return;
   window.setTimeout(()=>{
     void runButtonsAutotest();
@@ -2379,6 +2389,68 @@ async function runButtonsAutotest(){
 
     result.final=captureState();
     result.ok=result.steps.every(step=>step.passed);
+  }catch(error){
+    result.error=error?.message||String(error);
+    result.stack=error?.stack||'';
+  }
+  publishAutotestResult(result);
+}
+
+async function runShuffleAutotest(){
+  const wait=ms=>new Promise(resolve=>window.setTimeout(resolve,ms));
+  const result={
+    ok:false,
+    timestamp:new Date().toISOString(),
+    len:{},
+    orc:{},
+    back:{},
+  };
+  const captureDeck=deckId=>{
+    const deck=document.getElementById(deckId);
+    const cards=[...document.querySelectorAll(`#${deckId} .shuffle-card`)];
+    return{
+      live:!!deck&&deck.classList.contains('live-shuffling'),
+      cardCount:cards.length,
+      visibleCount:cards.filter(card=>getComputedStyle(card).display!=='none').length,
+      transforms:cards.slice(0,5).map(card=>getComputedStyle(card).transform),
+    };
+  };
+  try{
+    installLiveCardMotionStyles();
+    showScreen('s-len',40);
+    startLenShuffle();
+    await wait(1700);
+    result.len=captureDeck('len-deck');
+    stopLiveCardShuffle(document.getElementById('len-deck'));
+    stopShuffleSound();
+
+    const probe=makeResultCard(1,'len','100px','150px',0,{});
+    probe.id='len-back-probe';
+    probe.style.position='fixed';
+    probe.style.left='-9999px';
+    document.body.appendChild(probe);
+    const back=probe.querySelector('.len-placeholder');
+    result.back={
+      hasStyle:!!document.getElementById('live-card-motion-style'),
+      backgroundSize:getComputedStyle(back).backgroundSize,
+      backgroundPosition:getComputedStyle(back).backgroundPosition,
+    };
+
+    showScreen('s-orc',60);
+    startOrcShuffle();
+    await wait(1700);
+    result.orc=captureDeck('orc-deck');
+    stopLiveCardShuffle(document.getElementById('orc-deck'));
+    stopShuffleSound();
+
+    const hasMovingTransforms=[...result.len.transforms,...result.orc.transforms].some(value=>value&&value!=='none');
+    result.ok=!!result.back.hasStyle
+      && result.len.live
+      && result.orc.live
+      && result.len.visibleCount>=LIVE_SHUFFLE_MOBILE_CARD_COUNT
+      && result.orc.visibleCount>=LIVE_SHUFFLE_MOBILE_CARD_COUNT
+      && /contain/.test(result.back.backgroundSize)
+      && hasMovingTransforms;
   }catch(error){
     result.error=error?.message||String(error);
     result.stack=error?.stack||'';
@@ -6822,6 +6894,7 @@ function stopShuffleSound(){
 
 function stopMotionAudioForScreen(screenId=''){
   if(screenId!=='s-len'&&screenId!=='s-orc') stopShuffleSound();
+  stopLiveCardShuffleForScreen(screenId);
 }
 
 function playLenDrawSound(){
@@ -6834,6 +6907,210 @@ function playCardFlipSound(){
 
 function playResultCompleteSound(){
   playAppSound('complete',{restart:true,volume:AUDIO_VOLUME.complete});
+}
+
+function installLiveCardMotionStyles(){
+  if(typeof document==='undefined'||document.getElementById('live-card-motion-style')) return;
+  const style=document.createElement('style');
+  style.id='live-card-motion-style';
+  style.textContent=`
+    .shuffle-area.live-shuffling{
+      width:min(92vw,420px) !important;
+      height:286px !important;
+      perspective:1200px !important;
+      transform-style:preserve-3d !important;
+    }
+    .shuffle-area.live-shuffling::before{
+      width:260px !important;
+      height:34px !important;
+      opacity:.82 !important;
+    }
+    .shuffle-area.live-shuffling .shuffle-card{
+      left:50% !important;
+      top:50% !important;
+      margin-left:-70px !important;
+      margin-top:-105px !important;
+      animation:none !important;
+      transition:none !important;
+      transform-style:preserve-3d !important;
+      backface-visibility:hidden !important;
+      will-change:transform,opacity !important;
+    }
+    .shuffle-area.live-shuffling .shuffle-card-inner{
+      opacity:.2 !important;
+    }
+    .shuffle-area.live-shuffling .shuffle-card::after{
+      opacity:.14 !important;
+    }
+    .result-card-placeholder.len-placeholder{
+      background-size:100% 100%, contain !important;
+      background-repeat:no-repeat !important;
+      background-position:center !important;
+      background-color:#080512 !important;
+    }
+    .result-card-back.len-placeholder{
+      box-shadow:inset 0 0 0 1px rgba(201,149,42,.24), inset 0 0 28px rgba(0,0,0,.38);
+    }
+    @media (max-width:520px){
+      .shuffle-area.live-shuffling{
+        width:min(94vw,330px) !important;
+        height:252px !important;
+      }
+      .shuffle-area.live-shuffling .shuffle-card{
+        width:122px !important;
+        height:183px !important;
+        margin-left:-61px !important;
+        margin-top:-91px !important;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function getLiveShuffleKey(deck){
+  return deck?.id==='orc-deck'?'orc':'len';
+}
+
+function getLiveShuffleCards(deck){
+  return Array.from(deck?.querySelectorAll?.('.shuffle-card')||[]);
+}
+
+function ensureLiveShuffleDeck(deck){
+  if(!deck) return [];
+  const base=deck.querySelector('.shuffle-card');
+  if(!base) return [];
+  const target=window.matchMedia?.('(max-width:520px)')?.matches?LIVE_SHUFFLE_MOBILE_CARD_COUNT:LIVE_SHUFFLE_CARD_COUNT;
+  let cards=getLiveShuffleCards(deck);
+  while(cards.length<target){
+    const clone=base.cloneNode(true);
+    clone.dataset.liveShuffleClone='1';
+    clone.setAttribute('aria-hidden','true');
+    deck.appendChild(clone);
+    cards.push(clone);
+  }
+  cards.forEach((card,index)=>{
+    card.style.display=index<target?'flex':'none';
+    card.style.opacity=index<target?'1':'0';
+    card.style.zIndex=String(index+1);
+  });
+  return cards.slice(0,target);
+}
+
+function getShuffleRestPose(index,total){
+  const center=index-(total-1)/2;
+  return{
+    x:center*3.2,
+    y:-center*.9,
+    z:index*.6,
+    r:center*.85,
+  };
+}
+
+function setLiveShuffleRestPose(deck){
+  const cards=ensureLiveShuffleDeck(deck);
+  const total=cards.length||1;
+  cards.forEach((card,index)=>{
+    const p=getShuffleRestPose(index,total);
+    card.getAnimations?.().forEach(anim=>anim.cancel());
+    card.style.transform=`translate3d(${p.x}px,${p.y}px,${p.z}px) rotate(${p.r}deg)`;
+    card.style.zIndex=String(index+1);
+  });
+}
+
+function interleaveLiveShuffleDeck(deck,cards){
+  if(!deck||!cards?.length) return;
+  const split=Math.ceil(cards.length/2);
+  const next=[];
+  for(let i=0;i<split;i++){
+    if(cards[i]) next.push(cards[i]);
+    if(cards[i+split]) next.push(cards[i+split]);
+  }
+  next.forEach(card=>deck.appendChild(card));
+}
+
+function runLiveShuffleCycle(deck){
+  const cards=ensureLiveShuffleDeck(deck);
+  const total=cards.length;
+  if(!total) return;
+  const mobile=window.matchMedia?.('(max-width:520px)')?.matches;
+  const spread=mobile?58:82;
+  const lift=mobile?42:58;
+  const split=Math.ceil(total/2);
+  cards.forEach((card,index)=>{
+    const left=index<split;
+    const laneIndex=left?index:index-split;
+    const interleaveIndex=laneIndex*2+(left?0:1);
+    const rest=getShuffleRestPose(interleaveIndex,total);
+    const startX=left?-spread:spread;
+    const pullX=left?-spread*1.28:spread*1.28;
+    const handRot=left?-11:11;
+    const bridgeX=(left?-18:18)+(laneIndex%3-1)*5;
+    const bridgeY=-lift+(laneIndex%4)*8;
+    const settleY=10+(interleaveIndex%5)*1.7;
+    const duration=1120+(laneIndex%3)*70;
+    const delay=laneIndex*32+(left?0:58);
+    card.getAnimations?.().forEach(anim=>anim.cancel());
+    card.style.zIndex=String(100+interleaveIndex);
+    const animation=card.animate([
+      {transform:`translate3d(${startX}px,${laneIndex*2-8}px,${10+index}px) rotate(${handRot}deg) rotateY(${left?-14:14}deg) scale(1)`,opacity:1,offset:0},
+      {transform:`translate3d(${pullX}px,${-lift-laneIndex*1.4}px,${78+index}px) rotate(${handRot*1.4}deg) rotateY(${left?-22:22}deg) scale(1.035)`,opacity:1,offset:.2},
+      {transform:`translate3d(${bridgeX}px,${bridgeY}px,${112+interleaveIndex}px) rotate(${left?-4:4}deg) rotateY(${left?10:-10}deg) scale(1.025)`,opacity:1,offset:.46},
+      {transform:`translate3d(${rest.x*.65}px,${settleY}px,${36+interleaveIndex}px) rotate(${rest.r*1.4}deg) rotateX(${left?5:-5}deg) scale(1.01)`,opacity:1,offset:.72},
+      {transform:`translate3d(${rest.x}px,${rest.y}px,${rest.z}px) rotate(${rest.r}deg) rotateX(0) rotateY(0) scale(1)`,opacity:1,offset:1},
+    ],{
+      duration,
+      delay,
+      easing:'cubic-bezier(.18,.72,.18,1)',
+      fill:'forwards',
+    });
+    animation.onfinish=()=>{
+      if(!card.isConnected) return;
+      card.style.transform=`translate3d(${rest.x}px,${rest.y}px,${rest.z}px) rotate(${rest.r}deg)`;
+      card.style.zIndex=String(interleaveIndex+1);
+    };
+  });
+  setTimeout(()=>interleaveLiveShuffleDeck(deck,cards),1180);
+}
+
+function startLiveCardShuffle(deck){
+  if(!deck) return;
+  installLiveCardMotionStyles();
+  const key=getLiveShuffleKey(deck);
+  stopLiveCardShuffle(deck,{keepRest:true});
+  deck.classList.add('live-shuffling');
+  setLiveShuffleRestPose(deck);
+  const state={deck,running:true,timer:null};
+  const cycle=()=>{
+    if(!state.running||!deck.isConnected) return;
+    runLiveShuffleCycle(deck);
+    state.timer=setTimeout(cycle,1360);
+  };
+  LIVE_SHUFFLE_STATE[key]=state;
+  cycle();
+}
+
+function stopLiveCardShuffle(deck,options={}){
+  const key=getLiveShuffleKey(deck);
+  const state=LIVE_SHUFFLE_STATE[key];
+  if(state){
+    state.running=false;
+    if(state.timer) clearTimeout(state.timer);
+    LIVE_SHUFFLE_STATE[key]=null;
+  }
+  const targetDeck=deck||state?.deck;
+  if(!targetDeck) return;
+  targetDeck.classList.remove('live-shuffling');
+  getLiveShuffleCards(targetDeck).forEach(card=>{
+    card.getAnimations?.().forEach(anim=>anim.cancel());
+    card.style.opacity='';
+    card.style.zIndex='';
+    if(!options.keepRest) card.style.transform='';
+  });
+}
+
+function stopLiveCardShuffleForScreen(screenId=''){
+  if(screenId!=='s-len') stopLiveCardShuffle(document.getElementById('len-deck'));
+  if(screenId!=='s-orc') stopLiveCardShuffle(document.getElementById('orc-deck'));
 }
 
 function revealResultCard(card){
@@ -7044,6 +7321,7 @@ function startLenShuffle(){
   deck.style.display='';
   deck.classList.add('shuffling');
   deck.querySelectorAll('.shuffle-card').forEach(c=>c.classList.add('shuffling'));
+  startLiveCardShuffle(deck);
   clearInterval(lenInterval);
   lenInterval=null;
   startShuffleSound();
@@ -7058,6 +7336,7 @@ function stopLen(){
   lenShuffling=false;
   stopShuffleSound();
   const deck=document.getElementById('len-deck');
+  stopLiveCardShuffle(deck);
   deck.classList.remove('shuffling');
   deck.querySelectorAll('.shuffle-card').forEach(c=>{c.style.transform='';c.classList.remove('shuffling');});
   deck.style.display='none';
@@ -7172,6 +7451,7 @@ function startOrcShuffle(){
   deck.classList.add('shuffling');
   deck.querySelectorAll('.shuffle-card').forEach(c=>{c.style.display='flex';});
   deck.querySelectorAll('.shuffle-card').forEach(c=>c.classList.add('shuffling'));
+  startLiveCardShuffle(deck);
   clearInterval(orcInterval);
   orcInterval=null;
   startShuffleSound();
@@ -7187,6 +7467,7 @@ function stopOrc(){
   orcShuffling=false;
   stopShuffleSound();
   const deck=document.getElementById('orc-deck');
+  stopLiveCardShuffle(deck);
   deck.classList.remove('shuffling');
   deck.querySelectorAll('.shuffle-card').forEach(c=>{c.style.transform='';c.classList.remove('shuffling');});
   deck.style.display='none';
