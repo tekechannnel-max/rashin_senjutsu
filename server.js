@@ -10,6 +10,7 @@ const DATA_DIR = path.join(ROOT_DIR, 'data');
 const VAULT_DIR = path.join(DATA_DIR, 'vault-history');
 const MEMBER_DIR = path.join(DATA_DIR, 'member-access');
 const STRIPE_EVENT_DIR = path.join(DATA_DIR, 'stripe-events');
+const STRIPE_CHECKOUT_COMPLETION_DIR = path.join(DATA_DIR, 'stripe-checkout-completions');
 const USER_DIR = path.join(DATA_DIR, 'users');
 const INDEX_DIR = path.join(DATA_DIR, 'indexes');
 const LOG_DIR = path.join(DATA_DIR, 'logs');
@@ -784,8 +785,7 @@ async function readUserIndex(indexName) {
 async function writeUserIndex(indexName, data) {
   const filePath = getUserIndexPath(indexName);
   if (!filePath) return;
-  await ensureDir(INDEX_DIR);
-  await fsp.writeFile(filePath, JSON.stringify(data || {}, null, 2), 'utf8');
+  await writeJsonFileAtomic(filePath, data || {});
 }
 
 function collectUserIndexEntries(userRecord = {}) {
@@ -1435,14 +1435,21 @@ function mergeVaultRecord(records, record) {
   return next.slice(0, 48);
 }
 
+function normalizeVaultRecordId(recordId) {
+  const value = String(recordId || '').trim();
+  if (!value || !/^[A-Za-z0-9._-]{3,96}$/.test(value)) return '';
+  return value;
+}
+
 function sanitizeVaultRecord(record) {
   if (!record || typeof record !== 'object') {
     throw new Error('INVALID_RECORD');
   }
-  if (!record.id || typeof record.id !== 'string') {
+  const safeId = normalizeVaultRecordId(record.id);
+  if (!safeId) {
     throw new Error('INVALID_RECORD');
   }
-  return record;
+  return { ...record, id: safeId };
 }
 
 function sanitizePayload(body) {
@@ -1859,6 +1866,43 @@ async function stripeEventAlreadyHandled(eventId) {
   }
 }
 
+function getStripeCheckoutCompletionPath(sessionId) {
+  const safeId = String(sessionId || '').trim();
+  if (!safeId || safeId.length > 240) return '';
+  return path.join(STRIPE_CHECKOUT_COMPLETION_DIR, `${toBase64Url(safeId)}.json`);
+}
+
+async function stripeCheckoutSessionAlreadyCompleted(sessionId) {
+  const filePath = getStripeCheckoutCompletionPath(sessionId);
+  if (!filePath) return false;
+  try {
+    await fsp.access(filePath);
+    return true;
+  } catch (_error) {
+    return false;
+  }
+}
+
+async function markStripeCheckoutSessionCompleted(sessionId, meta = {}) {
+  const filePath = getStripeCheckoutCompletionPath(sessionId);
+  if (!filePath) return false;
+  await ensureDir(STRIPE_CHECKOUT_COMPLETION_DIR);
+  const payload = {
+    id: String(sessionId || '').trim(),
+    handledAt: new Date().toISOString(),
+    userId: normalizeUserId(meta.userId || ''),
+    stripeCustomerId: String(meta.stripeCustomerId || '').trim(),
+    stripeSubscriptionId: String(meta.stripeSubscriptionId || '').trim(),
+  };
+  try {
+    await fsp.writeFile(filePath, JSON.stringify(payload, null, 2), { encoding: 'utf8', flag: 'wx' });
+    return true;
+  } catch (error) {
+    if (error && error.code === 'EEXIST') return false;
+    throw error;
+  }
+}
+
 function extractOpenAIText(data) {
   if (!data) return '';
   if (typeof data.output_text === 'string' && data.output_text) return data.output_text;
@@ -2110,7 +2154,6 @@ async function handleAiProxy(req, res) {
         userId: authSession?.userId || '',
         memberSource: memberSession?.source || '',
         developerEmail,
-        promptPreview: clipText(payload.messages?.[0]?.content || '', 220),
         ...extractUsageMetrics(payload.provider, data?.raw),
         ok: true,
       });
@@ -2130,7 +2173,6 @@ async function handleAiProxy(req, res) {
         userId: authSession?.userId || '',
         memberSource: memberSession?.source || '',
         developerEmail,
-        promptPreview: clipText(payload.messages?.[0]?.content || '', 220),
         ok: false,
         error: error.code || error.message || 'AI_PROXY_ERROR',
         upstreamStatus: error.upstreamStatus || 0,
@@ -2733,6 +2775,21 @@ async function handleStripeCheckoutComplete(req, res) {
     });
     return;
   }
+  const existingAuth = readAuthSession(req);
+  if (await stripeCheckoutSessionAlreadyCompleted(sessionId)) {
+    if (existingAuth?.userId) {
+      sendJson(res, 200, await buildMemberStatus(req, {
+        memberSession: readMemberSession(req),
+        authSession: existingAuth,
+      }));
+      return;
+    }
+    sendJson(res, 409, {
+      error: 'STRIPE_SESSION_ALREADY_COMPLETED',
+      message: 'This Stripe checkout session has already been completed.',
+    });
+    return;
+  }
 
   try {
     const session = await retrieveStripeCheckoutSession(sessionId);
@@ -2747,6 +2804,32 @@ async function handleStripeCheckoutComplete(req, res) {
     });
     const userId = normalizeUserId(session?.metadata?.user_id || subscription?.metadata?.user_id || '');
     if (stripeSubscriptionGrantsAccess(subscriptionStatus)) {
+      if (existingAuth?.userId && userId && existingAuth.userId !== userId) {
+        sendJson(res, 403, {
+          error: 'SESSION_USER_MISMATCH',
+          message: 'The active login session does not match this Stripe checkout session.',
+        });
+        return;
+      }
+      const completionMarked = await markStripeCheckoutSessionCompleted(sessionId, {
+        userId,
+        stripeCustomerId: memberRecord?.stripeCustomerId || session?.customer || '',
+        stripeSubscriptionId: memberRecord?.stripeSubscriptionId || subscription?.id || '',
+      });
+      if (!completionMarked) {
+        if (existingAuth?.userId) {
+          sendJson(res, 200, await buildMemberStatus(req, {
+            memberSession: readMemberSession(req),
+            authSession: existingAuth,
+          }));
+          return;
+        }
+        sendJson(res, 409, {
+          error: 'STRIPE_SESSION_ALREADY_COMPLETED',
+          message: 'This Stripe checkout session has already been completed.',
+        });
+        return;
+      }
       if (userId) {
         const authSession = issueAuthSession(res, {
           source: 'google',
@@ -2856,7 +2939,8 @@ async function handleRequest(req, res) {
 
   if (req.method === 'GET' && req.url.startsWith('/api/health')) {
     const setup = getRuntimeSetupStatus(req);
-    sendJson(res, 200, {
+    const local = isLocalRequest(req);
+    const health = {
       ok: true,
       anthropicKeyConfigured: ANTHROPIC_KEY_CONFIGURED,
       openaiKeyConfigured: OPENAI_KEY_CONFIGURED,
@@ -2866,12 +2950,16 @@ async function handleRequest(req, res) {
       paidTestMode: isLocalRequest(req),
       memberCodeConfigured: MEMBER_ACCESS_CODES.size > 0,
       memberSessionPersistent: MEMBER_SESSION_PERSISTENT,
-      aiModels: AI_MODELS,
       stripeCheckoutReady: stripeReady(),
       stripePortalReady: stripePortalReady(),
       stripeWebhookReady: stripeWebhookReady(),
-      setup,
-    });
+      setup: local ? setup : {
+        ok: !!setup?.ok,
+        checkedAt: setup?.checkedAt || new Date().toISOString(),
+      },
+    };
+    if (local) health.aiModels = AI_MODELS;
+    sendJson(res, 200, health);
     return;
   }
 

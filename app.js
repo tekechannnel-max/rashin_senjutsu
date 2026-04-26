@@ -5458,8 +5458,9 @@ function renderRecentHistory(){
   listEl.innerHTML=latestLead+history.slice(0,3).map(record=>{
     const theme=record.input?.theme?truncateText(record.input.theme,34):'全体の流れ';
     const cardLine=truncateText((record.selLen||[]).map(id=>LENORMAND[id]?.name).filter(Boolean).join('・'),42);
+    const safeRecordId=escapeHtml(JSON.stringify(String(record.id||'')));
     return`
-      <button class="history-item" onclick="openHistoryItem('${record.id}')">
+      <button class="history-item" onclick="openHistoryItem(${safeRecordId})">
         <div class="history-item-body">
           <div class="history-thumb" aria-hidden="true"></div>
           <div class="history-item-main">
