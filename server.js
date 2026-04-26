@@ -176,6 +176,7 @@ const MIME_TYPES = {
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
   '.json': 'application/json; charset=utf-8',
+  '.mp3': 'audio/mpeg',
   '.txt': 'text/plain; charset=utf-8',
 };
 
@@ -219,6 +220,7 @@ function applySecurityHeaders(req, res) {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
     "img-src 'self' data: blob: https://*.googleusercontent.com",
+    "media-src 'self'",
     "connect-src 'self' https://accounts.google.com https://api.stripe.com",
     "frame-src 'self' https://accounts.google.com https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com",
     "frame-ancestors 'none'",
@@ -1243,18 +1245,26 @@ function getAllowedStaticPath(urlPath) {
   if (pathname === '/solar-term-boundaries.json') {
     return path.join(ROOT_DIR, 'solar-term-boundaries.json');
   }
-  if (!pathname.startsWith('/images/')) return null;
+  if (!pathname.startsWith('/images/') && !pathname.startsWith('/音素材/')) return null;
 
   const relativePath = pathname.replace(/^\/+/, '');
   const resolvedPath = path.resolve(ROOT_DIR, relativePath);
-  const imagesRoot = path.resolve(ROOT_DIR, 'images');
-  if (!resolvedPath.startsWith(imagesRoot)) return null;
+  const allowedRoots = [
+    path.resolve(ROOT_DIR, 'images'),
+    path.resolve(ROOT_DIR, '音素材'),
+  ];
+  if (!allowedRoots.some(rootPath => resolvedPath === rootPath || resolvedPath.startsWith(rootPath + path.sep))) return null;
   return resolvedPath;
 }
 
 function pathnameIsImage(urlPath) {
   const pathname = decodeURIComponent((urlPath || '').split('?')[0]);
   return pathname.startsWith('/images/');
+}
+
+function pathnameIsAudio(urlPath) {
+  const pathname = decodeURIComponent((urlPath || '').split('?')[0]);
+  return pathname.startsWith('/音素材/');
 }
 
 async function serveStatic(req, res) {
@@ -1274,7 +1284,7 @@ async function serveStatic(req, res) {
     const contentType = MIME_TYPES[ext] || 'application/octet-stream';
     res.writeHead(200, {
       'Content-Type': contentType,
-      'Cache-Control': pathnameIsImage(req.url) ? 'public, max-age=86400' : 'no-store',
+      'Cache-Control': (pathnameIsImage(req.url) || pathnameIsAudio(req.url)) ? 'public, max-age=86400' : 'no-store',
       'X-Content-Type-Options': 'nosniff',
     });
     fs.createReadStream(filePath).pipe(res);

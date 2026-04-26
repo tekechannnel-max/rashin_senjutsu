@@ -1532,6 +1532,15 @@ const VAULT_QUERY_ENDPOINT='/api/vault/history/query';
 const VAULT_SAVE_ENDPOINT='/api/vault/history/save';
 const VAULT_CLEAR_ENDPOINT='/api/vault/history/clear';
 const CLIENT_LOG_ENDPOINT='/api/client-log';
+const AUDIO_ASSETS={
+  shuffle:'音素材/ヒンズーシャッフル.mp3',
+  lenDraw:'音素材/カードをめくる_ルノルマンだけ.mp3',
+  flip:'音素材/カードを裏返す音_ルノルマンとオラクル.mp3',
+  complete:'音素材/鑑定完了音.mp3',
+};
+const CARD_DRAW_STEP_MS=430;
+const CARD_FLIP_AFTER_DRAW_MS=760;
+const AUDIO_VOLUME={shuffle:.36,lenDraw:.62,flip:.58,complete:.66};
 const INPUT_STORAGE_KEY='uranai-input';
 const INPUT_SAVE_PREF_KEY='uranai-input-autosave-v1';
 const HISTORY_STORAGE_KEY='uranai-history-v1';
@@ -1843,6 +1852,8 @@ let FOLLOWUP_LOADING=false;
 let DOSSIER_LOADING=false;
 let LAST_OUTPUTS={about:'',foundationDeep:'',len:'',orc:'',integration:'',dossier:'',followups:{}};
 let GOOGLE_SIGNIN_RENDER_TIMER=0;
+const AUDIO_CACHE={};
+let ACTIVE_SHUFFLE_SOUND='';
 let HISTORY_SYNC_STATE={
   loading:false,
   lastScope:'',
@@ -6767,10 +6778,89 @@ async function printDossier(){
   },500);
 }
 
+function getAudioElement(key){
+  const src=AUDIO_ASSETS[key];
+  if(!src||typeof Audio==='undefined') return null;
+  if(!AUDIO_CACHE[key]){
+    const audio=new Audio(encodeURI(src));
+    audio.preload='auto';
+    audio.volume=AUDIO_VOLUME[key]??.55;
+    AUDIO_CACHE[key]=audio;
+  }
+  return AUDIO_CACHE[key];
+}
+
+function playAppSound(key,options={}){
+  const audio=getAudioElement(key);
+  if(!audio) return;
+  audio.loop=!!options.loop;
+  audio.volume=options.volume??(AUDIO_VOLUME[key]??.55);
+  if(options.restart!==false){
+    try{audio.currentTime=0;}catch(e){}
+  }
+  const played=audio.play();
+  if(played&&typeof played.catch==='function') played.catch(()=>{});
+}
+
+function stopAppSound(key){
+  const audio=AUDIO_CACHE[key];
+  if(!audio) return;
+  audio.loop=false;
+  try{audio.pause();audio.currentTime=0;}catch(e){}
+}
+
+function startShuffleSound(){
+  ACTIVE_SHUFFLE_SOUND='shuffle';
+  playAppSound('shuffle',{loop:true,restart:true,volume:AUDIO_VOLUME.shuffle});
+}
+
+function stopShuffleSound(){
+  if(!ACTIVE_SHUFFLE_SOUND) return;
+  stopAppSound(ACTIVE_SHUFFLE_SOUND);
+  ACTIVE_SHUFFLE_SOUND='';
+}
+
+function stopMotionAudioForScreen(screenId=''){
+  if(screenId!=='s-len'&&screenId!=='s-orc') stopShuffleSound();
+}
+
+function playLenDrawSound(){
+  playAppSound('lenDraw',{restart:true,volume:AUDIO_VOLUME.lenDraw});
+}
+
+function playCardFlipSound(){
+  playAppSound('flip',{restart:true,volume:AUDIO_VOLUME.flip});
+}
+
+function playResultCompleteSound(){
+  playAppSound('complete',{restart:true,volume:AUDIO_VOLUME.complete});
+}
+
+function revealResultCard(card){
+  if(!card||!card.isConnected||card.classList.contains('is-flipped')) return;
+  card.classList.add('is-flipped');
+  card.classList.remove('is-face-down');
+  playCardFlipSound();
+}
+
+function armResultCardMotion(card,index,options={}){
+  if(!card) return;
+  const drawDelay=Math.max(0,Number(index)||0)*CARD_DRAW_STEP_MS;
+  card.style.setProperty('--draw-delay',`${drawDelay}ms`);
+  if(options.drawSound){
+    setTimeout(()=>{if(card.isConnected) playLenDrawSound();},drawDelay+120);
+  }
+  setTimeout(()=>revealResultCard(card),drawDelay+CARD_FLIP_AFTER_DRAW_MS);
+  if(options.glow){
+    setTimeout(()=>{if(card.isConnected) card.classList.add('card-glow');},drawDelay+CARD_FLIP_AFTER_DRAW_MS+780);
+  }
+}
+
 // ══════════════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════════════
 function showScreen(id,progress){
+  stopMotionAudioForScreen(id);
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   document.getElementById('progress').style.width=progress+'%';
@@ -6954,11 +7044,9 @@ function startLenShuffle(){
   deck.style.display='';
   deck.classList.add('shuffling');
   deck.querySelectorAll('.shuffle-card').forEach(c=>c.classList.add('shuffling'));
-  lenInterval=setInterval(()=>{
-    deck.querySelectorAll('.shuffle-card').forEach(c=>{
-      c.style.transform=`rotate(${(Math.random()-0.5)*12}deg) translate(${(Math.random()-0.5)*20}px,${(Math.random()-0.5)*10}px)`;
-    });
-  },400);
+  clearInterval(lenInterval);
+  lenInterval=null;
+  startShuffleSound();
   document.getElementById('len-stop-btn').style.display='block';
   document.getElementById('len-cards-full').classList.remove('on');
   document.getElementById('len-inst').textContent='シャッフル中です。止めたところで、上から順にカードを引きます';
@@ -6966,8 +7054,11 @@ function startLenShuffle(){
 
 function stopLen(){
   clearInterval(lenInterval);
+  lenInterval=null;
   lenShuffling=false;
+  stopShuffleSound();
   const deck=document.getElementById('len-deck');
+  deck.classList.remove('shuffling');
   deck.querySelectorAll('.shuffle-card').forEach(c=>{c.style.transform='';c.classList.remove('shuffling');});
   deck.style.display='none';
   document.getElementById('len-stop-btn').style.display='none';
@@ -6981,7 +7072,9 @@ function stopLen(){
 
 function showLenCards(){
   document.getElementById('len-deck').style.display='none';
-  document.getElementById('len-inst').textContent='いま出たカード';
+  const lenInst=document.getElementById('len-inst');
+  if(lenInst) lenInst.textContent=`${SEL_LEN.length}枚を順番に引いて、裏向きからめくっています`;
+  setTimeout(()=>{if(lenInst) lenInst.textContent='いま出たカード';},Math.max(1,SEL_LEN.length)*CARD_DRAW_STEP_MS+CARD_FLIP_AFTER_DRAW_MS+260);
   const full=document.getElementById('len-cards-full');
   full.classList.add('on');
 
@@ -6996,7 +7089,7 @@ function showLenCards(){
     preLbl.style.cssText='font-size:10px;letter-spacing:.3em;color:rgba(201,149,42,.7);margin-bottom:10px;';
     preLbl.textContent=`あなたを表すカード（事前配置）— No.${FIXED_GENDER_CARD} ${LENORMAND[FIXED_GENDER_CARD].name}`;
     preWrap.appendChild(preLbl);
-    preWrap.appendChild(makeResultCard(FIXED_GENDER_CARD,'len','clamp(90px,22vw,130px)','clamp(135px,33vw,195px)',0));
+    preWrap.appendChild(makeResultCard(FIXED_GENDER_CARD,'len','clamp(90px,22vw,130px)','clamp(135px,33vw,195px)',0,{drawSound:false}));
     grid.appendChild(preWrap);
   }
 
@@ -7014,7 +7107,7 @@ function showLenCards(){
       const cell=document.createElement('div');
       cell.className='grid33-cell';
       // 画面幅に合わせてカードサイズを計算（3列・gap考慮）
-      const card=makeResultCard(id,'len','clamp(104px,31.5vw,200px)','clamp(156px,47.2vw,300px)',i*0.08);
+      const card=makeResultCard(id,'len','clamp(104px,31.5vw,200px)','clamp(156px,47.2vw,300px)',i,{drawSound:true});
       if(i===4){
         card.style.border='2px solid rgba(201,149,42,.7)';
         card.style.boxShadow='0 0 20px rgba(201,149,42,.35),0 8px 32px rgba(0,0,0,.6)';
@@ -7039,7 +7132,7 @@ function showLenCards(){
     SEL_LEN.forEach((id,i)=>{
       const cell=document.createElement('div');
       cell.className='grid33-cell';
-      const card=makeResultCard(id,'len','clamp(112px,29vw,180px)','clamp(168px,43.5vw,270px)',i*0.08);
+      const card=makeResultCard(id,'len','clamp(112px,29vw,180px)','clamp(168px,43.5vw,270px)',i,{drawSound:true});
       if(i===1){
         card.style.border='2px solid rgba(201,149,42,.7)';
         card.style.boxShadow='0 0 18px rgba(201,149,42,.28),0 8px 28px rgba(0,0,0,.55)';
@@ -7057,8 +7150,7 @@ function showLenCards(){
     // 旧データ互換：1枚 大表示
     const wrap=document.createElement('div');
     wrap.className='card-single-wrap';
-    const card=makeResultCard(SEL_LEN[0],'len','clamp(240px,78vw,380px)','clamp(360px,117vw,570px)',0);
-    card.classList.add('card-glow');
+    const card=makeResultCard(SEL_LEN[0],'len','clamp(240px,78vw,380px)','clamp(360px,117vw,570px)',0,{drawSound:true,glow:true});
     wrap.appendChild(card);
     grid.appendChild(wrap);
   }
@@ -7077,12 +7169,12 @@ function startOrcShuffle(){
   orcSelCards=[];
   const deck=document.getElementById('orc-deck');
   deck.style.display='';
+  deck.classList.add('shuffling');
   deck.querySelectorAll('.shuffle-card').forEach(c=>{c.style.display='flex';});
-  orcInterval=setInterval(()=>{
-    deck.querySelectorAll('.shuffle-card').forEach(c=>{
-      c.style.transform=`rotate(${(Math.random()-0.5)*12}deg) translate(${(Math.random()-0.5)*20}px,${(Math.random()-0.5)*10}px)`;
-    });
-  },400);
+  deck.querySelectorAll('.shuffle-card').forEach(c=>c.classList.add('shuffling'));
+  clearInterval(orcInterval);
+  orcInterval=null;
+  startShuffleSound();
   document.getElementById('orc-stop-btn').style.display='block';
   document.getElementById('orc-select-area').classList.remove('on');
   document.getElementById('orc-cards-full').classList.remove('on');
@@ -7091,9 +7183,12 @@ function startOrcShuffle(){
 
 function stopOrc(){
   clearInterval(orcInterval);
+  orcInterval=null;
   orcShuffling=false;
+  stopShuffleSound();
   const deck=document.getElementById('orc-deck');
-  deck.querySelectorAll('.shuffle-card').forEach(c=>{c.style.transform='';});
+  deck.classList.remove('shuffling');
+  deck.querySelectorAll('.shuffle-card').forEach(c=>{c.style.transform='';c.classList.remove('shuffling');});
   deck.style.display='none';
   document.getElementById('orc-stop-btn').style.display='none';
 
@@ -7148,7 +7243,9 @@ function confirmOrcSelection(){
 
 function showOrcCards(){
   document.getElementById('orc-deck').style.display='none';
-  document.getElementById('orc-inst').textContent='いま出たカード';
+  const orcInst=document.getElementById('orc-inst');
+  if(orcInst) orcInst.textContent=`${SEL_ORC.length}枚を裏向きからめくっています`;
+  setTimeout(()=>{if(orcInst) orcInst.textContent='いま出たカード';},Math.max(1,SEL_ORC.length)*CARD_DRAW_STEP_MS+CARD_FLIP_AFTER_DRAW_MS+260);
   const full=document.getElementById('orc-cards-full');
   full.classList.add('on');
   const grid=document.getElementById('orc-cards-grid');
@@ -7158,14 +7255,13 @@ function showOrcCards(){
     // 無料：1枚 大表示
     const wrap=document.createElement('div');
     wrap.className='card-single-wrap';
-    const card=makeResultCard(SEL_ORC[0],'orc','clamp(240px,78vw,380px)','clamp(360px,117vw,570px)',0);
-    card.classList.add('card-glow');
+    const card=makeResultCard(SEL_ORC[0],'orc','clamp(240px,78vw,380px)','clamp(360px,117vw,570px)',0,{glow:true});
     wrap.appendChild(card);
     grid.appendChild(wrap);
   }else{
     // 深掘り鑑定：3枚 大表示
     SEL_ORC.forEach((id,i)=>{
-      const card=makeResultCard(id,'orc','clamp(104px,31.5vw,200px)','clamp(156px,47.2vw,300px)',i*0.1);
+      const card=makeResultCard(id,'orc','clamp(104px,31.5vw,200px)','clamp(156px,47.2vw,300px)',i);
       grid.appendChild(card);
     });
   }
@@ -8141,6 +8237,7 @@ async function completeResultGenerationUI(){
   renderMemberFollowupSection();
   renderReturnRitual();
   document.getElementById('progress').style.width='100%';
+  playResultCompleteSound();
   setTimeout(()=>{
     const shareBtn=document.getElementById('share-x-btn');
     if(shareBtn) shareBtn.style.display='inline-flex';
@@ -10129,20 +10226,38 @@ function typeText(id,text,delay=0){
 // ══════════════════════════════════════════════════
 // UTILS
 // ══════════════════════════════════════════════════
-function makeResultCard(id,type,w,h,delay=0){
+function makeResultCard(id,type,w,h,delay=0,options={}){
   const data=type==='len'?LENORMAND[id]:ORACLE[id];
   const imgSrc=type==='len'?`images/cards/lenormand/${String(id).padStart(2,'0')}.jpg`:`images/cards/oracle/${String(id).padStart(2,'0')}.jpg`;
   const el=document.createElement('div');
-  el.className=`result-card card-type-${type}`;
-  el.style.cssText=`width:${w};height:${h};animation-delay:${delay}s;`;
+  el.className=`result-card card-type-${type} card-draw-in is-face-down`;
+  el.style.cssText=`width:${w};height:${h};`;
+  const safeName=escapeHtml(data.name||'');
+  const safeKw=escapeHtml((data.kw||data.msg||'').slice(0,18));
   el.innerHTML=`
-    <img src="${imgSrc}" class="result-card-img" onerror="this.style.display='none'" alt="">
-    <div class="result-card-placeholder ${type}-placeholder">
-      <div class="rc-num">${id}</div>
-      <div class="rc-name">${data.name}</div>
-      <div class="rc-kw">${(data.kw||data.msg||'').slice(0,18)}</div>
+    <div class="result-card-flipper">
+      <div class="result-card-face result-card-back result-card-placeholder ${type}-placeholder" aria-hidden="true">
+        <div class="rc-num">${id}</div>
+        <div class="rc-name">${safeName}</div>
+        <div class="rc-kw">${safeKw}</div>
+      </div>
+      <div class="result-card-face result-card-front">
+        <img src="${imgSrc}" class="result-card-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="">
+        <div class="result-card-placeholder ${type}-placeholder">
+          <div class="rc-num">${id}</div>
+          <div class="rc-name">${safeName}</div>
+          <div class="rc-kw">${safeKw}</div>
+        </div>
+      </div>
     </div>`;
-  el.onclick=()=>openCardLightbox(imgSrc,id,data.name,data.kw||data.msg||'');
+  el.onclick=()=>{
+    if(!el.classList.contains('is-flipped')){
+      revealResultCard(el);
+      return;
+    }
+    openCardLightbox(imgSrc,id,data.name,data.kw||data.msg||'');
+  };
+  armResultCardMotion(el,delay,options);
   return el;
 }
 
