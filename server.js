@@ -103,6 +103,8 @@ const PORT = parseInt(readCliArg('--port') || process.env.PORT || '3000', 10);
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const GA_TRACKING_ID_RAW = normalizeEnvValue(process.env.GA_TRACKING_ID || process.env.GA4_TRACKING_ID || '');
+const GA_TRACKING_ID = isPlaceholderEnvValue(GA_TRACKING_ID_RAW) ? '' : GA_TRACKING_ID_RAW;
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 const STRIPE_PRICE_ID_MONTHLY = process.env.STRIPE_PRICE_ID_MONTHLY || '';
@@ -217,12 +219,12 @@ function applySecurityHeaders(req, res) {
   // migrating to nonce/hash-based CSP, and verifying the static HTML no longer needs it.
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://js.stripe.com",
+    "script-src 'self' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://js.stripe.com https://www.googletagmanager.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
-    "img-src 'self' data: blob: https://*.googleusercontent.com",
+    "img-src 'self' data: blob: https://*.googleusercontent.com https://www.google-analytics.com",
     "media-src 'self'",
-    "connect-src 'self' https://accounts.google.com https://api.stripe.com",
+    "connect-src 'self' https://accounts.google.com https://api.stripe.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com",
     "frame-src 'self' https://accounts.google.com https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",
@@ -1282,6 +1284,12 @@ async function serveStatic(req, res) {
     }
     const ext = path.extname(filePath).toLowerCase();
     const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+    if (path.basename(filePath) === 'uranai-v5.html') {
+      const body = (await fsp.readFile(filePath, 'utf8'))
+        .replace("window.GA_TRACKING_ID=window.GA_TRACKING_ID||'';", `window.GA_TRACKING_ID=window.GA_TRACKING_ID||${JSON.stringify(GA_TRACKING_ID)};`);
+      sendText(res, 200, body, contentType);
+      return;
+    }
     res.writeHead(200, {
       'Content-Type': contentType,
       'Cache-Control': (pathnameIsImage(req.url) || pathnameIsAudio(req.url)) ? 'public, max-age=86400' : 'no-store',

@@ -9,6 +9,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>羅針占術</title>
+<script>
+window.GA_TRACKING_ID=window.GA_TRACKING_ID||'';
+if(window.GA_TRACKING_ID){
+  window.dataLayer=window.dataLayer||[];
+  window.gtag=function(){window.dataLayer.push(arguments);};
+  var gaScript=document.createElement('script');
+  gaScript.async=true;
+  gaScript.src='https://www.googletagmanager.com/gtag/js?id='+encodeURIComponent(window.GA_TRACKING_ID);
+  document.head.appendChild(gaScript);
+  window.gtag('js',new Date());
+  window.gtag('config',window.GA_TRACKING_ID,{send_page_view:false});
+}
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700&family=Cinzel+Decorative:wght@400;700&family=Noto+Sans+JP:wght@300;400&display=swap" rel="stylesheet">
 
 <style>
@@ -5416,8 +5429,8 @@ body{
       <div class="top-sub" id="brand-app-subtitle">本質、本音、いまの現実。<br>3つの層から、次に進む方角を読み解きます。</div>
       <div class="top-desc">無料鑑定でも、本質・本音・現実・次の一手まで読み解けます。</div>
       <div class="top-btns">
-        <a class="btn-top btn-free" href="?flow=free" data-flow-target="free" onclick="if(window.startFlow){startFlow('free');return false;}">無料で羅針鑑定をはじめる</a>
-        <a class="btn-top btn-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定を見る</a>
+        <a class="btn-top btn-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="hero" onclick="if(window.startFlow){startFlow('free');return false;}">無料で羅針鑑定をはじめる</a>
+        <a class="btn-top btn-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="top" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定を見る</a>
         <button class="btn-top btn-sample" type="button" onclick="openSampleModal()" style="display:none">サンプルを見る</button>
       </div>
       <div class="top-note"></div>
@@ -5501,7 +5514,7 @@ body{
           </ul>
           <div class="plan-compare-summary">本質・本音・現実を知り、次の一手を受け取る鑑定です。</div>
           <div class="plan-compare-actions">
-            <a class="plan-compare-action free" href="?flow=free" data-flow-target="free" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
+            <a class="plan-compare-action free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
           </div>
         </div>
         <div class="plan-compare-card deep">
@@ -5519,7 +5532,7 @@ body{
           </ul>
           <div class="plan-compare-summary">迷いの変化を追い、注意点と次の選択を具体的に読み解きます。</div>
           <div class="plan-compare-actions">
-            <a class="plan-compare-action deep deep-premium-button" href="?flow=paid" data-flow-target="paid" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定を見る</a>
+            <a class="plan-compare-action deep deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="comparison" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定を見る</a>
           </div>
         </div>
       </div>
@@ -5573,7 +5586,7 @@ body{
           <div class="member-benefit">前回との変化を見比べられる</div>
           <div class="member-benefit">鑑定履歴が積み上がるほど傾向が見える</div>
         </div>
-        <button class="vault-link" type="button" data-member-intent="start-paid" onclick="openMemberAccessModal('start-paid')">深掘り鑑定をはじめる</button>
+      <button class="vault-link" type="button" data-member-intent="start-paid" data-track="deepen_cta_click" data-track-position="top" onclick="openMemberAccessModal('start-paid')">深掘り鑑定をはじめる</button>
       </div>
     </div>
   </div>
@@ -5648,8 +5661,8 @@ body{
         <div style="font-family:'Shippori Mincho',serif;font-size:15px;color:rgba(240,234,216,.7);letter-spacing:.08em;">無料で見えた流れを、次にすることまで深く読む</div>
       </div>
       <div class="paid-band-actions paid-band-actions-center">
-        <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
-        <a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定を見る</a>
+        <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
+        <a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="top" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定を見る</a>
       </div>
       <div class="paid-band-note">月額1,200円 / 1週間のお試しあり</div>
       <div class="checkout-disclosure">
@@ -6168,7 +6181,7 @@ body{
       <div class="result-deep-cta" id="result-deep-cta" style="display:none">
         <div class="result-deep-cta-title">この結果をさらに深く読み解けます</div>
         <div class="result-deep-cta-copy">無料鑑定では、いまの答えと次の一手まで整理しました。深掘り鑑定では、この結果を土台に、追加質問とカード展開で「なぜそうなるのか」「どこで止まりやすいのか」「次に何を確認すべきか」まで具体的に読み解きます。</div>
-        <button class="result-deep-cta-btn deep-premium-button" type="button" onclick="upgradeCurrentReadingToPaid()">この結果を深掘りする</button>
+        <button class="result-deep-cta-btn deep-premium-button" type="button" data-track="deepen_cta_click" data-track-position="result_bottom" onclick="upgradeCurrentReadingToPaid()">この結果を深掘りする</button>
         <div class="result-deep-cta-note">月額1,200円 / 1週間のお試しあり</div>
         <div class="checkout-disclosure">
           お試し終了後は月額課金に移行します。解約は請求管理から行えます。返金可否は利用規約に従います。占いは娯楽・自己理解支援であり、医療・法律・投資などの専門判断ではありません。

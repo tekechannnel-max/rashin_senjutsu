@@ -1530,6 +1530,12 @@ const VAULT_QUERY_ENDPOINT='/api/vault/history/query';
 const VAULT_SAVE_ENDPOINT='/api/vault/history/save';
 const VAULT_CLEAR_ENDPOINT='/api/vault/history/clear';
 const CLIENT_LOG_ENDPOINT='/api/client-log';
+const GA_DEBUG_DEFAULT=DEV_MODE||IS_LOCAL_RUNTIME||PAGE_PARAMS.has('ga_debug');
+const GA_FORBIDDEN_PARAM_KEYS=new Set([
+  'fullname','first_name','last_name','name','birthdate','birthday','birth_day',
+  'birth_month','birth_year','email','user_id','userid','google_user_id',
+  'theme','consultation','consultation_text','partner','partner_info','body','text','raw',
+]);
 const AUDIO_ASSETS={
   shuffle:'音素材/ヒンズーシャッフル.mp3',
   lenDraw:'音素材/カードをめくる_ルノルマンだけ.mp3',
@@ -1852,6 +1858,9 @@ let ACTIVE_FOLLOWUP_KEY='';
 let FOLLOWUP_LOADING=false;
 let DOSSIER_LOADING=false;
 let LAST_OUTPUTS={about:'',foundationDeep:'',len:'',orc:'',integration:'',dossier:'',followups:{}};
+let TOP_PAGE_VIEW_TRACKED=false;
+let LAST_DEEPEN_CTA_POSITION='unknown';
+const TRACKED_READING_COMPLETE_KEYS=new Set();
 let GOOGLE_SIGNIN_RENDER_TIMER=0;
 const AUDIO_CACHE={};
 let ACTIVE_SHUFFLE_SOUND='';
@@ -2188,6 +2197,156 @@ const CLARIFY_DEF={
   ]},
 };
 
+function shouldDebugGaEvents(){
+  if(window.URANAI_GA_DEBUG===false) return false;
+  if(window.URANAI_GA_DEBUG===true) return true;
+  return GA_DEBUG_DEFAULT&&!PAGE_PARAMS.has('ga_silent');
+}
+
+function sanitizeGaParams(params={}){
+  const safe={};
+  Object.entries(params||{}).forEach(([key,value])=>{
+    const normalizedKey=String(key||'').trim();
+    if(!normalizedKey||GA_FORBIDDEN_PARAM_KEYS.has(normalizedKey.toLowerCase())) return;
+    if(value===undefined||value===null) return;
+    if(typeof value==='boolean'){
+      safe[normalizedKey]=value;
+      return;
+    }
+    if(typeof value==='number'){
+      if(Number.isFinite(value)) safe[normalizedKey]=value;
+      return;
+    }
+    if(typeof value==='string'){
+      safe[normalizedKey]=value.slice(0,100);
+    }
+  });
+  return safe;
+}
+
+function trackEvent(name,params={}){
+  const eventName=String(name||'').trim();
+  if(!eventName) return;
+  const safeParams=sanitizeGaParams(params);
+  if(shouldDebugGaEvents()&&console?.debug) console.debug('[GA4]',eventName,safeParams);
+  if(typeof window.gtag!=='function') return;
+  try{
+    window.gtag('event',eventName,safeParams);
+  }catch(_error){}
+}
+
+function getUtmParams(){
+  const params=new URLSearchParams(location.search||'');
+  return{
+    utm_source:params.get('utm_source')||'',
+    utm_medium:params.get('utm_medium')||'',
+    utm_campaign:params.get('utm_campaign')||'',
+  };
+}
+
+function getCurrentReadingType(){
+  return PLAN==='paid'?'paid':'free';
+}
+
+function hasReadingHistory(){
+  return getReadingHistory().length>0;
+}
+
+function getCurrentInputAnalytics(){
+  const year=Number.parseInt(document.getElementById('f-year')?.value,10);
+  const month=Number.parseInt(document.getElementById('f-month')?.value,10);
+  const day=getSelectedBirthDay();
+  const fullname=getFullname();
+  const theme=document.getElementById('f-theme')?.value?.trim()||'';
+  return{
+    category:document.getElementById('f-cat')?.value||'総合',
+    theme_length:theme.length,
+    has_birthdate:hasFullBirthDate(year,month,day),
+    has_name:!!fullname,
+  };
+}
+
+function inferFreeButtonPosition(button){
+  if(!button) return'unknown';
+  const explicit=button.getAttribute('data-track-position');
+  if(explicit) return explicit;
+  if(button.closest('#s-top .top-hero-shell')) return'hero';
+  if(button.closest('#premium-entry')) return'entry';
+  if(button.closest('.plan-disclosure')) return'entry';
+  if(button.closest('#s-result')) return'result';
+  return'unknown';
+}
+
+function inferDeepenCtaPosition(button){
+  if(!button) return'unknown';
+  const explicit=button.getAttribute('data-track-position');
+  if(explicit) return explicit;
+  if(button.closest('#result-upgrade-panel')) return'result_panel';
+  if(button.closest('#member-followup-section')||button.closest('#result-deep-cta')) return'result_bottom';
+  if(button.closest('.plan-disclosure')) return'comparison';
+  if(button.closest('#s-top')) return'top';
+  return'unknown';
+}
+
+function checkoutSourceFromPosition(position){
+  if(position==='comparison') return'comparison';
+  if(position==='result_panel'||position==='result_bottom') return'result';
+  if(position==='top') return'top';
+  return'unknown';
+}
+
+function checkoutSourceFromIntent(intent=''){
+  if(String(intent||'').includes('upgrade')) return'result';
+  return checkoutSourceFromPosition(LAST_DEEPEN_CTA_POSITION);
+}
+
+function googleTriggerFromIntent(intent=''){
+  const value=String(intent||MEMBER_PENDING_INTENT||'').toLowerCase();
+  if(value.includes('upgrade')||value.includes('paid')) return'deepen';
+  if(value.includes('history')) return'history';
+  if(value.includes('daily')) return'daily';
+  return'unknown';
+}
+
+function trackTopPageView(){
+  if(TOP_PAGE_VIEW_TRACKED) return;
+  TOP_PAGE_VIEW_TRACKED=true;
+  trackEvent('page_view_top',{
+    path:location.pathname,
+    referrer:document.referrer||'',
+    ...getUtmParams(),
+  });
+}
+
+function trackFreeStartClick(button){
+  trackEvent('free_start_click',{
+    button_position:inferFreeButtonPosition(button),
+  });
+}
+
+function trackDeepenCtaClick(button){
+  const position=inferDeepenCtaPosition(button);
+  LAST_DEEPEN_CTA_POSITION=position;
+  trackEvent('deepen_cta_click',{
+    cta_position:position,
+    reading_type:getCurrentReadingType(),
+    has_history:hasReadingHistory(),
+  });
+}
+
+function trackReadingComplete(){
+  const key=CURRENT_READING_ID||`${PLAN}:${SEL_LEN.join('-')}:${SEL_ORC.join('-')}`;
+  if(TRACKED_READING_COMPLETE_KEYS.has(key)) return;
+  TRACKED_READING_COMPLETE_KEYS.add(key);
+  const input=getCurrentInputAnalytics();
+  trackEvent('reading_complete',{
+    reading_type:getCurrentReadingType(),
+    category:input.category,
+    lenormand_count:SEL_LEN.length,
+    oracle_count:SEL_ORC.length,
+  });
+}
+
 // ══════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════
@@ -2205,6 +2364,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   safeRun('loadServerHealth',()=>loadServerHealth().then(()=>handleStripeReturnFlow()).finally(()=>runRequestedFlowFromQuery()));
   safeRun('loadSolarTermBoundaries',()=>loadSolarTermBoundaries());
   safeRun('renderHomeVault',()=>renderHomeVault());
+  safeRun('trackTopPageView',()=>trackTopPageView());
   safeRun('runAutotestFromQuery',()=>runAutotestFromQuery());
 });
 
@@ -2212,16 +2372,25 @@ document.addEventListener('click',event=>{
   const target=event.target&&typeof event.target.closest==='function'
     ? event.target
     : event.target?.parentElement||null;
+  const trackBtn=target?.closest?.('[data-track]');
+  if(trackBtn&&!trackBtn.disabled){
+    const trackName=String(trackBtn.getAttribute('data-track')||'').trim();
+    if(trackName==='free_start_click') trackFreeStartClick(trackBtn);
+    if(trackName==='deepen_cta_click') trackDeepenCtaClick(trackBtn);
+  }
   const flowBtn=target?.closest?.('[data-flow-target]');
   if(flowBtn){
     event.preventDefault();
     const plan=String(flowBtn.getAttribute('data-flow-target')||'').trim();
+    if(plan==='free'&&!flowBtn.hasAttribute('data-track')) trackFreeStartClick(flowBtn);
+    if(plan==='paid'&&!flowBtn.hasAttribute('data-track')) trackDeepenCtaClick(flowBtn);
     if(plan) void startFlow(plan);
     return;
   }
   const memberBtn=target?.closest?.('[data-member-intent]');
   if(memberBtn){
     event.preventDefault();
+    if(!memberBtn.hasAttribute('data-track')) trackDeepenCtaClick(memberBtn);
     const intent=String(memberBtn.getAttribute('data-member-intent')||'start-paid').trim()||'start-paid';
     openMemberAccessModal(intent);
   }
@@ -2901,7 +3070,7 @@ function getMemberStatusMeta(){
       cls:'active',
       label,
       copy,
-      action:`<div style="display:flex;gap:10px;flex-wrap:wrap;"><button class="vault-link" onclick="startFlow('paid')">この続きで深掘り鑑定する</button>${portalBtn}<button class="vault-link" onclick="logoutMemberSession()">${MEMBER_AUTH.source==='local_preview'?'確認表示を閉じる':'ログアウト'}</button></div>`,
+      action:`<div style="display:flex;gap:10px;flex-wrap:wrap;"><button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">この続きで深掘り鑑定する</button>${portalBtn}<button class="vault-link" onclick="logoutMemberSession()">${MEMBER_AUTH.source==='local_preview'?'確認表示を閉じる':'ログアウト'}</button></div>`,
     };
   }
   if(canUsePaidTestMode()){
@@ -2909,7 +3078,7 @@ function getMemberStatusMeta(){
       cls:'inactive',
       label:'',
       copy:'前回の鑑定をもとに、続きの悩みを読み解けます。深掘り鑑定では、追加質問と履歴解析でさらに具体的に見ていきます。',
-      action:`<button class="vault-link" onclick="openMemberAccessModal('start-paid')">深掘り鑑定をはじめる</button>`,
+      action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openMemberAccessModal('start-paid')">深掘り鑑定をはじめる</button>`,
     };
   }
   if(MEMBER_AUTH.manageBillingAvailable){
@@ -2925,7 +3094,7 @@ function getMemberStatusMeta(){
       cls:'inactive',
       label:'Googleログイン待ち',
       copy:'前回の鑑定をもとに、続きの悩みを読み解けます。まずGoogleアカウントでログインし、その後に月額登録へ進みます。',
-      action:`<button class="vault-link" onclick="openMemberAccessModal('start-paid')">Googleでログイン</button>`,
+      action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openMemberAccessModal('start-paid')">Googleでログイン</button>`,
     };
   }
   if(MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.stripeCheckoutReady){
@@ -2933,7 +3102,7 @@ function getMemberStatusMeta(){
       cls:'inactive',
       label:'月額登録待ち',
       copy:'前回の鑑定をもとに、続きの悩みを読み解けます。月額登録を行うと追加質問と履歴解析でさらに具体的に見ていきます。',
-      action:`<button class="vault-link" onclick="openStripeCheckout('start-paid')">月額登録へ進む</button>`,
+      action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openStripeCheckout('start-paid')">月額登録へ進む</button>`,
     };
   }
   return{
@@ -2942,7 +3111,7 @@ function getMemberStatusMeta(){
     copy:MEMBER_AUTH.codeConfigured
       ?'前回の鑑定をもとに、続きの悩みを読み解けます。確認コードを入力すると深掘り鑑定の利用状態を確認できます。'
       :'鑑定を重ねるほど、あなたの迷いの流れが見えてきます。まずは無料鑑定から、あなたの記録を作りましょう。',
-    action:`<button class="vault-link" onclick="openMemberAccessModal('start-paid')" ${MEMBER_AUTH.codeConfigured?'':'disabled'}>確認コードを入力</button>`,
+    action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openMemberAccessModal('start-paid')" ${MEMBER_AUTH.codeConfigured?'':'disabled'}>確認コードを入力</button>`,
   };
 }
 
@@ -3200,6 +3369,12 @@ function scheduleGoogleSignInRender(retry=0){
         logo_alignment:'left',
         width:260,
       });
+      if(target.dataset.gaLoginBound!=='1'){
+        target.dataset.gaLoginBound='1';
+        target.addEventListener('click',()=>{
+          trackEvent('google_login_start',{trigger:googleTriggerFromIntent()});
+        });
+      }
       clearGoogleAuthError();
     }catch(e){
       setGoogleAuthError('Googleログインボタンを表示できませんでした');
@@ -3293,6 +3468,12 @@ async function openStripeCheckout(intent='start-paid'){
       return false;
     }
     saveStripeReturnIntent(intent);
+    trackEvent('checkout_start',{
+      plan:'monthly',
+      price:1200,
+      trial_days:7,
+      source:checkoutSourceFromIntent(intent),
+    });
     location.href=data.url;
     return true;
   }catch(e){
@@ -3975,18 +4156,18 @@ function renderPremiumEntrySection(){
   const el=document.getElementById('premium-entry');
   if(!el) return;
   const paidAction=isMemberActive()
-    ?`<a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定を見る</a>`
+    ?`<a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="top" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定を見る</a>`
     :canUsePaidTestMode()
-      ?`<a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定を見る</a>`
+      ?`<a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="top" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定を見る</a>`
       :((MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn)
-        ?`<a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-member-intent="start-paid" onclick="if(window.openMemberAccessModal){openMemberAccessModal('start-paid');return false;}">深掘り鑑定を見る</a>`
+        ?`<a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-member-intent="start-paid" data-track="deepen_cta_click" data-track-position="top" onclick="if(window.openMemberAccessModal){openMemberAccessModal('start-paid');return false;}">深掘り鑑定を見る</a>`
         :(MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.stripeCheckoutReady)
-          ?`<button class="today-cta today-cta-paid deep-premium-button" type="button" onclick="openStripeCheckout('start-paid')">深掘り鑑定を見る</button>`
-          :`<button class="today-cta today-cta-paid deep-premium-button" type="button" data-member-intent="start-paid" onclick="openMemberAccessModal('start-paid')" ${MEMBER_AUTH.codeConfigured?'':'disabled'}>${MEMBER_AUTH.codeConfigured?'深掘り鑑定を見る':'公開準備中'}</button>`);
+          ?`<button class="today-cta today-cta-paid deep-premium-button" type="button" data-track="deepen_cta_click" data-track-position="top" onclick="openStripeCheckout('start-paid')">深掘り鑑定を見る</button>`
+          :`<button class="today-cta today-cta-paid deep-premium-button" type="button" data-member-intent="start-paid" data-track="deepen_cta_click" data-track-position="top" onclick="openMemberAccessModal('start-paid')" ${MEMBER_AUTH.codeConfigured?'':'disabled'}>${MEMBER_AUTH.codeConfigured?'深掘り鑑定を見る':'公開準備中'}</button>`);
   el.innerHTML=`
     <div class="paid-band-inner">
       <div class="paid-band-actions paid-band-actions-center">
-        <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
+        <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
         ${paidAction}
       </div>
       <div class="paid-band-note">月額1,200円 / 1週間のお試しあり</div>
@@ -5412,7 +5593,7 @@ function renderMemberStatusFallback(){
       <div class="member-benefit">前回との変化を見比べられる</div>
       <div class="member-benefit">鑑定履歴が積み上がるほど傾向が見える</div>
     </div>
-    <button class="vault-link" type="button" data-member-intent="start-paid" onclick="openMemberAccessModal('start-paid')">深掘り鑑定をはじめる</button>`;
+    <button class="vault-link" type="button" data-member-intent="start-paid" data-track="deepen_cta_click" data-track-position="top" onclick="openMemberAccessModal('start-paid')">深掘り鑑定をはじめる</button>`;
 }
 
 function renderPremiumEntryFallback(){
@@ -5421,8 +5602,8 @@ function renderPremiumEntryFallback(){
   el.innerHTML=`
     <div class="paid-band-inner">
       <div class="paid-band-actions paid-band-actions-center">
-        <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
-        <a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定を見る</a>
+        <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
+        <a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="top" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定を見る</a>
       </div>
       <div class="paid-band-note">月額1,200円 / 1週間のお試しあり</div>
       <div class="checkout-disclosure">${CHECKOUT_DISCLOSURE_HTML}</div>
@@ -5450,7 +5631,7 @@ function renderRecentHistory(){
       <div class="vault-insight-body">前回のテーマを引き継ぎ、同じ悩みの続きを深く読み解きます。</div>
       <div class="history-deep-link">
         <div class="history-deep-link-copy">前回のテーマを引き継いで、今の迷いをさらに読み解けます。</div>
-        <button class="vault-link" type="button" onclick="event.stopPropagation();startFlow('paid')">この鑑定で深掘りする</button>
+        <button class="vault-link" type="button" data-track="deepen_cta_click" data-track-position="top" onclick="event.stopPropagation();startFlow('paid')">この鑑定で深掘りする</button>
       </div>
     </div>`;
   listEl.innerHTML=latestLead+history.slice(0,3).map(record=>{
@@ -6109,7 +6290,7 @@ function renderResultUpgradePanel(){
         </div>`).join('')}
     </div>
     <div class="upgrade-actions">
-      <button class="nav-btn nav-btn-primary" onclick="upgradeCurrentReadingToPaid()">この結果を深掘りする</button>
+      <button class="nav-btn nav-btn-primary" data-track="deepen_cta_click" data-track-position="result_panel" onclick="upgradeCurrentReadingToPaid()">この結果を深掘りする</button>
     </div>`;
   updateResultActionState();
 }
@@ -7156,6 +7337,7 @@ function showScreen(id,progress){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   document.getElementById('progress').style.width=progress+'%';
+  if(id==='s-top') trackTopPageView();
   if(typeof window.scrollTo==='function') window.scrollTo(0,0);
 }
 
@@ -7261,6 +7443,9 @@ function goToLen(){
     return;
   }
 
+  if(PLAN==='free'){
+    trackEvent('form_submit',getCurrentInputAnalytics());
+  }
   beginReadingSession();
   MEIMEI=calcMeimei(year,month,day,hour);
   LP=hasFullBirthDate(year,month,day)?calcLp(year,month,day):null;
@@ -8530,6 +8715,7 @@ async function completeResultGenerationUI(){
   renderMemberFollowupSection();
   renderReturnRitual();
   document.getElementById('progress').style.width='100%';
+  trackReadingComplete();
   playResultCompleteSound();
   setTimeout(()=>{
     const shareBtn=document.getElementById('share-x-btn');
@@ -9185,6 +9371,7 @@ ${buildReadingOutputFormatGuide('integration')}`;
   renderMemberFollowupSection();
   renderReturnRitual();
   document.getElementById('progress').style.width='100%';
+  trackReadingComplete();
   setTimeout(()=>{
     const shareBtn=document.getElementById('share-x-btn');
     if(shareBtn) shareBtn.style.display='inline-flex';
@@ -9465,14 +9652,14 @@ function renderMemberFollowupSection(){
             ?'確認コードがある場合は入力して利用状態を確認できます。'
             :'現在はまだ使えません。')));
     actionsEl.innerHTML=canUsePaidTestMode()
-      ?`<button class="followup-btn" onclick="openMemberAccessModal('upgrade-paid')">深掘り鑑定をはじめる</button>`
+      ?`<button class="followup-btn" data-track="deepen_cta_click" data-track-position="result_bottom" onclick="openMemberAccessModal('upgrade-paid')">深掘り鑑定をはじめる</button>`
       :((MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn)
-        ?`<button class="followup-btn" onclick="openMemberAccessModal('upgrade-paid')">Googleでログイン</button>`
+        ?`<button class="followup-btn" data-track="deepen_cta_click" data-track-position="result_bottom" onclick="openMemberAccessModal('upgrade-paid')">Googleでログイン</button>`
         :((MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.manageBillingAvailable)
           ?`<button class="followup-btn" onclick="openStripeBillingPortal()">請求管理</button>`
           :((MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.stripeCheckoutReady)
-            ?`<button class="followup-btn" onclick="openStripeCheckout('upgrade-paid')">月額登録へ進む</button>`
-            :`<button class="followup-btn" onclick="openMemberAccessModal('upgrade-paid')" ${MEMBER_AUTH.codeConfigured?'':'disabled'}>確認コードを入力</button>`)));
+            ?`<button class="followup-btn" data-track="deepen_cta_click" data-track-position="result_bottom" onclick="openStripeCheckout('upgrade-paid')">月額登録へ進む</button>`
+            :`<button class="followup-btn" data-track="deepen_cta_click" data-track-position="result_bottom" onclick="openMemberAccessModal('upgrade-paid')" ${MEMBER_AUTH.codeConfigured?'':'disabled'}>確認コードを入力</button>`)));
   }else{
     noteEl.style.display='none';
     actionsEl.innerHTML=Object.entries(FOLLOWUP_PRESETS).map(([key,preset])=>
@@ -10592,6 +10779,7 @@ function showToast(msg){
 }
 
 if(typeof window!=='undefined'){
+  window.trackEvent=trackEvent;
   window.startFlow=startFlow;
   window.openMemberAccessModal=openMemberAccessModal;
   window.openSampleModal=openSampleModal;
