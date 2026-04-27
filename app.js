@@ -1596,6 +1596,7 @@ const VAULT_ID_STORAGE_KEY='uranai-vault-id-v1';
 const DAILY_ORACLE_STORAGE_KEY='uranai-daily-oracle-v1';
 const MEMBER_STORAGE_KEY='uranai-member-preview-v1';
 const STRIPE_RETURN_INTENT_KEY='uranai-stripe-return-intent-v1';
+const DEEP_PAID_CTA_LABEL='深掘り鑑定をする(有料)';
 const FREE_LEN_COUNT=2;
 const FREE_ORC_COUNT=1;
 const LEN_FREE_POSITION_LABELS=['主題','修飾・答え'];
@@ -1913,6 +1914,7 @@ const TRACKED_DEEPEN_CTA_VIEW_KEYS=new Set();
 const TRACKED_DEEPEN_CTA_VIEW_LOGICAL_KEYS=new Set();
 const OBSERVED_DEEPEN_CTA_KEYS=new WeakSet();
 let DAILY_ORACLE_VIEW_TRACKED=false;
+let DAILY_ORACLE_MOTION_TIMERS=[];
 let DEEPEN_CTA_VIEW_OBSERVER=null;
 let FORM_START_TRACKED_FOR_SCREEN=false;
 let GOOGLE_SIGNIN_RENDER_TIMER=0;
@@ -2654,6 +2656,265 @@ function getDailyOracleShareText(card){
   ].filter(Boolean).join('\n');
 }
 
+function installDailyOracleStageStyles(){
+  if(typeof document==='undefined'||document.getElementById('daily-oracle-stage-style')) return;
+  const style=document.createElement('style');
+  style.id='daily-oracle-stage-style';
+  style.textContent=`
+    .daily-oracle-stage{
+      position:fixed;inset:0;z-index:6000;display:grid;place-items:center;
+      padding:clamp(14px,3vw,34px);background:rgba(3,4,13,.88);
+      backdrop-filter:blur(8px);opacity:0;pointer-events:none;
+      transition:opacity .24s ease;
+    }
+    .daily-oracle-stage.is-open{opacity:1;pointer-events:auto;}
+    .daily-oracle-stage-panel{
+      width:min(1040px,100%);max-height:calc(100dvh - 28px);overflow:auto;
+      border:1px solid rgba(228,184,74,.42);border-radius:6px;
+      background:
+        linear-gradient(180deg,rgba(16,20,42,.96),rgba(5,7,18,.98)),
+        url('images/ui/app-wide.jpg') center/cover no-repeat;
+      box-shadow:0 28px 90px rgba(0,0,0,.58),0 0 0 1px rgba(255,255,255,.04) inset;
+    }
+    .daily-oracle-stage-head{
+      display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+      padding:18px clamp(18px,3vw,30px);border-bottom:1px solid rgba(201,149,42,.2);
+      background:rgba(5,6,17,.56);
+    }
+    .daily-oracle-stage-kicker{
+      font-size:10px;letter-spacing:.28em;color:#92d2cf;text-transform:uppercase;margin-bottom:5px;
+    }
+    .daily-oracle-stage-title{
+      font-family:'Shippori Mincho',serif;font-size:clamp(19px,2.5vw,28px);
+      color:#f5d370;letter-spacing:.1em;line-height:1.45;
+    }
+    .daily-oracle-stage-close{
+      width:40px;height:40px;display:grid;place-items:center;flex:0 0 auto;
+      border:1px solid rgba(228,184,74,.34);border-radius:4px;
+      background:rgba(255,255,255,.04);color:rgba(246,239,219,.9);
+      font-size:24px;line-height:1;cursor:pointer;
+    }
+    .daily-oracle-stage-close:hover{border-color:rgba(245,211,112,.72);color:#f8df9a;}
+    .daily-oracle-stage-body{
+      display:grid;grid-template-columns:minmax(220px,.85fr) minmax(0,1.15fr);
+      gap:clamp(18px,4vw,40px);align-items:center;padding:clamp(20px,4vw,42px);
+    }
+    .daily-oracle-ritual-frame{
+      position:relative;min-height:clamp(340px,56vh,520px);display:grid;place-items:center;
+      border:1px solid rgba(201,149,42,.24);border-radius:6px;
+      background:
+        linear-gradient(135deg,rgba(255,255,255,.045),transparent 28%),
+        linear-gradient(180deg,rgba(4,7,19,.64),rgba(4,5,14,.86));
+      overflow:hidden;
+    }
+    .daily-oracle-ritual-frame::before,
+    .daily-oracle-ritual-frame::after{
+      content:'';position:absolute;inset:18px;border:1px solid rgba(228,184,74,.16);
+      transform:rotate(3deg);pointer-events:none;
+    }
+    .daily-oracle-ritual-frame::after{inset:34px;border-color:rgba(146,210,207,.13);transform:rotate(-4deg);}
+    .daily-oracle-ritual-deck{
+      position:absolute;width:clamp(132px,18vw,176px);aspect-ratio:2/3;border-radius:10px;
+      background:url('images/ui/oracle-card-back.jpg') center/cover no-repeat;
+      border:1px solid rgba(245,211,112,.4);box-shadow:0 20px 44px rgba(0,0,0,.5);
+      transform:translate(-18px,10px) rotate(-8deg);opacity:.76;
+    }
+    .daily-oracle-stage.is-open:not(.is-complete) .daily-oracle-ritual-deck{
+      animation:dailyOracleDeckPulse .56s ease-in-out infinite alternate;
+    }
+    .daily-oracle-ritual-deck::before,
+    .daily-oracle-ritual-deck::after{
+      content:'';position:absolute;inset:0;border-radius:inherit;background:inherit;border:inherit;
+      box-shadow:inherit;
+    }
+    .daily-oracle-ritual-deck::before{transform:translate(12px,-8px) rotate(7deg);}
+    .daily-oracle-ritual-deck::after{transform:translate(24px,-14px) rotate(13deg);}
+    .daily-oracle-ritual-card{
+      position:relative;width:clamp(156px,22vw,220px);aspect-ratio:2/3;z-index:2;
+      perspective:1200px;transform:translateY(28px) scale(.88);opacity:0;
+      transition:transform .74s cubic-bezier(.2,.78,.2,1),opacity .45s ease,filter .55s ease;
+      filter:drop-shadow(0 24px 42px rgba(0,0,0,.52));
+    }
+    .daily-oracle-ritual-card.is-drawn{transform:translateY(0) scale(1);opacity:1;}
+    .daily-oracle-ritual-card.is-complete{filter:drop-shadow(0 26px 42px rgba(0,0,0,.58)) drop-shadow(0 0 22px rgba(245,211,112,.2));}
+    .daily-oracle-ritual-card::after{
+      content:'';position:absolute;inset:-18%;z-index:4;pointer-events:none;
+      background:linear-gradient(115deg,transparent 28%,rgba(255,245,188,.28) 46%,transparent 62%);
+      transform:translateX(-110%) rotate(8deg);opacity:0;
+    }
+    .daily-oracle-ritual-card.is-flipped::after{
+      animation:dailyOracleLightSweep .9s ease .2s both;
+    }
+    .daily-oracle-ritual-card-inner{
+      position:absolute;inset:0;transform-style:preserve-3d;transition:transform .82s cubic-bezier(.2,.78,.2,1);
+    }
+    .daily-oracle-ritual-card.is-flipped .daily-oracle-ritual-card-inner{transform:rotateY(180deg);}
+    .daily-oracle-ritual-face{
+      position:absolute;inset:0;border-radius:10px;overflow:hidden;backface-visibility:hidden;
+      border:1px solid rgba(245,211,112,.58);background:#080a18;
+    }
+    .daily-oracle-ritual-back{
+      background:
+        linear-gradient(180deg,rgba(255,255,255,.04),rgba(0,0,0,.08)),
+        url('images/ui/oracle-card-back.jpg') center/cover no-repeat;
+    }
+    .daily-oracle-ritual-front{transform:rotateY(180deg);}
+    .daily-oracle-ritual-front img{width:100%;height:100%;object-fit:cover;display:block;}
+    .daily-oracle-ritual-reading{
+      opacity:0;transform:translateY(14px);transition:opacity .46s ease,transform .46s ease;
+      border-left:1px solid rgba(228,184,74,.24);padding-left:clamp(18px,3vw,30px);
+    }
+    .daily-oracle-stage.is-complete .daily-oracle-ritual-reading{opacity:1;transform:translateY(0);}
+    .daily-oracle-stage-label{
+      font-size:10px;letter-spacing:.28em;color:#92d2cf;text-transform:uppercase;margin-bottom:8px;
+    }
+    .daily-oracle-stage-name{
+      font-family:'Shippori Mincho',serif;font-size:clamp(24px,3.2vw,36px);
+      line-height:1.35;color:#f5d370;letter-spacing:.08em;overflow-wrap:anywhere;
+    }
+    .daily-oracle-stage-subtitle{
+      display:inline-flex;margin-top:10px;padding:5px 12px;border:1px solid rgba(201,149,42,.3);
+      color:rgba(246,239,219,.88);background:rgba(255,255,255,.04);font-size:12px;letter-spacing:.08em;
+    }
+    .daily-oracle-stage-block{margin-top:20px;}
+    .daily-oracle-stage-block-title{
+      font-size:11px;letter-spacing:.18em;color:rgba(228,184,74,.86);margin-bottom:6px;
+    }
+    .daily-oracle-stage-block-body{
+      font-size:14px;line-height:1.95;color:rgba(246,239,219,.86);letter-spacing:.04em;
+    }
+    .daily-oracle-stage-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px;}
+    .daily-oracle-stage-btn{
+      min-height:42px;padding:0 18px;border:1px solid rgba(228,184,74,.44);border-radius:3px;
+      background:rgba(255,255,255,.045);color:rgba(246,239,219,.9);
+      font-family:'Noto Sans JP',sans-serif;font-size:12px;letter-spacing:.08em;cursor:pointer;
+    }
+    .daily-oracle-stage-btn.primary{
+      background:linear-gradient(135deg,#c6972e,#f4d16e);color:#150f22;font-weight:700;
+    }
+    @media(max-width:760px){
+      .daily-oracle-stage{padding:10px;}
+      .daily-oracle-stage-body{grid-template-columns:1fr;gap:18px;}
+      .daily-oracle-ritual-frame{min-height:330px;}
+      .daily-oracle-ritual-reading{border-left:0;border-top:1px solid rgba(228,184,74,.22);padding-left:0;padding-top:18px;}
+      .daily-oracle-stage-actions{display:grid;grid-template-columns:1fr;}
+      .daily-oracle-stage-btn{width:100%;}
+    }
+    @media(prefers-reduced-motion:reduce){
+      .daily-oracle-stage,.daily-oracle-ritual-card,.daily-oracle-ritual-card-inner,.daily-oracle-ritual-reading{transition:none !important;}
+      .daily-oracle-stage.is-open:not(.is-complete) .daily-oracle-ritual-deck,
+      .daily-oracle-ritual-card.is-flipped::after{animation:none !important;}
+    }
+    @keyframes dailyOracleDeckPulse{
+      from{transform:translate(-20px,12px) rotate(-10deg);}
+      to{transform:translate(-8px,4px) rotate(-3deg);}
+    }
+    @keyframes dailyOracleLightSweep{
+      0%{opacity:0;transform:translateX(-110%) rotate(8deg);}
+      30%{opacity:1;}
+      100%{opacity:0;transform:translateX(110%) rotate(8deg);}
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function clearDailyOracleMotionTimers(){
+  DAILY_ORACLE_MOTION_TIMERS.forEach(timer=>clearTimeout(timer));
+  DAILY_ORACLE_MOTION_TIMERS=[];
+  stopAppSound('shuffle');
+}
+
+function closeDailyOracleStage(){
+  clearDailyOracleMotionTimers();
+  const stage=document.getElementById('daily-oracle-stage');
+  if(!stage) return;
+  stage.classList.remove('is-open');
+  setTimeout(()=>stage.remove(),240);
+}
+
+function openDailyOracleStage(record,options={}){
+  if(!record?.card) return;
+  installDailyOracleStageStyles();
+  clearDailyOracleMotionTimers();
+  document.getElementById('daily-oracle-stage')?.remove();
+  const card=record.card;
+  const imageSrc=`images/cards/oracle/${String(card.id).padStart(2,'0')}.jpg`;
+  const stage=document.createElement('div');
+  stage.className='daily-oracle-stage';
+  stage.id='daily-oracle-stage';
+  stage.setAttribute('role','dialog');
+  stage.setAttribute('aria-modal','true');
+  stage.setAttribute('aria-labelledby','daily-oracle-stage-title');
+  stage.innerHTML=`
+    <div class="daily-oracle-stage-panel">
+      <div class="daily-oracle-stage-head">
+        <div>
+          <div class="daily-oracle-stage-kicker">DAILY ORACLE</div>
+          <div class="daily-oracle-stage-title" id="daily-oracle-stage-title">今日のカードを開きます</div>
+        </div>
+        <button class="daily-oracle-stage-close" type="button" aria-label="閉じる" onclick="closeDailyOracleStage()">×</button>
+      </div>
+      <div class="daily-oracle-stage-body">
+        <div class="daily-oracle-ritual-frame">
+          <div class="daily-oracle-ritual-deck" aria-hidden="true"></div>
+          <div class="daily-oracle-ritual-card" id="daily-oracle-ritual-card">
+            <div class="daily-oracle-ritual-card-inner">
+              <div class="daily-oracle-ritual-face daily-oracle-ritual-back" aria-hidden="true"></div>
+              <div class="daily-oracle-ritual-face daily-oracle-ritual-front">
+                <img src="${escapeHtml(imageSrc)}" alt="${escapeHtml(card.name)}">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="daily-oracle-ritual-reading">
+          <div class="daily-oracle-stage-label">今日のオラクル</div>
+          <div class="daily-oracle-stage-name">${escapeHtml(card.name)}</div>
+          <div class="daily-oracle-stage-subtitle">${escapeHtml(card.title)}</div>
+          <div class="daily-oracle-stage-block">
+            <div class="daily-oracle-stage-block-title">今日のひとこと</div>
+            <div class="daily-oracle-stage-block-body">${escapeHtml(card.message)}</div>
+          </div>
+          <div class="daily-oracle-stage-block">
+            <div class="daily-oracle-stage-block-title">今日の一手</div>
+            <div class="daily-oracle-stage-block-body">${escapeHtml(card.action)}</div>
+          </div>
+          <div class="daily-oracle-stage-actions">
+            <button class="daily-oracle-stage-btn primary" type="button" onclick="closeDailyOracleStage()">戻る</button>
+            <button class="daily-oracle-stage-btn" type="button" onclick="shareDailyOracle('x')">Xでシェア</button>
+            <button class="daily-oracle-stage-btn" type="button" onclick="shareDailyOracle('line')">LINEで送る</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  stage.addEventListener('click',event=>{
+    if(event.target===stage) closeDailyOracleStage();
+  });
+  document.body.appendChild(stage);
+  requestAnimationFrame(()=>stage.classList.add('is-open'));
+  const cardEl=stage.querySelector('#daily-oracle-ritual-card');
+  const animate=options.animate!==false&&!window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+  if(!animate){
+    cardEl?.classList.add('is-drawn','is-flipped','is-complete');
+    stage.classList.add('is-complete');
+    return;
+  }
+  playAppSound('shuffle',{loop:true,restart:true,volume:.28});
+  DAILY_ORACLE_MOTION_TIMERS.push(setTimeout(()=>{
+    cardEl?.classList.add('is-drawn');
+    playAppSound('lenDraw',{restart:true,volume:.58});
+  },520));
+  DAILY_ORACLE_MOTION_TIMERS.push(setTimeout(()=>{
+    stopAppSound('shuffle');
+    cardEl?.classList.add('is-flipped');
+    playCardFlipSound();
+  },1350));
+  DAILY_ORACLE_MOTION_TIMERS.push(setTimeout(()=>{
+    cardEl?.classList.add('is-complete');
+    stage.classList.add('is-complete');
+    playResultCompleteSound();
+  },2180));
+}
+
 function renderDailyOracle(){
   const root=document.getElementById('daily-oracle');
   if(!root) return;
@@ -2703,6 +2964,7 @@ function renderDailyOracle(){
       </div>
       <!-- Future: show the daily oracle discount only after ticket storage and Stripe discount application are implemented. -->
       <div class="daily-oracle-actions">
+        <button class="daily-oracle-share" type="button" onclick="openDailyOracleStage(readDailyOracleRecord(),{animate:false})">カードをもう一度見る</button>
         <button class="daily-oracle-share" type="button" onclick="shareDailyOracle('x')">Xでシェア</button>
         <button class="daily-oracle-share" type="button" onclick="shareDailyOracle('line')">LINEで送る</button>
       </div>
@@ -2713,6 +2975,7 @@ function drawDailyOracle(){
   const existing=readDailyOracleRecord();
   if(existing){
     renderDailyOracle();
+    openDailyOracleStage(existing,{animate:false});
     showToast('今日のオラクルは引き終わっています');
     return;
   }
@@ -2720,9 +2983,10 @@ function drawDailyOracle(){
   const dateJst=getJstDateKey();
   const cardId=pickDailyOracleCardId(owner,dateJst);
   const card=DAILY_ORACLE_MESSAGES.find(item=>item.id===cardId)||DAILY_ORACLE_MESSAGES[0];
-  writeDailyOracleRecord(card);
+  const record=writeDailyOracleRecord(card);
   trackEvent('daily_oracle_draw',{card_id:card.id,source:'top'});
   renderDailyOracle();
+  openDailyOracleStage(record,{animate:true});
 }
 
 function shareDailyOracle(channel='x'){
@@ -2744,6 +3008,9 @@ function shareDailyOracle(channel='x'){
 // INIT
 // ══════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded',()=>{
+  document.addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&document.getElementById('daily-oracle-stage')) closeDailyOracleStage();
+  });
   safeRun('installGlobalClientLogging',()=>installGlobalClientLogging());
   safeRun('installLiveCardMotionStyles',()=>installLiveCardMotionStyles());
   safeRun('bootMemberMode',()=>bootMemberMode());
@@ -3483,7 +3750,7 @@ function getMemberStatusMeta(){
       cls:'active',
       label,
       copy,
-      action:`<div style="display:flex;gap:10px;flex-wrap:wrap;"><button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">この続きで深掘り鑑定する</button>${portalBtn}<button class="vault-link" onclick="logoutMemberSession()">${MEMBER_AUTH.source==='local_preview'?'確認表示を閉じる':'ログアウト'}</button></div>`,
+      action:`<div style="display:flex;gap:10px;flex-wrap:wrap;"><button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">${DEEP_PAID_CTA_LABEL}</button>${portalBtn}<button class="vault-link" onclick="logoutMemberSession()">${MEMBER_AUTH.source==='local_preview'?'確認表示を閉じる':'ログアウト'}</button></div>`,
     };
   }
   if(canUsePaidTestMode()){
@@ -4382,7 +4649,7 @@ function repairStaticCopy(){
   setText('#s-top .top-kicker','姓名判断・四柱推命・動物タイプ診断・カード占い');
   setHtml('#s-top .top-desc','無料鑑定でも、本質・本音・現実・次の一手まで読み解けます。');
   setText('#s-top .btn-top.btn-free','無料で羅針鑑定をはじめる');
-  setText('#s-top .btn-top.btn-paid','無料鑑定後に深掘り');
+  setText('#s-top .btn-top.btn-paid',DEEP_PAID_CTA_LABEL);
   document.querySelectorAll('#s-top [data-flow-target="paid"]').forEach(el=>{
     el.setAttribute('href','?flow=free');
     el.setAttribute('data-flow-target','free');
@@ -4425,7 +4692,7 @@ function repairStaticCopy(){
       '鑑定履歴がある場合は、前回からの変化も読む'
     ].forEach((text,index)=>{ if(deepItems[index]) deepItems[index].textContent=text; });
     setWithin(planCards[1],'.plan-compare-summary','深掘り鑑定では、この結果を土台に「なぜそうなるか」「どこで止まりやすいか」「次に何を確認すべきか」まで読み解きます。');
-    setWithin(planCards[1],'.plan-compare-action','無料鑑定後に深掘り');
+    setWithin(planCards[1],'.plan-compare-action',DEEP_PAID_CTA_LABEL);
   }
   document.querySelectorAll('.paid-band-note').forEach(el=>{
     el.textContent='深掘り鑑定 1回580円 / 継続課金ではありません';
@@ -4713,7 +4980,7 @@ function renderTopHeroPanels(){
 function renderPremiumEntrySection(){
   const el=document.getElementById('premium-entry');
   if(!el) return;
-  const paidAction=`<a class="today-cta today-cta-paid deep-premium-button" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料鑑定後に深掘り</a>`;
+  const paidAction=`<a class="today-cta today-cta-paid deep-premium-button" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">${DEEP_PAID_CTA_LABEL}</a>`;
   el.innerHTML=`
     <div class="paid-band-inner">
       <div class="paid-band-actions paid-band-actions-center">
@@ -6159,7 +6426,7 @@ function renderPremiumEntryFallback(){
     <div class="paid-band-inner">
       <div class="paid-band-actions paid-band-actions-center">
         <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
-        <a class="today-cta today-cta-paid deep-premium-button" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料鑑定後に深掘り</a>
+        <a class="today-cta today-cta-paid deep-premium-button" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">${DEEP_PAID_CTA_LABEL}</a>
       </div>
       <div class="paid-band-note">深掘り鑑定 1回580円 / 継続課金ではありません</div>
       <div class="checkout-disclosure">${CHECKOUT_DISCLOSURE_HTML}</div>
@@ -6831,7 +7098,7 @@ function renderResultUpgradePanel(){
         </div>
       </div>
       <div class="upgrade-actions">
-        <button class="result-unified-cta-btn deep-premium-button" type="button" data-track="deepen_cta_click" data-track-position="result_unified" onclick="upgradeCurrentReadingToPaid()">580円で深掘りする</button>
+        <button class="result-unified-cta-btn deep-premium-button" type="button" data-track="deepen_cta_click" data-track-position="result_unified" onclick="upgradeCurrentReadingToPaid()">${DEEP_PAID_CTA_LABEL}</button>
         <div class="checkout-disclosure">${RESULT_CHECKOUT_DISCLOSURE_HTML}</div>
       </div>
     </div>
@@ -10222,13 +10489,13 @@ function renderMemberFollowupSection(){
             ?'確認コードがある場合は入力して利用状態を確認できます。'
             :'現在はまだ使えません。')));
     actionsEl.innerHTML=canUsePaidTestMode()
-      ?`<button class="followup-btn" data-track="deepen_cta_click" data-track-position="result_bottom" onclick="openMemberAccessModal('upgrade-paid')">深掘り鑑定をはじめる</button>`
+      ?`<button class="followup-btn" data-track="deepen_cta_click" data-track-position="result_bottom" onclick="openMemberAccessModal('upgrade-paid')">${DEEP_PAID_CTA_LABEL}</button>`
       :((MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn)
-        ?`<button class="followup-btn" data-track="deepen_cta_click" data-track-position="result_bottom" onclick="upgradeCurrentReadingToPaid()">580円で深掘りする</button>`
+        ?`<button class="followup-btn" data-track="deepen_cta_click" data-track-position="result_bottom" onclick="upgradeCurrentReadingToPaid()">${DEEP_PAID_CTA_LABEL}</button>`
         :((MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.manageBillingAvailable)
           ?`<button class="followup-btn" onclick="openStripeBillingPortal()">請求管理</button>`
           :((MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.stripeCheckoutReady)
-            ?`<button class="followup-btn" data-track="deepen_cta_click" data-track-position="result_bottom" onclick="upgradeCurrentReadingToPaid()">580円で深掘りする</button>`
+            ?`<button class="followup-btn" data-track="deepen_cta_click" data-track-position="result_bottom" onclick="upgradeCurrentReadingToPaid()">${DEEP_PAID_CTA_LABEL}</button>`
             :(canUseAccessCode()
               ?`<button class="followup-btn" data-track="deepen_cta_click" data-track-position="result_bottom" onclick="openMemberAccessModal('upgrade-paid')">確認コードを入力</button>`
               :`<button class="followup-btn" data-track="deepen_cta_click" data-track-position="result_bottom" onclick="openMemberAccessModal('upgrade-paid')" ${MEMBER_AUTH.googleClientConfigured?'':'disabled'}>${MEMBER_AUTH.googleClientConfigured?'Googleでログイン':'公開準備中'}</button>`))));
