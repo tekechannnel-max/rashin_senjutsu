@@ -13,6 +13,7 @@ const STRIPE_EVENT_DIR = path.join(DATA_DIR, 'stripe-events');
 const STRIPE_CHECKOUT_COMPLETION_DIR = path.join(DATA_DIR, 'stripe-checkout-completions');
 const PURCHASE_ORDER_DIR = path.join(DATA_DIR, 'purchase-orders');
 const PAID_READING_TICKET_DIR = path.join(DATA_DIR, 'paid-reading-tickets');
+const RASHIN_DISCOUNT_CHECKOUT_LOCK_DIR = path.join(DATA_DIR, 'rashin-discount-checkout-locks');
 const USER_DIR = path.join(DATA_DIR, 'users');
 const INDEX_DIR = path.join(DATA_DIR, 'indexes');
 const LOG_DIR = path.join(DATA_DIR, 'logs');
@@ -101,8 +102,41 @@ function readCliArg(flag) {
   return '';
 }
 
+function normalizeOriginValue(value) {
+  const raw = normalizeEnvValue(value).replace(/\/+$/, '');
+  if (!raw || isPlaceholderEnvValue(raw)) return '';
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return '';
+    return url.origin;
+  } catch (_error) {
+    return '';
+  }
+}
+
+function normalizeRemoteAddress(value) {
+  let address = String(value || '').trim().toLowerCase();
+  if (!address) return '';
+  if (address.startsWith('::ffff:')) address = address.slice('::ffff:'.length);
+  if (address === '0:0:0:0:0:0:0:1') return '::1';
+  if (address === '[::1]') return '::1';
+  return address;
+}
+
+function isLocalAddress(value) {
+  const address = normalizeRemoteAddress(value);
+  return address === 'localhost' || address === '::1' || address === '127.0.0.1' || address.startsWith('127.');
+}
+
 const HOST = readCliArg('--host') || process.env.HOST || '127.0.0.1';
 const PORT = parseInt(readCliArg('--port') || process.env.PORT || '3000', 10);
+const NODE_ENV = normalizeEnvValue(process.env.NODE_ENV || '');
+const IS_PRODUCTION = NODE_ENV === 'production';
+const IS_RENDER_RUNTIME = !!normalizeEnvValue(process.env.RENDER || process.env.RENDER_SERVICE_ID || process.env.RENDER_EXTERNAL_URL || '');
+const IS_DEPLOYED_RUNTIME = IS_PRODUCTION || IS_RENDER_RUNTIME;
+const ENABLE_DEV_ACCESS = normalizeEnvValue(process.env.ENABLE_DEV_ACCESS || '').toLowerCase() === 'true';
+const TRUST_PROXY = IS_RENDER_RUNTIME || normalizeEnvValue(process.env.TRUST_PROXY || '').toLowerCase() === 'true';
+const PUBLIC_ORIGIN = normalizeOriginValue(process.env.PUBLIC_ORIGIN || '');
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
@@ -115,7 +149,7 @@ const STRIPE_PRICE_ID_DEEP_READING_580 = process.env.STRIPE_PRICE_ID_DEEP_READIN
 const STRIPE_SUCCESS_PATH = process.env.STRIPE_SUCCESS_PATH || '/uranai-v5.html?stripe_success=1&session_id={CHECKOUT_SESSION_ID}';
 const STRIPE_CANCEL_PATH = process.env.STRIPE_CANCEL_PATH || '/uranai-v5.html?stripe_cancel=1';
 const STRIPE_PORTAL_RETURN_PATH = process.env.STRIPE_PORTAL_RETURN_PATH || '/uranai-v5.html';
-const STRIPE_SUBSCRIPTION_NAME = process.env.STRIPE_SUBSCRIPTION_NAME || '深掘り鑑定';
+const STRIPE_SUBSCRIPTION_NAME = process.env.STRIPE_SUBSCRIPTION_NAME || '\u6df1\u6398\u308a\u9451\u5b9a';
 const STRIPE_TRIAL_PERIOD_DAYS = Math.max(0, parseInt(process.env.STRIPE_TRIAL_PERIOD_DAYS || '7', 10) || 0);
 const AI_MODELS = {
   free: process.env.OPENAI_FREE_MODEL || 'gpt-5.4-mini',
@@ -141,8 +175,11 @@ const MEMBER_SESSION_COOKIE = 'uranai_member_session';
 const AUTH_SESSION_COOKIE = 'uranai_auth_session';
 const MEMBER_SESSION_DAYS = Math.max(1, parseInt(process.env.MEMBER_SESSION_DAYS || '30', 10) || 30);
 const AUTH_SESSION_DAYS = Math.max(1, parseInt(process.env.AUTH_SESSION_DAYS || String(MEMBER_SESSION_DAYS), 10) || MEMBER_SESSION_DAYS);
-const IS_PRODUCTION = process.env.NODE_ENV === 'production';
-const DEV_ACCESS_ENABLED = !IS_PRODUCTION;
+// Development access must be explicitly enabled and is never available on deployed runtimes.
+const DEV_ACCESS_ENABLED = ENABLE_DEV_ACCESS && !IS_DEPLOYED_RUNTIME;
+if ((IS_PRODUCTION || IS_RENDER_RUNTIME) && !PUBLIC_ORIGIN) {
+  throw new Error('PUBLIC_ORIGIN is required in production/Render runtime.');
+}
 if (IS_PRODUCTION && !isConfiguredAppSecret(process.env.MEMBER_SESSION_SECRET || '')) {
   throw new Error('MEMBER_SESSION_SECRET is required in production.');
 }
@@ -160,10 +197,27 @@ const MEMBER_SESSION_PERSISTENT = isConfiguredAppSecret(process.env.MEMBER_SESSI
 const AUTH_SESSION_PERSISTENT = isConfiguredAppSecret(process.env.AUTH_SESSION_SECRET || process.env.MEMBER_SESSION_SECRET || '');
 const MAX_JSON_BYTES = 1024 * 1024;
 const STRIPE_WEBHOOK_TOLERANCE_SEC = Math.max(60, parseInt(process.env.STRIPE_WEBHOOK_TOLERANCE_SEC || '300', 10) || 300);
-const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]']);
+const CORS_ALLOWED_ORIGINS = (() => {
+  const origins = new Set();
+  if (PUBLIC_ORIGIN) origins.add(PUBLIC_ORIGIN);
+  String(process.env.CORS_ALLOWED_ORIGINS || '')
+    .split(',')
+    .map(normalizeOriginValue)
+    .filter(Boolean)
+    .forEach(origin => origins.add(origin));
+  if (!IS_DEPLOYED_RUNTIME) {
+    [PORT, 3000, 3001, 3060, 3061, 3062].forEach(port => {
+      origins.add(`http://127.0.0.1:${port}`);
+      origins.add(`http://localhost:${port}`);
+    });
+  }
+  return origins;
+})();
 const GOOGLE_ISSUERS = new Set(['accounts.google.com', 'https://accounts.google.com']);
 let GOOGLE_JWK_CACHE = { expiresAt: 0, keys: [] };
 const RATE_LIMIT_STATE = new Map();
+const USER_MUTATION_LOCKS = new Map();
+const CHECKOUT_SESSION_LOCKS = new Map();
 const RATE_LIMIT_RULES = {
   ai: { windowMs: 10 * 60 * 1000, max: 24 },
   google_auth: { windowMs: 10 * 60 * 1000, max: 12 },
@@ -174,6 +228,13 @@ const RATE_LIMIT_RULES = {
 };
 const RATE_LIMIT_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 const PAID_MODELS = new Set([AI_MODELS.paid, AI_MODELS.history, AI_MODELS.paidFallback]);
+const DEEP_READING_NORMAL_AMOUNT = 580;
+const RASHIN_BONUS_REWARD_AMOUNT = 1;
+const RASHIN_BONUS_VALID_DAYS = 7;
+const RASHIN_BONUS_DISCOUNTS = [
+  { requiredStones: 7, discountAmount: 200 },
+  { requiredStones: 3, discountAmount: 100 },
+];
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -221,8 +282,8 @@ function sendText(res, statusCode, body, contentType = 'text/plain; charset=utf-
 }
 
 function applySecurityHeaders(req, res) {
-  // TODO: Remove unsafe-inline after moving inline JS into app.js, extracting inline CSS,
-  // migrating to nonce/hash-based CSP, and verifying the static HTML no longer needs it.
+  // TODO(security): Remove unsafe-inline after moving inline JS/CSS to nonce/hash based assets.
+  // This is intentionally left for a larger frontend refactor.
   const csp = [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://js.stripe.com https://www.googletagmanager.com",
@@ -249,13 +310,9 @@ function applySecurityHeaders(req, res) {
 function getAllowedCorsOrigin(req) {
   const origin = String(req?.headers?.origin || '').trim();
   if (!origin) return '';
-  if (origin === 'null') return 'null';
-  try {
-    const url = new URL(origin);
-    if (LOCAL_HOSTS.has(String(url.hostname || '').toLowerCase())) return origin;
-    const requestOrigin = getRequestOrigin(req);
-    if (requestOrigin && requestOrigin === origin) return origin;
-  } catch (_error) {}
+  if (origin === 'null') return !IS_DEPLOYED_RUNTIME && isLocalRequest(req) ? 'null' : '';
+  const normalizedOrigin = normalizeOriginValue(origin);
+  if (normalizedOrigin && CORS_ALLOWED_ORIGINS.has(normalizedOrigin)) return normalizedOrigin;
   return '';
 }
 
@@ -269,19 +326,19 @@ function applyCorsHeaders(req, res) {
   res.setHeader('Vary', 'Origin');
 }
 
-function getRequestHost(req) {
-  const hostHeader = String(req?.headers?.host || '').trim().toLowerCase();
-  return hostHeader.split(':')[0];
+function getRemoteAddress(req) {
+  return normalizeRemoteAddress(req?.socket?.remoteAddress || '');
 }
 
 function isLocalRequest(req) {
-  return LOCAL_HOSTS.has(getRequestHost(req));
+  // Never trust Host/X-Forwarded-* for local-only privileges.
+  return isLocalAddress(getRemoteAddress(req));
 }
 
 function getClientAddress(req) {
-  const forwarded = String(req?.headers?.['x-forwarded-for'] || '').trim();
+  const forwarded = TRUST_PROXY ? String(req?.headers?.['x-forwarded-for'] || '').trim() : '';
   if (forwarded) return forwarded.split(',')[0].trim();
-  return String(req?.socket?.remoteAddress || '').trim() || 'unknown';
+  return getRemoteAddress(req) || 'unknown';
 }
 
 function consumeRateLimit(req, bucket) {
@@ -343,6 +400,7 @@ function getRequestProto(req) {
 }
 
 function getRequestOrigin(req) {
+  if (PUBLIC_ORIGIN) return PUBLIC_ORIGIN;
   const host = String(req?.headers?.['x-forwarded-host'] || req?.headers?.host || '').trim();
   if (!host) return '';
   return `${getRequestProto(req)}://${host}`;
@@ -351,10 +409,16 @@ function getRequestOrigin(req) {
 function makeAbsoluteUrl(req, pathValue) {
   const origin = getRequestOrigin(req);
   if (!origin) return pathValue || '';
-  if (String(pathValue || '').startsWith('http://') || String(pathValue || '').startsWith('https://')) {
-    return String(pathValue);
+  const raw = String(pathValue || '/');
+  if (raw.startsWith('http://') || raw.startsWith('https://')) {
+    try {
+      const url = new URL(raw);
+      return new URL(`${url.pathname}${url.search}${url.hash}`, origin).toString();
+    } catch (_error) {
+      return new URL('/', origin).toString();
+    }
   }
-  return new URL(String(pathValue || '/'), origin).toString();
+  return new URL(raw, origin).toString();
 }
 
 function stripeReady() {
@@ -568,6 +632,64 @@ function getIsoDayStamp(dateValue = new Date()) {
   return new Date(dateValue).toISOString().slice(0, 10);
 }
 
+function getJstDateStamp(dateValue = new Date()) {
+  const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
+  return new Date(date.getTime() + (9 * 60 * 60 * 1000)).toISOString().slice(0, 10);
+}
+
+function getJstEndOfDayAfterDaysIso(dateValue = new Date(), days = 0) {
+  const base = dateValue instanceof Date ? dateValue : new Date(dateValue);
+  const jst = new Date(base.getTime() + (9 * 60 * 60 * 1000));
+  jst.setUTCDate(jst.getUTCDate() + Math.max(0, Math.floor(days || 0)));
+  jst.setUTCHours(23, 59, 59, 999);
+  return new Date(jst.getTime() - (9 * 60 * 60 * 1000)).toISOString();
+}
+
+function normalizeRashinStones(value) {
+  const count = Math.floor(Number(value || 0));
+  return Number.isFinite(count) && count > 0 ? count : 0;
+}
+
+function getRashinDiscountForStones(stones) {
+  const count = normalizeRashinStones(stones);
+  return RASHIN_BONUS_DISCOUNTS.find(item => count >= item.requiredStones) || null;
+}
+
+function getNextRashinDiscount(stones) {
+  const count = normalizeRashinStones(stones);
+  const next = [...RASHIN_BONUS_DISCOUNTS].reverse().find(item => count < item.requiredStones);
+  return next ? {
+    requiredStones: next.requiredStones,
+    discountAmount: next.discountAmount,
+    remainingStones: Math.max(0, next.requiredStones - count),
+  } : null;
+}
+
+function buildRashinBonusView(userRecord, today = getJstDateStamp()) {
+  const rashinStones = normalizeRashinStones(userRecord?.rashin_stones);
+  const canClaim = String(userRecord?.last_rashin_bonus_claimed_date || '') !== today;
+  const available = getRashinDiscountForStones(rashinStones);
+  const payload = {
+    today,
+    canClaim,
+    rashinStones,
+    reward: {
+      type: 'rashin_stone',
+      amount: RASHIN_BONUS_REWARD_AMOUNT,
+    },
+  };
+  if (!canClaim) payload.reason = 'already_claimed';
+  if (available) {
+    payload.availableDiscount = {
+      requiredStones: available.requiredStones,
+      discountAmount: available.discountAmount,
+    };
+  } else {
+    payload.nextDiscount = getNextRashinDiscount(rashinStones);
+  }
+  return payload;
+}
+
 function clipText(value, maxLength = 400) {
   const normalized = String(value || '').replace(/\s+/g, ' ').trim();
   if (!normalized) return '';
@@ -748,6 +870,44 @@ async function writeUserRecord(userId, record) {
   await ensureDir(USER_DIR);
   await fsp.writeFile(filePath, JSON.stringify(record, null, 2), 'utf8');
   await updateUserIndexesForRecord({ ...record, userId: normalizeUserId(userId) || record?.userId || '' }, existing);
+}
+
+async function withUserMutation(userId, operation) {
+  const safeUserId = normalizeUserId(userId);
+  if (!safeUserId) throw new Error('INVALID_USER_ID');
+  const previous = USER_MUTATION_LOCKS.get(safeUserId) || Promise.resolve();
+  let release;
+  const current = new Promise(resolve => {
+    release = resolve;
+  });
+  const next = previous.then(() => current, () => current);
+  USER_MUTATION_LOCKS.set(safeUserId, next);
+  await previous.catch(() => {});
+  try {
+    return await operation(safeUserId);
+  } finally {
+    release();
+    if (USER_MUTATION_LOCKS.get(safeUserId) === next) USER_MUTATION_LOCKS.delete(safeUserId);
+  }
+}
+
+async function withCheckoutSessionMutation(sessionId, operation) {
+  const safeSessionId = normalizeStripeObjectId(sessionId);
+  if (!safeSessionId) throw new Error('INVALID_STRIPE_SESSION_ID');
+  const previous = CHECKOUT_SESSION_LOCKS.get(safeSessionId) || Promise.resolve();
+  let release;
+  const current = new Promise(resolve => {
+    release = resolve;
+  });
+  const next = previous.then(() => current, () => current);
+  CHECKOUT_SESSION_LOCKS.set(safeSessionId, next);
+  await previous.catch(() => {});
+  try {
+    return await operation(safeSessionId);
+  } finally {
+    release();
+    if (CHECKOUT_SESSION_LOCKS.get(safeSessionId) === next) CHECKOUT_SESSION_LOCKS.delete(safeSessionId);
+  }
 }
 
 async function listUserRecords() {
@@ -960,6 +1120,8 @@ function buildUserRecordFromGoogleProfile(profile, existing = null) {
     currentPeriodEnd: existing?.currentPeriodEnd || '',
     cancelAtPeriodEnd: !!existing?.cancelAtPeriodEnd,
     latestCheckoutSessionId: existing?.latestCheckoutSessionId || '',
+    rashin_stones: normalizeRashinStones(existing?.rashin_stones),
+    last_rashin_bonus_claimed_date: existing?.last_rashin_bonus_claimed_date || null,
     createdAt: existing?.createdAt || now,
     updatedAt: now,
   };
@@ -1028,6 +1190,8 @@ async function ensureDeveloperUserRecord(email, name = '') {
     currentPeriodEnd: '',
     cancelAtPeriodEnd: false,
     latestCheckoutSessionId: '',
+    rashin_stones: 0,
+    last_rashin_bonus_claimed_date: null,
     createdAt: now,
     updatedAt: now,
   };
@@ -1079,6 +1243,8 @@ function buildUserRecordFromStripe(data = {}, existing = null) {
     currentPeriodEnd: data.currentPeriodEnd || existing?.currentPeriodEnd || '',
     cancelAtPeriodEnd: !!(data.cancelAtPeriodEnd ?? existing?.cancelAtPeriodEnd),
     latestCheckoutSessionId: String(data.checkoutSessionId || existing?.latestCheckoutSessionId || '').trim(),
+    rashin_stones: normalizeRashinStones(existing?.rashin_stones),
+    last_rashin_bonus_claimed_date: existing?.last_rashin_bonus_claimed_date || null,
     createdAt: existing?.createdAt || now,
     updatedAt: now,
   };
@@ -1148,6 +1314,8 @@ async function buildMemberStatus(req, sessionPayload = null) {
     currentPeriodEnd: userRecord?.currentPeriodEnd || memberRecord?.currentPeriodEnd || '',
     cancelAtPeriodEnd: !!(userRecord?.cancelAtPeriodEnd ?? memberRecord?.cancelAtPeriodEnd),
     manageBillingAvailable: !!(authLoggedIn && userRecord?.stripeCustomerId && stripePortalReady()),
+    rashinStones: normalizeRashinStones(userRecord?.rashin_stones),
+    lastRashinBonusClaimedDate: userRecord?.last_rashin_bonus_claimed_date || null,
   };
 }
 
@@ -1161,6 +1329,14 @@ async function hasPaidAccess(req, payload = null) {
   if (DEV_ACCESS_ENABLED && userRecordHasDeveloperAccess(userRecord)) return true;
   if (userRecord && stripeSubscriptionGrantsAccess(userRecord.stripeSubscriptionStatus)) return true;
   return validatePaidReadingTicketAccess(req, payload);
+}
+
+async function readGoogleUserForRequest(req) {
+  const authSession = readAuthSession(req);
+  const userId = normalizeUserId(authSession?.userId || '');
+  if (!userId || authSession?.source !== 'google') return null;
+  const userRecord = await readUserRecord(userId);
+  return userRecord?.userId ? userRecord : null;
 }
 
 async function ensureDir(dirPath) {
@@ -1213,7 +1389,7 @@ function getPayloadReadingType(payload) {
 
 function getSafePayloadCategory(payload) {
   const value = String(payload?.category || '').trim();
-  return value ? value.slice(0, 40) : '総合';
+  return value ? value.slice(0, 40) : '邱丞粋';
 }
 
 function buildAiLogBase(payload, event) {
@@ -1299,13 +1475,13 @@ function getAllowedStaticPath(urlPath) {
   if (pathname === '/solar-term-boundaries.json') {
     return path.join(ROOT_DIR, 'solar-term-boundaries.json');
   }
-  if (!pathname.startsWith('/images/') && !pathname.startsWith('/音素材/')) return null;
+  if (!pathname.startsWith('/images/') && !pathname.startsWith('/\u97f3\u7d20\u6750/')) return null;
 
   const relativePath = pathname.replace(/^\/+/, '');
   const resolvedPath = path.resolve(ROOT_DIR, relativePath);
   const allowedRoots = [
     path.resolve(ROOT_DIR, 'images'),
-    path.resolve(ROOT_DIR, '音素材'),
+    path.resolve(ROOT_DIR, '\u97f3\u7d20\u6750'),
   ];
   if (!allowedRoots.some(rootPath => resolvedPath === rootPath || resolvedPath.startsWith(rootPath + path.sep))) return null;
   return resolvedPath;
@@ -1318,7 +1494,7 @@ function pathnameIsImage(urlPath) {
 
 function pathnameIsAudio(urlPath) {
   const pathname = decodeURIComponent((urlPath || '').split('?')[0]);
-  return pathname.startsWith('/音素材/');
+  return pathname.startsWith('/\u97f3\u7d20\u6750/');
 }
 
 async function serveStatic(req, res) {
@@ -1534,6 +1710,12 @@ function normalizePaidTicketId(value) {
   return raw;
 }
 
+function makePaidTicketIdForCheckoutSession(sessionId) {
+  const safeSessionId = normalizeStripeObjectId(sessionId);
+  if (!safeSessionId) return '';
+  return `prt_${crypto.createHash('sha256').update(`stripe_checkout:${safeSessionId}`).digest('hex')}`;
+}
+
 function normalizeStripeObjectId(value) {
   const raw = String(value || '').trim();
   if (!/^[A-Za-z0-9_]{3,255}$/.test(raw)) return '';
@@ -1548,6 +1730,13 @@ function getPurchaseOrderPath(orderId) {
 function getPaidReadingTicketPath(ticketId) {
   const safeId = normalizePaidTicketId(ticketId);
   return safeId ? path.join(PAID_READING_TICKET_DIR, `${safeId}.json`) : '';
+}
+
+function getRashinDiscountCheckoutLockPath(userId) {
+  const safeUserId = normalizeUserId(userId);
+  if (!safeUserId) return '';
+  const key = crypto.createHash('sha256').update(`rashin_discount_checkout:${safeUserId}`).digest('hex');
+  return path.join(RASHIN_DISCOUNT_CHECKOUT_LOCK_DIR, `${key}.json`);
 }
 
 async function readPurchaseOrder(orderId) {
@@ -1572,6 +1761,22 @@ async function writePaidReadingTicket(record) {
   const safeId = normalizePaidTicketId(record?.id);
   if (!safeId) throw new Error('INVALID_PAID_TICKET_ID');
   await writeJsonFileAtomic(getPaidReadingTicketPath(safeId), { ...record, id: safeId });
+}
+
+async function writePaidReadingTicketIfAbsent(record) {
+  const safeId = normalizePaidTicketId(record?.id);
+  if (!safeId) throw new Error('INVALID_PAID_TICKET_ID');
+  await ensureDir(PAID_READING_TICKET_DIR);
+  const filePath = getPaidReadingTicketPath(safeId);
+  try {
+    await fsp.writeFile(filePath, JSON.stringify({ ...record, id: safeId }, null, 2), { encoding: 'utf8', flag: 'wx' });
+    return { created: true, ticket: { ...record, id: safeId } };
+  } catch (error) {
+    if (error && error.code === 'EEXIST') {
+      return { created: false, ticket: await readPaidReadingTicket(safeId) };
+    }
+    throw error;
+  }
 }
 
 async function listJsonRecords(dirPath) {
@@ -1634,6 +1839,128 @@ function ownerMatchesTicket(owner, ticket) {
   return false;
 }
 
+function getRecordCreatedTime(record = {}) {
+  const created = new Date(record?.createdAt || record?.updatedAt || 0).getTime();
+  return Number.isFinite(created) && created > 0 ? created : 0;
+}
+
+function getRashinDiscountExpiry(record = {}) {
+  const created = getRecordCreatedTime(record);
+  return created ? getJstEndOfDayAfterDaysIso(new Date(created), RASHIN_BONUS_VALID_DAYS) : '';
+}
+
+async function getUserFreeReadingRecords(userId) {
+  const vaultKey = makeUserVaultKey(userId);
+  const records = await readVaultRecords(vaultKey);
+  return (Array.isArray(records) ? records : [])
+    .filter(record => record && normalizeVaultRecordId(record.id) && record.plan === 'free')
+    .sort((a, b) => getRecordCreatedTime(b) - getRecordCreatedTime(a));
+}
+
+async function hasDeepReadingPurchaseForSource(owner, sourceReadingId) {
+  const sourceId = normalizeVaultRecordId(sourceReadingId);
+  if (!owner || !sourceId) return false;
+  const tickets = await listJsonRecords(PAID_READING_TICKET_DIR);
+  return tickets.some(ticket => ownerMatchesTicket(owner, ticket) && ticket.sourceReadingId === sourceId);
+}
+
+function isOpenRashinDiscountOrder(order) {
+  if (!order || order.purchaseType !== 'deep_reading_once') return false;
+  if (order.discountType !== 'rashin_bonus' || normalizeRashinStones(order.discountStonesUsed) <= 0) return false;
+  if (order.paidAt || order.rashinBonusConsumedAt) return false;
+  if (['paid', 'completed', 'requires_manual_review', 'payment_requires_review', 'manual_review', 'canceled', 'cancelled', 'expired', 'stripe_create_failed'].includes(String(order.status || '').trim())) return false;
+  if (isExpiredIso(order.expiresAt)) return false;
+  return true;
+}
+
+async function findOpenRashinDiscountOrder({ userId, sourceReadingId = '' }) {
+  const safeUserId = normalizeUserId(userId);
+  const sourceId = normalizeVaultRecordId(sourceReadingId);
+  if (!safeUserId) return null;
+  const orders = await listJsonRecords(PURCHASE_ORDER_DIR);
+  return orders.find(order => {
+    if (!isOpenRashinDiscountOrder(order)) return false;
+    if (normalizeUserId(order.userId || '') !== safeUserId) return false;
+    if (sourceId && order.sourceReadingId === sourceId) return true;
+    return !sourceId;
+  }) || null;
+}
+
+async function acquireRashinDiscountCheckoutLock({ userId, sourceReadingId, purchaseOrderId }) {
+  const safeUserId = normalizeUserId(userId);
+  const sourceId = normalizeVaultRecordId(sourceReadingId);
+  const safeOrderId = normalizePurchaseOrderId(purchaseOrderId);
+  const filePath = getRashinDiscountCheckoutLockPath(safeUserId);
+  if (!safeUserId || !sourceId || !safeOrderId || !filePath) return false;
+  await ensureDir(RASHIN_DISCOUNT_CHECKOUT_LOCK_DIR);
+  const payload = {
+    userId: safeUserId,
+    sourceReadingId: sourceId,
+    purchaseOrderId: safeOrderId,
+    createdAt: new Date().toISOString(),
+  };
+  try {
+    await fsp.writeFile(filePath, JSON.stringify(payload, null, 2), { encoding: 'utf8', flag: 'wx' });
+    return true;
+  } catch (error) {
+    if (!error || error.code !== 'EEXIST') throw error;
+  }
+
+  const existingLock = await readJsonFileSafe(filePath, null);
+  const existingOrder = existingLock?.purchaseOrderId ? await readPurchaseOrder(existingLock.purchaseOrderId) : null;
+  if (isOpenRashinDiscountOrder(existingOrder)) return false;
+  await fsp.writeFile(filePath, JSON.stringify(payload, null, 2), 'utf8');
+  return true;
+}
+
+async function getRashinDiscountEligibility(userRecord, sourceReadingId) {
+  const sourceId = normalizeVaultRecordId(sourceReadingId);
+  const normalAmount = DEEP_READING_NORMAL_AMOUNT;
+  const base = {
+    eligible: false,
+    normalAmount,
+    finalAmount: normalAmount,
+    rashinStones: normalizeRashinStones(userRecord?.rashin_stones),
+  };
+  if (!userRecord?.userId) return { ...base, reason: 'login_required' };
+  if (!sourceId) return { ...base, reason: 'result_required' };
+
+  const freeRecords = await getUserFreeReadingRecords(userRecord.userId);
+  const requested = freeRecords.find(record => record.id === sourceId) || null;
+  if (!requested) return { ...base, reason: 'result_not_found' };
+  const latest = freeRecords[0] || null;
+  if (!latest || latest.id !== sourceId) return { ...base, reason: 'not_latest_result' };
+
+  const expiresAt = getRashinDiscountExpiry(requested);
+  if (!expiresAt || new Date(expiresAt).getTime() < Date.now()) {
+    return { ...base, reason: 'expired', expiresAt };
+  }
+
+  const owner = { ownerType: 'user', userId: userRecord.userId, vaultId: '' };
+  if (await hasDeepReadingPurchaseForSource(owner, sourceId)) {
+    return { ...base, reason: 'already_purchased', expiresAt };
+  }
+
+  const discount = getRashinDiscountForStones(userRecord.rashin_stones);
+  if (!discount) {
+    return {
+      ...base,
+      reason: 'insufficient_stones',
+      nextDiscount: getNextRashinDiscount(userRecord.rashin_stones),
+      expiresAt,
+    };
+  }
+  return {
+    eligible: true,
+    normalAmount,
+    discountAmount: discount.discountAmount,
+    finalAmount: Math.max(0, normalAmount - discount.discountAmount),
+    stonesRequired: discount.requiredStones,
+    rashinStones: normalizeRashinStones(userRecord.rashin_stones),
+    expiresAt,
+  };
+}
+
 async function findUsablePaidReadingTicket({ owner, sourceReadingId, paidReadingId = '' }) {
   const sourceId = normalizeVaultRecordId(sourceReadingId);
   if (!owner || !sourceId) return null;
@@ -1649,20 +1976,28 @@ async function findUsablePaidReadingTicket({ owner, sourceReadingId, paidReading
   }) || null;
 }
 
-async function createPurchaseOrder({ owner, sourceReadingId }) {
+async function createPurchaseOrder({ owner, sourceReadingId, rashinDiscount = null, orderId = '' }) {
   const sourceId = normalizeVaultRecordId(sourceReadingId);
   if (!owner || !sourceId) throw new Error('INVALID_PURCHASE_ORDER');
   const now = new Date().toISOString();
+  const discountAmount = Math.max(0, Math.floor(Number(rashinDiscount?.discountAmount || 0)) || 0);
+  const stonesRequired = Math.max(0, Math.floor(Number(rashinDiscount?.stonesRequired || 0)) || 0);
+  const finalAmount = Math.max(0, DEEP_READING_NORMAL_AMOUNT - discountAmount);
   const order = {
-    id: generateRecordId('po'),
+    id: normalizePurchaseOrderId(orderId) || generateRecordId('po'),
     ownerType: owner.ownerType,
     userId: owner.ownerType === 'user' ? owner.userId : '',
     vaultId: owner.ownerType === 'vault' ? owner.vaultId : '',
     sourceReadingId: sourceId,
+    oracleResultId: sourceId,
     purchaseType: 'deep_reading_once',
-    baseAmount: 580,
-    discountAmount: 0,
-    finalAmount: 580,
+    baseAmount: DEEP_READING_NORMAL_AMOUNT,
+    originalAmount: DEEP_READING_NORMAL_AMOUNT,
+    discountAmount,
+    finalAmount,
+    discountStonesUsed: stonesRequired,
+    discountType: discountAmount > 0 ? 'rashin_bonus' : '',
+    rashinBonusConsumedAt: '',
     currency: 'jpy',
     status: 'created',
     stripeCheckoutSessionId: '',
@@ -1673,6 +2008,57 @@ async function createPurchaseOrder({ owner, sourceReadingId }) {
   };
   await writePurchaseOrder(order);
   return order;
+}
+
+async function consumeRashinBonusForPaidOrder(order) {
+  const stonesToConsume = Math.max(0, Math.floor(Number(order?.discountStonesUsed || 0)) || 0);
+  const userId = normalizeUserId(order?.userId || '');
+  if (order?.discountType !== 'rashin_bonus' || !stonesToConsume || !userId || order?.rashinBonusConsumedAt) {
+    return { ok: true, order };
+  }
+  return withUserMutation(userId, async safeUserId => {
+    const latestOrder = await readPurchaseOrder(order.id) || order;
+    if (latestOrder.rashinBonusConsumedAt) return { ok: true, order: latestOrder };
+    const userRecord = await readUserRecord(safeUserId);
+    const currentStones = normalizeRashinStones(userRecord?.rashin_stones);
+    const now = new Date().toISOString();
+    if (currentStones < stonesToConsume) {
+      const reviewOrder = {
+        ...latestOrder,
+        status: 'requires_manual_review',
+        reviewReason: 'RASHIN_STONES_INSUFFICIENT_AT_PAYMENT',
+        reviewRequiredAt: now,
+        updatedAt: now,
+      };
+      await writePurchaseOrder(reviewOrder);
+      console.error('Rashin bonus payment requires manual review', {
+        purchaseOrderId: latestOrder.id,
+        userId: safeUserId,
+        currentStones,
+        stonesToConsume,
+        stripeCheckoutSessionId: latestOrder.stripeCheckoutSessionId || '',
+      });
+      return {
+        ok: false,
+        reason: 'insufficient_stones',
+        order: reviewOrder,
+      };
+    }
+    const nextUser = {
+      ...(userRecord || {}),
+      rashin_stones: currentStones - stonesToConsume,
+      updatedAt: now,
+    };
+    await writeUserRecord(safeUserId, nextUser);
+    const consumedOrder = {
+      ...latestOrder,
+      status: 'paid',
+      rashinBonusConsumedAt: now,
+      updatedAt: now,
+    };
+    await writePurchaseOrder(consumedOrder);
+    return { ok: true, order: consumedOrder };
+  });
 }
 
 async function fulfillDeepReadingCheckoutSession(session) {
@@ -1686,6 +2072,18 @@ async function fulfillDeepReadingCheckoutSession(session) {
   if (String(session?.payment_status || '').trim() !== 'paid') {
     return { pending: true, purchaseOrderId, sourceReadingId };
   }
+  return withCheckoutSessionMutation(sessionId, async () => fulfillDeepReadingCheckoutSessionLocked(session, {
+    sessionId,
+    purchaseOrderId,
+    sourceReadingId,
+  }));
+}
+
+async function fulfillDeepReadingCheckoutSessionLocked(session, ids) {
+  const { sessionId, purchaseOrderId, sourceReadingId } = ids;
+  const deterministicTicketId = makePaidTicketIdForCheckoutSession(sessionId);
+  const existingById = deterministicTicketId ? await readPaidReadingTicket(deterministicTicketId) : null;
+  if (existingById) return existingById;
   const existingTicket = await findPaidReadingTicketByCheckoutSessionId(sessionId);
   if (existingTicket) return existingTicket;
 
@@ -1712,18 +2110,31 @@ async function fulfillDeepReadingCheckoutSession(session) {
     paidAt: now,
   };
   await writePurchaseOrder(paidOrder);
+  const consumeResult = await consumeRashinBonusForPaidOrder(paidOrder);
+  const consumedOrder = consumeResult.order || paidOrder;
+  if (!consumeResult.ok) {
+    return {
+      requiresManualReview: true,
+      purchaseOrderId,
+      sourceReadingId,
+      status: consumedOrder.status || 'requires_manual_review',
+    };
+  }
 
   const ticket = {
-    id: generateRecordId('prt'),
+    id: deterministicTicketId || generateRecordId('prt'),
     ownerType: order.ownerType,
     userId: order.ownerType === 'user' ? order.userId : '',
     vaultId: order.ownerType === 'vault' ? order.vaultId : '',
     sourceReadingId,
     stripeCheckoutSessionId: sessionId,
     stripePaymentIntentId: paymentIntentId,
-    baseAmount: 580,
-    discountAmount: 0,
-    finalAmount: 580,
+    baseAmount: Number(consumedOrder.originalAmount || consumedOrder.baseAmount || DEEP_READING_NORMAL_AMOUNT),
+    originalAmount: Number(consumedOrder.originalAmount || consumedOrder.baseAmount || DEEP_READING_NORMAL_AMOUNT),
+    discountAmount: Number(consumedOrder.discountAmount || 0),
+    finalAmount: Number(consumedOrder.finalAmount || DEEP_READING_NORMAL_AMOUNT),
+    discountStonesUsed: Number(consumedOrder.discountStonesUsed || 0),
+    discountType: consumedOrder.discountType || '',
     currency: 'jpy',
     status: 'unused',
     createdAt: now,
@@ -1733,8 +2144,8 @@ async function fulfillDeepReadingCheckoutSession(session) {
     lockedReadingId: '',
     lockedAt: '',
   };
-  await writePaidReadingTicket(ticket);
-  return ticket;
+  const writeResult = await writePaidReadingTicketIfAbsent(ticket);
+  return writeResult.ticket;
 }
 
 async function validatePaidReadingTicketAccess(req, payload = {}) {
@@ -2038,13 +2449,8 @@ async function verifyGoogleIdToken(idToken) {
 function sameOriginRequest(req) {
   const origin = String(req?.headers?.origin || '').trim();
   if (!origin) return true;
-  if (origin === 'null' && isLocalRequest(req)) return true;
-  try {
-    const originUrl = new URL(origin);
-    return originUrl.host.toLowerCase() === String(req?.headers?.host || '').trim().toLowerCase();
-  } catch (_error) {
-    return false;
-  }
+  if (origin === 'null') return !IS_DEPLOYED_RUNTIME && isLocalRequest(req);
+  return !!(normalizeOriginValue(origin) && normalizeOriginValue(origin) === normalizeOriginValue(getRequestOrigin(req)));
 }
 
 function unixToIso(value) {
@@ -2967,6 +3373,71 @@ async function handleGoogleAuth(req, res) {
   }
 }
 
+async function handleRashinBonusStatus(req, res) {
+  const userRecord = await readGoogleUserForRequest(req);
+  if (!userRecord) {
+    sendJson(res, 401, {
+      error: 'LOGIN_REQUIRED',
+      message: 'Google login is required.',
+    });
+    return;
+  }
+  sendJson(res, 200, buildRashinBonusView(userRecord));
+}
+
+async function handleRashinBonusClaim(req, res) {
+  const userRecord = await readGoogleUserForRequest(req);
+  if (!userRecord) {
+    sendJson(res, 401, {
+      error: 'LOGIN_REQUIRED',
+      message: 'Google login is required.',
+    });
+    return;
+  }
+  const result = await withUserMutation(userRecord.userId, async userId => {
+    const latest = await readUserRecord(userId);
+    const today = getJstDateStamp();
+    if (String(latest?.last_rashin_bonus_claimed_date || '') === today) {
+      return {
+        claimed: false,
+        reason: 'already_claimed',
+        ...buildRashinBonusView(latest, today),
+      };
+    }
+    const now = new Date().toISOString();
+    const next = {
+      ...(latest || userRecord),
+      rashin_stones: normalizeRashinStones(latest?.rashin_stones) + RASHIN_BONUS_REWARD_AMOUNT,
+      last_rashin_bonus_claimed_date: today,
+      updatedAt: now,
+    };
+    await writeUserRecord(userId, next);
+    return {
+      claimed: true,
+      ...buildRashinBonusView(next, today),
+    };
+  });
+  sendJson(res, 200, result);
+}
+
+async function handleDeepReadingDiscountStatus(req, res) {
+  const userRecord = await readGoogleUserForRequest(req);
+  if (!userRecord) {
+    sendJson(res, 401, {
+      error: 'LOGIN_REQUIRED',
+      message: 'Google login is required.',
+      eligible: false,
+      normalAmount: DEEP_READING_NORMAL_AMOUNT,
+      finalAmount: DEEP_READING_NORMAL_AMOUNT,
+    });
+    return;
+  }
+  const url = new URL(req.url, makeAbsoluteUrl(req, '/'));
+  const resultId = normalizeVaultRecordId(url.searchParams.get('resultId') || url.searchParams.get('oracleResultId') || '');
+  const status = await getRashinDiscountEligibility(userRecord, resultId);
+  sendJson(res, 200, status);
+}
+
 async function handlePaidReadingTicketPrepare(req, res) {
   let body;
   try {
@@ -3162,7 +3633,9 @@ async function handleStripeCheckoutSessionCreate(req, res) {
     });
     return;
   }
-  const sourceReadingId = normalizeVaultRecordId(body?.sourceReadingId || body?.source_reading_id || '');
+  const sourceReadingId = normalizeVaultRecordId(
+    body?.oracleResultId || body?.oracle_result_id || body?.sourceReadingId || body?.source_reading_id || ''
+  );
   if (!sourceReadingId) {
     sendJson(res, 400, {
       error: 'SOURCE_READING_REQUIRED',
@@ -3170,29 +3643,122 @@ async function handleStripeCheckoutSessionCreate(req, res) {
     });
     return;
   }
+  if (await hasDeepReadingPurchaseForSource(owner, sourceReadingId)) {
+    sendJson(res, 409, {
+      error: 'DEEP_READING_ALREADY_PURCHASED',
+      message: 'This reading has already been purchased.',
+    });
+    return;
+  }
 
   const urls = buildStripeCheckoutUrls(req);
   const intent = String(body?.intent || '').trim() || 'upgrade-paid';
-  const purchaseOrder = await createPurchaseOrder({ owner, sourceReadingId });
+  let purchaseOrder;
+  try {
+    if (owner.ownerType === 'user' && userRecord?.userId && authSession?.source === 'google') {
+      purchaseOrder = await withUserMutation(userRecord.userId, async safeUserId => {
+        const latestUser = await readUserRecord(safeUserId);
+        const discountStatus = await getRashinDiscountEligibility(latestUser, sourceReadingId);
+        if (['login_required', 'result_required', 'result_not_found'].includes(discountStatus.reason)) {
+          const error = new Error('ORACLE_RESULT_NOT_AVAILABLE');
+          error.statusCode = 403;
+          error.publicCode = 'ORACLE_RESULT_NOT_AVAILABLE';
+          throw error;
+        }
+        if (discountStatus.reason === 'already_purchased') {
+          const error = new Error('DEEP_READING_ALREADY_PURCHASED');
+          error.statusCode = 409;
+          error.publicCode = 'DEEP_READING_ALREADY_PURCHASED';
+          throw error;
+        }
+        if (discountStatus.eligible) {
+          const openForResult = await findOpenRashinDiscountOrder({ userId: safeUserId, sourceReadingId });
+          const openForUser = await findOpenRashinDiscountOrder({ userId: safeUserId });
+          if (openForResult || openForUser) {
+            const error = new Error('RASHIN_DISCOUNT_CHECKOUT_ALREADY_OPEN');
+            error.statusCode = 409;
+            error.publicCode = 'RASHIN_DISCOUNT_CHECKOUT_ALREADY_OPEN';
+            throw error;
+          }
+          const orderId = generateRecordId('po');
+          const lockAcquired = await acquireRashinDiscountCheckoutLock({
+            userId: safeUserId,
+            sourceReadingId,
+            purchaseOrderId: orderId,
+          });
+          if (!lockAcquired) {
+            const error = new Error('RASHIN_DISCOUNT_CHECKOUT_ALREADY_OPEN');
+            error.statusCode = 409;
+            error.publicCode = 'RASHIN_DISCOUNT_CHECKOUT_ALREADY_OPEN';
+            throw error;
+          }
+          return createPurchaseOrder({
+            owner,
+            sourceReadingId,
+            orderId,
+            rashinDiscount: {
+              discountAmount: discountStatus.discountAmount,
+              stonesRequired: discountStatus.stonesRequired,
+            },
+          });
+        }
+        return createPurchaseOrder({ owner, sourceReadingId, rashinDiscount: null });
+      });
+    } else {
+      purchaseOrder = await createPurchaseOrder({ owner, sourceReadingId, rashinDiscount: null });
+    }
+  } catch (error) {
+    console.error('Stripe checkout order preparation failed', {
+      error: error.message,
+      stack: error.stack,
+      userId: userRecord?.userId || '',
+      sourceReadingId,
+    });
+    sendJson(res, error.statusCode || 500, {
+      error: error.publicCode || 'STRIPE_CHECKOUT_PREPARE_FAILED',
+      message: 'The request could not be completed. Please wait and try again.',
+    });
+    return;
+  }
   const params = new URLSearchParams();
   params.set('mode', 'payment');
   params.set('success_url', urls.successUrl);
   params.set('cancel_url', urls.cancelUrl);
   params.set('locale', 'ja');
   params.set('billing_address_collection', 'auto');
-  params.set('line_items[0][price]', STRIPE_PRICE_ID_DEEP_READING_580);
+  if (purchaseOrder.finalAmount === DEEP_READING_NORMAL_AMOUNT) {
+    params.set('line_items[0][price]', STRIPE_PRICE_ID_DEEP_READING_580);
+  } else {
+    params.set('line_items[0][price_data][currency]', purchaseOrder.currency);
+    params.set('line_items[0][price_data][unit_amount]', String(purchaseOrder.finalAmount));
+    params.set('line_items[0][price_data][product_data][name]', STRIPE_SUBSCRIPTION_NAME || 'Deep Reading');
+  }
   params.set('line_items[0][quantity]', '1');
   params.set('client_reference_id', purchaseOrder.id);
   params.set('metadata[intent]', intent);
   params.set('metadata[purchaseOrderId]', purchaseOrder.id);
   params.set('metadata[sourceReadingId]', purchaseOrder.sourceReadingId);
+  params.set('metadata[oracleResultId]', purchaseOrder.oracleResultId);
   params.set('metadata[purchaseType]', 'deep_reading_once');
-  params.set('metadata[expectedAmount]', '580');
+  params.set('metadata[userId]', purchaseOrder.userId);
+  params.set('metadata[originalAmount]', String(purchaseOrder.originalAmount));
+  params.set('metadata[discountAmount]', String(purchaseOrder.discountAmount));
+  params.set('metadata[finalAmount]', String(purchaseOrder.finalAmount));
+  params.set('metadata[stonesToConsume]', String(purchaseOrder.discountStonesUsed));
+  params.set('metadata[discountType]', purchaseOrder.discountType || '');
+  params.set('metadata[expectedAmount]', String(purchaseOrder.finalAmount));
   params.set('metadata[currency]', 'jpy');
   params.set('payment_intent_data[metadata][purchaseOrderId]', purchaseOrder.id);
   params.set('payment_intent_data[metadata][sourceReadingId]', purchaseOrder.sourceReadingId);
+  params.set('payment_intent_data[metadata][oracleResultId]', purchaseOrder.oracleResultId);
   params.set('payment_intent_data[metadata][purchaseType]', 'deep_reading_once');
-  params.set('payment_intent_data[metadata][expectedAmount]', '580');
+  params.set('payment_intent_data[metadata][userId]', purchaseOrder.userId);
+  params.set('payment_intent_data[metadata][originalAmount]', String(purchaseOrder.originalAmount));
+  params.set('payment_intent_data[metadata][discountAmount]', String(purchaseOrder.discountAmount));
+  params.set('payment_intent_data[metadata][finalAmount]', String(purchaseOrder.finalAmount));
+  params.set('payment_intent_data[metadata][stonesToConsume]', String(purchaseOrder.discountStonesUsed));
+  params.set('payment_intent_data[metadata][discountType]', purchaseOrder.discountType || '');
+  params.set('payment_intent_data[metadata][expectedAmount]', String(purchaseOrder.finalAmount));
   params.set('payment_intent_data[metadata][currency]', 'jpy');
   if (userRecord?.email) {
     params.set('customer_email', userRecord.email);
@@ -3210,11 +3776,36 @@ async function handleStripeCheckoutSessionCreate(req, res) {
       url: session?.url || '',
       id: session?.id || '',
       purchaseOrderId: purchaseOrder.id,
+      normalAmount: purchaseOrder.originalAmount,
+      discountAmount: purchaseOrder.discountAmount,
+      finalAmount: purchaseOrder.finalAmount,
+      stonesToConsume: purchaseOrder.discountStonesUsed,
     });
   } catch (error) {
+    console.error('Stripe checkout session create failed', {
+      error: error.message,
+      stack: error.stack,
+      purchaseOrderId: purchaseOrder?.id || '',
+      userId: purchaseOrder?.userId || '',
+      sourceReadingId: purchaseOrder?.sourceReadingId || '',
+    });
+    if (purchaseOrder?.id) {
+      try {
+        await writePurchaseOrder({
+          ...purchaseOrder,
+          status: 'stripe_create_failed',
+          updatedAt: new Date().toISOString(),
+        });
+      } catch (writeError) {
+        console.error('Failed to mark purchase order as stripe_create_failed', {
+          error: writeError.message,
+          purchaseOrderId: purchaseOrder.id,
+        });
+      }
+    }
     sendJson(res, error.statusCode || 502, {
-      error: error.code || error.message || 'STRIPE_CHECKOUT_CREATE_FAILED',
-      message: error.message || 'Stripe checkout session could not be created.',
+      error: 'STRIPE_CHECKOUT_CREATE_FAILED',
+      message: 'The request could not be completed. Please wait and try again.',
     });
   }
 }
@@ -3270,9 +3861,14 @@ async function handleStripePortalSessionCreate(req, res) {
       url: portal?.url || '',
     });
   } catch (error) {
+    console.error('Stripe portal session create failed', {
+      error: error.message,
+      stack: error.stack,
+      userId: userRecord?.userId || '',
+    });
     sendJson(res, error.statusCode || 502, {
-      error: error.code || error.message || 'STRIPE_PORTAL_CREATE_FAILED',
-      message: error.message || 'Stripe billing portal session could not be created.',
+      error: 'STRIPE_PORTAL_CREATE_FAILED',
+      message: 'The request could not be completed. Please wait and try again.',
     });
   }
 }
@@ -3330,6 +3926,18 @@ async function handleStripeCheckoutComplete(req, res) {
         });
         return;
       }
+      if (ticket?.requiresManualReview) {
+        sendJson(res, 202, {
+          ...status,
+          ok: false,
+          pending: true,
+          error: 'PAYMENT_REVIEW_PENDING',
+          message: 'Payment confirmation is being reviewed. Please wait and try again later.',
+          purchaseType: 'deep_reading_once',
+          sourceReadingId: ticket.sourceReadingId || '',
+        });
+        return;
+      }
       sendJson(res, 200, {
         ...status,
         ok: true,
@@ -3338,6 +3946,10 @@ async function handleStripeCheckoutComplete(req, res) {
         ticketId: ticket?.id || '',
         ticketStatus: ticket?.status || '',
         sourceReadingId: ticket?.sourceReadingId || '',
+        normalAmount: Number(ticket?.originalAmount || ticket?.baseAmount || DEEP_READING_NORMAL_AMOUNT),
+        discountAmount: Number(ticket?.discountAmount || 0),
+        finalAmount: Number(ticket?.finalAmount || DEEP_READING_NORMAL_AMOUNT),
+        discountStonesUsed: Number(ticket?.discountStonesUsed || 0),
       });
       return;
     }
@@ -3401,9 +4013,15 @@ async function handleStripeCheckoutComplete(req, res) {
       subscriptionStatus,
     });
   } catch (error) {
+    console.error('Stripe checkout completion failed', {
+      error: error.message,
+      stack: error.stack,
+      sessionId,
+      userId: existingAuth?.userId || '',
+    });
     sendJson(res, error.statusCode || 502, {
-      error: error.code || error.message || 'STRIPE_CHECKOUT_COMPLETE_FAILED',
-      message: error.message || 'Stripe checkout completion could not be confirmed.',
+      error: 'STRIPE_CHECKOUT_COMPLETE_FAILED',
+      message: 'The request could not be completed. Please wait and try again.',
     });
   }
 }
@@ -3476,9 +4094,15 @@ async function handleStripeWebhook(req, res) {
     await markStripeEventHandled(event?.id);
     sendJson(res, 200, { ok: true, received: true });
   } catch (error) {
+    console.error('Stripe webhook processing failed', {
+      error: error.message,
+      stack: error.stack,
+      eventId: event?.id || '',
+      eventType: event?.type || '',
+    });
     sendJson(res, 500, {
-      error: error.code || error.message || 'STRIPE_WEBHOOK_PROCESS_FAILED',
-      message: error.message || 'Stripe webhook could not be processed.',
+      error: 'STRIPE_WEBHOOK_PROCESS_FAILED',
+      message: 'The request could not be completed. Please wait and try again.',
     });
   }
 }
@@ -3527,6 +4151,21 @@ async function handleRequest(req, res) {
 
   if (req.method === 'GET' && req.url.startsWith('/api/member/status')) {
     await handleMemberStatus(req, res);
+    return;
+  }
+
+  if (req.method === 'GET' && req.url.startsWith('/api/rashin-bonus/status')) {
+    await handleRashinBonusStatus(req, res);
+    return;
+  }
+
+  if (req.method === 'POST' && req.url.startsWith('/api/rashin-bonus/claim')) {
+    await handleRashinBonusClaim(req, res);
+    return;
+  }
+
+  if (req.method === 'GET' && req.url.startsWith('/api/deep-reading/discount-status')) {
+    await handleDeepReadingDiscountStatus(req, res);
     return;
   }
 
@@ -3620,9 +4259,15 @@ async function handleRequest(req, res) {
 function createServer() {
   return http.createServer((req, res) => {
     handleRequest(req, res).catch(error => {
+      console.error('Unexpected server error', {
+        error: error.message,
+        stack: error.stack,
+        method: req.method || '',
+        url: req.url || '',
+      });
       sendJson(res, 500, {
         error: 'UNEXPECTED_SERVER_ERROR',
-        message: error.message || 'Unexpected server error.',
+        message: 'The request could not be completed. Please wait and try again.',
       });
     });
   });
@@ -3640,6 +4285,8 @@ if (require.main === module) {
   });
   server.listen(PORT, HOST, () => {
     console.log(`Star reader app running at http://${HOST}:${PORT}`);
+    console.log(`Runtime: NODE_ENV=${NODE_ENV || '(unset)'}, render=${IS_RENDER_RUNTIME ? 'yes' : 'no'}, devAccess=${DEV_ACCESS_ENABLED ? 'enabled' : 'disabled'}`);
+    console.log(`Public origin: ${PUBLIC_ORIGIN ? 'configured' : 'missing'}`);
     console.log(`Anthropic proxy: ${ANTHROPIC_KEY_CONFIGURED ? 'configured' : 'missing ANTHROPIC_API_KEY'}`);
     console.log(`OpenAI proxy: ${OPENAI_KEY_CONFIGURED ? 'configured' : 'missing OPENAI_API_KEY'}`);
   });

@@ -1561,6 +1561,9 @@ const GOOGLE_AUTH_ENDPOINT='/api/auth/google';
 const MEMBER_STATUS_ENDPOINT='/api/member/status';
 const MEMBER_SESSION_ENDPOINT='/api/member/session';
 const MEMBER_LOGOUT_ENDPOINT='/api/member/logout';
+const RASHIN_BONUS_STATUS_ENDPOINT='/api/rashin-bonus/status';
+const RASHIN_BONUS_CLAIM_ENDPOINT='/api/rashin-bonus/claim';
+const DEEP_READING_DISCOUNT_STATUS_ENDPOINT='/api/deep-reading/discount-status';
 const STRIPE_CHECKOUT_ENDPOINT='/api/stripe/checkout-session';
 const STRIPE_CHECKOUT_COMPLETE_ENDPOINT='/api/stripe/checkout/complete';
 const STRIPE_PORTAL_ENDPOINT='/api/stripe/portal-session';
@@ -1863,6 +1866,8 @@ let MEMBER_AUTH={
   currentPeriodEnd:'',
   cancelAtPeriodEnd:false,
   manageBillingAvailable:false,
+  rashinStones:0,
+  lastRashinBonusClaimedDate:null,
 };
 
 function getGenderPersonCard(gender=GENDER){
@@ -1903,6 +1908,10 @@ let ACTIVE_PAID_SOURCE_READING_ID='';
 let CLIENT_LOGGING_READY=false;
 const SENT_CLIENT_LOG_KEYS=new Set();
 let CURRENT_READING_CREATED_AT='';
+let RASHIN_BONUS_STATUS=null;
+let RASHIN_BONUS_LOADING=false;
+let RASHIN_DISCOUNT_STATUS=null;
+let RASHIN_DISCOUNT_RESULT_ID='';
 let ACTIVE_FOLLOWUP_KEY='';
 let FOLLOWUP_LOADING=false;
 let DOSSIER_LOADING=false;
@@ -2971,6 +2980,8 @@ function renderDailyOracle(){
     drawBtn.hidden=false;
     drawBtn.disabled=false;
     drawBtn.textContent=DAILY_ORACLE_TEST_MODE?'テストでカードを引く':'今日のカードを引く';
+    renderRashinBonusCard();
+    void loadRashinBonusStatus({render:true});
     return;
   }
   const card=record.card;
@@ -3009,6 +3020,8 @@ function renderDailyOracle(){
         <button class="daily-oracle-share" type="button" onclick="shareDailyOracle('line')">LINEで送る</button>
       </div>
     </div>`;
+  renderRashinBonusCard();
+  void loadRashinBonusStatus({render:true});
 }
 
 function drawDailyOracle(){
@@ -3052,6 +3065,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
   safeRun('installGlobalClientLogging',()=>installGlobalClientLogging());
   safeRun('installLiveCardMotionStyles',()=>installLiveCardMotionStyles());
+  safeRun('installRashinBonusStyles',()=>installRashinBonusStyles());
   safeRun('bootMemberMode',()=>bootMemberMode());
   safeRun('installThemeCounter',()=>installThemeCounter());
   safeRun('renderBrandLayer',()=>renderBrandLayer());
@@ -3870,6 +3884,8 @@ function applyMemberAuthData(data,overrides={}){
     currentPeriodEnd:data?.currentPeriodEnd||'',
     cancelAtPeriodEnd:!!data?.cancelAtPeriodEnd,
     manageBillingAvailable:!!data?.manageBillingAvailable,
+    rashinStones:Number.isFinite(Number(data?.rashinStones))?Math.max(0,Math.floor(Number(data.rashinStones))):MEMBER_AUTH.rashinStones,
+    lastRashinBonusClaimedDate:data?.lastRashinBonusClaimedDate||MEMBER_AUTH.lastRashinBonusClaimedDate||null,
     ...overrides,
   };
   return MEMBER_AUTH;
@@ -3894,6 +3910,7 @@ async function loadMemberStatus(options={}){
       renderHomeVault();
       renderMemberFollowupSection();
       renderGoogleAuthShell();
+      renderRashinBonusCard();
     }
     return MEMBER_AUTH;
   }
@@ -3927,8 +3944,219 @@ async function loadMemberStatus(options={}){
     renderHomeVault();
     renderMemberFollowupSection();
     renderGoogleAuthShell();
+    renderRashinBonusCard();
   }
+  void loadRashinBonusStatus({render:options.render!==false});
   return MEMBER_AUTH;
+}
+
+function installRashinBonusStyles(){
+  if(document.getElementById('rashin-bonus-style')) return;
+  const style=document.createElement('style');
+  style.id='rashin-bonus-style';
+  style.textContent=`
+    .rashin-bonus-card{margin:18px 0 0;padding:16px;border:1px solid rgba(199,154,54,.48);background:linear-gradient(135deg,rgba(15,13,29,.82),rgba(10,7,18,.72));box-shadow:0 16px 40px rgba(0,0,0,.28),inset 0 0 0 1px rgba(255,255,255,.04);color:#f4e8c8}
+    .rashin-bonus-card[hidden]{display:none!important}
+    .rashin-bonus-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+    .rashin-bonus-kicker{font-size:12px;letter-spacing:.12em;color:#8fd8d2;text-transform:uppercase}
+    .rashin-bonus-title{font-size:18px;color:#f4cd62;font-weight:700;letter-spacing:.04em}
+    .rashin-bonus-stones{font-size:14px;color:#fff}
+    .rashin-bonus-body{display:grid;gap:8px;font-size:14px;line-height:1.7;color:rgba(255,255,255,.82)}
+    .rashin-bonus-main{font-size:16px;color:#fff;font-weight:700}
+    .rashin-bonus-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    .rashin-bonus-btn{border:1px solid rgba(244,205,98,.75);background:linear-gradient(90deg,#9c741b,#f4d372);color:#100b14;font-weight:800;padding:10px 14px;cursor:pointer}
+    .rashin-bonus-btn:disabled{opacity:.55;cursor:not-allowed}
+    .rashin-bonus-link{border:1px solid rgba(244,205,98,.42);background:rgba(255,255,255,.04);color:#f4e8c8;font-weight:700;padding:10px 14px;cursor:pointer}
+    .upgrade-bonus-note{margin-top:6px;color:#f4cd62;font-size:13px;line-height:1.6}
+    .upgrade-price-normal{display:block;color:rgba(255,255,255,.72);text-decoration:line-through;font-size:13px}
+    .upgrade-price-discount{display:block;color:#fff;font-size:18px;font-weight:800}
+    @media (max-width:680px){.rashin-bonus-card{padding:14px}.rashin-bonus-head{align-items:flex-start;flex-direction:column}.rashin-bonus-actions>*{width:100%}}
+  `;
+  document.head.appendChild(style);
+}
+
+function ensureRashinBonusSlot(){
+  const root=document.getElementById('daily-oracle');
+  if(!root) return null;
+  let slot=document.getElementById('rashin-bonus-card');
+  if(!slot){
+    slot=document.createElement('div');
+    slot.id='rashin-bonus-card';
+    slot.className='rashin-bonus-card';
+    root.appendChild(slot);
+  }
+  return slot;
+}
+
+function getRashinAvailableDiscount(status=RASHIN_BONUS_STATUS){
+  return status?.availableDiscount||null;
+}
+
+function renderRashinBonusCard(){
+  const slot=ensureRashinBonusSlot();
+  if(!slot) return;
+  installRashinBonusStyles();
+  if(!canUseProxy()||!MEMBER_AUTH.googleClientConfigured){
+    slot.hidden=true;
+    slot.innerHTML='';
+    return;
+  }
+  slot.hidden=false;
+  if(!MEMBER_AUTH.authLoggedIn){
+    slot.innerHTML=`
+      <div class="rashin-bonus-head">
+        <div>
+          <div class="rashin-bonus-kicker">RASHIN BONUS</div>
+          <div class="rashin-bonus-title">今日の羅針ボーナス</div>
+        </div>
+      </div>
+      <div class="rashin-bonus-body">
+        <div class="rashin-bonus-main">Googleログインで羅針石を受け取れます</div>
+        <div>羅針石は深掘り鑑定の割引にだけ使えます。無料チケットではありません。</div>
+      </div>
+      <div class="rashin-bonus-actions">
+        <button class="rashin-bonus-btn" type="button" onclick="openMemberAccessModal('rashin-bonus')">Googleでログイン</button>
+      </div>`;
+    return;
+  }
+  if(RASHIN_BONUS_LOADING&&!RASHIN_BONUS_STATUS){
+    slot.innerHTML=`
+      <div class="rashin-bonus-head">
+        <div>
+          <div class="rashin-bonus-kicker">RASHIN BONUS</div>
+          <div class="rashin-bonus-title">今日の羅針ボーナス</div>
+        </div>
+      </div>
+      <div class="rashin-bonus-body"><div>確認しています。</div></div>`;
+    return;
+  }
+  const status=RASHIN_BONUS_STATUS||{};
+  const stones=Number.isFinite(Number(status.rashinStones))?Math.max(0,Math.floor(Number(status.rashinStones))):Math.max(0,Math.floor(Number(MEMBER_AUTH.rashinStones||0)));
+  const available=getRashinAvailableDiscount(status);
+  const next=status.nextDiscount||null;
+  const canClaim=!!status.canClaim;
+  const main=canClaim
+    ?'本日の羅針石を受け取れます'
+    :(available
+      ?`羅針石 ${stones}個獲得`
+      :'本日は受け取り済みです');
+  const sub=available
+    ?`深掘り鑑定${available.discountAmount}円OFFが使えます`
+    :(next
+      ?`あと${next.remainingStones}個で深掘り鑑定${next.discountAmount}円OFF`
+      :'また明日お越しください');
+  slot.innerHTML=`
+    <div class="rashin-bonus-head">
+      <div>
+        <div class="rashin-bonus-kicker">RASHIN BONUS</div>
+        <div class="rashin-bonus-title">今日の羅針ボーナス</div>
+      </div>
+      <div class="rashin-bonus-stones">羅針石 ${stones}個</div>
+    </div>
+    <div class="rashin-bonus-body">
+      <div class="rashin-bonus-main">${escapeHtml(main)}</div>
+      <div>${escapeHtml(sub)}</div>
+      ${!canClaim&&!available?'<div>また明日お越しください。</div>':''}
+    </div>
+    <div class="rashin-bonus-actions">
+      ${canClaim
+        ?`<button class="rashin-bonus-btn" type="button" onclick="claimRashinBonus()" ${RASHIN_BONUS_LOADING?'disabled':''}>本日の羅針石を受け取る</button>`
+        :`<button class="rashin-bonus-link" type="button" disabled>本日は受け取り済みです</button>`}
+      ${available&&PLAN==='free'&&canContinueCurrentReadingToPaid()
+        ?`<button class="rashin-bonus-link" type="button" onclick="upgradeCurrentReadingToPaid()">この結果を深掘りする</button>`
+        :''}
+    </div>`;
+}
+
+async function loadRashinBonusStatus(options={}){
+  if(!canUseProxy()||!MEMBER_AUTH.authLoggedIn||MEMBER_AUTH.authProvider!=='google'){
+    RASHIN_BONUS_STATUS=null;
+    if(options.render!==false) renderRashinBonusCard();
+    return null;
+  }
+  RASHIN_BONUS_LOADING=true;
+  if(options.render!==false) renderRashinBonusCard();
+  try{
+    const res=await fetchApi(RASHIN_BONUS_STATUS_ENDPOINT,{cache:'no-store'});
+    const data=await readJsonSafe(res);
+    if(!res.ok) throw new Error(getServerErrorMessage(data,'羅針ボーナスを確認できませんでした'));
+    RASHIN_BONUS_STATUS=data;
+    MEMBER_AUTH.rashinStones=Math.max(0,Math.floor(Number(data?.rashinStones||0)));
+    MEMBER_AUTH.lastRashinBonusClaimedDate=data?.lastRashinBonusClaimedDate||MEMBER_AUTH.lastRashinBonusClaimedDate;
+    return data;
+  }catch(e){
+    RASHIN_BONUS_STATUS=null;
+    return null;
+  }finally{
+    RASHIN_BONUS_LOADING=false;
+    if(options.render!==false) renderRashinBonusCard();
+  }
+}
+
+async function claimRashinBonus(){
+  if(!canUseProxy()||!MEMBER_AUTH.authLoggedIn){
+    openMemberAccessModal('rashin-bonus');
+    return false;
+  }
+  RASHIN_BONUS_LOADING=true;
+  renderRashinBonusCard();
+  try{
+    const res=await fetchApi(RASHIN_BONUS_CLAIM_ENDPOINT,{method:'POST'});
+    const data=await readJsonSafe(res);
+    if(!res.ok) throw new Error(getServerErrorMessage(data,'羅針石を受け取れませんでした'));
+    RASHIN_BONUS_STATUS=data;
+    MEMBER_AUTH.rashinStones=Math.max(0,Math.floor(Number(data?.rashinStones||0)));
+    showToast(data?.claimed?'羅針石を1個受け取りました':'本日は受け取り済みです');
+    if(CURRENT_READING_ID) await loadDeepReadingDiscountStatus(CURRENT_READING_ID,{render:true});
+    return !!data?.claimed;
+  }catch(e){
+    showToast(e?.message||'羅針石を受け取れませんでした');
+    return false;
+  }finally{
+    RASHIN_BONUS_LOADING=false;
+    renderRashinBonusCard();
+  }
+}
+
+function updateResultUpgradePrice(status=RASHIN_DISCOUNT_STATUS){
+  const priceEl=document.getElementById('upgrade-price-value');
+  const noteEl=document.getElementById('upgrade-bonus-note');
+  if(!priceEl) return;
+  if(status?.eligible){
+    priceEl.innerHTML=`
+      <span class="upgrade-price-normal">通常 ${status.normalAmount||580}円</span>
+      <span class="upgrade-price-discount">羅針ボーナス適用で ${status.finalAmount||580}円</span>`;
+    if(noteEl) noteEl.textContent=`決済完了時に羅針石${status.stonesRequired}個を使用します。有効期限はこの無料鑑定から7日間です。`;
+    return;
+  }
+  priceEl.textContent='通常 580円';
+  if(noteEl) noteEl.textContent=status?.reason==='insufficient_stones'
+    ?'羅針石が3個以上になると、この結果の深掘り鑑定で割引が使えます。'
+    :'';
+}
+
+async function loadDeepReadingDiscountStatus(resultId=CURRENT_READING_ID,options={}){
+  const safeId=String(resultId||'').trim();
+  if(!canUseProxy()||!safeId||!MEMBER_AUTH.authLoggedIn||MEMBER_AUTH.authProvider!=='google'){
+    RASHIN_DISCOUNT_STATUS=null;
+    RASHIN_DISCOUNT_RESULT_ID='';
+    if(options.render!==false) updateResultUpgradePrice(null);
+    return null;
+  }
+  try{
+    const res=await fetchApi(`${DEEP_READING_DISCOUNT_STATUS_ENDPOINT}?resultId=${encodeURIComponent(safeId)}`,{cache:'no-store'});
+    const data=await readJsonSafe(res);
+    if(!res.ok) throw new Error(getServerErrorMessage(data,'羅針ボーナス割引を確認できませんでした'));
+    RASHIN_DISCOUNT_STATUS=data;
+    RASHIN_DISCOUNT_RESULT_ID=safeId;
+    if(options.render!==false&&CURRENT_READING_ID===safeId) updateResultUpgradePrice(data);
+    return data;
+  }catch(e){
+    RASHIN_DISCOUNT_STATUS=null;
+    RASHIN_DISCOUNT_RESULT_ID='';
+    if(options.render!==false) updateResultUpgradePrice(null);
+    return null;
+  }
 }
 
 async function activateMemberSession(payload={},options={}){
@@ -4134,6 +4362,8 @@ async function handleGoogleCredentialResponse(response){
     renderHomeVault();
     renderMemberFollowupSection();
     renderGoogleAuthShell();
+    renderRashinBonusCard();
+    void loadRashinBonusStatus({render:true});
     closeMemberAccessModal(false);
     showToast('Googleログインが完了しました');
     resumePendingMemberIntent();
@@ -4261,13 +4491,17 @@ async function openStripeCheckout(intent='start-paid'){
     return false;
   }
   try{
+    if(MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.userId){
+      try{
+        await saveHistoryRecordToVault(buildCurrentReadingRecord());
+      }catch(_error){}
+    }
     const res=await fetchApi(STRIPE_CHECKOUT_ENDPOINT,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         intent,
-        sourceReadingId,
-        identity:getPaidReadingIdentity(),
+        oracleResultId:sourceReadingId,
       }),
     });
     const data=await readJsonSafe(res);
@@ -4281,11 +4515,13 @@ async function openStripeCheckout(intent='start-paid'){
       return false;
     }
     saveStripeReturnIntent(intent);
+    const finalAmount=Number(data?.finalAmount||580);
+    const discountAmount=Number(data?.discountAmount||0);
     trackEvent('checkout_start',{
       plan:'one_time',
       price:580,
-      final_amount:580,
-      discount_amount:0,
+      final_amount:finalAmount,
+      discount_amount:discountAmount,
       checkout_mode:'payment',
       purchase_type:'deep_reading_once',
       source:checkoutSourceFromIntent(intent),
@@ -4293,8 +4529,8 @@ async function openStripeCheckout(intent='start-paid'){
     trackEvent('deep_payment_start',{
       source:checkoutSourceFromIntent(intent),
       price:580,
-      final_amount:580,
-      discount_amount:0,
+      final_amount:finalAmount,
+      discount_amount:discountAmount,
       checkout_mode:'payment',
       purchase_type:'deep_reading_once',
     });
@@ -4365,22 +4601,25 @@ async function handleStripeReturnFlow(){
     renderHomeVault();
     renderMemberFollowupSection();
     renderGoogleAuthShell();
+    void loadRashinBonusStatus({render:true});
     cleanupStripeReturnParams();
     const intent=consumeStripeReturnIntent();
     if(data?.ticketReady){
+      const finalAmount=Number(data?.finalAmount||580);
+      const discountAmount=Number(data?.discountAmount||0);
       trackEvent('deep_payment_complete',{
         source:checkoutSourceFromIntent(intent),
         price:580,
-        final_amount:580,
-        discount_amount:0,
+        final_amount:finalAmount,
+        discount_amount:discountAmount,
         checkout_mode:'payment',
         purchase_type:'deep_reading_once',
       });
       trackEvent('deep_ticket_created',{
         source:checkoutSourceFromIntent(intent),
         price:580,
-        final_amount:580,
-        discount_amount:0,
+        final_amount:finalAmount,
+        discount_amount:discountAmount,
         checkout_mode:'payment',
         purchase_type:'deep_reading_once',
         ticket_status:data.ticketStatus||'unused',
@@ -4610,6 +4849,11 @@ function resumePendingMemberIntent(){
   const intent=MEMBER_PENDING_INTENT;
   MEMBER_PENDING_INTENT='';
   if(!intent) return;
+  if(intent==='rashin-bonus'){
+    renderRashinBonusCard();
+    void loadRashinBonusStatus({render:true});
+    return;
+  }
   if(isMemberActive()){
     if(intent==='start-paid') startFlowUnlocked('paid');
     if(intent==='upgrade-paid'&&canContinueCurrentReadingToPaid()) upgradeCurrentReadingToPaidUnlocked();
@@ -7131,17 +7375,20 @@ function renderResultUpgradePanel(){
         <div class="upgrade-meta">
           <div class="upgrade-price">
             <div class="upgrade-price-label">料金</div>
-            <div class="upgrade-price-value">深掘り鑑定 1回580円</div>
+            <div class="upgrade-price-value" id="upgrade-price-value">通常 580円</div>
+            <div class="upgrade-bonus-note" id="upgrade-bonus-note"></div>
           </div>
           <div class="upgrade-note">継続課金ではありません。解約手続きは不要です。</div>
         </div>
       </div>
       <div class="upgrade-actions">
-        <button class="result-unified-cta-btn deep-premium-button" type="button" data-track="deepen_cta_click" data-track-position="result_unified" onclick="upgradeCurrentReadingToPaid()">${DEEP_PAID_CTA_LABEL}</button>
+        <button class="result-unified-cta-btn deep-premium-button" type="button" data-track="deepen_cta_click" data-track-position="result_unified" onclick="upgradeCurrentReadingToPaid()">この結果を深掘りする</button>
         <div class="checkout-disclosure">${RESULT_CHECKOUT_DISCLOSURE_HTML}</div>
       </div>
     </div>
     `;
+  updateResultUpgradePrice(RASHIN_DISCOUNT_RESULT_ID===CURRENT_READING_ID?RASHIN_DISCOUNT_STATUS:null);
+  void loadDeepReadingDiscountStatus(CURRENT_READING_ID,{render:true});
   updateResultActionState();
   refreshDeepenCtaViewTracking(el);
 }
@@ -7964,6 +8211,17 @@ function installLiveCardMotionStyles(){
       height:34px !important;
       opacity:.82 !important;
     }
+    #len-deck.live-shuffling,
+    #orc-deck.live-shuffling{
+      transform:translateY(14px) rotateX(8deg) rotateY(-12deg) rotateZ(-1.5deg) !important;
+      transform-origin:50% 62% !important;
+      perspective-origin:56% 34% !important;
+    }
+    #len-deck.live-shuffling::before,
+    #orc-deck.live-shuffling::before{
+      transform:translateX(-50%) rotateZ(-5deg) scaleX(1.06) !important;
+      opacity:.76 !important;
+    }
     .shuffle-area.live-shuffling .shuffle-card{
       left:50% !important;
       top:50% !important;
@@ -8009,6 +8267,10 @@ function installLiveCardMotionStyles(){
       .shuffle-area.live-shuffling{
         width:min(92vw,260px) !important;
         height:268px !important;
+      }
+      #len-deck.live-shuffling,
+      #orc-deck.live-shuffling{
+        transform:translateY(10px) rotateX(7deg) rotateY(-9deg) rotateZ(-1deg) !important;
       }
       .shuffle-area.live-shuffling .shuffle-card{
         width:122px !important;

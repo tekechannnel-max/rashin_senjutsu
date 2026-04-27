@@ -1,8 +1,13 @@
 .env
+.env.*
+!.env.example
+!.env.example.txt
 node_modules/
 data/
 *.log
 *.bak
+.tmp-env-dump.txt
+*env-dump*
 .tmp*
 .tmp-*
 *素材*/
