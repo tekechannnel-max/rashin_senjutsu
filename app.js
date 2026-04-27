@@ -7991,10 +7991,10 @@ function installLiveCardMotionStyles(){
       box-shadow:inset 0 0 0 1px rgba(201,149,42,.24), inset 0 0 28px rgba(0,0,0,.38);
     }
     .result-card.card-type-len .result-card-front .result-card-img{
-      width:108% !important;
-      height:108% !important;
+      width:104% !important;
+      height:104% !important;
       max-width:none !important;
-      margin:-4% !important;
+      margin:-2% !important;
       object-fit:cover !important;
     }
     .result-card:hover .result-card-img,

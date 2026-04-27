@@ -1,0 +1,240 @@
+.hinduShuffle {
+  --hindu-card-w: clamp(64px, 18vw, 112px);
+  --hindu-card-ratio: 1.48;
+  --hindu-card-h: calc(var(--hindu-card-w) * var(--hindu-card-ratio));
+  --hindu-card-back:
+    radial-gradient(circle at 50% 42%, rgba(245, 211, 112, .22), transparent 30%),
+    linear-gradient(145deg, #182044, #070914 62%, #2c173d);
+  --hindu-gold: #f2d279;
+  --hindu-cyan: #8fd8d4;
+  width: min(100%, 720px);
+  color: #f6efdb;
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+}
+
+.hinduShuffle__table {
+  position: relative;
+  width: min(100%, 680px);
+  min-height: clamp(260px, 58vw, 430px);
+  perspective: 1200px;
+  transform-style: preserve-3d;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 24% 22%, rgba(143, 216, 212, .13), transparent 30%),
+    radial-gradient(circle at 78% 18%, rgba(242, 210, 121, .13), transparent 28%),
+    linear-gradient(180deg, rgba(10, 14, 31, .88), rgba(3, 5, 14, .96));
+  box-shadow: 0 26px 70px rgba(0, 0, 0, .36), inset 0 1px 0 rgba(255, 255, 255, .05);
+  overflow: visible;
+  isolation: isolate;
+}
+
+.hinduShuffle__table::before {
+  content: '';
+  position: absolute;
+  inset: 16px;
+  border: 1px solid rgba(242, 210, 121, .12);
+  border-radius: 6px;
+  pointer-events: none;
+  transform: translateZ(-20px);
+}
+
+.hinduShuffle__deck,
+.hinduShuffle__movingPacket {
+  position: absolute;
+  left: 58%;
+  top: 45%;
+  width: var(--hindu-card-w);
+  height: var(--hindu-card-h);
+  transform-style: preserve-3d;
+}
+
+.hinduShuffle__deck--receive {
+  left: 58%;
+  top: 45%;
+}
+
+.hinduShuffle__movingPacket {
+  z-index: 8;
+  pointer-events: none;
+}
+
+.hinduShuffle__card {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  transform-origin: 50% 68%;
+  box-shadow:
+    0 12px 24px rgba(0, 0, 0, .34),
+    0 1px 0 rgba(255, 255, 255, .2) inset,
+    0 -1px 0 rgba(0, 0, 0, .32) inset;
+}
+
+.hinduShuffle__card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  transform: translateZ(-2px) translate(3px, 4px);
+  background: linear-gradient(135deg, rgba(242, 210, 121, .26), rgba(255, 255, 255, .05));
+  opacity: .45;
+  z-index: -1;
+}
+
+.hinduShuffle__card::after {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px solid rgba(242, 210, 121, .34);
+  border-radius: 5px;
+  pointer-events: none;
+}
+
+.hinduShuffle__cardFace {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  backface-visibility: hidden;
+  overflow: hidden;
+}
+
+.hinduShuffle__cardFace--back {
+  background: var(--hindu-card-back);
+  background-size: cover;
+  border: 1px solid rgba(242, 210, 121, .42);
+}
+
+.hinduShuffle__cardFace--back::before {
+  content: '';
+  position: absolute;
+  inset: 14%;
+  border: 1px solid rgba(143, 216, 212, .24);
+  border-radius: 50%;
+  box-shadow: 0 0 22px rgba(143, 216, 212, .12);
+}
+
+.hinduShuffle__cardFace--front {
+  transform: rotateY(180deg);
+  background: center / cover no-repeat;
+}
+
+.hinduShuffle__card--received {
+  opacity: .18;
+}
+
+.hinduShuffle__card--packet {
+  box-shadow:
+    0 18px 34px rgba(0, 0, 0, .45),
+    0 0 18px rgba(242, 210, 121, .16),
+    0 1px 0 rgba(255, 255, 255, .22) inset;
+}
+
+.hinduShuffle__shadow {
+  position: absolute;
+  width: calc(var(--hindu-card-w) * 1.35);
+  height: 34px;
+  top: calc(45% + var(--hindu-card-h) * .56);
+  left: 58%;
+  border-radius: 999px;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, .46), transparent 68%);
+  transform: translate(-16%, 0) rotate(-5deg);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.hinduShuffle__shadow--receive {
+  transform: translate(-102%, 22px) rotate(-7deg);
+  opacity: .72;
+}
+
+.hinduShuffle__shadow--source {
+  opacity: .62;
+}
+
+.hinduShuffle.is-shuffling .hinduShuffle__movingPacket.is-active .hinduShuffle__card {
+  will-change: transform, opacity;
+}
+
+.hinduShuffle.is-shuffling .hinduShuffle__deck.is-feeding .hinduShuffle__card:first-child {
+  box-shadow:
+    0 16px 32px rgba(0, 0, 0, .42),
+    0 0 16px rgba(143, 216, 212, .12),
+    0 1px 0 rgba(255, 255, 255, .2) inset;
+}
+
+.hinduShuffle.is-shuffling .hinduShuffle__deck.is-catching {
+  filter: none;
+}
+
+.hinduShuffle.is-shuffling .hinduShuffle__deck.is-catching .hinduShuffle__card--received:nth-child(-n + 4) {
+  opacity: .42;
+}
+
+.hinduShuffle.is-complete .hinduShuffle__deck--receive .hinduShuffle__card--received {
+  opacity: .34;
+}
+
+.hinduShuffle__button {
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid rgba(242, 210, 121, .48);
+  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(201, 149, 42, .9), rgba(244, 209, 110, .94));
+  color: #150f22;
+  font: 700 13px/1.1 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  letter-spacing: .08em;
+  cursor: pointer;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, .22), 0 0 18px rgba(242, 210, 121, .12);
+}
+
+.hinduShuffle__button:disabled {
+  cursor: wait;
+  opacity: .78;
+}
+
+.hinduShuffle--low {
+  --hindu-card-w: clamp(58px, 17vw, 96px);
+}
+
+.hinduShuffle--high {
+  --hindu-card-w: clamp(70px, 18vw, 118px);
+}
+
+.hinduShuffle[data-reduced-motion='true'] .hinduShuffle__table {
+  perspective: 900px;
+}
+
+.hinduShuffle[data-reduced-motion='true'] .hinduShuffle__card--packet {
+  box-shadow: 0 13px 26px rgba(0, 0, 0, .38), 0 1px 0 rgba(255, 255, 255, .16) inset;
+}
+
+@media (max-width: 620px) {
+  .hinduShuffle {
+    --hindu-card-w: clamp(54px, 20vw, 82px);
+  }
+
+  .hinduShuffle__table {
+    min-height: 300px;
+  }
+
+  .hinduShuffle__deck,
+  .hinduShuffle__movingPacket {
+    left: 64%;
+    top: 43%;
+  }
+
+  .hinduShuffle__shadow {
+    left: 64%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hinduShuffle__card,
+  .hinduShuffle__deck,
+  .hinduShuffle__movingPacket {
+    transition: none !important;
+  }
+}
