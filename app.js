@@ -2618,6 +2618,38 @@ function getDailyOracleRecordKey(owner=getDailyOracleOwner(),dateJst=getJstDateK
   return`${owner.key}:${dateJst}`;
 }
 
+function getJstDateKeyOffset(dateJst=getJstDateKey(),offsetDays=0){
+  const match=String(dateJst||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!match) return getJstDateKey();
+  const date=new Date(Date.UTC(Number(match[1]),Number(match[2])-1,Number(match[3])));
+  date.setUTCDate(date.getUTCDate()+Math.trunc(Number(offsetDays)||0));
+  return date.toISOString().slice(0,10);
+}
+
+function getDailyOracleOwnerKeys(owner=getDailyOracleOwner()){
+  const keys=[owner?.key].filter(Boolean);
+  if(owner?.type==='user'){
+    const vaultId=getOrCreateVaultId();
+    if(vaultId) keys.push(`vault:${vaultId}`);
+  }
+  return Array.from(new Set(keys));
+}
+
+function getRecentDailyOracleCardIds(owner=getDailyOracleOwner(),dateJst=getJstDateKey(),days=2){
+  const store=getDailyOracleStorage();
+  const ownerKeys=getDailyOracleOwnerKeys(owner);
+  const excluded=new Set();
+  for(let i=1;i<=days;i+=1){
+    const pastDate=getJstDateKeyOffset(dateJst,-i);
+    ownerKeys.forEach(key=>{
+      const record=store[`${key}:${pastDate}`];
+      const cardId=Number(record?.cardId);
+      if(DAILY_ORACLE_MESSAGES.some(item=>item.id===cardId)) excluded.add(cardId);
+    });
+  }
+  return excluded;
+}
+
 function getForcedDailyOracleCardId(){
   const id=parseInt(DAILY_ORACLE_CARD_PARAM||'',10);
   if(!Number.isFinite(id)) return 0;
@@ -2641,8 +2673,14 @@ function pickDailyOracleTestCardId(){
 function pickDailyOracleCardId(owner=getDailyOracleOwner(),dateJst=getJstDateKey()){
   if(DAILY_ORACLE_TEST_MODE) return pickDailyOracleTestCardId();
   const animal=REACTION_PROFILE?.animal||'none';
-  const index=hashDailyOracleKey(`${dateJst}:${owner.key}:${animal}`)%DAILY_ORACLE_MESSAGES.length;
-  return DAILY_ORACLE_MESSAGES[index]?.id||1;
+  const recentIds=getRecentDailyOracleCardIds(owner,dateJst,2);
+  const ranked=DAILY_ORACLE_MESSAGES
+    .map(item=>({
+      id:item.id,
+      rank:hashDailyOracleKey(`${dateJst}:${owner.key}:${animal}:${item.id}`),
+    }))
+    .sort((a,b)=>a.rank-b.rank);
+  return ranked.find(item=>!recentIds.has(item.id))?.id||ranked[0]?.id||1;
 }
 
 function readDailyOracleRecord(){
