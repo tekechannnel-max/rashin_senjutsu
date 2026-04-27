@@ -1696,6 +1696,12 @@ async function fulfillDeepReadingCheckoutSession(session) {
   if (order.sourceReadingId !== sourceReadingId) {
     throw new Error('PURCHASE_ORDER_SOURCE_MISMATCH');
   }
+  if (order.stripeCheckoutSessionId !== sessionId) {
+    throw new Error('PURCHASE_ORDER_SESSION_MISMATCH');
+  }
+  if (Number(session?.amount_total) !== Number(order.finalAmount) || String(session?.currency || '').toLowerCase() !== order.currency) {
+    throw new Error('STRIPE_SESSION_AMOUNT_MISMATCH');
+  }
   const now = new Date().toISOString();
   const paymentIntentId = normalizeStripeObjectId(session?.payment_intent || '');
   const paidOrder = {
@@ -1741,7 +1747,6 @@ async function validatePaidReadingTicketAccess(req, payload = {}) {
   if (isExpiredIso(ticket.expiresAt)) return false;
   const owner = await resolvePurchaseOwner(req, payload?.identity);
   if (!ownerMatchesTicket(owner, ticket)) return false;
-  if (ticket.status === 'used') return ticket.usedReadingId === paidReadingId;
   if (ticket.status !== 'unused') return false;
   if (ticket.lockedReadingId !== paidReadingId) return false;
   return true;
