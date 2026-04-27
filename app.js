@@ -1538,6 +1538,8 @@ const IS_LOCAL_RUNTIME=location.protocol==='file:'||LOCAL_RUNTIME_HOSTS.includes
 const DEV_MODE=PAGE_PARAMS.has('dev')&&IS_LOCAL_RUNTIME;
 const MEMBER_PREVIEW_PARAM=PAGE_PARAMS.has('member');
 const LOCAL_TEST_RUNTIME=IS_LOCAL_RUNTIME;
+const DAILY_ORACLE_TEST_MODE=PAGE_PARAMS.has('oracle_test')||PAGE_PARAMS.has('daily_oracle_test');
+const DAILY_ORACLE_CARD_PARAM=PAGE_PARAMS.get('oracle_card')||PAGE_PARAMS.get('daily_oracle_card')||'';
 const FILE_PROXY_STORAGE_KEY='uranai-file-proxy-origin-v1';
 const FILE_PROXY_CANDIDATES=['http://127.0.0.1:3000','http://localhost:3000','http://127.0.0.1:3060','http://localhost:3060','http://127.0.0.1:3062','http://localhost:3062'];
 let FILE_PROXY_ORIGIN='';
@@ -1915,6 +1917,7 @@ const TRACKED_DEEPEN_CTA_VIEW_LOGICAL_KEYS=new Set();
 const OBSERVED_DEEPEN_CTA_KEYS=new WeakSet();
 let DAILY_ORACLE_VIEW_TRACKED=false;
 let DAILY_ORACLE_MOTION_TIMERS=[];
+let DAILY_ORACLE_TEST_RECORD=null;
 let DEEPEN_CTA_VIEW_OBSERVER=null;
 let FORM_START_TRACKED_FOR_SCREEN=false;
 let GOOGLE_SIGNIN_RENDER_TIMER=0;
@@ -2606,13 +2609,35 @@ function getDailyOracleRecordKey(owner=getDailyOracleOwner(),dateJst=getJstDateK
   return`${owner.key}:${dateJst}`;
 }
 
+function getForcedDailyOracleCardId(){
+  const id=parseInt(DAILY_ORACLE_CARD_PARAM||'',10);
+  if(!Number.isFinite(id)) return 0;
+  return DAILY_ORACLE_MESSAGES.some(item=>item.id===id)?id:0;
+}
+
+function pickDailyOracleTestCardId(){
+  const forcedId=getForcedDailyOracleCardId();
+  if(forcedId) return forcedId;
+  let last=0;
+  try{
+    last=parseInt(sessionStorage.getItem('uranai-daily-oracle-test-last-id')||'0',10)||0;
+  }catch(_error){}
+  const ordered=DAILY_ORACLE_MESSAGES.map(item=>item.id);
+  const currentIndex=Math.max(-1,ordered.indexOf(last));
+  const nextId=ordered[(currentIndex+1)%ordered.length]||1;
+  try{sessionStorage.setItem('uranai-daily-oracle-test-last-id',String(nextId));}catch(_error){}
+  return nextId;
+}
+
 function pickDailyOracleCardId(owner=getDailyOracleOwner(),dateJst=getJstDateKey()){
+  if(DAILY_ORACLE_TEST_MODE) return pickDailyOracleTestCardId();
   const animal=REACTION_PROFILE?.animal||'none';
   const index=hashDailyOracleKey(`${dateJst}:${owner.key}:${animal}`)%DAILY_ORACLE_MESSAGES.length;
   return DAILY_ORACLE_MESSAGES[index]?.id||1;
 }
 
 function readDailyOracleRecord(){
+  if(DAILY_ORACLE_TEST_MODE) return DAILY_ORACLE_TEST_RECORD;
   const owner=getDailyOracleOwner();
   const dateJst=getJstDateKey();
   const store=getDailyOracleStorage();
@@ -2633,6 +2658,16 @@ function readDailyOracleRecord(){
 }
 
 function writeDailyOracleRecord(card){
+  if(DAILY_ORACLE_TEST_MODE){
+    const record={
+      ownerType:'test',
+      dateJst:getJstDateKey(),
+      cardId:card.id,
+      drawnAt:new Date().toISOString(),
+    };
+    DAILY_ORACLE_TEST_RECORD={...record,card};
+    return DAILY_ORACLE_TEST_RECORD;
+  }
   const owner=getDailyOracleOwner();
   const dateJst=getJstDateKey();
   const store=getDailyOracleStorage();
@@ -2928,19 +2963,24 @@ function renderDailyOracle(){
   }
   if(!resultEl||!drawBtn) return;
   if(!record){
-    if(introEl) introEl.textContent='数秘オラクルカードから、今日の一手を1枚引きます。';
+    if(introEl) introEl.textContent=DAILY_ORACLE_TEST_MODE
+      ?'テスト表示中です。クリックするたびに別のオラクルカードを確認できます。'
+      :'数秘オラクルカードから、今日の一手を1枚引きます。';
     resultEl.innerHTML='';
     resultEl.hidden=true;
     drawBtn.hidden=false;
     drawBtn.disabled=false;
-    drawBtn.textContent='今日のカードを引く';
+    drawBtn.textContent=DAILY_ORACLE_TEST_MODE?'テストでカードを引く':'今日のカードを引く';
     return;
   }
   const card=record.card;
   const imageSrc=`images/cards/oracle/${String(card.id).padStart(2,'0')}.jpg`;
-  if(introEl) introEl.textContent='今日のオラクルは引き終わっています。本日のカードをもう一度表示します。';
-  drawBtn.hidden=true;
-  drawBtn.disabled=true;
+  if(introEl) introEl.textContent=DAILY_ORACLE_TEST_MODE
+    ?'テスト表示中です。保存せずに別カードの演出を確認できます。'
+    :'今日のオラクルは保存されています。カードを開く演出は何度でも見られます。';
+  drawBtn.hidden=false;
+  drawBtn.disabled=false;
+  drawBtn.textContent=DAILY_ORACLE_TEST_MODE?'別のカードを試す':'今日のカードをもう一度開く';
   resultEl.hidden=false;
   resultEl.innerHTML=`
     <div class="daily-oracle-card-wrap">
@@ -2964,7 +3004,7 @@ function renderDailyOracle(){
       </div>
       <!-- Future: show the daily oracle discount only after ticket storage and Stripe discount application are implemented. -->
       <div class="daily-oracle-actions">
-        <button class="daily-oracle-share" type="button" onclick="openDailyOracleStage(readDailyOracleRecord(),{animate:false})">カードをもう一度見る</button>
+        <button class="daily-oracle-share" type="button" onclick="openDailyOracleStage(readDailyOracleRecord(),{animate:true})">カード演出をもう一度見る</button>
         <button class="daily-oracle-share" type="button" onclick="shareDailyOracle('x')">Xでシェア</button>
         <button class="daily-oracle-share" type="button" onclick="shareDailyOracle('line')">LINEで送る</button>
       </div>
@@ -2973,10 +3013,9 @@ function renderDailyOracle(){
 
 function drawDailyOracle(){
   const existing=readDailyOracleRecord();
-  if(existing){
+  if(existing&&!DAILY_ORACLE_TEST_MODE){
     renderDailyOracle();
-    openDailyOracleStage(existing,{animate:false});
-    showToast('今日のオラクルは引き終わっています');
+    openDailyOracleStage(existing,{animate:true});
     return;
   }
   const owner=getDailyOracleOwner();
