@@ -4842,8 +4842,7 @@ function openPaidEntryGuide(){
     void upgradeCurrentReadingToPaid();
     return;
   }
-  const modal=ensurePaidEntryGuideModal();
-  modal.classList.add('on');
+  void startFlow('paid');
 }
 
 function closePaidEntryGuide(){
@@ -5058,12 +5057,12 @@ function repairStaticCopy(){
   setText('#s-top .btn-top.btn-free','無料で羅針鑑定をはじめる');
   setText('#s-top .btn-top.btn-paid',DEEP_PAID_CTA_LABEL);
   document.querySelectorAll('#s-top .btn-top.btn-paid').forEach(el=>{
-    el.setAttribute('href','#paid-entry-guide');
-    el.removeAttribute('data-flow-target');
+    el.setAttribute('href','?flow=paid');
+    el.setAttribute('data-flow-target','paid');
     el.setAttribute('data-track','deepen_cta_click');
     el.onclick=function(event){
       event.preventDefault();
-      openPaidEntryGuide();
+      void startFlow('paid');
       return false;
     };
   });
@@ -5103,12 +5102,12 @@ function repairStaticCopy(){
     setWithin(planCards[1],'.plan-compare-action',DEEP_PAID_CTA_LABEL);
     const deepAction=planCards[1].querySelector('.plan-compare-action');
     if(deepAction){
-      deepAction.setAttribute('href','#paid-entry-guide');
-      deepAction.removeAttribute('data-flow-target');
+      deepAction.setAttribute('href','?flow=paid');
+      deepAction.setAttribute('data-flow-target','paid');
       deepAction.setAttribute('data-track','deepen_cta_click');
       deepAction.onclick=function(event){
         event.preventDefault();
-        openPaidEntryGuide();
+        void startFlow('paid');
         return false;
       };
     }
@@ -5399,7 +5398,7 @@ function renderTopHeroPanels(){
 function renderPremiumEntrySection(){
   const el=document.getElementById('premium-entry');
   if(!el) return;
-  const paidAction=`<a class="today-cta today-cta-paid deep-premium-button" href="#paid-entry-guide" data-track="deepen_cta_click" data-track-position="entry" onclick="if(window.openPaidEntryGuide){openPaidEntryGuide();return false;}">${DEEP_PAID_CTA_LABEL}</a>`;
+  const paidAction=`<a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('paid');return false;}">${DEEP_PAID_CTA_LABEL}</a>`;
   el.innerHTML=`
     <div class="paid-band-inner">
       <div class="paid-band-actions paid-band-actions-center">
@@ -6845,7 +6844,7 @@ function renderPremiumEntryFallback(){
     <div class="paid-band-inner">
       <div class="paid-band-actions paid-band-actions-center">
         <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
-        <a class="today-cta today-cta-paid deep-premium-button" href="#paid-entry-guide" data-track="deepen_cta_click" data-track-position="entry" onclick="if(window.openPaidEntryGuide){openPaidEntryGuide();return false;}">${DEEP_PAID_CTA_LABEL}</a>
+        <a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('paid');return false;}">${DEEP_PAID_CTA_LABEL}</a>
       </div>
       <div class="paid-band-note">深掘り鑑定 1回580円 / 継続課金ではありません</div>
       <div class="checkout-disclosure">${CHECKOUT_DISCLOSURE_HTML}</div>
