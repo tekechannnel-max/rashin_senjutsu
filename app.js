@@ -2079,8 +2079,8 @@ const MEMBERSHIP_PLAN={
     },
   ],
 };
-const CHECKOUT_DISCLOSURE_HTML='深掘り鑑定は1回580円の単発課金です。継続課金ではありません。解約手続きは不要です。購入後すぐに、この結果に紐づく1回分の深掘り鑑定を利用できます。提供開始後のキャンセル・返金は、重複決済や技術的な提供不能を除き原則できません。占いは娯楽・自己理解支援であり、医療・法律・投資などの専門判断ではありません。 <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a>';
-const RESULT_CHECKOUT_DISCLOSURE_HTML='深掘り鑑定は1回580円の単発課金です。継続課金ではありません。購入後すぐに、この結果に紐づく深掘り鑑定を利用できます。提供開始後の返金は、重複決済や技術的な提供不能を除き原則できません。 <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a>';
+const CHECKOUT_DISCLOSURE_HTML='深掘り鑑定は1回580円の単発課金です。購入後すぐに、この結果に紐づく鑑定を利用できます。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
+const RESULT_CHECKOUT_DISCLOSURE_HTML='深掘り鑑定は1回580円の単発課金です。購入後すぐに、この結果に紐づく鑑定を利用できます。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
 
 // 全カード・各3問の解釈絞り込みテンプレート
 const CLARIFY_DEF={
@@ -3993,7 +3993,7 @@ function installRashinBonusStyles(){
   const style=document.createElement('style');
   style.id='rashin-bonus-style';
   style.textContent=`
-    .rashin-bonus-card{margin:18px 0 0;padding:16px;border:1px solid rgba(199,154,54,.48);background:linear-gradient(135deg,rgba(15,13,29,.82),rgba(10,7,18,.72));box-shadow:0 16px 40px rgba(0,0,0,.28),inset 0 0 0 1px rgba(255,255,255,.04);color:#f4e8c8}
+    .rashin-bonus-card{grid-column:1/-1;margin:4px 0 0;padding:16px 0 0;border-top:1px solid rgba(199,154,54,.26);color:#f4e8c8}
     .rashin-bonus-card[hidden]{display:none!important}
     .rashin-bonus-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
     .rashin-bonus-kicker{font-size:12px;letter-spacing:.12em;color:#8fd8d2;text-transform:uppercase}
@@ -4005,6 +4005,7 @@ function installRashinBonusStyles(){
     .rashin-bonus-btn{border:1px solid rgba(244,205,98,.75);background:linear-gradient(90deg,#9c741b,#f4d372);color:#100b14;font-weight:800;padding:10px 14px;cursor:pointer}
     .rashin-bonus-btn:disabled{opacity:.55;cursor:not-allowed}
     .rashin-bonus-link{border:1px solid rgba(244,205,98,.42);background:rgba(255,255,255,.04);color:#f4e8c8;font-weight:700;padding:10px 14px;cursor:pointer}
+    .rashin-bonus-link:disabled{opacity:.62;cursor:default}
     .upgrade-bonus-note{margin-top:6px;color:#f4cd62;font-size:13px;line-height:1.6}
     .upgrade-price-normal{display:block;color:rgba(255,255,255,.72);text-decoration:line-through;font-size:13px}
     .upgrade-price-discount{display:block;color:#fff;font-size:18px;font-weight:800}
@@ -4015,13 +4016,14 @@ function installRashinBonusStyles(){
 
 function ensureRashinBonusSlot(){
   const root=document.getElementById('daily-oracle');
-  if(!root) return null;
+  const shell=root?.querySelector('.daily-oracle-shell')||root;
+  if(!shell) return null;
   let slot=document.getElementById('rashin-bonus-card');
   if(!slot){
     slot=document.createElement('div');
     slot.id='rashin-bonus-card';
     slot.className='rashin-bonus-card';
-    root.appendChild(slot);
+    shell.appendChild(slot);
   }
   return slot;
 }
@@ -4045,19 +4047,19 @@ function renderRashinBonusCard(){
       <div class="rashin-bonus-head">
         <div>
           <div class="rashin-bonus-kicker">RASHIN BONUS</div>
-          <div class="rashin-bonus-title">今日の羅針ボーナス</div>
+          <div class="rashin-bonus-title">今日の記録と羅針ボーナス</div>
         </div>
       </div>
       <div class="rashin-bonus-body">
-        <div class="rashin-bonus-main">Googleログインで羅針石を受け取れます</div>
-        <div>羅針石は深掘り鑑定の割引にだけ使えます。無料チケットではありません。</div>
+        <div class="rashin-bonus-main">Googleログインで今日のカードを記録できます</div>
+        <div>ログインすると羅針石を1個受け取り、深掘り鑑定の割引に使えます。</div>
       </div>
       <div class="rashin-bonus-actions">
         <button class="rashin-bonus-btn" type="button" onclick="openMemberAccessModal('rashin-bonus')">Googleでログイン</button>
       </div>`;
     return;
   }
-  if(RASHIN_BONUS_LOADING&&!RASHIN_BONUS_STATUS){
+  if(!RASHIN_BONUS_STATUS){
     slot.innerHTML=`
       <div class="rashin-bonus-head">
         <div>
@@ -4065,7 +4067,7 @@ function renderRashinBonusCard(){
           <div class="rashin-bonus-title">今日の羅針ボーナス</div>
         </div>
       </div>
-      <div class="rashin-bonus-body"><div>確認しています。</div></div>`;
+      <div class="rashin-bonus-body"><div>羅針石を確認しています。</div></div>`;
     return;
   }
   const status=RASHIN_BONUS_STATUS||{};
@@ -4077,12 +4079,13 @@ function renderRashinBonusCard(){
     ?'本日の羅針石を受け取れます'
     :(available
       ?`羅針石 ${stones}個獲得`
-      :'本日は受け取り済みです');
+      :`羅針石 ${stones}個`);
   const sub=available
     ?`深掘り鑑定${available.discountAmount}円OFFが使えます`
     :(next
       ?`あと${next.remainingStones}個で深掘り鑑定${next.discountAmount}円OFF`
-      :'また明日お越しください');
+      :'明日また羅針石を受け取れます');
+  const settledText=canClaim?'':'本日の受け取りは完了しています';
   slot.innerHTML=`
     <div class="rashin-bonus-head">
       <div>
@@ -4094,12 +4097,11 @@ function renderRashinBonusCard(){
     <div class="rashin-bonus-body">
       <div class="rashin-bonus-main">${escapeHtml(main)}</div>
       <div>${escapeHtml(sub)}</div>
-      ${!canClaim&&!available?'<div>また明日お越しください。</div>':''}
     </div>
     <div class="rashin-bonus-actions">
       ${canClaim
         ?`<button class="rashin-bonus-btn" type="button" onclick="claimRashinBonus()" ${RASHIN_BONUS_LOADING?'disabled':''}>本日の羅針石を受け取る</button>`
-        :`<button class="rashin-bonus-link" type="button" disabled>本日は受け取り済みです</button>`}
+        :`<button class="rashin-bonus-link" type="button" disabled>${escapeHtml(settledText)}</button>`}
       ${available&&PLAN==='free'&&canContinueCurrentReadingToPaid()
         ?`<button class="rashin-bonus-link" type="button" onclick="upgradeCurrentReadingToPaid()">この結果を深掘りする</button>`
         :''}
@@ -4144,7 +4146,7 @@ async function claimRashinBonus(){
     if(!res.ok) throw new Error(getServerErrorMessage(data,'羅針石を受け取れませんでした'));
     RASHIN_BONUS_STATUS=data;
     MEMBER_AUTH.rashinStones=Math.max(0,Math.floor(Number(data?.rashinStones||0)));
-    showToast(data?.claimed?'羅針石を1個受け取りました':'本日は受け取り済みです');
+    showToast(data?.claimed?'羅針石を1個受け取りました':'本日の受け取りは完了しています');
     if(CURRENT_READING_ID) await loadDeepReadingDiscountStatus(CURRENT_READING_ID,{render:true});
     return !!data?.claimed;
   }catch(e){
@@ -4315,8 +4317,8 @@ function renderGoogleAuthShell(){
     return;
   }
   copy.textContent=MEMBER_AUTH.stripeCheckoutReady
-    ?'Googleでログインすると、購入確認と履歴保存が安定します。'
-    :'Googleでログインしたうえで、深掘り鑑定の利用状態と購入履歴をこの端末にひも付けます。';
+    ?'購入履歴と深掘り鑑定を安全に保存します。'
+    :'履歴保存と羅針石の受け取りに使います。';
   scheduleGoogleSignInRender();
 }
 
@@ -4712,14 +4714,14 @@ function openMemberAccessModal(intent=''){
     desc.textContent=canUseDeveloperQuickAccess()
       ?'確認用アクセスは上のボタンから進めます。'
       :(MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn
-        ?'深掘り鑑定は、無料鑑定の結果から1回580円で進めます。'
+        ?'Googleログインで購入を続けます。'
         :'深掘り鑑定は、利用状態を確認できたときだけ開きます。');
   }
   if(guide){
     guide.textContent=canUseDeveloperQuickAccess()
       ?'確認用アクセスは上のボタン。その他の確認方法は下から選べます。'
       :(MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn
-        ?'Googleログインは履歴保存に使えます。深掘り鑑定は無料結果から購入できます。'
+        ?'購入履歴と深掘り鑑定を安全に保存します。'
         :(canUseAccessCode()
           ?'確認コードがあるなら下に入れてください。'
           :'深掘り鑑定はGoogleログインを優先しています。'));
@@ -4733,7 +4735,7 @@ function openMemberAccessModal(intent=''){
       :canUsePaidTestMode()
       ?'<div class="runtime-status-title">このまま深掘り鑑定フローへ進めます</div><div class="runtime-status-detail">確認用の状態で深掘り鑑定フローを確認できます。</div>'
       :(usesGoogle
-        ?'<div class="runtime-status-title">Googleログインを使えます</div><div class="runtime-status-detail">ログインすると履歴保存と購入確認が安定します。</div>'
+        ?'<div class="runtime-status-title">Googleログインで続行</div><div class="runtime-status-detail">履歴と購入確認を保存します。</div>'
         :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':'深掘り鑑定の準備中です'}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':'無料鑑定の結果から深掘り鑑定へ進めます。'}</div>`);
   }
   if(localBtn) localBtn.style.display=canUsePaidTestMode()?'inline-flex':'none';
