@@ -4811,6 +4811,51 @@ function closeSampleModal(){
   if(modal) modal.classList.remove('on');
 }
 
+function ensurePaidEntryGuideModal(){
+  let modal=document.getElementById('paid-entry-guide-modal');
+  if(modal) return modal;
+  modal=document.createElement('div');
+  modal.className='modal-overlay';
+  modal.id='paid-entry-guide-modal';
+  modal.innerHTML=`
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="paid-entry-guide-title">
+      <div class="modal-title" id="paid-entry-guide-title">深掘り鑑定は結果画面から購入できます</div>
+      <div class="modal-desc">まず無料鑑定を作成してください。結果画面の「この結果を深掘りする」から、1回580円の単発購入へ進めます。</div>
+      <div class="runtime-status ok">
+        <div class="runtime-status-title">今はまだ課金されません</div>
+        <div class="runtime-status-detail">無料結果に紐づけて深掘り鑑定を作るため、先に無料鑑定が必要です。</div>
+      </div>
+      <div class="modal-btns">
+        <button class="modal-save" type="button" onclick="startFreeFromPaidEntryGuide()">無料鑑定を始める</button>
+        <button class="modal-cancel" type="button" onclick="closePaidEntryGuide()">閉じる</button>
+      </div>
+    </div>`;
+  modal.addEventListener('click',event=>{
+    if(event.target===modal) closePaidEntryGuide();
+  });
+  document.body.appendChild(modal);
+  return modal;
+}
+
+function openPaidEntryGuide(){
+  if(PLAN==='free'&&canContinueCurrentReadingToPaid()){
+    void upgradeCurrentReadingToPaid();
+    return;
+  }
+  const modal=ensurePaidEntryGuideModal();
+  modal.classList.add('on');
+}
+
+function closePaidEntryGuide(){
+  const modal=document.getElementById('paid-entry-guide-modal');
+  if(modal) modal.classList.remove('on');
+}
+
+function startFreeFromPaidEntryGuide(){
+  closePaidEntryGuide();
+  startFlow('free');
+}
+
 function handleMemberAccessKeydown(event){
   if(event.key==='Enter'){
     event.preventDefault();
@@ -5011,8 +5056,16 @@ function repairStaticCopy(){
   setText('#s-top .top-kicker','姓名判断・四柱推命・動物タイプ診断・カード占い');
   setHtml('#s-top .top-desc','無料鑑定でも、本質・本音・現実・次の一手まで読み解けます。');
   setText('#s-top .btn-top.btn-free','無料で羅針鑑定をはじめる');
+  setText('#s-top .btn-top.btn-paid',DEEP_PAID_CTA_LABEL);
   document.querySelectorAll('#s-top .btn-top.btn-paid').forEach(el=>{
-    el.remove();
+    el.setAttribute('href','#paid-entry-guide');
+    el.removeAttribute('data-flow-target');
+    el.setAttribute('data-track','deepen_cta_click');
+    el.onclick=function(event){
+      event.preventDefault();
+      openPaidEntryGuide();
+      return false;
+    };
   });
   setText('#s-top .btn-top.btn-sample','サンプルを見る');
   setText('#s-top .top-note','');
@@ -5047,8 +5100,18 @@ function repairStaticCopy(){
       '鑑定履歴がある場合は、前回からの変化も読む'
     ].forEach((text,index)=>{ if(deepItems[index]) deepItems[index].textContent=text; });
     setWithin(planCards[1],'.plan-compare-summary','深掘り鑑定では、同じ相談内容を前提に追加カードを引き、「なぜそうなるか」「どこで止まりやすいか」「次に何を確認すべきか」まで読み解きます。');
+    setWithin(planCards[1],'.plan-compare-action',DEEP_PAID_CTA_LABEL);
     const deepAction=planCards[1].querySelector('.plan-compare-action');
-    if(deepAction) deepAction.remove();
+    if(deepAction){
+      deepAction.setAttribute('href','#paid-entry-guide');
+      deepAction.removeAttribute('data-flow-target');
+      deepAction.setAttribute('data-track','deepen_cta_click');
+      deepAction.onclick=function(event){
+        event.preventDefault();
+        openPaidEntryGuide();
+        return false;
+      };
+    }
   }
   document.querySelectorAll('.paid-band-note').forEach(el=>{
     el.textContent='深掘り鑑定 1回580円 / 継続課金ではありません';
@@ -5336,10 +5399,12 @@ function renderTopHeroPanels(){
 function renderPremiumEntrySection(){
   const el=document.getElementById('premium-entry');
   if(!el) return;
+  const paidAction=`<a class="today-cta today-cta-paid deep-premium-button" href="#paid-entry-guide" data-track="deepen_cta_click" data-track-position="entry" onclick="if(window.openPaidEntryGuide){openPaidEntryGuide();return false;}">${DEEP_PAID_CTA_LABEL}</a>`;
   el.innerHTML=`
     <div class="paid-band-inner">
       <div class="paid-band-actions paid-band-actions-center">
         <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
+        ${paidAction}
       </div>
       <div class="paid-band-note">深掘り鑑定 1回580円 / 継続課金ではありません</div>
       <div class="checkout-disclosure">${CHECKOUT_DISCLOSURE_HTML}</div>
@@ -6780,6 +6845,7 @@ function renderPremiumEntryFallback(){
     <div class="paid-band-inner">
       <div class="paid-band-actions paid-band-actions-center">
         <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
+        <a class="today-cta today-cta-paid deep-premium-button" href="#paid-entry-guide" data-track="deepen_cta_click" data-track-position="entry" onclick="if(window.openPaidEntryGuide){openPaidEntryGuide();return false;}">${DEEP_PAID_CTA_LABEL}</a>
       </div>
       <div class="paid-band-note">深掘り鑑定 1回580円 / 継続課金ではありません</div>
       <div class="checkout-disclosure">${CHECKOUT_DISCLOSURE_HTML}</div>
@@ -8547,7 +8613,7 @@ async function startFlow(plan){
 
 function startFlowUnlocked(plan){
   if(plan==='paid'&&!isMemberActive()){
-    showToast('深掘り鑑定は無料鑑定後の結果画面から購入できます');
+    openPaidEntryGuide();
     return;
   }
   PLAN=plan;
@@ -12005,6 +12071,9 @@ if(typeof window!=='undefined'){
   window.drawDailyOracle=drawDailyOracle;
   window.shareDailyOracle=shareDailyOracle;
   window.openMemberAccessModal=openMemberAccessModal;
+  window.openPaidEntryGuide=openPaidEntryGuide;
+  window.closePaidEntryGuide=closePaidEntryGuide;
+  window.startFreeFromPaidEntryGuide=startFreeFromPaidEntryGuide;
   window.openSampleModal=openSampleModal;
   window.closeSampleModal=closeSampleModal;
   window.openStripeCheckout=openStripeCheckout;
