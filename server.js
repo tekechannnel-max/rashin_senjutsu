@@ -3643,9 +3643,13 @@ async function handleStripeCheckoutSessionCreate(req, res) {
     });
     return;
   }
-  const sourceReadingId = normalizeVaultRecordId(
+  const intent = String(body?.intent || '').trim() || 'upgrade-paid';
+  let sourceReadingId = normalizeVaultRecordId(
     body?.oracleResultId || body?.oracle_result_id || body?.sourceReadingId || body?.source_reading_id || ''
   );
+  if (!sourceReadingId && intent === 'start-paid') {
+    sourceReadingId = generateRecordId('direct');
+  }
   if (!sourceReadingId) {
     sendJson(res, 400, {
       error: 'SOURCE_READING_REQUIRED',
@@ -3653,7 +3657,7 @@ async function handleStripeCheckoutSessionCreate(req, res) {
     });
     return;
   }
-  if (await hasDeepReadingPurchaseForSource(owner, sourceReadingId)) {
+  if (intent !== 'start-paid' && await hasDeepReadingPurchaseForSource(owner, sourceReadingId)) {
     sendJson(res, 409, {
       error: 'DEEP_READING_ALREADY_PURCHASED',
       message: 'This reading has already been purchased.',
@@ -3662,10 +3666,9 @@ async function handleStripeCheckoutSessionCreate(req, res) {
   }
 
   const urls = buildStripeCheckoutUrls(req);
-  const intent = String(body?.intent || '').trim() || 'upgrade-paid';
   let purchaseOrder;
   try {
-    if (owner.ownerType === 'user' && userRecord?.userId && authSession?.source === 'google') {
+    if (intent !== 'start-paid' && owner.ownerType === 'user' && userRecord?.userId && authSession?.source === 'google') {
       purchaseOrder = await withUserMutation(userRecord.userId, async safeUserId => {
         const latestUser = await readUserRecord(safeUserId);
         const discountStatus = await getRashinDiscountEligibility(latestUser, sourceReadingId);

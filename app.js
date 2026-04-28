@@ -4355,9 +4355,11 @@ function renderGoogleAuthShell(){
     clearGoogleAuthError();
     return;
   }
-  copy.textContent=MEMBER_AUTH.stripeCheckoutReady
-    ?'購入履歴と深掘り鑑定を安全に保存します。'
-    :'履歴保存と羅針石の受け取りに使います。';
+  copy.textContent=MEMBER_PENDING_INTENT==='start-paid'
+    ?'ログインして購入へ進む'
+    :(MEMBER_AUTH.stripeCheckoutReady
+      ?'購入履歴と深掘り鑑定を安全に保存します。'
+      :'履歴保存と羅針石の受け取りに使います。');
   scheduleGoogleSignInRender();
 }
 
@@ -4565,23 +4567,23 @@ async function openStripeCheckout(intent='start-paid'){
     return false;
   }
   const sourceReadingId=CURRENT_READING_ID;
-  if(!sourceReadingId||PLAN!=='free'||!canContinueCurrentReadingToPaid()){
+  const needsSourceReading=intent==='upgrade-paid';
+  if(needsSourceReading&&(!sourceReadingId||PLAN!=='free'||!canContinueCurrentReadingToPaid())){
     showToast('深掘り鑑定は無料鑑定後の結果画面から購入できます');
     return false;
   }
   try{
-    if(MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.userId){
+    if(sourceReadingId&&MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.userId){
       try{
         await saveHistoryRecordToVault(buildCurrentReadingRecord());
       }catch(_error){}
     }
+    const checkoutBody={intent};
+    if(sourceReadingId&&PLAN==='free'&&canContinueCurrentReadingToPaid()) checkoutBody.oracleResultId=sourceReadingId;
     const res=await fetchApi(STRIPE_CHECKOUT_ENDPOINT,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        intent,
-        oracleResultId:sourceReadingId,
-      }),
+      body:JSON.stringify(checkoutBody),
     });
     const data=await readJsonSafe(res);
     if(!res.ok){
@@ -4704,6 +4706,16 @@ async function handleStripeReturnFlow(){
         ticket_status:data.ticketStatus||'unused',
       });
       showToast('深掘り鑑定の準備が整いました');
+      if(intent==='start-paid'){
+        const paidReadingId=createReadingId();
+        PENDING_PAID_READING_ID=paidReadingId;
+        ACTIVE_PAID_SOURCE_READING_ID=data.sourceReadingId||'';
+        const prepared=await preparePaidReadingTicket(ACTIVE_PAID_SOURCE_READING_ID,paidReadingId);
+        if(prepared.ok){
+          startFlowUnlocked('paid');
+          return;
+        }
+      }
       if(data.sourceReadingId){
         const record=getReadingHistory().find(item=>item.id===data.sourceReadingId);
         if(record&&CURRENT_READING_ID!==record.id) openHistoryItem(record.id);
@@ -4742,14 +4754,17 @@ function openMemberAccessModal(intent=''){
   const desc=document.getElementById('member-access-desc');
   const guide=document.getElementById('member-access-guide');
   const status=document.getElementById('member-access-status');
+  const disclosure=modal?.querySelector('.checkout-disclosure');
   const localBtn=document.getElementById('member-local-preview-btn');
   const accessLabel=document.getElementById('member-access-label');
   const input=document.getElementById('member-access-input');
   const submitBtn=document.getElementById('member-access-submit-btn');
+  const compactPaidStart=MEMBER_PENDING_INTENT==='start-paid';
   clearMemberAccessError();
   clearGoogleAuthError();
   clearDeveloperAccessError();
   if(desc){
+    desc.style.display=compactPaidStart?'none':'';
     desc.textContent=canUseDeveloperQuickAccess()
       ?'確認用アクセスは上のボタンから進めます。'
       :(MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn
@@ -4757,6 +4772,7 @@ function openMemberAccessModal(intent=''){
         :'深掘り鑑定は、利用状態を確認できたときだけ開きます。');
   }
   if(guide){
+    guide.style.display=compactPaidStart?'none':'';
     guide.textContent=canUseDeveloperQuickAccess()
       ?'確認用アクセスは上のボタン。その他の確認方法は下から選べます。'
       :(MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn
@@ -4766,6 +4782,7 @@ function openMemberAccessModal(intent=''){
           :'深掘り鑑定はGoogleログインを優先しています。'));
   }
   if(status){
+    status.style.display=compactPaidStart?'none':'';
     const usesGoogle=MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn&&!canUsePaidTestMode();
     const usesDeveloper=canUseDeveloperQuickAccess();
     status.className=`runtime-status ${usesDeveloper||canUsePaidTestMode()||usesGoogle?'ok':'warn'}`;
@@ -4777,6 +4794,7 @@ function openMemberAccessModal(intent=''){
         ?'<div class="runtime-status-title">Googleログインで続行</div><div class="runtime-status-detail">履歴と購入確認を保存します。</div>'
         :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':'深掘り鑑定の準備中です'}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':'深掘り鑑定は無料鑑定後の結果画面から購入できます。'}</div>`);
   }
+  if(disclosure) disclosure.style.display='none';
   if(localBtn) localBtn.style.display=canUsePaidTestMode()?'inline-flex':'none';
   renderGoogleAuthShell();
   renderDeveloperAccessShell();
@@ -5116,6 +5134,7 @@ function repairStaticCopy(){
     el.textContent='深掘り鑑定 1回580円 / 継続課金ではありません';
   });
   document.querySelectorAll('.checkout-disclosure').forEach(el=>{
+    if(el.closest('#member-access-modal')) return;
     el.innerHTML=CHECKOUT_DISCLOSURE_HTML;
   });
 
@@ -8611,7 +8630,7 @@ async function startFlow(plan){
 }
 
 function startFlowUnlocked(plan){
-  if(plan==='paid'&&!isMemberActive()){
+  if(plan==='paid'&&!isMemberActive()&&!ACTIVE_PAID_READING_TICKET?.id){
     openPaidEntryGuide();
     return;
   }
@@ -8715,7 +8734,8 @@ function goToLen(){
   if(PLAN==='free'){
     trackEvent('form_submit',getCurrentInputAnalytics());
   }
-  beginReadingSession();
+  beginReadingSession(PLAN==='paid'&&PENDING_PAID_READING_ID?PENDING_PAID_READING_ID:'');
+  if(PLAN==='paid') PENDING_PAID_READING_ID='';
   MEIMEI=calcMeimei(year,month,day,hour);
   LP=hasFullBirthDate(year,month,day)?calcLp(year,month,day):null;
   NAMEJUDGE=calcNameJudge(fullname);
