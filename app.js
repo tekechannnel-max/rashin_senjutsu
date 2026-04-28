@@ -3077,6 +3077,9 @@ function drawDailyOracle(){
   trackEvent('daily_oracle_draw',{card_id:card.id,source:'top'});
   renderDailyOracle();
   openDailyOracleStage(record,{animate:true});
+  if(MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.authProvider==='google'){
+    void claimRashinBonus({silentAlreadyClaimed:true});
+  }
 }
 
 function shareDailyOracle(channel='x'){
@@ -3996,6 +3999,7 @@ function installRashinBonusStyles(){
     .rashin-bonus-card{grid-column:1/-1;margin:4px 0 0;padding:14px 0 0;border-top:1px solid rgba(199,154,54,.26);color:#f4e8c8}
     .rashin-bonus-card[hidden]{display:none!important}
     .rashin-bonus-panel{display:grid;grid-template-columns:minmax(0,1fr) minmax(176px,220px);gap:16px;align-items:stretch;padding:14px 16px;border:1px solid rgba(199,154,54,.28);background:linear-gradient(135deg,rgba(9,12,28,.62),rgba(14,9,24,.54));box-shadow:inset 0 0 0 1px rgba(255,255,255,.035),0 14px 32px rgba(0,0,0,.18)}
+    .rashin-bonus-panel.is-compact{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px}
     .rashin-bonus-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
     .rashin-bonus-kicker{font-size:12px;letter-spacing:.12em;color:#8fd8d2;text-transform:uppercase}
     .rashin-bonus-title{font-size:18px;color:#f4cd62;font-weight:700;letter-spacing:.04em}
@@ -4016,7 +4020,7 @@ function installRashinBonusStyles(){
     .upgrade-bonus-note{margin-top:6px;color:#f4cd62;font-size:13px;line-height:1.6}
     .upgrade-price-normal{display:block;color:rgba(255,255,255,.72);text-decoration:line-through;font-size:13px}
     .upgrade-price-discount{display:block;color:#fff;font-size:18px;font-weight:800}
-    @media (max-width:760px){.rashin-bonus-panel{grid-template-columns:1fr;padding:14px}.rashin-bonus-stones{justify-content:flex-start;min-height:auto}.rashin-bonus-actions>*{width:100%}}
+    @media (max-width:760px){.rashin-bonus-panel{grid-template-columns:1fr;padding:14px}.rashin-bonus-panel.is-compact{align-items:stretch;flex-direction:column}.rashin-bonus-stones{justify-content:flex-start;min-height:auto}.rashin-bonus-actions>*{width:100%}}
   `;
   document.head.appendChild(style);
 }
@@ -4048,31 +4052,24 @@ function renderRashinBonusCard(){
     slot.innerHTML='';
     return;
   }
+  const hasDailyOracle=!!readDailyOracleRecord()?.card;
+  if(!hasDailyOracle){
+    slot.hidden=true;
+    slot.innerHTML='';
+    return;
+  }
   slot.hidden=false;
   if(!MEMBER_AUTH.authLoggedIn){
     slot.innerHTML=`
-      <div class="rashin-bonus-panel">
+      <div class="rashin-bonus-panel is-compact">
         <div>
-          <div class="rashin-bonus-head">
-            <div>
-              <div class="rashin-bonus-kicker">RASHIN BONUS</div>
-              <div class="rashin-bonus-title">今日の記録と羅針ボーナス</div>
-            </div>
-          </div>
           <div class="rashin-bonus-body">
-            <div class="rashin-bonus-main">Googleログインで今日のカードを記録できます</div>
-            <div>ログインすると羅針石を1個受け取り、深掘り鑑定の割引に使えます。</div>
+            <div class="rashin-bonus-main">今日のカードを記録して羅針石+1</div>
+            <div>Googleログインすると本日のボーナスを受け取れます。</div>
           </div>
-        </div>
-        <div class="rashin-bonus-stones">
-          <span class="rashin-stone-gem" aria-hidden="true"></span>
-          <span class="rashin-stone-count">
-            <span class="rashin-stone-label">ログインで獲得</span>
-            <span class="rashin-stone-number">+1</span>
-          </span>
         </div>
         <div class="rashin-bonus-actions">
-          <button class="rashin-bonus-btn" type="button" onclick="openMemberAccessModal('rashin-bonus')">Googleでログイン</button>
+          <button class="rashin-bonus-btn" type="button" onclick="openMemberAccessModal('rashin-bonus')">Googleで記録して+1</button>
         </div>
       </div>`;
     return;
@@ -4172,7 +4169,7 @@ async function loadRashinBonusStatus(options={}){
   }
 }
 
-async function claimRashinBonus(){
+async function claimRashinBonus(options={}){
   if(!canUseProxy()||!MEMBER_AUTH.authLoggedIn){
     openMemberAccessModal('rashin-bonus');
     return false;
@@ -4185,7 +4182,11 @@ async function claimRashinBonus(){
     if(!res.ok) throw new Error(getServerErrorMessage(data,'羅針石を受け取れませんでした'));
     RASHIN_BONUS_STATUS=data;
     MEMBER_AUTH.rashinStones=Math.max(0,Math.floor(Number(data?.rashinStones||0)));
-    showToast(data?.claimed?'羅針石を1個受け取りました':'本日の受け取りは完了しています');
+    if(data?.claimed){
+      showToast('羅針石を1個受け取りました');
+    }else if(!options.silentAlreadyClaimed){
+      showToast('本日の受け取りは完了しています');
+    }
     if(CURRENT_READING_ID) await loadDeepReadingDiscountStatus(CURRENT_READING_ID,{render:true});
     return !!data?.claimed;
   }catch(e){
@@ -4357,6 +4358,8 @@ function renderGoogleAuthShell(){
   }
   copy.textContent=MEMBER_PENDING_INTENT==='start-paid'
     ?'ログインして購入へ進む'
+    :MEMBER_PENDING_INTENT==='rashin-bonus'
+    ?'ログインして羅針石+1を受け取る'
     :(MEMBER_AUTH.stripeCheckoutReady
       ?'購入履歴と深掘り鑑定を安全に保存します。'
       :'履歴保存と羅針石の受け取りに使います。');
@@ -4751,6 +4754,7 @@ function setMemberAccessError(message){
 function openMemberAccessModal(intent=''){
   MEMBER_PENDING_INTENT=intent||'';
   const modal=document.getElementById('member-access-modal');
+  const title=modal?.querySelector('.modal-title');
   const desc=document.getElementById('member-access-desc');
   const guide=document.getElementById('member-access-guide');
   const status=document.getElementById('member-access-status');
@@ -4760,19 +4764,23 @@ function openMemberAccessModal(intent=''){
   const input=document.getElementById('member-access-input');
   const submitBtn=document.getElementById('member-access-submit-btn');
   const compactPaidStart=MEMBER_PENDING_INTENT==='start-paid';
+  const bonusLogin=MEMBER_PENDING_INTENT==='rashin-bonus';
   clearMemberAccessError();
   clearGoogleAuthError();
   clearDeveloperAccessError();
+  if(title) title.textContent=bonusLogin?'今日の羅針ボーナス':(compactPaidStart?'深掘り鑑定の購入':'深掘り鑑定の確認');
   if(desc){
     desc.style.display=compactPaidStart?'none':'';
-    desc.textContent=canUseDeveloperQuickAccess()
+    desc.textContent=bonusLogin
+      ?'Googleログインで今日のカードを記録し、羅針石を1個受け取ります。'
+      :canUseDeveloperQuickAccess()
       ?'確認用アクセスは上のボタンから進めます。'
       :(MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn
         ?'Googleログインで購入を続けます。'
         :'深掘り鑑定は、利用状態を確認できたときだけ開きます。');
   }
   if(guide){
-    guide.style.display=compactPaidStart?'none':'';
+    guide.style.display=(compactPaidStart||bonusLogin)?'none':'';
     guide.textContent=canUseDeveloperQuickAccess()
       ?'確認用アクセスは上のボタン。その他の確認方法は下から選べます。'
       :(MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn
@@ -4782,7 +4790,7 @@ function openMemberAccessModal(intent=''){
           :'深掘り鑑定はGoogleログインを優先しています。'));
   }
   if(status){
-    status.style.display=compactPaidStart?'none':'';
+    status.style.display=(compactPaidStart||bonusLogin)?'none':'';
     const usesGoogle=MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn&&!canUsePaidTestMode();
     const usesDeveloper=canUseDeveloperQuickAccess();
     status.className=`runtime-status ${usesDeveloper||canUsePaidTestMode()||usesGoogle?'ok':'warn'}`;
@@ -4992,7 +5000,11 @@ function resumePendingMemberIntent(){
   if(!intent) return;
   if(intent==='rashin-bonus'){
     renderRashinBonusCard();
-    void loadRashinBonusStatus({render:true});
+    if(MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.authProvider==='google'){
+      void claimRashinBonus();
+    }else{
+      void loadRashinBonusStatus({render:true});
+    }
     return;
   }
   if(isMemberActive()){
