@@ -44,6 +44,7 @@ Set these on the Render service and redeploy before testing:
 - `STRIPE_SECRET_KEY=sk_test_...`
 - `STRIPE_WEBHOOK_SECRET=whsec_...`
 - `STRIPE_PRICE_ID_DEEP_READING_580=price_...`
+- `STRIPE_PAYMENT_METHOD_TYPES=card,paypay`
 - `GOOGLE_CLIENT_ID=...apps.googleusercontent.com`
 - `MEMBER_SESSION_SECRET=<strong random secret>`
 - `AUTH_SESSION_SECRET=<strong random secret>`
@@ -66,6 +67,17 @@ In Stripe Dashboard test mode:
    - `Stripe checkout: configured`
    - `Stripe webhook: configured`
 
+### PayPay setup
+
+PayPay is used through Stripe Checkout for one-time JPY payments.
+
+1. In Stripe Dashboard test mode, open Payment methods and enable PayPay.
+2. Keep `STRIPE_PAYMENT_METHOD_TYPES=card,paypay` in Render.
+3. During Checkout testing, confirm both card and PayPay can be selected.
+4. Repeat the same PayPay enablement in live mode before switching to live keys.
+
+If Stripe rejects Checkout creation because PayPay is not enabled or not available on the account, set `STRIPE_PAYMENT_METHOD_TYPES=card` temporarily and redeploy, then enable PayPay in Stripe before restoring `card,paypay`.
+
 ### Checkout scenarios
 
 Use a Google login account dedicated to test payments. Run these with Stripe test cards only.
@@ -73,6 +85,7 @@ Use a Google login account dedicated to test payments. Run these with Stripe tes
 1. Normal 580 yen Checkout:
    - Start from the latest free reading result.
    - Confirm the app opens Stripe Checkout for `580 JPY`.
+   - Confirm card and PayPay are available when PayPay is enabled in Stripe.
    - Complete payment with a Stripe test card.
    - Confirm a paid reading ticket is created under `data/paid-reading-tickets`.
    - Confirm the purchase order under `data/purchase-orders` has `finalAmount: 580`, `discountAmount: 0`, and `paidAt`.

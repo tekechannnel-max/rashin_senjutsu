@@ -89,6 +89,15 @@ function isConfiguredAppSecret(value) {
   return normalized.length >= 24 && !isPlaceholderEnvValue(normalized);
 }
 
+function parseStripePaymentMethodTypes(value) {
+  const allowed = new Set(['card', 'paypay']);
+  const parsed = String(value || 'card,paypay')
+    .split(',')
+    .map(item => item.trim().toLowerCase())
+    .filter(item => allowed.has(item));
+  return parsed.length ? Array.from(new Set(parsed)) : ['card', 'paypay'];
+}
+
 function readCliArg(flag) {
   const args = process.argv.slice(2);
   for (let i = 0; i < args.length; i += 1) {
@@ -151,6 +160,7 @@ const STRIPE_CANCEL_PATH = process.env.STRIPE_CANCEL_PATH || '/uranai-v5.html?st
 const STRIPE_PORTAL_RETURN_PATH = process.env.STRIPE_PORTAL_RETURN_PATH || '/uranai-v5.html';
 const STRIPE_SUBSCRIPTION_NAME = process.env.STRIPE_SUBSCRIPTION_NAME || '\u6df1\u6398\u308a\u9451\u5b9a';
 const STRIPE_TRIAL_PERIOD_DAYS = Math.max(0, parseInt(process.env.STRIPE_TRIAL_PERIOD_DAYS || '7', 10) || 0);
+const STRIPE_CHECKOUT_PAYMENT_METHOD_TYPES = parseStripePaymentMethodTypes(process.env.STRIPE_PAYMENT_METHOD_TYPES);
 const AI_MODELS = {
   free: process.env.OPENAI_FREE_MODEL || 'gpt-5.4-mini',
   paid: process.env.ANTHROPIC_PAID_MODEL || 'claude-sonnet-4-6',
@@ -3726,6 +3736,9 @@ async function handleStripeCheckoutSessionCreate(req, res) {
   params.set('cancel_url', urls.cancelUrl);
   params.set('locale', 'ja');
   params.set('billing_address_collection', 'auto');
+  STRIPE_CHECKOUT_PAYMENT_METHOD_TYPES.forEach((paymentMethodType, index) => {
+    params.set(`payment_method_types[${index}]`, paymentMethodType);
+  });
   if (purchaseOrder.finalAmount === DEEP_READING_NORMAL_AMOUNT) {
     params.set('line_items[0][price]', STRIPE_PRICE_ID_DEEP_READING_580);
   } else {
