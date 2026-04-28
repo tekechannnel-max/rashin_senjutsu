@@ -2079,8 +2079,8 @@ const MEMBERSHIP_PLAN={
     },
   ],
 };
-const CHECKOUT_DISCLOSURE_HTML='深掘り鑑定は1回580円の単発課金です。購入後すぐに、この結果に紐づく鑑定を利用できます。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
-const RESULT_CHECKOUT_DISCLOSURE_HTML='深掘り鑑定は1回580円の単発課金です。購入後すぐに、この結果に紐づく鑑定を利用できます。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
+const CHECKOUT_DISCLOSURE_HTML='深掘り鑑定は、無料鑑定後の結果画面から購入できる1回580円の単発課金です。継続課金ではありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
+const RESULT_CHECKOUT_DISCLOSURE_HTML='深掘り鑑定は1回580円の単発課金です。無料鑑定の本文を延長するものではなく、無料で引いたカードを軸に、有料分の追加カードを展開して作成する別の鑑定です。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
 
 // 全カード・各3問の解釈絞り込みテンプレート
 const CLARIFY_DEF={
@@ -3816,7 +3816,7 @@ function getServerErrorMessage(data,fallback='処理に失敗しました'){
   if(code==='STRIPE_CUSTOMER_NOT_FOUND') return'決済情報がまだ作成されていません';
   if(code==='STRIPE_SUBSCRIPTION_NOT_ACTIVE') return'決済は完了しましたが、深掘り鑑定への反映がまだ終わっていません';
   if(code==='PAID_TICKET_REQUIRED') return'この結果の深掘り鑑定を購入すると利用できます';
-  if(code==='SOURCE_READING_REQUIRED') return'無料鑑定結果を確認してから深掘り鑑定へ進んでください';
+  if(code==='SOURCE_READING_REQUIRED') return'無料鑑定後の結果画面から深掘り鑑定を購入してください';
   if(code==='SESSION_ID_REQUIRED') return'決済確認に必要な情報が不足しています';
   if(message) return message;
   return fallback;
@@ -3864,7 +3864,7 @@ function getMemberStatusMeta(){
     return{
       cls:'inactive',
       label:'深掘り鑑定',
-      copy:'無料鑑定の結果をもとに、1回580円でさらに詳しく読み解けます。継続課金ではありません。',
+      copy:'深掘り鑑定は、無料鑑定後の結果画面から購入できる1回580円の別鑑定です。継続課金ではありません。',
       action:`<button class="vault-link" data-track="free_start_click" data-track-position="top" onclick="startFlow('free')">無料鑑定から始める</button>`,
     };
   }
@@ -3872,7 +3872,7 @@ function getMemberStatusMeta(){
     return{
       cls:'inactive',
       label:'深掘り鑑定',
-      copy:'無料鑑定の結果をもとに、1回580円でさらに詳しく読み解けます。継続課金ではありません。',
+      copy:'深掘り鑑定は、無料鑑定後の結果画面から購入できる1回580円の別鑑定です。継続課金ではありません。',
       action:`<button class="vault-link" data-track="free_start_click" data-track-position="top" onclick="startFlow('free')">無料鑑定から始める</button>`,
     };
   }
@@ -4133,7 +4133,7 @@ function renderRashinBonusCard(){
             ?`<button class="rashin-bonus-btn" type="button" onclick="claimRashinBonus()" ${RASHIN_BONUS_LOADING?'disabled':''}>本日の羅針石を受け取る</button>`
             :`<button class="rashin-bonus-link" type="button" disabled>${escapeHtml(settledText)}</button>`}
           ${available&&PLAN==='free'&&canContinueCurrentReadingToPaid()
-            ?`<button class="rashin-bonus-link" type="button" onclick="upgradeCurrentReadingToPaid()">この結果を深掘りする</button>`
+            ?`<button class="rashin-bonus-link" type="button" onclick="upgradeCurrentReadingToPaid()">追加カードで有料鑑定する</button>`
             :''}
         </div>
       </div>
@@ -4566,7 +4566,7 @@ async function openStripeCheckout(intent='start-paid'){
   }
   const sourceReadingId=CURRENT_READING_ID;
   if(!sourceReadingId||PLAN!=='free'||!canContinueCurrentReadingToPaid()){
-    showToast('深掘り鑑定は、無料鑑定の結果から購入できます');
+    showToast('深掘り鑑定は無料鑑定後の結果画面から購入できます');
     return false;
   }
   try{
@@ -4775,7 +4775,7 @@ function openMemberAccessModal(intent=''){
       ?'<div class="runtime-status-title">このまま深掘り鑑定フローへ進めます</div><div class="runtime-status-detail">確認用の状態で深掘り鑑定フローを確認できます。</div>'
       :(usesGoogle
         ?'<div class="runtime-status-title">Googleログインで続行</div><div class="runtime-status-detail">履歴と購入確認を保存します。</div>'
-        :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':'深掘り鑑定の準備中です'}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':'無料鑑定の結果から深掘り鑑定へ進めます。'}</div>`);
+        :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':'深掘り鑑定の準備中です'}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':'深掘り鑑定は無料鑑定後の結果画面から購入できます。'}</div>`);
   }
   if(localBtn) localBtn.style.display=canUsePaidTestMode()?'inline-flex':'none';
   renderGoogleAuthShell();
@@ -4809,51 +4809,6 @@ function openSampleModal(){
 function closeSampleModal(){
   const modal=document.getElementById('sample-modal');
   if(modal) modal.classList.remove('on');
-}
-
-function ensurePaidEntryGuideModal(){
-  let modal=document.getElementById('paid-entry-guide-modal');
-  if(modal) return modal;
-  modal=document.createElement('div');
-  modal.className='modal-overlay';
-  modal.id='paid-entry-guide-modal';
-  modal.innerHTML=`
-    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="paid-entry-guide-title">
-      <div class="modal-title" id="paid-entry-guide-title">深掘り鑑定は結果画面から購入できます</div>
-      <div class="modal-desc">まず無料鑑定を作成してください。結果画面の「この結果を深掘りする」から、1回580円の単発購入へ進めます。</div>
-      <div class="runtime-status ok">
-        <div class="runtime-status-title">今はまだ課金されません</div>
-        <div class="runtime-status-detail">無料結果に紐づけて深掘り鑑定を作るため、先に無料鑑定が必要です。</div>
-      </div>
-      <div class="modal-btns">
-        <button class="modal-save" type="button" onclick="startFreeFromPaidEntryGuide()">無料鑑定を始める</button>
-        <button class="modal-cancel" type="button" onclick="closePaidEntryGuide()">閉じる</button>
-      </div>
-    </div>`;
-  modal.addEventListener('click',event=>{
-    if(event.target===modal) closePaidEntryGuide();
-  });
-  document.body.appendChild(modal);
-  return modal;
-}
-
-function openPaidEntryGuide(){
-  if(PLAN==='free'&&canContinueCurrentReadingToPaid()){
-    void upgradeCurrentReadingToPaid();
-    return;
-  }
-  const modal=ensurePaidEntryGuideModal();
-  modal.classList.add('on');
-}
-
-function closePaidEntryGuide(){
-  const modal=document.getElementById('paid-entry-guide-modal');
-  if(modal) modal.classList.remove('on');
-}
-
-function startFreeFromPaidEntryGuide(){
-  closePaidEntryGuide();
-  startFlow('free');
 }
 
 function handleMemberAccessKeydown(event){
@@ -5056,16 +5011,8 @@ function repairStaticCopy(){
   setText('#s-top .top-kicker','姓名判断・四柱推命・動物タイプ診断・カード占い');
   setHtml('#s-top .top-desc','無料鑑定でも、本質・本音・現実・次の一手まで読み解けます。');
   setText('#s-top .btn-top.btn-free','無料で羅針鑑定をはじめる');
-  setText('#s-top .btn-top.btn-paid',DEEP_PAID_CTA_LABEL);
   document.querySelectorAll('#s-top .btn-top.btn-paid').forEach(el=>{
-    el.setAttribute('href','#paid-entry-guide');
-    el.removeAttribute('data-flow-target');
-    el.setAttribute('data-track','deepen_cta_click');
-    el.onclick=function(event){
-      event.preventDefault();
-      openPaidEntryGuide();
-      return false;
-    };
+    el.remove();
   });
   setText('#s-top .btn-top.btn-sample','サンプルを見る');
   setText('#s-top .top-note','');
@@ -5099,19 +5046,9 @@ function repairStaticCopy(){
       '追加質問で悩みの前提を具体化',
       '鑑定履歴がある場合は、前回からの変化も読む'
     ].forEach((text,index)=>{ if(deepItems[index]) deepItems[index].textContent=text; });
-    setWithin(planCards[1],'.plan-compare-summary','深掘り鑑定では、この結果を土台に「なぜそうなるか」「どこで止まりやすいか」「次に何を確認すべきか」まで読み解きます。');
-    setWithin(planCards[1],'.plan-compare-action',DEEP_PAID_CTA_LABEL);
+    setWithin(planCards[1],'.plan-compare-summary','深掘り鑑定では、同じ相談内容を前提に追加カードを引き、「なぜそうなるか」「どこで止まりやすいか」「次に何を確認すべきか」まで読み解きます。');
     const deepAction=planCards[1].querySelector('.plan-compare-action');
-    if(deepAction){
-      deepAction.setAttribute('href','#paid-entry-guide');
-      deepAction.removeAttribute('data-flow-target');
-      deepAction.setAttribute('data-track','deepen_cta_click');
-      deepAction.onclick=function(event){
-        event.preventDefault();
-        openPaidEntryGuide();
-        return false;
-      };
-    }
+    if(deepAction) deepAction.remove();
   }
   document.querySelectorAll('.paid-band-note').forEach(el=>{
     el.textContent='深掘り鑑定 1回580円 / 継続課金ではありません';
@@ -5126,7 +5063,7 @@ function repairStaticCopy(){
     ['数秘オラクルカードって何ですか？','誕生日などの数字の意味と、直感で選ぶカードを合わせて読むアドバイスカードです。<br>あなたの強み、背中を押す言葉、次の一手を示します。'],
     ['AIがどうやって占うのですか？','相談内容・名前・生年月日・カード結果をもとに、設計された占術ロジックに沿って鑑定文を生成します。<br>同じカードでも、相談内容やこれまでの流れによって読み方が変わります。'],
     ['無料鑑定では何ができますか？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。<br>自分自身の本質、本音、いまの現実、次に進むためのアドバイスを確認できます。'],
-    ['無料鑑定と深掘り鑑定の違いは？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。<br>深掘り鑑定では、無料鑑定の内容をすべて含み、ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>深掘り鑑定は1回580円の単発課金です。継続課金ではありません。'],
+    ['無料鑑定と深掘り鑑定の違いは？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。<br>深掘り鑑定では、同じ相談内容を前提に追加カードを引き、ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>深掘り鑑定は無料鑑定とは別の1回580円の単発課金です。継続課金ではありません。'],
     ['過去の鑑定は読み返せますか？','はい。これまでの鑑定は「過去の占いを読み返す」から確認できます。<br>前回のテーマやカードの流れを見返すことで、同じ悩みの続きや変化を確認しやすくなります。'],
     ['「鑑定履歴の流れを読み解く」って何ですか？','これまでの鑑定をまとめて、よく出るカード、相談テーマの変化、くり返し向き合っている悩みを時系列で読み解く機能です。<br>鑑定履歴があるほど、変化の流れが見えやすくなります。']
   ];
@@ -5399,12 +5336,10 @@ function renderTopHeroPanels(){
 function renderPremiumEntrySection(){
   const el=document.getElementById('premium-entry');
   if(!el) return;
-  const paidAction=`<a class="today-cta today-cta-paid deep-premium-button" href="#paid-entry-guide" data-track="deepen_cta_click" data-track-position="entry" onclick="if(window.openPaidEntryGuide){openPaidEntryGuide();return false;}">${DEEP_PAID_CTA_LABEL}</a>`;
   el.innerHTML=`
     <div class="paid-band-inner">
       <div class="paid-band-actions paid-band-actions-center">
         <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
-        ${paidAction}
       </div>
       <div class="paid-band-note">深掘り鑑定 1回580円 / 継続課金ではありません</div>
       <div class="checkout-disclosure">${CHECKOUT_DISCLOSURE_HTML}</div>
@@ -6845,7 +6780,6 @@ function renderPremiumEntryFallback(){
     <div class="paid-band-inner">
       <div class="paid-band-actions paid-band-actions-center">
         <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
-        <a class="today-cta today-cta-paid deep-premium-button" href="#paid-entry-guide" data-track="deepen_cta_click" data-track-position="entry" onclick="if(window.openPaidEntryGuide){openPaidEntryGuide();return false;}">${DEEP_PAID_CTA_LABEL}</a>
       </div>
       <div class="paid-band-note">深掘り鑑定 1回580円 / 継続課金ではありません</div>
       <div class="checkout-disclosure">${CHECKOUT_DISCLOSURE_HTML}</div>
@@ -7505,8 +7439,8 @@ function renderResultUpgradePanel(){
       <div class="upgrade-head">
         <div>
           <div class="upgrade-badge">深掘り鑑定</div>
-          <div class="upgrade-title">この結果を、9枚でさらに深く読む</div>
-          <div class="upgrade-copy">無料鑑定では、今の答えと次の一手まで整理しました。<br>深掘り鑑定では、ルノルマン9枚と追加カードで、迷いの原因と次に確認すべきことを詳しく読み解きます。</div>
+          <div class="upgrade-title">追加カードで、有料の深掘り鑑定を作る</div>
+          <div class="upgrade-copy">無料鑑定はここで完了です。<br>深掘り鑑定は、無料で引いたカードを軸に、有料分の追加カードを展開して作成する別の鑑定です。</div>
         </div>
         <div class="upgrade-meta">
           <div class="upgrade-price">
@@ -7518,7 +7452,7 @@ function renderResultUpgradePanel(){
         </div>
       </div>
       <div class="upgrade-actions">
-        <button class="result-unified-cta-btn deep-premium-button" type="button" data-track="deepen_cta_click" data-track-position="result_unified" onclick="upgradeCurrentReadingToPaid()">この結果を深掘りする</button>
+        <button class="result-unified-cta-btn deep-premium-button" type="button" data-track="deepen_cta_click" data-track-position="result_unified" onclick="upgradeCurrentReadingToPaid()">追加カードで有料鑑定する</button>
         <div class="checkout-disclosure">${RESULT_CHECKOUT_DISCLOSURE_HTML}</div>
       </div>
     </div>
@@ -7611,7 +7545,7 @@ function upgradeCurrentReadingToPaidUnlocked(){
     }
     SEL_LEN=buildExpandedLenSpreadFromFree(anchorId);
     SEL_ORC=buildExpandedOrcSpreadFromFree(SEL_ORC[0]);
-    showToast('今のカードを軸に、追加カードを展開しました');
+    showToast('追加カードを引いて、有料の深掘り鑑定を作成します');
     renderClarifyScreen();
     showScreen('s-clarify',85);
     return;
@@ -8613,7 +8547,7 @@ async function startFlow(plan){
 
 function startFlowUnlocked(plan){
   if(plan==='paid'&&!isMemberActive()){
-    openPaidEntryGuide();
+    showToast('深掘り鑑定は無料鑑定後の結果画面から購入できます');
     return;
   }
   PLAN=plan;
@@ -10915,21 +10849,21 @@ function renderMemberFollowupSection(){
   copyEl.textContent=isMemberActive()
     ?'結果を読んだあとに残る「あと1つだけ聞きたいこと」を追加で見られます。相手の気持ち、この7日でやること、動く時期などを絞って深めるための欄です。'
     :(canUsePaidTestMode()
-        ?'深掘り鑑定では、この結果を土台に追加質問まで進めます。'
+        ?'深掘り鑑定では、追加カードで作成した有料鑑定に追加質問を使えます。'
         :((MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn)
-        ?'深掘り鑑定を購入すると、この結果の続きから詳しく読み解けます。'
+        ?'深掘り鑑定を購入すると、無料で引いたカードを軸に、有料分の追加カードを展開して作成します。'
         :((MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.stripeCheckoutReady)
-          ?'深掘り鑑定を購入すると、この結果の続きから詳しく読み解けます。'
-          :'深掘り鑑定の準備が整うと、今回の結果を土台に追加質問まで進めます。')));
+          ?'深掘り鑑定を購入すると、無料で引いたカードを軸に、有料分の追加カードを展開して作成します。'
+          :'深掘り鑑定の準備が整うと、追加カードで作成した有料鑑定に追加質問を使えます。')));
 
   if(!isMemberActive()){
     noteEl.style.display='block';
     noteEl.textContent=canUsePaidTestMode()
-      ?'深掘り鑑定では、いまの結果を土台に追加質問まで進めます。'
+      ?'深掘り鑑定では、追加カードで作成した有料鑑定に追加質問を使えます。'
       :((MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn)
-        ?'この結果を深掘りする場合は、1回580円の単発購入へ進んでください。'
+        ?'追加カードで有料鑑定を作る場合は、1回580円の単発購入へ進んでください。'
         :((MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.stripeCheckoutReady)
-          ?'この結果を深掘りする場合は、1回580円の単発購入へ進んでください。'
+          ?'追加カードで有料鑑定を作る場合は、1回580円の単発購入へ進んでください。'
           :(canUseAccessCode()
             ?'確認コードがある場合は入力して利用状態を確認できます。'
             :'現在はまだ使えません。')));
@@ -12071,9 +12005,6 @@ if(typeof window!=='undefined'){
   window.drawDailyOracle=drawDailyOracle;
   window.shareDailyOracle=shareDailyOracle;
   window.openMemberAccessModal=openMemberAccessModal;
-  window.openPaidEntryGuide=openPaidEntryGuide;
-  window.closePaidEntryGuide=closePaidEntryGuide;
-  window.startFreeFromPaidEntryGuide=startFreeFromPaidEntryGuide;
   window.openSampleModal=openSampleModal;
   window.closeSampleModal=closeSampleModal;
   window.openStripeCheckout=openStripeCheckout;
