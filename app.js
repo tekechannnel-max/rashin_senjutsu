@@ -3993,12 +3993,19 @@ function installRashinBonusStyles(){
   const style=document.createElement('style');
   style.id='rashin-bonus-style';
   style.textContent=`
-    .rashin-bonus-card{grid-column:1/-1;margin:4px 0 0;padding:16px 0 0;border-top:1px solid rgba(199,154,54,.26);color:#f4e8c8}
+    .rashin-bonus-card{grid-column:1/-1;margin:4px 0 0;padding:14px 0 0;border-top:1px solid rgba(199,154,54,.26);color:#f4e8c8}
     .rashin-bonus-card[hidden]{display:none!important}
-    .rashin-bonus-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+    .rashin-bonus-panel{display:grid;grid-template-columns:minmax(0,1fr) minmax(176px,220px);gap:16px;align-items:stretch;padding:14px 16px;border:1px solid rgba(199,154,54,.28);background:linear-gradient(135deg,rgba(9,12,28,.62),rgba(14,9,24,.54));box-shadow:inset 0 0 0 1px rgba(255,255,255,.035),0 14px 32px rgba(0,0,0,.18)}
+    .rashin-bonus-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
     .rashin-bonus-kicker{font-size:12px;letter-spacing:.12em;color:#8fd8d2;text-transform:uppercase}
     .rashin-bonus-title{font-size:18px;color:#f4cd62;font-weight:700;letter-spacing:.04em}
-    .rashin-bonus-stones{font-size:14px;color:#fff}
+    .rashin-bonus-stones{display:flex;align-items:center;justify-content:center;gap:11px;min-height:100%;padding:14px 16px;border:1px solid rgba(244,205,98,.36);background:radial-gradient(circle at 28% 20%,rgba(255,239,175,.24),transparent 34%),linear-gradient(145deg,rgba(201,149,42,.18),rgba(7,8,20,.72));box-shadow:inset 0 0 18px rgba(244,205,98,.08),0 0 22px rgba(201,149,42,.12)}
+    .rashin-stone-gem{position:relative;flex:0 0 auto;width:28px;height:28px;transform:rotate(45deg);border:1px solid rgba(255,235,169,.82);background:linear-gradient(135deg,#fff5b8 0%,#d4a837 42%,#7f5713 100%);box-shadow:0 0 18px rgba(244,205,98,.36),inset 0 0 10px rgba(255,255,255,.34)}
+    .rashin-stone-gem::before{content:'';position:absolute;inset:5px 3px 3px 5px;border-top:1px solid rgba(255,255,255,.62);border-left:1px solid rgba(255,255,255,.42)}
+    .rashin-stone-gem::after{content:'';position:absolute;left:3px;top:3px;width:7px;height:7px;background:rgba(255,255,255,.6);filter:blur(.5px)}
+    .rashin-stone-count{display:grid;gap:2px;line-height:1.2}
+    .rashin-stone-label{font-size:11px;letter-spacing:.14em;color:rgba(240,234,216,.68)}
+    .rashin-stone-number{font-size:22px;color:#fff;font-weight:900;letter-spacing:.03em;text-shadow:0 0 14px rgba(244,205,98,.28)}
     .rashin-bonus-body{display:grid;gap:8px;font-size:14px;line-height:1.7;color:rgba(255,255,255,.82)}
     .rashin-bonus-main{font-size:16px;color:#fff;font-weight:700}
     .rashin-bonus-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
@@ -4009,7 +4016,7 @@ function installRashinBonusStyles(){
     .upgrade-bonus-note{margin-top:6px;color:#f4cd62;font-size:13px;line-height:1.6}
     .upgrade-price-normal{display:block;color:rgba(255,255,255,.72);text-decoration:line-through;font-size:13px}
     .upgrade-price-discount{display:block;color:#fff;font-size:18px;font-weight:800}
-    @media (max-width:680px){.rashin-bonus-card{padding:14px}.rashin-bonus-head{align-items:flex-start;flex-direction:column}.rashin-bonus-actions>*{width:100%}}
+    @media (max-width:760px){.rashin-bonus-panel{grid-template-columns:1fr;padding:14px}.rashin-bonus-stones{justify-content:flex-start;min-height:auto}.rashin-bonus-actions>*{width:100%}}
   `;
   document.head.appendChild(style);
 }
@@ -4044,30 +4051,52 @@ function renderRashinBonusCard(){
   slot.hidden=false;
   if(!MEMBER_AUTH.authLoggedIn){
     slot.innerHTML=`
-      <div class="rashin-bonus-head">
+      <div class="rashin-bonus-panel">
         <div>
-          <div class="rashin-bonus-kicker">RASHIN BONUS</div>
-          <div class="rashin-bonus-title">今日の記録と羅針ボーナス</div>
+          <div class="rashin-bonus-head">
+            <div>
+              <div class="rashin-bonus-kicker">RASHIN BONUS</div>
+              <div class="rashin-bonus-title">今日の記録と羅針ボーナス</div>
+            </div>
+          </div>
+          <div class="rashin-bonus-body">
+            <div class="rashin-bonus-main">Googleログインで今日のカードを記録できます</div>
+            <div>ログインすると羅針石を1個受け取り、深掘り鑑定の割引に使えます。</div>
+          </div>
         </div>
-      </div>
-      <div class="rashin-bonus-body">
-        <div class="rashin-bonus-main">Googleログインで今日のカードを記録できます</div>
-        <div>ログインすると羅針石を1個受け取り、深掘り鑑定の割引に使えます。</div>
-      </div>
-      <div class="rashin-bonus-actions">
-        <button class="rashin-bonus-btn" type="button" onclick="openMemberAccessModal('rashin-bonus')">Googleでログイン</button>
+        <div class="rashin-bonus-stones">
+          <span class="rashin-stone-gem" aria-hidden="true"></span>
+          <span class="rashin-stone-count">
+            <span class="rashin-stone-label">ログインで獲得</span>
+            <span class="rashin-stone-number">+1</span>
+          </span>
+        </div>
+        <div class="rashin-bonus-actions">
+          <button class="rashin-bonus-btn" type="button" onclick="openMemberAccessModal('rashin-bonus')">Googleでログイン</button>
+        </div>
       </div>`;
     return;
   }
   if(!RASHIN_BONUS_STATUS){
     slot.innerHTML=`
-      <div class="rashin-bonus-head">
+      <div class="rashin-bonus-panel">
         <div>
-          <div class="rashin-bonus-kicker">RASHIN BONUS</div>
-          <div class="rashin-bonus-title">今日の羅針ボーナス</div>
+          <div class="rashin-bonus-head">
+            <div>
+              <div class="rashin-bonus-kicker">RASHIN BONUS</div>
+              <div class="rashin-bonus-title">今日の羅針ボーナス</div>
+            </div>
+          </div>
+          <div class="rashin-bonus-body"><div>羅針石を確認しています。</div></div>
         </div>
-      </div>
-      <div class="rashin-bonus-body"><div>羅針石を確認しています。</div></div>`;
+        <div class="rashin-bonus-stones">
+          <span class="rashin-stone-gem" aria-hidden="true"></span>
+          <span class="rashin-stone-count">
+            <span class="rashin-stone-label">RASHIN STONE</span>
+            <span class="rashin-stone-number">確認中</span>
+          </span>
+        </div>
+      </div>`;
     return;
   }
   const status=RASHIN_BONUS_STATUS||{};
@@ -4087,24 +4116,34 @@ function renderRashinBonusCard(){
       :'明日また羅針石を受け取れます');
   const settledText=canClaim?'':'本日の受け取りは完了しています';
   slot.innerHTML=`
-    <div class="rashin-bonus-head">
+    <div class="rashin-bonus-panel">
       <div>
-        <div class="rashin-bonus-kicker">RASHIN BONUS</div>
-        <div class="rashin-bonus-title">今日の羅針ボーナス</div>
+        <div class="rashin-bonus-head">
+          <div>
+            <div class="rashin-bonus-kicker">RASHIN BONUS</div>
+            <div class="rashin-bonus-title">今日の羅針ボーナス</div>
+          </div>
+        </div>
+        <div class="rashin-bonus-body">
+          <div class="rashin-bonus-main">${escapeHtml(main)}</div>
+          <div>${escapeHtml(sub)}</div>
+        </div>
+        <div class="rashin-bonus-actions">
+          ${canClaim
+            ?`<button class="rashin-bonus-btn" type="button" onclick="claimRashinBonus()" ${RASHIN_BONUS_LOADING?'disabled':''}>本日の羅針石を受け取る</button>`
+            :`<button class="rashin-bonus-link" type="button" disabled>${escapeHtml(settledText)}</button>`}
+          ${available&&PLAN==='free'&&canContinueCurrentReadingToPaid()
+            ?`<button class="rashin-bonus-link" type="button" onclick="upgradeCurrentReadingToPaid()">この結果を深掘りする</button>`
+            :''}
+        </div>
       </div>
-      <div class="rashin-bonus-stones">羅針石 ${stones}個</div>
-    </div>
-    <div class="rashin-bonus-body">
-      <div class="rashin-bonus-main">${escapeHtml(main)}</div>
-      <div>${escapeHtml(sub)}</div>
-    </div>
-    <div class="rashin-bonus-actions">
-      ${canClaim
-        ?`<button class="rashin-bonus-btn" type="button" onclick="claimRashinBonus()" ${RASHIN_BONUS_LOADING?'disabled':''}>本日の羅針石を受け取る</button>`
-        :`<button class="rashin-bonus-link" type="button" disabled>${escapeHtml(settledText)}</button>`}
-      ${available&&PLAN==='free'&&canContinueCurrentReadingToPaid()
-        ?`<button class="rashin-bonus-link" type="button" onclick="upgradeCurrentReadingToPaid()">この結果を深掘りする</button>`
-        :''}
+      <div class="rashin-bonus-stones" aria-label="羅針石 ${stones}個">
+        <span class="rashin-stone-gem" aria-hidden="true"></span>
+        <span class="rashin-stone-count">
+          <span class="rashin-stone-label">羅針石</span>
+          <span class="rashin-stone-number">${stones}個</span>
+        </span>
+      </div>
     </div>`;
 }
 
