@@ -1599,6 +1599,8 @@ const INPUT_SAVE_PREF_KEY='uranai-input-autosave-v1';
 const HISTORY_STORAGE_KEY='uranai-history-v1';
 const VAULT_ID_STORAGE_KEY='uranai-vault-id-v1';
 const DAILY_ORACLE_STORAGE_KEY='uranai-daily-oracle-v1';
+const DAILY_ORACLE_FALLBACK_ID_STORAGE_KEY='uranai-daily-oracle-fallback-id-v1';
+const DAILY_ORACLE_ACTIVE_RECORD_KEY='uranai-daily-oracle-active-v1';
 const MEMBER_STORAGE_KEY='uranai-member-preview-v1';
 const STRIPE_RETURN_INTENT_KEY='uranai-stripe-return-intent-v1';
 const DEEP_PAID_CTA_LABEL='深掘り鑑定をする(有料)';
@@ -2579,15 +2581,23 @@ function hashDailyOracleKey(value=''){
 }
 
 function getOrCreateDailyOracleFallbackId(){
-  const key='uranai-daily-oracle-fallback-id-v1';
   try{
-    const existing=localStorage.getItem(key)||'';
+    const existing=localStorage.getItem(DAILY_ORACLE_FALLBACK_ID_STORAGE_KEY)||'';
     if(/^[A-Za-z0-9_-]{12,80}$/.test(existing)) return existing;
     const id=`do_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,12)}`;
-    localStorage.setItem(key,id);
+    localStorage.setItem(DAILY_ORACLE_FALLBACK_ID_STORAGE_KEY,id);
     return id;
   }catch(_error){
     return'daily-oracle-local';
+  }
+}
+
+function getDailyOracleFallbackId(){
+  try{
+    const existing=localStorage.getItem(DAILY_ORACLE_FALLBACK_ID_STORAGE_KEY)||'';
+    return /^[A-Za-z0-9_-]{12,80}$/.test(existing)?existing:'';
+  }catch(_error){
+    return'';
   }
 }
 
@@ -2616,6 +2626,61 @@ function setDailyOracleStorage(store){
 
 function getDailyOracleRecordKey(owner=getDailyOracleOwner(),dateJst=getJstDateKey()){
   return`${owner.key}:${dateJst}`;
+}
+
+function normalizeDailyOracleRecord(record,dateJst=getJstDateKey()){
+  if(!record||record.dateJst!==dateJst) return null;
+  const cardId=Number(record.cardId);
+  if(!DAILY_ORACLE_MESSAGES.some(item=>item.id===cardId)) return null;
+  return{...record,cardId};
+}
+
+function readDailyOracleActiveRecord(dateJst=getJstDateKey()){
+  try{
+    return normalizeDailyOracleRecord(JSON.parse(sessionStorage.getItem(DAILY_ORACLE_ACTIVE_RECORD_KEY)||'null'),dateJst);
+  }catch(_error){
+    return null;
+  }
+}
+
+function rememberDailyOracleActiveRecord(record,owner=getDailyOracleOwner()){
+  const normalized=normalizeDailyOracleRecord(record,record?.dateJst||getJstDateKey());
+  if(!normalized) return;
+  try{
+    sessionStorage.setItem(DAILY_ORACLE_ACTIVE_RECORD_KEY,JSON.stringify({
+      ownerType:owner?.type||normalized.ownerType||'',
+      ownerKey:owner?.key||normalized.ownerKey||'',
+      dateJst:normalized.dateJst,
+      cardId:normalized.cardId,
+      drawnAt:normalized.drawnAt||new Date().toISOString(),
+    }));
+  }catch(_error){}
+}
+
+function getDailyOracleLocalRecordKeys(dateJst=getJstDateKey()){
+  const keys=[];
+  const vaultId=getOrCreateVaultId();
+  if(vaultId) keys.push(getDailyOracleRecordKey({type:'vault',key:`vault:${vaultId}`},dateJst));
+  const fallbackId=getDailyOracleFallbackId();
+  if(fallbackId) keys.push(getDailyOracleRecordKey({type:'vault',key:`vault:${fallbackId}`},dateJst));
+  return Array.from(new Set(keys));
+}
+
+function adoptDailyOracleRecord(record,owner=getDailyOracleOwner(),store=getDailyOracleStorage(),dateJst=getJstDateKey()){
+  if(!record) return null;
+  const normalized=normalizeDailyOracleRecord({...record,dateJst},dateJst);
+  if(!normalized||!owner?.key) return null;
+  const adopted={
+    ownerType:owner.type,
+    dateJst,
+    cardId:normalized.cardId,
+    drawnAt:normalized.drawnAt||new Date().toISOString(),
+    migratedAt:new Date().toISOString(),
+  };
+  store[getDailyOracleRecordKey(owner,dateJst)]=adopted;
+  setDailyOracleStorage(store);
+  rememberDailyOracleActiveRecord(adopted,owner);
+  return adopted;
 }
 
 function getJstDateKeyOffset(dateJst=getJstDateKey(),offsetDays=0){
@@ -2689,17 +2754,25 @@ function readDailyOracleRecord(){
   const dateJst=getJstDateKey();
   const store=getDailyOracleStorage();
   const key=getDailyOracleRecordKey(owner,dateJst);
-  let record=store[key]||null;
-  if(!record&&owner.type==='user'){
-    const vaultId=getOrCreateVaultId();
-    const vaultKey=vaultId?getDailyOracleRecordKey({type:'vault',key:`vault:${vaultId}`},dateJst):'';
-    if(vaultKey&&store[vaultKey]){
-      record={...store[vaultKey],ownerType:'user',dateJst};
-      store[key]=record;
-      setDailyOracleStorage(store);
+  let record=normalizeDailyOracleRecord(store[key]||null,dateJst);
+  if(owner.type==='user'){
+    const activeRecord=readDailyOracleActiveRecord(dateJst);
+    const canAdoptActive=activeRecord
+      && activeRecord.ownerKey!==owner.key
+      && activeRecord.ownerType!=='user';
+    if(canAdoptActive){
+      record=adoptDailyOracleRecord(activeRecord,owner,store,dateJst);
     }
   }
-  if(!record||record.dateJst!==dateJst) return null;
+  if(!record&&owner.type==='user'){
+    const localRecordKey=getDailyOracleLocalRecordKeys(dateJst)
+      .find(localKey=>normalizeDailyOracleRecord(store[localKey]||null,dateJst));
+    if(localRecordKey){
+      record=adoptDailyOracleRecord(store[localRecordKey],owner,store,dateJst);
+    }
+  }
+  if(!record) return null;
+  rememberDailyOracleActiveRecord(record,owner);
   const card=DAILY_ORACLE_MESSAGES.find(item=>item.id===Number(record.cardId));
   return card?{...record,card}:null;
 }
@@ -2727,6 +2800,7 @@ function writeDailyOracleRecord(card){
   };
   store[key]=record;
   setDailyOracleStorage(store);
+  rememberDailyOracleActiveRecord(record,owner);
   return{...record,card};
 }
 
@@ -3774,7 +3848,7 @@ function isProductionRuntime(){
 }
 
 function canUsePaidTestMode(){
-  return !isProductionRuntime()&&(LOCAL_TEST_RUNTIME||!!RUNTIME_HEALTH.paidTestMode||!!MEMBER_AUTH.localTestMode);
+  return !isProductionRuntime()&&(DEV_MODE||!!RUNTIME_HEALTH.paidTestMode||!!MEMBER_AUTH.localTestMode);
 }
 
 function canUseAccessCode(){
@@ -3996,31 +4070,34 @@ function installRashinBonusStyles(){
   const style=document.createElement('style');
   style.id='rashin-bonus-style';
   style.textContent=`
-    .rashin-bonus-card{grid-column:1/-1;margin:4px 0 0;padding:14px 0 0;border-top:1px solid rgba(199,154,54,.26);color:#f4e8c8}
+    .rashin-bonus-card{grid-column:1/-1;width:min(780px,100%);margin:4px auto 0;padding:14px 0 0;border-top:1px solid rgba(199,154,54,.26);color:#f4e8c8}
     .rashin-bonus-card[hidden]{display:none!important}
-    .rashin-bonus-panel{display:grid;grid-template-columns:minmax(0,1fr) minmax(176px,220px);gap:16px;align-items:stretch;padding:14px 16px;border:1px solid rgba(199,154,54,.28);background:linear-gradient(135deg,rgba(9,12,28,.62),rgba(14,9,24,.54));box-shadow:inset 0 0 0 1px rgba(255,255,255,.035),0 14px 32px rgba(0,0,0,.18)}
-    .rashin-bonus-panel.is-compact{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px}
-    .rashin-bonus-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
-    .rashin-bonus-kicker{font-size:12px;letter-spacing:.12em;color:#8fd8d2;text-transform:uppercase}
-    .rashin-bonus-title{font-size:18px;color:#f4cd62;font-weight:700;letter-spacing:.04em}
-    .rashin-bonus-stones{display:flex;align-items:center;justify-content:center;gap:11px;min-height:100%;padding:14px 16px;border:1px solid rgba(244,205,98,.36);background:radial-gradient(circle at 28% 20%,rgba(255,239,175,.24),transparent 34%),linear-gradient(145deg,rgba(201,149,42,.18),rgba(7,8,20,.72));box-shadow:inset 0 0 18px rgba(244,205,98,.08),0 0 22px rgba(201,149,42,.12)}
-    .rashin-stone-gem{position:relative;flex:0 0 auto;width:28px;height:28px;transform:rotate(45deg);border:1px solid rgba(255,235,169,.82);background:linear-gradient(135deg,#fff5b8 0%,#d4a837 42%,#7f5713 100%);box-shadow:0 0 18px rgba(244,205,98,.36),inset 0 0 10px rgba(255,255,255,.34)}
-    .rashin-stone-gem::before{content:'';position:absolute;inset:5px 3px 3px 5px;border-top:1px solid rgba(255,255,255,.62);border-left:1px solid rgba(255,255,255,.42)}
-    .rashin-stone-gem::after{content:'';position:absolute;left:3px;top:3px;width:7px;height:7px;background:rgba(255,255,255,.6);filter:blur(.5px)}
+    .rashin-bonus-panel{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(176px,230px);gap:16px;align-items:center;padding:18px 20px;border:1px solid rgba(244,205,98,.38);background:radial-gradient(circle at 18% 12%,rgba(143,216,210,.16),transparent 34%),linear-gradient(135deg,rgba(10,14,34,.82),rgba(16,10,29,.72));box-shadow:inset 0 0 0 1px rgba(255,255,255,.045),0 18px 36px rgba(0,0,0,.24);overflow:hidden}
+    .rashin-bonus-panel::after{content:'';position:absolute;inset:10px;border:1px solid rgba(244,205,98,.14);pointer-events:none}
+    .rashin-bonus-panel.is-compact{grid-template-columns:minmax(0,1fr) auto;gap:16px}
+    .rashin-bonus-panel > *{position:relative;z-index:1}
+    .rashin-bonus-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+    .rashin-bonus-kicker{font-size:11px;letter-spacing:.22em;color:#8fd8d2;text-transform:uppercase}
+    .rashin-bonus-title{font-size:24px;line-height:1.28;color:#f4cd62;font-weight:900;letter-spacing:.04em;text-shadow:0 0 18px rgba(244,205,98,.16)}
+    .rashin-bonus-stones{display:flex;align-items:center;justify-content:center;gap:14px;min-height:118px;padding:16px 18px;border:1px solid rgba(244,205,98,.46);background:radial-gradient(circle at 34% 20%,rgba(255,239,175,.28),transparent 38%),linear-gradient(145deg,rgba(201,149,42,.22),rgba(7,8,20,.8));box-shadow:inset 0 0 22px rgba(244,205,98,.1),0 0 24px rgba(201,149,42,.14)}
+    .rashin-stone-gem{position:relative;flex:0 0 auto;width:38px;height:38px;transform:rotate(45deg);border:1px solid rgba(255,235,169,.9);background:linear-gradient(135deg,#fff7bc 0%,#dfb848 44%,#805713 100%);box-shadow:0 0 22px rgba(244,205,98,.42),inset 0 0 12px rgba(255,255,255,.34)}
+    .rashin-stone-gem::before{content:'';position:absolute;inset:7px 4px 4px 7px;border-top:1px solid rgba(255,255,255,.66);border-left:1px solid rgba(255,255,255,.46)}
+    .rashin-stone-gem::after{content:'';position:absolute;left:5px;top:5px;width:9px;height:9px;background:rgba(255,255,255,.64);filter:blur(.5px)}
     .rashin-stone-count{display:grid;gap:2px;line-height:1.2}
-    .rashin-stone-label{font-size:11px;letter-spacing:.14em;color:rgba(240,234,216,.68)}
-    .rashin-stone-number{font-size:22px;color:#fff;font-weight:900;letter-spacing:.03em;text-shadow:0 0 14px rgba(244,205,98,.28)}
-    .rashin-bonus-body{display:grid;gap:8px;font-size:14px;line-height:1.7;color:rgba(255,255,255,.82)}
-    .rashin-bonus-main{font-size:16px;color:#fff;font-weight:700}
-    .rashin-bonus-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-    .rashin-bonus-btn{border:1px solid rgba(244,205,98,.75);background:linear-gradient(90deg,#9c741b,#f4d372);color:#100b14;font-weight:800;padding:10px 14px;cursor:pointer}
+    .rashin-stone-label{font-size:11px;letter-spacing:.14em;color:rgba(240,234,216,.7)}
+    .rashin-stone-number{font-size:32px;color:#fff;font-weight:950;letter-spacing:.02em;text-shadow:0 0 18px rgba(244,205,98,.34)}
+    .rashin-bonus-body{display:grid;gap:7px;font-size:14px;line-height:1.55;color:rgba(255,255,255,.82)}
+    .rashin-bonus-main{font-size:20px;line-height:1.45;color:#fff;font-weight:900}
+    .rashin-bonus-sub{font-size:15px;color:rgba(255,255,255,.84);font-weight:700}
+    .rashin-bonus-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    .rashin-bonus-btn{min-height:44px;border:1px solid rgba(244,205,98,.75);background:linear-gradient(90deg,#9c741b,#f4d372);color:#100b14;font-weight:900;padding:10px 16px;cursor:pointer}
     .rashin-bonus-btn:disabled{opacity:.55;cursor:not-allowed}
-    .rashin-bonus-link{border:1px solid rgba(244,205,98,.42);background:rgba(255,255,255,.04);color:#f4e8c8;font-weight:700;padding:10px 14px;cursor:pointer}
+    .rashin-bonus-link{min-height:44px;border:1px solid rgba(244,205,98,.42);background:rgba(255,255,255,.04);color:#f4e8c8;font-weight:800;padding:10px 14px;cursor:pointer}
     .rashin-bonus-link:disabled{opacity:.62;cursor:default}
     .upgrade-bonus-note{margin-top:6px;color:#f4cd62;font-size:13px;line-height:1.6}
     .upgrade-price-normal{display:block;color:rgba(255,255,255,.72);text-decoration:line-through;font-size:13px}
     .upgrade-price-discount{display:block;color:#fff;font-size:18px;font-weight:800}
-    @media (max-width:760px){.rashin-bonus-panel{grid-template-columns:1fr;padding:14px}.rashin-bonus-panel.is-compact{align-items:stretch;flex-direction:column}.rashin-bonus-stones{justify-content:flex-start;min-height:auto}.rashin-bonus-actions>*{width:100%}}
+    @media (max-width:760px){.rashin-bonus-card{width:100%}.rashin-bonus-panel,.rashin-bonus-panel.is-compact{grid-template-columns:1fr;padding:16px}.rashin-bonus-title{font-size:22px}.rashin-bonus-stones{justify-content:flex-start;min-height:auto}.rashin-bonus-actions>*{width:100%}}
   `;
   document.head.appendChild(style);
 }
@@ -4063,9 +4140,15 @@ function renderRashinBonusCard(){
     slot.innerHTML=`
       <div class="rashin-bonus-panel is-compact">
         <div>
+          <div class="rashin-bonus-head">
+            <div>
+              <div class="rashin-bonus-kicker">LOGIN BONUS</div>
+              <div class="rashin-bonus-title">ログインボーナス</div>
+            </div>
+          </div>
           <div class="rashin-bonus-body">
             <div class="rashin-bonus-main">今日のカードを記録して羅針石+1</div>
-            <div>Googleログインすると本日のボーナスを受け取れます。</div>
+            <div class="rashin-bonus-sub">Googleログインすると本日のボーナスを受け取れます。</div>
           </div>
         </div>
         <div class="rashin-bonus-actions">
@@ -4080,8 +4163,8 @@ function renderRashinBonusCard(){
         <div>
           <div class="rashin-bonus-head">
             <div>
-              <div class="rashin-bonus-kicker">RASHIN BONUS</div>
-              <div class="rashin-bonus-title">今日の羅針ボーナス</div>
+              <div class="rashin-bonus-kicker">LOGIN BONUS</div>
+              <div class="rashin-bonus-title">ログインボーナス</div>
             </div>
           </div>
           <div class="rashin-bonus-body"><div>羅針石を確認しています。</div></div>
@@ -4117,13 +4200,13 @@ function renderRashinBonusCard(){
       <div>
         <div class="rashin-bonus-head">
           <div>
-            <div class="rashin-bonus-kicker">RASHIN BONUS</div>
-            <div class="rashin-bonus-title">今日の羅針ボーナス</div>
+            <div class="rashin-bonus-kicker">LOGIN BONUS</div>
+            <div class="rashin-bonus-title">ログインボーナス</div>
           </div>
         </div>
         <div class="rashin-bonus-body">
           <div class="rashin-bonus-main">${escapeHtml(main)}</div>
-          <div>${escapeHtml(sub)}</div>
+          <div class="rashin-bonus-sub">${escapeHtml(sub)}</div>
         </div>
         <div class="rashin-bonus-actions">
           ${canClaim
@@ -4335,7 +4418,7 @@ function setDeveloperAccessError(message){
 }
 
 function canUseDeveloperQuickAccess(){
-  return !isProductionRuntime()&&(LOCAL_TEST_RUNTIME||DEV_MODE);
+  return canUsePaidTestMode();
 }
 
 function setGoogleAuthError(message){
@@ -4768,7 +4851,7 @@ function openMemberAccessModal(intent=''){
   clearMemberAccessError();
   clearGoogleAuthError();
   clearDeveloperAccessError();
-  if(title) title.textContent=bonusLogin?'今日の羅針ボーナス':(compactPaidStart?'深掘り鑑定の購入':'深掘り鑑定の確認');
+  if(title) title.textContent=bonusLogin?'ログインボーナス':(compactPaidStart?'深掘り鑑定の購入':'深掘り鑑定の確認');
   if(desc){
     desc.style.display=compactPaidStart?'none':'';
     desc.textContent=bonusLogin
