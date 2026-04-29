@@ -9,6 +9,9 @@
 ## Limited prerelease SNS operation
 
 Daily X / Threads posting is handled by `scripts/social/daily-oracle-post.js`.
+Due-time execution is handled by `scripts/social/run-scheduled-posts.js`.
+
+X automation should use the official API. Do not use Playwright or other browser automation to script the X website for posting. Before turning on X automation, enable the automated account label and make the account bio clear about who operates it.
 
 ### Draft generation
 
@@ -33,13 +36,35 @@ Set these only in the machine or job runner that performs SNS posting:
 - `THREADS_USER_ID`
 - `THREADS_ACCESS_TOKEN`
 - `THREADS_PUBLISH_WAIT_MS=30000`
+- `SOCIAL_AUTOMATED_POSTING_ENABLED=true`
+- `SOCIAL_PLATFORMS=x,threads`
+- `SOCIAL_ORACLE_TIME=07:00`
+- `SOCIAL_CONCEPT_TIME=20:00`
 
 Recommended schedule:
 
-- `07:00 Asia/Tokyo`: `node scripts/social/daily-oracle-post.js --write --post --kind=oracle`
-- `12:00 or 20:00 Asia/Tokyo`: `node scripts/social/daily-oracle-post.js --write --post --kind=concept`
+- `07:00 Asia/Tokyo`: oracle image post
+- `20:00 Asia/Tokyo`: concept post
 
-Run `--dry-run` before enabling real posting on any new machine.
+Run a dry check before enabling real posting on any new machine:
+
+```powershell
+node scripts/social/run-scheduled-posts.js --dry-run
+```
+
+Run due posts once:
+
+```powershell
+npm run social:run-due
+```
+
+Run as a long-lived local process:
+
+```powershell
+npm run social:daemon
+```
+
+The scheduler writes `data/social-posts/scheduled-post-state.json` and will not post the same kind twice on the same JST date after a successful post.
 
 ## File-backed state
 

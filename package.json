@@ -5,10 +5,12 @@
   "type": "commonjs",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check app.js && node --check scripts/social/daily-oracle-post.js",
+    "check": "node --check server.js && node --check app.js && node --check scripts/social/daily-oracle-post.js && node --check scripts/social/run-scheduled-posts.js",
     "social:draft": "node scripts/social/daily-oracle-post.js --dry-run",
     "social:write": "node scripts/social/daily-oracle-post.js --write",
-    "social:post": "node scripts/social/daily-oracle-post.js --write --post"
+    "social:post": "node scripts/social/daily-oracle-post.js --write --post",
+    "social:run-due": "node scripts/social/run-scheduled-posts.js --once",
+    "social:daemon": "node scripts/social/run-scheduled-posts.js --daemon"
   },
   "engines": {
     "node": ">=20"
