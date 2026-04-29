@@ -568,7 +568,9 @@ function getRuntimeSetupStatus(req) {
   if (!STRIPE_WEBHOOK_CONFIGURED) issues.push('STRIPE_WEBHOOK_SECRET');
   if (!MEMBER_SESSION_PERSISTENT) issues.push('MEMBER_SESSION_SECRET');
   if (!AUTH_SESSION_PERSISTENT) issues.push('AUTH_SESSION_SECRET');
+  const productionReady = issues.length === 0;
   return {
+    ok: productionReady,
     googleClientConfigured: GOOGLE_CLIENT_CONFIGURED,
     stripeSecretConfigured: STRIPE_SECRET_CONFIGURED,
     stripePriceConfigured: STRIPE_PRICE_CONFIGURED,
@@ -576,7 +578,7 @@ function getRuntimeSetupStatus(req) {
     stripeWebhookConfigured: STRIPE_WEBHOOK_CONFIGURED,
     memberSessionPersistent: MEMBER_SESSION_PERSISTENT,
     authSessionPersistent: AUTH_SESSION_PERSISTENT,
-    productionReady: issues.length === 0,
+    productionReady,
     issues,
     webhookPath: '/api/stripe/webhook',
     webhookUrl: makeAbsoluteUrl(req, '/api/stripe/webhook'),
@@ -4445,7 +4447,7 @@ async function handleRequest(req, res) {
       stripePortalReady: stripePortalReady(),
       stripeWebhookReady: stripeWebhookReady(),
       setup: local ? setup : {
-        ok: !!setup?.ok,
+        ok: !!setup?.productionReady,
         checkedAt: setup?.checkedAt || new Date().toISOString(),
       },
     };
