@@ -5166,11 +5166,11 @@ body{
 
   display:flex;align-items:center;justify-content:center;
 
-  padding:20px;opacity:0;pointer-events:none;transition:opacity .25s;
+  padding:20px;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .25s,visibility 0s linear .25s;
 
 }
 
-.modal-overlay.on{opacity:1;pointer-events:all;}
+.modal-overlay.on{opacity:1;visibility:visible;pointer-events:all;transition:opacity .25s;}
 
 .modal-box{
 
@@ -5475,7 +5475,7 @@ body{
 
 <!-- 接続設定モーダル -->
 
-<div class="modal-overlay" id="settings-modal">
+<div class="modal-overlay" id="settings-modal" aria-hidden="true" inert>
   <div class="modal-box">
     <div class="modal-title">接続設定</div>
 
@@ -5499,7 +5499,7 @@ body{
   </div>
 </div>
 
-<div class="modal-overlay" id="member-access-modal">
+<div class="modal-overlay" id="member-access-modal" aria-hidden="true" inert>
   <div class="modal-box">
     <div class="modal-title">深掘り鑑定の確認</div>
     <div class="modal-desc" id="member-access-desc">
@@ -5539,7 +5539,7 @@ body{
   </div>
 </div>
 
-<div class="modal-overlay" id="sample-modal" onclick="if(event.target===this)closeSampleModal()">
+<div class="modal-overlay" id="sample-modal" aria-hidden="true" inert onclick="if(event.target===this)closeSampleModal()">
   <div class="modal-box sample-modal-box" role="dialog" aria-modal="true" aria-labelledby="sample-modal-title">
     <div class="sample-modal-head">
       <div>
@@ -6396,7 +6396,7 @@ body{
 <script src="app.js"></script>
 
 <!-- Flow Analysis Modal -->
-<div class="flow-analysis-modal" id="flow-analysis-modal" onclick="if(event.target===this)closeFlowAnalysisModal()">
+<div class="flow-analysis-modal" id="flow-analysis-modal" aria-hidden="true" inert onclick="if(event.target===this)closeFlowAnalysisModal()">
   <div class="flow-analysis-window" onclick="event.stopPropagation()">
     <button class="flow-analysis-close" type="button" onclick="closeFlowAnalysisModal()" aria-label="閉じる">×</button>
     <div class="flow-analysis-title">鑑定履歴の流れを読み解く ✦</div>
@@ -6407,7 +6407,7 @@ body{
 <!-- Card Lightbox -->
 <div id="card-lightbox" onclick="closeCardLightbox()" style="display:none;position:fixed;inset:0;z-index:9100;background:rgba(0,0,0,.9);align-items:center;justify-content:center;padding:24px;">
   <div onclick="event.stopPropagation()" style="max-width:min(88vw,400px);position:relative;text-align:center;">
-    <img id="card-lightbox-img" src="" alt="" style="width:100%;height:auto;border-radius:10px;box-shadow:0 0 60px rgba(201,149,42,.3),0 32px 80px rgba(0,0,0,.85);display:block;">
+    <img id="card-lightbox-img" alt="" style="width:100%;height:auto;border-radius:10px;box-shadow:0 0 60px rgba(201,149,42,.3),0 32px 80px rgba(0,0,0,.85);display:block;">
     <div id="card-lightbox-name" style="font-family:'Shippori Mincho',serif;color:#e4b84a;margin-top:18px;font-size:17px;letter-spacing:.22em;"></div>
     <div id="card-lightbox-kw" style="display:none"></div>
     <button onclick="closeCardLightbox()" style="position:absolute;top:-14px;right:-14px;width:34px;height:34px;border-radius:50%;background:rgba(201,149,42,.85);border:none;color:#04030a;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;">✕</button>

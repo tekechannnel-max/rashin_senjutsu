@@ -297,7 +297,7 @@ function applySecurityHeaders(req, res) {
   const csp = [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://js.stripe.com https://www.googletagmanager.com",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com",
     "font-src 'self' https://fonts.gstatic.com data:",
     "img-src 'self' data: blob: https://*.googleusercontent.com https://www.google-analytics.com",
     "media-src 'self'",
@@ -2463,6 +2463,62 @@ function sameOriginRequest(req) {
   return !!(normalizeOriginValue(origin) && normalizeOriginValue(origin) === normalizeOriginValue(getRequestOrigin(req)));
 }
 
+const SAME_ORIGIN_POST_API_PREFIXES = [
+  '/api/rashin-bonus/claim',
+  '/api/auth/google',
+  '/api/member/session',
+  '/api/member/logout',
+  '/api/client-log',
+  '/api/stripe/checkout-session',
+  '/api/paid-reading/prepare-ticket',
+  '/api/paid-reading/use-ticket',
+  '/api/paid-reading/release-ticket',
+  '/api/stripe/portal-session',
+  '/api/ai/generate',
+  '/api/anthropic/messages',
+  '/api/vault/history/query',
+  '/api/vault/history/save',
+  '/api/vault/history/clear',
+];
+
+function getRequestPathname(req) {
+  return String(req?.url || '').split('?')[0] || '/';
+}
+
+function isSameOriginPostApiRequest(req) {
+  const pathname = getRequestPathname(req);
+  return SAME_ORIGIN_POST_API_PREFIXES.some(prefix => pathname.startsWith(prefix));
+}
+
+function requestHasBody(req) {
+  const contentLength = String(req?.headers?.['content-length'] || '').trim();
+  const transferEncoding = String(req?.headers?.['transfer-encoding'] || '').trim();
+  return (!!contentLength && contentLength !== '0') || !!transferEncoding;
+}
+
+function isJsonContentType(req) {
+  const contentType = String(req?.headers?.['content-type'] || '').split(';')[0].trim().toLowerCase();
+  return contentType === 'application/json' || contentType.endsWith('+json');
+}
+
+function guardSameOriginPostApi(req, res) {
+  if (!sameOriginRequest(req)) {
+    sendJson(res, 403, {
+      error: 'ORIGIN_NOT_ALLOWED',
+      message: 'API requests are limited to same-origin requests.',
+    });
+    return false;
+  }
+  if (requestHasBody(req) && !isJsonContentType(req)) {
+    sendJson(res, 415, {
+      error: 'UNSUPPORTED_MEDIA_TYPE',
+      message: 'JSON API requests must use application/json.',
+    });
+    return false;
+  }
+  return true;
+}
+
 function unixToIso(value) {
   const seconds = Number(value);
   if (!Number.isFinite(seconds) || seconds <= 0) return '';
@@ -4135,6 +4191,10 @@ async function handleRequest(req, res) {
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
     res.end();
+    return;
+  }
+
+  if (req.method === 'POST' && isSameOriginPostApiRequest(req) && !guardSameOriginPostApi(req, res)) {
     return;
   }
 

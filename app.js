@@ -4834,6 +4834,20 @@ function setMemberAccessError(message){
   el.style.display='block';
 }
 
+function setModalOpen(modalOrId,open){
+  const modal=typeof modalOrId==='string'?document.getElementById(modalOrId):modalOrId;
+  if(!modal) return null;
+  modal.classList.toggle('on',!!open);
+  if(open){
+    modal.removeAttribute('inert');
+    modal.setAttribute('aria-hidden','false');
+  }else{
+    modal.setAttribute('aria-hidden','true');
+    modal.setAttribute('inert','');
+  }
+  return modal;
+}
+
 function openMemberAccessModal(intent=''){
   MEMBER_PENDING_INTENT=intent||'';
   const modal=document.getElementById('member-access-modal');
@@ -4897,12 +4911,12 @@ function openMemberAccessModal(intent=''){
     input.style.display=showAccess?'block':'none';
   }
   if(submitBtn) submitBtn.style.display=showAccess?'inline-flex':'none';
-  if(modal) modal.classList.add('on');
+  setModalOpen(modal,true);
 }
 
 function closeMemberAccessModal(clearIntent=true){
   const modal=document.getElementById('member-access-modal');
-  if(modal) modal.classList.remove('on');
+  setModalOpen(modal,false);
   if(clearIntent) MEMBER_PENDING_INTENT='';
   clearMemberAccessError();
   clearGoogleAuthError();
@@ -4912,12 +4926,12 @@ function openSampleModal(){
   showToast('鑑定サンプルは、実際の深掘り鑑定を確認してから公開します。');
   return;
   const modal=document.getElementById('sample-modal');
-  if(modal) modal.classList.add('on');
+  setModalOpen(modal,true);
 }
 
 function closeSampleModal(){
   const modal=document.getElementById('sample-modal');
-  if(modal) modal.classList.remove('on');
+  setModalOpen(modal,false);
 }
 
 function ensurePaidEntryGuideModal(){
@@ -4926,6 +4940,8 @@ function ensurePaidEntryGuideModal(){
   modal=document.createElement('div');
   modal.className='modal-overlay';
   modal.id='paid-entry-guide-modal';
+  modal.setAttribute('aria-hidden','true');
+  modal.setAttribute('inert','');
   modal.innerHTML=`
     <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="paid-entry-guide-title">
       <div class="modal-title" id="paid-entry-guide-title">深掘り鑑定は結果画面から購入できます</div>
@@ -4956,7 +4972,7 @@ function openPaidEntryGuide(){
 
 function closePaidEntryGuide(){
   const modal=document.getElementById('paid-entry-guide-modal');
-  if(modal) modal.classList.remove('on');
+  setModalOpen(modal,false);
 }
 
 function startFreeFromPaidEntryGuide(){
@@ -7181,13 +7197,13 @@ function openFlowAnalysisModal(text=''){
   const body=document.getElementById('flow-analysis-modal-body');
   if(!modal||!body) return;
   body.innerHTML=formatFlowAnalysisHtml(text||'鑑定の流れを読み解いています。');
-  modal.classList.add('on');
+  setModalOpen(modal,true);
   document.body.style.overflow='hidden';
 }
 
 function closeFlowAnalysisModal(){
   const modal=document.getElementById('flow-analysis-modal');
-  if(modal) modal.classList.remove('on');
+  setModalOpen(modal,false);
   document.body.style.overflow='';
 }
 
@@ -11237,11 +11253,11 @@ function openSettings(){
   document.getElementById('apikey-input').value=API_KEY;
   updateKeyStatus(API_KEY);
   document.getElementById('modal-cancel-btn').style.display='block';
-  document.getElementById('settings-modal').classList.add('on');
+  setModalOpen('settings-modal',true);
 }
 
 function closeSettings(){
-  document.getElementById('settings-modal').classList.remove('on');
+  setModalOpen('settings-modal',false);
 }
 
 function saveApiKey(){
@@ -12158,6 +12174,8 @@ function openCardLightbox(src,id,name,kw){
 function closeCardLightbox(){
   const lb=document.getElementById('card-lightbox');
   if(lb) lb.style.display='none';
+  const img=document.getElementById('card-lightbox-img');
+  if(img) img.removeAttribute('src');
   document.body.style.overflow='';
 }
 
