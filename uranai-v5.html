@@ -331,19 +331,6 @@ body{
 
 .btn-free:hover{animation-duration:2.3s;border-color:rgba(228,184,74,.95);box-shadow:0 0 42px rgba(201,149,42,.62),0 22px 44px rgba(201,149,42,.34),inset 0 1px 0 rgba(255,255,255,.34);transform:translateY(-1px);}
 
-.btn-sample{
-
-  min-width:190px;
-  background:rgba(255,255,255,.025);border:1px solid rgba(240,234,216,.18);
-
-  color:rgba(240,234,216,.82);
-  font-size:14px;
-  letter-spacing:.16em;
-
-}
-
-.btn-sample:hover{background:rgba(255,255,255,.055);border-color:rgba(228,184,74,.48);color:var(--gold-l);}
-
 .btn-simple{
   width:300px;max-width:100%;min-width:238px;min-height:46px;height:auto;padding:10px 18px;
   background:rgba(201,149,42,.07);border:1px solid rgba(201,149,42,.28);
@@ -1165,17 +1152,6 @@ body{
   font-size:18px;
 }
 
-.sample-reading{
-  display:grid;grid-template-columns:minmax(0,.78fr) minmax(0,1.22fr);gap:0;
-  border:1px solid rgba(201,149,42,.14);background:rgba(14,11,8,.54);
-}
-.sample-reading+.sample-reading{margin-top:12px;}
-.sample-reading-side{padding:22px 22px;border-right:1px solid rgba(201,149,42,.12);}
-.sample-reading-label{font-size:9px;letter-spacing:.2em;color:var(--muted);margin-bottom:10px;text-transform:uppercase;}
-.sample-reading-theme{font-family:'Shippori Mincho',serif;font-size:17px;line-height:1.7;color:var(--gold-l);letter-spacing:.06em;margin-bottom:10px;}
-.sample-reading-note{font-size:12px;line-height:1.9;color:rgba(240,234,216,.55);}
-.sample-reading-body{padding:22px 24px;font-size:13px;line-height:2;color:rgba(240,234,216,.76);letter-spacing:.035em;}
-.sample-reading-body strong{color:rgba(228,184,74,.9);font-weight:500;}
 .vault-btn-pair{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;align-items:start;}
 .vault-btn-card{
   border:1px solid rgba(201,149,42,.24);
@@ -2145,7 +2121,8 @@ body{
 
 .btn-main:hover{box-shadow:0 4px 20px rgba(201,149,42,.3);transform:translateY(-1px);}
 
-.btn-skip{
+.btn-skip,
+.btn-back-input{
 
   flex:1;padding:16px;background:transparent;
 
@@ -2159,7 +2136,8 @@ body{
 
 }
 
-.btn-skip:hover{border-color:rgba(201,149,42,.4);color:var(--cream);}
+.btn-skip:hover,
+.btn-back-input:hover{border-color:rgba(201,149,42,.4);color:var(--cream);}
 .flow-nav-row{
   display:flex;
   flex-wrap:wrap;
@@ -5113,10 +5091,6 @@ body{
   .plan-compare-list li{font-size:13px;}
   .plan-compare-summary{max-width:28em;font-size:13px;line-height:1.8;}
   .plan-compare-action{width:100%;}
-  .sample-reading{grid-template-columns:1fr;}
-  .sample-reading-side{border-right:none;border-bottom:1px solid rgba(201,149,42,.12);}
-  .sample-modal-box{max-height:88vh;padding:22px 18px;}
-  .sample-modal-head{grid-template-columns:1fr auto;}
   .paid-band{padding:20px;}
   .paid-band-inner{flex-direction:column;align-items:center;}
   .paid-band-actions{width:100%;}
@@ -5296,28 +5270,6 @@ body{
 }
 
 .modal-cancel:hover{border-color:rgba(201,149,42,.4);color:var(--cream);}
-
-.sample-modal-box{
-  max-width:860px;max-height:min(84vh,720px);overflow:auto;
-  padding:30px 30px 28px;
-}
-.sample-modal-head{
-  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:start;
-  border-bottom:1px solid rgba(201,149,42,.14);padding-bottom:16px;margin-bottom:16px;
-}
-.sample-modal-kicker{font-size:10px;letter-spacing:.2em;color:var(--muted);margin-bottom:8px;text-transform:uppercase;}
-.sample-modal-title{font-family:'Shippori Mincho',serif;font-size:20px;line-height:1.6;color:var(--gold-l);letter-spacing:.08em;}
-.sample-modal-copy{font-size:12px;line-height:1.85;color:rgba(240,234,216,.6);letter-spacing:.04em;margin-top:8px;}
-.sample-modal-close{
-  width:34px;height:34px;border:1px solid rgba(201,149,42,.2);background:transparent;
-  color:rgba(240,234,216,.7);font-size:22px;line-height:1;cursor:pointer;
-}
-.sample-modal-close:hover{border-color:rgba(228,184,74,.55);color:var(--gold-l);}
-.sample-modal-list{display:grid;gap:12px;}
-.sample-modal-foot{
-  margin-top:14px;padding-top:14px;border-top:1px solid rgba(201,149,42,.1);
-  font-size:11px;line-height:1.8;color:rgba(240,234,216,.48);letter-spacing:.04em;
-}
 
 .key-status{font-size:11px;margin-top:10px;letter-spacing:.06em;}
 
@@ -5588,7 +5540,7 @@ body{
         <div class="key-status" id="google-auth-error" style="display:none;margin-top:10px;"></div>
       </div>
       <div class="checkout-disclosure">
-        深掘り鑑定は1回580円の単発課金です。継続課金ではありません。無料鑑定の本文を延長するものではなく、無料で引いたカードを軸に、有料分の追加カードを展開して作成する別の鑑定です。返金可否は利用規約とStripeの処理状況に従います。占いは娯楽・自己理解支援であり、医療・法律・投資などの専門判断ではありません。
+        深掘り鑑定は1回680円の単発課金です。継続課金ではありません。無料鑑定の本文を延長するものではなく、無料で引いたカードを軸に、有料分の追加カードを展開して作成する別の鑑定です。返金可否は利用規約とStripeの処理状況に従います。占いは娯楽・自己理解支援であり、医療・法律・投資などの専門判断ではありません。
         <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a>
       </div>
     <div id="developer-access-shell" style="display:none;margin:14px 0 18px;">
@@ -5611,33 +5563,6 @@ body{
   </div>
 </div>
 
-<div class="modal-overlay" id="sample-modal" aria-hidden="true" inert onclick="if(event.target===this)closeSampleModal()">
-  <div class="modal-box sample-modal-box" role="dialog" aria-modal="true" aria-labelledby="sample-modal-title">
-    <div class="sample-modal-head">
-      <div>
-        <div class="sample-modal-kicker">鑑定サンプル</div>
-        <div class="sample-modal-title" id="sample-modal-title">鑑定サンプルは準備中です</div>
-        <div class="sample-modal-copy">実際の深掘り鑑定を検査し、十分な品質を確認できたものだけを掲載します。</div>
-      </div>
-      <button class="sample-modal-close" type="button" onclick="closeSampleModal()" aria-label="閉じる">×</button>
-    </div>
-    <div class="sample-modal-list">
-      <div class="sample-reading">
-        <div class="sample-reading-side">
-          <div class="sample-reading-label">品質確認中</div>
-          <div class="sample-reading-theme">弱いサンプルは出しません</div>
-          <div class="sample-reading-note">短く作った見本ではなく、深掘り鑑定と同じ条件で出した結果を確認します。</div>
-        </div>
-        <div class="sample-reading-body">
-          <strong>現在の状態：</strong>サンプルは一時的に非公開です。鑑定文の量、具体性、相談内容との一致、過去日付の混入、言い切りすぎの表現を確認してから公開します。<br>
-          <strong>公開する条件：</strong>実際の深掘り鑑定として使える品質に達したものだけを、恋愛・仕事・お金の3種類で掲載します。
-        </div>
-      </div>
-    </div>
-    <div class="sample-modal-foot">公開前のサンプルで、鑑定の品質を高く見せることはしません。</div>
-  </div>
-</div>
-
 <!-- ══════════════════════════════════
      TOP
 ══════════════════════════════════ -->
@@ -5654,7 +5579,6 @@ body{
       <div class="top-btns">
         <a class="btn-top btn-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="hero" onclick="if(window.startFlow){startFlow('free');return false;}">無料で羅針鑑定をはじめる</a>
         <a class="btn-top btn-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="top" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定をする(有料)</a>
-        <button class="btn-top btn-sample" type="button" onclick="openSampleModal()" style="display:none">サンプルを見る</button>
       </div>
       <div class="top-note"></div>
       <div class="runtime-status warn" id="top-ai-status" style="display:none">
@@ -5786,7 +5710,7 @@ body{
         <div class="plan-compare-card deep">
           <div class="plan-compare-kicker">DEEP READING</div>
           <div class="plan-compare-title">深掘り鑑定</div>
-          <div class="plan-compare-price">1回580円</div>
+          <div class="plan-compare-price">1回680円</div>
           <div class="plan-compare-trial">継続課金ではありません</div>
           <div class="plan-compare-badge">無料鑑定の内容をすべて含む</div>
           <ul class="plan-compare-list">
@@ -5899,7 +5823,7 @@ body{
         <span class="top-faq-q-text">無料鑑定と深掘り鑑定の違いは？</span>
         <span class="top-faq-arrow">›</span>
       </button>
-      <div class="top-faq-a">無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。<br>深掘り鑑定では、同じ相談内容を前提に追加カードを引き、ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>深掘り鑑定は無料鑑定とは別の1回580円の単発課金です。継続課金ではありません。</div>
+      <div class="top-faq-a">無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。<br>深掘り鑑定では、同じ相談内容を前提に追加カードを引き、ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>深掘り鑑定は無料鑑定とは別の1回680円の単発課金です。継続課金ではありません。</div>
     </div>
     <div class="top-faq-item">
       <button class="top-faq-q" onclick="toggleFaq(this)">
@@ -5930,9 +5854,9 @@ body{
         <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
         <a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定をする(有料)</a>
       </div>
-      <div class="paid-band-note">深掘り鑑定 1回580円 / 継続課金ではありません</div>
+      <div class="paid-band-note">深掘り鑑定 1回680円 / 継続課金ではありません</div>
       <div class="checkout-disclosure">
-        深掘り鑑定は1回580円の単発課金です。継続課金ではありません。無料鑑定後の結果画面から購入できる別の有料鑑定です。返金可否は利用規約とStripeの処理状況に従います。占いは娯楽・自己理解支援であり、医療・法律・投資などの専門判断ではありません。
+        深掘り鑑定は1回680円の単発課金です。継続課金ではありません。無料鑑定後の結果画面から購入できる別の有料鑑定です。返金可否は利用規約とStripeの処理状況に従います。占いは娯楽・自己理解支援であり、医療・法律・投資などの専門判断ではありません。
         <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a>
       </div>
     </div>
@@ -6117,8 +6041,8 @@ body{
     </div>
 
     <div class="input-btns">
+      <button class="btn-back-input" type="button" onclick="gotoTop()">戻る</button>
       <button class="btn-main" onclick="goToLen()">この内容で占う ✦</button>
-      <button class="btn-skip" onclick="skipInput()">サンプルで試す</button>
     </div>
 
   </div>

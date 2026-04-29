@@ -1,4 +1,3 @@
-﻿
 // ══════════════════════════════════════════════════
 // KNOWLEDGE BASE
 // ══════════════════════════════════════════════════
@@ -2031,7 +2030,7 @@ const BRAND_PROFILE={
     member:{
       badge:'深掘り',
       title:'深掘り鑑定で、進路を自分で選べるようになる',
-      price:'深掘り鑑定 1回580円',
+      price:'深掘り鑑定 1回680円',
       items:[
         '具体的な悩みの構造と本音を整理できる',
         '次にどちらへ進むかが現実レベルで具体的に残る',
@@ -2042,7 +2041,7 @@ const BRAND_PROFILE={
 };
 
 const MEMBERSHIP_PLAN={
-  price:'深掘り鑑定 1回580円',
+  price:'深掘り鑑定 1回680円',
   status:'読み返しと記録は準備中',
   promise:'無料で見えたことを、次にすることまで深く読む鑑定です',
   description:'無料で見えた「今の状態」をもとに、ここからは悩みをもっと深く読みます。現実を見ながら、次にどう動くかまで残せます。',
@@ -2086,8 +2085,8 @@ const MEMBERSHIP_PLAN={
     },
   ],
 };
-const CHECKOUT_DISCLOSURE_HTML='深掘り鑑定は、無料鑑定後の結果画面から購入できる1回580円の単発課金です。継続課金ではありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
-const RESULT_CHECKOUT_DISCLOSURE_HTML='深掘り鑑定は1回580円の単発課金です。無料鑑定の本文を延長するものではなく、無料で引いたカードを軸に、有料分の追加カードを展開して作成する別の鑑定です。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
+const CHECKOUT_DISCLOSURE_HTML='深掘り鑑定は、無料鑑定後の結果画面から購入できる1回680円の単発課金です。継続課金ではありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
+const RESULT_CHECKOUT_DISCLOSURE_HTML='深掘り鑑定は1回680円の単発課金です。無料鑑定の本文を延長するものではなく、無料で引いたカードを軸に、有料分の追加カードを展開して作成する別の鑑定です。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
 
 // 全カード・各3問の解釈絞り込みテンプレート
 const CLARIFY_DEF={
@@ -3187,7 +3186,6 @@ async function shareDailyOracle(channel='x'){
   }
   window.open(`https://line.me/R/msg/text/?${encodeURIComponent(shareText)}`,'_blank','noopener,noreferrer');
 }
-
 // ══════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════
@@ -3335,7 +3333,6 @@ async function runButtonsAutotest(){
     activeScreens:[...document.querySelectorAll('.screen.active')].map(node=>node.id),
     progressWidth:document.getElementById('progress')?.style.width||'',
     modalOn:document.getElementById('member-access-modal')?.classList.contains('on')||false,
-    sampleModalOn:document.getElementById('sample-modal')?.classList.contains('on')||false,
   });
   const waitFor=async(check,timeoutMs=2500)=>{
     const started=Date.now();
@@ -3351,7 +3348,6 @@ async function runButtonsAutotest(){
     result.initial={
       topFree:!!document.querySelector('.btn-top.btn-free'),
       topPaid:!!document.querySelector('.btn-top.btn-paid'),
-      topSample:!!document.querySelector('.btn-top.btn-sample'),
       bottomPrimary:!!document.querySelector('#premium-entry .today-cta'),
       hasStartFlow:typeof window.startFlow,
       hasOpenMemberAccessModal:typeof window.openMemberAccessModal,
@@ -3379,20 +3375,6 @@ async function runButtonsAutotest(){
       result.steps.push({label:'topPaid',passed,state:captureState()});
     }else{
       result.steps.push({label:'topPaid',passed:false,reason:'button-missing'});
-    }
-
-    if(typeof window.gotoTop==='function') window.gotoTop();
-
-    const topSampleBtn=document.querySelector('.btn-top.btn-sample');
-    if(topSampleBtn){
-      topSampleBtn.click();
-      const passed=await waitFor(()=>{
-        return document.getElementById('sample-modal')?.classList.contains('on');
-      });
-      result.steps.push({label:'topSample',passed,state:captureState()});
-      if(typeof window.closeSampleModal==='function') window.closeSampleModal();
-    }else{
-      result.steps.push({label:'topSample',passed:false,reason:'button-missing'});
     }
 
     if(typeof window.gotoTop==='function') window.gotoTop();
@@ -3754,14 +3736,6 @@ function hydrateReactionInput(saved={}){
   resetReactionFlow();
 }
 
-function applySampleReactionAnswers(){
-  setReactionAnswers({
-    stress_play:'win_break',
-    stress_rule:'lose_efficiency',
-    drive_style:'direct',
-  });
-}
-
 function buildReactionPromptSnippet(profile=REACTION_PROFILE){
   if(!profile) return '動物タイプ診断：未入力';
   return [
@@ -3966,7 +3940,7 @@ function getMemberStatusMeta(){
     return{
       cls:'inactive',
       label:'深掘り鑑定',
-      copy:'深掘り鑑定は、無料鑑定後の結果画面から購入できる1回580円の別鑑定です。継続課金ではありません。',
+      copy:'深掘り鑑定は、無料鑑定後の結果画面から購入できる1回680円の別鑑定です。継続課金ではありません。',
       action:`<button class="vault-link" data-track="free_start_click" data-track-position="top" onclick="startFlow('free')">無料鑑定から始める</button>`,
     };
   }
@@ -3974,7 +3948,7 @@ function getMemberStatusMeta(){
     return{
       cls:'inactive',
       label:'深掘り鑑定',
-      copy:'深掘り鑑定は、無料鑑定後の結果画面から購入できる1回580円の別鑑定です。継続課金ではありません。',
+      copy:'深掘り鑑定は、無料鑑定後の結果画面から購入できる1回680円の別鑑定です。継続課金ではありません。',
       action:`<button class="vault-link" data-track="free_start_click" data-track-position="top" onclick="startFlow('free')">無料鑑定から始める</button>`,
     };
   }
@@ -4380,12 +4354,12 @@ function updateResultUpgradePrice(status=RASHIN_DISCOUNT_STATUS){
   if(!priceEl) return;
   if(status?.eligible){
     priceEl.innerHTML=`
-      <span class="upgrade-price-normal">通常 ${status.normalAmount||580}円</span>
-      <span class="upgrade-price-discount">羅針ボーナス適用で ${status.finalAmount||580}円</span>`;
+      <span class="upgrade-price-normal">通常 ${status.normalAmount||680}円</span>
+      <span class="upgrade-price-discount">羅針ボーナス適用で ${status.finalAmount||680}円</span>`;
     if(noteEl) noteEl.textContent=`決済完了時に羅針石${status.stonesRequired}個を使用します。有効期限はこの無料鑑定から7日間です。`;
     return;
   }
-  priceEl.textContent='通常 580円';
+  priceEl.textContent='通常 680円';
   if(noteEl) noteEl.textContent=status?.reason==='insufficient_stones'
     ?'羅針石が3個以上になると、この結果の深掘り鑑定で割引が使えます。'
     :'';
@@ -4708,8 +4682,8 @@ async function markPaidReadingTicketUsed(){
       ACTIVE_PAID_READING_TICKET={...ACTIVE_PAID_READING_TICKET,status:data?.ticketStatus||'used'};
       trackEvent('deep_ticket_used',{
         source:'result',
-        price:580,
-        final_amount:580,
+        price:680,
+        final_amount:680,
         discount_amount:0,
         checkout_mode:'payment',
         purchase_type:'deep_reading_once',
@@ -4775,11 +4749,11 @@ async function openStripeCheckout(intent='start-paid'){
       return false;
     }
     saveStripeReturnIntent(intent);
-    const finalAmount=Number(data?.finalAmount||580);
+    const finalAmount=Number(data?.finalAmount||680);
     const discountAmount=Number(data?.discountAmount||0);
     trackEvent('checkout_start',{
       plan:'one_time',
-      price:580,
+      price:680,
       final_amount:finalAmount,
       discount_amount:discountAmount,
       checkout_mode:'payment',
@@ -4788,7 +4762,7 @@ async function openStripeCheckout(intent='start-paid'){
     });
     trackEvent('deep_payment_start',{
       source:checkoutSourceFromIntent(intent),
-      price:580,
+      price:680,
       final_amount:finalAmount,
       discount_amount:discountAmount,
       checkout_mode:'payment',
@@ -4865,11 +4839,11 @@ async function handleStripeReturnFlow(){
     cleanupStripeReturnParams();
     const intent=consumeStripeReturnIntent();
     if(data?.ticketReady){
-      const finalAmount=Number(data?.finalAmount||580);
+      const finalAmount=Number(data?.finalAmount||680);
       const discountAmount=Number(data?.discountAmount||0);
       trackEvent('deep_payment_complete',{
         source:checkoutSourceFromIntent(intent),
-        price:580,
+        price:680,
         final_amount:finalAmount,
         discount_amount:discountAmount,
         checkout_mode:'payment',
@@ -4877,7 +4851,7 @@ async function handleStripeReturnFlow(){
       });
       trackEvent('deep_ticket_created',{
         source:checkoutSourceFromIntent(intent),
-        price:580,
+        price:680,
         final_amount:finalAmount,
         discount_amount:discountAmount,
         checkout_mode:'payment',
@@ -5015,18 +4989,6 @@ function closeMemberAccessModal(clearIntent=true){
   clearGoogleAuthError();
 }
 
-function openSampleModal(){
-  showToast('鑑定サンプルは、実際の深掘り鑑定を確認してから公開します。');
-  return;
-  const modal=document.getElementById('sample-modal');
-  setModalOpen(modal,true);
-}
-
-function closeSampleModal(){
-  const modal=document.getElementById('sample-modal');
-  setModalOpen(modal,false);
-}
-
 function ensurePaidEntryGuideModal(){
   let modal=document.getElementById('paid-entry-guide-modal');
   if(modal) return modal;
@@ -5038,7 +5000,7 @@ function ensurePaidEntryGuideModal(){
   modal.innerHTML=`
     <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="paid-entry-guide-title">
       <div class="modal-title" id="paid-entry-guide-title">深掘り鑑定は結果画面から購入できます</div>
-      <div class="modal-desc">まず無料鑑定を作成してください。結果画面の「この結果を深掘りする」から、1回580円の単発購入へ進めます。</div>
+      <div class="modal-desc">まず無料鑑定を作成してください。結果画面の「この結果を深掘りする」から、1回680円の単発購入へ進めます。</div>
       <div class="runtime-status ok">
         <div class="runtime-status-title">今はまだ課金されません</div>
         <div class="runtime-status-detail">無料結果に紐づけて深掘り鑑定を作るため、先に無料鑑定が必要です。</div>
@@ -5283,8 +5245,7 @@ function repairStaticCopy(){
   if(!simpleTopBtn){
     simpleTopBtn=document.createElement('a');
     simpleTopBtn.className='btn-top btn-simple';
-    const sampleBtn=document.querySelector('#s-top .btn-top.btn-sample');
-    if(topBtns) topBtns.insertBefore(simpleTopBtn,sampleBtn||null);
+    if(topBtns) topBtns.appendChild(simpleTopBtn);
   }
   if(simpleTopBtn){
     simpleTopBtn.textContent=SIMPLE_READING_LABEL;
@@ -5327,7 +5288,6 @@ function repairStaticCopy(){
       return false;
     };
   });
-  setText('#s-top .btn-top.btn-sample','サンプルを見る');
   setText('#s-top .top-note','');
   setHtml('.plan-disclosure .top-disclosure-summary > span:first-child, .plan-disclosure summary > span:first-child','<span class="top-disclosure-kicker">PLAN</span>無料鑑定と深掘り鑑定の違い');
   setHtml('.faq-disclosure summary > span:first-child','<span class="top-disclosure-kicker">Q&A</span>よくある質問を見る');
@@ -5348,7 +5308,7 @@ function repairStaticCopy(){
   }
   if(planCards[1]){
     setWithin(planCards[1],'.plan-compare-title','深掘り鑑定');
-    setWithin(planCards[1],'.plan-compare-price','1回580円');
+    setWithin(planCards[1],'.plan-compare-price','1回680円');
     setWithin(planCards[1],'.plan-compare-trial','継続課金ではありません');
     setWithin(planCards[1],'.plan-compare-badge','無料鑑定の内容をすべて含む');
     const deepItems=planCards[1].querySelectorAll('.plan-compare-list li');
@@ -5374,7 +5334,7 @@ function repairStaticCopy(){
     }
   }
   document.querySelectorAll('.paid-band-note').forEach(el=>{
-    el.textContent='深掘り鑑定 1回580円 / 継続課金ではありません';
+    el.textContent='深掘り鑑定 1回680円 / 継続課金ではありません';
   });
   document.querySelectorAll('.checkout-disclosure').forEach(el=>{
     if(el.closest('#member-access-modal')) return;
@@ -5387,7 +5347,7 @@ function repairStaticCopy(){
     ['数秘オラクルカードって何ですか？','誕生日などの数字の意味と、直感で選ぶカードを合わせて読むアドバイスカードです。<br>あなたの強み、背中を押す言葉、次の一手を示します。'],
     ['AIがどうやって占うのですか？','相談内容・名前・生年月日・カード結果をもとに、設計された占術ロジックに沿って鑑定文を生成します。<br>同じカードでも、相談内容やこれまでの流れによって読み方が変わります。'],
     ['無料鑑定では何ができますか？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。<br>自分自身の本質、本音、いまの現実、次に進むためのアドバイスを確認できます。'],
-    ['無料鑑定と深掘り鑑定の違いは？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。<br>深掘り鑑定では、同じ相談内容を前提に追加カードを引き、ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>深掘り鑑定は無料鑑定とは別の1回580円の単発課金です。継続課金ではありません。'],
+    ['無料鑑定と深掘り鑑定の違いは？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。<br>深掘り鑑定では、同じ相談内容を前提に追加カードを引き、ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>深掘り鑑定は無料鑑定とは別の1回680円の単発課金です。継続課金ではありません。'],
     ['過去の鑑定は読み返せますか？','はい。これまでの鑑定は「過去の占いを読み返す」から確認できます。<br>前回のテーマやカードの流れを見返すことで、同じ悩みの続きや変化を確認しやすくなります。'],
     ['「鑑定履歴の流れを読み解く」って何ですか？','これまでの鑑定をまとめて、よく出るカード、相談テーマの変化、くり返し向き合っている悩みを時系列で読み解く機能です。<br>鑑定履歴があるほど、変化の流れが見えやすくなります。']
   ];
@@ -5486,7 +5446,7 @@ function repairStaticCopy(){
     simpleInputBtn.textContent=SIMPLE_READING_LABEL;
     simpleInputBtn.onclick=()=>startFlow(SIMPLE_READING_PLAN);
   }
-  setButtons('#s-input .input-btns button',['この内容で占う ✦','サンプルで試す',SIMPLE_READING_LABEL]);
+  setButtons('#s-input .input-btns button',['戻る','この内容で占う ✦',SIMPLE_READING_LABEL]);
   syncInputModeUI();
 
   setText('#len-inst','シャッフル中です。止めたところで、上から順にカードを引きます');
@@ -5681,7 +5641,7 @@ function renderPremiumEntrySection(){
         <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
         ${paidAction}
       </div>
-      <div class="paid-band-note">深掘り鑑定 1回580円 / 継続課金ではありません</div>
+      <div class="paid-band-note">深掘り鑑定 1回680円 / 継続課金ではありません</div>
       <div class="checkout-disclosure">${CHECKOUT_DISCLOSURE_HTML}</div>
     </div>`;
 }
@@ -7130,7 +7090,7 @@ function renderPremiumEntryFallback(){
         <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
         <a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('paid');return false;}">${DEEP_PAID_CTA_LABEL}</a>
       </div>
-      <div class="paid-band-note">深掘り鑑定 1回580円 / 継続課金ではありません</div>
+      <div class="paid-band-note">深掘り鑑定 1回680円 / 継続課金ではありません</div>
       <div class="checkout-disclosure">${CHECKOUT_DISCLOSURE_HTML}</div>
     </div>`;
 }
@@ -7794,7 +7754,7 @@ function renderResultUpgradePanel(){
         <div class="upgrade-meta">
           <div class="upgrade-price">
             <div class="upgrade-price-label">料金</div>
-            <div class="upgrade-price-value" id="upgrade-price-value">通常 580円</div>
+            <div class="upgrade-price-value" id="upgrade-price-value">通常 680円</div>
             <div class="upgrade-bonus-note" id="upgrade-bonus-note"></div>
           </div>
           <div class="upgrade-note">継続課金ではありません。解約手続きは不要です。</div>
@@ -8920,8 +8880,6 @@ function syncInputModeUI(){
   updateThemeCounter();
   const mainBtn=document.querySelector('#s-input .input-btns .btn-main');
   if(mainBtn) mainBtn.textContent=simple?SIMPLE_READING_LABEL:'この内容で占う ✦';
-  const sampleBtn=document.querySelector('#s-input .input-btns .btn-skip');
-  if(sampleBtn) sampleBtn.style.display=simple?'none':'';
   const simpleBtn=document.getElementById('simple-reading-btn');
   if(simpleBtn) simpleBtn.style.display=simple?'none':'';
 }
@@ -9072,39 +9030,6 @@ function goToSimpleReading(){
   }
   showScreen('s-result',90);
   renderResult();
-}
-
-function skipInput(){
-  beginReadingSession();
-  const sampleYear=1990;
-  const sampleMonth=6;
-  const sampleDay=15;
-  const sampleHour=12;
-  const seiEl=document.getElementById('f-sei');
-  const meiEl=document.getElementById('f-mei');
-  const yearEl=document.getElementById('f-year');
-  const monthEl=document.getElementById('f-month');
-  const dayEl=document.getElementById('f-day');
-  const hourEl=document.getElementById('f-hour');
-  const catEl=document.getElementById('f-cat');
-  const themeEl=document.getElementById('f-theme');
-  if(seiEl) seiEl.value='山田';
-  if(meiEl) meiEl.value='花子';
-  if(yearEl) yearEl.value=String(sampleYear);
-  if(monthEl) monthEl.value=String(sampleMonth);
-  syncDayOptions(sampleDay);
-  if(dayEl) dayEl.value=String(sampleDay);
-  if(hourEl) hourEl.value=String(sampleHour);
-  if(catEl) catEl.value='総合';
-  if(themeEl) themeEl.value='';
-  setGender('female');
-  MEIMEI=calcMeimei(sampleYear,sampleMonth,sampleDay,sampleHour);
-  LP=calcLp(sampleYear,sampleMonth,sampleDay);
-  NAMEJUDGE=calcNameJudge(getFullname()||'山田 花子');
-  applySampleReactionAnswers();
-  showToast('サンプル生年月日でお試し鑑定を開始します');
-  showScreen('s-len',40);
-  startLenShuffle();
 }
 
 function gotoTop(){
@@ -11298,9 +11223,9 @@ function renderMemberFollowupSection(){
     noteEl.textContent=canUsePaidTestMode()
       ?'深掘り鑑定では、追加カードで作成した有料鑑定に追加質問を使えます。'
       :((MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn)
-        ?'追加カードで有料鑑定を作る場合は、1回580円の単発購入へ進んでください。'
+        ?'追加カードで有料鑑定を作る場合は、1回680円の単発購入へ進んでください。'
         :((MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.stripeCheckoutReady)
-          ?'追加カードで有料鑑定を作る場合は、1回580円の単発購入へ進んでください。'
+          ?'追加カードで有料鑑定を作る場合は、1回680円の単発購入へ進んでください。'
           :(canUseAccessCode()
             ?'確認コードがある場合は入力して利用状態を確認できます。'
             :'現在はまだ使えません。')));
@@ -12489,8 +12414,6 @@ if(typeof window!=='undefined'){
   window.openPaidEntryGuide=openPaidEntryGuide;
   window.closePaidEntryGuide=closePaidEntryGuide;
   window.startFreeFromPaidEntryGuide=startFreeFromPaidEntryGuide;
-  window.openSampleModal=openSampleModal;
-  window.closeSampleModal=closeSampleModal;
   window.openStripeCheckout=openStripeCheckout;
   window.openStripeBillingPortal=openStripeBillingPortal;
   window.comparePaidModelsForDev=comparePaidModelsForDev;
