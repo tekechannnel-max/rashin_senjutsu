@@ -1604,6 +1604,8 @@ const DAILY_ORACLE_ACTIVE_RECORD_KEY='uranai-daily-oracle-active-v1';
 const MEMBER_STORAGE_KEY='uranai-member-preview-v1';
 const STRIPE_RETURN_INTENT_KEY='uranai-stripe-return-intent-v1';
 const DEEP_PAID_CTA_LABEL='深掘り鑑定をする(有料)';
+const SIMPLE_READING_PLAN='simple';
+const SIMPLE_READING_LABEL='カードなしで土台診断だけ見る';
 const FREE_LEN_COUNT=2;
 const FREE_ORC_COUNT=1;
 const LEN_FREE_POSITION_LABELS=['主題','修飾・答え'];
@@ -2317,6 +2319,10 @@ function getUtmParams(){
 
 function getCurrentReadingType(){
   return PLAN==='paid'?'paid':'free';
+}
+
+function isSimpleReadingPlan(){
+  return PLAN===SIMPLE_READING_PLAN;
 }
 
 function hasReadingHistory(){
@@ -3156,7 +3162,7 @@ function drawDailyOracle(){
   }
 }
 
-function shareDailyOracle(channel='x'){
+async function shareDailyOracle(channel='x'){
   const record=readDailyOracleRecord();
   if(!record?.card){
     drawDailyOracle();
@@ -3165,6 +3171,14 @@ function shareDailyOracle(channel='x'){
   const text=getDailyOracleShareText(record.card);
   const normalized=String(channel||'x').toLowerCase()==='line'?'line':'x';
   trackEvent('daily_oracle_share',{channel:normalized,card_id:record.card.id,source:'top'});
+  const imageSrc=`images/cards/oracle/${String(record.card.id).padStart(2,'0')}.jpg`;
+  const shared=await shareWithAttachedCard({
+    text,
+    imageSrc,
+    filename:`rashin-oracle-${String(record.card.id).padStart(2,'0')}`,
+    title:'今日のオラクル',
+  });
+  if(shared) return;
   const url=normalized==='line'
     ?`https://line.me/R/msg/text/?${encodeURIComponent(text)}`
     :`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
@@ -3282,7 +3296,7 @@ function runRequestedFlowFromQuery(){
   if(FLOW_QUERY_CONSUMED) return;
   const params=new URLSearchParams(window.location.search);
   const plan=String(params.get('flow')||'').trim().toLowerCase();
-  if(plan!=='free'&&plan!=='paid') return;
+  if(plan!=='free'&&plan!=='paid'&&plan!==SIMPLE_READING_PLAN) return;
   FLOW_QUERY_CONSUMED=true;
   params.delete('flow');
   const nextQuery=params.toString();
@@ -5185,6 +5199,22 @@ function repairStaticCopy(){
   setHtml('#s-top .top-desc','無料鑑定でも、本質・本音・現実・次の一手まで読み解けます。');
   setText('#s-top .btn-top.btn-free','無料で羅針鑑定をはじめる');
   setText('#s-top .btn-top.btn-paid',DEEP_PAID_CTA_LABEL);
+  let simpleTopBtn=document.querySelector('#s-top .btn-top.btn-simple');
+  if(!simpleTopBtn){
+    simpleTopBtn=document.createElement('a');
+    simpleTopBtn.className='btn-top btn-simple';
+    const topBtns=document.querySelector('#s-top .top-btns');
+    const sampleBtn=document.querySelector('#s-top .btn-top.btn-sample');
+    if(topBtns) topBtns.insertBefore(simpleTopBtn,sampleBtn||null);
+  }
+  if(simpleTopBtn){
+    simpleTopBtn.textContent='カードなしで土台だけ見る';
+    simpleTopBtn.setAttribute('href','?flow=simple');
+    simpleTopBtn.setAttribute('data-flow-target','simple');
+    simpleTopBtn.setAttribute('data-track','simple_start_click');
+    simpleTopBtn.setAttribute('data-track-position','hero');
+    simpleTopBtn.onclick=null;
+  }
   document.querySelectorAll('#s-top .btn-top.btn-paid').forEach(el=>{
     el.setAttribute('href','?flow=paid');
     el.setAttribute('data-flow-target','paid');
@@ -5341,7 +5371,21 @@ function repairStaticCopy(){
   setText('#s-input .check-label','入力内容を次回のために自動保存する（この端末だけ）');
   setText('#s-input .local-data-note','保存されるのはこの端末だけです。あとから自分で消せます。');
   setButtons('#s-input .local-data-actions .vault-link',['保存した入力を消す','この履歴を消す']);
-  setButtons('#s-input .input-btns button',['この内容で占う ✦','サンプルで試す']);
+  const inputBtns=document.querySelector('#s-input .input-btns');
+  let simpleInputBtn=document.getElementById('simple-reading-btn');
+  if(inputBtns&&!simpleInputBtn){
+    simpleInputBtn=document.createElement('button');
+    simpleInputBtn.id='simple-reading-btn';
+    simpleInputBtn.className='btn-simple-input';
+    simpleInputBtn.type='button';
+    inputBtns.appendChild(simpleInputBtn);
+  }
+  if(simpleInputBtn){
+    simpleInputBtn.textContent=SIMPLE_READING_LABEL;
+    simpleInputBtn.onclick=()=>startFlow(SIMPLE_READING_PLAN);
+  }
+  setButtons('#s-input .input-btns button',['この内容で占う ✦','サンプルで試す',SIMPLE_READING_LABEL]);
+  syncInputModeUI();
 
   setText('#len-inst','シャッフル中です。止めたところで、上から順にカードを引きます');
   setText('#len-stop-btn','シャッフルを止める');
@@ -6626,7 +6670,7 @@ function renderFoundationMiniSummary(){
   const animal=getAnimalTypeSummaryParts();
   const nameBirth=getNameBirthSummaryParts();
   const consultation=truncateText(getConsultationBasisSummary(),90);
-  grid.innerHTML=[
+  const cards=[
     {
       title:`動物タイプ：${animal.name}`,
       body:`${truncateText(animal.strength,70)}<br>${truncateText(animal.inConsultation,82)}`,
@@ -6634,12 +6678,16 @@ function renderFoundationMiniSummary(){
     {
       title:'名前と生まれが示す傾向',
       body:`${nameBirth.summary}<br>${nameBirth.caution}`,
-    },
+    }
+  ];
+  if(!isSimpleReadingPlan()){
+    cards.push(
     {
       title:'今回の相談での見方',
       body:consultation,
-    },
-  ].map(card=>`
+    });
+  }
+  grid.innerHTML=cards.map(card=>`
     <div class="foundation-mini-card">
       <div class="foundation-mini-title">${escapeHtml(card.title)}</div>
       <div class="foundation-mini-copy">${card.body.split('<br>').map(line=>escapeHtml(line)).join('<br>')}</div>
@@ -6647,7 +6695,9 @@ function renderFoundationMiniSummary(){
   `).join('');
   section.style.display='';
   const summaryEl=document.getElementById('basis-summary-copy');
-  if(summaryEl) summaryEl.textContent=`${animal.strength} ${consultation}`;
+  if(summaryEl) summaryEl.textContent=isSimpleReadingPlan()
+    ?`${animal.strength} ${nameBirth.summary}`
+    :`${animal.strength} ${consultation}`;
   const animalTitle=document.getElementById('basis-animal-title');
   if(animalTitle) animalTitle.textContent=`${animal.name}タイプの本音・強み・注意点`;
   const animalCopy=document.getElementById('basis-animal-copy');
@@ -6656,7 +6706,9 @@ function renderFoundationMiniSummary(){
   if(nameBirthCopy) nameBirthCopy.textContent=`${nameBirth.summary} ${nameBirth.caution}`;
   const consultationCopy=document.getElementById('basis-consultation-copy');
   if(consultationCopy) consultationCopy.textContent=consultation;
-  ensureBasisConsultationDetail(consultation,animal,nameBirth);
+  const consultationPanel=document.getElementById('basis-consultation-panel');
+  if(consultationPanel) consultationPanel.style.display=isSimpleReadingPlan()?'none':'';
+  if(!isSimpleReadingPlan()) ensureBasisConsultationDetail(consultation,animal,nameBirth);
 }
 
 function ensureBasisConsultationDetail(consultation,animal,nameBirth){
@@ -8732,12 +8784,14 @@ function showScreen(id,progress){
     installFormStartTracking();
   }
   if(id==='s-result') trackResultView();
+  if(id==='s-input') syncInputModeUI();
   if(typeof window.scrollTo==='function') window.scrollTo(0,0);
 }
 
 async function startFlow(plan){
-  if(plan==='paid'&&!(await ensurePaidAccess('start-paid'))) return;
-  startFlowUnlocked(plan);
+  const normalized=plan===SIMPLE_READING_PLAN?SIMPLE_READING_PLAN:(plan==='paid'?'paid':'free');
+  if(normalized==='paid'&&!(await ensurePaidAccess('start-paid'))) return;
+  startFlowUnlocked(normalized);
 }
 
 function startFlowUnlocked(plan){
@@ -8745,8 +8799,29 @@ function startFlowUnlocked(plan){
     openPaidEntryGuide();
     return;
   }
-  PLAN=plan;
+  PLAN=plan===SIMPLE_READING_PLAN?SIMPLE_READING_PLAN:(plan==='paid'?'paid':'free');
+  SEL_LEN=[];
+  SEL_ORC=[];
+  FIXED_GENDER_CARD=null;
+  orcSelCards=[];
+  CLARIFY_ANSWERS={};
+  CLARIFY_ACTIVE_QUESTIONS=[];
   showScreen('s-input',20);
+}
+
+function syncInputModeUI(){
+  const simple=isSimpleReadingPlan();
+  const theme=document.getElementById('f-theme');
+  const themeField=theme?.closest('.field-group');
+  if(themeField) themeField.style.display=simple?'none':'';
+  if(simple&&theme) theme.value='';
+  updateThemeCounter();
+  const mainBtn=document.querySelector('#s-input .input-btns .btn-main');
+  if(mainBtn) mainBtn.textContent=simple?'カードなしで診断する':'この内容で占う ✦';
+  const sampleBtn=document.querySelector('#s-input .input-btns .btn-skip');
+  if(sampleBtn) sampleBtn.style.display=simple?'none':'';
+  const simpleBtn=document.getElementById('simple-reading-btn');
+  if(simpleBtn) simpleBtn.style.display=simple?'none':'';
 }
 
 function backToInputFromFlow(){
@@ -8826,6 +8901,10 @@ async function clearReadingHistoryData(){
 }
 
 function goToLen(){
+  if(isSimpleReadingPlan()){
+    goToSimpleReading();
+    return;
+  }
   const year=parseInt(document.getElementById('f-year').value);
   const month=parseInt(document.getElementById('f-month').value);
   const day=getSelectedBirthDay();
@@ -8857,6 +8936,40 @@ function goToLen(){
 
   showScreen('s-len',40);
   startLenShuffle();
+}
+
+function goToSimpleReading(){
+  const year=parseInt(document.getElementById('f-year').value);
+  const month=parseInt(document.getElementById('f-month').value);
+  const day=getSelectedBirthDay();
+  const hour=getSelectedBirthHour();
+  const cat=document.getElementById('f-cat')?.value||'総合';
+  const theme='';
+  if(!ensureRequiredGender()) return;
+  const fullname=requireFullnameForNameJudge();
+  if(!fullname) return;
+  if(!hasBirthYearMonth(year,month)){
+    showToast('生年と生月を確認してください');
+    syncDayOptions(day);
+    return;
+  }
+  PLAN=SIMPLE_READING_PLAN;
+  SEL_LEN=[];
+  SEL_ORC=[];
+  FIXED_GENDER_CARD=null;
+  orcSelCards=[];
+  CLARIFY_ANSWERS={};
+  CLARIFY_ACTIVE_QUESTIONS=[];
+  trackEvent('simple_form_submit',getCurrentInputAnalytics());
+  beginReadingSession();
+  MEIMEI=calcMeimei(year,month,day,hour);
+  LP=hasFullBirthDate(year,month,day)?calcLp(year,month,day):null;
+  NAMEJUDGE=calcNameJudge(fullname);
+  if(checkSave){
+    try{localStorage.setItem(INPUT_STORAGE_KEY,JSON.stringify({fullname,gender:GENDER,year,month,day,hour,cat,theme,reactionAnswers:getReactionAnswersSnapshot(),reactionProfile:REACTION_PROFILE}));}catch(e){}
+  }
+  showScreen('s-result',90);
+  renderResult();
 }
 
 function skipInput(){
@@ -9290,6 +9403,32 @@ function buildClarifyPromptText(mode='detail'){
 
 function renderResult(){
   renderCards();
+  if(isSimpleReadingPlan()){
+    const progressCard=document.getElementById('result-progress-card');
+    if(progressCard) progressCard.style.display='none';
+    ['rs-len','rs-orc','rs-integration','rs-dossier','result-upgrade-panel'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.style.display='none';
+    });
+    const basisEl=document.getElementById('rs-basis');
+    if(basisEl) basisEl.style.display='';
+    renderMeimei();
+    renderNameJudge();
+    renderReactionProfile();
+    updateAnimalReveal();
+    renderFoundationMiniSummary();
+    const shareBtn=document.getElementById('share-x-btn');
+    if(shareBtn) shareBtn.style.display='none';
+    const saveBtn=document.getElementById('dossier-save-btn');
+    if(saveBtn) saveBtn.style.display='none';
+    const copyBtn=document.getElementById('dossier-copy-inline-btn');
+    if(copyBtn) copyBtn.style.display='none';
+    document.getElementById('progress').style.width='100%';
+    renderMemberFollowupSection();
+    updateResultActionState();
+    trackEvent('simple_reading_complete',getCurrentInputAnalytics());
+    return;
+  }
   if(PLAN==='reader'){
     const progressCard=document.getElementById('result-progress-card');
     if(progressCard) progressCard.style.display='none';
@@ -11150,8 +11289,70 @@ ${preset.intro}
 }
 
 // ── X（Twitter）シェア ─────────────────────────────────────────────────
+function getPrimaryShareCard(){
+  const orcId=(SEL_ORC||[])[0];
+  if(orcId&&ORACLE[orcId]){
+    return{
+      type:'orc',
+      id:orcId,
+      name:ORACLE[orcId].name||'',
+      message:ORACLE[orcId].msg||ORACLE[orcId].essence||'',
+      imageSrc:`images/cards/oracle/${String(orcId).padStart(2,'0')}.jpg`,
+    };
+  }
+  const lenId=(SEL_LEN||[])[0];
+  if(lenId&&LENORMAND[lenId]){
+    return{
+      type:'len',
+      id:lenId,
+      name:LENORMAND[lenId].name||'',
+      message:LENORMAND[lenId].kw||LENORMAND[lenId].desc||'',
+      imageSrc:`images/cards/lenormand/${String(lenId).padStart(2,'0')}.jpg`,
+    };
+  }
+  return null;
+}
+
+function getShareFileExtension(mime=''){
+  if(/png/i.test(mime)) return'png';
+  if(/webp/i.test(mime)) return'webp';
+  return'jpg';
+}
+
+async function buildShareImageFile(imageSrc='',baseName='rashin-card'){
+  if(!imageSrc||typeof File!=='function') return null;
+  const res=await fetch(imageSrc,{cache:'force-cache'});
+  if(!res.ok) return null;
+  const blob=await res.blob();
+  if(!blob?.size) return null;
+  const ext=getShareFileExtension(blob.type);
+  return new File([blob],`${baseName}.${ext}`,{type:blob.type||'image/jpeg'});
+}
+
+async function shareWithAttachedCard({text='',imageSrc='',filename='rashin-card',title='羅針占術'}={}){
+  if(typeof navigator==='undefined'||!navigator.share||!navigator.canShare||!imageSrc) return false;
+  try{
+    if(typeof File!=='function') return false;
+    const probe=new File(['x'],`${filename}.jpg`,{type:'image/jpeg'});
+    if(!navigator.canShare({files:[probe]})) return false;
+    const file=await buildShareImageFile(imageSrc,filename);
+    if(!file) return false;
+    const shareData={
+      title,
+      text,
+      files:[file],
+    };
+    if(!navigator.canShare({files:[file]})) return false;
+    await navigator.share(shareData);
+    return true;
+  }catch(_error){
+    return false;
+  }
+}
+
 function buildShareText(){
   const animal=String(REACTION_PROFILE?.animal||getAnimalTypeName?.()||'').trim();
+  const primaryCard=getPrimaryShareCard();
   const cardNames=[
     ...(SEL_LEN||[]).map(id=>LENORMAND[id]?.name||''),
     ...(SEL_ORC||[]).map(id=>ORACLE[id]?.name||''),
@@ -11162,6 +11363,7 @@ function buildShareText(){
   ];
   if(animal) lines.push(`私のタイプ：${animal}`);
   if(cardNames) lines.push(`出たカード：${cardNames}`);
+  if(primaryCard?.message) lines.push(`カードのメッセージ：${truncateText(primaryCard.message,90)}`);
   if(animal||cardNames) lines.push('');
   lines.push(
     '迷いを、次の一手に変える占い。',
@@ -11173,9 +11375,18 @@ function buildShareText(){
   return lines.join('\n');
 }
 
-function shareToX(){
+async function shareToX(){
   const text=buildShareText();
+  const primaryCard=getPrimaryShareCard();
   trackEvent('share_click',{channel:'x',source:'result'});
+  if(primaryCard?.imageSrc){
+    const shared=await shareWithAttachedCard({
+      text,
+      imageSrc:primaryCard.imageSrc,
+      filename:`rashin-${primaryCard.type}-${String(primaryCard.id).padStart(2,'0')}`,
+    });
+    if(shared) return;
+  }
   window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(text),'_blank','noopener,noreferrer');
 }
 
