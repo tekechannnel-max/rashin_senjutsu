@@ -291,6 +291,15 @@ function sendText(res, statusCode, body, contentType = 'text/plain; charset=utf-
   res.end(body);
 }
 
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function applySecurityHeaders(req, res) {
   // TODO(security): Remove unsafe-inline after moving inline JS/CSS to nonce/hash based assets.
   // This is intentionally left for a larger frontend refactor.
@@ -429,6 +438,58 @@ function makeAbsoluteUrl(req, pathValue) {
     }
   }
   return new URL(raw, origin).toString();
+}
+
+function normalizeShareText(value, fallback = '', maxLength = 140) {
+  const text = String(value || '').replace(/[\r\n\t]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
+  return (text || fallback).slice(0, maxLength);
+}
+
+function getShareCardImagePath(type, idValue) {
+  const id = Number.parseInt(String(idValue || ''), 10);
+  if (!Number.isInteger(id) || id < 1 || id > 99) return '';
+  const folder = String(type || '').toLowerCase() === 'len' || String(type || '').toLowerCase() === 'lenormand'
+    ? 'lenormand'
+    : 'oracle';
+  return `/images/cards/${folder}/${String(id).padStart(2, '0')}.jpg`;
+}
+
+function handleShareCardPage(req, res) {
+  const url = new URL(req.url, makeAbsoluteUrl(req, '/'));
+  const imagePath = getShareCardImagePath(url.searchParams.get('type'), url.searchParams.get('id'));
+  if (!imagePath) {
+    sendText(res, 404, 'Not Found');
+    return;
+  }
+  const title = normalizeShareText(url.searchParams.get('title'), '羅針占術のカード', 80);
+  const description = normalizeShareText(url.searchParams.get('message'), '迷いを、次の一手に変える占い。', 160);
+  const pageUrl = makeAbsoluteUrl(req, `${url.pathname}${url.search}`);
+  const imageUrl = makeAbsoluteUrl(req, imagePath);
+  const appUrl = makeAbsoluteUrl(req, '/uranai-v5.html');
+  const body = `<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${escapeHtml(title)} | 羅針占術</title>
+  <meta name="description" content="${escapeHtml(description)}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="羅針占術">
+  <meta property="og:title" content="${escapeHtml(title)}">
+  <meta property="og:description" content="${escapeHtml(description)}">
+  <meta property="og:url" content="${escapeHtml(pageUrl)}">
+  <meta property="og:image" content="${escapeHtml(imageUrl)}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${escapeHtml(title)}">
+  <meta name="twitter:description" content="${escapeHtml(description)}">
+  <meta name="twitter:image" content="${escapeHtml(imageUrl)}">
+  <meta http-equiv="refresh" content="0; url=${escapeHtml(appUrl)}">
+</head>
+<body>
+  <p><a href="${escapeHtml(appUrl)}">羅針占術を開く</a></p>
+</body>
+</html>`;
+  sendText(res, 200, body, 'text/html; charset=utf-8');
 }
 
 function stripeReady() {
@@ -4195,6 +4256,11 @@ async function handleRequest(req, res) {
   }
 
   if (req.method === 'POST' && isSameOriginPostApiRequest(req) && !guardSameOriginPostApi(req, res)) {
+    return;
+  }
+
+  if (req.method === 'GET' && req.url.startsWith('/share/card')) {
+    handleShareCardPage(req, res);
     return;
   }
 

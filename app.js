@@ -3173,14 +3173,13 @@ async function shareDailyOracle(channel='x'){
   trackEvent('daily_oracle_share',{channel:normalized,card_id:record.card.id,source:'top'});
   const imageSrc=`images/cards/oracle/${String(record.card.id).padStart(2,'0')}.jpg`;
   if(normalized==='x'){
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`,'_blank','noopener,noreferrer');
-    await prepareShareCardImageForX({
-      text,
-      imageSrc,
-      filename:`rashin-oracle-${String(record.card.id).padStart(2,'0')}`,
-      cardName:record.card.name,
-      message:record.card.message||record.card.action||record.card.title||'',
+    const shareUrl=buildShareCardUrl({
+      type:'oracle',
+      id:record.card.id,
+      name:`今日のオラクル：${record.card.name||'数秘オラクル'}`,
+      message:record.card.message||record.card.share||record.card.action||'',
     });
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${text}\n${shareUrl}`)}`,'_blank','noopener,noreferrer');
     return;
   }
   const shared=await shareWithAttachedCard({
@@ -11326,6 +11325,17 @@ function getPrimaryShareCard(){
   return null;
 }
 
+function buildShareCardUrl(card){
+  if(!card?.id) return location.origin+location.pathname;
+  const params=new URLSearchParams({
+    type:card.type==='len'?'len':'oracle',
+    id:String(card.id),
+    title:card.name||'羅針占術のカード',
+    message:card.message||'迷いを、次の一手に変える占い。',
+  });
+  return new URL(`/share/card?${params.toString()}`,location.href).toString();
+}
+
 function loadShareImage(imageSrc=''){
   return new Promise((resolve,reject)=>{
     if(!imageSrc) reject(new Error('SHARE_IMAGE_MISSING'));
@@ -11449,19 +11459,6 @@ async function downloadShareImageFallback(file,text=''){
   return true;
 }
 
-async function copyShareImageToClipboard(file){
-  if(!file||typeof ClipboardItem==='undefined'||!navigator?.clipboard?.write) return false;
-  try{
-    await navigator.clipboard.write([
-      new ClipboardItem({[file.type||'image/png']:file})
-    ]);
-    showToast('カード画像をコピーしました。Xの投稿欄で貼り付けてください');
-    return true;
-  }catch(_error){
-    return false;
-  }
-}
-
 async function shareWithAttachedCard({text='',imageSrc='',filename='rashin-card',title='羅針占術',cardName='',message=''}={}){
   try{
     const file=await buildShareImageFile({imageSrc,baseName:filename,cardName,message});
@@ -11484,20 +11481,10 @@ async function shareWithAttachedCard({text='',imageSrc='',filename='rashin-card'
   }
 }
 
-async function prepareShareCardImageForX({text='',imageSrc='',filename='rashin-card',cardName='',message=''}={}){
-  try{
-    const file=await buildShareImageFile({imageSrc,baseName:filename,cardName,message});
-    if(!file) return false;
-    if(await copyShareImageToClipboard(file)) return true;
-    return await downloadShareImageFallback(file,text);
-  }catch(_error){
-    return false;
-  }
-}
-
-function buildShareText(){
+function buildShareText(options={}){
   const animal=String(REACTION_PROFILE?.animal||getAnimalTypeName?.()||'').trim();
   const primaryCard=getPrimaryShareCard();
+  const shareUrl=options.shareUrl||location.origin+location.pathname;
   const cardNames=[
     ...(SEL_LEN||[]).map(id=>LENORMAND[id]?.name||''),
     ...(SEL_ORC||[]).map(id=>ORACLE[id]?.name||''),
@@ -11513,7 +11500,7 @@ function buildShareText(){
   lines.push(
     '迷いを、次の一手に変える占い。',
     '',
-    location.origin+location.pathname,
+    shareUrl,
     '',
     '#羅針占術 #カード占い'
   );
@@ -11521,19 +11508,11 @@ function buildShareText(){
 }
 
 async function shareToX(){
-  const text=buildShareText();
   const primaryCard=getPrimaryShareCard();
+  const shareUrl=primaryCard?buildShareCardUrl(primaryCard):location.origin+location.pathname;
+  const text=buildShareText({shareUrl});
   trackEvent('share_click',{channel:'x',source:'result'});
   window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(text),'_blank','noopener,noreferrer');
-  if(primaryCard?.imageSrc){
-    await prepareShareCardImageForX({
-      text,
-      imageSrc:primaryCard.imageSrc,
-      filename:`rashin-${primaryCard.type}-${String(primaryCard.id).padStart(2,'0')}`,
-      cardName:primaryCard.name,
-      message:primaryCard.message,
-    });
-  }
 }
 
 // ══════════════════════════════════════════════════
