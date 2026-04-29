@@ -445,6 +445,42 @@ function normalizeShareText(value, fallback = '', maxLength = 140) {
   return (text || fallback).slice(0, maxLength);
 }
 
+const SHARE_ORACLE_META = {
+  1: { name: 'The Guide', description: '今日は、自分の中の道しるべを信じる日。' },
+  2: { name: 'The Supporter', description: '今日は、無理なく支える日。' },
+  3: { name: 'The Innocent', description: '今日は、軽さが本音を連れてくる日。' },
+  4: { name: 'The Diligent', description: '今日は、足元を整える日。' },
+  5: { name: 'The Adventurer', description: '今日は、小さな冒険が流れを動かす日。' },
+  6: { name: 'The Caregiver', description: '今日は、自分も優しさの輪に入れる日。' },
+  7: { name: 'The Artisan', description: '今日は、自分の質を磨く日。' },
+  8: { name: 'The Warrior', description: '今日は、力の使い道を決める日。' },
+  9: { name: 'The Sage', description: '今日は、手放すほど見えてくる日。' },
+  10: { name: 'The Great Power', description: '今日は、新しい入口を見つける日。' },
+  11: { name: 'The Inspired One', description: '今日は、ひらめきを形にする日。' },
+  12: { name: 'The Harmonizer', description: '今日は、間に余白を作る日。' },
+  13: { name: 'The Wise King', description: '今日は、古い型を更新する日。' },
+  14: { name: 'The Transformer', description: '今日は、ちょうどいい配合を探す日。' },
+  15: { name: 'The Servant', description: '今日は、動機を澄ませる日。' },
+  16: { name: 'The Perceptive One', description: '今日は、違和感を見過ごさない日。' },
+  17: { name: 'The Benefactor', description: '今日は、小さな希望を渡す日。' },
+  18: { name: 'The Seeker', description: '今日は、霧の中で事実を拾う日。' },
+  19: { name: 'The Unwavering One', description: '今日は、自分の光を曲げない日。' },
+  20: { name: 'The Unifier', description: '今日は、過去の学びを今に戻す日。' },
+  21: { name: 'The Completer', description: '今日は、美しく終える日。' },
+  22: { name: 'The Charism', description: '今日は、誠実な一手が影響力になる日。' },
+  23: { name: 'The Flowrider', description: '今日は、予定外の流れを味方にする日。' },
+  24: { name: 'The Gracebearer', description: '今日は、柔らかさが力になる日。' },
+  25: { name: 'The Wayfarer', description: '今日は、自分の歩幅に戻る日。' },
+  26: { name: 'The Trailblazer', description: '今日は、未舗装の道を試す日。' },
+  27: { name: 'The Gatewalker', description: '今日は、次の扉の前で整える日。' },
+  28: { name: 'The Resonator', description: '今日は、響き合う場を選ぶ日。' },
+  29: { name: 'The Visionweaver', description: '今日は、理想を一手に編み込む日。' },
+  30: { name: 'The Creator', description: '今日は、ひらめきを形にして残す日。' },
+  31: { name: 'The Architect', description: '今日は、設計図を引く日。' },
+  32: { name: 'The Collaborator', description: '今日は、ひとりで抱えず共に動かす日。' },
+  33: { name: 'The Awakened', description: '今日は、自分の灯を守ってから照らす日。' },
+};
+
 function getShareCardImagePath(type, idValue) {
   const id = Number.parseInt(String(idValue || ''), 10);
   if (!Number.isInteger(id) || id < 1 || id > 99) return '';
@@ -456,13 +492,17 @@ function getShareCardImagePath(type, idValue) {
 
 function handleShareCardPage(req, res) {
   const url = new URL(req.url, makeAbsoluteUrl(req, '/'));
-  const imagePath = getShareCardImagePath(url.searchParams.get('type'), url.searchParams.get('id'));
+  const type = url.searchParams.get('type');
+  const id = Number.parseInt(String(url.searchParams.get('id') || ''), 10);
+  const imagePath = getShareCardImagePath(type, id);
   if (!imagePath) {
     sendText(res, 404, 'Not Found');
     return;
   }
-  const title = normalizeShareText(url.searchParams.get('title'), '羅針占術のカード', 80);
-  const description = normalizeShareText(url.searchParams.get('message'), '迷いを、次の一手に変える占い。', 160);
+  const isOracle = String(type || '').toLowerCase() !== 'len' && String(type || '').toLowerCase() !== 'lenormand';
+  const oracleMeta = isOracle ? SHARE_ORACLE_META[id] : null;
+  const title = normalizeShareText(url.searchParams.get('title'), oracleMeta?.name || '羅針占術のカード', 80);
+  const description = normalizeShareText(url.searchParams.get('message'), oracleMeta?.description || '迷いを、次の一手に変える占い。', 160);
   const pageUrl = makeAbsoluteUrl(req, `${url.pathname}${url.search}`);
   const imageUrl = makeAbsoluteUrl(req, imagePath);
   const appUrl = makeAbsoluteUrl(req, '/uranai-v5.html');
