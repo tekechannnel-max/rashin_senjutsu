@@ -175,6 +175,12 @@ const MEMBER_ACCESS_CODES = new Set(
     .map(value => value.trim())
     .filter(Boolean)
 );
+const RASHIN_ACCESS_CODES = new Set(
+  String(process.env.RASHIN_CODE || process.env.RASHIN_ACCESS_CODE || process.env.RASHIN_ACCESS_CODES || '')
+    .split(',')
+    .map(value => value.trim())
+    .filter(value => /^\d{7}$/.test(value))
+);
 const DEVELOPER_ACCESS_EMAILS = new Set(
   String(process.env.DEVELOPER_ACCESS_EMAILS || '')
     .split(',')
@@ -184,6 +190,7 @@ const DEVELOPER_ACCESS_EMAILS = new Set(
 const MEMBER_SESSION_COOKIE = 'uranai_member_session';
 const AUTH_SESSION_COOKIE = 'uranai_auth_session';
 const MEMBER_SESSION_DAYS = Math.max(1, parseInt(process.env.MEMBER_SESSION_DAYS || '30', 10) || 30);
+const RASHIN_CODE_SESSION_DAYS = Math.max(1, parseInt(process.env.RASHIN_CODE_SESSION_DAYS || String(MEMBER_SESSION_DAYS), 10) || MEMBER_SESSION_DAYS);
 const AUTH_SESSION_DAYS = Math.max(1, parseInt(process.env.AUTH_SESSION_DAYS || String(MEMBER_SESSION_DAYS), 10) || MEMBER_SESSION_DAYS);
 // Development access must be explicitly enabled and is never available on deployed runtimes.
 const DEV_ACCESS_ENABLED = ENABLE_DEV_ACCESS && !IS_DEPLOYED_RUNTIME;
@@ -232,6 +239,7 @@ const RATE_LIMIT_RULES = {
   ai: { windowMs: 10 * 60 * 1000, max: 24 },
   google_auth: { windowMs: 10 * 60 * 1000, max: 12 },
   member_session: { windowMs: 10 * 60 * 1000, max: 20 },
+  rashin_code: { windowMs: 10 * 60 * 1000, max: 10 },
   stripe_checkout: { windowMs: 10 * 60 * 1000, max: 8 },
   stripe_portal: { windowMs: 10 * 60 * 1000, max: 20 },
   client_log: { windowMs: 10 * 60 * 1000, max: 80 },
@@ -1382,17 +1390,20 @@ async function buildMemberStatus(req, sessionPayload = null) {
   const hasStripeAccess = authLoggedIn && stripeSubscriptionGrantsAccess(stripeStatus);
   const hasLocalPreview = DEV_ACCESS_ENABLED && !!(memberSession && memberSession.source === 'local_preview' && isLocalRequest(req));
   const hasAccessCode = DEV_ACCESS_ENABLED && !!(memberSession && memberSession.source === 'access_code');
-  const active = developerAccess || hasLocalPreview || hasAccessCode || hasStripeAccess;
+  const hasRashinCode = !!(memberSession && memberSession.source === 'rashin_code');
+  const active = developerAccess || hasLocalPreview || hasAccessCode || hasRashinCode || hasStripeAccess;
   const source = developerAccess
     ? 'developer'
     : hasLocalPreview
     ? 'local_preview'
     : hasAccessCode
       ? 'access_code'
-      : hasStripeAccess
-        ? 'stripe'
-        : (authLoggedIn ? 'google' : '');
-  const expiresAt = hasLocalPreview || hasAccessCode
+      : hasRashinCode
+        ? 'rashin_code'
+        : hasStripeAccess
+          ? 'stripe'
+          : (authLoggedIn ? 'google' : '');
+  const expiresAt = hasLocalPreview || hasAccessCode || hasRashinCode
     ? (memberSession?.exp ? new Date(memberSession.exp).toISOString() : '')
     : (authSession?.exp ? new Date(authSession.exp).toISOString() : '');
   return {
@@ -1403,6 +1414,7 @@ async function buildMemberStatus(req, sessionPayload = null) {
     production: IS_PRODUCTION,
     localTestMode: DEV_ACCESS_ENABLED && isLocalRequest(req),
     codeConfigured: DEV_ACCESS_ENABLED && MEMBER_ACCESS_CODES.size > 0,
+    rashinCodeConfigured: RASHIN_ACCESS_CODES.size > 0,
     sessionPersistent: MEMBER_SESSION_PERSISTENT,
     authLoggedIn,
     authProvider: authLoggedIn ? (developerAccess ? 'developer' : 'google') : '',
@@ -1435,6 +1447,7 @@ async function hasPaidAccess(req, payload = null) {
   const memberSession = readMemberSession(req);
   if (DEV_ACCESS_ENABLED && memberSession?.source === 'local_preview') return isLocalRequest(req);
   if (DEV_ACCESS_ENABLED && memberSession?.source === 'access_code') return true;
+  if (memberSession?.source === 'rashin_code') return true;
   const authSession = readAuthSession(req);
   const userRecord = authSession?.userId ? await readUserRecord(authSession.userId) : null;
   if (DEV_ACCESS_ENABLED && userRecordHasDeveloperAccess(userRecord)) return true;
@@ -2568,6 +2581,7 @@ const SAME_ORIGIN_POST_API_PREFIXES = [
   '/api/rashin-bonus/claim',
   '/api/auth/google',
   '/api/member/session',
+  '/api/rashin-code/redeem',
   '/api/member/logout',
   '/api/client-log',
   '/api/stripe/checkout-session',
@@ -3424,6 +3438,52 @@ async function handleMemberLogout(req, res) {
     memberSession: null,
     authSession: null,
   }));
+}
+
+async function handleRashinCodeRedeem(req, res) {
+  const rate = consumeRateLimit(req, 'rashin_code');
+  if (!rate.ok) {
+    sendRateLimitExceeded(res, rate, 'Too many code attempts. Please wait and retry.');
+    return;
+  }
+  let body;
+  try {
+    body = await readJsonBody(req);
+  } catch (error) {
+    sendJson(res, 400, {
+      error: error.message || 'INVALID_JSON',
+      message: 'Rashin code payload could not be parsed.',
+    });
+    return;
+  }
+  const rashinCode = String(body?.rashinCode || body?.rashin_code || '').trim();
+  if (!/^\d{7}$/.test(rashinCode)) {
+    sendJson(res, 400, {
+      error: 'RASHIN_CODE_FORMAT_INVALID',
+      message: 'A 7-digit Rashin code is required.',
+    });
+    return;
+  }
+  if (!RASHIN_ACCESS_CODES.size) {
+    sendJson(res, 503, {
+      error: 'RASHIN_CODE_DISABLED',
+      message: 'Rashin code access is not configured on the server.',
+    });
+    return;
+  }
+  const validCode = [...RASHIN_ACCESS_CODES].some(code => safeCompareText(code, rashinCode));
+  if (!validCode) {
+    sendJson(res, 401, {
+      error: 'RASHIN_CODE_INVALID',
+      message: 'The Rashin code was not accepted.',
+    });
+    return;
+  }
+  const session = issueMemberSession(res, {
+    source: 'rashin_code',
+    maxAgeSeconds: RASHIN_CODE_SESSION_DAYS * 24 * 60 * 60,
+  });
+  sendJson(res, 200, await buildMemberStatus(req, session));
 }
 
 async function handleClientLog(req, res) {
@@ -4317,6 +4377,7 @@ async function handleRequest(req, res) {
       production: IS_PRODUCTION,
       paidTestMode: DEV_ACCESS_ENABLED && isLocalRequest(req),
       memberCodeConfigured: DEV_ACCESS_ENABLED && MEMBER_ACCESS_CODES.size > 0,
+      rashinCodeConfigured: RASHIN_ACCESS_CODES.size > 0,
       memberSessionPersistent: MEMBER_SESSION_PERSISTENT,
       stripeCheckoutReady: stripeReady(),
       stripePortalReady: stripePortalReady(),
@@ -4358,6 +4419,11 @@ async function handleRequest(req, res) {
 
   if (req.method === 'POST' && req.url.startsWith('/api/member/session')) {
     await handleMemberSession(req, res);
+    return;
+  }
+
+  if (req.method === 'POST' && req.url.startsWith('/api/rashin-code/redeem')) {
+    await handleRashinCodeRedeem(req, res);
     return;
   }
 

@@ -1567,6 +1567,7 @@ const DEEP_READING_DISCOUNT_STATUS_ENDPOINT='/api/deep-reading/discount-status';
 const STRIPE_CHECKOUT_ENDPOINT='/api/stripe/checkout-session';
 const STRIPE_CHECKOUT_COMPLETE_ENDPOINT='/api/stripe/checkout/complete';
 const STRIPE_PORTAL_ENDPOINT='/api/stripe/portal-session';
+const RASHIN_CODE_REDEEM_ENDPOINT='/api/rashin-code/redeem';
 const PAID_READING_PREPARE_ENDPOINT='/api/paid-reading/prepare-ticket';
 const PAID_READING_USE_ENDPOINT='/api/paid-reading/use-ticket';
 const PAID_READING_RELEASE_ENDPOINT='/api/paid-reading/release-ticket';
@@ -1847,6 +1848,7 @@ let MEMBER_AUTH={
   production:false,
   localTestMode:false,
   codeConfigured:false,
+  rashinCodeConfigured:false,
   sessionPersistent:false,
   authLoggedIn:false,
   authProvider:'',
@@ -1965,6 +1967,7 @@ let RUNTIME_HEALTH={
   production:false,
   paidTestMode:false,
   memberCodeConfigured:false,
+  rashinCodeConfigured:false,
   stripeCheckoutReady:false,
   stripePortalReady:false,
   error:'',
@@ -3869,6 +3872,10 @@ function canUseAccessCode(){
   return !isProductionRuntime()&&(DEV_MODE||LOCAL_TEST_RUNTIME)&&!!MEMBER_AUTH.codeConfigured;
 }
 
+function canUseRashinCode(){
+  return canUseProxy()&&!!MEMBER_AUTH.rashinCodeConfigured;
+}
+
 function rememberMemberPreview(enabled){
   try{
     localStorage.setItem(MEMBER_STORAGE_KEY,enabled?'1':'0');
@@ -3892,6 +3899,9 @@ function getServerErrorMessage(data,fallback='処理に失敗しました'){
   const message=String(data?.message||'').trim();
   if(code==='ACCESS_CODE_INVALID') return'確認コードが一致しませんでした';
   if(code==='ACCESS_CODE_DISABLED') return'確認コードが設定されていません';
+  if(code==='RASHIN_CODE_FORMAT_INVALID') return'羅針コードは7桁の数字で入力してください';
+  if(code==='RASHIN_CODE_INVALID') return'羅針コードが一致しませんでした';
+  if(code==='RASHIN_CODE_DISABLED') return'羅針コードはまだ設定されていません';
   if(code==='LOCAL_ONLY_MEMBER_PREVIEW') return'この操作はこの環境からは使えません';
   if(code==='DEV_ACCESS_DISABLED_IN_PRODUCTION') return'本番環境では確認用アクセスは使えません';
   if(code==='ACCESS_CODE_REQUIRED') return'確認コードを入力してください';
@@ -3990,6 +4000,7 @@ function applyMemberAuthData(data,overrides={}){
     production:!!nextProduction,
     localTestMode:!!data?.localTestMode,
     codeConfigured:!nextProduction&&!!data?.codeConfigured,
+    rashinCodeConfigured:!!data?.rashinCodeConfigured,
     sessionPersistent:!!data?.sessionPersistent,
     authLoggedIn:!!data?.authLoggedIn,
     authProvider:data?.authProvider||'',
@@ -4062,6 +4073,7 @@ async function loadMemberStatus(options={}){
       stripeWebhookReady:false,
       production:!!RUNTIME_HEALTH.production,
       codeConfigured:!RUNTIME_HEALTH.production&&!!RUNTIME_HEALTH.memberCodeConfigured,
+      rashinCodeConfigured:!!RUNTIME_HEALTH.rashinCodeConfigured,
     },{error:'FETCH_FAILED'});
   }
   if(syncLocalPreview&&MEMBER_MODE&&canUsePaidTestMode()&&!MEMBER_AUTH.active){
@@ -4077,6 +4089,72 @@ async function loadMemberStatus(options={}){
   }
   void loadRashinBonusStatus({render:options.render!==false});
   return MEMBER_AUTH;
+}
+
+function normalizeRashinCode(value=''){
+  return String(value||'').replace(/\D+/g,'').slice(0,7);
+}
+
+function setRashinCodeStatus(message='',state=''){
+  const status=document.getElementById('rashin-code-status');
+  if(!status) return;
+  status.textContent=message;
+  status.className=`rashin-code-status ${state||''}`.trim();
+  status.style.display=message?'block':'none';
+}
+
+function handleRashinCodeInput(event){
+  const input=event?.target;
+  if(!input) return;
+  input.value=normalizeRashinCode(input.value);
+  setRashinCodeStatus('', '');
+}
+
+function handleRashinCodeKeydown(event){
+  if(event.key==='Enter'){
+    event.preventDefault();
+    submitRashinCode();
+  }
+}
+
+async function submitRashinCode(){
+  const input=document.getElementById('rashin-code-input');
+  const submitBtn=document.getElementById('rashin-code-submit');
+  const code=normalizeRashinCode(input?.value||'');
+  if(input) input.value=code;
+  if(!code||code.length!==7){
+    setRashinCodeStatus('7桁の羅針コードを入力してください','ng');
+    return;
+  }
+  if(!canUseProxy()){
+    setRashinCodeStatus('羅針コードは本番URLから入力してください','ng');
+    return;
+  }
+  submitBtn?.setAttribute('disabled','');
+  setRashinCodeStatus('羅針コードを確認しています','');
+  try{
+    const res=await fetchApi(RASHIN_CODE_REDEEM_ENDPOINT,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({rashinCode:code}),
+    });
+    const data=await readJsonSafe(res);
+    if(!res.ok){
+      setRashinCodeStatus(getServerErrorMessage(data,'羅針コードを確認できませんでした'),'ng');
+      return;
+    }
+    applyMemberAuthData(data);
+    renderHomeVault();
+    renderMemberFollowupSection();
+    renderGoogleAuthShell();
+    setRashinCodeStatus('羅針コードを確認しました。深掘り鑑定へ進みます','ok');
+    trackEvent('rashin_code_redeem',{source:'hero'});
+    setTimeout(()=>startFlow('paid'),250);
+  }catch(_error){
+    setRashinCodeStatus('羅針コードの確認に失敗しました','ng');
+  }finally{
+    submitBtn?.removeAttribute('disabled');
+  }
 }
 
 function installRashinBonusStyles(){
@@ -5215,6 +5293,29 @@ function repairStaticCopy(){
     simpleTopBtn.setAttribute('data-track-position','hero');
     simpleTopBtn.onclick=null;
   }
+  let rashinCodeForm=document.querySelector('#s-top .rashin-code-form');
+  if(!rashinCodeForm){
+    rashinCodeForm=document.createElement('div');
+    rashinCodeForm.className='rashin-code-form';
+    rashinCodeForm.innerHTML=`
+      <label class="rashin-code-label" for="rashin-code-input">羅針コード</label>
+      <div class="rashin-code-row">
+        <input class="rashin-code-input" id="rashin-code-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="7" autocomplete="one-time-code" placeholder="7桁">
+        <button class="rashin-code-submit" id="rashin-code-submit" type="button">使う</button>
+      </div>
+      <div class="rashin-code-status" id="rashin-code-status" aria-live="polite" style="display:none"></div>`;
+    if(topBtns){
+      if(simpleTopBtn?.nextSibling) topBtns.insertBefore(rashinCodeForm,simpleTopBtn.nextSibling);
+      else topBtns.appendChild(rashinCodeForm);
+    }
+  }
+  const rashinCodeInput=document.getElementById('rashin-code-input');
+  const rashinCodeSubmit=document.getElementById('rashin-code-submit');
+  if(rashinCodeInput){
+    rashinCodeInput.oninput=handleRashinCodeInput;
+    rashinCodeInput.onkeydown=handleRashinCodeKeydown;
+  }
+  if(rashinCodeSubmit) rashinCodeSubmit.onclick=submitRashinCode;
   document.querySelectorAll('#s-top .btn-top.btn-paid').forEach(el=>{
     el.setAttribute('href','?flow=paid');
     el.setAttribute('data-flow-target','paid');
@@ -11716,6 +11817,7 @@ async function loadServerHealth(silent=false){
       production:false,
       paidTestMode:false,
       memberCodeConfigured:false,
+      rashinCodeConfigured:false,
       stripeCheckoutReady:false,
       stripePortalReady:false,
       error:'',
@@ -11733,6 +11835,7 @@ async function loadServerHealth(silent=false){
       production:false,
       paidTestMode:LOCAL_TEST_RUNTIME,
       memberCodeConfigured:false,
+      rashinCodeConfigured:false,
       stripeCheckoutReady:false,
       stripePortalReady:false,
       error:'LOCAL_FILE',
@@ -11770,6 +11873,7 @@ async function loadServerHealth(silent=false){
       production:!!data?.production,
       paidTestMode:!data?.production&&!!data?.paidTestMode,
       memberCodeConfigured:!data?.production&&!!data?.memberCodeConfigured,
+      rashinCodeConfigured:!!data?.rashinCodeConfigured,
       stripeCheckoutReady:!!data?.stripeCheckoutReady,
       stripePortalReady:!!data?.stripePortalReady,
       error:'',
@@ -11785,6 +11889,7 @@ async function loadServerHealth(silent=false){
       production:false,
       paidTestMode:LOCAL_TEST_RUNTIME,
       memberCodeConfigured:false,
+      rashinCodeConfigured:false,
       stripeCheckoutReady:false,
       stripePortalReady:false,
       error:'FETCH_FAILED',
