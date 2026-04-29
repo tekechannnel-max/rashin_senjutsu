@@ -3171,30 +3171,18 @@ async function shareDailyOracle(channel='x'){
   const text=getDailyOracleShareText(record.card);
   const normalized=String(channel||'x').toLowerCase()==='line'?'line':'x';
   trackEvent('daily_oracle_share',{channel:normalized,card_id:record.card.id,source:'top'});
-  const imageSrc=`images/cards/oracle/${String(record.card.id).padStart(2,'0')}.jpg`;
+  const shareUrl=buildShareCardUrl({
+    type:'oracle',
+    id:record.card.id,
+    name:`今日のオラクル：${record.card.name||'数秘オラクル'}`,
+    message:record.card.message||record.card.share||record.card.action||'',
+  });
+  const shareText=`${text}\n${shareUrl}`;
   if(normalized==='x'){
-    const shareUrl=buildShareCardUrl({
-      type:'oracle',
-      id:record.card.id,
-      name:`今日のオラクル：${record.card.name||'数秘オラクル'}`,
-      message:record.card.message||record.card.share||record.card.action||'',
-    });
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${text}\n${shareUrl}`)}`,'_blank','noopener,noreferrer');
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`,'_blank','noopener,noreferrer');
     return;
   }
-  const shared=await shareWithAttachedCard({
-    text,
-    imageSrc,
-    filename:`rashin-oracle-${String(record.card.id).padStart(2,'0')}`,
-    title:'今日のオラクル',
-    cardName:record.card.name,
-    message:record.card.message||record.card.action||record.card.title||'',
-  });
-  if(shared) return;
-  const url=normalized==='line'
-    ?`https://line.me/R/msg/text/?${encodeURIComponent(text)}`
-    :`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
-  window.open(url,'_blank','noopener,noreferrer');
+  window.open(`https://line.me/R/msg/text/?${encodeURIComponent(shareText)}`,'_blank','noopener,noreferrer');
 }
 
 // ══════════════════════════════════════════════════
@@ -11334,151 +11322,6 @@ function buildShareCardUrl(card){
     message:card.message||'迷いを、次の一手に変える占い。',
   });
   return new URL(`/share/card?${params.toString()}`,location.href).toString();
-}
-
-function loadShareImage(imageSrc=''){
-  return new Promise((resolve,reject)=>{
-    if(!imageSrc) reject(new Error('SHARE_IMAGE_MISSING'));
-    const img=new Image();
-    img.onload=()=>resolve(img);
-    img.onerror=()=>reject(new Error('SHARE_IMAGE_LOAD_FAILED'));
-    img.src=imageSrc;
-  });
-}
-
-function roundRectPath(ctx,x,y,w,h,r){
-  const radius=Math.min(r,w/2,h/2);
-  ctx.beginPath();
-  ctx.moveTo(x+radius,y);
-  ctx.lineTo(x+w-radius,y);
-  ctx.quadraticCurveTo(x+w,y,x+w,y+radius);
-  ctx.lineTo(x+w,y+h-radius);
-  ctx.quadraticCurveTo(x+w,y+h,x+w-radius,y+h);
-  ctx.lineTo(x+radius,y+h);
-  ctx.quadraticCurveTo(x,y+h,x,y+h-radius);
-  ctx.lineTo(x,y+radius);
-  ctx.quadraticCurveTo(x,y,x+radius,y);
-  ctx.closePath();
-}
-
-function drawWrappedText(ctx,text,x,y,maxWidth,lineHeight,maxLines=4){
-  const chars=Array.from(String(text||'').replace(/\s+/g,' ').trim());
-  let line='';
-  let lines=0;
-  for(const ch of chars){
-    const test=line+ch;
-    if(ctx.measureText(test).width>maxWidth&&line){
-      lines+=1;
-      if(lines>=maxLines){
-        ctx.fillText(line.replace(/。?$/,'…'),x,y);
-        return y+lineHeight;
-      }
-      ctx.fillText(line,x,y);
-      y+=lineHeight;
-      line=ch;
-    }else{
-      line=test;
-    }
-  }
-  if(line){
-    ctx.fillText(line,x,y);
-    y+=lineHeight;
-  }
-  return y;
-}
-
-function canvasToBlob(canvas,type='image/png',quality=.92){
-  return new Promise(resolve=>canvas.toBlob(resolve,type,quality));
-}
-
-async function buildShareImageFile({imageSrc='',baseName='rashin-card',cardName='',message=''}={}){
-  if(!imageSrc||typeof File!=='function'||typeof document==='undefined') return null;
-  const img=await loadShareImage(imageSrc);
-  const canvas=document.createElement('canvas');
-  canvas.width=1080;
-  canvas.height=1350;
-  const ctx=canvas.getContext('2d');
-  if(!ctx) return null;
-
-  const grad=ctx.createLinearGradient(0,0,1080,1350);
-  grad.addColorStop(0,'#100821');
-  grad.addColorStop(.55,'#070814');
-  grad.addColorStop(1,'#1a1028');
-  ctx.fillStyle=grad;
-  ctx.fillRect(0,0,1080,1350);
-  ctx.fillStyle='rgba(201,149,42,.12)';
-  ctx.fillRect(0,0,1080,12);
-  ctx.fillRect(0,1338,1080,12);
-
-  const cardX=315;
-  const cardY=110;
-  const cardW=450;
-  const cardH=675;
-  ctx.save();
-  roundRectPath(ctx,cardX-14,cardY-14,cardW+28,cardH+28,18);
-  ctx.fillStyle='rgba(201,149,42,.26)';
-  ctx.fill();
-  roundRectPath(ctx,cardX,cardY,cardW,cardH,10);
-  ctx.clip();
-  ctx.drawImage(img,cardX,cardY,cardW,cardH);
-  ctx.restore();
-
-  ctx.textAlign='center';
-  ctx.fillStyle='#8fd8d2';
-  ctx.font='26px "Noto Sans JP", sans-serif';
-  ctx.fillText('RASHIN SENJUTSU',540,855);
-  ctx.fillStyle='#f4cd62';
-  ctx.font='700 44px "Noto Sans JP", sans-serif';
-  drawWrappedText(ctx,cardName||'今日のカード',150,930,780,58,2);
-  ctx.fillStyle='rgba(255,255,255,.88)';
-  ctx.font='32px "Noto Sans JP", sans-serif';
-  drawWrappedText(ctx,message||'いま必要なメッセージを受け取りました。',150,1045,780,48,4);
-  ctx.fillStyle='rgba(240,234,216,.62)';
-  ctx.font='26px "Noto Sans JP", sans-serif';
-  ctx.fillText('迷いを、次の一手に変える占い。',540,1245);
-
-  const blob=await canvasToBlob(canvas,'image/png');
-  if(!blob?.size) return null;
-  return new File([blob],`${baseName}.png`,{type:'image/png'});
-}
-
-async function downloadShareImageFallback(file,text=''){
-  if(!file||typeof URL==='undefined'||typeof document==='undefined') return false;
-  const url=URL.createObjectURL(file);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download=file.name||'rashin-card.png';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),1200);
-  try{
-    if(navigator?.clipboard&&text) await navigator.clipboard.writeText(text);
-  }catch(_error){}
-  showToast('カード画像を保存しました。投稿画面で画像を添付してください');
-  return true;
-}
-
-async function shareWithAttachedCard({text='',imageSrc='',filename='rashin-card',title='羅針占術',cardName='',message=''}={}){
-  try{
-    const file=await buildShareImageFile({imageSrc,baseName:filename,cardName,message});
-    if(!file) return false;
-    if(typeof navigator==='undefined'||!navigator.share){
-      return await downloadShareImageFallback(file,text);
-    }
-    const shareData={
-      title,
-      text,
-      files:[file],
-    };
-    if(navigator.canShare&&!navigator.canShare({files:[file]})){
-      return await downloadShareImageFallback(file,text);
-    }
-    await navigator.share(shareData);
-    return true;
-  }catch(_error){
-    return false;
-  }
 }
 
 function buildShareText(options={}){
