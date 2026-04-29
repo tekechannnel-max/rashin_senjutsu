@@ -5529,6 +5529,10 @@ function repairStaticCopy(){
     shareBtn.textContent='Xでシェア';
     if(svg) shareBtn.prepend(svg);
   }
+  const lineBtn=document.getElementById('share-line-btn');
+  if(lineBtn){
+    lineBtn.innerHTML='<span class="share-line-mark" aria-hidden="true">L</span>LINEで送る';
+  }
   setText('#dossier-title','鑑定書を整えています');
   setText('#dossier-subtitle','今回の鑑定結果を、PDFやコピーで残しやすい形へ整えています。');
   setText('#dossier-print-btn','印刷 / PDF保存');
@@ -7580,6 +7584,18 @@ function updateResultActionState(){
   refreshDeepenCtaViewTracking(upgradePanel||document);
 }
 
+function setResultShareButtonsVisible(visible){
+  ['share-x-btn','share-line-btn'].forEach(id=>{
+    const btn=document.getElementById(id);
+    if(btn) btn.style.display=visible?'inline-flex':'none';
+  });
+}
+
+function syncResultModeClass(){
+  const resultScreen=document.getElementById('s-result');
+  if(resultScreen) resultScreen.classList.toggle('simple-result-mode',isSimpleReadingPlan());
+}
+
 function getResultProgressSummary(){
   if(RESULT_STAGE_STATE.integration==='working'){
     return{
@@ -7652,8 +7668,7 @@ function initializeResultLoadingState(){
   const progressCard=document.getElementById('result-progress-card');
   if(progressCard) progressCard.style.display='block';
   setResultContentVisibility(false);
-  const shareBtn=document.getElementById('share-x-btn');
-  if(shareBtn) shareBtn.style.display='none';
+  setResultShareButtonsVisible(false);
   const dossierSaveBtn=document.getElementById('dossier-save-btn');
   if(dossierSaveBtn) dossierSaveBtn.style.display='none';
   const dossierCopyBtn=document.getElementById('dossier-copy-inline-btn');
@@ -7679,6 +7694,7 @@ async function startResultGeneration(){
 }
 
 function renderStoredResult(){
+  syncResultModeClass();
   renderCards();
   renderMeimei();
   renderNameJudge();
@@ -7714,8 +7730,7 @@ function renderStoredResult(){
     renderFormattedResultText('r-integration',LAST_OUTPUTS.integration||'','integration');
   }
   renderPremiumDossier();
-  const shareBtn=document.getElementById('share-x-btn');
-  if(shareBtn) shareBtn.style.display='inline-flex';
+  setResultShareButtonsVisible(true);
   const dossierSaveBtn=document.getElementById('dossier-save-btn');
   if(dossierSaveBtn) dossierSaveBtn.style.display=PLAN==='paid'?'inline-flex':'none';
   const dossierCopyBtn=document.getElementById('dossier-copy-inline-btn');
@@ -9429,6 +9444,7 @@ function buildClarifyPromptText(mode='detail'){
 }
 
 function renderResult(){
+  syncResultModeClass();
   renderCards();
   if(isSimpleReadingPlan()){
     const progressCard=document.getElementById('result-progress-card');
@@ -9444,8 +9460,7 @@ function renderResult(){
     renderReactionProfile();
     updateAnimalReveal();
     renderFoundationMiniSummary();
-    const shareBtn=document.getElementById('share-x-btn');
-    if(shareBtn) shareBtn.style.display='none';
+    setResultShareButtonsVisible(true);
     const saveBtn=document.getElementById('dossier-save-btn');
     if(saveBtn) saveBtn.style.display='none';
     const copyBtn=document.getElementById('dossier-copy-inline-btn');
@@ -9472,8 +9487,7 @@ function renderResult(){
     document.getElementById('progress').style.width='100%';
     // シェアボタンも表示
     setTimeout(()=>{
-      const btn=document.getElementById('share-x-btn');
-      if(btn) btn.style.display='inline-flex';
+      setResultShareButtonsVisible(true);
     },400);
     renderPremiumDossier(false);
     renderMemberFollowupSection();
@@ -10284,8 +10298,7 @@ async function completeResultGenerationUI(){
   trackReadingComplete();
   playResultCompleteSound();
   setTimeout(()=>{
-    const shareBtn=document.getElementById('share-x-btn');
-    if(shareBtn) shareBtn.style.display='inline-flex';
+    setResultShareButtonsVisible(true);
     const saveBtn=document.getElementById('dossier-save-btn');
     if(saveBtn) saveBtn.style.display=PLAN==='paid'?'inline-flex':'none';
     const copyBtn=document.getElementById('dossier-copy-inline-btn');
@@ -10297,8 +10310,7 @@ function completeFailedResultGenerationUI(){
   setResultContentVisibility(true);
   const progressCard=document.getElementById('result-progress-card');
   if(progressCard) progressCard.style.display='none';
-  const shareBtn=document.getElementById('share-x-btn');
-  if(shareBtn) shareBtn.style.display='none';
+  setResultShareButtonsVisible(false);
   const saveBtn=document.getElementById('dossier-save-btn');
   if(saveBtn) saveBtn.style.display='none';
   const copyBtn=document.getElementById('dossier-copy-inline-btn');
@@ -10941,8 +10953,7 @@ ${buildReadingOutputFormatGuide('integration')}`;
   document.getElementById('progress').style.width='100%';
   trackReadingComplete();
   setTimeout(()=>{
-    const shareBtn=document.getElementById('share-x-btn');
-    if(shareBtn) shareBtn.style.display='inline-flex';
+    setResultShareButtonsVisible(true);
     const saveBtn=document.getElementById('dossier-save-btn');
     if(saveBtn) saveBtn.style.display=PLAN==='paid'?'inline-flex':'none';
     const copyBtn=document.getElementById('dossier-copy-inline-btn');
@@ -11358,7 +11369,9 @@ function buildShareText(options={}){
     ...(SEL_ORC||[]).map(id=>ORACLE[id]?.name||''),
   ].filter(Boolean).slice(0,4).join(' / ');
   const lines=[
-    '羅針占術で、いまの流れを見ました。',
+    cardNames
+      ?'羅針占術で、いまの流れを見ました。'
+      :'羅針占術で、自分の土台を見ました。',
     '',
   ];
   if(animal) lines.push(`私のタイプ：${animal}`);
@@ -11370,7 +11383,7 @@ function buildShareText(options={}){
     '',
     shareUrl,
     '',
-    '#羅針占術 #カード占い'
+    cardNames?'#羅針占術 #カード占い':'#羅針占術 #自己理解'
   );
   return lines.join('\n');
 }
@@ -11381,6 +11394,14 @@ async function shareToX(){
   const text=buildShareText({shareUrl});
   trackEvent('share_click',{channel:'x',source:'result'});
   window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(text),'_blank','noopener,noreferrer');
+}
+
+async function shareToLine(){
+  const primaryCard=getPrimaryShareCard();
+  const shareUrl=primaryCard?buildShareCardUrl(primaryCard):location.origin+location.pathname;
+  const text=buildShareText({shareUrl});
+  trackEvent('share_click',{channel:'line',source:'result'});
+  window.open('https://line.me/R/msg/text/?'+encodeURIComponent(text),'_blank','noopener,noreferrer');
 }
 
 // ══════════════════════════════════════════════════
