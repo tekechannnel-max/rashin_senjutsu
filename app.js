@@ -1605,7 +1605,7 @@ const MEMBER_STORAGE_KEY='uranai-member-preview-v1';
 const STRIPE_RETURN_INTENT_KEY='uranai-stripe-return-intent-v1';
 const DEEP_PAID_CTA_LABEL='深掘り鑑定をする(有料)';
 const SIMPLE_READING_PLAN='simple';
-const SIMPLE_READING_LABEL='カードなしで土台診断だけ見る';
+const SIMPLE_READING_LABEL='無料・カードなしで羅針鑑定する';
 const FREE_LEN_COUNT=2;
 const FREE_ORC_COUNT=1;
 const LEN_FREE_POSITION_LABELS=['主題','修飾・答え'];
@@ -5208,7 +5208,7 @@ function repairStaticCopy(){
     if(topBtns) topBtns.insertBefore(simpleTopBtn,sampleBtn||null);
   }
   if(simpleTopBtn){
-    simpleTopBtn.textContent='カードなしで土台だけ見る';
+    simpleTopBtn.textContent=SIMPLE_READING_LABEL;
     simpleTopBtn.setAttribute('href','?flow=simple');
     simpleTopBtn.setAttribute('data-flow-target','simple');
     simpleTopBtn.setAttribute('data-track','simple_start_click');
@@ -8817,7 +8817,7 @@ function syncInputModeUI(){
   if(simple&&theme) theme.value='';
   updateThemeCounter();
   const mainBtn=document.querySelector('#s-input .input-btns .btn-main');
-  if(mainBtn) mainBtn.textContent=simple?'カードなしで診断する':'この内容で占う ✦';
+  if(mainBtn) mainBtn.textContent=simple?SIMPLE_READING_LABEL:'この内容で占う ✦';
   const sampleBtn=document.querySelector('#s-input .input-btns .btn-skip');
   if(sampleBtn) sampleBtn.style.display=simple?'none':'';
   const simpleBtn=document.getElementById('simple-reading-btn');
