@@ -5278,11 +5278,11 @@ function repairStaticCopy(){
   setHtml('#s-top .top-desc','無料鑑定でも、本質・本音・現実・次の一手まで読み解けます。');
   setText('#s-top .btn-top.btn-free','無料で羅針鑑定をはじめる');
   setText('#s-top .btn-top.btn-paid',DEEP_PAID_CTA_LABEL);
+  const topBtns=document.querySelector('#s-top .top-btns');
   let simpleTopBtn=document.querySelector('#s-top .btn-top.btn-simple');
   if(!simpleTopBtn){
     simpleTopBtn=document.createElement('a');
     simpleTopBtn.className='btn-top btn-simple';
-    const topBtns=document.querySelector('#s-top .top-btns');
     const sampleBtn=document.querySelector('#s-top .btn-top.btn-sample');
     if(topBtns) topBtns.insertBefore(simpleTopBtn,sampleBtn||null);
   }
