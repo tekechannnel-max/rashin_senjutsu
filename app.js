@@ -3172,6 +3172,17 @@ async function shareDailyOracle(channel='x'){
   const normalized=String(channel||'x').toLowerCase()==='line'?'line':'x';
   trackEvent('daily_oracle_share',{channel:normalized,card_id:record.card.id,source:'top'});
   const imageSrc=`images/cards/oracle/${String(record.card.id).padStart(2,'0')}.jpg`;
+  if(normalized==='x'){
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`,'_blank','noopener,noreferrer');
+    await prepareShareCardImageForX({
+      text,
+      imageSrc,
+      filename:`rashin-oracle-${String(record.card.id).padStart(2,'0')}`,
+      cardName:record.card.name,
+      message:record.card.message||record.card.action||record.card.title||'',
+    });
+    return;
+  }
   const shared=await shareWithAttachedCard({
     text,
     imageSrc,
@@ -11438,6 +11449,19 @@ async function downloadShareImageFallback(file,text=''){
   return true;
 }
 
+async function copyShareImageToClipboard(file){
+  if(!file||typeof ClipboardItem==='undefined'||!navigator?.clipboard?.write) return false;
+  try{
+    await navigator.clipboard.write([
+      new ClipboardItem({[file.type||'image/png']:file})
+    ]);
+    showToast('カード画像をコピーしました。Xの投稿欄で貼り付けてください');
+    return true;
+  }catch(_error){
+    return false;
+  }
+}
+
 async function shareWithAttachedCard({text='',imageSrc='',filename='rashin-card',title='羅針占術',cardName='',message=''}={}){
   try{
     const file=await buildShareImageFile({imageSrc,baseName:filename,cardName,message});
@@ -11455,6 +11479,17 @@ async function shareWithAttachedCard({text='',imageSrc='',filename='rashin-card'
     }
     await navigator.share(shareData);
     return true;
+  }catch(_error){
+    return false;
+  }
+}
+
+async function prepareShareCardImageForX({text='',imageSrc='',filename='rashin-card',cardName='',message=''}={}){
+  try{
+    const file=await buildShareImageFile({imageSrc,baseName:filename,cardName,message});
+    if(!file) return false;
+    if(await copyShareImageToClipboard(file)) return true;
+    return await downloadShareImageFallback(file,text);
   }catch(_error){
     return false;
   }
@@ -11489,17 +11524,16 @@ async function shareToX(){
   const text=buildShareText();
   const primaryCard=getPrimaryShareCard();
   trackEvent('share_click',{channel:'x',source:'result'});
+  window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(text),'_blank','noopener,noreferrer');
   if(primaryCard?.imageSrc){
-    const shared=await shareWithAttachedCard({
+    await prepareShareCardImageForX({
       text,
       imageSrc:primaryCard.imageSrc,
       filename:`rashin-${primaryCard.type}-${String(primaryCard.id).padStart(2,'0')}`,
       cardName:primaryCard.name,
       message:primaryCard.message,
     });
-    if(shared) return;
   }
-  window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(text),'_blank','noopener,noreferrer');
 }
 
 // ══════════════════════════════════════════════════
