@@ -192,6 +192,7 @@ const MEMBER_SESSION_COOKIE = 'uranai_member_session';
 const AUTH_SESSION_COOKIE = 'uranai_auth_session';
 const MEMBER_SESSION_DAYS = Math.max(1, parseInt(process.env.MEMBER_SESSION_DAYS || '30', 10) || 30);
 const RASHIN_CODE_SESSION_DAYS = Math.max(1, parseInt(process.env.RASHIN_CODE_SESSION_DAYS || String(MEMBER_SESSION_DAYS), 10) || MEMBER_SESSION_DAYS);
+const RASHIN_CODE_REUSE_DAYS = Math.max(1, parseInt(process.env.RASHIN_CODE_REUSE_DAYS || String(RASHIN_CODE_SESSION_DAYS), 10) || RASHIN_CODE_SESSION_DAYS);
 const AUTH_SESSION_DAYS = Math.max(1, parseInt(process.env.AUTH_SESSION_DAYS || String(MEMBER_SESSION_DAYS), 10) || MEMBER_SESSION_DAYS);
 // Development access must be explicitly enabled and is never available on deployed runtimes.
 const DEV_ACCESS_ENABLED = ENABLE_DEV_ACCESS && !IS_DEPLOYED_RUNTIME;
@@ -1849,7 +1850,16 @@ async function writeRashinCodeRedeemRecordIfAbsent(code, record) {
     return { created: true, record: safeRecord };
   } catch (error) {
     if (error && error.code === 'EEXIST') {
-      return { created: false, record: await readRashinCodeRedeemRecord(code) };
+      const existing = await readRashinCodeRedeemRecord(code);
+      if (isExpiredIso(existing?.expiresAt)) {
+        await writeJsonFileAtomic(filePath, {
+          ...safeRecord,
+          previousRedeemedAt: existing?.redeemedAt || '',
+          revivedAt: safeRecord.redeemedAt || new Date().toISOString(),
+        });
+        return { created: true, revived: true, record: safeRecord };
+      }
+      return { created: false, record: existing };
     }
     throw error;
   }
@@ -3520,6 +3530,7 @@ async function handleRashinCodeRedeem(req, res) {
   }
   const redeemResult = await writeRashinCodeRedeemRecordIfAbsent(rashinCode, {
     redeemedAt: new Date().toISOString(),
+    expiresAt: addDaysIso(RASHIN_CODE_REUSE_DAYS),
     remoteAddress: getClientAddress(req),
     userAgent: String(req?.headers?.['user-agent'] || '').slice(0, 300),
   });
