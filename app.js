@@ -3901,6 +3901,7 @@ function getServerErrorMessage(data,fallback='処理に失敗しました'){
   if(code==='ACCESS_CODE_DISABLED') return'確認コードが設定されていません';
   if(code==='RASHIN_CODE_FORMAT_INVALID') return'羅針コードは7桁の数字で入力してください';
   if(code==='RASHIN_CODE_INVALID') return'羅針コードが一致しませんでした';
+  if(code==='RASHIN_CODE_ALREADY_USED') return'この羅針コードはすでに使用済みです';
   if(code==='RASHIN_CODE_DISABLED') return'羅針コードはまだ設定されていません';
   if(code==='LOCAL_ONLY_MEMBER_PREVIEW') return'この操作はこの環境からは使えません';
   if(code==='DEV_ACCESS_DISABLED_IN_PRODUCTION') return'本番環境では確認用アクセスは使えません';

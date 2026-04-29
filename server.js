@@ -13,6 +13,7 @@ const STRIPE_EVENT_DIR = path.join(DATA_DIR, 'stripe-events');
 const STRIPE_CHECKOUT_COMPLETION_DIR = path.join(DATA_DIR, 'stripe-checkout-completions');
 const PURCHASE_ORDER_DIR = path.join(DATA_DIR, 'purchase-orders');
 const PAID_READING_TICKET_DIR = path.join(DATA_DIR, 'paid-reading-tickets');
+const RASHIN_CODE_REDEEM_DIR = path.join(DATA_DIR, 'rashin-codes');
 const RASHIN_DISCOUNT_CHECKOUT_LOCK_DIR = path.join(DATA_DIR, 'rashin-discount-checkout-locks');
 const USER_DIR = path.join(DATA_DIR, 'users');
 const INDEX_DIR = path.join(DATA_DIR, 'indexes');
@@ -1816,6 +1817,44 @@ function generateRecordId(prefix) {
   return `${prefix}_${Date.now().toString(36)}_${crypto.randomBytes(8).toString('hex')}`;
 }
 
+function getRashinCodeRedeemKey(code) {
+  const safeCode = String(code || '').trim();
+  if (!/^\d{7}$/.test(safeCode)) return '';
+  return crypto.createHash('sha256').update(`rashin_code:${safeCode}`).digest('hex');
+}
+
+function getRashinCodeRedeemPath(code) {
+  const key = getRashinCodeRedeemKey(code);
+  return key ? path.join(RASHIN_CODE_REDEEM_DIR, `${key}.json`) : '';
+}
+
+async function readRashinCodeRedeemRecord(code) {
+  const filePath = getRashinCodeRedeemPath(code);
+  if (!filePath) return null;
+  return readJsonFileSafe(filePath, null);
+}
+
+async function writeRashinCodeRedeemRecordIfAbsent(code, record) {
+  const key = getRashinCodeRedeemKey(code);
+  if (!key) throw new Error('INVALID_RASHIN_CODE');
+  await ensureDir(RASHIN_CODE_REDEEM_DIR);
+  const filePath = getRashinCodeRedeemPath(code);
+  const safeRecord = {
+    ...(record || {}),
+    id: key,
+    codeHash: key,
+  };
+  try {
+    await fsp.writeFile(filePath, JSON.stringify(safeRecord, null, 2), { encoding: 'utf8', flag: 'wx' });
+    return { created: true, record: safeRecord };
+  } catch (error) {
+    if (error && error.code === 'EEXIST') {
+      return { created: false, record: await readRashinCodeRedeemRecord(code) };
+    }
+    throw error;
+  }
+}
+
 function addDaysIso(days) {
   const date = new Date();
   date.setUTCDate(date.getUTCDate() + days);
@@ -3476,6 +3515,18 @@ async function handleRashinCodeRedeem(req, res) {
     sendJson(res, 401, {
       error: 'RASHIN_CODE_INVALID',
       message: 'The Rashin code was not accepted.',
+    });
+    return;
+  }
+  const redeemResult = await writeRashinCodeRedeemRecordIfAbsent(rashinCode, {
+    redeemedAt: new Date().toISOString(),
+    remoteAddress: getClientAddress(req),
+    userAgent: String(req?.headers?.['user-agent'] || '').slice(0, 300),
+  });
+  if (!redeemResult.created) {
+    sendJson(res, 409, {
+      error: 'RASHIN_CODE_ALREADY_USED',
+      message: 'This Rashin code has already been used.',
     });
     return;
   }
