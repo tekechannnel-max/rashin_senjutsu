@@ -1594,7 +1594,7 @@ function getAllowedStaticPath(urlPath) {
   if (pathname === '/' || pathname === '/uranai-v5.html') {
     return path.join(ROOT_DIR, 'uranai-v5.html');
   }
-  if (pathname === '/terms.html' || pathname === '/privacy.html' || pathname === '/commercial-transactions.html' || pathname === '/local-card-draw.html') {
+  if (pathname === '/terms.html' || pathname === '/privacy.html' || pathname === '/commercial-transactions.html') {
     return path.join(ROOT_DIR, pathname.slice(1));
   }
   if (pathname === '/app.js') {

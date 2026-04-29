@@ -41,22 +41,6 @@ Recommended schedule:
 
 Run `--dry-run` before enabling real posting on any new machine.
 
-## TikTok LIVE local tool
-
-Use `local-card-draw.html` for LIVE when no viewer letters are available yet.
-
-- It is local only.
-- It does not call AI, login, Stripe, or the production API.
-- It uses existing card images from `images/cards/`.
-- Open it directly in a browser, or serve the repo locally and open `/local-card-draw.html`.
-
-Recommended first LIVE flow:
-
-1. Draw today's oracle card.
-2. Explain the card in one sentence.
-3. Draw three cards as "今の状態 / 注意点 / 次の一手".
-4. Mention the limited prerelease code only near the end.
-
 ## File-backed state
 
 The following production paths are part of the app's state and must persist across deploys/restarts:
