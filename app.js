@@ -11318,8 +11318,6 @@ function buildShareCardUrl(card){
   const params=new URLSearchParams({
     type:card.type==='len'?'len':'oracle',
     id:String(card.id),
-    title:card.name||'羅針占術のカード',
-    message:card.message||'迷いを、次の一手に変える占い。',
   });
   return new URL(`/share/card?${params.toString()}`,location.href).toString();
 }
