@@ -5302,7 +5302,7 @@ function repairStaticCopy(){
       <label class="rashin-code-label" for="rashin-code-input">羅針コード</label>
       <div class="rashin-code-row">
         <input class="rashin-code-input" id="rashin-code-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="7" autocomplete="one-time-code" placeholder="7桁">
-        <button class="rashin-code-submit" id="rashin-code-submit" type="button">使う</button>
+        <button class="rashin-code-submit" id="rashin-code-submit" type="button">認証</button>
       </div>
       <div class="rashin-code-status" id="rashin-code-status" aria-live="polite" style="display:none"></div>`;
     if(topBtns){
