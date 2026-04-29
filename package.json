@@ -5,7 +5,10 @@
   "type": "commonjs",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check app.js"
+    "check": "node --check server.js && node --check app.js && node --check scripts/social/daily-oracle-post.js",
+    "social:draft": "node scripts/social/daily-oracle-post.js --dry-run",
+    "social:write": "node scripts/social/daily-oracle-post.js --write",
+    "social:post": "node scripts/social/daily-oracle-post.js --write --post"
   },
   "engines": {
     "node": ">=20"

@@ -6,6 +6,57 @@
 - Runtime state under `data/` must be persistent for production operation.
 - Do not scale horizontally with multiple app instances while the current file-based storage and lock files are in use.
 
+## Limited prerelease SNS operation
+
+Daily X / Threads posting is handled by `scripts/social/daily-oracle-post.js`.
+
+### Draft generation
+
+Run without credentials to create or inspect the daily content:
+
+```powershell
+npm run social:draft
+npm run social:write
+```
+
+Generated JSON drafts are written under `data/social-posts/`, which is intentionally gitignored.
+
+### Auto posting
+
+Set these only in the machine or job runner that performs SNS posting:
+
+- `PUBLIC_ORIGIN=https://rashin-senjutsu.onrender.com`
+- `X_API_KEY`
+- `X_API_SECRET`
+- `X_ACCESS_TOKEN`
+- `X_ACCESS_TOKEN_SECRET`
+- `THREADS_USER_ID`
+- `THREADS_ACCESS_TOKEN`
+- `THREADS_PUBLISH_WAIT_MS=30000`
+
+Recommended schedule:
+
+- `07:00 Asia/Tokyo`: `node scripts/social/daily-oracle-post.js --write --post --kind=oracle`
+- `12:00 or 20:00 Asia/Tokyo`: `node scripts/social/daily-oracle-post.js --write --post --kind=concept`
+
+Run `--dry-run` before enabling real posting on any new machine.
+
+## TikTok LIVE local tool
+
+Use `local-card-draw.html` for LIVE when no viewer letters are available yet.
+
+- It is local only.
+- It does not call AI, login, Stripe, or the production API.
+- It uses existing card images from `images/cards/`.
+- Open it directly in a browser, or serve the repo locally and open `/local-card-draw.html`.
+
+Recommended first LIVE flow:
+
+1. Draw today's oracle card.
+2. Explain the card in one sentence.
+3. Draw three cards as "今の状態 / 注意点 / 次の一手".
+4. Mention the limited prerelease code only near the end.
+
 ## File-backed state
 
 The following production paths are part of the app's state and must persist across deploys/restarts:
@@ -43,7 +94,7 @@ Set these on the Render service and redeploy before testing:
 - `ENABLE_DEV_ACCESS=false`
 - `STRIPE_SECRET_KEY=sk_test_...`
 - `STRIPE_WEBHOOK_SECRET=whsec_...`
-- `STRIPE_PRICE_ID_DEEP_READING_580=price_...`
+- `STRIPE_PRICE_ID_DEEP_READING_680=price_...`
 - `STRIPE_PAYMENT_METHOD_TYPES=card,paypay`
 - `GOOGLE_CLIENT_ID=...apps.googleusercontent.com`
 - `MEMBER_SESSION_SECRET=<strong random secret>`
@@ -82,29 +133,29 @@ If Stripe rejects Checkout creation because PayPay is not enabled or not availab
 
 Use a Google login account dedicated to test payments. Run these with Stripe test cards only.
 
-1. Normal 580 yen Checkout:
+1. Normal 680 yen Checkout:
    - Start from the latest free reading result.
-   - Confirm the app opens Stripe Checkout for `580 JPY`.
+   - Confirm the app opens Stripe Checkout for `680 JPY`.
    - Confirm card and PayPay are available when PayPay is enabled in Stripe.
    - Complete payment with a Stripe test card.
    - Confirm a paid reading ticket is created under `data/paid-reading-tickets`.
-   - Confirm the purchase order under `data/purchase-orders` has `finalAmount: 580`, `discountAmount: 0`, and `paidAt`.
+   - Confirm the purchase order under `data/purchase-orders` has `finalAmount: 680`, `discountAmount: 0`, and `paidAt`.
 
 2. 100 yen OFF Checkout:
    - Prepare the test user with `rashin_stones: 3`.
    - Start Checkout from the latest free reading result.
-   - Confirm Stripe Checkout shows `480 JPY`.
+   - Confirm Stripe Checkout shows `580 JPY`.
    - Complete payment.
    - Confirm `rashin_stones` decreases by 3 only after payment success.
-   - Confirm the purchase order has `discountAmount: 100`, `finalAmount: 480`, `discountStonesUsed: 3`, and `rashinBonusConsumedAt`.
+   - Confirm the purchase order has `discountAmount: 100`, `finalAmount: 580`, `discountStonesUsed: 3`, and `rashinBonusConsumedAt`.
 
 3. 200 yen OFF Checkout:
    - Prepare the test user with `rashin_stones: 7`.
    - Start Checkout from the latest free reading result.
-   - Confirm Stripe Checkout shows `380 JPY`.
+   - Confirm Stripe Checkout shows `480 JPY`.
    - Complete payment.
    - Confirm `rashin_stones` decreases by 7 only after payment success.
-   - Confirm the purchase order has `discountAmount: 200`, `finalAmount: 380`, `discountStonesUsed: 7`, and `rashinBonusConsumedAt`.
+   - Confirm the purchase order has `discountAmount: 200`, `finalAmount: 480`, `discountStonesUsed: 7`, and `rashinBonusConsumedAt`.
 
 4. Cancel flow:
    - Start a discounted Checkout.
@@ -171,7 +222,7 @@ Failure logs that require investigation before launch:
 
 Do not switch to live keys unless all are true:
 
-- `580`, `480`, and `380` JPY Checkout amounts are confirmed in Stripe test mode.
+- `680`, `580`, and `480` JPY Checkout amounts are confirmed in Stripe test mode.
 - Tickets are issued only after successful payment.
 - Canceled Checkout does not consume stones.
 - Duplicate webhook resend does not create another ticket.
