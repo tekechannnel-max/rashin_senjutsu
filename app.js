@@ -1608,6 +1608,7 @@ const FREE_RASHIN_CTA_LABEL='無料で羅針鑑定をする';
 const DEEP_PAID_CTA_LABEL='深堀り羅針鑑定をする(有料)';
 const SIMPLE_READING_PLAN='simple';
 const SIMPLE_READING_LABEL='ミニ羅針鑑定はこちら（カードなし）';
+const SIMPLE_READING_LABEL_HTML='ミニ羅針鑑定はこちら<br>（カードなし）';
 const FREE_LEN_COUNT=2;
 const FREE_ORC_COUNT=1;
 const LEN_FREE_POSITION_LABELS=['主題','修飾・答え'];
@@ -5363,7 +5364,7 @@ function repairStaticCopy(){
     if(topBtns) topBtns.appendChild(simpleTopBtn);
   }
   if(simpleTopBtn){
-    simpleTopBtn.textContent=SIMPLE_READING_LABEL;
+    simpleTopBtn.innerHTML=SIMPLE_READING_LABEL_HTML;
     simpleTopBtn.setAttribute('href','?flow=simple');
     simpleTopBtn.setAttribute('data-flow-target','simple');
     simpleTopBtn.setAttribute('data-track','simple_start_click');
@@ -5558,10 +5559,11 @@ function repairStaticCopy(){
     inputBtns.appendChild(simpleInputBtn);
   }
   if(simpleInputBtn){
-    simpleInputBtn.textContent=SIMPLE_READING_LABEL;
+    simpleInputBtn.innerHTML=SIMPLE_READING_LABEL_HTML;
     simpleInputBtn.onclick=()=>startFlow(SIMPLE_READING_PLAN);
   }
   setButtons('#s-input .input-btns button',['戻る','この内容で占う ✦',SIMPLE_READING_LABEL]);
+  if(simpleInputBtn) simpleInputBtn.innerHTML=SIMPLE_READING_LABEL_HTML;
   syncInputModeUI();
 
   setText('#len-inst','シャッフル中です。止めたところで、上から順にカードを引きます');
