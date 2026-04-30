@@ -4933,6 +4933,18 @@ body{
 .today-cta:hover{box-shadow:0 18px 38px rgba(201,149,42,.18), inset 0 1px 0 rgba(255,255,255,.08);transform:translateY(-1px);}
 .today-cta.today-cta-free{background:linear-gradient(90deg,var(--gold-d),var(--gold-l),#fffaec,var(--gold),var(--gold-d));background-size:200% auto;color:#04030a;border-color:rgba(228,184,74,.72);box-shadow:0 0 26px rgba(201,149,42,.48),0 16px 34px rgba(201,149,42,.28),inset 0 1px 0 rgba(255,255,255,.3);animation:ctaShimmer 5s linear infinite;font-weight:700;letter-spacing:.06em;}
 .today-cta.today-cta-paid{background:rgba(255,255,255,.025);border-color:rgba(228,184,74,.5);color:var(--gold-l);box-shadow:0 12px 28px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.06);}
+.today-cta.today-cta-simple{
+  background:linear-gradient(135deg,rgba(37,190,126,.82),rgba(134,238,181,.9),rgba(48,178,128,.86));
+  border-color:rgba(151,245,194,.76);
+  color:#03110a;
+  box-shadow:0 0 24px rgba(98,230,164,.34),0 16px 34px rgba(26,144,96,.24),inset 0 1px 0 rgba(255,255,255,.32);
+  letter-spacing:.08em;
+}
+.today-cta.today-cta-simple:hover{
+  border-color:rgba(190,255,218,.95);
+  box-shadow:0 0 34px rgba(112,242,178,.5),0 18px 40px rgba(24,143,95,.32),inset 0 1px 0 rgba(255,255,255,.36);
+  color:#021108;
+}
 .today-cta.today-cta-free:hover{animation-duration:2.3s;box-shadow:0 0 40px rgba(201,149,42,.65),0 20px 44px rgba(201,149,42,.38),inset 0 1px 0 rgba(255,255,255,.32);color:#04030a;}
 .today-cta.today-cta-paid:hover{background:rgba(201,149,42,.08);border-color:rgba(228,184,74,.8);}
 .today-cta.today-cta-paid.deep-premium-button{
@@ -5816,7 +5828,7 @@ body{
           </ul>
           <div class="plan-compare-summary">本質・本音・現実を知り、次の一手を受け取る鑑定です。</div>
           <div class="plan-compare-actions">
-            <a class="plan-compare-action free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
+            <a class="plan-compare-action free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で羅針鑑定をする</a>
           </div>
         </div>
         <div class="plan-compare-card deep">
@@ -5963,8 +5975,9 @@ body{
         <div style="font-family:'Shippori Mincho',serif;font-size:15px;color:rgba(240,234,216,.7);letter-spacing:.08em;">無料で見えた流れを、次にすることまで深く読む</div>
       </div>
       <div class="paid-band-actions paid-band-actions-center">
-        <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
+        <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で羅針鑑定をする</a>
         <a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('paid');return false;}">深堀り羅針鑑定をする(有料)</a>
+        <a class="today-cta today-cta-simple" href="?flow=simple" data-flow-target="simple" data-track="simple_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('simple');return false;}">ミニ羅針鑑定はこちら<br>（カードなし）</a>
       </div>
       <div class="paid-band-note">深堀り羅針鑑定 1回980円 / 月額2,200円で有料5回まで</div>
       <div class="checkout-disclosure">

@@ -5424,7 +5424,7 @@ function repairStaticCopy(){
       '数秘オラクルカード1枚'
     ].forEach((text,index)=>{ if(freeItems[index]) freeItems[index].textContent=text; });
     setWithin(planCards[0],'.plan-compare-summary','無料鑑定では、いまの答えと次の一手を整理します。');
-    setWithin(planCards[0],'.plan-compare-action','無料で鑑定をはじめる');
+    setWithin(planCards[0],'.plan-compare-action',FREE_RASHIN_CTA_LABEL);
   }
   if(planCards[1]){
     setWithin(planCards[1],'.plan-compare-title','深掘り鑑定');
@@ -5763,8 +5763,9 @@ function renderPremiumEntrySection(){
   el.innerHTML=`
     <div class="paid-band-inner">
       <div class="paid-band-actions paid-band-actions-center">
-        <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
+        <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">${FREE_RASHIN_CTA_LABEL}</a>
         ${paidAction}
+        <a class="today-cta today-cta-simple" href="?flow=simple" data-flow-target="simple" data-track="simple_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('simple');return false;}">${SIMPLE_READING_LABEL_HTML}</a>
       </div>
       <div class="paid-band-note">深堀り羅針鑑定 1回980円 / 月額2,200円で有料5回まで</div>
       <div class="checkout-disclosure">${CHECKOUT_DISCLOSURE_HTML}</div>
@@ -7267,8 +7268,9 @@ function renderPremiumEntryFallback(){
   el.innerHTML=`
     <div class="paid-band-inner">
       <div class="paid-band-actions paid-band-actions-center">
-        <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
+        <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">${FREE_RASHIN_CTA_LABEL}</a>
         <a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('paid');return false;}">${DEEP_PAID_CTA_LABEL}</a>
+        <a class="today-cta today-cta-simple" href="?flow=simple" data-flow-target="simple" data-track="simple_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('simple');return false;}">${SIMPLE_READING_LABEL_HTML}</a>
       </div>
       <div class="paid-band-note">深堀り羅針鑑定 1回980円 / 月額2,200円で有料5回まで</div>
       <div class="checkout-disclosure">${CHECKOUT_DISCLOSURE_HTML}</div>
