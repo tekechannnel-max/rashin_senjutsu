@@ -345,13 +345,26 @@ body{
 
 .btn-simple{
   width:300px;max-width:100%;min-width:238px;min-height:46px;height:auto;padding:10px 18px;
-  background:rgba(201,149,42,.07);border:1px solid rgba(201,149,42,.28);
-  color:rgba(240,234,216,.86);font-size:13px;letter-spacing:.06em;line-height:1.45;
+  background:linear-gradient(135deg,rgba(28,112,80,.92),rgba(87,194,137,.86),rgba(185,238,191,.92));
+  border:1px solid rgba(149,226,171,.72);
+  color:#061711;font-size:13px;font-weight:800;letter-spacing:.06em;line-height:1.45;
   white-space:normal;text-align:center;
-  box-shadow:none;animation:none;
+  box-shadow:0 0 24px rgba(87,194,137,.32),0 16px 32px rgba(11,63,43,.24),inset 0 1px 0 rgba(255,255,255,.36);
+  animation:gentleGreenPulse 4.8s ease-in-out infinite;
 }
 
-.btn-simple:hover{background:rgba(255,255,255,.05);border-color:rgba(228,184,74,.42);color:var(--gold-l);transform:translateY(-1px);}
+.btn-simple:hover{
+  background:linear-gradient(135deg,rgba(35,129,91,.96),rgba(105,211,151,.94),rgba(205,246,209,.96));
+  border-color:rgba(184,242,196,.9);
+  color:#03120c;
+  box-shadow:0 0 32px rgba(105,211,151,.42),0 20px 38px rgba(11,63,43,.3),inset 0 1px 0 rgba(255,255,255,.42);
+  transform:translateY(-1px);
+}
+
+@keyframes gentleGreenPulse{
+  0%,100%{box-shadow:0 0 18px rgba(87,194,137,.24),0 16px 32px rgba(11,63,43,.22),inset 0 1px 0 rgba(255,255,255,.34);}
+  50%{box-shadow:0 0 30px rgba(124,224,162,.42),0 18px 34px rgba(11,63,43,.26),inset 0 1px 0 rgba(255,255,255,.4);}
+}
 
 .rashin-code-form{
   width:300px;max-width:100%;min-width:238px;min-height:56px;padding:9px 10px 9px 14px;
@@ -2356,13 +2369,19 @@ body{
 }
 
 .btn-simple-input{
-  flex:0 0 100%;min-height:46px;padding:12px 16px;background:rgba(201,149,42,.05);
-  border:1px solid rgba(201,149,42,.24);border-radius:1px;
-  font-family:'Noto Sans JP',sans-serif;font-size:13px;letter-spacing:.04em;line-height:1.5;color:rgba(240,234,216,.82);
+  flex:0 0 100%;min-height:46px;padding:12px 16px;
+  background:linear-gradient(135deg,rgba(28,112,80,.9),rgba(87,194,137,.84),rgba(185,238,191,.9));
+  border:1px solid rgba(149,226,171,.68);border-radius:1px;
+  font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:800;letter-spacing:.04em;line-height:1.5;color:#061711;
   cursor:pointer;transition:all .2s;text-align:center;white-space:normal;
+  box-shadow:0 0 20px rgba(87,194,137,.28),0 14px 28px rgba(11,63,43,.22),inset 0 1px 0 rgba(255,255,255,.34);
 }
 
-.btn-simple-input:hover{border-color:rgba(201,149,42,.42);color:var(--gold-l);background:rgba(201,149,42,.06);}
+.btn-simple-input:hover{
+  border-color:rgba(184,242,196,.88);color:#03120c;
+  background:linear-gradient(135deg,rgba(35,129,91,.95),rgba(105,211,151,.92),rgba(205,246,209,.96));
+  box-shadow:0 0 30px rgba(105,211,151,.38),0 18px 34px rgba(11,63,43,.28),inset 0 1px 0 rgba(255,255,255,.42);
+}
 
 .shuffle-area{
   width:min(82vw,260px);
@@ -5668,10 +5687,10 @@ body{
       <div class="top-kicker">姓名判断・四柱推命・動物タイプ診断・カード占い</div>
       <h1 class="top-title" id="brand-app-name">羅針占術</h1>
       <div class="top-sub" id="brand-app-subtitle">本質、本音、いまの現実。<br>3つの層から、次に進む方角を読み解きます。</div>
-      <div class="top-desc">まずは30秒のミニ鑑定で、いまの流れと次の一手を確認できます。</div>
+      <div class="top-desc">まずは無料の羅針鑑定で、あなたの本質・本音・いまの流れ・次の一手を確認できます。</div>
       <div class="top-btns">
-        <a class="btn-top btn-free" href="?flow=simple" data-flow-target="simple" data-track="simple_start_click" data-track-position="hero" onclick="if(window.startFlow){startFlow('simple');return false;}">30秒で無料ミニ鑑定する</a>
-        <a class="btn-top btn-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="top" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定をする(有料)</a>
+        <a class="btn-top btn-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="hero" onclick="if(window.startFlow){startFlow('free');return false;}">無料で羅針鑑定をする</a>
+        <a class="btn-top btn-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="top" onclick="if(window.startFlow){startFlow('paid');return false;}">深堀り羅針鑑定をする(有料)</a>
       </div>
       <div class="top-note"></div>
       <div class="runtime-status warn" id="top-ai-status" style="display:none">
@@ -5815,7 +5834,7 @@ body{
           </ul>
           <div class="plan-compare-summary">迷いの変化を追い、注意点と次の選択を具体的に読み解きます。</div>
           <div class="plan-compare-actions">
-            <a class="plan-compare-action deep deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="comparison" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定をする(有料)</a>
+            <a class="plan-compare-action deep deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="comparison" onclick="if(window.startFlow){startFlow('paid');return false;}">深堀り羅針鑑定をする(有料)</a>
           </div>
         </div>
       </div>
@@ -5945,7 +5964,7 @@ body{
       </div>
       <div class="paid-band-actions paid-band-actions-center">
         <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
-        <a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定をする(有料)</a>
+        <a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('paid');return false;}">深堀り羅針鑑定をする(有料)</a>
       </div>
       <div class="paid-band-note">深掘り鑑定 1回980円 / 継続課金ではありません</div>
       <div class="checkout-disclosure">

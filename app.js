@@ -1604,9 +1604,10 @@ const DAILY_ORACLE_FALLBACK_ID_STORAGE_KEY='uranai-daily-oracle-fallback-id-v1';
 const DAILY_ORACLE_ACTIVE_RECORD_KEY='uranai-daily-oracle-active-v1';
 const MEMBER_STORAGE_KEY='uranai-member-preview-v1';
 const STRIPE_RETURN_INTENT_KEY='uranai-stripe-return-intent-v1';
-const DEEP_PAID_CTA_LABEL='深掘り鑑定をする(有料)';
+const FREE_RASHIN_CTA_LABEL='無料で羅針鑑定をする';
+const DEEP_PAID_CTA_LABEL='深堀り羅針鑑定をする(有料)';
 const SIMPLE_READING_PLAN='simple';
-const SIMPLE_READING_LABEL='30秒で無料ミニ鑑定する';
+const SIMPLE_READING_LABEL='ミニ羅針鑑定はこちら（カードなし）';
 const FREE_LEN_COUNT=2;
 const FREE_ORC_COUNT=1;
 const LEN_FREE_POSITION_LABELS=['主題','修飾・答え'];
@@ -5344,13 +5345,13 @@ function repairStaticCopy(){
   setButtons('#member-access-modal .modal-btns button',['確認用で始める','確認して続ける','閉じる']);
 
   setText('#s-top .top-kicker','姓名判断・四柱推命・動物タイプ診断・カード占い');
-  setHtml('#s-top .top-desc','まずは30秒のミニ鑑定で、いまの流れと次の一手を確認できます。');
+  setHtml('#s-top .top-desc','まずは無料の羅針鑑定で、あなたの本質・本音・いまの流れ・次の一手を確認できます。');
   const topQuickBtn=document.querySelector('#s-top .btn-top.btn-free');
   if(topQuickBtn){
-    topQuickBtn.textContent=SIMPLE_READING_LABEL;
-    topQuickBtn.setAttribute('href','?flow=simple');
-    topQuickBtn.setAttribute('data-flow-target','simple');
-    topQuickBtn.setAttribute('data-track','simple_start_click');
+    topQuickBtn.textContent=FREE_RASHIN_CTA_LABEL;
+    topQuickBtn.setAttribute('href','?flow=free');
+    topQuickBtn.setAttribute('data-flow-target','free');
+    topQuickBtn.setAttribute('data-track','free_start_click');
     topQuickBtn.setAttribute('data-track-position','hero');
   }
   setText('#s-top .btn-top.btn-paid',DEEP_PAID_CTA_LABEL);
@@ -5362,10 +5363,10 @@ function repairStaticCopy(){
     if(topBtns) topBtns.appendChild(simpleTopBtn);
   }
   if(simpleTopBtn){
-    simpleTopBtn.textContent='カードありの無料鑑定をする';
-    simpleTopBtn.setAttribute('href','?flow=free');
-    simpleTopBtn.setAttribute('data-flow-target','free');
-    simpleTopBtn.setAttribute('data-track','free_start_click');
+    simpleTopBtn.textContent=SIMPLE_READING_LABEL;
+    simpleTopBtn.setAttribute('href','?flow=simple');
+    simpleTopBtn.setAttribute('data-flow-target','simple');
+    simpleTopBtn.setAttribute('data-track','simple_start_click');
     simpleTopBtn.setAttribute('data-track-position','hero');
     simpleTopBtn.onclick=null;
   }
@@ -9010,15 +9011,15 @@ function syncInputModeUI(){
   const reactionField=document.getElementById('reaction-progress')?.closest('.field-group');
   if(nameNote){
     nameNote.textContent=simple
-      ?'※ミニ鑑定では姓名は任意です。入力すると名前から見える傾向も補足します。'
+      ?'※ミニ鑑定では姓名は任意です。動物タイプ診断と生年月から、カードなしで短く読みます。'
       :'※姓名判断のため、姓と名の両方を入力してください。';
   }
   if(themeField) themeField.style.display=simple?'none':'';
-  if(reactionField) reactionField.style.display=simple?'none':'';
+  if(reactionField) reactionField.style.display='';
   if(simple&&theme) theme.value='';
   updateThemeCounter();
   const mainBtn=document.querySelector('#s-input .input-btns .btn-main');
-  if(mainBtn) mainBtn.textContent=simple?'ミニ鑑定を見る ✦':'この内容で占う ✦';
+  if(mainBtn) mainBtn.textContent=simple?'ミニ羅針鑑定を見る ✦':'この内容で占う ✦';
   const simpleBtn=document.getElementById('simple-reading-btn');
   if(simpleBtn) simpleBtn.style.display=simple?'none':'';
 }
@@ -9154,6 +9155,11 @@ function goToSimpleReading(){
   if(!hasBirthYearMonth(year,month)){
     showToast('生年と生月を確認してください');
     syncDayOptions(day);
+    return;
+  }
+  if(!isReactionComplete(REACTION_ANSWERS)||!REACTION_PROFILE){
+    showToast('動物タイプ診断を最後まで選んでください');
+    renderReactionQuestionnaire();
     return;
   }
   PLAN=SIMPLE_READING_PLAN;
