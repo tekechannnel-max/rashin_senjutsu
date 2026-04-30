@@ -1604,6 +1604,8 @@ const DAILY_ORACLE_FALLBACK_ID_STORAGE_KEY='uranai-daily-oracle-fallback-id-v1';
 const DAILY_ORACLE_ACTIVE_RECORD_KEY='uranai-daily-oracle-active-v1';
 const MEMBER_STORAGE_KEY='uranai-member-preview-v1';
 const STRIPE_RETURN_INTENT_KEY='uranai-stripe-return-intent-v1';
+const FREE_READING_QUOTA_STORAGE_KEY='uranai-free-reading-quota-v1';
+const FREE_READING_DAILY_LIMIT=5;
 const FREE_RASHIN_CTA_LABEL='無料で羅針鑑定をする';
 const DEEP_PAID_CTA_LABEL='深堀り羅針鑑定をする(有料)';
 const SIMPLE_READING_PLAN='simple';
@@ -2089,8 +2091,8 @@ const MEMBERSHIP_PLAN={
     },
   ],
 };
-const CHECKOUT_DISCLOSURE_HTML='深堀り羅針鑑定は、カード決済で購入できる1回980円の単発課金です。無料鑑定を先に作成する必要はありません。継続課金ではありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
-const RESULT_CHECKOUT_DISCLOSURE_HTML='深掘り鑑定は1回980円の単発課金です。無料鑑定の本文を延長するものではなく、無料で引いたカードを軸に、有料分の追加カードを展開して作成する別の鑑定です。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
+const CHECKOUT_DISCLOSURE_HTML='深堀り羅針鑑定は、カード決済で購入できる有料鑑定です。料金は1回980円、月額プランは2,200円で有料鑑定5回までです。無料鑑定を先に作成する必要はありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
+const RESULT_CHECKOUT_DISCLOSURE_HTML='深掘り鑑定は1回980円、月額プランは2,200円で有料鑑定5回までです。無料で引いたカードの続きから追加カードを展開することも、直接有料鑑定から始めることもできます。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
 
 // 全カード・各3問の解釈絞り込みテンプレート
 const CLARIFY_DEF={
@@ -3954,7 +3956,7 @@ function getMemberStatusMeta(){
     return{
       cls:'inactive',
       label:'深掘り鑑定',
-      copy:'深堀り羅針鑑定は、カード決済で購入できる1回980円の別鑑定です。無料鑑定を先に作成する必要はありません。継続課金ではありません。',
+      copy:'深堀り羅針鑑定は、1回980円、月額2,200円で有料鑑定5回までです。無料鑑定から続きのカードを引くことも、直接有料鑑定から始めることもできます。',
       action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openStripeCheckout('start-paid')">カード決済へ進む</button>`,
     };
   }
@@ -3962,7 +3964,7 @@ function getMemberStatusMeta(){
     return{
       cls:'inactive',
       label:'深掘り鑑定',
-      copy:'深堀り羅針鑑定は、カード決済で購入できる1回980円の別鑑定です。無料鑑定を先に作成する必要はありません。継続課金ではありません。',
+      copy:'深堀り羅針鑑定は、1回980円、月額2,200円で有料鑑定5回までです。無料鑑定から続きのカードを引くことも、直接有料鑑定から始めることもできます。',
       action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openStripeCheckout('start-paid')">カード決済へ進む</button>`,
     };
   }
@@ -3971,7 +3973,7 @@ function getMemberStatusMeta(){
     label:canUseAccessCode()?'確認コード待ち':'公開準備中',
     copy:canUseAccessCode()
       ?'前回の鑑定をもとに、続きの悩みを読み解けます。確認コードを入力すると深掘り鑑定の利用状態を確認できます。'
-      :'深堀り羅針鑑定は、カード決済で直接購入できます。無料鑑定を先に作成する必要はありません。',
+      :'深堀り羅針鑑定は、カード決済で直接購入できます。1回980円、月額2,200円で有料鑑定5回までです。',
     action:canUseAccessCode()
       ?`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openMemberAccessModal('start-paid')">確認コードを入力</button>`
       :`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openStripeCheckout('start-paid')">カード決済へ進む</button>`,
@@ -4948,9 +4950,10 @@ async function handleStripeReturnFlow(){
     void loadRashinBonusStatus({render:true});
     cleanupStripeReturnParams();
     const intent=consumeStripeReturnIntent();
-    if(data?.ticketReady){
+  if(data?.ticketReady){
     const finalAmount=Number(data?.finalAmount||980);
       const discountAmount=Number(data?.discountAmount||0);
+      restoreFreeReadingQuotaFromPaid(data.ticketId||sessionId);
       trackEvent('deep_payment_complete',{
         source:checkoutSourceFromIntent(intent),
       price:980,
@@ -5074,7 +5077,7 @@ function openMemberAccessModal(intent=''){
       ?'<div class="runtime-status-title">このまま深掘り鑑定フローへ進めます</div><div class="runtime-status-detail">確認用の状態で深掘り鑑定フローを確認できます。</div>'
       :(usesGoogle
         ?'<div class="runtime-status-title">Googleログインで続行</div><div class="runtime-status-detail">履歴と購入確認を保存します。</div>'
-        :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':'深堀り羅針鑑定の準備中です'}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':'有料鑑定はカード決済から直接購入できます。無料鑑定を先に作成する必要はありません。'}</div>`);
+        :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':'深堀り羅針鑑定の準備中です'}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':'有料鑑定はカード決済から直接購入できます。1回980円、月額2,200円で有料鑑定5回までです。'}</div>`);
   }
   if(disclosure) disclosure.style.display='none';
   if(localBtn) localBtn.style.display=canUsePaidTestMode()?'inline-flex':'none';
@@ -5110,7 +5113,7 @@ function ensurePaidEntryGuideModal(){
   modal.innerHTML=`
     <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="paid-entry-guide-title">
       <div class="modal-title" id="paid-entry-guide-title">深堀り羅針鑑定のカード決済へ進みます</div>
-      <div class="modal-desc">無料鑑定を先に作成する必要はありません。1回980円の単発購入です。</div>
+      <div class="modal-desc">無料鑑定を先に作成する必要はありません。1回980円、月額2,200円で有料鑑定5回までです。</div>
       <div class="runtime-status ok">
         <div class="runtime-status-title">カード決済後に有料鑑定を開始します</div>
         <div class="runtime-status-detail">KOMOJUの申請・決済準備が完了していない場合は、購入画面に進めません。</div>
@@ -5425,8 +5428,8 @@ function repairStaticCopy(){
   }
   if(planCards[1]){
     setWithin(planCards[1],'.plan-compare-title','深掘り鑑定');
-  setWithin(planCards[1],'.plan-compare-price','1回980円');
-    setWithin(planCards[1],'.plan-compare-trial','継続課金ではありません');
+  setWithin(planCards[1],'.plan-compare-price','1回980円 / 月額2,200円');
+    setWithin(planCards[1],'.plan-compare-trial','月額は有料鑑定5回まで');
     setWithin(planCards[1],'.plan-compare-badge','無料鑑定の内容をすべて含む');
     const deepItems=planCards[1].querySelectorAll('.plan-compare-list li');
     [
@@ -5451,7 +5454,7 @@ function repairStaticCopy(){
     }
   }
   document.querySelectorAll('.paid-band-note').forEach(el=>{
-  el.textContent='深掘り鑑定 1回980円 / 継続課金ではありません';
+  el.textContent='深堀り羅針鑑定 1回980円 / 月額2,200円で有料5回まで';
   });
   document.querySelectorAll('.checkout-disclosure').forEach(el=>{
     if(el.closest('#member-access-modal')) return;
@@ -5464,7 +5467,7 @@ function repairStaticCopy(){
     ['数秘オラクルカードって何ですか？','誕生日などの数字の意味と、直感で選ぶカードを合わせて読むアドバイスカードです。<br>あなたの強み、背中を押す言葉、次の一手を示します。'],
     ['AIがどうやって占うのですか？','相談内容・名前・生年月日・カード結果をもとに、設計された占術ロジックに沿って鑑定文を生成します。<br>同じカードでも、相談内容やこれまでの流れによって読み方が変わります。'],
     ['無料鑑定では何ができますか？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。<br>自分自身の本質、本音、いまの現実、次に進むためのアドバイスを確認できます。'],
-    ['無料鑑定と深掘り鑑定の違いは？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。<br>深掘り鑑定では、同じ相談内容を前提に追加カードを引き、ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>深掘り鑑定は無料鑑定とは別の1回980円の単発課金です。継続課金ではありません。'],
+    ['無料鑑定と深掘り鑑定の違いは？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。無料鑑定とミニ鑑定はあわせて1日5回までです。<br>深掘り鑑定では、同じ相談内容を前提に続きの追加カードを引くことも、直接有料鑑定から始めることもできます。ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>料金は1回980円、月額プランは2,200円で有料鑑定5回までです。有料課金ごとに無料鑑定枠が1回分回復します。'],
     ['過去の鑑定は読み返せますか？','はい。これまでの鑑定は「過去の占いを読み返す」から確認できます。<br>前回のテーマやカードの流れを見返すことで、同じ悩みの続きや変化を確認しやすくなります。'],
     ['「鑑定履歴の流れを読み解く」って何ですか？','これまでの鑑定をまとめて、よく出るカード、相談テーマの変化、くり返し向き合っている悩みを時系列で読み解く機能です。<br>鑑定履歴があるほど、変化の流れが見えやすくなります。']
   ];
@@ -5763,7 +5766,7 @@ function renderPremiumEntrySection(){
         <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
         ${paidAction}
       </div>
-      <div class="paid-band-note">深掘り鑑定 1回980円 / 継続課金ではありません</div>
+      <div class="paid-band-note">深堀り羅針鑑定 1回980円 / 月額2,200円で有料5回まで</div>
       <div class="checkout-disclosure">${CHECKOUT_DISCLOSURE_HTML}</div>
     </div>`;
 }
@@ -5798,6 +5801,61 @@ function resetLatestOutputs(){
 
 function createReadingId(){
   return 'rd_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+}
+
+function getJstDateStamp(dateValue=new Date()){
+  const date=dateValue instanceof Date?dateValue:new Date(dateValue);
+  return new Date(date.getTime()+(9*60*60*1000)).toISOString().slice(0,10);
+}
+
+function readFreeReadingQuotaStore(){
+  const today=getJstDateStamp();
+  try{
+    const parsed=JSON.parse(localStorage.getItem(FREE_READING_QUOTA_STORAGE_KEY)||'{}');
+    if(parsed?.date===today){
+      return{
+        date:today,
+        freeReadingIds:Array.isArray(parsed.freeReadingIds)?parsed.freeReadingIds.slice(0,200):[],
+        restoredPaidReadingIds:Array.isArray(parsed.restoredPaidReadingIds)?parsed.restoredPaidReadingIds.slice(0,200):[],
+      };
+    }
+  }catch(e){}
+  return{date:today,freeReadingIds:[],restoredPaidReadingIds:[]};
+}
+
+function writeFreeReadingQuotaStore(store){
+  try{
+    localStorage.setItem(FREE_READING_QUOTA_STORAGE_KEY,JSON.stringify(store));
+  }catch(e){}
+}
+
+function getFreeReadingQuotaLimit(store=readFreeReadingQuotaStore()){
+  return FREE_READING_DAILY_LIMIT+(store.restoredPaidReadingIds?.length||0);
+}
+
+function consumeFreeReadingQuota(readingId=''){
+  const safeId=String(readingId||CURRENT_READING_ID||'').trim();
+  if(!safeId) return true;
+  const store=readFreeReadingQuotaStore();
+  if(store.freeReadingIds.includes(safeId)) return true;
+  const limit=getFreeReadingQuotaLimit(store);
+  if(store.freeReadingIds.length>=limit){
+    showToast(`本日の無料鑑定枠を使い切りました。無料鑑定とミニ鑑定はあわせて1日${FREE_READING_DAILY_LIMIT}回までです。有料鑑定を1回利用すると無料枠が1回分回復します。`);
+    return false;
+  }
+  store.freeReadingIds.push(safeId);
+  writeFreeReadingQuotaStore(store);
+  return true;
+}
+
+function restoreFreeReadingQuotaFromPaid(restoreId=''){
+  const safeId=String(restoreId||'').trim();
+  if(!safeId) return false;
+  const store=readFreeReadingQuotaStore();
+  if(store.restoredPaidReadingIds.includes(safeId)) return false;
+  store.restoredPaidReadingIds.push(safeId);
+  writeFreeReadingQuotaStore(store);
+  return true;
 }
 
 function beginReadingSession(readingId=''){
@@ -7212,7 +7270,7 @@ function renderPremiumEntryFallback(){
         <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
         <a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('paid');return false;}">${DEEP_PAID_CTA_LABEL}</a>
       </div>
-      <div class="paid-band-note">深掘り鑑定 1回980円 / 継続課金ではありません</div>
+      <div class="paid-band-note">深堀り羅針鑑定 1回980円 / 月額2,200円で有料5回まで</div>
       <div class="checkout-disclosure">${CHECKOUT_DISCLOSURE_HTML}</div>
     </div>`;
 }
@@ -7890,7 +7948,7 @@ function renderResultUpgradePanel(){
           <div class="upgrade-price-value" id="upgrade-price-value">通常 980円</div>
             <div class="upgrade-bonus-note" id="upgrade-bonus-note"></div>
           </div>
-          <div class="upgrade-note">継続課金ではありません。解約手続きは不要です。</div>
+          <div class="upgrade-note">1回980円 / 月額2,200円で有料鑑定5回までです。</div>
         </div>
       </div>
       <div class="upgrade-actions">
@@ -9132,6 +9190,11 @@ function goToLen(){
     trackEvent('form_submit',getCurrentInputAnalytics());
   }
   beginReadingSession(PLAN==='paid'&&PENDING_PAID_READING_ID?PENDING_PAID_READING_ID:'');
+  if(PLAN==='free'&&!consumeFreeReadingQuota(CURRENT_READING_ID)){
+    CURRENT_READING_ID='';
+    CURRENT_READING_CREATED_AT='';
+    return;
+  }
   if(PLAN==='paid') PENDING_PAID_READING_ID='';
   MEIMEI=calcMeimei(year,month,day,hour);
   LP=hasFullBirthDate(year,month,day)?calcLp(year,month,day):null;
@@ -9178,6 +9241,11 @@ function goToSimpleReading(){
   CLARIFY_ACTIVE_QUESTIONS=[];
   trackEvent('simple_form_submit',getCurrentInputAnalytics());
   beginReadingSession();
+  if(!consumeFreeReadingQuota(CURRENT_READING_ID)){
+    CURRENT_READING_ID='';
+    CURRENT_READING_CREATED_AT='';
+    return;
+  }
   MEIMEI=calcMeimei(year,month,day,hour);
   LP=hasFullBirthDate(year,month,day)?calcLp(year,month,day):null;
   NAMEJUDGE=fullname?calcNameJudge(fullname):null;
@@ -12041,6 +12109,7 @@ function buildAiPayload(userPrompt,maxTokens,sys,options={}){
     model:options.model||taskCfg.model,
     task_key:options.taskKey||'',
     plan:PLAN,
+    reading_id:CURRENT_READING_ID||'',
     category:document.getElementById('f-cat')?.value||'総合',
     paid_ticket_id:PLAN==='paid'?(ACTIVE_PAID_READING_TICKET?.id||''):'',
     paid_reading_id:PLAN==='paid'?CURRENT_READING_ID:'',
@@ -12075,7 +12144,7 @@ async function callAIThroughProxy(payload){
     throw makeAppError('OPENAI_UPSTREAM_ERROR',generationError);
   }
   if(data?.error==='FREE_DAILY_QUOTA_EXCEEDED'){
-    throw makeAppError('FREE_DAILY_QUOTA_EXCEEDED','本日の無料鑑定の利用が集中しています。時間をおいてから再度お試しください。');
+    throw makeAppError('FREE_DAILY_QUOTA_EXCEEDED','本日の無料鑑定枠を使い切りました。無料鑑定とミニ鑑定はあわせて1日5回までです。有料鑑定を1回利用すると無料枠が1回分回復します。');
   }
   if(data?.error==='ANTHROPIC_NETWORK_ERROR'){
     throw makeAppError('ANTHROPIC_NETWORK_ERROR',generationError);

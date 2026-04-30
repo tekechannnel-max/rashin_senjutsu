@@ -255,7 +255,7 @@ const RATE_LIMIT_RULES = {
   client_log: { windowMs: 10 * 60 * 1000, max: 80 },
 };
 const RATE_LIMIT_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
-const AI_FREE_DAILY_LIMIT = Math.max(12, parseInt(process.env.AI_FREE_DAILY_LIMIT || '96', 10) || 96);
+const AI_FREE_DAILY_LIMIT = Math.max(1, parseInt(process.env.AI_FREE_DAILY_LIMIT || '5', 10) || 5);
 const PAID_MODELS = new Set([AI_MODELS.paid, AI_MODELS.history, AI_MODELS.paidFallback]);
 const DEEP_READING_NORMAL_AMOUNT = 980;
 const RASHIN_BONUS_REWARD_AMOUNT = 1;
@@ -433,22 +433,68 @@ async function consumeFreeAiDailyQuota(req, payload = {}) {
   const dateStamp = getJstDateStamp();
   const ownerKey = getAiDailyQuotaOwner(req, payload);
   const filePath = getAiDailyQuotaPath(ownerKey, dateStamp);
-  const current = await readJsonFileSafe(filePath, { date: dateStamp, count: 0 });
-  const count = current?.date === dateStamp ? Math.max(0, Number(current.count || 0) || 0) : 0;
-  if (count >= AI_FREE_DAILY_LIMIT) {
-    return { ok: false, remaining: 0, limit: AI_FREE_DAILY_LIMIT };
+  const current = await readJsonFileSafe(filePath, { date: dateStamp, count: 0, freeReadingIds: [], paidRestores: 0, restoredPaidReadingIds: [] });
+  const freeReadingIds = current?.date === dateStamp && Array.isArray(current.freeReadingIds)
+    ? current.freeReadingIds.slice(0, 200)
+    : [];
+  const readingId = normalizeVaultRecordId(payload?.reading_id || '');
+  const legacyCount = current?.date === dateStamp ? Math.max(0, Number(current.count || 0) || 0) : 0;
+  const count = Math.max(legacyCount, freeReadingIds.length);
+  const paidRestores = current?.date === dateStamp ? Math.max(0, Number(current.paidRestores || 0) || 0) : 0;
+  const limit = AI_FREE_DAILY_LIMIT + paidRestores;
+  if (readingId && freeReadingIds.includes(readingId)) {
+    return { ok: true, remaining: Math.max(0, limit - count), limit };
+  }
+  if (count >= limit) {
+    return { ok: false, remaining: 0, limit };
   }
   const nextCount = count + 1;
+  const nextFreeReadingIds = readingId ? [...freeReadingIds, readingId] : freeReadingIds;
   await writeJsonFileAtomic(filePath, {
+    ...(current && typeof current === 'object' ? current : {}),
     date: dateStamp,
     count: nextCount,
+    freeReadingIds: nextFreeReadingIds,
+    paidRestores,
+    restoredPaidReadingIds: Array.isArray(current?.restoredPaidReadingIds) ? current.restoredPaidReadingIds.slice(0, 100) : [],
     updatedAt: new Date().toISOString(),
   });
   return {
     ok: true,
-    remaining: Math.max(0, AI_FREE_DAILY_LIMIT - nextCount),
-    limit: AI_FREE_DAILY_LIMIT,
+    remaining: Math.max(0, limit - nextCount),
+    limit,
   };
+}
+
+async function restoreFreeAiDailyQuota(req, payload = {}, restoreId = '') {
+  if (isLocalRequest(req)) return { ok: true, restored: false };
+  const safeRestoreId = normalizeVaultRecordId(restoreId || '');
+  if (!safeRestoreId) return { ok: true, restored: false };
+  const dateStamp = getJstDateStamp();
+  const ownerKey = getAiDailyQuotaOwner(req, payload);
+  const filePath = getAiDailyQuotaPath(ownerKey, dateStamp);
+  const current = await readJsonFileSafe(filePath, { date: dateStamp, count: 0, paidRestores: 0, restoredPaidReadingIds: [] });
+  const restoredIds = current?.date === dateStamp && Array.isArray(current.restoredPaidReadingIds)
+    ? current.restoredPaidReadingIds.slice(0, 100)
+    : [];
+  if (restoredIds.includes(safeRestoreId)) return { ok: true, restored: false };
+  restoredIds.push(safeRestoreId);
+  await writeJsonFileAtomic(filePath, {
+    ...(current && typeof current === 'object' ? current : {}),
+    date: dateStamp,
+    count: current?.date === dateStamp ? Math.max(0, Number(current.count || 0) || 0) : 0,
+    paidRestores: restoredIds.length,
+    restoredPaidReadingIds: restoredIds,
+    updatedAt: new Date().toISOString(),
+  });
+  return { ok: true, restored: true };
+}
+
+async function restoreFreeAiDailyQuotaFromPaid(req, payload = {}) {
+  if (payload?.plan !== 'paid' || !isPaidModel(payload?.model) || payload?.task_key !== 'paid') {
+    return { ok: true, restored: false };
+  }
+  return restoreFreeAiDailyQuota(req, payload, payload?.paid_reading_id || '');
 }
 
 // TODO: Move rate limiting to Redis or another shared store before multi-process production scaling.
@@ -2805,6 +2851,7 @@ function sanitizePayload(body) {
   const taskKey = typeof body.task_key === 'string' ? body.task_key.trim().slice(0, 40) : '';
   const plan = typeof body.plan === 'string' ? body.plan.trim().slice(0, 20) : '';
   const category = typeof body.category === 'string' ? body.category.trim().slice(0, 40) : '';
+  const readingId = normalizeVaultRecordId(body.reading_id || '');
   const paidTicketId = normalizePaidTicketId(body.paid_ticket_id || '');
   const paidReadingId = normalizeVaultRecordId(body.paid_reading_id || '');
   const sourceReadingId = normalizeVaultRecordId(body.source_reading_id || '');
@@ -2840,6 +2887,7 @@ function sanitizePayload(body) {
     messages: safeMessages,
     task_key: taskKey,
     plan,
+    reading_id: readingId,
     category,
     paid_ticket_id: paidTicketId,
     paid_reading_id: paidReadingId,
@@ -3573,6 +3621,9 @@ async function handleAiProxy(req, res) {
       tokens_in: usageMetrics.inputTokens || 0,
       tokens_out: usageMetrics.outputTokens || 0,
     });
+    try {
+      await restoreFreeAiDailyQuotaFromPaid(req, payload);
+    } catch (_error) {}
     try {
       await writeAiUsageLog({
         at: new Date().toISOString(),
@@ -4837,6 +4888,7 @@ async function handleStripeCheckoutComplete(req, res) {
         });
         return;
       }
+      await restoreFreeAiDailyQuota(req, {}, ticket?.id || sessionId);
       sendJson(res, 200, {
         ...status,
         ok: true,
@@ -4889,6 +4941,7 @@ async function handleStripeCheckoutComplete(req, res) {
         });
         return;
       }
+      await restoreFreeAiDailyQuota(req, {}, subscription?.id || sessionId);
       if (userId) {
         const authSession = issueAuthSession(res, {
           source: 'google',
