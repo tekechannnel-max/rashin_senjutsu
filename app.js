@@ -1606,7 +1606,7 @@ const MEMBER_STORAGE_KEY='uranai-member-preview-v1';
 const STRIPE_RETURN_INTENT_KEY='uranai-stripe-return-intent-v1';
 const DEEP_PAID_CTA_LABEL='深掘り鑑定をする(有料)';
 const SIMPLE_READING_PLAN='simple';
-const SIMPLE_READING_LABEL='無料・カードなしで羅針鑑定する';
+const SIMPLE_READING_LABEL='30秒で無料ミニ鑑定する';
 const FREE_LEN_COUNT=2;
 const FREE_ORC_COUNT=1;
 const LEN_FREE_POSITION_LABELS=['主題','修飾・答え'];
@@ -4644,6 +4644,16 @@ function getPaidReadingIdentity(){
   return buildVaultIdentityFromInput(getCurrentInputSnapshot())||getPreferredVaultIdentity();
 }
 
+function getAiQuotaIdentity(){
+  return buildVaultIdentityFromInput(getCurrentInputSnapshot())||{
+    vaultId:getOrCreateVaultId(),
+    gender:GENDER||'unknown',
+    year:parseInt(document.getElementById('f-year')?.value,10)||null,
+    month:parseInt(document.getElementById('f-month')?.value,10)||null,
+    day:getSelectedBirthDay(),
+  };
+}
+
 function normalizeRashinPaidCodeInput(value=''){
   return String(value||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,12);
 }
@@ -5334,8 +5344,15 @@ function repairStaticCopy(){
   setButtons('#member-access-modal .modal-btns button',['確認用で始める','確認して続ける','閉じる']);
 
   setText('#s-top .top-kicker','姓名判断・四柱推命・動物タイプ診断・カード占い');
-  setHtml('#s-top .top-desc','無料鑑定でも、本質・本音・現実・次の一手まで読み解けます。');
-  setText('#s-top .btn-top.btn-free','無料で羅針鑑定をはじめる');
+  setHtml('#s-top .top-desc','まずは30秒のミニ鑑定で、いまの流れと次の一手を確認できます。');
+  const topQuickBtn=document.querySelector('#s-top .btn-top.btn-free');
+  if(topQuickBtn){
+    topQuickBtn.textContent=SIMPLE_READING_LABEL;
+    topQuickBtn.setAttribute('href','?flow=simple');
+    topQuickBtn.setAttribute('data-flow-target','simple');
+    topQuickBtn.setAttribute('data-track','simple_start_click');
+    topQuickBtn.setAttribute('data-track-position','hero');
+  }
   setText('#s-top .btn-top.btn-paid',DEEP_PAID_CTA_LABEL);
   const topBtns=document.querySelector('#s-top .top-btns');
   let simpleTopBtn=document.querySelector('#s-top .btn-top.btn-simple');
@@ -5345,10 +5362,10 @@ function repairStaticCopy(){
     if(topBtns) topBtns.appendChild(simpleTopBtn);
   }
   if(simpleTopBtn){
-    simpleTopBtn.textContent=SIMPLE_READING_LABEL;
-    simpleTopBtn.setAttribute('href','?flow=simple');
-    simpleTopBtn.setAttribute('data-flow-target','simple');
-    simpleTopBtn.setAttribute('data-track','simple_start_click');
+    simpleTopBtn.textContent='カードありの無料鑑定をする';
+    simpleTopBtn.setAttribute('href','?flow=free');
+    simpleTopBtn.setAttribute('data-flow-target','free');
+    simpleTopBtn.setAttribute('data-track','free_start_click');
     simpleTopBtn.setAttribute('data-track-position','hero');
     simpleTopBtn.onclick=null;
   }
@@ -8985,13 +9002,23 @@ function startFlowUnlocked(plan){
 
 function syncInputModeUI(){
   const simple=isSimpleReadingPlan();
+  const sei=document.getElementById('f-sei');
+  const nameField=sei?.closest('.field-group');
+  const nameNote=nameField?.querySelector('.field-note');
   const theme=document.getElementById('f-theme');
   const themeField=theme?.closest('.field-group');
+  const reactionField=document.getElementById('reaction-progress')?.closest('.field-group');
+  if(nameNote){
+    nameNote.textContent=simple
+      ?'※ミニ鑑定では姓名は任意です。入力すると名前から見える傾向も補足します。'
+      :'※姓名判断のため、姓と名の両方を入力してください。';
+  }
   if(themeField) themeField.style.display=simple?'none':'';
+  if(reactionField) reactionField.style.display=simple?'none':'';
   if(simple&&theme) theme.value='';
   updateThemeCounter();
   const mainBtn=document.querySelector('#s-input .input-btns .btn-main');
-  if(mainBtn) mainBtn.textContent=simple?SIMPLE_READING_LABEL:'この内容で占う ✦';
+  if(mainBtn) mainBtn.textContent=simple?'ミニ鑑定を見る ✦':'この内容で占う ✦';
   const simpleBtn=document.getElementById('simple-reading-btn');
   if(simpleBtn) simpleBtn.style.display=simple?'none':'';
 }
@@ -9118,8 +9145,12 @@ function goToSimpleReading(){
   const cat=document.getElementById('f-cat')?.value||'総合';
   const theme='';
   if(!ensureRequiredGender()) return;
-  const fullname=requireFullnameForNameJudge();
-  if(!fullname) return;
+  const rawFullname=getFullname();
+  let fullname='';
+  if(rawFullname){
+    fullname=requireFullnameForNameJudge();
+    if(!fullname) return;
+  }
   if(!hasBirthYearMonth(year,month)){
     showToast('生年と生月を確認してください');
     syncDayOptions(day);
@@ -9136,7 +9167,7 @@ function goToSimpleReading(){
   beginReadingSession();
   MEIMEI=calcMeimei(year,month,day,hour);
   LP=hasFullBirthDate(year,month,day)?calcLp(year,month,day):null;
-  NAMEJUDGE=calcNameJudge(fullname);
+  NAMEJUDGE=fullname?calcNameJudge(fullname):null;
   if(checkSave){
     try{localStorage.setItem(INPUT_STORAGE_KEY,JSON.stringify({fullname,gender:GENDER,year,month,day,hour,cat,theme,reactionAnswers:getReactionAnswersSnapshot(),reactionProfile:REACTION_PROFILE}));}catch(e){}
   }
@@ -12001,7 +12032,7 @@ function buildAiPayload(userPrompt,maxTokens,sys,options={}){
     paid_ticket_id:PLAN==='paid'?(ACTIVE_PAID_READING_TICKET?.id||''):'',
     paid_reading_id:PLAN==='paid'?CURRENT_READING_ID:'',
     source_reading_id:PLAN==='paid'?(ACTIVE_PAID_SOURCE_READING_ID||''):'',
-    identity:PLAN==='paid'?getPaidReadingIdentity():null,
+    identity:PLAN==='paid'?getPaidReadingIdentity():getAiQuotaIdentity(),
     max_tokens:maxTokens,
     system:withPromptSafetyRules(sys),
     messages:[{role:'user',content:userPrompt}],
@@ -12029,6 +12060,9 @@ async function callAIThroughProxy(payload){
   }
   if(data?.error==='OPENAI_UPSTREAM_ERROR'){
     throw makeAppError('OPENAI_UPSTREAM_ERROR',generationError);
+  }
+  if(data?.error==='FREE_DAILY_QUOTA_EXCEEDED'){
+    throw makeAppError('FREE_DAILY_QUOTA_EXCEEDED','本日の無料鑑定の利用が集中しています。時間をおいてから再度お試しください。');
   }
   if(data?.error==='ANTHROPIC_NETWORK_ERROR'){
     throw makeAppError('ANTHROPIC_NETWORK_ERROR',generationError);

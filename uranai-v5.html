@@ -8,7 +8,19 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>羅針占術</title>
+<title>羅針占術 | 姓名判断・四柱推命・カードで次の一手を読む占い</title>
+<meta name="description" content="羅針占術は、姓名判断・四柱推命・動物タイプ診断・ルノルマンカード・数秘オラクルカードを重ねて、本質、本音、いまの現実、次の一手を読み解く占いWEBアプリです。">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="羅針占術">
+<meta property="og:title" content="羅針占術 | 次の一手を読む占い">
+<meta property="og:description" content="本質、本音、いまの現実。3つの層から、次に進む方角を読み解きます。">
+<meta property="og:url" content="https://rashin-senjutsu.onrender.com/uranai-v5.html">
+<meta property="og:image" content="https://rashin-senjutsu.onrender.com/images/ui/app-wide.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="羅針占術 | 次の一手を読む占い">
+<meta name="twitter:description" content="姓名判断・四柱推命・カードを重ねて、迷いを次の一手に変える占いWEBアプリです。">
+<meta name="twitter:image" content="https://rashin-senjutsu.onrender.com/images/ui/app-wide.jpg">
+<link rel="canonical" href="https://rashin-senjutsu.onrender.com/uranai-v5.html">
 <script>
 window.GA_TRACKING_ID=window.GA_TRACKING_ID||'';
 if(window.GA_TRACKING_ID){
@@ -1908,6 +1920,7 @@ body{
 .field-input{
 
   width:100%;background:rgba(255,255,255,.04);
+  min-width:0;
 
   border:1px solid rgba(201,149,42,.18);border-radius:1px;
 
@@ -1958,6 +1971,7 @@ body{
 
 
 .date-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;}
+.date-grid > div{min-width:0;}
 
 .date-label{font-size:10px;letter-spacing:.2em;color:var(--muted);margin-bottom:6px;display:block;text-align:center;}
 
@@ -5040,7 +5054,17 @@ body{
 
   .top-hero-shell{min-height:100vh;min-height:100svh;padding:24px 18px 40px;}
 
-  .top-main{padding:0;}
+  #s-top,
+  #s-input{
+    width:100%;
+    max-width:100%;
+  }
+
+  .top-main{
+    width:100%;
+    max-width:342px;
+    padding:0;
+  }
 
   .top-hero-shell::before{background:
     linear-gradient(180deg,rgba(4,3,10,.1),rgba(4,3,10,.28) 56%,rgba(4,3,10,.56) 86%,rgba(7,5,18,.84) 100%),
@@ -5059,15 +5083,61 @@ body{
 
   .top-seal::after{width:66px;height:66px;}
 
-  .top-title{font-size:clamp(48px,18vw,72px);letter-spacing:.1em;}
+  .top-kicker{
+    max-width:100%;
+    white-space:normal;
+    line-height:1.7;
+    overflow-wrap:anywhere;
+  }
+
+  .top-title{
+    max-width:100%;
+    font-size:clamp(40px,14vw,54px);
+    letter-spacing:0;
+    overflow-wrap:anywhere;
+  }
 
   .top-sub{letter-spacing:.06em;font-size:16px;line-height:1.85;}
 
-  .top-desc{font-size:13px;line-height:1.9;}
+  .top-desc{
+    max-width:100%;
+    font-size:13px;
+    line-height:1.9;
+    overflow-wrap:anywhere;
+  }
 
   .top-btns{flex-direction:column;max-width:360px;margin:30px auto 0;}
 
   .btn-top{width:100%;min-width:0;}
+  #s-input{padding-left:24px;padding-right:24px;overflow-x:hidden;}
+  #s-top *,
+  #s-input *{max-width:100%;}
+  .input-wrap{
+    width:100%;
+    max-width:342px;
+  }
+  .field-group{width:100%;}
+  .input-title{
+    max-width:100%;
+    font-size:17px;
+    letter-spacing:.02em;
+    line-height:1.6;
+    overflow-wrap:anywhere;
+  }
+  .top-kicker,
+  .top-desc,
+  .input-title,
+  .field-note{
+    word-break:break-all;
+  }
+  #s-input .field-group > div[style*="grid-template-columns:1fr 1.5fr"]{
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  }
+  .date-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;}
+  .date-grid > div:first-child{grid-column:1/-1;}
+  .field-input{padding-left:14px;padding-right:34px;font-size:14px;}
+  .field-textarea{padding-right:14px;}
+  .gender-row{gap:10px;}
   .rashin-code-form{width:100%;grid-template-columns:1fr;gap:8px;padding:12px 14px;}
   .rashin-code-row{display:flex;gap:8px;align-items:center;justify-content:center;width:100%;}
   .rashin-code-input{max-width:118px;}
@@ -5563,7 +5633,7 @@ body{
         <div class="key-status" id="google-auth-error" style="display:none;margin-top:10px;"></div>
       </div>
       <div class="checkout-disclosure">
-        深掘り鑑定は1回680円の単発課金です。継続課金ではありません。無料鑑定の本文を延長するものではなく、無料で引いたカードを軸に、有料分の追加カードを展開して作成する別の鑑定です。返金可否は利用規約とStripeの処理状況に従います。占いは娯楽・自己理解支援であり、医療・法律・投資などの専門判断ではありません。
+        深掘り鑑定は1回980円の単発課金です。継続課金ではありません。無料鑑定の本文を延長するものではなく、無料で引いたカードを軸に、有料分の追加カードを展開して作成する別の鑑定です。返金可否は利用規約とStripeの処理状況に従います。占いは娯楽・自己理解支援であり、医療・法律・投資などの専門判断ではありません。
         <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a>
       </div>
     <div id="developer-access-shell" style="display:none;margin:14px 0 18px;">
@@ -5596,11 +5666,11 @@ body{
     <div class="top-main">
       <div class="top-seal" aria-hidden="true"></div>
       <div class="top-kicker">姓名判断・四柱推命・動物タイプ診断・カード占い</div>
-      <div class="top-title" id="brand-app-name">羅針占術</div>
+      <h1 class="top-title" id="brand-app-name">羅針占術</h1>
       <div class="top-sub" id="brand-app-subtitle">本質、本音、いまの現実。<br>3つの層から、次に進む方角を読み解きます。</div>
-      <div class="top-desc">無料鑑定でも、本質・本音・現実・次の一手まで読み解けます。</div>
+      <div class="top-desc">まずは30秒のミニ鑑定で、いまの流れと次の一手を確認できます。</div>
       <div class="top-btns">
-        <a class="btn-top btn-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="hero" onclick="if(window.startFlow){startFlow('free');return false;}">無料で羅針鑑定をはじめる</a>
+        <a class="btn-top btn-free" href="?flow=simple" data-flow-target="simple" data-track="simple_start_click" data-track-position="hero" onclick="if(window.startFlow){startFlow('simple');return false;}">30秒で無料ミニ鑑定する</a>
         <a class="btn-top btn-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="top" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定をする(有料)</a>
       </div>
       <div class="top-note"></div>
@@ -5733,7 +5803,7 @@ body{
         <div class="plan-compare-card deep">
           <div class="plan-compare-kicker">DEEP READING</div>
           <div class="plan-compare-title">深掘り鑑定</div>
-          <div class="plan-compare-price">1回680円</div>
+          <div class="plan-compare-price">1回980円</div>
           <div class="plan-compare-trial">継続課金ではありません</div>
           <div class="plan-compare-badge">無料鑑定の内容をすべて含む</div>
           <ul class="plan-compare-list">
@@ -5846,7 +5916,7 @@ body{
         <span class="top-faq-q-text">無料鑑定と深掘り鑑定の違いは？</span>
         <span class="top-faq-arrow">›</span>
       </button>
-      <div class="top-faq-a">無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。<br>深掘り鑑定では、同じ相談内容を前提に追加カードを引き、ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>深掘り鑑定は無料鑑定とは別の1回680円の単発課金です。継続課金ではありません。</div>
+      <div class="top-faq-a">無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。<br>深掘り鑑定では、同じ相談内容を前提に追加カードを引き、ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>深掘り鑑定は無料鑑定とは別の1回980円の単発課金です。継続課金ではありません。</div>
     </div>
     <div class="top-faq-item">
       <button class="top-faq-q" onclick="toggleFaq(this)">
@@ -5877,9 +5947,9 @@ body{
         <a class="today-cta today-cta-free" href="?flow=free" data-flow-target="free" data-track="free_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('free');return false;}">無料で鑑定をはじめる</a>
         <a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り鑑定をする(有料)</a>
       </div>
-      <div class="paid-band-note">深掘り鑑定 1回680円 / 継続課金ではありません</div>
+      <div class="paid-band-note">深掘り鑑定 1回980円 / 継続課金ではありません</div>
       <div class="checkout-disclosure">
-        深掘り鑑定は1回680円の単発課金です。継続課金ではありません。無料鑑定後の結果画面から購入できる別の有料鑑定です。返金可否は利用規約とStripeの処理状況に従います。占いは娯楽・自己理解支援であり、医療・法律・投資などの専門判断ではありません。
+        深掘り鑑定は1回980円の単発課金です。継続課金ではありません。無料鑑定後の結果画面から購入できる別の有料鑑定です。返金可否は利用規約とStripeの処理状況に従います。占いは娯楽・自己理解支援であり、医療・法律・投資などの専門判断ではありません。
         <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a>
       </div>
     </div>

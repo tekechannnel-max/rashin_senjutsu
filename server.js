@@ -22,6 +22,7 @@ const LOG_DIR = path.join(DATA_DIR, 'logs');
 const AI_USAGE_LOG_DIR = path.join(LOG_DIR, 'ai-usage');
 const CLIENT_ERROR_LOG_DIR = path.join(LOG_DIR, 'client-errors');
 const AI_EVENT_LOG_DIR = LOG_DIR;
+const AI_FREE_DAILY_QUOTA_DIR = path.join(DATA_DIR, 'ai-free-daily-quotas');
 
 function applyDotEnv(rootDir) {
   const envPath = path.join(rootDir, '.env');
@@ -254,6 +255,7 @@ const RATE_LIMIT_RULES = {
   client_log: { windowMs: 10 * 60 * 1000, max: 80 },
 };
 const RATE_LIMIT_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
+const AI_FREE_DAILY_LIMIT = Math.max(12, parseInt(process.env.AI_FREE_DAILY_LIMIT || '96', 10) || 96);
 const PAID_MODELS = new Set([AI_MODELS.paid, AI_MODELS.history, AI_MODELS.paidFallback]);
 const DEEP_READING_NORMAL_AMOUNT = 980;
 const RASHIN_BONUS_REWARD_AMOUNT = 1;
@@ -409,6 +411,43 @@ function consumeRateLimit(req, bucket) {
   return {
     ok: true,
     remaining: Math.max(0, rule.max - entries.length),
+  };
+}
+
+function getAiDailyQuotaOwner(req, payload = {}) {
+  const authSession = readAuthSession(req);
+  if (authSession?.userId) return `user:${authSession.userId}`;
+  const vaultId = String(payload?.identity?.vaultId || '').trim();
+  if (/^[A-Za-z0-9_-]{16,100}$/.test(vaultId)) return `vault:${vaultId}`;
+  return `ip:${getClientAddress(req)}`;
+}
+
+function getAiDailyQuotaPath(ownerKey, dateStamp = getJstDateStamp()) {
+  const ownerHash = crypto.createHash('sha256').update(ownerKey).digest('hex');
+  return path.join(AI_FREE_DAILY_QUOTA_DIR, `${dateStamp}-${ownerHash}.json`);
+}
+
+async function consumeFreeAiDailyQuota(req, payload = {}) {
+  if (isLocalRequest(req)) return { ok: true, remaining: AI_FREE_DAILY_LIMIT };
+  if (payload?.plan === 'paid' || isPaidModel(payload?.model)) return { ok: true, remaining: AI_FREE_DAILY_LIMIT };
+  const dateStamp = getJstDateStamp();
+  const ownerKey = getAiDailyQuotaOwner(req, payload);
+  const filePath = getAiDailyQuotaPath(ownerKey, dateStamp);
+  const current = await readJsonFileSafe(filePath, { date: dateStamp, count: 0 });
+  const count = current?.date === dateStamp ? Math.max(0, Number(current.count || 0) || 0) : 0;
+  if (count >= AI_FREE_DAILY_LIMIT) {
+    return { ok: false, remaining: 0, limit: AI_FREE_DAILY_LIMIT };
+  }
+  const nextCount = count + 1;
+  await writeJsonFileAtomic(filePath, {
+    date: dateStamp,
+    count: nextCount,
+    updatedAt: new Date().toISOString(),
+  });
+  return {
+    ok: true,
+    remaining: Math.max(0, AI_FREE_DAILY_LIMIT - nextCount),
+    limit: AI_FREE_DAILY_LIMIT,
   };
 }
 
@@ -3489,6 +3528,16 @@ async function handleAiProxy(req, res) {
     sendJson(res, 400, {
       error: error.message,
       message: 'Invalid AI payload.',
+    });
+    return;
+  }
+
+  const dailyQuota = await consumeFreeAiDailyQuota(req, payload);
+  if (!dailyQuota.ok) {
+    sendJson(res, 429, {
+      error: 'FREE_DAILY_QUOTA_EXCEEDED',
+      limit: dailyQuota.limit,
+      message: 'Free reading daily usage limit reached. Please retry later.',
     });
     return;
   }
