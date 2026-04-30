@@ -14,6 +14,7 @@ const STRIPE_CHECKOUT_COMPLETION_DIR = path.join(DATA_DIR, 'stripe-checkout-comp
 const PURCHASE_ORDER_DIR = path.join(DATA_DIR, 'purchase-orders');
 const PAID_READING_TICKET_DIR = path.join(DATA_DIR, 'paid-reading-tickets');
 const RASHIN_CODE_REDEEM_DIR = path.join(DATA_DIR, 'rashin-codes');
+const RASHIN_PAID_CODE_DIR = path.join(DATA_DIR, 'rashin-paid-codes');
 const RASHIN_DISCOUNT_CHECKOUT_LOCK_DIR = path.join(DATA_DIR, 'rashin-discount-checkout-locks');
 const USER_DIR = path.join(DATA_DIR, 'users');
 const INDEX_DIR = path.join(DATA_DIR, 'indexes');
@@ -91,12 +92,12 @@ function isConfiguredAppSecret(value) {
 }
 
 function parseStripePaymentMethodTypes(value) {
-  const allowed = new Set(['card', 'paypay']);
-  const parsed = String(value || 'card,paypay')
+  const allowed = new Set(['card']);
+  const parsed = String(value || 'card')
     .split(',')
     .map(item => item.trim().toLowerCase())
     .filter(item => allowed.has(item));
-  return parsed.length ? Array.from(new Set(parsed)) : ['card', 'paypay'];
+  return parsed.length ? Array.from(new Set(parsed)) : ['card'];
 }
 
 function readCliArg(flag) {
@@ -155,13 +156,14 @@ const GA_TRACKING_ID = isPlaceholderEnvValue(GA_TRACKING_ID_RAW) ? '' : GA_TRACK
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 const STRIPE_PRICE_ID_MONTHLY = process.env.STRIPE_PRICE_ID_MONTHLY || '';
-const STRIPE_PRICE_ID_DEEP_READING_680 = process.env.STRIPE_PRICE_ID_DEEP_READING_680 || '';
+const STRIPE_PRICE_ID_DEEP_READING_980 = process.env.STRIPE_PRICE_ID_DEEP_READING_980 || '';
 const STRIPE_SUCCESS_PATH = process.env.STRIPE_SUCCESS_PATH || '/uranai-v5.html?stripe_success=1&session_id={CHECKOUT_SESSION_ID}';
 const STRIPE_CANCEL_PATH = process.env.STRIPE_CANCEL_PATH || '/uranai-v5.html?stripe_cancel=1';
 const STRIPE_PORTAL_RETURN_PATH = process.env.STRIPE_PORTAL_RETURN_PATH || '/uranai-v5.html';
 const STRIPE_SUBSCRIPTION_NAME = process.env.STRIPE_SUBSCRIPTION_NAME || '\u6df1\u6398\u308a\u9451\u5b9a';
 const STRIPE_TRIAL_PERIOD_DAYS = Math.max(0, parseInt(process.env.STRIPE_TRIAL_PERIOD_DAYS || '7', 10) || 0);
 const STRIPE_CHECKOUT_PAYMENT_METHOD_TYPES = parseStripePaymentMethodTypes(process.env.STRIPE_PAYMENT_METHOD_TYPES);
+const RASHIN_CODE_ADMIN_SECRET = normalizeEnvValue(process.env.RASHIN_CODE_ADMIN_SECRET || '');
 const AI_MODELS = {
   free: process.env.OPENAI_FREE_MODEL || 'gpt-5.4-mini',
   paid: process.env.ANTHROPIC_PAID_MODEL || 'claude-sonnet-4-6',
@@ -211,7 +213,7 @@ const GOOGLE_CLIENT_CONFIGURED = isConfiguredGoogleClientId(GOOGLE_CLIENT_ID);
 const STRIPE_SECRET_CONFIGURED = isConfiguredStripeSecretKey(STRIPE_SECRET_KEY);
 const STRIPE_WEBHOOK_CONFIGURED = isConfiguredStripeWebhookSecret(STRIPE_WEBHOOK_SECRET);
 const STRIPE_PRICE_CONFIGURED = isConfiguredStripePriceId(STRIPE_PRICE_ID_MONTHLY);
-const STRIPE_DEEP_READING_PRICE_CONFIGURED = isConfiguredStripePriceId(STRIPE_PRICE_ID_DEEP_READING_680);
+const STRIPE_DEEP_READING_PRICE_CONFIGURED = isConfiguredStripePriceId(STRIPE_PRICE_ID_DEEP_READING_980);
 const MEMBER_SESSION_PERSISTENT = isConfiguredAppSecret(process.env.MEMBER_SESSION_SECRET || '');
 const AUTH_SESSION_PERSISTENT = isConfiguredAppSecret(process.env.AUTH_SESSION_SECRET || process.env.MEMBER_SESSION_SECRET || '');
 const MAX_JSON_BYTES = 1024 * 1024;
@@ -237,24 +239,39 @@ let GOOGLE_JWK_CACHE = { expiresAt: 0, keys: [] };
 const RATE_LIMIT_STATE = new Map();
 const USER_MUTATION_LOCKS = new Map();
 const CHECKOUT_SESSION_LOCKS = new Map();
+const PURCHASE_ORDER_MUTATION_LOCKS = new Map();
+const RASHIN_PAID_CODE_MUTATION_LOCKS = new Map();
 const RATE_LIMIT_RULES = {
   ai: { windowMs: 10 * 60 * 1000, max: 24 },
   google_auth: { windowMs: 10 * 60 * 1000, max: 12 },
   member_session: { windowMs: 10 * 60 * 1000, max: 20 },
   rashin_code: { windowMs: 10 * 60 * 1000, max: 10 },
+  rashin_paid_code: { windowMs: 10 * 60 * 1000, max: 10 },
+  rashin_code_purchase: { windowMs: 10 * 60 * 1000, max: 8 },
+  rashin_code_admin: { windowMs: 10 * 60 * 1000, max: 30 },
   stripe_checkout: { windowMs: 10 * 60 * 1000, max: 8 },
   stripe_portal: { windowMs: 10 * 60 * 1000, max: 20 },
   client_log: { windowMs: 10 * 60 * 1000, max: 80 },
 };
 const RATE_LIMIT_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 const PAID_MODELS = new Set([AI_MODELS.paid, AI_MODELS.history, AI_MODELS.paidFallback]);
-const DEEP_READING_NORMAL_AMOUNT = 680;
+const DEEP_READING_NORMAL_AMOUNT = 980;
 const RASHIN_BONUS_REWARD_AMOUNT = 1;
 const RASHIN_BONUS_VALID_DAYS = 7;
 const RASHIN_BONUS_DISCOUNTS = [
   { requiredStones: 7, discountAmount: 200 },
   { requiredStones: 3, discountAmount: 100 },
 ];
+const RASHIN_FREE_PAID_CODE_HASHES = new Set(
+  String(process.env.RASHIN_FREE_PAID_CODES || process.env.RASHIN_PROMO_PAID_CODES || '')
+    .split(/[\s,]+/)
+    .map(value => value.trim())
+    .filter(value => value && !isPlaceholderEnvValue(value))
+    .map(value => normalizeRashinPaidCode(value))
+    .filter(value => /^[A-Z0-9]{12}$/.test(value))
+    .map(value => getRashinPaidCodeHash(value))
+    .filter(Boolean)
+);
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -313,12 +330,13 @@ function escapeHtml(value) {
 function applySecurityHeaders(req, res) {
   // TODO(security): Remove unsafe-inline after moving inline JS/CSS to nonce/hash based assets.
   // This is intentionally left for a larger frontend refactor.
+  const imgSrc = "img-src 'self' data: blob: https://*.googleusercontent.com https://www.google-analytics.com";
   const csp = [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://js.stripe.com https://www.googletagmanager.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com",
     "font-src 'self' https://fonts.gstatic.com data:",
-    "img-src 'self' data: blob: https://*.googleusercontent.com https://www.google-analytics.com",
+    imgSrc,
     "media-src 'self'",
     "connect-src 'self' https://accounts.google.com https://api.stripe.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com",
     "frame-src 'self' https://accounts.google.com https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com",
@@ -558,20 +576,23 @@ function stripeWebhookReady() {
   return !!(STRIPE_SECRET_CONFIGURED && STRIPE_WEBHOOK_CONFIGURED);
 }
 
+function rashinPaidCodeReady() {
+  return true;
+}
+
 function getRuntimeSetupStatus(req) {
   const issues = [];
   if (!OPENAI_KEY_CONFIGURED) issues.push('OPENAI_API_KEY');
   if (!ANTHROPIC_KEY_CONFIGURED) issues.push('ANTHROPIC_API_KEY');
   if (!GOOGLE_CLIENT_CONFIGURED) issues.push('GOOGLE_CLIENT_ID');
-  if (!STRIPE_SECRET_CONFIGURED) issues.push('STRIPE_SECRET_KEY');
-  if (!STRIPE_DEEP_READING_PRICE_CONFIGURED) issues.push('STRIPE_PRICE_ID_DEEP_READING_680');
-  if (!STRIPE_WEBHOOK_CONFIGURED) issues.push('STRIPE_WEBHOOK_SECRET');
   if (!MEMBER_SESSION_PERSISTENT) issues.push('MEMBER_SESSION_SECRET');
   if (!AUTH_SESSION_PERSISTENT) issues.push('AUTH_SESSION_SECRET');
   const productionReady = issues.length === 0;
   return {
     ok: productionReady,
     googleClientConfigured: GOOGLE_CLIENT_CONFIGURED,
+    rashinPaidCodeReady: rashinPaidCodeReady(),
+    rashinCodeAdminSecretConfigured: isConfiguredAppSecret(RASHIN_CODE_ADMIN_SECRET),
     stripeSecretConfigured: STRIPE_SECRET_CONFIGURED,
     stripePriceConfigured: STRIPE_PRICE_CONFIGURED,
     stripeDeepReadingPriceConfigured: STRIPE_DEEP_READING_PRICE_CONFIGURED,
@@ -580,11 +601,11 @@ function getRuntimeSetupStatus(req) {
     authSessionPersistent: AUTH_SESSION_PERSISTENT,
     productionReady,
     issues,
-    webhookPath: '/api/stripe/webhook',
-    webhookUrl: makeAbsoluteUrl(req, '/api/stripe/webhook'),
-    checkoutSuccessUrl: makeAbsoluteUrl(req, STRIPE_SUCCESS_PATH),
-    checkoutCancelUrl: makeAbsoluteUrl(req, STRIPE_CANCEL_PATH),
-    customerPortalReturnUrl: makeAbsoluteUrl(req, STRIPE_PORTAL_RETURN_PATH),
+    codePurchasePath: '/api/rashin-paid-code/purchase-intent',
+    codeRedeemPath: '/api/rashin-paid-code/redeem',
+    codeAdminIssuePath: '/api/rashin-paid-code/admin/issue',
+    legacyStripeWebhookPath: '/api/stripe/webhook',
+    legacyStripeWebhookUrl: makeAbsoluteUrl(req, '/api/stripe/webhook'),
   };
 }
 
@@ -1033,6 +1054,44 @@ async function withCheckoutSessionMutation(sessionId, operation) {
   }
 }
 
+async function withRashinPaidCodeMutation(codeHash, operation) {
+  const safeHash = String(codeHash || '').trim().toLowerCase();
+  if (!/^[a-f0-9]{64}$/.test(safeHash)) throw new Error('INVALID_RASHIN_PAID_CODE_HASH');
+  const previous = RASHIN_PAID_CODE_MUTATION_LOCKS.get(safeHash) || Promise.resolve();
+  let release;
+  const current = new Promise(resolve => {
+    release = resolve;
+  });
+  const next = previous.then(() => current, () => current);
+  RASHIN_PAID_CODE_MUTATION_LOCKS.set(safeHash, next);
+  await previous.catch(() => {});
+  try {
+    return await operation(safeHash);
+  } finally {
+    release();
+    if (RASHIN_PAID_CODE_MUTATION_LOCKS.get(safeHash) === next) RASHIN_PAID_CODE_MUTATION_LOCKS.delete(safeHash);
+  }
+}
+
+async function withPurchaseOrderMutation(purchaseOrderId, operation) {
+  const safePurchaseOrderId = normalizePurchaseOrderId(purchaseOrderId);
+  if (!safePurchaseOrderId) throw new Error('INVALID_PURCHASE_ORDER_ID');
+  const previous = PURCHASE_ORDER_MUTATION_LOCKS.get(safePurchaseOrderId) || Promise.resolve();
+  let release;
+  const current = new Promise(resolve => {
+    release = resolve;
+  });
+  const next = previous.then(() => current, () => current);
+  PURCHASE_ORDER_MUTATION_LOCKS.set(safePurchaseOrderId, next);
+  await previous.catch(() => {});
+  try {
+    return await operation(safePurchaseOrderId);
+  } finally {
+    release();
+    if (PURCHASE_ORDER_MUTATION_LOCKS.get(safePurchaseOrderId) === next) PURCHASE_ORDER_MUTATION_LOCKS.delete(safePurchaseOrderId);
+  }
+}
+
 async function listUserRecords() {
   try {
     const entries = await fsp.readdir(USER_DIR, { withFileTypes: true });
@@ -1255,6 +1314,41 @@ function normalizeCustomerEmail(email) {
   return value.includes('@') ? value : '';
 }
 
+function hashPrivateLookupValue(prefix, value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized) return '';
+  return crypto.createHash('sha256').update(`${prefix}:${normalized}`).digest('hex');
+}
+
+function maskEmail(email) {
+  const normalized = normalizeCustomerEmail(email);
+  if (!normalized) return '';
+  const [local, domain] = normalized.split('@');
+  if (!local || !domain) return '';
+  const head = local.slice(0, 2);
+  const tail = local.length > 4 ? local.slice(-1) : '';
+  return `${head}${'*'.repeat(Math.max(2, Math.min(8, local.length - head.length - tail.length)))}${tail}@${domain}`;
+}
+
+function normalizePublicUrl(value) {
+  const raw = normalizeEnvValue(value);
+  if (!raw || isPlaceholderEnvValue(raw)) return '';
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return '';
+    return url.toString();
+  } catch (_error) {
+    return '';
+  }
+}
+
+function normalizePaymentAssetUrl(value) {
+  const raw = normalizeEnvValue(value);
+  if (!raw || isPlaceholderEnvValue(raw)) return '';
+  if (raw.startsWith('/')) return raw.startsWith('//') ? '' : raw;
+  return normalizePublicUrl(raw);
+}
+
 function readDeveloperEmailFromHeader(req) {
   if (!DEV_ACCESS_ENABLED) return '';
   if (!isLocalRequest(req)) return '';
@@ -1430,17 +1524,18 @@ async function buildMemberStatus(req, sessionPayload = null) {
     userName: userRecord?.name || headerDeveloperRecord?.name || '',
     userEmail: userRecord?.email || headerDeveloperEmail || '',
     userPicture: userRecord?.picture || '',
-    stripeEnabled: stripeReady(),
-    stripeCheckoutReady: stripeReady(),
-    stripePortalReady: stripePortalReady(),
-    stripeWebhookReady: stripeWebhookReady(),
+    stripeEnabled: false,
+    stripeCheckoutReady: false,
+    stripePortalReady: false,
+    stripeWebhookReady: false,
+    rashinPaidCodeReady: rashinPaidCodeReady(),
     subscriptionStatus: stripeStatus,
     customerEmail: userRecord?.email || headerDeveloperEmail || memberRecord?.customerEmail || '',
     customerName: userRecord?.name || headerDeveloperRecord?.name || memberRecord?.customerName || '',
     productLabel: memberRecord?.productLabel || STRIPE_SUBSCRIPTION_NAME,
     currentPeriodEnd: userRecord?.currentPeriodEnd || memberRecord?.currentPeriodEnd || '',
     cancelAtPeriodEnd: !!(userRecord?.cancelAtPeriodEnd ?? memberRecord?.cancelAtPeriodEnd),
-    manageBillingAvailable: !!(authLoggedIn && userRecord?.stripeCustomerId && stripePortalReady()),
+    manageBillingAvailable: false,
     rashinStones: normalizeRashinStones(userRecord?.rashin_stones),
     lastRashinBonusClaimedDate: userRecord?.last_rashin_bonus_claimed_date || null,
   };
@@ -1954,6 +2049,122 @@ async function writePaidReadingTicketIfAbsent(record) {
   }
 }
 
+function normalizeRashinPaidCode(value) {
+  return String(value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
+}
+
+function formatRashinPaidCode(value) {
+  const code = normalizeRashinPaidCode(value);
+  return code.length === 12 ? `${code.slice(0, 4)}-${code.slice(4, 8)}-${code.slice(8, 12)}` : code;
+}
+
+function generateRashinPaidCode() {
+  const alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let code = '';
+  while (code.length < 12) {
+    const bytes = crypto.randomBytes(16);
+    for (const byte of bytes) {
+      if (code.length >= 12) break;
+      code += alphabet[byte % alphabet.length];
+    }
+  }
+  return code;
+}
+
+function getRashinPaidCodeHash(code) {
+  const safeCode = normalizeRashinPaidCode(code);
+  if (!/^[A-Z0-9]{12}$/.test(safeCode)) return '';
+  return crypto.createHash('sha256').update(`rashin_paid_code:${safeCode}`).digest('hex');
+}
+
+function getRashinPaidCodePathByHash(codeHash) {
+  const safeHash = String(codeHash || '').trim().toLowerCase();
+  return /^[a-f0-9]{64}$/.test(safeHash) ? path.join(RASHIN_PAID_CODE_DIR, `${safeHash}.json`) : '';
+}
+
+function getRashinPaidCodePath(code) {
+  return getRashinPaidCodePathByHash(getRashinPaidCodeHash(code));
+}
+
+async function readRashinPaidCodeRecordByHash(codeHash) {
+  const filePath = getRashinPaidCodePathByHash(codeHash);
+  if (!filePath) return null;
+  return readJsonFileSafe(filePath, null);
+}
+
+async function readRashinPaidCodeRecord(code) {
+  const filePath = getRashinPaidCodePath(code);
+  if (!filePath) return null;
+  return readJsonFileSafe(filePath, null);
+}
+
+async function writeRashinPaidCodeRecord(record) {
+  const codeHash = String(record?.codeHash || '').trim().toLowerCase();
+  const filePath = getRashinPaidCodePathByHash(codeHash);
+  if (!filePath) throw new Error('INVALID_RASHIN_PAID_CODE_HASH');
+  await writeJsonFileAtomic(filePath, { ...record, codeHash });
+}
+
+function isConfiguredFreeRashinPaidCode(code) {
+  const codeHash = getRashinPaidCodeHash(code);
+  return !!codeHash && RASHIN_FREE_PAID_CODE_HASHES.has(codeHash);
+}
+
+function createFreeRashinPaidCodeRecord({ code, userRecord, sourceReadingId }) {
+  const normalizedCode = normalizeRashinPaidCode(code);
+  const codeHash = getRashinPaidCodeHash(normalizedCode);
+  const sourceId = normalizeVaultRecordId(sourceReadingId);
+  const now = new Date().toISOString();
+  return {
+    codeHash,
+    codeSuffix: normalizedCode.slice(-4),
+    product: 'deep_reading_once',
+    status: 'issued',
+    purchaseOrderId: '',
+    sourceReadingId: sourceId,
+    ownerType: 'user',
+    userId: normalizeUserId(userRecord?.userId || ''),
+    vaultId: '',
+    paymentProvider: 'manual_free_code',
+    providerPaymentId: '',
+    recipientEmailHash: '',
+    recipientEmailMasked: '',
+    deliveryChannel: 'manual_free_code',
+    deliveryStatus: 'redeemed_by_input',
+    baseAmount: DEEP_READING_NORMAL_AMOUNT,
+    originalAmount: DEEP_READING_NORMAL_AMOUNT,
+    discountAmount: DEEP_READING_NORMAL_AMOUNT,
+    finalAmount: 0,
+    discountStonesUsed: 0,
+    discountType: 'manual_free_code',
+    currency: 'jpy',
+    issuedAt: now,
+    expiresAt: '',
+    redeemedAt: '',
+    redeemedByUserId: '',
+    redeemedSourceReadingId: '',
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+function makePaidTicketIdForRashinPaidCode(codeHash, sourceReadingId) {
+  const safeHash = String(codeHash || '').trim().toLowerCase();
+  const sourceId = normalizeVaultRecordId(sourceReadingId);
+  if (!/^[a-f0-9]{64}$/.test(safeHash) || !sourceId) return '';
+  return `prt_${crypto.createHash('sha256').update(`rashin_paid_code:${safeHash}:${sourceId}`).digest('hex')}`;
+}
+
+function getRashinCodeAdminSecret(req, body = {}) {
+  return normalizeEnvValue(req?.headers?.['x-rashin-code-admin-secret'] || body?.adminSecret || body?.admin_secret || '');
+}
+
+function canUseRashinCodeAdmin(req, body = {}) {
+  const configured = isConfiguredAppSecret(RASHIN_CODE_ADMIN_SECRET);
+  if (configured) return safeCompareText(RASHIN_CODE_ADMIN_SECRET, getRashinCodeAdminSecret(req, body));
+  return !IS_DEPLOYED_RUNTIME && isLocalRequest(req);
+}
+
 async function listJsonRecords(dirPath) {
   try {
     const entries = await fsp.readdir(dirPath, { withFileTypes: true });
@@ -2183,6 +2394,214 @@ async function createPurchaseOrder({ owner, sourceReadingId, rashinDiscount = nu
   };
   await writePurchaseOrder(order);
   return order;
+}
+
+async function createRashinCodePurchaseOrder({ userRecord, sourceReadingId, intent = 'upgrade-paid' }) {
+  const sourceId = normalizeVaultRecordId(sourceReadingId);
+  if (!userRecord?.userId || !sourceId) {
+    const error = new Error('SOURCE_READING_REQUIRED');
+    error.statusCode = 400;
+    error.publicCode = 'SOURCE_READING_REQUIRED';
+    throw error;
+  }
+  const owner = { ownerType: 'user', userId: userRecord.userId, vaultId: '' };
+  if (await hasDeepReadingPurchaseForSource(owner, sourceId)) {
+    const error = new Error('DEEP_READING_ALREADY_PURCHASED');
+    error.statusCode = 409;
+    error.publicCode = 'DEEP_READING_ALREADY_PURCHASED';
+    throw error;
+  }
+  return withUserMutation(userRecord.userId, async safeUserId => {
+    const latestUser = await readUserRecord(safeUserId);
+    const discountStatus = await getRashinDiscountEligibility(latestUser, sourceId);
+    if (['login_required', 'result_required', 'result_not_found'].includes(discountStatus.reason)) {
+      const error = new Error('ORACLE_RESULT_NOT_AVAILABLE');
+      error.statusCode = 403;
+      error.publicCode = 'ORACLE_RESULT_NOT_AVAILABLE';
+      throw error;
+    }
+    if (discountStatus.reason === 'already_purchased') {
+      const error = new Error('DEEP_READING_ALREADY_PURCHASED');
+      error.statusCode = 409;
+      error.publicCode = 'DEEP_READING_ALREADY_PURCHASED';
+      throw error;
+    }
+    let orderId = '';
+    if (discountStatus.eligible) {
+      const openForResult = await findOpenRashinDiscountOrder({ userId: safeUserId, sourceReadingId: sourceId });
+      const openForUser = await findOpenRashinDiscountOrder({ userId: safeUserId });
+      if (openForResult || openForUser) {
+        const error = new Error('RASHIN_DISCOUNT_CHECKOUT_ALREADY_OPEN');
+        error.statusCode = 409;
+        error.publicCode = 'RASHIN_DISCOUNT_CHECKOUT_ALREADY_OPEN';
+        throw error;
+      }
+      orderId = generateRecordId('po');
+      const lockAcquired = await acquireRashinDiscountCheckoutLock({
+        userId: safeUserId,
+        sourceReadingId: sourceId,
+        purchaseOrderId: orderId,
+      });
+      if (!lockAcquired) {
+        const error = new Error('RASHIN_DISCOUNT_CHECKOUT_ALREADY_OPEN');
+        error.statusCode = 409;
+        error.publicCode = 'RASHIN_DISCOUNT_CHECKOUT_ALREADY_OPEN';
+        throw error;
+      }
+    }
+    const order = await createPurchaseOrder({
+      owner,
+      sourceReadingId: sourceId,
+      orderId,
+      rashinDiscount: discountStatus.eligible ? {
+        discountAmount: discountStatus.discountAmount,
+        stonesRequired: discountStatus.stonesRequired,
+      } : null,
+    });
+    const email = normalizeCustomerEmail(latestUser?.email || userRecord.email || '');
+    const pendingOrder = {
+      ...order,
+      status: 'awaiting_payment',
+      paymentProvider: 'rashin_code',
+      checkoutProvider: 'rashin_code',
+      requestedIntent: String(intent || '').slice(0, 40),
+      deliveryChannel: 'google_email',
+      recipientEmailHash: hashPrivateLookupValue('email', email),
+      recipientEmailMasked: maskEmail(email),
+      updatedAt: new Date().toISOString(),
+    };
+    await writePurchaseOrder(pendingOrder);
+    return pendingOrder;
+  });
+}
+
+async function createPaidTicketFromRashinPaidCode({ codeRecord, owner, sourceReadingId }) {
+  const sourceId = normalizeVaultRecordId(sourceReadingId);
+  if (!codeRecord?.codeHash || !owner || !sourceId) throw new Error('INVALID_RASHIN_PAID_CODE_TICKET');
+  const ticketId = makePaidTicketIdForRashinPaidCode(codeRecord.codeHash, sourceId);
+  const existing = ticketId ? await readPaidReadingTicket(ticketId) : null;
+  if (existing) return existing;
+  const now = new Date().toISOString();
+  const ticket = {
+    id: ticketId || generateRecordId('prt'),
+    ownerType: owner.ownerType,
+    userId: owner.ownerType === 'user' ? owner.userId : '',
+    vaultId: owner.ownerType === 'vault' ? owner.vaultId : '',
+    sourceReadingId: sourceId,
+    purchaseOrderId: normalizePurchaseOrderId(codeRecord.purchaseOrderId || ''),
+    paymentProvider: codeRecord.paymentProvider || 'rashin_code',
+    rashinPaidCodeHash: codeRecord.codeHash,
+    codeSuffix: codeRecord.codeSuffix || '',
+    baseAmount: Number(codeRecord.originalAmount || codeRecord.baseAmount || DEEP_READING_NORMAL_AMOUNT),
+    originalAmount: Number(codeRecord.originalAmount || codeRecord.baseAmount || DEEP_READING_NORMAL_AMOUNT),
+    discountAmount: Number(codeRecord.discountAmount || 0),
+    finalAmount: Number(codeRecord.finalAmount || DEEP_READING_NORMAL_AMOUNT),
+    discountStonesUsed: Number(codeRecord.discountStonesUsed || 0),
+    discountType: codeRecord.discountType || '',
+    currency: 'jpy',
+    status: 'unused',
+    createdAt: now,
+    usedAt: '',
+    expiresAt: addDaysIso(30),
+    usedReadingId: '',
+    lockedReadingId: '',
+    lockedAt: '',
+  };
+  const writeResult = await writePaidReadingTicketIfAbsent(ticket);
+  return writeResult.ticket;
+}
+
+async function issueRashinPaidCodeForOrder(order, issueMeta = {}) {
+  const purchaseOrderId = normalizePurchaseOrderId(order?.id || '');
+  if (!purchaseOrderId || order?.purchaseType !== 'deep_reading_once') {
+    const error = new Error('PURCHASE_ORDER_NOT_FOUND');
+    error.statusCode = 404;
+    throw error;
+  }
+  if (order.rashinPaidCodeHash) {
+    const error = new Error('RASHIN_CODE_ALREADY_ISSUED');
+    error.statusCode = 409;
+    throw error;
+  }
+  const paidAt = issueMeta.paidAt || new Date().toISOString();
+  const paidOrder = {
+    ...order,
+    status: 'paid',
+    paymentProvider: issueMeta.paymentProvider || order.paymentProvider || 'manual',
+    providerPaymentId: String(issueMeta.providerPaymentId || '').trim().slice(0, 160),
+    paidAt,
+    updatedAt: paidAt,
+  };
+  await writePurchaseOrder(paidOrder);
+  const consumeResult = await consumeRashinBonusForPaidOrder(paidOrder);
+  const consumedOrder = consumeResult.order || paidOrder;
+  if (!consumeResult.ok) return { requiresManualReview: true, order: consumedOrder };
+
+  let rawCode = '';
+  let codeHash = '';
+  for (let i = 0; i < 8; i += 1) {
+    rawCode = generateRashinPaidCode();
+    codeHash = getRashinPaidCodeHash(rawCode);
+    if (codeHash && !await readRashinPaidCodeRecordByHash(codeHash)) break;
+    rawCode = '';
+    codeHash = '';
+  }
+  if (!rawCode || !codeHash) throw new Error('RASHIN_CODE_GENERATE_FAILED');
+  const now = new Date().toISOString();
+  const codeRecord = {
+    codeHash,
+    codeSuffix: rawCode.slice(-4),
+    product: 'deep_reading_once',
+    status: 'issued',
+    purchaseOrderId,
+    sourceReadingId: consumedOrder.sourceReadingId,
+    ownerType: consumedOrder.ownerType,
+    userId: consumedOrder.userId || '',
+    vaultId: consumedOrder.vaultId || '',
+    paymentProvider: paidOrder.paymentProvider,
+    providerPaymentId: paidOrder.providerPaymentId || '',
+    recipientEmailHash: consumedOrder.recipientEmailHash || '',
+    recipientEmailMasked: consumedOrder.recipientEmailMasked || '',
+    deliveryChannel: consumedOrder.deliveryChannel || 'google_email',
+    deliveryStatus: issueMeta.deliveryStatus || 'pending_delivery',
+    baseAmount: Number(consumedOrder.originalAmount || consumedOrder.baseAmount || DEEP_READING_NORMAL_AMOUNT),
+    originalAmount: Number(consumedOrder.originalAmount || consumedOrder.baseAmount || DEEP_READING_NORMAL_AMOUNT),
+    discountAmount: Number(consumedOrder.discountAmount || 0),
+    finalAmount: Number(consumedOrder.finalAmount || DEEP_READING_NORMAL_AMOUNT),
+    discountStonesUsed: Number(consumedOrder.discountStonesUsed || 0),
+    discountType: consumedOrder.discountType || '',
+    currency: 'jpy',
+    issuedAt: now,
+    expiresAt: addDaysIso(30),
+    redeemedAt: '',
+    redeemedByUserId: '',
+    redeemedSourceReadingId: '',
+    createdAt: now,
+    updatedAt: now,
+  };
+  await writeRashinPaidCodeRecord(codeRecord);
+  await writePurchaseOrder({
+    ...consumedOrder,
+    status: 'code_issued',
+    rashinPaidCodeHash: codeHash,
+    codeSuffix: codeRecord.codeSuffix,
+    codeIssuedAt: now,
+    deliveryStatus: codeRecord.deliveryStatus,
+    updatedAt: now,
+  });
+  return { code: formatRashinPaidCode(rawCode), codeRecord };
+}
+
+async function issueRashinPaidCodeForPurchaseOrderId(purchaseOrderId, issueMeta = {}) {
+  return withPurchaseOrderMutation(purchaseOrderId, async safePurchaseOrderId => {
+    const latestOrder = await readPurchaseOrder(safePurchaseOrderId);
+    if (!latestOrder) {
+      const error = new Error('PURCHASE_ORDER_NOT_FOUND');
+      error.statusCode = 404;
+      throw error;
+    }
+    return issueRashinPaidCodeForOrder(latestOrder, issueMeta);
+  });
 }
 
 async function consumeRashinBonusForPaidOrder(order) {
@@ -3729,6 +4148,140 @@ async function handleDeepReadingDiscountStatus(req, res) {
   sendJson(res, 200, status);
 }
 
+async function handleRashinPaidCodePurchaseIntent(req, res) {
+  sendJson(res, 410, {
+    error: 'RASHIN_CODE_PURCHASE_DISABLED',
+    message: 'Rashin paid code purchase orders are disabled. Redeem a manually issued code instead.',
+  });
+}
+
+async function handleRashinPaidCodeRedeem(req, res) {
+  const rate = consumeRateLimit(req, 'rashin_paid_code');
+  if (!rate.ok) {
+    sendRateLimitExceeded(res, rate, 'Too many code attempts. Please wait and retry.');
+    return;
+  }
+  let body;
+  try {
+    body = await readJsonBody(req);
+  } catch (error) {
+    sendJson(res, 400, {
+      error: error.message || 'INVALID_JSON',
+      message: 'Rashin paid code payload could not be parsed.',
+    });
+    return;
+  }
+  const code = normalizeRashinPaidCode(body?.code || body?.rashinCode || body?.rashin_code || '');
+  const sourceReadingId = normalizeVaultRecordId(body?.sourceReadingId || body?.source_reading_id || body?.oracleResultId || body?.oracle_result_id || '');
+  if (!/^[A-Z0-9]{12}$/.test(code)) {
+    sendJson(res, 400, {
+      error: 'RASHIN_PAID_CODE_FORMAT_INVALID',
+      message: 'A 12-character Rashin paid code is required.',
+    });
+    return;
+  }
+  if (!sourceReadingId) {
+    sendJson(res, 400, {
+      error: 'SOURCE_READING_REQUIRED',
+      message: 'A source reading id is required before redeeming a Rashin paid code.',
+    });
+    return;
+  }
+  const userRecord = await readGoogleUserForRequest(req);
+  if (!userRecord) {
+    sendJson(res, 401, {
+      error: 'GOOGLE_LOGIN_REQUIRED',
+      message: 'Google login is required before redeeming a Rashin paid code.',
+    });
+    return;
+  }
+  try {
+    const codeHash = getRashinPaidCodeHash(code);
+    const result = await withRashinPaidCodeMutation(codeHash, async () => {
+      let codeRecord = await readRashinPaidCodeRecordByHash(codeHash);
+      if (!codeRecord) {
+        if (!isConfiguredFreeRashinPaidCode(code)) {
+          const error = new Error('RASHIN_PAID_CODE_INVALID');
+          error.statusCode = 404;
+          throw error;
+        }
+        codeRecord = createFreeRashinPaidCodeRecord({ code, userRecord, sourceReadingId });
+        await writeRashinPaidCodeRecord(codeRecord);
+      }
+      if (codeRecord.status !== 'issued' || codeRecord.redeemedAt || isExpiredIso(codeRecord.expiresAt)) {
+        const error = new Error('RASHIN_PAID_CODE_ALREADY_USED');
+        error.statusCode = 409;
+        throw error;
+      }
+      const userEmailHash = hashPrivateLookupValue('email', userRecord.email || '');
+      if (codeRecord.recipientEmailHash && codeRecord.recipientEmailHash !== userEmailHash) {
+        const error = new Error('RASHIN_PAID_CODE_RECIPIENT_MISMATCH');
+        error.statusCode = 403;
+        throw error;
+      }
+      if (codeRecord.sourceReadingId && codeRecord.sourceReadingId !== sourceReadingId) {
+        const error = new Error('RASHIN_PAID_CODE_SOURCE_MISMATCH');
+        error.statusCode = 403;
+        throw error;
+      }
+      const owner = { ownerType: 'user', userId: userRecord.userId, vaultId: '' };
+      const ticket = await createPaidTicketFromRashinPaidCode({ codeRecord, owner, sourceReadingId });
+      const now = new Date().toISOString();
+      await writeRashinPaidCodeRecord({
+        ...codeRecord,
+        status: 'redeemed',
+        redeemedAt: now,
+        redeemedByUserId: userRecord.userId,
+        redeemedSourceReadingId: sourceReadingId,
+        paidReadingTicketId: ticket.id,
+        updatedAt: now,
+      });
+      return { ticket };
+    });
+    sendJson(res, 200, {
+      ok: true,
+      ticketId: result.ticket.id,
+      ticketStatus: result.ticket.status,
+      sourceReadingId: result.ticket.sourceReadingId,
+      normalAmount: result.ticket.originalAmount,
+      discountAmount: result.ticket.discountAmount,
+      finalAmount: result.ticket.finalAmount,
+      currency: result.ticket.currency,
+    });
+  } catch (error) {
+    if (error.statusCode) {
+      const messages = {
+        RASHIN_PAID_CODE_INVALID: 'The Rashin paid code was not accepted.',
+        RASHIN_PAID_CODE_ALREADY_USED: 'This Rashin paid code is no longer usable.',
+        RASHIN_PAID_CODE_RECIPIENT_MISMATCH: 'This Rashin paid code belongs to a different Google account.',
+        RASHIN_PAID_CODE_SOURCE_MISMATCH: 'This Rashin paid code is for a different reading.',
+      };
+      sendJson(res, error.statusCode, {
+        error: error.message,
+        message: messages[error.message] || 'The request could not be completed. Please wait and try again.',
+      });
+      return;
+    }
+    console.error('Rashin paid code redeem failed', {
+      error: error.message,
+      stack: error.stack,
+      userId: userRecord?.userId || '',
+      sourceReadingId,
+    });
+    sendJson(res, 500, {
+      error: 'RASHIN_PAID_CODE_REDEEM_FAILED',
+      message: 'The request could not be completed. Please wait and try again.',
+    });
+  }
+}
+
+async function handleRashinPaidCodeAdminIssue(req, res) {
+  sendJson(res, 410, {
+    error: 'RASHIN_CODE_AUTO_ISSUE_DISABLED',
+    message: 'Automatic Rashin paid code issuing is disabled. Configure one-time free codes with RASHIN_FREE_PAID_CODES instead.',
+  });
+}
+
 async function handlePaidReadingTicketPrepare(req, res) {
   let body;
   try {
@@ -4024,7 +4577,7 @@ async function handleStripeCheckoutSessionCreate(req, res) {
     params.set(`payment_method_types[${index}]`, paymentMethodType);
   });
   if (purchaseOrder.finalAmount === DEEP_READING_NORMAL_AMOUNT) {
-    params.set('line_items[0][price]', STRIPE_PRICE_ID_DEEP_READING_680);
+    params.set('line_items[0][price]', STRIPE_PRICE_ID_DEEP_READING_980);
   } else {
     params.set('line_items[0][price_data][currency]', purchaseOrder.currency);
     params.set('line_items[0][price_data][unit_amount]', String(purchaseOrder.finalAmount));
@@ -4442,10 +4995,11 @@ async function handleRequest(req, res) {
       paidTestMode: DEV_ACCESS_ENABLED && isLocalRequest(req),
       memberCodeConfigured: DEV_ACCESS_ENABLED && MEMBER_ACCESS_CODES.size > 0,
       rashinCodeConfigured: RASHIN_ACCESS_CODES.size > 0,
+      rashinPaidCodeReady: rashinPaidCodeReady(),
       memberSessionPersistent: MEMBER_SESSION_PERSISTENT,
-      stripeCheckoutReady: stripeReady(),
-      stripePortalReady: stripePortalReady(),
-      stripeWebhookReady: stripeWebhookReady(),
+      stripeCheckoutReady: false,
+      stripePortalReady: false,
+      stripeWebhookReady: false,
       setup: local ? setup : {
         ok: !!setup?.productionReady,
         checkedAt: setup?.checkedAt || new Date().toISOString(),
@@ -4473,6 +5027,21 @@ async function handleRequest(req, res) {
 
   if (req.method === 'GET' && req.url.startsWith('/api/deep-reading/discount-status')) {
     await handleDeepReadingDiscountStatus(req, res);
+    return;
+  }
+
+  if (req.method === 'POST' && req.url.startsWith('/api/rashin-paid-code/purchase-intent')) {
+    await handleRashinPaidCodePurchaseIntent(req, res);
+    return;
+  }
+
+  if (req.method === 'POST' && req.url.startsWith('/api/rashin-paid-code/redeem')) {
+    await handleRashinPaidCodeRedeem(req, res);
+    return;
+  }
+
+  if (req.method === 'POST' && req.url.startsWith('/api/rashin-paid-code/admin/issue')) {
+    await handleRashinPaidCodeAdminIssue(req, res);
     return;
   }
 
@@ -4507,7 +5076,10 @@ async function handleRequest(req, res) {
   }
 
   if (req.method === 'POST' && req.url.startsWith('/api/stripe/checkout-session')) {
-    await handleStripeCheckoutSessionCreate(req, res);
+    sendJson(res, 410, {
+      error: 'STRIPE_CHECKOUT_DISABLED',
+      message: 'Stripe checkout has been disabled. Use Rashin code purchase flow instead.',
+    });
     return;
   }
 
@@ -4531,7 +5103,10 @@ async function handleRequest(req, res) {
   }
 
   if (req.method === 'POST' && req.url.startsWith('/api/stripe/portal-session')) {
-    await handleStripePortalSessionCreate(req, res);
+    sendJson(res, 410, {
+      error: 'STRIPE_PORTAL_DISABLED',
+      message: 'Stripe billing portal has been disabled.',
+    });
     return;
   }
 
