@@ -1913,6 +1913,7 @@ let CURRENT_READING_ID='';
 let PENDING_PAID_READING_ID='';
 let ACTIVE_PAID_READING_TICKET=null;
 let ACTIVE_PAID_SOURCE_READING_ID='';
+let CHECKOUT_OPENING=false;
 let CLIENT_LOGGING_READY=false;
 const SENT_CLIENT_LOG_KEYS=new Set();
 let CURRENT_READING_CREATED_AT='';
@@ -2088,7 +2089,7 @@ const MEMBERSHIP_PLAN={
     },
   ],
 };
-const CHECKOUT_DISCLOSURE_HTML='深掘り鑑定は、無料鑑定後の結果画面から購入できる1回980円の単発課金です。継続課金ではありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
+const CHECKOUT_DISCLOSURE_HTML='深堀り羅針鑑定は、カード決済で購入できる1回980円の単発課金です。無料鑑定を先に作成する必要はありません。継続課金ではありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
 const RESULT_CHECKOUT_DISCLOSURE_HTML='深掘り鑑定は1回980円の単発課金です。無料鑑定の本文を延長するものではなく、無料で引いたカードを軸に、有料分の追加カードを展開して作成する別の鑑定です。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
 
 // 全カード・各3問の解釈絞り込みテンプレート
@@ -3901,10 +3902,11 @@ function getServerErrorMessage(data,fallback='処理に失敗しました'){
   if(code==='AUTH_REQUIRED'||code==='STRIPE_PORTAL_AUTH_REQUIRED'||code==='PAID_AUTH_REQUIRED') return'深掘り鑑定の購入確認が必要です';
   if(code==='PAID_SESSION_REQUIRED') return'深掘り鑑定の利用確認が必要です';
   if(code==='STRIPE_NOT_CONFIGURED') return'深掘り鑑定の購入準備がまだできていません';
+  if(code==='STRIPE_CHECKOUT_DISABLED') return'カード決済はKOMOJU申請中のため、まだ開けません';
   if(code==='STRIPE_CUSTOMER_NOT_FOUND') return'決済情報がまだ作成されていません';
   if(code==='STRIPE_SUBSCRIPTION_NOT_ACTIVE') return'決済は完了しましたが、深掘り鑑定への反映がまだ終わっていません';
   if(code==='PAID_TICKET_REQUIRED') return'この結果の深掘り鑑定を購入すると利用できます';
-  if(code==='SOURCE_READING_REQUIRED') return'無料鑑定後の結果画面から深掘り鑑定を購入してください';
+  if(code==='SOURCE_READING_REQUIRED') return'決済準備に必要な情報が不足しています。もう一度購入ボタンから進んでください';
   if(code==='SESSION_ID_REQUIRED') return'決済確認に必要な情報が不足しています';
   if(message) return message;
   return fallback;
@@ -3937,7 +3939,7 @@ function getMemberStatusMeta(){
       cls:'inactive',
       label:'',
       copy:'前回の鑑定をもとに、続きの悩みを読み解けます。深掘り鑑定では、追加質問と履歴解析でさらに具体的に見ていきます。',
-      action:`<button class="vault-link" data-track="free_start_click" data-track-position="top" onclick="startFlow('free')">無料鑑定から始める</button>`,
+      action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">${DEEP_PAID_CTA_LABEL}</button>`,
     };
   }
   if(MEMBER_AUTH.manageBillingAvailable){
@@ -3952,16 +3954,16 @@ function getMemberStatusMeta(){
     return{
       cls:'inactive',
       label:'深掘り鑑定',
-      copy:'深掘り鑑定は、無料鑑定後の結果画面から購入できる1回980円の別鑑定です。継続課金ではありません。',
-      action:`<button class="vault-link" data-track="free_start_click" data-track-position="top" onclick="startFlow('free')">無料鑑定から始める</button>`,
+      copy:'深堀り羅針鑑定は、カード決済で購入できる1回980円の別鑑定です。無料鑑定を先に作成する必要はありません。継続課金ではありません。',
+      action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openStripeCheckout('start-paid')">カード決済へ進む</button>`,
     };
   }
   if(MEMBER_AUTH.authLoggedIn){
     return{
       cls:'inactive',
       label:'深掘り鑑定',
-      copy:'深掘り鑑定は、無料鑑定後の結果画面から購入できる1回980円の別鑑定です。継続課金ではありません。',
-      action:`<button class="vault-link" data-track="free_start_click" data-track-position="top" onclick="startFlow('free')">無料鑑定から始める</button>`,
+      copy:'深堀り羅針鑑定は、カード決済で購入できる1回980円の別鑑定です。無料鑑定を先に作成する必要はありません。継続課金ではありません。',
+      action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openStripeCheckout('start-paid')">カード決済へ進む</button>`,
     };
   }
   return{
@@ -3969,10 +3971,10 @@ function getMemberStatusMeta(){
     label:canUseAccessCode()?'確認コード待ち':'公開準備中',
     copy:canUseAccessCode()
       ?'前回の鑑定をもとに、続きの悩みを読み解けます。確認コードを入力すると深掘り鑑定の利用状態を確認できます。'
-      :'鑑定を重ねるほど、あなたの迷いの流れが見えてきます。まずは無料鑑定から、あなたの記録を作りましょう。',
+      :'深堀り羅針鑑定は、カード決済で直接購入できます。無料鑑定を先に作成する必要はありません。',
     action:canUseAccessCode()
       ?`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openMemberAccessModal('start-paid')">確認コードを入力</button>`
-      :`<button class="vault-link" data-track="free_start_click" data-track-position="top" onclick="startFlow('free')">無料鑑定から始める</button>`,
+      :`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openStripeCheckout('start-paid')">カード決済へ進む</button>`,
   };
 }
 
@@ -4669,7 +4671,7 @@ async function redeemRashinPaidCodeForReading(code='',sourceReadingId=CURRENT_RE
   const normalized=normalizeRashinPaidCodeInput(code);
   const sourceId=String(sourceReadingId||'').trim();
   if(!normalized||normalized.length!==12) return{ok:false,error:'RASHIN_PAID_CODE_FORMAT_INVALID',message:'羅針コードの形式を確認してください'};
-  if(!sourceId) return{ok:false,error:'SOURCE_READING_REQUIRED',message:'無料鑑定後の結果画面から入力してください'};
+  if(!sourceId) return{ok:false,error:'SOURCE_READING_REQUIRED',message:'羅針コードを使うには対象の鑑定情報が必要です'};
   try{
     const res=await fetchApi(RASHIN_PAID_CODE_REDEEM_ENDPOINT,{
       method:'POST',
@@ -4717,7 +4719,7 @@ async function requestRashinCodePurchase(intent='upgrade-paid'){
   }
   const sourceReadingId=CURRENT_READING_ID;
   if(!sourceReadingId||PLAN!=='free'||!canContinueCurrentReadingToPaid()){
-    showToast('無料鑑定後の結果画面から羅針コードを入力してください');
+    showToast('羅針コードを使うには対象の鑑定情報が必要です');
     return false;
   }
   try{
@@ -4819,7 +4821,7 @@ async function releasePaidReadingTicketLock(){
 }
 
 async function openStripeCheckout(intent='start-paid'){
-  return requestRashinCodePurchase(intent);
+  if(CHECKOUT_OPENING) return false;
   if(!canUseProxy()){
     showToast('深掘り鑑定の購入はサービス経由でのアクセスが必要です。直接ファイルを開いている場合は利用できません。');
     return false;
@@ -4827,9 +4829,10 @@ async function openStripeCheckout(intent='start-paid'){
   const sourceReadingId=CURRENT_READING_ID;
   const needsSourceReading=intent==='upgrade-paid';
   if(needsSourceReading&&(!sourceReadingId||PLAN!=='free'||!canContinueCurrentReadingToPaid())){
-    showToast('深掘り鑑定は無料鑑定後の結果画面から購入できます');
+    showToast('この結果を深掘りするには、結果画面からカード決済へ進んでください');
     return false;
   }
+  CHECKOUT_OPENING=true;
   try{
     if(sourceReadingId&&MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.userId){
       try{
@@ -4878,6 +4881,8 @@ async function openStripeCheckout(intent='start-paid'){
   }catch(e){
     showToast('深掘り鑑定の購入画面への接続に失敗しました');
     return false;
+  }finally{
+    CHECKOUT_OPENING=false;
   }
 }
 
@@ -5069,7 +5074,7 @@ function openMemberAccessModal(intent=''){
       ?'<div class="runtime-status-title">このまま深掘り鑑定フローへ進めます</div><div class="runtime-status-detail">確認用の状態で深掘り鑑定フローを確認できます。</div>'
       :(usesGoogle
         ?'<div class="runtime-status-title">Googleログインで続行</div><div class="runtime-status-detail">履歴と購入確認を保存します。</div>'
-        :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':'深掘り鑑定の準備中です'}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':'深掘り鑑定は無料鑑定後の結果画面から購入できます。'}</div>`);
+        :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':'深堀り羅針鑑定の準備中です'}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':'有料鑑定はカード決済から直接購入できます。無料鑑定を先に作成する必要はありません。'}</div>`);
   }
   if(disclosure) disclosure.style.display='none';
   if(localBtn) localBtn.style.display=canUsePaidTestMode()?'inline-flex':'none';
@@ -5104,14 +5109,14 @@ function ensurePaidEntryGuideModal(){
   modal.setAttribute('inert','');
   modal.innerHTML=`
     <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="paid-entry-guide-title">
-      <div class="modal-title" id="paid-entry-guide-title">深掘り鑑定は結果画面から購入できます</div>
-      <div class="modal-desc">まず無料鑑定を作成してください。結果画面の「この結果を深掘りする」から、1回980円の単発購入へ進めます。</div>
+      <div class="modal-title" id="paid-entry-guide-title">深堀り羅針鑑定のカード決済へ進みます</div>
+      <div class="modal-desc">無料鑑定を先に作成する必要はありません。1回980円の単発購入です。</div>
       <div class="runtime-status ok">
-        <div class="runtime-status-title">今はまだ課金されません</div>
-        <div class="runtime-status-detail">無料結果に紐づけて深掘り鑑定を作るため、先に無料鑑定が必要です。</div>
+        <div class="runtime-status-title">カード決済後に有料鑑定を開始します</div>
+        <div class="runtime-status-detail">KOMOJUの申請・決済準備が完了していない場合は、購入画面に進めません。</div>
       </div>
       <div class="modal-btns">
-        <button class="modal-save" type="button" onclick="startFreeFromPaidEntryGuide()">無料鑑定を始める</button>
+        <button class="modal-save" type="button" onclick="openStripeCheckout('start-paid')">カード決済へ進む</button>
         <button class="modal-cancel" type="button" onclick="closePaidEntryGuide()">閉じる</button>
       </div>
     </div>`;
@@ -5123,11 +5128,7 @@ function ensurePaidEntryGuideModal(){
 }
 
 function openPaidEntryGuide(){
-  if(PLAN==='free'&&canContinueCurrentReadingToPaid()){
-    void upgradeCurrentReadingToPaid();
-    return;
-  }
-  void startFlow('paid');
+  void openStripeCheckout('start-paid');
 }
 
 function closePaidEntryGuide(){
@@ -7199,7 +7200,7 @@ function renderMemberStatusFallback(){
       <div class="member-benefit">前回との変化を見比べられる</div>
       <div class="member-benefit">鑑定履歴が積み上がるほど傾向が見える</div>
     </div>
-    <button class="vault-link" type="button" data-track="free_start_click" data-track-position="top" onclick="startFlow('free')">無料鑑定から始める</button>`;
+    <button class="vault-link" type="button" data-track="deepen_cta_click" data-track-position="top" onclick="openStripeCheckout('start-paid')">カード決済へ進む</button>`;
 }
 
 function renderPremiumEntryFallback(){
@@ -8984,6 +8985,10 @@ function showScreen(id,progress){
 
 async function startFlow(plan){
   const normalized=plan===SIMPLE_READING_PLAN?SIMPLE_READING_PLAN:(plan==='paid'?'paid':'free');
+  if(normalized==='paid'&&!isMemberActive()&&!ACTIVE_PAID_READING_TICKET?.id&&!canUsePaidTestMode()){
+    await openStripeCheckout('start-paid');
+    return;
+  }
   if(normalized==='paid'&&!(await ensurePaidAccess('start-paid'))) return;
   startFlowUnlocked(normalized);
 }
