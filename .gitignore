@@ -4,6 +4,7 @@
 !.env.example.txt
 node_modules/
 data/
+__pycache__/
 *.log
 *.bak
 .tmp-env-dump.txt
