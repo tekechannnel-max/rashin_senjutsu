@@ -2886,6 +2886,123 @@ function getDailyOracleHistoryRecords(owner=getDailyOracleOwner(),limit=7){
     .slice(0,max);
 }
 
+function getJstMonthKey(dateJst=getJstDateKey()){
+  const value=String(dateJst||getJstDateKey());
+  return /^\d{4}-\d{2}-\d{2}$/.test(value)?value.slice(0,7):getJstDateKey().slice(0,7);
+}
+
+function getJstDateParts(dateJst){
+  const match=String(dateJst||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!match) return null;
+  return{year:Number(match[1]),month:Number(match[2]),day:Number(match[3])};
+}
+
+function getJstDateWeekday(dateJst){
+  const parts=getJstDateParts(dateJst);
+  if(!parts) return 0;
+  return new Date(Date.UTC(parts.year,parts.month-1,parts.day)).getUTCDay();
+}
+
+function getJstMonthDayCount(monthKey=getJstMonthKey()){
+  const match=String(monthKey||'').match(/^(\d{4})-(\d{2})$/);
+  if(!match) return 30;
+  return new Date(Date.UTC(Number(match[1]),Number(match[2]),0)).getUTCDate();
+}
+
+function getDailyOracleCalendarSummary(){
+  const records=getDailyOracleHistoryRecords(getDailyOracleOwner(),120);
+  const monthKey=getJstMonthKey();
+  const monthRecords=records.filter(record=>String(record.dateJst||'').startsWith(monthKey));
+  return{records,monthKey,monthCount:monthRecords.length};
+}
+
+function renderRashinCalendarButton(source='today_compass'){
+  const summary=getDailyOracleCalendarSummary();
+  const safeSource=escapeHtml(JSON.stringify(String(source||'today_compass')));
+  return`
+    <button class="rashin-calendar-button" type="button" onclick="openRashinCalendarWindow(${safeSource})">
+      <span>羅針カレンダー</span>
+      <small>${escapeHtml(summary.monthKey.replace('-','年'))}月 ${summary.monthCount}回</small>
+    </button>`;
+}
+
+function buildRashinCalendarWindowHtml(){
+  const {records,monthKey,monthCount}=getDailyOracleCalendarSummary();
+  const today=getJstDateKey();
+  const dayCount=getJstMonthDayCount(monthKey);
+  const firstWeekday=getJstDateWeekday(`${monthKey}-01`);
+  const monthRecords=new Map(records
+    .filter(record=>String(record.dateJst||'').startsWith(monthKey))
+    .map(record=>[record.dateJst,record]));
+  const cells=[];
+  for(let i=0;i<firstWeekday;i+=1){
+    cells.push('<div class="day empty"></div>');
+  }
+  for(let day=1;day<=dayCount;day+=1){
+    const dateJst=`${monthKey}-${String(day).padStart(2,'0')}`;
+    const record=monthRecords.get(dateJst)||null;
+    const cardName=record?.card?.name||'';
+    const classes=['day'];
+    if(record) classes.push('lit');
+    if(dateJst===today) classes.push('today');
+    cells.push(`
+      <div class="${classes.join(' ')}">
+        <span>${day}</span>
+        ${cardName?`<small>${escapeHtml(cardName)}</small>`:''}
+      </div>`);
+  }
+  const title=`${monthKey.replace('-','年')}月の羅針`;
+  return`<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${escapeHtml(title)}</title>
+<style>
+  *{box-sizing:border-box}body{margin:0;padding:24px;background:#080711;color:#f4e8c8;font-family:"Noto Sans JP",system-ui,sans-serif}
+  .wrap{max-width:560px;margin:0 auto}.head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+  .kicker{font-size:11px;letter-spacing:.22em;color:#8fd8d2;font-weight:800}.title{font-size:25px;line-height:1.35;color:#f4cd62;font-weight:900;margin-top:4px}
+  .count{font-size:13px;color:rgba(244,232,200,.78);font-weight:700;margin-top:4px}.close{border:1px solid rgba(244,205,98,.45);background:rgba(255,255,255,.04);color:#f4e8c8;min-width:42px;height:38px;font-size:20px;cursor:pointer}
+  .grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}.weekday{min-height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;color:rgba(244,232,200,.56);font-weight:900}
+  .day{min-height:58px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.025);padding:7px 6px;display:grid;align-content:start;gap:4px;color:rgba(244,232,200,.5);font-weight:900}
+  .day.empty{border-color:transparent;background:transparent}.day.lit{border-color:rgba(244,205,98,.48);background:radial-gradient(circle at 50% 28%,rgba(244,205,98,.28),rgba(244,205,98,.08) 45%,rgba(255,255,255,.035));color:#fff}
+  .day.today{outline:1px solid rgba(143,216,210,.78);outline-offset:1px}.day small{font-size:10px;line-height:1.35;color:rgba(244,232,200,.74);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .note{margin-top:16px;font-size:12px;line-height:1.7;color:rgba(244,232,200,.72);border-top:1px solid rgba(244,205,98,.18);padding-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div>
+      <div class="kicker">TODAY'S COMPASS</div>
+      <div class="title">${escapeHtml(title)}</div>
+      <div class="count">今月の羅針 ${monthCount}回</div>
+    </div>
+    <button class="close" type="button" onclick="window.close()" aria-label="閉じる">×</button>
+  </div>
+  <div class="grid">
+    ${['日','月','火','水','木','金','土'].map(day=>`<div class="weekday">${day}</div>`).join('')}
+    ${cells.join('')}
+  </div>
+  <div class="note">今日のオラクルを引いた日だけが灯ります。羅針のかけらの受け取り状況は、元の画面の「今日の羅針」で確認できます。</div>
+</div>
+</body>
+</html>`;
+}
+
+function openRashinCalendarWindow(source='today_compass'){
+  const popup=window.open('','rashin_oracle_calendar','width=560,height=680,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes,resizable=yes');
+  if(!popup){
+    showToast('羅針カレンダーを開けませんでした。ポップアップ設定をご確認ください。');
+    return;
+  }
+  popup.document.open();
+  popup.document.write(buildRashinCalendarWindowHtml());
+  popup.document.close();
+  popup.focus();
+  trackEvent('rashin_calendar_opened',{source,month_count:getDailyOracleCalendarSummary().monthCount});
+}
+
 function getDailyOracleFlowLabels(card){
   const text=[card?.title,card?.message,card?.action,card?.share].filter(Boolean).join(' ');
   const labels=[];
@@ -4396,6 +4513,10 @@ function installRashinBonusStyles(){
     .rashin-bonus-btn:disabled{opacity:.55;cursor:not-allowed}
     .rashin-bonus-link{min-height:44px;border:1px solid rgba(244,205,98,.42);background:rgba(255,255,255,.04);color:#f4e8c8;font-weight:800;padding:10px 14px;cursor:pointer}
     .rashin-bonus-link:disabled{opacity:.62;cursor:default}
+    .rashin-bonus-side{display:grid;gap:10px;align-content:center}
+    .rashin-calendar-button{min-height:42px;border:1px solid rgba(143,216,210,.5);background:rgba(7,18,32,.56);color:#f4e8c8;font-weight:900;padding:9px 13px;cursor:pointer;display:grid;gap:2px;text-align:center}
+    .rashin-calendar-button small{font-size:11px;color:rgba(143,216,210,.9);font-weight:800}
+    .rashin-calendar-button:hover{border-color:rgba(143,216,210,.82);background:rgba(143,216,210,.12)}
     .rashin-oracle-cta{margin-top:14px;padding:13px 14px;border:1px solid rgba(143,216,210,.28);background:rgba(6,14,28,.34);display:grid;gap:8px}
     .rashin-oracle-cta-title{font-size:15px;line-height:1.55;color:#fff;font-weight:900}
     .rashin-oracle-cta-sub{font-size:13px;line-height:1.65;color:rgba(244,232,200,.82)}
@@ -4414,7 +4535,7 @@ function installRashinBonusStyles(){
     .rashin-history-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:8px}
     .rashin-history-count{font-size:13px;font-weight:900;color:#f4cd62}
     .rashin-history-actions{display:flex;gap:8px;flex-wrap:wrap}
-    @media (max-width:760px){.rashin-bonus-card{width:100%}.rashin-bonus-panel,.rashin-bonus-panel.is-compact{grid-template-columns:1fr;padding:16px}.rashin-bonus-title{font-size:22px}.rashin-bonus-stones{justify-content:flex-start;min-height:auto}.rashin-bonus-actions>*{width:100%}}
+    @media (max-width:760px){.rashin-bonus-card{width:100%}.rashin-bonus-panel,.rashin-bonus-panel.is-compact{grid-template-columns:1fr;padding:16px}.rashin-bonus-title{font-size:22px}.rashin-bonus-stones{justify-content:flex-start;min-height:auto}.rashin-bonus-actions>*{width:100%}.rashin-bonus-side{align-content:start}.rashin-calendar-button{text-align:left}}
   `;
   document.head.appendChild(style);
 }
@@ -4507,8 +4628,9 @@ function renderRashinBonusCard(){
             <div class="rashin-bonus-sub">Googleログインすると、羅針のかけらを1つ受け取れます。</div>
           </div>
         </div>
-        <div class="rashin-bonus-actions">
+        <div class="rashin-bonus-side">
           <button class="rashin-bonus-btn" type="button" onclick="openMemberAccessModal('rashin-bonus')">Googleで今日の羅針を記録</button>
+          ${renderRashinCalendarButton('today_compass_guest')}
         </div>
       </div>`;
     return;
@@ -4525,12 +4647,15 @@ function renderRashinBonusCard(){
           </div>
           <div class="rashin-bonus-body"><div>羅針のかけらを確認しています。</div></div>
         </div>
-        <div class="rashin-bonus-stones">
-          <span class="rashin-stone-gem" aria-hidden="true"></span>
-          <span class="rashin-stone-count">
-            <span class="rashin-stone-label">RASHIN FRAGMENT</span>
-            <span class="rashin-stone-number">確認中</span>
-          </span>
+        <div class="rashin-bonus-side">
+          <div class="rashin-bonus-stones">
+            <span class="rashin-stone-gem" aria-hidden="true"></span>
+            <span class="rashin-stone-count">
+              <span class="rashin-stone-label">RASHIN FRAGMENT</span>
+              <span class="rashin-stone-number">確認中</span>
+            </span>
+          </div>
+          ${renderRashinCalendarButton('today_compass_loading')}
         </div>
       </div>`;
     return;
@@ -4582,12 +4707,15 @@ function renderRashinBonusCard(){
         </div>
         ${renderDailyOracleDeepCta(status)}
       </div>
-      <div class="rashin-bonus-stones" aria-label="羅針のかけら ${stones}個">
-        <span class="rashin-stone-gem" aria-hidden="true"></span>
-        <span class="rashin-stone-count">
-          <span class="rashin-stone-label">羅針のかけら</span>
-          <span class="rashin-stone-number">${stones}個</span>
-        </span>
+      <div class="rashin-bonus-side">
+        <div class="rashin-bonus-stones" aria-label="羅針のかけら ${stones}個">
+          <span class="rashin-stone-gem" aria-hidden="true"></span>
+          <span class="rashin-stone-count">
+            <span class="rashin-stone-label">羅針のかけら</span>
+            <span class="rashin-stone-number">${stones}個</span>
+          </span>
+        </div>
+        ${renderRashinCalendarButton('today_compass')}
       </div>
     </div>`;
 }
