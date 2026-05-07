@@ -1603,6 +1603,8 @@ const VAULT_ID_STORAGE_KEY='uranai-vault-id-v1';
 const DAILY_ORACLE_STORAGE_KEY='uranai-daily-oracle-v1';
 const DAILY_ORACLE_FALLBACK_ID_STORAGE_KEY='uranai-daily-oracle-fallback-id-v1';
 const DAILY_ORACLE_ACTIVE_RECORD_KEY='uranai-daily-oracle-active-v1';
+const RASHIN_MONTHLY_FOCUS_STORAGE_KEY='uranai-rashin-monthly-focus-v1';
+const RASHIN_CHANGE_MEMO_STORAGE_KEY='uranai-rashin-change-memo-v1';
 const MEMBER_STORAGE_KEY='uranai-member-preview-v1';
 const STRIPE_RETURN_INTENT_KEY='uranai-stripe-return-intent-v1';
 const EVENT_LOG_STORAGE_KEY='uranai-event-log-v1';
@@ -1616,6 +1618,26 @@ const SIMPLE_READING_LABEL_HTML='ミニ羅針鑑定はこちら<br>（カード�
 const FREE_LEN_COUNT=2;
 const FREE_ORC_COUNT=1;
 const LEN_FREE_POSITION_LABELS=['主題','修飾・答え'];
+const RASHIN_MONTHLY_FOCUS_OPTIONS=[
+  {group:'love',label:'恋愛',copy:'相手との距離感を、今月の流れとして見つめます。'},
+  {group:'work',label:'仕事',copy:'続ける・変える・待つの判断軸を整えます。'},
+  {group:'money',label:'金運',copy:'使う時期と控える時期を、日々の流れから見ます。'},
+  {group:'relationship',label:'人間関係',copy:'境界線と向き合い方を、少しずつ整理します。'},
+  {group:'general',label:'総合',copy:'いま一番気になる迷いを、月の流れとして追います。'},
+];
+const RASHIN_CHANGE_MEMO_OPTIONS=[
+  {id:'advanced',label:'少し進んだ',copy:'小さく動けた日'},
+  {id:'thinking',label:'迷い中',copy:'言葉を整理する日'},
+  {id:'wait',label:'待つ',copy:'流れを見る日'},
+  {id:'act',label:'動く',copy:'次の一手を試す日'},
+];
+const RASHIN_TOMORROW_PREVIEWS=[
+  '明日は、行動のタイミングを見つめる羅針が灯ります。',
+  '明日は、言葉にする前の気持ちを整える羅針が灯ります。',
+  '明日は、近づく・待つ・離れるの境目を見つめます。',
+  '明日は、今月の流れを小さな一手に移す日です。',
+  '明日は、見落としていた選択肢を拾い直す羅針が灯ります。',
+];
 
 try{
   if(location.protocol==='file:'){
@@ -1938,6 +1960,8 @@ const TRACKED_DEEPEN_CTA_VIEW_KEYS=new Set();
 const TRACKED_DEEPEN_CTA_VIEW_LOGICAL_KEYS=new Set();
 const TRACKED_MINI_ANALYSIS_VIEW_KEYS=new Set();
 const TRACKED_PRICE_CONFIRM_VIEW_KEYS=new Set();
+const TRACKED_RASHIN_CALENDAR_VIEW_KEYS=new Set();
+const TRACKED_RASHIN_MILESTONE_VIEW_KEYS=new Set();
 const OBSERVED_DEEPEN_CTA_KEYS=new WeakSet();
 let DAILY_ORACLE_VIEW_TRACKED=false;
 let DAILY_ORACLE_MOTION_TIMERS=[];
@@ -2886,6 +2910,233 @@ function getDailyOracleHistoryRecords(owner=getDailyOracleOwner(),limit=7){
     .slice(0,max);
 }
 
+function readObjectStorage(key){
+  try{
+    const parsed=JSON.parse(localStorage.getItem(key)||'{}');
+    return parsed&&typeof parsed==='object'?parsed:{};
+  }catch(_error){
+    return{};
+  }
+}
+
+function writeObjectStorage(key,value){
+  try{
+    localStorage.setItem(key,JSON.stringify(value||{}));
+  }catch(_error){}
+}
+
+function getRashinOwnerStorageKey(owner=getDailyOracleOwner()){
+  return String(owner?.key||'local');
+}
+
+function getJstMonthKey(dateJst=getJstDateKey()){
+  const value=String(dateJst||getJstDateKey());
+  return /^\d{4}-\d{2}-\d{2}$/.test(value)?value.slice(0,7):getJstDateKey().slice(0,7);
+}
+
+function getJstDateParts(dateJst){
+  const match=String(dateJst||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!match) return null;
+  return{year:Number(match[1]),month:Number(match[2]),day:Number(match[3])};
+}
+
+function getJstDateWeekday(dateJst){
+  const parts=getJstDateParts(dateJst);
+  if(!parts) return 0;
+  return new Date(Date.UTC(parts.year,parts.month-1,parts.day)).getUTCDay();
+}
+
+function getJstMonthDayCount(monthKey=getJstMonthKey()){
+  const match=String(monthKey||'').match(/^(\d{4})-(\d{2})$/);
+  if(!match) return 30;
+  return new Date(Date.UTC(Number(match[1]),Number(match[2]),0)).getUTCDate();
+}
+
+function getRashinMonthlyFocus(owner=getDailyOracleOwner(),dateJst=getJstDateKey()){
+  const monthKey=getJstMonthKey(dateJst);
+  const key=`${getRashinOwnerStorageKey(owner)}:${monthKey}`;
+  const saved=readObjectStorage(RASHIN_MONTHLY_FOCUS_STORAGE_KEY)[key]||null;
+  const option=RASHIN_MONTHLY_FOCUS_OPTIONS.find(item=>item.group===saved?.group)||null;
+  return option?{...option,monthKey,selected:true,setAt:saved?.setAt||''}:{monthKey,selected:false};
+}
+
+function setRashinMonthlyFocus(group){
+  const option=RASHIN_MONTHLY_FOCUS_OPTIONS.find(item=>item.group===group)||RASHIN_MONTHLY_FOCUS_OPTIONS.find(item=>item.group==='general');
+  if(!option) return;
+  const owner=getDailyOracleOwner();
+  const monthKey=getJstMonthKey();
+  const key=`${getRashinOwnerStorageKey(owner)}:${monthKey}`;
+  const store=readObjectStorage(RASHIN_MONTHLY_FOCUS_STORAGE_KEY);
+  store[key]={group:option.group,setAt:new Date().toISOString()};
+  writeObjectStorage(RASHIN_MONTHLY_FOCUS_STORAGE_KEY,store);
+  trackEvent('monthly_focus_set',{theme_group:option.group,source:'daily_oracle'});
+  renderDailyOracle();
+  renderRecentHistory();
+}
+
+function getRashinChangeMemo(dateJst=getJstDateKey(),owner=getDailyOracleOwner()){
+  const key=`${getRashinOwnerStorageKey(owner)}:${dateJst}`;
+  const saved=readObjectStorage(RASHIN_CHANGE_MEMO_STORAGE_KEY)[key]||null;
+  const option=RASHIN_CHANGE_MEMO_OPTIONS.find(item=>item.id===saved?.id)||null;
+  return option?{...option,dateJst,savedAt:saved?.savedAt||''}:null;
+}
+
+function setRashinChangeMemo(id,dateJst=getJstDateKey()){
+  const option=RASHIN_CHANGE_MEMO_OPTIONS.find(item=>item.id===id);
+  if(!option) return;
+  const owner=getDailyOracleOwner();
+  const safeDate=/^\d{4}-\d{2}-\d{2}$/.test(String(dateJst||''))?String(dateJst):getJstDateKey();
+  const key=`${getRashinOwnerStorageKey(owner)}:${safeDate}`;
+  const store=readObjectStorage(RASHIN_CHANGE_MEMO_STORAGE_KEY);
+  store[key]={id:option.id,savedAt:new Date().toISOString()};
+  writeObjectStorage(RASHIN_CHANGE_MEMO_STORAGE_KEY,store);
+  trackEvent('oracle_change_memo_set',{memo:option.id,source:'daily_oracle'});
+  renderDailyOracle();
+  renderRecentHistory();
+}
+
+function getRashinDailyOracleStreak(records,dateJst=getJstDateKey()){
+  const dates=new Set((records||[]).map(record=>record.dateJst).filter(Boolean));
+  let cursor=dates.has(dateJst)?dateJst:getJstDateKeyOffset(dateJst,-1);
+  let streak=0;
+  for(let i=0;i<366;i+=1){
+    if(!dates.has(cursor)) break;
+    streak+=1;
+    cursor=getJstDateKeyOffset(cursor,-1);
+  }
+  return streak;
+}
+
+function getRashinMilestone(records){
+  const count=(records||[]).length;
+  if(count>=14) return{level:14,title:'14回の羅針が重なりました',copy:'迷いの向きが少しずつ見えています。次は「なぜ同じところで止まるのか」を深掘りしやすい頃です。'};
+  if(count>=7) return{level:7,title:'7回の羅針がそろいました',copy:'短いミニ解析で、立ち止まる・整える・動かす流れを確認できます。'};
+  if(count>=3) return{level:3,title:'3回の羅針が灯りました',copy:'まずは小さな流れが見え始めています。焦らず、同じテーマで変化を見ていきましょう。'};
+  return null;
+}
+
+function getRashinTomorrowPreview(owner=getDailyOracleOwner(),dateJst=getJstDateKey()){
+  const tomorrow=getJstDateKeyOffset(dateJst,1);
+  const index=hashDailyOracleKey(`${getRashinOwnerStorageKey(owner)}:${tomorrow}:preview`)%RASHIN_TOMORROW_PREVIEWS.length;
+  return{dateJst:tomorrow,copy:RASHIN_TOMORROW_PREVIEWS[index]||RASHIN_TOMORROW_PREVIEWS[0]};
+}
+
+function getRashinFocusOracleCopy(group='general',card=null){
+  const cardName=card?.name?`「${card.name}」`:'今日のカード';
+  if(group==='love') return`${cardName}を恋愛に重ねると、近づくより先に距離感を整える日です。`;
+  if(group==='work') return`${cardName}を仕事に重ねると、続ける・変える・待つの判断軸を整理する日です。`;
+  if(group==='money') return`${cardName}を金運に重ねると、使う前に流れを見直す日です。`;
+  if(group==='relationship') return`${cardName}を人間関係に重ねると、境界線をやわらかく引き直す日です。`;
+  return`${cardName}を今の迷いに重ねて、次に取る行動を1つだけ選ぶ日です。`;
+}
+
+function renderRashinMonthlyFocusPanel(record=null){
+  const focus=getRashinMonthlyFocus();
+  const body=focus.selected
+    ?`${focus.label}を今月の羅針として追っています。${getRashinFocusOracleCopy(focus.group,record?.card)}`
+    :'今月追うテーマを1つ決めると、今日のカードを同じ悩みに重ねて見られます。';
+  const buttons=RASHIN_MONTHLY_FOCUS_OPTIONS.map(option=>`
+          <button class="rashin-focus-option ${focus.group===option.group?'is-active':''}" type="button" onclick="setRashinMonthlyFocus('${option.group}')">
+            <span>${escapeHtml(option.label)}</span>
+          </button>`).join('');
+  return`
+      <div class="rashin-rhythm-card">
+        <div class="rashin-rhythm-label">今月追うテーマ</div>
+        <div class="rashin-rhythm-copy">${escapeHtml(body)}</div>
+        <div class="rashin-focus-options">${buttons}</div>
+      </div>`;
+}
+
+function renderRashinChangeMemoPanel(record=null){
+  if(!record?.dateJst) return '';
+  const memo=getRashinChangeMemo(record.dateJst);
+  const safeDate=escapeHtml(JSON.stringify(record.dateJst));
+  const buttons=RASHIN_CHANGE_MEMO_OPTIONS.map(option=>`
+          <button class="rashin-memo-option ${memo?.id===option.id?'is-active':''}" type="button" onclick="setRashinChangeMemo('${option.id}',${safeDate})">
+            <span>${escapeHtml(option.label)}</span>
+          </button>`).join('');
+  const copy=memo?`今日の変化メモ：${memo.copy}`:'今日の気持ちを1つ残すと、後から迷いの変化を見返せます。';
+  return`
+      <div class="rashin-rhythm-card">
+        <div class="rashin-rhythm-label">前回からの変化メモ</div>
+        <div class="rashin-rhythm-copy">${escapeHtml(copy)}</div>
+        <div class="rashin-memo-options">${buttons}</div>
+      </div>`;
+}
+
+function renderRashinCalendarPanel(records=[],record=null){
+  const owner=getDailyOracleOwner();
+  const today=getJstDateKey();
+  const monthKey=getJstMonthKey(today);
+  const dayCount=getJstMonthDayCount(monthKey);
+  const firstWeekday=getJstDateWeekday(`${monthKey}-01`);
+  const monthRecords=new Map((records||[])
+    .filter(row=>String(row.dateJst||'').startsWith(monthKey))
+    .map(row=>[row.dateJst,row]));
+  const monthCount=monthRecords.size;
+  const streak=getRashinDailyOracleStreak(records,today);
+  const viewKey=`${getRashinOwnerStorageKey(owner)}:${monthKey}:${monthCount}`;
+  if(!TRACKED_RASHIN_CALENDAR_VIEW_KEYS.has(viewKey)){
+    TRACKED_RASHIN_CALENDAR_VIEW_KEYS.add(viewKey);
+    trackEvent('rashin_calendar_viewed',{source:'daily_oracle',month_count:monthCount,streak});
+  }
+  const cells=[];
+  for(let i=0;i<firstWeekday;i+=1){
+    cells.push('<div class="rashin-calendar-day is-empty" aria-hidden="true"></div>');
+  }
+  for(let day=1;day<=dayCount;day+=1){
+    const dateJst=`${monthKey}-${String(day).padStart(2,'0')}`;
+    const row=monthRecords.get(dateJst)||null;
+    const memo=getRashinChangeMemo(dateJst,owner);
+    const classes=['rashin-calendar-day'];
+    if(row) classes.push('is-lit');
+    if(dateJst===today) classes.push('is-today');
+    if(memo) classes.push('has-memo');
+    const cardLabel=row?.card?.name?` ${row.card.name}`:'';
+    const memoLabel=memo?` / ${memo.label}`:'';
+    cells.push(`<div class="${classes.join(' ')}" title="${escapeHtml(`${dateJst}${cardLabel}${memoLabel}`)}">
+        <span>${day}</span>
+      </div>`);
+  }
+  const milestone=getRashinMilestone(records);
+  if(milestone){
+    const milestoneKey=`${getRashinOwnerStorageKey(owner)}:${milestone.level}:${records.length}`;
+    if(!TRACKED_RASHIN_MILESTONE_VIEW_KEYS.has(milestoneKey)){
+      TRACKED_RASHIN_MILESTONE_VIEW_KEYS.add(milestoneKey);
+      trackEvent('rashin_milestone_viewed',{source:'daily_oracle',milestone:milestone.level,oracle_records:records.length});
+    }
+  }
+  const tomorrow=getRashinTomorrowPreview(owner,today);
+  return`
+      <div class="rashin-rhythm-card">
+        <div class="rashin-calendar-head">
+          <div>
+            <div class="rashin-rhythm-label">羅針カレンダー</div>
+            <div class="rashin-rhythm-copy">${escapeHtml(monthKey.replace('-','年'))}月の羅針 ${monthCount}回 / 直近 ${streak}日</div>
+          </div>
+          <div class="rashin-calendar-legend"><span></span>灯った日</div>
+        </div>
+        <div class="rashin-calendar-grid" aria-label="今月の羅針カレンダー">
+          ${['日','月','火','水','木','金','土'].map(day=>`<div class="rashin-calendar-weekday">${day}</div>`).join('')}
+          ${cells.join('')}
+        </div>
+        ${milestone?`<div class="rashin-rhythm-milestone"><strong>${escapeHtml(milestone.title)}</strong><span>${escapeHtml(milestone.copy)}</span></div>`:''}
+        <div class="rashin-rhythm-preview">${escapeHtml(tomorrow.copy)}</div>
+      </div>`;
+}
+
+function renderDailyOracleRhythmPanel(record=null){
+  const owner=getDailyOracleOwner();
+  const records=getDailyOracleHistoryRecords(owner,120);
+  if(!records.length) return '';
+  return`
+      <div class="daily-oracle-rhythm">
+        ${renderRashinCalendarPanel(records,record)}
+        ${renderRashinMonthlyFocusPanel(record)}
+        ${renderRashinChangeMemoPanel(record)}
+      </div>`;
+}
+
 function getDailyOracleFlowLabels(card){
   const text=[card?.title,card?.message,card?.action,card?.share].filter(Boolean).join(' ');
   const labels=[];
@@ -3357,6 +3608,7 @@ function renderDailyOracle(){
         <div class="daily-oracle-block-body">${escapeHtml(card.action)}</div>
       </div>
       ${renderDailyOracleMiniAnalysis()}
+      ${renderDailyOracleRhythmPanel(record)}
       <div class="daily-oracle-actions">
         <button class="daily-oracle-share" type="button" onclick="openDailyOracleStage(readDailyOracleRecord(),{animate:true})">カード演出をもう一度見る</button>
         <button class="daily-oracle-share" type="button" onclick="shareDailyOracle('x')">Xでシェア</button>
@@ -4410,6 +4662,26 @@ function installRashinBonusStyles(){
     .daily-oracle-mini-next{color:#fff;font-size:13px;line-height:1.65;font-weight:800;border-top:1px solid rgba(143,216,210,.2);padding-top:8px;margin-top:2px}
     .daily-oracle-mini-lead{color:rgba(244,232,200,.82);font-size:13px;line-height:1.65}
     .daily-oracle-mini-cta{justify-self:start;margin-top:4px;min-height:42px;border:1px solid rgba(244,205,98,.56);background:rgba(255,255,255,.05);color:#f4e8c8;font-weight:900;padding:9px 14px;cursor:pointer}
+    .daily-oracle-rhythm{margin-top:14px;display:grid;gap:12px}
+    .rashin-rhythm-card{padding:14px 16px;border:1px solid rgba(143,216,210,.26);background:linear-gradient(135deg,rgba(8,16,31,.58),rgba(19,12,31,.5));display:grid;gap:10px}
+    .rashin-rhythm-label{font-size:12px;letter-spacing:.16em;color:#8fd8d2;font-weight:900}
+    .rashin-rhythm-copy{font-size:13px;line-height:1.7;color:rgba(244,232,200,.84);font-weight:700}
+    .rashin-calendar-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+    .rashin-calendar-legend{display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(244,232,200,.68);white-space:nowrap}
+    .rashin-calendar-legend span{width:10px;height:10px;border-radius:50%;background:#f4cd62;box-shadow:0 0 12px rgba(244,205,98,.42)}
+    .rashin-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+    .rashin-calendar-weekday{min-height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(244,232,200,.55);font-weight:800}
+    .rashin-calendar-day{position:relative;min-height:32px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.025);color:rgba(244,232,200,.46);font-size:12px;font-weight:800}
+    .rashin-calendar-day.is-empty{border-color:transparent;background:transparent}
+    .rashin-calendar-day.is-lit{border-color:rgba(244,205,98,.42);background:radial-gradient(circle at 50% 36%,rgba(244,205,98,.32),rgba(244,205,98,.09) 42%,rgba(255,255,255,.035));color:#fff;box-shadow:inset 0 0 12px rgba(244,205,98,.12)}
+    .rashin-calendar-day.is-today{outline:1px solid rgba(143,216,210,.72);outline-offset:1px}
+    .rashin-calendar-day.has-memo::after{content:'';position:absolute;right:5px;bottom:5px;width:5px;height:5px;border-radius:50%;background:#8fd8d2;box-shadow:0 0 9px rgba(143,216,210,.58)}
+    .rashin-rhythm-milestone{border-top:1px solid rgba(143,216,210,.18);padding-top:9px;display:grid;gap:4px;font-size:13px;line-height:1.65;color:rgba(255,255,255,.88)}
+    .rashin-rhythm-milestone strong{color:#fff}
+    .rashin-rhythm-preview{font-size:12px;line-height:1.65;color:rgba(244,232,200,.72);border-top:1px solid rgba(255,255,255,.08);padding-top:8px}
+    .rashin-focus-options,.rashin-memo-options{display:flex;gap:7px;flex-wrap:wrap}
+    .rashin-focus-option,.rashin-memo-option{min-height:34px;border:1px solid rgba(244,205,98,.34);background:rgba(255,255,255,.04);color:#f4e8c8;padding:7px 10px;font-size:12px;font-weight:900;cursor:pointer}
+    .rashin-focus-option.is-active,.rashin-memo-option.is-active{background:linear-gradient(90deg,#9c741b,#f4d372);color:#100b14;border-color:rgba(244,205,98,.8)}
     .rashin-history-progress{border-color:rgba(244,205,98,.28);background:rgba(11,16,31,.46)}
     .rashin-history-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:8px}
     .rashin-history-count{font-size:13px;font-weight:900;color:#f4cd62}
