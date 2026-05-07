@@ -157,7 +157,7 @@ const GA_TRACKING_ID = isPlaceholderEnvValue(GA_TRACKING_ID_RAW) ? '' : GA_TRACK
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 const STRIPE_PRICE_ID_MONTHLY = process.env.STRIPE_PRICE_ID_MONTHLY || '';
-const STRIPE_PRICE_ID_DEEP_READING_980 = process.env.STRIPE_PRICE_ID_DEEP_READING_980 || '';
+const STRIPE_PRICE_ID_DEEP_READING_780 = process.env.STRIPE_PRICE_ID_DEEP_READING_780 || '';
 const STRIPE_SUCCESS_PATH = process.env.STRIPE_SUCCESS_PATH || '/uranai-v5.html?stripe_success=1&session_id={CHECKOUT_SESSION_ID}';
 const STRIPE_CANCEL_PATH = process.env.STRIPE_CANCEL_PATH || '/uranai-v5.html?stripe_cancel=1';
 const STRIPE_PORTAL_RETURN_PATH = process.env.STRIPE_PORTAL_RETURN_PATH || '/uranai-v5.html';
@@ -214,7 +214,7 @@ const GOOGLE_CLIENT_CONFIGURED = isConfiguredGoogleClientId(GOOGLE_CLIENT_ID);
 const STRIPE_SECRET_CONFIGURED = isConfiguredStripeSecretKey(STRIPE_SECRET_KEY);
 const STRIPE_WEBHOOK_CONFIGURED = isConfiguredStripeWebhookSecret(STRIPE_WEBHOOK_SECRET);
 const STRIPE_PRICE_CONFIGURED = isConfiguredStripePriceId(STRIPE_PRICE_ID_MONTHLY);
-const STRIPE_DEEP_READING_PRICE_CONFIGURED = isConfiguredStripePriceId(STRIPE_PRICE_ID_DEEP_READING_980);
+const STRIPE_DEEP_READING_PRICE_CONFIGURED = isConfiguredStripePriceId(STRIPE_PRICE_ID_DEEP_READING_780);
 const MEMBER_SESSION_PERSISTENT = isConfiguredAppSecret(process.env.MEMBER_SESSION_SECRET || '');
 const AUTH_SESSION_PERSISTENT = isConfiguredAppSecret(process.env.AUTH_SESSION_SECRET || process.env.MEMBER_SESSION_SECRET || '');
 const MAX_JSON_BYTES = 1024 * 1024;
@@ -257,7 +257,7 @@ const RATE_LIMIT_RULES = {
 const RATE_LIMIT_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 const AI_FREE_DAILY_LIMIT = Math.max(1, parseInt(process.env.AI_FREE_DAILY_LIMIT || '5', 10) || 5);
 const PAID_MODELS = new Set([AI_MODELS.paid, AI_MODELS.history, AI_MODELS.paidFallback]);
-const DEEP_READING_NORMAL_AMOUNT = 980;
+const DEEP_READING_NORMAL_AMOUNT = 780;
 const RASHIN_BONUS_REWARD_AMOUNT = 1;
 const RASHIN_BONUS_VALID_DAYS = 7;
 const RASHIN_BONUS_DISCOUNTS = [
@@ -4677,7 +4677,7 @@ async function handleStripeCheckoutSessionCreate(req, res) {
     params.set(`payment_method_types[${index}]`, paymentMethodType);
   });
   if (purchaseOrder.finalAmount === DEEP_READING_NORMAL_AMOUNT) {
-    params.set('line_items[0][price]', STRIPE_PRICE_ID_DEEP_READING_980);
+    params.set('line_items[0][price]', STRIPE_PRICE_ID_DEEP_READING_780);
   } else {
     params.set('line_items[0][price_data][currency]', purchaseOrder.currency);
     params.set('line_items[0][price_data][unit_amount]', String(purchaseOrder.finalAmount));

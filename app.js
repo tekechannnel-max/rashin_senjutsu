@@ -2036,7 +2036,7 @@ const BRAND_PROFILE={
     member:{
       badge:'深掘り',
       title:'深掘り鑑定で、進路を自分で選べるようになる',
-      price:'深掘り鑑定 1回980円',
+      price:'深掘り鑑定 1回780円',
       items:[
         '具体的な悩みの構造と本音を整理できる',
         '次にどちらへ進むかが現実レベルで具体的に残る',
@@ -2047,7 +2047,7 @@ const BRAND_PROFILE={
 };
 
 const MEMBERSHIP_PLAN={
-  price:'深掘り鑑定 1回980円',
+  price:'深掘り鑑定 1回780円',
   status:'読み返しと記録は準備中',
   promise:'無料で見えたことを、次にすることまで深く読む鑑定です',
   description:'無料で見えた「今の状態」をもとに、ここからは悩みをもっと深く読みます。現実を見ながら、次にどう動くかまで残せます。',
@@ -2091,8 +2091,8 @@ const MEMBERSHIP_PLAN={
     },
   ],
 };
-const CHECKOUT_DISCLOSURE_HTML='深堀り羅針鑑定は、カード決済で購入できる有料鑑定です。料金は単発1回980円、月額プランは月3回1,480円・月5回2,020円です。無料鑑定を先に作成する必要はありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
-const RESULT_CHECKOUT_DISCLOSURE_HTML='深掘り鑑定は単発1回980円、月額プランは月3回1,480円・月5回2,020円です。無料で引いたカードの続きから追加カードを展開することも、直接有料鑑定から始めることもできます。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
+const CHECKOUT_DISCLOSURE_HTML='深堀り羅針鑑定は、カード決済で購入できる有料鑑定です。料金は単発1回780円、月額プランは月3回1,480円・月5回2,020円です。無料鑑定を先に作成する必要はありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
+const RESULT_CHECKOUT_DISCLOSURE_HTML='深掘り鑑定は単発1回780円、月額プランは月3回1,480円・月5回2,020円です。無料で引いたカードの続きから追加カードを展開することも、直接有料鑑定から始めることもできます。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
 
 // 全カード・各3問の解釈絞り込みテンプレート
 const CLARIFY_DEF={
@@ -3956,7 +3956,7 @@ function getMemberStatusMeta(){
     return{
       cls:'inactive',
       label:'深掘り鑑定',
-      copy:'深堀り羅針鑑定は、単発1回980円、月額は月3回1,480円・月5回2,020円です。無料鑑定から続きのカードを引くことも、直接有料鑑定から始めることもできます。',
+      copy:'深堀り羅針鑑定は、単発1回780円、月額は月3回1,480円・月5回2,020円です。無料鑑定から続きのカードを引くことも、直接有料鑑定から始めることもできます。',
       action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openStripeCheckout('start-paid')">カード決済へ進む</button>`,
     };
   }
@@ -3964,7 +3964,7 @@ function getMemberStatusMeta(){
     return{
       cls:'inactive',
       label:'深掘り鑑定',
-      copy:'深堀り羅針鑑定は、単発1回980円、月額は月3回1,480円・月5回2,020円です。無料鑑定から続きのカードを引くことも、直接有料鑑定から始めることもできます。',
+      copy:'深堀り羅針鑑定は、単発1回780円、月額は月3回1,480円・月5回2,020円です。無料鑑定から続きのカードを引くことも、直接有料鑑定から始めることもできます。',
       action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openStripeCheckout('start-paid')">カード決済へ進む</button>`,
     };
   }
@@ -3973,7 +3973,7 @@ function getMemberStatusMeta(){
     label:canUseAccessCode()?'確認コード待ち':'公開準備中',
     copy:canUseAccessCode()
       ?'前回の鑑定をもとに、続きの悩みを読み解けます。確認コードを入力すると深掘り鑑定の利用状態を確認できます。'
-      :'深堀り羅針鑑定は、カード決済で直接購入できます。単発1回980円、月額は月3回1,480円・月5回2,020円です。',
+      :'深堀り羅針鑑定は、カード決済で直接購入できます。単発1回780円、月額は月3回1,480円・月5回2,020円です。',
     action:canUseAccessCode()
       ?`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openMemberAccessModal('start-paid')">確認コードを入力</button>`
       :`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openStripeCheckout('start-paid')">カード決済へ進む</button>`,
@@ -4370,12 +4370,12 @@ function updateResultUpgradePrice(status=RASHIN_DISCOUNT_STATUS){
   if(!priceEl) return;
   if(status?.eligible){
     priceEl.innerHTML=`
-      <span class="upgrade-price-normal">通常 ${status.normalAmount||980}円</span>
-      <span class="upgrade-price-discount">羅針ボーナス適用で ${status.finalAmount||980}円</span>`;
+      <span class="upgrade-price-normal">通常 ${status.normalAmount||780}円</span>
+      <span class="upgrade-price-discount">羅針ボーナス適用で ${status.finalAmount||780}円</span>`;
     if(noteEl) noteEl.textContent=`決済完了時に羅針石${status.stonesRequired}個を使用します。有効期限はこの無料鑑定から7日間です。`;
     return;
   }
-  priceEl.textContent='通常 980円';
+  priceEl.textContent='通常 780円';
   if(noteEl) noteEl.textContent=status?.reason==='insufficient_stones'
     ?'羅針石が3個以上になると、この結果の深掘り鑑定で割引が使えます。'
     :'';
@@ -4729,9 +4729,9 @@ async function requestRashinCodePurchase(intent='upgrade-paid'){
     const redeemed=await promptAndRedeemRashinPaidCode(sourceReadingId);
     trackEvent('rashin_paid_code_prompt',{
       source:checkoutSourceFromIntent(intent),
-      price:980,
-      final_amount:redeemed?0:980,
-      discount_amount:redeemed?980:0,
+      price:780,
+      final_amount:redeemed?0:780,
+      discount_amount:redeemed?780:0,
       purchase_type:'deep_reading_once',
       payment_provider:'manual_free_code',
     });
@@ -4790,8 +4790,8 @@ async function markPaidReadingTicketUsed(){
       ACTIVE_PAID_READING_TICKET={...ACTIVE_PAID_READING_TICKET,status:data?.ticketStatus||'used'};
       trackEvent('deep_ticket_used',{
         source:'result',
-        price:980,
-        final_amount:980,
+        price:780,
+        final_amount:780,
         discount_amount:0,
         checkout_mode:'payment',
         purchase_type:'deep_reading_once',
@@ -4859,11 +4859,11 @@ async function openStripeCheckout(intent='start-paid'){
       return false;
     }
     saveStripeReturnIntent(intent);
-      const finalAmount=Number(data?.finalAmount||980);
+      const finalAmount=Number(data?.finalAmount||780);
     const discountAmount=Number(data?.discountAmount||0);
     trackEvent('checkout_start',{
       plan:'one_time',
-        price:980,
+        price:780,
       final_amount:finalAmount,
       discount_amount:discountAmount,
       checkout_mode:'payment',
@@ -4872,7 +4872,7 @@ async function openStripeCheckout(intent='start-paid'){
     });
     trackEvent('deep_payment_start',{
       source:checkoutSourceFromIntent(intent),
-        price:980,
+        price:780,
       final_amount:finalAmount,
       discount_amount:discountAmount,
       checkout_mode:'payment',
@@ -4951,12 +4951,12 @@ async function handleStripeReturnFlow(){
     cleanupStripeReturnParams();
     const intent=consumeStripeReturnIntent();
   if(data?.ticketReady){
-    const finalAmount=Number(data?.finalAmount||980);
+    const finalAmount=Number(data?.finalAmount||780);
       const discountAmount=Number(data?.discountAmount||0);
       restoreFreeReadingQuotaFromPaid(data.ticketId||sessionId);
       trackEvent('deep_payment_complete',{
         source:checkoutSourceFromIntent(intent),
-      price:980,
+      price:780,
         final_amount:finalAmount,
         discount_amount:discountAmount,
         checkout_mode:'payment',
@@ -4964,7 +4964,7 @@ async function handleStripeReturnFlow(){
       });
       trackEvent('deep_ticket_created',{
         source:checkoutSourceFromIntent(intent),
-      price:980,
+      price:780,
         final_amount:finalAmount,
         discount_amount:discountAmount,
         checkout_mode:'payment',
@@ -5077,7 +5077,7 @@ function openMemberAccessModal(intent=''){
       ?'<div class="runtime-status-title">このまま深掘り鑑定フローへ進めます</div><div class="runtime-status-detail">確認用の状態で深掘り鑑定フローを確認できます。</div>'
       :(usesGoogle
         ?'<div class="runtime-status-title">Googleログインで続行</div><div class="runtime-status-detail">履歴と購入確認を保存します。</div>'
-        :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':'深堀り羅針鑑定の準備中です'}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':'有料鑑定はカード決済から直接購入できます。単発1回980円、月3回1,480円、月5回2,020円です。'}</div>`);
+        :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':'深堀り羅針鑑定の準備中です'}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':'有料鑑定はカード決済から直接購入できます。単発1回780円、月3回1,480円、月5回2,020円です。'}</div>`);
   }
   if(disclosure) disclosure.style.display='none';
   if(localBtn) localBtn.style.display=canUsePaidTestMode()?'inline-flex':'none';
@@ -5113,7 +5113,7 @@ function ensurePaidEntryGuideModal(){
   modal.innerHTML=`
     <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="paid-entry-guide-title">
       <div class="modal-title" id="paid-entry-guide-title">深堀り羅針鑑定のカード決済へ進みます</div>
-      <div class="modal-desc">無料鑑定を先に作成する必要はありません。単発1回980円、月3回1,480円、月5回2,020円です。</div>
+      <div class="modal-desc">無料鑑定を先に作成する必要はありません。単発1回780円、月3回1,480円、月5回2,020円です。</div>
       <div class="runtime-status ok">
         <div class="runtime-status-title">カード決済後に有料鑑定を開始します</div>
         <div class="runtime-status-detail">KOMOJUの申請・決済準備が完了していない場合は、購入画面に進めません。</div>
@@ -5428,7 +5428,7 @@ function repairStaticCopy(){
   }
   if(planCards[1]){
     setWithin(planCards[1],'.plan-compare-title','深掘り鑑定');
-  setWithin(planCards[1],'.plan-compare-price','単発980円 / 月3回1,480円 / 月5回2,020円');
+  setWithin(planCards[1],'.plan-compare-price','単発780円 / 月3回1,480円 / 月5回2,020円');
     setWithin(planCards[1],'.plan-compare-trial','月額は3回・5回から選択');
     setWithin(planCards[1],'.plan-compare-badge','無料鑑定の内容をすべて含む');
     const deepItems=planCards[1].querySelectorAll('.plan-compare-list li');
@@ -5454,7 +5454,7 @@ function repairStaticCopy(){
     }
   }
   document.querySelectorAll('.paid-band-note').forEach(el=>{
-  el.textContent='深堀り羅針鑑定 単発980円 / 月3回1,480円 / 月5回2,020円';
+  el.textContent='深堀り羅針鑑定 単発780円 / 月3回1,480円 / 月5回2,020円';
   });
   document.querySelectorAll('.checkout-disclosure').forEach(el=>{
     if(el.closest('#member-access-modal')) return;
@@ -5467,7 +5467,7 @@ function repairStaticCopy(){
     ['数秘オラクルカードって何ですか？','誕生日などの数字の意味と、直感で選ぶカードを合わせて読むアドバイスカードです。<br>あなたの強み、背中を押す言葉、次の一手を示します。'],
     ['AIがどうやって占うのですか？','相談内容・名前・生年月日・カード結果をもとに、設計された占術ロジックに沿って鑑定文を生成します。<br>同じカードでも、相談内容やこれまでの流れによって読み方が変わります。'],
     ['無料鑑定では何ができますか？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。<br>自分自身の本質、本音、いまの現実、次に進むためのアドバイスを確認できます。'],
-    ['無料鑑定と深掘り鑑定の違いは？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。無料鑑定とミニ鑑定はあわせて1日5回までです。<br>深掘り鑑定では、同じ相談内容を前提に続きの追加カードを引くことも、直接有料鑑定から始めることもできます。ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>料金は単発1回980円、月額プランは月3回1,480円・月5回2,020円です。有料課金ごとに無料鑑定枠が1回分回復します。'],
+    ['無料鑑定と深掘り鑑定の違いは？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。無料鑑定とミニ鑑定はあわせて1日5回までです。<br>深掘り鑑定では、同じ相談内容を前提に続きの追加カードを引くことも、直接有料鑑定から始めることもできます。ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>料金は単発1回780円、月額プランは月3回1,480円・月5回2,020円です。有料課金ごとに無料鑑定枠が1回分回復します。'],
     ['過去の鑑定は読み返せますか？','はい。これまでの鑑定は「過去の占いを読み返す」から確認できます。<br>前回のテーマやカードの流れを見返すことで、同じ悩みの続きや変化を確認しやすくなります。'],
     ['「鑑定履歴の流れを読み解く」って何ですか？','これまでの鑑定をまとめて、よく出るカード、相談テーマの変化、くり返し向き合っている悩みを時系列で読み解く機能です。<br>鑑定履歴があるほど、変化の流れが見えやすくなります。']
   ];
@@ -5767,7 +5767,7 @@ function renderPremiumEntrySection(){
         ${paidAction}
         <a class="today-cta today-cta-simple" href="?flow=simple" data-flow-target="simple" data-track="simple_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('simple');return false;}">${SIMPLE_READING_LABEL_HTML}</a>
       </div>
-      <div class="paid-band-note">深堀り羅針鑑定 単発980円 / 月3回1,480円 / 月5回2,020円</div>
+      <div class="paid-band-note">深堀り羅針鑑定 単発780円 / 月3回1,480円 / 月5回2,020円</div>
       <div class="checkout-disclosure">${CHECKOUT_DISCLOSURE_HTML}</div>
     </div>`;
 }
@@ -7272,7 +7272,7 @@ function renderPremiumEntryFallback(){
         <a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('paid');return false;}">${DEEP_PAID_CTA_LABEL}</a>
         <a class="today-cta today-cta-simple" href="?flow=simple" data-flow-target="simple" data-track="simple_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('simple');return false;}">${SIMPLE_READING_LABEL_HTML}</a>
       </div>
-      <div class="paid-band-note">深堀り羅針鑑定 単発980円 / 月3回1,480円 / 月5回2,020円</div>
+      <div class="paid-band-note">深堀り羅針鑑定 単発780円 / 月3回1,480円 / 月5回2,020円</div>
       <div class="checkout-disclosure">${CHECKOUT_DISCLOSURE_HTML}</div>
     </div>`;
 }
@@ -7947,10 +7947,10 @@ function renderResultUpgradePanel(){
         <div class="upgrade-meta">
           <div class="upgrade-price">
             <div class="upgrade-price-label">料金</div>
-          <div class="upgrade-price-value" id="upgrade-price-value">通常 980円</div>
+          <div class="upgrade-price-value" id="upgrade-price-value">通常 780円</div>
             <div class="upgrade-bonus-note" id="upgrade-bonus-note"></div>
           </div>
-          <div class="upgrade-note">単発980円 / 月3回1,480円 / 月5回2,020円</div>
+          <div class="upgrade-note">単発780円 / 月3回1,480円 / 月5回2,020円</div>
         </div>
       </div>
       <div class="upgrade-actions">
@@ -11445,9 +11445,9 @@ function renderMemberFollowupSection(){
     noteEl.textContent=canUsePaidTestMode()
       ?'深掘り鑑定では、追加カードで作成した有料鑑定に追加質問を使えます。'
       :((MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn)
-    ?'追加カードで有料鑑定を作る場合は、単発980円または月額プランへ進んでください。'
+    ?'追加カードで有料鑑定を作る場合は、単発780円または月額プランへ進んでください。'
         :((MEMBER_AUTH.authLoggedIn)
-    ?'追加カードで有料鑑定を作る場合は、単発980円または月額プランへ進んでください。'
+    ?'追加カードで有料鑑定を作る場合は、単発780円または月額プランへ進んでください。'
           :(canUseAccessCode()
             ?'確認コードがある場合は入力して利用状態を確認できます。'
             :'現在はまだ使えません。')));

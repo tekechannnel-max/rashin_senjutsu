@@ -123,28 +123,28 @@ Rashin paid codes are not auto-issued from payment. A code in `RASHIN_FREE_PAID_
 
 Use a Google login account dedicated to test payments.
 
-1. Normal 980 yen order:
+1. Normal 780 yen order:
    - Start from the latest free reading result.
-   - Confirm the payment provider creates or confirms a `980 JPY` payment.
+   - Confirm the payment provider creates or confirms a `780 JPY` payment.
    - Confirm a paid reading ticket is created under `data/paid-reading-tickets`.
-   - Confirm the paid ticket has `finalAmount: 980` and `discountAmount: 0`.
+   - Confirm the paid ticket has `finalAmount: 780` and `discountAmount: 0`.
 
 2. 100 yen OFF order:
    - Prepare the test user with `rashin_stones: 3`.
    - Start a paid purchase from the latest free reading result.
-   - Confirm the final amount is `880 JPY`.
+   - Confirm the final amount is `680 JPY`.
    - Confirm `rashin_stones` decreases by 3 only after successful payment confirmation.
 
 3. 200 yen OFF order:
    - Prepare the test user with `rashin_stones: 7`.
    - Start a paid purchase from the latest free reading result.
-   - Confirm the final amount is `780 JPY`.
+   - Confirm the final amount is `580 JPY`.
    - Confirm `rashin_stones` decreases by 7 only after successful payment confirmation.
 
 4. Manual free code:
    - Add a test code to `RASHIN_FREE_PAID_CODES`.
    - Redeem the code from a logged-in Google account on the latest free reading result.
-   - Confirm a paid ticket is created with `finalAmount: 0`, `discountAmount: 980`, and `paymentProvider: manual_free_code`.
+   - Confirm a paid ticket is created with `finalAmount: 0`, `discountAmount: 780`, and `paymentProvider: manual_free_code`.
    - Confirm the code hash record under `data/rashin-paid-codes` moves to `status: redeemed`.
 
 5. Duplicate free code redemption:
@@ -193,8 +193,8 @@ Failure logs that require investigation before launch:
 
 Do not enable paid sales unless all are true:
 
-- `980`, `880`, and `780` JPY one-time amounts are confirmed.
-- `2,980` JPY monthly plan copy and provider settings are consistent.
+- `780`, `680`, and `580` JPY one-time amounts are confirmed.
+- `1,480` and `2,020` JPY monthly plan copy and provider settings are consistent.
 - Manual free codes create exactly one free paid ticket.
 - Duplicate code redemption does not create another ticket.
 - Unpaid orders do not consume stones.
