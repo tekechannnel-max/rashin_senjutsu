@@ -1562,6 +1562,7 @@ const MEMBER_SESSION_ENDPOINT='/api/member/session';
 const MEMBER_LOGOUT_ENDPOINT='/api/member/logout';
 const RASHIN_BONUS_STATUS_ENDPOINT='/api/rashin-bonus/status';
 const RASHIN_BONUS_CLAIM_ENDPOINT='/api/rashin-bonus/claim';
+const RASHIN_BONUS_REDEEM_PAID_TICKET_ENDPOINT='/api/rashin-bonus/redeem-paid-ticket';
 const DEEP_READING_DISCOUNT_STATUS_ENDPOINT='/api/deep-reading/discount-status';
 const STRIPE_CHECKOUT_ENDPOINT='/api/stripe/checkout-session';
 const STRIPE_CHECKOUT_COMPLETE_ENDPOINT='/api/stripe/checkout/complete';
@@ -2574,10 +2575,18 @@ function getRashinFragmentSnapshot(status=RASHIN_BONUS_STATUS){
     discountAmount:200,
     remainingStones:Math.max(0,10-stones),
   });
+  const freeReadingBenefit=status?.freeReadingBenefit||{
+    requiredStones:30,
+    discountAmount:780,
+    finalAmount:0,
+    available:stones>=30,
+    remainingStones:Math.max(0,30-stones),
+  };
   return{
     stones,
     availableDiscount,
     nextDiscount,
+    freeReadingBenefit,
   };
 }
 
@@ -2585,14 +2594,17 @@ async function startDailyOracleDeepReading(source='daily_oracle',useDiscount=fal
   const context=getConsultationCtaContext();
   const snapshot=getRashinFragmentSnapshot();
   const discountReady=!!snapshot.availableDiscount;
+  const freeTicketReady=!!snapshot.freeReadingBenefit?.available;
   const canUseDiscount=!!(useDiscount&&discountReady&&PLAN==='free'&&canContinueCurrentReadingToPaid());
-  trackEvent(canUseDiscount?'discount_cta_clicked':'deep_cta_clicked',{
+  const canUseFreeTicket=!!(useDiscount&&freeTicketReady&&PLAN==='free'&&canContinueCurrentReadingToPaid());
+  trackEvent(canUseFreeTicket?'fragment_free_ticket_cta_clicked':(canUseDiscount?'discount_cta_clicked':'deep_cta_clicked'),{
     source,
     theme_group:context.group,
     fragments:snapshot.stones,
     discount_available:discountReady,
+    free_ticket_available:freeTicketReady,
   });
-  if(canUseDiscount){
+  if(canUseDiscount||canUseFreeTicket){
     if(await ensurePaidAccess('upgrade-paid')) upgradeCurrentReadingToPaidUnlocked();
     return;
   }
@@ -4429,18 +4441,27 @@ function renderDailyOracleDeepCta(status=RASHIN_BONUS_STATUS){
   const snapshot=getRashinFragmentSnapshot(status);
   const context=getConsultationCtaContext();
   const available=!!snapshot.availableDiscount;
+  const freeTicketAvailable=!!snapshot.freeReadingBenefit?.available;
   const canApplyDiscount=available&&PLAN==='free'&&canContinueCurrentReadingToPaid();
+  const canUseFreeTicket=freeTicketAvailable&&PLAN==='free'&&canContinueCurrentReadingToPaid();
   const ctaLabel=getDeepReadingCtaLabel({...context,preferHistory:context.hasHistory});
   const remaining=snapshot.nextDiscount?.remainingStones??Math.max(0,10-snapshot.stones);
+  const freeRemaining=snapshot.freeReadingBenefit?.remainingStones??Math.max(0,30-snapshot.stones);
   const title=available
-    ?'羅針のかけらが揃っています'
+    ?(freeTicketAvailable?'羅針のかけらが30個集まっています':'羅針のかけらが揃っています')
     :'今日のカードを、今の悩みに重ねて読む';
-  const sub=available
+  const sub=freeTicketAvailable
+    ?(canUseFreeTicket
+      ?'深掘り鑑定1回分として使えます。'
+      :'無料鑑定の結果から進むと、深掘り鑑定1回分として使えます。')
+    :available
     ?(canApplyDiscount
-      ?'深掘り鑑定を200円OFFで受けられます。'
-      :'無料鑑定の結果から進むと、深掘り鑑定200円OFFが使えます。')
-    :`今すぐ深掘りすることもできます。あと${remaining}個で、深掘り鑑定200円OFFが使えます。`;
-  const primary=available&&canApplyDiscount
+      ?`深掘り鑑定を200円OFFで受けられます。あと${freeRemaining}個で1回分として使えます。`
+      :`無料鑑定の結果から進むと、深掘り鑑定200円OFFが使えます。あと${freeRemaining}個で1回分として使えます。`)
+    :`今すぐ深掘りすることもできます。あと${remaining}個で200円OFF、あと${freeRemaining}個で深掘り鑑定1回分として使えます。`;
+  const primary=freeTicketAvailable&&canUseFreeTicket
+    ?'<button class="rashin-bonus-btn" type="button" onclick="startDailyOracleDeepReading(\'daily_oracle_free_ticket\',true)">30個で深掘り鑑定へ</button>'
+    :available&&canApplyDiscount
     ?'<button class="rashin-bonus-btn" type="button" onclick="startDailyOracleDeepReading(\'daily_oracle_bonus\',true)">200円OFFで深掘り鑑定へ</button>'
     :`<button class="rashin-bonus-btn" type="button" onclick="startDailyOracleDeepReading('daily_oracle',false)">${escapeHtml(available?'深掘り鑑定へ進む':ctaLabel)}</button>`;
   return `
@@ -4517,22 +4538,30 @@ function renderRashinBonusCard(){
   const status=RASHIN_BONUS_STATUS||{};
   const stones=Number.isFinite(Number(status.rashinStones))?Math.max(0,Math.floor(Number(status.rashinStones))):Math.max(0,Math.floor(Number(MEMBER_AUTH.rashinStones||0)));
   const available=getRashinAvailableDiscount(status);
+  const snapshot=getRashinFragmentSnapshot(status);
+  const freeTicketAvailable=!!snapshot.freeReadingBenefit?.available;
   const next=status.nextDiscount||null;
   const canClaim=!!status.canClaim;
   const justClaimed=status.claimed===true;
-  const main=justClaimed&&available
+  const main=justClaimed&&freeTicketAvailable
+    ?'羅針のかけらが30個集まりました'
+    :freeTicketAvailable
+    ?'羅針のかけらが30個集まりました'
+    :justClaimed&&available
     ?'羅針のかけらが10個集まりました'
     :(justClaimed||canClaim
       ?'今日の羅針が灯りました'
       :(available
         ?'羅針のかけらが10個集まりました'
         :'今日の羅針のかけらは受け取り済みです'));
-  const sub=available
+  const sub=freeTicketAvailable
+    ?`${justClaimed?'羅針のかけらを1つ獲得しました。':''}深掘り鑑定1回分として使えます`
+    :available
     ?`${justClaimed?'羅針のかけらを1つ獲得しました。':''}深掘り鑑定を${available.discountAmount}円OFFで受けられます`
     :(next
       ?`${justClaimed?'羅針のかけらを1つ獲得しました。':(canClaim?'今日のオラクルを記録すると、羅針のかけらを1つ獲得できます。':'')}あと${next.remainingStones}個で、深掘り鑑定${next.discountAmount}円OFFが使えます`
       :'また明日、今日のオラクルを引くと1つ獲得できます');
-  const settledText=available?'深掘り鑑定200円OFFが使用できます':'今日の羅針のかけらは受け取り済みです';
+  const settledText=freeTicketAvailable?'深掘り鑑定1回分が使用できます':(available?'深掘り鑑定200円OFFが使用できます':'今日の羅針のかけらは受け取り済みです');
   slot.innerHTML=`
     <div class="rashin-bonus-panel">
       <div>
@@ -4615,6 +4644,12 @@ async function claimRashinBonus(options={}){
           fragments:MEMBER_AUTH.rashinStones,
         });
       }
+      if(beforeStones<30&&getRashinFragmentSnapshot(data).freeReadingBenefit?.available){
+        trackEvent('fragment_30_reached',{
+          source:'daily_oracle',
+          fragments:MEMBER_AUTH.rashinStones,
+        });
+      }
     }else if(!options.silentAlreadyClaimed){
       showToast('今日の羅針のかけらは受け取り済みです');
     }
@@ -4637,14 +4672,16 @@ async function claimRashinBonus(options={}){
 }
 
 function trackPriceConfirmViewed(status=RASHIN_DISCOUNT_STATUS){
-  const discountApplied=!!status?.eligible;
-  const displayedPrice=discountApplied?Number(status.finalAmount||580):780;
-  const key=`single_deep:${discountApplied?'discount':'normal'}:${displayedPrice}`;
+  const freeApplied=!!status?.freeReadingBenefit?.available;
+  const discountApplied=freeApplied||!!status?.eligible;
+  const displayedPrice=freeApplied?0:(discountApplied?Number(status.finalAmount||580):780);
+  const key=`single_deep:${freeApplied?'free_fragment':(discountApplied?'discount':'normal')}:${displayedPrice}`;
   if(TRACKED_PRICE_CONFIRM_VIEW_KEYS.has(key)) return;
   TRACKED_PRICE_CONFIRM_VIEW_KEYS.add(key);
   trackEvent('price_confirm_viewed',{
     product:'single_deep',
     discount_applied:discountApplied,
+    free_fragment_applied:freeApplied,
     displayed_price:displayedPrice,
   });
 }
@@ -4653,6 +4690,16 @@ function updateResultUpgradePrice(status=RASHIN_DISCOUNT_STATUS){
   const priceEl=document.getElementById('upgrade-price-value');
   const noteEl=document.getElementById('upgrade-bonus-note');
   if(!priceEl) return;
+  if(status?.freeReadingBenefit?.available){
+    priceEl.innerHTML=`
+      <span class="upgrade-price-normal">通常 ${status.normalAmount||780}円</span>
+      <span class="upgrade-price-discount">羅針のかけら30個で 支払い金額：0円</span>`;
+    if(noteEl) noteEl.textContent='通常価格：780円 / 羅針のかけら特典：-780円 / 支払い金額：0円。深掘り鑑定を開始すると羅針のかけら30個を使用します。';
+    const ctaBtn=document.querySelector('#result-upgrade-panel .result-unified-cta-btn');
+    if(ctaBtn) ctaBtn.textContent='30個で深掘り鑑定へ';
+    trackPriceConfirmViewed(status);
+    return;
+  }
   if(status?.eligible){
     priceEl.innerHTML=`
       <span class="upgrade-price-normal">通常 ${status.normalAmount||780}円</span>
@@ -5044,6 +5091,54 @@ async function requestRashinCodePurchase(intent='upgrade-paid'){
   }
 }
 
+async function redeemRashinFragmentsForPaidTicket(sourceReadingId='',paidReadingId=''){
+  const sourceId=String(sourceReadingId||'').trim();
+  const paidId=String(paidReadingId||'').trim();
+  if(!canUseProxy()||!MEMBER_AUTH.authLoggedIn||MEMBER_AUTH.authProvider!=='google'||!sourceId||!paidId){
+    return{ok:false,error:'UNAVAILABLE'};
+  }
+  try{
+    const res=await fetchApi(RASHIN_BONUS_REDEEM_PAID_TICKET_ENDPOINT,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        sourceReadingId:sourceId,
+        paidReadingId:paidId,
+        identity:getPaidReadingIdentity(),
+      }),
+    });
+    const data=await readJsonSafe(res);
+    if(!res.ok){
+      return{ok:false,error:data?.error||'',message:getServerErrorMessage(data,'羅針のかけらを深掘り鑑定に使えませんでした')};
+    }
+    ACTIVE_PAID_READING_TICKET={
+      id:data.ticketId||'',
+      sourceReadingId:data.sourceReadingId||sourceId,
+      paidReadingId:data.paidReadingId||paidId,
+      status:data.ticketStatus||'unused',
+      finalAmount:Number(data.finalAmount||0),
+      discountStonesUsed:Number(data.discountStonesUsed||30),
+      discountType:'rashin_fragments_free_reading',
+    };
+    ACTIVE_PAID_SOURCE_READING_ID=ACTIVE_PAID_READING_TICKET.sourceReadingId;
+    PENDING_PAID_READING_ID=ACTIVE_PAID_READING_TICKET.paidReadingId;
+    if(data.bonusStatus) RASHIN_BONUS_STATUS=data.bonusStatus;
+    MEMBER_AUTH.rashinStones=Math.max(0,Math.floor(Number(data.rashinStones||0)));
+    renderRashinBonusCard();
+    renderRecentHistory();
+    showToast(data.consumed?'羅針のかけら30個で深掘り鑑定を開きました':'深掘り鑑定の準備が整いました');
+    trackEvent('fragment_free_ticket_redeemed',{
+      source:'result_upgrade',
+      fragments:MEMBER_AUTH.rashinStones,
+      consumed:!!data.consumed,
+      discount_stones_used:Number(data.discountStonesUsed||30),
+    });
+    return{ok:true,ticket:ACTIVE_PAID_READING_TICKET};
+  }catch(e){
+    return{ok:false,error:'NETWORK_ERROR',message:'羅針のかけらの使用に失敗しました'};
+  }
+}
+
 async function preparePaidReadingTicket(sourceReadingId='',paidReadingId=''){
   const sourceId=sourceReadingId||CURRENT_READING_ID;
   const nextPaidId=paidReadingId||PENDING_PAID_READING_ID||createReadingId();
@@ -5065,6 +5160,9 @@ async function preparePaidReadingTicket(sourceReadingId='',paidReadingId=''){
       sourceReadingId:data.sourceReadingId||sourceId,
       paidReadingId:data.paidReadingId||nextPaidId,
       status:data.ticketStatus||'unused',
+      finalAmount:Number(data.finalAmount??780),
+      discountStonesUsed:Number(data.discountStonesUsed||0),
+      discountType:data.discountType||'',
     };
     ACTIVE_PAID_SOURCE_READING_ID=ACTIVE_PAID_READING_TICKET.sourceReadingId;
     PENDING_PAID_READING_ID=ACTIVE_PAID_READING_TICKET.paidReadingId;
@@ -5093,9 +5191,9 @@ async function markPaidReadingTicketUsed(){
       trackEvent('deep_ticket_used',{
         source:'result',
         price:780,
-        final_amount:780,
-        discount_amount:0,
-        checkout_mode:'payment',
+        final_amount:Number(ACTIVE_PAID_READING_TICKET.finalAmount??780),
+        discount_amount:Number(ACTIVE_PAID_READING_TICKET.finalAmount===0?780:0),
+        checkout_mode:ACTIVE_PAID_READING_TICKET.discountType==='rashin_fragments_free_reading'?'rashin_fragments':'payment',
         purchase_type:'deep_reading_once',
         ticket_status:ACTIVE_PAID_READING_TICKET.status,
       });
@@ -5560,6 +5658,12 @@ async function ensurePaidAccess(intent=''){
     if(!PENDING_PAID_READING_ID) PENDING_PAID_READING_ID=createReadingId();
     const prepared=await preparePaidReadingTicket(sourceReadingId,PENDING_PAID_READING_ID);
     if(prepared.ok) return true;
+    const fragmentTicket=await redeemRashinFragmentsForPaidTicket(sourceReadingId,PENDING_PAID_READING_ID);
+    if(fragmentTicket.ok) return true;
+    if(fragmentTicket.error&&!['UNAVAILABLE','RASHIN_FRAGMENTS_INSUFFICIENT'].includes(fragmentTicket.error)){
+      showToast(fragmentTicket.message||'羅針のかけらを深掘り鑑定に使えませんでした');
+      return false;
+    }
     const redeemed=await promptAndRedeemRashinPaidCode(sourceReadingId);
     if(redeemed){
       const redeemedPrepared=await preparePaidReadingTicket(sourceReadingId,PENDING_PAID_READING_ID);
@@ -7611,11 +7715,17 @@ function renderRashinFragmentHistoryProgress(){
   if(!canUseProxy()||!MEMBER_AUTH.googleClientConfigured||!MEMBER_AUTH.authLoggedIn) return '';
   const snapshot=getRashinFragmentSnapshot();
   const available=!!snapshot.availableDiscount;
+  const freeTicketAvailable=!!snapshot.freeReadingBenefit?.available;
   const remaining=snapshot.nextDiscount?.remainingStones??Math.max(0,10-snapshot.stones);
-  const body=available
-    ?'深掘り鑑定200円OFFが使用できます。'
-    :`あと${remaining}つで、深掘り鑑定200円OFFが使えます。`;
-  const primary=available&&PLAN==='free'&&canContinueCurrentReadingToPaid()
+  const freeRemaining=snapshot.freeReadingBenefit?.remainingStones??Math.max(0,30-snapshot.stones);
+  const body=freeTicketAvailable
+    ?'深掘り鑑定1回分として使えます。'
+    :available
+    ?`深掘り鑑定200円OFFが使用できます。あと${freeRemaining}つで1回分として使えます。`
+    :`あと${remaining}つで200円OFF、あと${freeRemaining}つで深掘り鑑定1回分として使えます。`;
+  const primary=freeTicketAvailable&&PLAN==='free'&&canContinueCurrentReadingToPaid()
+    ?'<button class="vault-link" type="button" onclick="event.stopPropagation();startDailyOracleDeepReading(\'history_fragment_free_ticket\',true)">30個で深掘り鑑定へ</button>'
+    :available&&PLAN==='free'&&canContinueCurrentReadingToPaid()
     ?'<button class="vault-link" type="button" onclick="event.stopPropagation();startDailyOracleDeepReading(\'history_fragment\',true)">200円OFFで深掘り鑑定へ</button>'
     :'<button class="vault-link" type="button" onclick="event.stopPropagation();focusDailyOracleFromHistory()">今日のオラクルを引く</button>';
   return `
@@ -7623,7 +7733,7 @@ function renderRashinFragmentHistoryProgress(){
       <div class="vault-insight-label">今日の羅針</div>
       <div class="vault-insight-body">${escapeHtml(body)}</div>
       <div class="rashin-history-row">
-        <div class="rashin-history-count">羅針のかけら ${snapshot.stones} / 10</div>
+        <div class="rashin-history-count">羅針のかけら ${snapshot.stones} / 30</div>
         <div class="rashin-history-actions">
           ${primary}
           <button class="vault-link" type="button" onclick="event.stopPropagation();openMonthlyPlanFromCta('history_fragment','monthly_3')">月3回の羅針で変化を見る</button>
@@ -8296,7 +8406,10 @@ function renderResultUpgradePanel(){
     el.innerHTML='';
     return;
   }
-  const ctaLabel=getDeepReadingCtaLabel(getConsultationCtaContext());
+  const currentDiscountStatus=RASHIN_DISCOUNT_RESULT_ID===CURRENT_READING_ID?RASHIN_DISCOUNT_STATUS:null;
+  const ctaLabel=currentDiscountStatus?.freeReadingBenefit?.available
+    ?'30個で深掘り鑑定へ'
+    :getDeepReadingCtaLabel(getConsultationCtaContext());
   el.style.display='block';
   el.innerHTML=`
     <div class="upgrade-unified-shell" data-track-view="deepen_cta_view" data-track-position="result_unified">
@@ -8355,10 +8468,12 @@ function getFreeLenAnchorId(){
 async function upgradeCurrentReadingToPaid(){
   const context=getConsultationCtaContext();
   const discountReady=!!RASHIN_DISCOUNT_STATUS?.eligible;
-  trackEvent(discountReady?'discount_cta_clicked':'deep_cta_clicked',{
+  const freeTicketReady=!!(RASHIN_DISCOUNT_STATUS?.freeReadingBenefit?.available||getRashinFragmentSnapshot().freeReadingBenefit?.available);
+  trackEvent(freeTicketReady?'fragment_free_ticket_cta_clicked':(discountReady?'discount_cta_clicked':'deep_cta_clicked'),{
     source:'result_upgrade',
     theme_group:context.group,
     discount_available:discountReady,
+    free_ticket_available:freeTicketReady,
     fragments:getRashinFragmentSnapshot().stones,
   });
   if(!(await ensurePaidAccess('upgrade-paid'))) return;

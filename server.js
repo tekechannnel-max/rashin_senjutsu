@@ -260,6 +260,7 @@ const PAID_MODELS = new Set([AI_MODELS.paid, AI_MODELS.history, AI_MODELS.paidFa
 const DEEP_READING_NORMAL_AMOUNT = 780;
 const RASHIN_BONUS_REWARD_AMOUNT = 1;
 const RASHIN_BONUS_VALID_DAYS = 7;
+const RASHIN_BONUS_FREE_READING_REQUIRED_STONES = 30;
 const RASHIN_BONUS_DISCOUNTS = [
   { requiredStones: 10, discountAmount: 200 },
 ];
@@ -893,6 +894,17 @@ function getNextRashinDiscount(stones) {
   } : null;
 }
 
+function getRashinFreeReadingBenefit(stones) {
+  const count = normalizeRashinStones(stones);
+  return {
+    requiredStones: RASHIN_BONUS_FREE_READING_REQUIRED_STONES,
+    discountAmount: DEEP_READING_NORMAL_AMOUNT,
+    finalAmount: 0,
+    available: count >= RASHIN_BONUS_FREE_READING_REQUIRED_STONES,
+    remainingStones: Math.max(0, RASHIN_BONUS_FREE_READING_REQUIRED_STONES - count),
+  };
+}
+
 function buildRashinBonusView(userRecord, today = getJstDateStamp()) {
   const rashinStones = normalizeRashinStones(userRecord?.rashin_stones);
   const canClaim = String(userRecord?.last_rashin_bonus_claimed_date || '') !== today;
@@ -905,6 +917,7 @@ function buildRashinBonusView(userRecord, today = getJstDateStamp()) {
       type: 'rashin_fragment',
       amount: RASHIN_BONUS_REWARD_AMOUNT,
     },
+    freeReadingBenefit: getRashinFreeReadingBenefit(rashinStones),
   };
   if (!canClaim) payload.reason = 'already_claimed';
   if (available) {
@@ -2239,6 +2252,13 @@ function makePaidTicketIdForRashinPaidCode(codeHash, sourceReadingId) {
   return `prt_${crypto.createHash('sha256').update(`rashin_paid_code:${safeHash}:${sourceId}`).digest('hex')}`;
 }
 
+function makePaidTicketIdForRashinFragments(userId, sourceReadingId) {
+  const safeUserId = normalizeUserId(userId);
+  const sourceId = normalizeVaultRecordId(sourceReadingId);
+  if (!safeUserId || !sourceId) return '';
+  return `prt_${crypto.createHash('sha256').update(`rashin_fragments:${safeUserId}:${sourceId}`).digest('hex')}`;
+}
+
 function getRashinCodeAdminSecret(req, body = {}) {
   return normalizeEnvValue(req?.headers?.['x-rashin-code-admin-secret'] || body?.adminSecret || body?.admin_secret || '');
 }
@@ -2386,11 +2406,16 @@ async function acquireRashinDiscountCheckoutLock({ userId, sourceReadingId, purc
 async function getRashinDiscountEligibility(userRecord, sourceReadingId) {
   const sourceId = normalizeVaultRecordId(sourceReadingId);
   const normalAmount = DEEP_READING_NORMAL_AMOUNT;
+  const rashinStones = normalizeRashinStones(userRecord?.rashin_stones);
   const base = {
     eligible: false,
     normalAmount,
     finalAmount: normalAmount,
-    rashinStones: normalizeRashinStones(userRecord?.rashin_stones),
+    rashinStones,
+    freeReadingBenefit: {
+      ...getRashinFreeReadingBenefit(rashinStones),
+      available: false,
+    },
   };
   if (!userRecord?.userId) return { ...base, reason: 'login_required' };
   if (!sourceId) return { ...base, reason: 'result_required' };
@@ -2427,6 +2452,7 @@ async function getRashinDiscountEligibility(userRecord, sourceReadingId) {
     finalAmount: Math.max(0, normalAmount - discount.discountAmount),
     stonesRequired: discount.requiredStones,
     rashinStones: normalizeRashinStones(userRecord.rashin_stones),
+    freeReadingBenefit: getRashinFreeReadingBenefit(userRecord.rashin_stones),
     expiresAt,
   };
 }
@@ -2593,6 +2619,98 @@ async function createPaidTicketFromRashinPaidCode({ codeRecord, owner, sourceRea
   };
   const writeResult = await writePaidReadingTicketIfAbsent(ticket);
   return writeResult.ticket;
+}
+
+async function createPaidTicketFromRashinFragments({ userRecord, sourceReadingId, paidReadingId = '' }) {
+  const sourceId = normalizeVaultRecordId(sourceReadingId);
+  const paidId = normalizeVaultRecordId(paidReadingId);
+  if (!userRecord?.userId || !sourceId || !paidId) {
+    const error = new Error('READING_ID_REQUIRED');
+    error.statusCode = 400;
+    throw error;
+  }
+  return withUserMutation(userRecord.userId, async safeUserId => {
+    const latestUser = await readUserRecord(safeUserId);
+    const owner = { ownerType: 'user', userId: safeUserId, vaultId: '' };
+    const reusableTicket = await findUsablePaidReadingTicket({ owner, sourceReadingId: sourceId, paidReadingId: paidId });
+    if (reusableTicket) {
+      const now = new Date().toISOString();
+      const locked = reusableTicket.lockedReadingId ? reusableTicket : {
+        ...reusableTicket,
+        lockedReadingId: paidId,
+        lockedAt: now,
+      };
+      if (!reusableTicket.lockedReadingId) await writePaidReadingTicket(locked);
+      return { ticket: locked, consumed: false, userRecord: latestUser };
+    }
+
+    const freeRecords = await getUserFreeReadingRecords(safeUserId);
+    const requested = freeRecords.find(record => record.id === sourceId) || null;
+    const latest = freeRecords[0] || null;
+    if (!requested || !latest) {
+      const error = new Error('ORACLE_RESULT_NOT_AVAILABLE');
+      error.statusCode = 403;
+      throw error;
+    }
+    if (latest.id !== sourceId) {
+      const error = new Error('LATEST_RESULT_REQUIRED');
+      error.statusCode = 409;
+      throw error;
+    }
+    const expiresAt = getRashinDiscountExpiry(requested);
+    if (!expiresAt || new Date(expiresAt).getTime() < Date.now()) {
+      const error = new Error('ORACLE_RESULT_EXPIRED');
+      error.statusCode = 410;
+      throw error;
+    }
+    if (await hasDeepReadingPurchaseForSource(owner, sourceId)) {
+      const error = new Error('DEEP_READING_ALREADY_PURCHASED');
+      error.statusCode = 409;
+      throw error;
+    }
+    const currentStones = normalizeRashinStones(latestUser?.rashin_stones);
+    if (currentStones < RASHIN_BONUS_FREE_READING_REQUIRED_STONES) {
+      const error = new Error('RASHIN_FRAGMENTS_INSUFFICIENT');
+      error.statusCode = 409;
+      error.rashinStones = currentStones;
+      throw error;
+    }
+
+    const now = new Date().toISOString();
+    const ticket = {
+      id: makePaidTicketIdForRashinFragments(safeUserId, sourceId) || generateRecordId('prt'),
+      ownerType: 'user',
+      userId: safeUserId,
+      vaultId: '',
+      sourceReadingId: sourceId,
+      purchaseOrderId: '',
+      paymentProvider: 'rashin_fragments',
+      checkoutProvider: 'rashin_fragments',
+      baseAmount: DEEP_READING_NORMAL_AMOUNT,
+      originalAmount: DEEP_READING_NORMAL_AMOUNT,
+      discountAmount: DEEP_READING_NORMAL_AMOUNT,
+      finalAmount: 0,
+      discountStonesUsed: RASHIN_BONUS_FREE_READING_REQUIRED_STONES,
+      discountType: 'rashin_fragments_free_reading',
+      currency: 'jpy',
+      status: 'unused',
+      createdAt: now,
+      usedAt: '',
+      expiresAt: addDaysIso(30),
+      usedReadingId: '',
+      lockedReadingId: paidId,
+      lockedAt: now,
+    };
+    const writeResult = await writePaidReadingTicketIfAbsent(ticket);
+    if (!writeResult.created) return { ticket: writeResult.ticket, consumed: false, userRecord: latestUser };
+    const nextUser = {
+      ...(latestUser || userRecord),
+      rashin_stones: currentStones - RASHIN_BONUS_FREE_READING_REQUIRED_STONES,
+      updatedAt: now,
+    };
+    await writeUserRecord(safeUserId, nextUser);
+    return { ticket: writeResult.ticket, consumed: true, userRecord: nextUser };
+  });
 }
 
 async function issueRashinPaidCodeForOrder(order, issueMeta = {}) {
@@ -4229,6 +4347,76 @@ async function handleRashinBonusClaim(req, res) {
   sendJson(res, 200, result);
 }
 
+async function handleRashinBonusRedeemPaidTicket(req, res) {
+  let body;
+  try {
+    body = await readJsonBody(req);
+  } catch (error) {
+    sendJson(res, 400, {
+      error: error.message || 'INVALID_JSON',
+      message: 'Rashin fragment payload could not be parsed.',
+    });
+    return;
+  }
+  const userRecord = await readGoogleUserForRequest(req);
+  if (!userRecord) {
+    sendJson(res, 401, {
+      error: 'LOGIN_REQUIRED',
+      message: 'Google login is required.',
+    });
+    return;
+  }
+  const sourceReadingId = normalizeVaultRecordId(body?.sourceReadingId || body?.source_reading_id || body?.oracleResultId || body?.oracle_result_id || '');
+  const paidReadingId = normalizeVaultRecordId(body?.paidReadingId || body?.paid_reading_id || '');
+  try {
+    const result = await createPaidTicketFromRashinFragments({ userRecord, sourceReadingId, paidReadingId });
+    sendJson(res, 200, {
+      ok: true,
+      consumed: !!result.consumed,
+      ticketId: result.ticket.id,
+      ticketStatus: result.ticket.status,
+      sourceReadingId: result.ticket.sourceReadingId,
+      paidReadingId: result.ticket.lockedReadingId || paidReadingId,
+      normalAmount: result.ticket.originalAmount,
+      discountAmount: result.ticket.discountAmount,
+      finalAmount: result.ticket.finalAmount,
+      discountStonesUsed: result.ticket.discountStonesUsed,
+      currency: result.ticket.currency,
+      rashinStones: normalizeRashinStones(result.userRecord?.rashin_stones),
+      bonusStatus: buildRashinBonusView(result.userRecord),
+    });
+  } catch (error) {
+    const messages = {
+      READING_ID_REQUIRED: 'A source reading id and paid reading id are required.',
+      ORACLE_RESULT_NOT_AVAILABLE: 'The source reading could not be found.',
+      LATEST_RESULT_REQUIRED: 'Use this benefit from your latest free reading.',
+      ORACLE_RESULT_EXPIRED: 'This free reading is no longer eligible.',
+      DEEP_READING_ALREADY_PURCHASED: 'This reading already has a deep reading ticket.',
+      RASHIN_FRAGMENTS_INSUFFICIENT: 'Not enough Rashin fragments.',
+    };
+    if (error.statusCode) {
+      sendJson(res, error.statusCode, {
+        error: error.message,
+        message: messages[error.message] || 'The request could not be completed. Please wait and try again.',
+        requiredStones: RASHIN_BONUS_FREE_READING_REQUIRED_STONES,
+        rashinStones: normalizeRashinStones(error.rashinStones),
+      });
+      return;
+    }
+    console.error('Rashin fragment paid ticket redeem failed', {
+      error: error.message,
+      stack: error.stack,
+      userId: userRecord?.userId || '',
+      sourceReadingId,
+      paidReadingId,
+    });
+    sendJson(res, 500, {
+      error: 'RASHIN_FRAGMENTS_REDEEM_FAILED',
+      message: 'The request could not be completed. Please wait and try again.',
+    });
+  }
+}
+
 async function handleDeepReadingDiscountStatus(req, res) {
   const userRecord = await readGoogleUserForRequest(req);
   if (!userRecord) {
@@ -4429,6 +4617,11 @@ async function handlePaidReadingTicketPrepare(req, res) {
     sourceReadingId: locked.sourceReadingId,
     paidReadingId: locked.lockedReadingId,
     ticketStatus: locked.status,
+    normalAmount: locked.originalAmount,
+    discountAmount: locked.discountAmount,
+    finalAmount: locked.finalAmount,
+    discountStonesUsed: locked.discountStonesUsed,
+    discountType: locked.discountType || '',
   });
 }
 
@@ -5123,6 +5316,11 @@ async function handleRequest(req, res) {
 
   if (req.method === 'POST' && req.url.startsWith('/api/rashin-bonus/claim')) {
     await handleRashinBonusClaim(req, res);
+    return;
+  }
+
+  if (req.method === 'POST' && req.url.startsWith('/api/rashin-bonus/redeem-paid-ticket')) {
+    await handleRashinBonusRedeemPaidTicket(req, res);
     return;
   }
 
