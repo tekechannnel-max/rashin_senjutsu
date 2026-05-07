@@ -261,8 +261,7 @@ const DEEP_READING_NORMAL_AMOUNT = 780;
 const RASHIN_BONUS_REWARD_AMOUNT = 1;
 const RASHIN_BONUS_VALID_DAYS = 7;
 const RASHIN_BONUS_DISCOUNTS = [
-  { requiredStones: 7, discountAmount: 200 },
-  { requiredStones: 3, discountAmount: 100 },
+  { requiredStones: 10, discountAmount: 200 },
 ];
 const RASHIN_FREE_PAID_CODE_HASHES = new Set(
   String(process.env.RASHIN_FREE_PAID_CODES || process.env.RASHIN_PROMO_PAID_CODES || '')
@@ -903,7 +902,7 @@ function buildRashinBonusView(userRecord, today = getJstDateStamp()) {
     canClaim,
     rashinStones,
     reward: {
-      type: 'rashin_stone',
+      type: 'rashin_fragment',
       amount: RASHIN_BONUS_REWARD_AMOUNT,
     },
   };

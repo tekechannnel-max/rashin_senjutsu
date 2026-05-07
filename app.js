@@ -1607,7 +1607,7 @@ const STRIPE_RETURN_INTENT_KEY='uranai-stripe-return-intent-v1';
 const FREE_READING_QUOTA_STORAGE_KEY='uranai-free-reading-quota-v1';
 const FREE_READING_DAILY_LIMIT=5;
 const FREE_RASHIN_CTA_LABEL='無料で羅針鑑定をする';
-const DEEP_PAID_CTA_LABEL='深堀り羅針鑑定をする(有料)';
+const DEEP_PAID_CTA_LABEL='深掘り羅針鑑定をする(有料)';
 const SIMPLE_READING_PLAN='simple';
 const SIMPLE_READING_LABEL='ミニ羅針鑑定はこちら（カードなし）';
 const SIMPLE_READING_LABEL_HTML='ミニ羅針鑑定はこちら<br>（カードなし）';
@@ -2091,7 +2091,7 @@ const MEMBERSHIP_PLAN={
     },
   ],
 };
-const CHECKOUT_DISCLOSURE_HTML='深堀り羅針鑑定は、カード決済で購入できる有料鑑定です。料金は単発1回780円、月額プランは月3回1,480円・月5回2,020円です。無料鑑定を先に作成する必要はありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
+const CHECKOUT_DISCLOSURE_HTML='深掘り羅針鑑定は、カード決済で購入できる有料鑑定です。料金は単発1回780円、月額プランは月3回1,480円・月5回2,020円です。無料鑑定を先に作成する必要はありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
 const RESULT_CHECKOUT_DISCLOSURE_HTML='深掘り鑑定は単発1回780円、月額プランは月3回1,480円・月5回2,020円です。無料で引いたカードの続きから追加カードを展開することも、直接有料鑑定から始めることもできます。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
 
 // 全カード・各3問の解釈絞り込みテンプレート
@@ -2729,6 +2729,80 @@ function getRecentDailyOracleCardIds(owner=getDailyOracleOwner(),dateJst=getJstD
   return excluded;
 }
 
+function getDailyOracleHistoryRecords(owner=getDailyOracleOwner(),limit=7){
+  const max=Math.max(1,Math.floor(Number(limit)||7));
+  const store=getDailyOracleStorage();
+  const ownerKeys=getDailyOracleOwnerKeys(owner);
+  const rows=[];
+  Object.entries(store).forEach(([key,value])=>{
+    const ownerKey=ownerKeys.find(prefix=>key.startsWith(`${prefix}:`));
+    if(!ownerKey) return;
+    const dateJst=String(value?.dateJst||key.slice(ownerKey.length+1)||'').trim();
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(dateJst)) return;
+    const record=normalizeDailyOracleRecord(value,dateJst);
+    if(!record) return;
+    const card=DAILY_ORACLE_MESSAGES.find(item=>item.id===Number(record.cardId));
+    if(!card) return;
+    rows.push({...record,card,ownerKey});
+  });
+  const byDate=new Map();
+  rows
+    .sort((a,b)=>String(b.drawnAt||'').localeCompare(String(a.drawnAt||'')))
+    .forEach(row=>{
+      if(!byDate.has(row.dateJst)) byDate.set(row.dateJst,row);
+    });
+  return Array.from(byDate.values())
+    .sort((a,b)=>String(b.dateJst).localeCompare(String(a.dateJst))||String(b.drawnAt||'').localeCompare(String(a.drawnAt||'')))
+    .slice(0,max);
+}
+
+function getDailyOracleFlowLabels(card){
+  const text=[card?.title,card?.message,card?.action,card?.share].filter(Boolean).join(' ');
+  const labels=[];
+  if(/待|距離|見る|確かめ|内省|静|事実|境目|選び/.test(text)) labels.push('立ち止まる');
+  if(/整|土台|余白|休|満た|支え|整理|落ち着|軽さ/.test(text)) labels.push('整える');
+  if(/動|始|進|決|行動|試|火|開|踏み出/.test(text)) labels.push('動かす');
+  return labels.length?labels:['流れを見る'];
+}
+
+function buildDailyOracleMiniAnalysis(records){
+  const counts=new Map();
+  records.forEach(record=>{
+    getDailyOracleFlowLabels(record.card).forEach(label=>{
+      counts.set(label,(counts.get(label)||0)+1);
+    });
+  });
+  const labels=Array.from(counts.entries())
+    .sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'ja'))
+    .slice(0,3)
+    .map(([label])=>label);
+  const flowLabels=labels.length?labels:['流れを見る'];
+  const flowText=`この7回のオラクルでは、${flowLabels.join('・')}流れが強めです。`;
+  const guidance=flowLabels.includes('動かす')&&!flowLabels.includes('立ち止まる')
+    ?'小さく試しながら、次の一手を決めていく時期です。'
+    :'今は結論を急ぐより、自分の気持ちと言葉を整理する時期です。';
+  return {
+    flowText,
+    guidance,
+    lead:'過去の鑑定履歴と合わせると、迷いの流れをさらに詳しく読めます。',
+    cta:'履歴解析つき深掘り鑑定へ',
+  };
+}
+
+function renderDailyOracleMiniAnalysis(){
+  const records=getDailyOracleHistoryRecords(getDailyOracleOwner(),7);
+  if(records.length<7) return '';
+  const analysis=buildDailyOracleMiniAnalysis(records);
+  return `
+      <div class="daily-oracle-mini-analysis">
+        <div class="daily-oracle-mini-title">7回の羅針ミニ解析</div>
+        <div class="daily-oracle-mini-copy">${escapeHtml(analysis.flowText)}</div>
+        <div class="daily-oracle-mini-copy">${escapeHtml(analysis.guidance)}</div>
+        <div class="daily-oracle-mini-lead">${escapeHtml(analysis.lead)}</div>
+        <button class="daily-oracle-mini-cta" type="button" onclick="void startFlow('paid')">${escapeHtml(analysis.cta)}</button>
+      </div>`;
+}
+
 function getForcedDailyOracleCardId(){
   const id=parseInt(DAILY_ORACLE_CARD_PARAM||'',10);
   if(!Number.isFinite(id)) return 0;
@@ -3139,7 +3213,7 @@ function renderDailyOracle(){
         <div class="daily-oracle-block-title">今日の一手</div>
         <div class="daily-oracle-block-body">${escapeHtml(card.action)}</div>
       </div>
-      <!-- Future: show the daily oracle discount only after ticket storage and Stripe discount application are implemented. -->
+      ${renderDailyOracleMiniAnalysis()}
       <div class="daily-oracle-actions">
         <button class="daily-oracle-share" type="button" onclick="openDailyOracleStage(readDailyOracleRecord(),{animate:true})">カード演出をもう一度見る</button>
         <button class="daily-oracle-share" type="button" onclick="shareDailyOracle('x')">Xでシェア</button>
@@ -3956,7 +4030,7 @@ function getMemberStatusMeta(){
     return{
       cls:'inactive',
       label:'深掘り鑑定',
-      copy:'深堀り羅針鑑定は、単発1回780円、月額は月3回1,480円・月5回2,020円です。無料鑑定から続きのカードを引くことも、直接有料鑑定から始めることもできます。',
+      copy:'深掘り羅針鑑定は、単発1回780円、月額は月3回1,480円・月5回2,020円です。無料鑑定から続きのカードを引くことも、直接有料鑑定から始めることもできます。',
       action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openStripeCheckout('start-paid')">カード決済へ進む</button>`,
     };
   }
@@ -3964,7 +4038,7 @@ function getMemberStatusMeta(){
     return{
       cls:'inactive',
       label:'深掘り鑑定',
-      copy:'深堀り羅針鑑定は、単発1回780円、月額は月3回1,480円・月5回2,020円です。無料鑑定から続きのカードを引くことも、直接有料鑑定から始めることもできます。',
+      copy:'深掘り羅針鑑定は、単発1回780円、月額は月3回1,480円・月5回2,020円です。無料鑑定から続きのカードを引くことも、直接有料鑑定から始めることもできます。',
       action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openStripeCheckout('start-paid')">カード決済へ進む</button>`,
     };
   }
@@ -3973,7 +4047,7 @@ function getMemberStatusMeta(){
     label:canUseAccessCode()?'確認コード待ち':'公開準備中',
     copy:canUseAccessCode()
       ?'前回の鑑定をもとに、続きの悩みを読み解けます。確認コードを入力すると深掘り鑑定の利用状態を確認できます。'
-      :'深堀り羅針鑑定は、カード決済で直接購入できます。単発1回780円、月額は月3回1,480円・月5回2,020円です。',
+      :'深掘り羅針鑑定は、カード決済で直接購入できます。単発1回780円、月額は月3回1,480円・月5回2,020円です。',
     action:canUseAccessCode()
       ?`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openMemberAccessModal('start-paid')">確認コードを入力</button>`
       :`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openStripeCheckout('start-paid')">カード決済へ進む</button>`,
@@ -4180,6 +4254,11 @@ function installRashinBonusStyles(){
     .upgrade-bonus-note{margin-top:6px;color:#f4cd62;font-size:13px;line-height:1.6}
     .upgrade-price-normal{display:block;color:rgba(255,255,255,.72);text-decoration:line-through;font-size:13px}
     .upgrade-price-discount{display:block;color:#fff;font-size:18px;font-weight:800}
+    .daily-oracle-mini-analysis{margin-top:14px;padding:14px 16px;border:1px solid rgba(143,216,210,.28);background:rgba(9,18,32,.46);display:grid;gap:7px}
+    .daily-oracle-mini-title{color:#8fd8d2;font-size:13px;font-weight:900;letter-spacing:.08em}
+    .daily-oracle-mini-copy{color:rgba(255,255,255,.88);font-size:14px;line-height:1.7;font-weight:700}
+    .daily-oracle-mini-lead{color:rgba(244,232,200,.82);font-size:13px;line-height:1.65}
+    .daily-oracle-mini-cta{justify-self:start;margin-top:4px;min-height:42px;border:1px solid rgba(244,205,98,.56);background:rgba(255,255,255,.05);color:#f4e8c8;font-weight:900;padding:9px 14px;cursor:pointer}
     @media (max-width:760px){.rashin-bonus-card{width:100%}.rashin-bonus-panel,.rashin-bonus-panel.is-compact{grid-template-columns:1fr;padding:16px}.rashin-bonus-title{font-size:22px}.rashin-bonus-stones{justify-content:flex-start;min-height:auto}.rashin-bonus-actions>*{width:100%}}
   `;
   document.head.appendChild(style);
@@ -4225,17 +4304,17 @@ function renderRashinBonusCard(){
         <div>
           <div class="rashin-bonus-head">
             <div>
-              <div class="rashin-bonus-kicker">LOGIN BONUS</div>
-              <div class="rashin-bonus-title">ログインボーナス</div>
+              <div class="rashin-bonus-kicker">TODAY'S COMPASS</div>
+              <div class="rashin-bonus-title">今日の羅針</div>
             </div>
           </div>
           <div class="rashin-bonus-body">
-            <div class="rashin-bonus-main">今日のカードを記録して羅針石+1</div>
-            <div class="rashin-bonus-sub">Googleログインすると本日のボーナスを受け取れます。</div>
+            <div class="rashin-bonus-main">今日の羅針を記録できます</div>
+            <div class="rashin-bonus-sub">Googleログインすると、羅針のかけらを1つ受け取れます。</div>
           </div>
         </div>
         <div class="rashin-bonus-actions">
-          <button class="rashin-bonus-btn" type="button" onclick="openMemberAccessModal('rashin-bonus')">Googleで記録して+1</button>
+          <button class="rashin-bonus-btn" type="button" onclick="openMemberAccessModal('rashin-bonus')">Googleで今日の羅針を記録</button>
         </div>
       </div>`;
     return;
@@ -4246,16 +4325,16 @@ function renderRashinBonusCard(){
         <div>
           <div class="rashin-bonus-head">
             <div>
-              <div class="rashin-bonus-kicker">LOGIN BONUS</div>
-              <div class="rashin-bonus-title">ログインボーナス</div>
+              <div class="rashin-bonus-kicker">TODAY'S COMPASS</div>
+              <div class="rashin-bonus-title">今日の羅針</div>
             </div>
           </div>
-          <div class="rashin-bonus-body"><div>羅針石を確認しています。</div></div>
+          <div class="rashin-bonus-body"><div>羅針のかけらを確認しています。</div></div>
         </div>
         <div class="rashin-bonus-stones">
           <span class="rashin-stone-gem" aria-hidden="true"></span>
           <span class="rashin-stone-count">
-            <span class="rashin-stone-label">RASHIN STONE</span>
+            <span class="rashin-stone-label">RASHIN FRAGMENT</span>
             <span class="rashin-stone-number">確認中</span>
           </span>
         </div>
@@ -4267,24 +4346,27 @@ function renderRashinBonusCard(){
   const available=getRashinAvailableDiscount(status);
   const next=status.nextDiscount||null;
   const canClaim=!!status.canClaim;
-  const main=canClaim
-    ?'本日の羅針石を受け取れます'
-    :(available
-      ?`羅針石 ${stones}個獲得`
-      :`羅針石 ${stones}個`);
+  const justClaimed=status.claimed===true;
+  const main=justClaimed&&available
+    ?'羅針のかけらが10個集まりました'
+    :(justClaimed||canClaim
+      ?'今日の羅針が灯りました'
+      :(available
+        ?'羅針のかけらが10個集まりました'
+        :'今日の羅針のかけらは受け取り済みです'));
   const sub=available
-    ?`深掘り鑑定${available.discountAmount}円OFFが使えます`
+    ?`${justClaimed?'羅針のかけらを1つ獲得しました。':''}深掘り鑑定を${available.discountAmount}円OFFで受けられます`
     :(next
-      ?`あと${next.remainingStones}個で深掘り鑑定${next.discountAmount}円OFF`
-      :'明日また羅針石を受け取れます');
-  const settledText=canClaim?'':'本日の受け取りは完了しています';
+      ?`${justClaimed?'羅針のかけらを1つ獲得しました。':(canClaim?'今日のオラクルを記録すると、羅針のかけらを1つ獲得できます。':'')}あと${next.remainingStones}個で、深掘り鑑定${next.discountAmount}円OFFが使えます`
+      :'また明日、今日のオラクルを引くと1つ獲得できます');
+  const settledText=available?'深掘り鑑定200円OFFが使用できます':'今日の羅針のかけらは受け取り済みです';
   slot.innerHTML=`
     <div class="rashin-bonus-panel">
       <div>
         <div class="rashin-bonus-head">
           <div>
-            <div class="rashin-bonus-kicker">LOGIN BONUS</div>
-            <div class="rashin-bonus-title">ログインボーナス</div>
+            <div class="rashin-bonus-kicker">TODAY'S COMPASS</div>
+            <div class="rashin-bonus-title">運気チャージ</div>
           </div>
         </div>
         <div class="rashin-bonus-body">
@@ -4293,17 +4375,17 @@ function renderRashinBonusCard(){
         </div>
         <div class="rashin-bonus-actions">
           ${canClaim
-            ?`<button class="rashin-bonus-btn" type="button" onclick="claimRashinBonus()" ${RASHIN_BONUS_LOADING?'disabled':''}>本日の羅針石を受け取る</button>`
+            ?`<button class="rashin-bonus-btn" type="button" onclick="claimRashinBonus()" ${RASHIN_BONUS_LOADING?'disabled':''}>羅針のかけらを受け取る</button>`
             :`<button class="rashin-bonus-link" type="button" disabled>${escapeHtml(settledText)}</button>`}
           ${available&&PLAN==='free'&&canContinueCurrentReadingToPaid()
-            ?`<button class="rashin-bonus-link" type="button" onclick="upgradeCurrentReadingToPaid()">追加カードで有料鑑定する</button>`
+            ?`<button class="rashin-bonus-link" type="button" onclick="upgradeCurrentReadingToPaid()">200円OFFで深掘り鑑定へ</button>`
             :''}
         </div>
       </div>
-      <div class="rashin-bonus-stones" aria-label="羅針石 ${stones}個">
+      <div class="rashin-bonus-stones" aria-label="羅針のかけら ${stones}個">
         <span class="rashin-stone-gem" aria-hidden="true"></span>
         <span class="rashin-stone-count">
-          <span class="rashin-stone-label">羅針石</span>
+          <span class="rashin-stone-label">羅針のかけら</span>
           <span class="rashin-stone-number">${stones}個</span>
         </span>
       </div>
@@ -4321,7 +4403,7 @@ async function loadRashinBonusStatus(options={}){
   try{
     const res=await fetchApi(RASHIN_BONUS_STATUS_ENDPOINT,{cache:'no-store'});
     const data=await readJsonSafe(res);
-    if(!res.ok) throw new Error(getServerErrorMessage(data,'羅針ボーナスを確認できませんでした'));
+    if(!res.ok) throw new Error(getServerErrorMessage(data,'羅針のかけらを確認できませんでした'));
     RASHIN_BONUS_STATUS=data;
     MEMBER_AUTH.rashinStones=Math.max(0,Math.floor(Number(data?.rashinStones||0)));
     MEMBER_AUTH.lastRashinBonusClaimedDate=data?.lastRashinBonusClaimedDate||MEMBER_AUTH.lastRashinBonusClaimedDate;
@@ -4345,18 +4427,18 @@ async function claimRashinBonus(options={}){
   try{
     const res=await fetchApi(RASHIN_BONUS_CLAIM_ENDPOINT,{method:'POST'});
     const data=await readJsonSafe(res);
-    if(!res.ok) throw new Error(getServerErrorMessage(data,'羅針石を受け取れませんでした'));
+    if(!res.ok) throw new Error(getServerErrorMessage(data,'羅針のかけらの反映に失敗しました'));
     RASHIN_BONUS_STATUS=data;
     MEMBER_AUTH.rashinStones=Math.max(0,Math.floor(Number(data?.rashinStones||0)));
     if(data?.claimed){
-      showToast('羅針石を1個受け取りました');
+      showToast('羅針のかけらを1つ獲得しました');
     }else if(!options.silentAlreadyClaimed){
-      showToast('本日の受け取りは完了しています');
+      showToast('今日の羅針のかけらは受け取り済みです');
     }
     if(CURRENT_READING_ID) await loadDeepReadingDiscountStatus(CURRENT_READING_ID,{render:true});
     return !!data?.claimed;
   }catch(e){
-    showToast(e?.message||'羅針石を受け取れませんでした');
+    showToast(e?.message||'羅針のかけらの反映に失敗しました');
     return false;
   }finally{
     RASHIN_BONUS_LOADING=false;
@@ -4371,13 +4453,13 @@ function updateResultUpgradePrice(status=RASHIN_DISCOUNT_STATUS){
   if(status?.eligible){
     priceEl.innerHTML=`
       <span class="upgrade-price-normal">通常 ${status.normalAmount||780}円</span>
-      <span class="upgrade-price-discount">羅針ボーナス適用で ${status.finalAmount||780}円</span>`;
-    if(noteEl) noteEl.textContent=`決済完了時に羅針石${status.stonesRequired}個を使用します。有効期限はこの無料鑑定から7日間です。`;
+      <span class="upgrade-price-discount">羅針のかけら特典で ${status.finalAmount||780}円</span>`;
+    if(noteEl) noteEl.textContent=`通常価格：${status.normalAmount||780}円 / 羅針のかけら特典：-${status.discountAmount||200}円 / 支払い金額：${status.finalAmount||780}円。決済完了時に羅針のかけら${status.stonesRequired}個を使用します。`;
     return;
   }
   priceEl.textContent='通常 780円';
   if(noteEl) noteEl.textContent=status?.reason==='insufficient_stones'
-    ?'羅針石が3個以上になると、この結果の深掘り鑑定で割引が使えます。'
+    ?'羅針のかけらが10個集まると、この結果の深掘り鑑定で200円OFFが使えます。'
     :'';
 }
 
@@ -4392,7 +4474,7 @@ async function loadDeepReadingDiscountStatus(resultId=CURRENT_READING_ID,options
   try{
     const res=await fetchApi(`${DEEP_READING_DISCOUNT_STATUS_ENDPOINT}?resultId=${encodeURIComponent(safeId)}`,{cache:'no-store'});
     const data=await readJsonSafe(res);
-    if(!res.ok) throw new Error(getServerErrorMessage(data,'羅針ボーナス割引を確認できませんでした'));
+    if(!res.ok) throw new Error(getServerErrorMessage(data,'羅針のかけら特典を確認できませんでした'));
     RASHIN_DISCOUNT_STATUS=data;
     RASHIN_DISCOUNT_RESULT_ID=safeId;
     if(options.render!==false&&CURRENT_READING_ID===safeId) updateResultUpgradePrice(data);
@@ -4525,10 +4607,10 @@ function renderGoogleAuthShell(){
   copy.textContent=MEMBER_PENDING_INTENT==='start-paid'
     ?'ログインして購入へ進む'
     :MEMBER_PENDING_INTENT==='rashin-bonus'
-    ?'ログインして羅針石+1を受け取る'
+    ?'ログインして羅針のかけらを受け取る'
     :(MEMBER_AUTH.authLoggedIn
       ?'購入履歴と深掘り鑑定を安全に保存します。'
-      :'履歴保存と羅針石の受け取りに使います。');
+      :'履歴保存と羅針のかけらの受け取りに使います。');
   scheduleGoogleSignInRender();
 }
 
@@ -5045,11 +5127,11 @@ function openMemberAccessModal(intent=''){
   clearMemberAccessError();
   clearGoogleAuthError();
   clearDeveloperAccessError();
-  if(title) title.textContent=bonusLogin?'ログインボーナス':(compactPaidStart?'深掘り鑑定の購入':'深掘り鑑定の確認');
+  if(title) title.textContent=bonusLogin?'今日の羅針':(compactPaidStart?'深掘り鑑定の購入':'深掘り鑑定の確認');
   if(desc){
     desc.style.display=compactPaidStart?'none':'';
     desc.textContent=bonusLogin
-      ?'Googleログインで今日のカードを記録し、羅針石を1個受け取ります。'
+      ?'Googleログインで今日のカードを記録し、羅針のかけらを1つ受け取ります。'
       :canUseDeveloperQuickAccess()
       ?'確認用アクセスは上のボタンから進めます。'
       :(MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn
@@ -5077,7 +5159,7 @@ function openMemberAccessModal(intent=''){
       ?'<div class="runtime-status-title">このまま深掘り鑑定フローへ進めます</div><div class="runtime-status-detail">確認用の状態で深掘り鑑定フローを確認できます。</div>'
       :(usesGoogle
         ?'<div class="runtime-status-title">Googleログインで続行</div><div class="runtime-status-detail">履歴と購入確認を保存します。</div>'
-        :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':'深堀り羅針鑑定の準備中です'}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':'有料鑑定はカード決済から直接購入できます。単発1回780円、月3回1,480円、月5回2,020円です。'}</div>`);
+        :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':'深掘り羅針鑑定の準備中です'}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':'有料鑑定はカード決済から直接購入できます。単発1回780円、月3回1,480円、月5回2,020円です。'}</div>`);
   }
   if(disclosure) disclosure.style.display='none';
   if(localBtn) localBtn.style.display=canUsePaidTestMode()?'inline-flex':'none';
@@ -5112,7 +5194,7 @@ function ensurePaidEntryGuideModal(){
   modal.setAttribute('inert','');
   modal.innerHTML=`
     <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="paid-entry-guide-title">
-      <div class="modal-title" id="paid-entry-guide-title">深堀り羅針鑑定のカード決済へ進みます</div>
+      <div class="modal-title" id="paid-entry-guide-title">深掘り羅針鑑定のカード決済へ進みます</div>
       <div class="modal-desc">無料鑑定を先に作成する必要はありません。単発1回780円、月3回1,480円、月5回2,020円です。</div>
       <div class="runtime-status ok">
         <div class="runtime-status-title">カード決済後に有料鑑定を開始します</div>
@@ -5439,7 +5521,7 @@ function repairStaticCopy(){
       '追加質問で悩みの前提を具体化',
       '鑑定履歴がある場合は、前回からの変化も読む'
     ].forEach((text,index)=>{ if(deepItems[index]) deepItems[index].textContent=text; });
-    setWithin(planCards[1],'.plan-compare-summary','深掘り鑑定では、同じ相談内容を前提に追加カードを引き、「なぜそうなるか」「どこで止まりやすいか」「次に何を確認すべきか」まで読み解きます。');
+    setWithin(planCards[1],'.plan-compare-summary','深掘り鑑定では、同じ相談内容を前提に追加カードを引き、「なぜそうなるか」「どこで止まりやすいか」まで読み解きます。月3回の羅針では、今の状況、相手や環境の変化、次に取る行動を流れとして追えます。');
     setWithin(planCards[1],'.plan-compare-action',DEEP_PAID_CTA_LABEL);
     const deepAction=planCards[1].querySelector('.plan-compare-action');
     if(deepAction){
@@ -5454,7 +5536,7 @@ function repairStaticCopy(){
     }
   }
   document.querySelectorAll('.paid-band-note').forEach(el=>{
-  el.textContent='深堀り羅針鑑定 単発780円 / 月3回1,480円 / 月5回2,020円';
+  el.textContent='深掘り羅針鑑定 単発780円 / 月3回1,480円 / 月5回2,020円';
   });
   document.querySelectorAll('.checkout-disclosure').forEach(el=>{
     if(el.closest('#member-access-modal')) return;
@@ -5767,7 +5849,7 @@ function renderPremiumEntrySection(){
         ${paidAction}
         <a class="today-cta today-cta-simple" href="?flow=simple" data-flow-target="simple" data-track="simple_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('simple');return false;}">${SIMPLE_READING_LABEL_HTML}</a>
       </div>
-      <div class="paid-band-note">深堀り羅針鑑定 単発780円 / 月3回1,480円 / 月5回2,020円</div>
+      <div class="paid-band-note">深掘り羅針鑑定 単発780円 / 月3回1,480円 / 月5回2,020円</div>
       <div class="checkout-disclosure">${CHECKOUT_DISCLOSURE_HTML}</div>
     </div>`;
 }
@@ -7272,7 +7354,7 @@ function renderPremiumEntryFallback(){
         <a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('paid');return false;}">${DEEP_PAID_CTA_LABEL}</a>
         <a class="today-cta today-cta-simple" href="?flow=simple" data-flow-target="simple" data-track="simple_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('simple');return false;}">${SIMPLE_READING_LABEL_HTML}</a>
       </div>
-      <div class="paid-band-note">深堀り羅針鑑定 単発780円 / 月3回1,480円 / 月5回2,020円</div>
+      <div class="paid-band-note">深掘り羅針鑑定 単発780円 / 月3回1,480円 / 月5回2,020円</div>
       <div class="checkout-disclosure">${CHECKOUT_DISCLOSURE_HTML}</div>
     </div>`;
 }

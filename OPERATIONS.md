@@ -82,7 +82,7 @@ The following production paths are part of the app's state and must persist acro
 
 Before horizontal scaling, move these operations to a database with transactions or conditional writes:
 
-- Google user record updates for `rashin_stones` and `last_rashin_bonus_claimed_date`
+- Google user record updates for `rashin_stones` (displayed as 羅針のかけら) and `last_rashin_bonus_claimed_date`
 - Rashin bonus discount checkout lock acquisition
 - Purchase order creation and status changes
 - Rashin paid code issue and redemption
@@ -129,31 +129,25 @@ Use a Google login account dedicated to test payments.
    - Confirm a paid reading ticket is created under `data/paid-reading-tickets`.
    - Confirm the paid ticket has `finalAmount: 780` and `discountAmount: 0`.
 
-2. 100 yen OFF order:
-   - Prepare the test user with `rashin_stones: 3`.
-   - Start a paid purchase from the latest free reading result.
-   - Confirm the final amount is `680 JPY`.
-   - Confirm `rashin_stones` decreases by 3 only after successful payment confirmation.
-
-3. 200 yen OFF order:
-   - Prepare the test user with `rashin_stones: 7`.
+2. 200 yen OFF fragment order:
+   - Prepare the test user with `rashin_stones: 10`.
    - Start a paid purchase from the latest free reading result.
    - Confirm the final amount is `580 JPY`.
-   - Confirm `rashin_stones` decreases by 7 only after successful payment confirmation.
+   - Confirm `rashin_stones` decreases by 10 only after successful payment confirmation.
 
-4. Manual free code:
+3. Manual free code:
    - Add a test code to `RASHIN_FREE_PAID_CODES`.
    - Redeem the code from a logged-in Google account on the latest free reading result.
    - Confirm a paid ticket is created with `finalAmount: 0`, `discountAmount: 780`, and `paymentProvider: manual_free_code`.
    - Confirm the code hash record under `data/rashin-paid-codes` moves to `status: redeemed`.
 
-5. Duplicate free code redemption:
+4. Duplicate free code redemption:
    - Redeem a code once.
    - Try to redeem the same code again.
    - Confirm the second attempt returns `RASHIN_PAID_CODE_ALREADY_USED`.
    - Confirm no second ticket is created.
 
-6. Unpaid order:
+5. Unpaid order:
    - Start a paid order and abandon payment.
    - Confirm no paid ticket exists.
    - Confirm `rashin_stones` did not change.
