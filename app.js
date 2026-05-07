@@ -3032,17 +3032,17 @@ function getRashinFocusOracleCopy(group='general',card=null){
 
 function renderRashinMonthlyFocusPanel(record=null){
   const focus=getRashinMonthlyFocus();
-  const body=focus.selected
-    ?`${focus.label}を今月の羅針として追っています。${getRashinFocusOracleCopy(focus.group,record?.card)}`
-    :'今月追うテーマを1つ決めると、今日のカードを同じ悩みに重ねて見られます。';
   const buttons=RASHIN_MONTHLY_FOCUS_OPTIONS.map(option=>`
           <button class="rashin-focus-option ${focus.group===option.group?'is-active':''}" type="button" onclick="setRashinMonthlyFocus('${option.group}')">
             <span>${escapeHtml(option.label)}</span>
           </button>`).join('');
+  const body=focus.selected?getRashinFocusOracleCopy(focus.group,record?.card):'未設定';
   return`
-      <div class="rashin-rhythm-card">
-        <div class="rashin-rhythm-label">今月追うテーマ</div>
-        <div class="rashin-rhythm-copy">${escapeHtml(body)}</div>
+      <div class="rashin-rhythm-row">
+        <div class="rashin-rhythm-row-head">
+          <span class="rashin-rhythm-label">今月</span>
+          <span class="rashin-rhythm-copy">${escapeHtml(body)}</span>
+        </div>
         <div class="rashin-focus-options">${buttons}</div>
       </div>`;
 }
@@ -3055,16 +3055,18 @@ function renderRashinChangeMemoPanel(record=null){
           <button class="rashin-memo-option ${memo?.id===option.id?'is-active':''}" type="button" onclick="setRashinChangeMemo('${option.id}',${safeDate})">
             <span>${escapeHtml(option.label)}</span>
           </button>`).join('');
-  const copy=memo?`今日の変化メモ：${memo.copy}`:'今日の気持ちを1つ残すと、後から迷いの変化を見返せます。';
+  const copy=memo?memo.copy:'未記録';
   return`
-      <div class="rashin-rhythm-card">
-        <div class="rashin-rhythm-label">前回からの変化メモ</div>
-        <div class="rashin-rhythm-copy">${escapeHtml(copy)}</div>
+      <div class="rashin-rhythm-row">
+        <div class="rashin-rhythm-row-head">
+          <span class="rashin-rhythm-label">変化</span>
+          <span class="rashin-rhythm-copy">${escapeHtml(copy)}</span>
+        </div>
         <div class="rashin-memo-options">${buttons}</div>
       </div>`;
 }
 
-function renderRashinCalendarPanel(records=[],record=null){
+function buildRashinCalendarView(records=[],options={}){
   const owner=getDailyOracleOwner();
   const today=getJstDateKey();
   const monthKey=getJstMonthKey(today);
@@ -3107,22 +3109,67 @@ function renderRashinCalendarPanel(records=[],record=null){
     }
   }
   const tomorrow=getRashinTomorrowPreview(owner,today);
-  return`
-      <div class="rashin-rhythm-card">
-        <div class="rashin-calendar-head">
-          <div>
-            <div class="rashin-rhythm-label">羅針カレンダー</div>
-            <div class="rashin-rhythm-copy">${escapeHtml(monthKey.replace('-','年'))}月の羅針 ${monthCount}回 / 直近 ${streak}日</div>
-          </div>
-          <div class="rashin-calendar-legend"><span></span>灯った日</div>
-        </div>
+  const grid=`
         <div class="rashin-calendar-grid" aria-label="今月の羅針カレンダー">
           ${['日','月','火','水','木','金','土'].map(day=>`<div class="rashin-calendar-weekday">${day}</div>`).join('')}
           ${cells.join('')}
+        </div>`;
+  return{owner,monthKey,monthCount,streak,milestone,tomorrow,grid};
+}
+
+function renderRashinCalendarPanel(records=[],record=null){
+  const view=buildRashinCalendarView(records,{track:true});
+  return`
+      <div class="rashin-rhythm-card is-summary">
+        <div class="rashin-calendar-summary">
+          <div>
+            <div class="rashin-rhythm-label">羅針カレンダー</div>
+            <div class="rashin-rhythm-copy">${escapeHtml(view.monthKey.replace('-','年'))}月の羅針 ${view.monthCount}回 / 直近 ${view.streak}日</div>
+          </div>
+          <button class="rashin-rhythm-open" type="button" onclick="openRashinCalendarWindow()">開く</button>
         </div>
-        ${milestone?`<div class="rashin-rhythm-milestone"><strong>${escapeHtml(milestone.title)}</strong><span>${escapeHtml(milestone.copy)}</span></div>`:''}
-        <div class="rashin-rhythm-preview">${escapeHtml(tomorrow.copy)}</div>
+        ${view.milestone?`<div class="rashin-rhythm-compact-note">${escapeHtml(view.milestone.title)}</div>`:''}
+        <div class="rashin-rhythm-preview">${escapeHtml(view.tomorrow.copy)}</div>
       </div>`;
+}
+
+function openRashinCalendarWindow(){
+  const records=getDailyOracleHistoryRecords(getDailyOracleOwner(),120);
+  const view=buildRashinCalendarView(records,{track:true});
+  let modal=document.getElementById('rashin-calendar-modal');
+  if(!modal){
+    modal=document.createElement('div');
+    modal.id='rashin-calendar-modal';
+    modal.className='rashin-calendar-modal';
+    modal.addEventListener('click',event=>{
+      if(event.target===modal) closeRashinCalendarWindow();
+    });
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML=`
+    <div class="rashin-calendar-modal-panel" role="dialog" aria-modal="true" aria-labelledby="rashin-calendar-modal-title">
+      <div class="rashin-calendar-modal-head">
+        <div>
+          <div class="rashin-rhythm-label">羅針カレンダー</div>
+          <div class="rashin-calendar-modal-title" id="rashin-calendar-modal-title">${escapeHtml(view.monthKey.replace('-','年'))}月の羅針</div>
+          <div class="rashin-rhythm-copy">${view.monthCount}回 / 直近 ${view.streak}日</div>
+        </div>
+        <button class="rashin-calendar-close" type="button" onclick="closeRashinCalendarWindow()" aria-label="羅針カレンダーを閉じる">×</button>
+      </div>
+      <div class="rashin-calendar-legend"><span></span>灯った日</div>
+      ${view.grid}
+      ${view.milestone?`<div class="rashin-rhythm-milestone"><strong>${escapeHtml(view.milestone.title)}</strong><span>${escapeHtml(view.milestone.copy)}</span></div>`:''}
+      <div class="rashin-rhythm-preview">${escapeHtml(view.tomorrow.copy)}</div>
+    </div>`;
+  modal.classList.add('is-open');
+  document.body.classList.add('rashin-calendar-open');
+  trackEvent('rashin_calendar_opened',{source:'daily_oracle',month_count:view.monthCount,streak:view.streak});
+}
+
+function closeRashinCalendarWindow(){
+  const modal=document.getElementById('rashin-calendar-modal');
+  if(modal) modal.classList.remove('is-open');
+  document.body.classList.remove('rashin-calendar-open');
 }
 
 function renderDailyOracleRhythmPanel(record=null){
@@ -3667,6 +3714,7 @@ async function shareDailyOracle(channel='x'){
 // ══════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded',()=>{
   document.addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&document.getElementById('rashin-calendar-modal')?.classList.contains('is-open')) closeRashinCalendarWindow();
     if(event.key==='Escape'&&document.getElementById('daily-oracle-stage')) closeDailyOracleStage();
   });
   safeRun('installGlobalClientLogging',()=>installGlobalClientLogging());
@@ -4662,11 +4710,17 @@ function installRashinBonusStyles(){
     .daily-oracle-mini-next{color:#fff;font-size:13px;line-height:1.65;font-weight:800;border-top:1px solid rgba(143,216,210,.2);padding-top:8px;margin-top:2px}
     .daily-oracle-mini-lead{color:rgba(244,232,200,.82);font-size:13px;line-height:1.65}
     .daily-oracle-mini-cta{justify-self:start;margin-top:4px;min-height:42px;border:1px solid rgba(244,205,98,.56);background:rgba(255,255,255,.05);color:#f4e8c8;font-weight:900;padding:9px 14px;cursor:pointer}
-    .daily-oracle-rhythm{margin-top:14px;display:grid;gap:12px}
-    .rashin-rhythm-card{padding:14px 16px;border:1px solid rgba(143,216,210,.26);background:linear-gradient(135deg,rgba(8,16,31,.58),rgba(19,12,31,.5));display:grid;gap:10px}
-    .rashin-rhythm-label{font-size:12px;letter-spacing:.16em;color:#8fd8d2;font-weight:900}
-    .rashin-rhythm-copy{font-size:13px;line-height:1.7;color:rgba(244,232,200,.84);font-weight:700}
-    .rashin-calendar-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+    .daily-oracle-rhythm{margin-top:12px;display:grid;gap:8px}
+    .rashin-rhythm-card{padding:12px 14px;border:1px solid rgba(143,216,210,.22);background:rgba(8,16,31,.42);display:grid;gap:8px}
+    .rashin-rhythm-card.is-summary{background:linear-gradient(135deg,rgba(8,16,31,.5),rgba(19,12,31,.42))}
+    .rashin-rhythm-label{font-size:11px;letter-spacing:.16em;color:#8fd8d2;font-weight:900;white-space:nowrap}
+    .rashin-rhythm-copy{font-size:12px;line-height:1.55;color:rgba(244,232,200,.82);font-weight:700}
+    .rashin-calendar-summary,.rashin-rhythm-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .rashin-rhythm-row{padding:9px 11px;border:1px solid rgba(143,216,210,.18);background:rgba(8,16,31,.3)}
+    .rashin-rhythm-row-head{display:flex;align-items:center;gap:9px;min-width:0;flex:1}
+    .rashin-rhythm-row-head .rashin-rhythm-copy{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .rashin-rhythm-open{min-height:34px;border:1px solid rgba(244,205,98,.52);background:rgba(244,205,98,.1);color:#f4e8c8;font-weight:900;padding:7px 12px;cursor:pointer;white-space:nowrap}
+    .rashin-rhythm-open:hover{background:rgba(244,205,98,.18);border-color:rgba(244,205,98,.78)}
     .rashin-calendar-legend{display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(244,232,200,.68);white-space:nowrap}
     .rashin-calendar-legend span{width:10px;height:10px;border-radius:50%;background:#f4cd62;box-shadow:0 0 12px rgba(244,205,98,.42)}
     .rashin-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
@@ -4676,17 +4730,26 @@ function installRashinBonusStyles(){
     .rashin-calendar-day.is-lit{border-color:rgba(244,205,98,.42);background:radial-gradient(circle at 50% 36%,rgba(244,205,98,.32),rgba(244,205,98,.09) 42%,rgba(255,255,255,.035));color:#fff;box-shadow:inset 0 0 12px rgba(244,205,98,.12)}
     .rashin-calendar-day.is-today{outline:1px solid rgba(143,216,210,.72);outline-offset:1px}
     .rashin-calendar-day.has-memo::after{content:'';position:absolute;right:5px;bottom:5px;width:5px;height:5px;border-radius:50%;background:#8fd8d2;box-shadow:0 0 9px rgba(143,216,210,.58)}
+    .rashin-rhythm-compact-note{font-size:12px;line-height:1.55;color:#fff;font-weight:900}
     .rashin-rhythm-milestone{border-top:1px solid rgba(143,216,210,.18);padding-top:9px;display:grid;gap:4px;font-size:13px;line-height:1.65;color:rgba(255,255,255,.88)}
     .rashin-rhythm-milestone strong{color:#fff}
-    .rashin-rhythm-preview{font-size:12px;line-height:1.65;color:rgba(244,232,200,.72);border-top:1px solid rgba(255,255,255,.08);padding-top:8px}
-    .rashin-focus-options,.rashin-memo-options{display:flex;gap:7px;flex-wrap:wrap}
-    .rashin-focus-option,.rashin-memo-option{min-height:34px;border:1px solid rgba(244,205,98,.34);background:rgba(255,255,255,.04);color:#f4e8c8;padding:7px 10px;font-size:12px;font-weight:900;cursor:pointer}
+    .rashin-rhythm-preview{font-size:12px;line-height:1.55;color:rgba(244,232,200,.72);border-top:1px solid rgba(255,255,255,.08);padding-top:7px}
+    .rashin-focus-options,.rashin-memo-options{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+    .rashin-focus-option,.rashin-memo-option{min-height:30px;border:1px solid rgba(244,205,98,.28);background:rgba(255,255,255,.035);color:#f4e8c8;padding:5px 8px;font-size:11px;font-weight:900;cursor:pointer}
     .rashin-focus-option.is-active,.rashin-memo-option.is-active{background:linear-gradient(90deg,#9c741b,#f4d372);color:#100b14;border-color:rgba(244,205,98,.8)}
+    .rashin-calendar-modal{position:fixed;inset:0;z-index:1200;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(2,3,10,.72);backdrop-filter:blur(8px)}
+    .rashin-calendar-modal.is-open{display:flex}
+    .rashin-calendar-modal-panel{width:min(640px,100%);max-height:min(86vh,720px);overflow:auto;padding:20px;border:1px solid rgba(143,216,210,.36);background:linear-gradient(145deg,rgba(8,13,29,.96),rgba(17,10,29,.94));box-shadow:0 28px 80px rgba(0,0,0,.55);display:grid;gap:14px}
+    .rashin-calendar-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+    .rashin-calendar-modal-title{font-size:22px;line-height:1.35;color:#fff;font-weight:900;margin-top:2px}
+    .rashin-calendar-close{width:38px;height:38px;border:1px solid rgba(244,205,98,.42);background:rgba(255,255,255,.04);color:#f4e8c8;font-size:22px;line-height:1;cursor:pointer}
+    .rashin-calendar-close:hover{border-color:rgba(244,205,98,.78);background:rgba(244,205,98,.12)}
+    body.rashin-calendar-open{overflow:hidden}
     .rashin-history-progress{border-color:rgba(244,205,98,.28);background:rgba(11,16,31,.46)}
     .rashin-history-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:8px}
     .rashin-history-count{font-size:13px;font-weight:900;color:#f4cd62}
     .rashin-history-actions{display:flex;gap:8px;flex-wrap:wrap}
-    @media (max-width:760px){.rashin-bonus-card{width:100%}.rashin-bonus-panel,.rashin-bonus-panel.is-compact{grid-template-columns:1fr;padding:16px}.rashin-bonus-title{font-size:22px}.rashin-bonus-stones{justify-content:flex-start;min-height:auto}.rashin-bonus-actions>*{width:100%}}
+    @media (max-width:760px){.rashin-bonus-card{width:100%}.rashin-bonus-panel,.rashin-bonus-panel.is-compact{grid-template-columns:1fr;padding:16px}.rashin-bonus-title{font-size:22px}.rashin-bonus-stones{justify-content:flex-start;min-height:auto}.rashin-bonus-actions>*{width:100%}.rashin-calendar-summary,.rashin-rhythm-row{align-items:flex-start;flex-direction:column}.rashin-focus-options,.rashin-memo-options{justify-content:flex-start}.rashin-calendar-modal{padding:12px}.rashin-calendar-modal-panel{padding:16px}.rashin-calendar-day{min-height:30px}}
   `;
   document.head.appendChild(style);
 }
