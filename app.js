@@ -1604,6 +1604,7 @@ const DAILY_ORACLE_FALLBACK_ID_STORAGE_KEY='uranai-daily-oracle-fallback-id-v1';
 const DAILY_ORACLE_ACTIVE_RECORD_KEY='uranai-daily-oracle-active-v1';
 const MEMBER_STORAGE_KEY='uranai-member-preview-v1';
 const STRIPE_RETURN_INTENT_KEY='uranai-stripe-return-intent-v1';
+const EVENT_LOG_STORAGE_KEY='uranai-event-log-v1';
 const FREE_READING_QUOTA_STORAGE_KEY='uranai-free-reading-quota-v1';
 const FREE_READING_DAILY_LIMIT=5;
 const FREE_RASHIN_CTA_LABEL='無料で羅針鑑定をする';
@@ -1934,6 +1935,8 @@ const TRACKED_RESULT_VIEW_KEYS=new Set();
 const TRACKED_RESULT_TIME_30S_KEYS=new Set();
 const TRACKED_DEEPEN_CTA_VIEW_KEYS=new Set();
 const TRACKED_DEEPEN_CTA_VIEW_LOGICAL_KEYS=new Set();
+const TRACKED_MINI_ANALYSIS_VIEW_KEYS=new Set();
+const TRACKED_PRICE_CONFIRM_VIEW_KEYS=new Set();
 const OBSERVED_DEEPEN_CTA_KEYS=new WeakSet();
 let DAILY_ORACLE_VIEW_TRACKED=false;
 let DAILY_ORACLE_MOTION_TIMERS=[];
@@ -2305,10 +2308,24 @@ function sanitizeGaParams(params={}){
   return safe;
 }
 
+function rememberLocalEvent(eventName,safeParams={}){
+  try{
+    const current=JSON.parse(localStorage.getItem(EVENT_LOG_STORAGE_KEY)||'[]');
+    const rows=Array.isArray(current)?current:[];
+    rows.push({
+      name:eventName,
+      params:safeParams,
+      at:new Date().toISOString(),
+    });
+    localStorage.setItem(EVENT_LOG_STORAGE_KEY,JSON.stringify(rows.slice(-120)));
+  }catch(_error){}
+}
+
 function trackEvent(name,params={}){
   const eventName=String(name||'').trim();
   if(!eventName) return;
   const safeParams=sanitizeGaParams(params);
+  rememberLocalEvent(eventName,safeParams);
   if(shouldDebugGaEvents()&&console?.debug) console.debug('[GA4]',eventName,safeParams);
   if(typeof window.gtag!=='function') return;
   try{
@@ -2489,6 +2506,107 @@ function trackDeepenCtaClick(button){
     reading_type:getCurrentReadingType(),
     has_history:hasReadingHistory(),
   });
+  trackEvent('deep_cta_clicked',{
+    cta_position:position,
+    reading_type:getCurrentReadingType(),
+    has_history:hasReadingHistory(),
+  });
+}
+
+function normalizeConsultationThemeGroup(value=''){
+  const text=String(value||'').toLowerCase();
+  if(/金運|お金|収入|支出|貯金|副業|投資|財|金銭|資産/.test(text)) return'money';
+  if(/恋愛|復縁|片思|結婚|婚活|夫婦|交際|相手|連絡|好き/.test(text)) return'love';
+  if(/仕事|転職|職場|キャリア|退職|就職|働|上司|同僚|ビジネス/.test(text)) return'work';
+  if(/人間関係|友人|家族|親子|対人|距離|境界|関係|仲直り/.test(text)) return'relationship';
+  return'general';
+}
+
+function getConsultationCtaContext(){
+  const history=getReadingHistory();
+  const latest=history[0]||null;
+  const category=document.getElementById('f-cat')?.value||latest?.input?.cat||'総合';
+  const currentTheme=document.getElementById('f-theme')?.value||'';
+  const historyTheme=latest?.input?.theme||'';
+  const group=normalizeConsultationThemeGroup(`${category} ${currentTheme} ${historyTheme}`);
+  return{
+    group,
+    category,
+    hasHistory:history.length>0,
+  };
+}
+
+function getDeepReadingCtaLabel(context={}){
+  if(context.hasHistory&&context.preferHistory) return'前回からの変化を読む';
+  if(context.group==='love') return'相手の本音と次の一手を読む';
+  if(context.group==='work') return'続ける・変える・待つの判断軸を読む';
+  if(context.group==='money') return'使う時期・控える時期を見る';
+  if(context.group==='relationship') return'相手との境界線を整理する';
+  return'今日のカードを、今の悩みに重ねて読む';
+}
+
+function getNextDeepThemeSuggestion(group='general'){
+  if(group==='love') return'次に深掘りするなら、「相手との距離感」を見ると流れが整理されやすいです。';
+  if(group==='work') return'次に深掘りするなら、「続ける・変える・待つ」の判断軸を見るとよさそうです。';
+  if(group==='money') return'次に深掘りするなら、「使う時期・控える時期」を見ると行動に落とし込みやすいです。';
+  if(group==='relationship') return'次に深掘りするなら、「相手との境界線」を整理すると流れが見えやすくなります。';
+  return'次に深掘りするなら、いま一番気になっているテーマを1つ選ぶと、迷いの流れが読みやすくなります。';
+}
+
+function getDominantHistoryThemeGroup(){
+  const counts={love:0,work:0,money:0,relationship:0,general:0};
+  getReadingHistory().slice(0,7).forEach(record=>{
+    const group=normalizeConsultationThemeGroup(`${record?.input?.cat||''} ${record?.input?.theme||''}`);
+    counts[group]=(counts[group]||0)+1;
+  });
+  const current=getConsultationCtaContext().group;
+  counts[current]=(counts[current]||0)+1;
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0]?.[0]||'general';
+}
+
+function getRashinFragmentSnapshot(status=RASHIN_BONUS_STATUS){
+  const stones=Number.isFinite(Number(status?.rashinStones))
+    ?Math.max(0,Math.floor(Number(status.rashinStones)))
+    :Math.max(0,Math.floor(Number(MEMBER_AUTH.rashinStones||0)));
+  const availableDiscount=status?.availableDiscount||(stones>=10?{requiredStones:10,discountAmount:200}:null);
+  const nextDiscount=status?.nextDiscount||(availableDiscount?null:{
+    requiredStones:10,
+    discountAmount:200,
+    remainingStones:Math.max(0,10-stones),
+  });
+  return{
+    stones,
+    availableDiscount,
+    nextDiscount,
+  };
+}
+
+async function startDailyOracleDeepReading(source='daily_oracle',useDiscount=false){
+  const context=getConsultationCtaContext();
+  const snapshot=getRashinFragmentSnapshot();
+  const discountReady=!!snapshot.availableDiscount;
+  const canUseDiscount=!!(useDiscount&&discountReady&&PLAN==='free'&&canContinueCurrentReadingToPaid());
+  trackEvent(canUseDiscount?'discount_cta_clicked':'deep_cta_clicked',{
+    source,
+    theme_group:context.group,
+    fragments:snapshot.stones,
+    discount_available:discountReady,
+  });
+  if(canUseDiscount){
+    if(await ensurePaidAccess('upgrade-paid')) upgradeCurrentReadingToPaidUnlocked();
+    return;
+  }
+  void startFlow('paid');
+}
+
+function openMonthlyPlanFromCta(source='daily_oracle',plan='monthly_3'){
+  const normalized=plan==='monthly_5'?'monthly_5':'monthly_3';
+  trackEvent('monthly_plan_clicked',{
+    source,
+    plan:normalized,
+    price:normalized==='monthly_5'?2020:1480,
+  });
+  void startFlow('paid');
 }
 
 function trackReadingComplete(){
@@ -2781,10 +2899,13 @@ function buildDailyOracleMiniAnalysis(records){
   const guidance=flowLabels.includes('動かす')&&!flowLabels.includes('立ち止まる')
     ?'小さく試しながら、次の一手を決めていく時期です。'
     :'今は結論を急ぐより、自分の気持ちと言葉を整理する時期です。';
+  const nextThemeGroup=getDominantHistoryThemeGroup();
   return {
     flowText,
     guidance,
     lead:'過去の鑑定履歴と合わせると、迷いの流れをさらに詳しく読めます。',
+    nextTheme:getNextDeepThemeSuggestion(nextThemeGroup),
+    nextThemeGroup,
     cta:'履歴解析つき深掘り鑑定へ',
   };
 }
@@ -2793,13 +2914,23 @@ function renderDailyOracleMiniAnalysis(){
   const records=getDailyOracleHistoryRecords(getDailyOracleOwner(),7);
   if(records.length<7) return '';
   const analysis=buildDailyOracleMiniAnalysis(records);
+  const trackingKey=records.map(record=>`${record.dateJst}:${record.cardId}`).join('|');
+  if(trackingKey&&!TRACKED_MINI_ANALYSIS_VIEW_KEYS.has(trackingKey)){
+    TRACKED_MINI_ANALYSIS_VIEW_KEYS.add(trackingKey);
+    trackEvent('mini_analysis_viewed',{
+      source:'daily_oracle',
+      oracle_records:records.length,
+      theme_group:analysis.nextThemeGroup,
+    });
+  }
   return `
       <div class="daily-oracle-mini-analysis">
         <div class="daily-oracle-mini-title">7回の羅針ミニ解析</div>
         <div class="daily-oracle-mini-copy">${escapeHtml(analysis.flowText)}</div>
         <div class="daily-oracle-mini-copy">${escapeHtml(analysis.guidance)}</div>
+        <div class="daily-oracle-mini-next">${escapeHtml(analysis.nextTheme)}</div>
         <div class="daily-oracle-mini-lead">${escapeHtml(analysis.lead)}</div>
-        <button class="daily-oracle-mini-cta" type="button" onclick="void startFlow('paid')">${escapeHtml(analysis.cta)}</button>
+        <button class="daily-oracle-mini-cta" type="button" onclick="startDailyOracleDeepReading('mini_analysis',false)">${escapeHtml(analysis.cta)}</button>
       </div>`;
 }
 
@@ -3237,6 +3368,7 @@ function drawDailyOracle(){
   const card=DAILY_ORACLE_MESSAGES.find(item=>item.id===cardId)||DAILY_ORACLE_MESSAGES[0];
   const record=writeDailyOracleRecord(card);
   trackEvent('daily_oracle_draw',{card_id:card.id,source:'top'});
+  trackEvent('oracle_drawn',{card_id:card.id,source:'top'});
   renderDailyOracle();
   openDailyOracleStage(record,{animate:true});
   if(MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.authProvider==='google'){
@@ -3277,6 +3409,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   safeRun('installLiveCardMotionStyles',()=>installLiveCardMotionStyles());
   safeRun('installRashinBonusStyles',()=>installRashinBonusStyles());
   safeRun('bootMemberMode',()=>bootMemberMode());
+  safeRun('hidePublicDeveloperUi',()=>hidePublicDeveloperUi());
   safeRun('installThemeCounter',()=>installThemeCounter());
   safeRun('renderBrandLayer',()=>renderBrandLayer());
   safeRun('buildStars',()=>buildStars());
@@ -4251,14 +4384,24 @@ function installRashinBonusStyles(){
     .rashin-bonus-btn:disabled{opacity:.55;cursor:not-allowed}
     .rashin-bonus-link{min-height:44px;border:1px solid rgba(244,205,98,.42);background:rgba(255,255,255,.04);color:#f4e8c8;font-weight:800;padding:10px 14px;cursor:pointer}
     .rashin-bonus-link:disabled{opacity:.62;cursor:default}
+    .rashin-oracle-cta{margin-top:14px;padding:13px 14px;border:1px solid rgba(143,216,210,.28);background:rgba(6,14,28,.34);display:grid;gap:8px}
+    .rashin-oracle-cta-title{font-size:15px;line-height:1.55;color:#fff;font-weight:900}
+    .rashin-oracle-cta-sub{font-size:13px;line-height:1.65;color:rgba(244,232,200,.82)}
+    .rashin-oracle-cta-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:2px}
+    .rashin-oracle-cta .rashin-bonus-btn,.rashin-oracle-cta .rashin-bonus-link{min-height:40px;padding:9px 13px}
     .upgrade-bonus-note{margin-top:6px;color:#f4cd62;font-size:13px;line-height:1.6}
     .upgrade-price-normal{display:block;color:rgba(255,255,255,.72);text-decoration:line-through;font-size:13px}
     .upgrade-price-discount{display:block;color:#fff;font-size:18px;font-weight:800}
     .daily-oracle-mini-analysis{margin-top:14px;padding:14px 16px;border:1px solid rgba(143,216,210,.28);background:rgba(9,18,32,.46);display:grid;gap:7px}
     .daily-oracle-mini-title{color:#8fd8d2;font-size:13px;font-weight:900;letter-spacing:.08em}
     .daily-oracle-mini-copy{color:rgba(255,255,255,.88);font-size:14px;line-height:1.7;font-weight:700}
+    .daily-oracle-mini-next{color:#fff;font-size:13px;line-height:1.65;font-weight:800;border-top:1px solid rgba(143,216,210,.2);padding-top:8px;margin-top:2px}
     .daily-oracle-mini-lead{color:rgba(244,232,200,.82);font-size:13px;line-height:1.65}
     .daily-oracle-mini-cta{justify-self:start;margin-top:4px;min-height:42px;border:1px solid rgba(244,205,98,.56);background:rgba(255,255,255,.05);color:#f4e8c8;font-weight:900;padding:9px 14px;cursor:pointer}
+    .rashin-history-progress{border-color:rgba(244,205,98,.28);background:rgba(11,16,31,.46)}
+    .rashin-history-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:8px}
+    .rashin-history-count{font-size:13px;font-weight:900;color:#f4cd62}
+    .rashin-history-actions{display:flex;gap:8px;flex-wrap:wrap}
     @media (max-width:760px){.rashin-bonus-card{width:100%}.rashin-bonus-panel,.rashin-bonus-panel.is-compact{grid-template-columns:1fr;padding:16px}.rashin-bonus-title{font-size:22px}.rashin-bonus-stones{justify-content:flex-start;min-height:auto}.rashin-bonus-actions>*{width:100%}}
   `;
   document.head.appendChild(style);
@@ -4280,6 +4423,36 @@ function ensureRashinBonusSlot(){
 
 function getRashinAvailableDiscount(status=RASHIN_BONUS_STATUS){
   return status?.availableDiscount||null;
+}
+
+function renderDailyOracleDeepCta(status=RASHIN_BONUS_STATUS){
+  const snapshot=getRashinFragmentSnapshot(status);
+  const context=getConsultationCtaContext();
+  const available=!!snapshot.availableDiscount;
+  const canApplyDiscount=available&&PLAN==='free'&&canContinueCurrentReadingToPaid();
+  const ctaLabel=getDeepReadingCtaLabel({...context,preferHistory:context.hasHistory});
+  const remaining=snapshot.nextDiscount?.remainingStones??Math.max(0,10-snapshot.stones);
+  const title=available
+    ?'羅針のかけらが揃っています'
+    :'今日のカードを、今の悩みに重ねて読む';
+  const sub=available
+    ?(canApplyDiscount
+      ?'深掘り鑑定を200円OFFで受けられます。'
+      :'無料鑑定の結果から進むと、深掘り鑑定200円OFFが使えます。')
+    :`今すぐ深掘りすることもできます。あと${remaining}個で、深掘り鑑定200円OFFが使えます。`;
+  const primary=available&&canApplyDiscount
+    ?'<button class="rashin-bonus-btn" type="button" onclick="startDailyOracleDeepReading(\'daily_oracle_bonus\',true)">200円OFFで深掘り鑑定へ</button>'
+    :`<button class="rashin-bonus-btn" type="button" onclick="startDailyOracleDeepReading('daily_oracle',false)">${escapeHtml(available?'深掘り鑑定へ進む':ctaLabel)}</button>`;
+  return `
+        <div class="rashin-oracle-cta">
+          <div class="rashin-oracle-cta-title">${escapeHtml(title)}</div>
+          <div class="rashin-oracle-cta-sub">${escapeHtml(sub)}</div>
+          <div class="rashin-oracle-cta-actions">
+            ${primary}
+            <button class="rashin-bonus-link" type="button" onclick="openMonthlyPlanFromCta('daily_oracle','monthly_3')">月3回プランを見る</button>
+          </div>
+          <div class="rashin-oracle-cta-sub">月3回の羅針で、迷いの変化を見つめられます。</div>
+        </div>`;
 }
 
 function renderRashinBonusCard(){
@@ -4377,10 +4550,8 @@ function renderRashinBonusCard(){
           ${canClaim
             ?`<button class="rashin-bonus-btn" type="button" onclick="claimRashinBonus()" ${RASHIN_BONUS_LOADING?'disabled':''}>羅針のかけらを受け取る</button>`
             :`<button class="rashin-bonus-link" type="button" disabled>${escapeHtml(settledText)}</button>`}
-          ${available&&PLAN==='free'&&canContinueCurrentReadingToPaid()
-            ?`<button class="rashin-bonus-link" type="button" onclick="upgradeCurrentReadingToPaid()">200円OFFで深掘り鑑定へ</button>`
-            :''}
         </div>
+        ${renderDailyOracleDeepCta(status)}
       </div>
       <div class="rashin-bonus-stones" aria-label="羅針のかけら ${stones}個">
         <span class="rashin-stone-gem" aria-hidden="true"></span>
@@ -4414,6 +4585,7 @@ async function loadRashinBonusStatus(options={}){
   }finally{
     RASHIN_BONUS_LOADING=false;
     if(options.render!==false) renderRashinBonusCard();
+    if(options.render!==false) renderRecentHistory();
   }
 }
 
@@ -4423,6 +4595,7 @@ async function claimRashinBonus(options={}){
     return false;
   }
   RASHIN_BONUS_LOADING=true;
+  const beforeStones=getRashinFragmentSnapshot().stones;
   renderRashinBonusCard();
   try{
     const res=await fetchApi(RASHIN_BONUS_CLAIM_ENDPOINT,{method:'POST'});
@@ -4432,8 +4605,24 @@ async function claimRashinBonus(options={}){
     MEMBER_AUTH.rashinStones=Math.max(0,Math.floor(Number(data?.rashinStones||0)));
     if(data?.claimed){
       showToast('羅針のかけらを1つ獲得しました');
+      trackEvent('fragment_awarded',{
+        source:'daily_oracle',
+        fragments:MEMBER_AUTH.rashinStones,
+      });
+      if(beforeStones<10&&(data?.availableDiscount||MEMBER_AUTH.rashinStones>=10)){
+        trackEvent('fragment_10_reached',{
+          source:'daily_oracle',
+          fragments:MEMBER_AUTH.rashinStones,
+        });
+      }
     }else if(!options.silentAlreadyClaimed){
       showToast('今日の羅針のかけらは受け取り済みです');
+    }
+    if(!data?.claimed){
+      trackEvent('fragment_already_claimed',{
+        source:'daily_oracle',
+        fragments:MEMBER_AUTH.rashinStones,
+      });
     }
     if(CURRENT_READING_ID) await loadDeepReadingDiscountStatus(CURRENT_READING_ID,{render:true});
     return !!data?.claimed;
@@ -4443,7 +4632,21 @@ async function claimRashinBonus(options={}){
   }finally{
     RASHIN_BONUS_LOADING=false;
     renderRashinBonusCard();
+    renderRecentHistory();
   }
+}
+
+function trackPriceConfirmViewed(status=RASHIN_DISCOUNT_STATUS){
+  const discountApplied=!!status?.eligible;
+  const displayedPrice=discountApplied?Number(status.finalAmount||580):780;
+  const key=`single_deep:${discountApplied?'discount':'normal'}:${displayedPrice}`;
+  if(TRACKED_PRICE_CONFIRM_VIEW_KEYS.has(key)) return;
+  TRACKED_PRICE_CONFIRM_VIEW_KEYS.add(key);
+  trackEvent('price_confirm_viewed',{
+    product:'single_deep',
+    discount_applied:discountApplied,
+    displayed_price:displayedPrice,
+  });
 }
 
 function updateResultUpgradePrice(status=RASHIN_DISCOUNT_STATUS){
@@ -4453,14 +4656,16 @@ function updateResultUpgradePrice(status=RASHIN_DISCOUNT_STATUS){
   if(status?.eligible){
     priceEl.innerHTML=`
       <span class="upgrade-price-normal">通常 ${status.normalAmount||780}円</span>
-      <span class="upgrade-price-discount">羅針のかけら特典で ${status.finalAmount||780}円</span>`;
+      <span class="upgrade-price-discount">支払い金額：${status.finalAmount||780}円</span>`;
     if(noteEl) noteEl.textContent=`通常価格：${status.normalAmount||780}円 / 羅針のかけら特典：-${status.discountAmount||200}円 / 支払い金額：${status.finalAmount||780}円。決済完了時に羅針のかけら${status.stonesRequired}個を使用します。`;
+    trackPriceConfirmViewed(status);
     return;
   }
-  priceEl.textContent='通常 780円';
+  priceEl.textContent='支払い金額：780円';
   if(noteEl) noteEl.textContent=status?.reason==='insufficient_stones'
-    ?'羅針のかけらが10個集まると、この結果の深掘り鑑定で200円OFFが使えます。'
-    :'';
+    ?'ルノルマン9枚・数秘オラクル3枚・追加質問・履歴解析つき。羅針のかけらが10個集まると、この結果の深掘り鑑定で200円OFFが使えます。'
+    :'ルノルマン9枚・数秘オラクル3枚・追加質問・履歴解析つき。';
+  trackPriceConfirmViewed(status);
 }
 
 async function loadDeepReadingDiscountStatus(resultId=CURRENT_READING_ID,options={}){
@@ -4586,6 +4791,19 @@ function canUseDeveloperQuickAccess(){
   return canUsePaidTestMode();
 }
 
+function hidePublicDeveloperUi(){
+  const shouldHide=!DEV_MODE&&!canUsePaidTestMode();
+  if(!shouldHide) return;
+  ['dev-badge','settings-btn','settings-modal','developer-access-shell','member-local-preview-btn'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    el.style.display='none';
+    el.setAttribute('hidden','');
+    el.setAttribute('aria-hidden','true');
+    if(id.endsWith('modal')||id.endsWith('shell')) el.setAttribute('inert','');
+  });
+}
+
 function setGoogleAuthError(message){
   const el=document.getElementById('google-auth-error');
   if(!el) return;
@@ -4620,7 +4838,9 @@ function renderDeveloperAccessShell(){
   const input=document.getElementById('developer-email-input');
   const btn=document.getElementById('developer-access-btn');
   if(!shell||!copy||!input||!btn) return;
+  hidePublicDeveloperUi();
   const shouldShow=!!(canUseDeveloperQuickAccess()&&!isMemberActive());
+  if(shouldShow) shell.removeAttribute('hidden');
   shell.style.display=shouldShow?'block':'none';
   if(!shouldShow){
     clearDeveloperAccessError();
@@ -4918,6 +5138,13 @@ async function openStripeCheckout(intent='start-paid'){
   }
   CHECKOUT_OPENING=true;
   try{
+    const discountPlanned=!!(intent==='upgrade-paid'&&RASHIN_DISCOUNT_STATUS?.eligible);
+    trackEvent('checkout_started',{
+      product:'single_deep',
+      source:checkoutSourceFromIntent(intent),
+      discount_applied:discountPlanned,
+      displayed_price:discountPlanned?Number(RASHIN_DISCOUNT_STATUS?.finalAmount||580):780,
+    });
     if(sourceReadingId&&MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.userId){
       try{
         await saveHistoryRecordToVault(buildCurrentReadingRecord());
@@ -5005,8 +5232,12 @@ async function handleStripeReturnFlow(){
   const succeeded=url.searchParams.get('stripe_success')==='1';
   const sessionId=String(url.searchParams.get('session_id')||'').trim();
   if(canceled){
-    consumeStripeReturnIntent();
+    const intent=consumeStripeReturnIntent();
     cleanupStripeReturnParams();
+    trackEvent('payment_cancelled',{
+      product:'single_deep',
+      source:checkoutSourceFromIntent(intent),
+    });
     showToast('深掘り鑑定の購入をキャンセルしました');
     return;
   }
@@ -5043,6 +5274,12 @@ async function handleStripeReturnFlow(){
         discount_amount:discountAmount,
         checkout_mode:'payment',
         purchase_type:'deep_reading_once',
+      });
+      trackEvent('payment_success',{
+        product:'single_deep',
+        source:checkoutSourceFromIntent(intent),
+        final_amount:finalAmount,
+        discount_amount:discountAmount,
       });
       trackEvent('deep_ticket_created',{
         source:checkoutSourceFromIntent(intent),
@@ -5162,9 +5399,13 @@ function openMemberAccessModal(intent=''){
         :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':'深掘り羅針鑑定の準備中です'}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':'有料鑑定はカード決済から直接購入できます。単発1回780円、月3回1,480円、月5回2,020円です。'}</div>`);
   }
   if(disclosure) disclosure.style.display='none';
-  if(localBtn) localBtn.style.display=canUsePaidTestMode()?'inline-flex':'none';
+  if(localBtn){
+    if(canUsePaidTestMode()) localBtn.removeAttribute('hidden');
+    localBtn.style.display=canUsePaidTestMode()?'inline-flex':'none';
+  }
   renderGoogleAuthShell();
   renderDeveloperAccessShell();
+  hidePublicDeveloperUi();
   const showAccess=canUseAccessCode();
   if(accessLabel) accessLabel.style.display=showAccess?'block':'none';
   if(input){
@@ -5511,26 +5752,27 @@ function repairStaticCopy(){
   if(planCards[1]){
     setWithin(planCards[1],'.plan-compare-title','深掘り鑑定');
   setWithin(planCards[1],'.plan-compare-price','単発780円 / 月3回1,480円 / 月5回2,020円');
-    setWithin(planCards[1],'.plan-compare-trial','月額は3回・5回から選択');
-    setWithin(planCards[1],'.plan-compare-badge','無料鑑定の内容をすべて含む');
+    setWithin(planCards[1],'.plan-compare-trial','月3回は変化を追う / 月5回は複数テーマ向け');
+    setWithin(planCards[1],'.plan-compare-badge','おすすめは月3回の羅針');
     const deepItems=planCards[1].querySelectorAll('.plan-compare-list li');
     [
-      '姓名判断・四柱推命・動物タイプ診断',
-      'ルノルマン9枚で、止まりやすい場所と現実の流れを見る',
-      '数秘オラクル3枚で、判断軸・整えること・次の行動を出す',
+      '単発780円：まず1回だけ、いまの悩みを深く読む',
+      '月3回1,480円：今の状況、変化、次の行動を追う',
+      '月5回2,020円：恋愛・仕事・人間関係など複数テーマ向け',
       '追加質問で悩みの前提を具体化',
       '鑑定履歴がある場合は、前回からの変化も読む'
     ].forEach((text,index)=>{ if(deepItems[index]) deepItems[index].textContent=text; });
     setWithin(planCards[1],'.plan-compare-summary','深掘り鑑定では、同じ相談内容を前提に追加カードを引き、「なぜそうなるか」「どこで止まりやすいか」まで読み解きます。月3回の羅針では、今の状況、相手や環境の変化、次に取る行動を流れとして追えます。');
-    setWithin(planCards[1],'.plan-compare-action',DEEP_PAID_CTA_LABEL);
+    setWithin(planCards[1],'.plan-compare-action','月3回の羅針で変化を見る');
     const deepAction=planCards[1].querySelector('.plan-compare-action');
     if(deepAction){
       deepAction.setAttribute('href','?flow=paid');
-      deepAction.setAttribute('data-flow-target','paid');
-      deepAction.setAttribute('data-track','deepen_cta_click');
+      deepAction.removeAttribute('data-flow-target');
+      deepAction.removeAttribute('data-track');
       deepAction.onclick=function(event){
         event.preventDefault();
-        void startFlow('paid');
+        event.stopPropagation();
+        openMonthlyPlanFromCta('plan_compare','monthly_3');
         return false;
       };
     }
@@ -7359,6 +7601,37 @@ function renderPremiumEntryFallback(){
     </div>`;
 }
 
+function focusDailyOracleFromHistory(){
+  trackEvent('daily_oracle_focus',{source:'history_fragment'});
+  const target=document.getElementById('daily-oracle');
+  if(target) target.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function renderRashinFragmentHistoryProgress(){
+  if(!canUseProxy()||!MEMBER_AUTH.googleClientConfigured||!MEMBER_AUTH.authLoggedIn) return '';
+  const snapshot=getRashinFragmentSnapshot();
+  const available=!!snapshot.availableDiscount;
+  const remaining=snapshot.nextDiscount?.remainingStones??Math.max(0,10-snapshot.stones);
+  const body=available
+    ?'深掘り鑑定200円OFFが使用できます。'
+    :`あと${remaining}つで、深掘り鑑定200円OFFが使えます。`;
+  const primary=available&&PLAN==='free'&&canContinueCurrentReadingToPaid()
+    ?'<button class="vault-link" type="button" onclick="event.stopPropagation();startDailyOracleDeepReading(\'history_fragment\',true)">200円OFFで深掘り鑑定へ</button>'
+    :'<button class="vault-link" type="button" onclick="event.stopPropagation();focusDailyOracleFromHistory()">今日のオラクルを引く</button>';
+  return `
+    <div class="vault-insight rashin-history-progress">
+      <div class="vault-insight-label">今日の羅針</div>
+      <div class="vault-insight-body">${escapeHtml(body)}</div>
+      <div class="rashin-history-row">
+        <div class="rashin-history-count">羅針のかけら ${snapshot.stones} / 10</div>
+        <div class="rashin-history-actions">
+          ${primary}
+          <button class="vault-link" type="button" onclick="event.stopPropagation();openMonthlyPlanFromCta('history_fragment','monthly_3')">月3回の羅針で変化を見る</button>
+        </div>
+      </div>
+    </div>`;
+}
+
 function renderRecentHistory(){
   const listEl=document.getElementById('recent-history-list');
   const emptyEl=document.getElementById('recent-history-empty');
@@ -7375,6 +7648,7 @@ function renderRecentHistory(){
   btnEl.style.display='inline-flex';
   const latestTheme=history[0]?.input?.theme?truncateText(history[0].input.theme,40):'前回のテーマ';
   const safeLatestRecordId=escapeHtml(JSON.stringify(String(history[0]?.id||'')));
+  const fragmentProgress=renderRashinFragmentHistoryProgress();
   const latestLead=`
     <div class="vault-insight">
       <div class="vault-insight-label">いちばん新しい記録</div>
@@ -7384,7 +7658,7 @@ function renderRecentHistory(){
         <button class="vault-link" type="button" data-track="deepen_cta_click" data-track-position="top" onclick="event.stopPropagation();openHistoryItem(${safeLatestRecordId})">結果を開いて深掘りする</button>
       </div>
     </div>`;
-  listEl.innerHTML=latestLead+history.slice(0,3).map(record=>{
+  listEl.innerHTML=fragmentProgress+latestLead+history.slice(0,3).map(record=>{
     const theme=record.input?.theme?truncateText(record.input.theme,34):'全体の流れ';
     const cardLine=truncateText((record.selLen||[]).map(id=>LENORMAND[id]?.name).filter(Boolean).join('・'),42);
     const safeRecordId=escapeHtml(JSON.stringify(String(record.id||'')));
@@ -7720,6 +7994,11 @@ function openHistoryItem(id){
     showToast('保存された鑑定が見つかりません');
     return;
   }
+  trackEvent('history_opened',{
+    source:'history',
+    reading_type:record.plan==='paid'?'paid':'free',
+    category:record.input?.cat||'総合',
+  });
   PLAN=record.plan||'free';
   GENDER=['male','female'].includes(record.input?.gender)?record.input.gender:'';
   MEIMEI=record.meimei||null;
@@ -8017,6 +8296,7 @@ function renderResultUpgradePanel(){
     el.innerHTML='';
     return;
   }
+  const ctaLabel=getDeepReadingCtaLabel(getConsultationCtaContext());
   el.style.display='block';
   el.innerHTML=`
     <div class="upgrade-unified-shell" data-track-view="deepen_cta_view" data-track-position="result_unified">
@@ -8036,7 +8316,7 @@ function renderResultUpgradePanel(){
         </div>
       </div>
       <div class="upgrade-actions">
-        <button class="result-unified-cta-btn deep-premium-button" type="button" data-track="deepen_cta_click" data-track-position="result_unified" onclick="upgradeCurrentReadingToPaid()">追加カードで有料鑑定する</button>
+        <button class="result-unified-cta-btn deep-premium-button" type="button" data-track="deepen_cta_click" data-track-position="result_unified" onclick="upgradeCurrentReadingToPaid()">${escapeHtml(ctaLabel)}</button>
         <div class="checkout-disclosure">${RESULT_CHECKOUT_DISCLOSURE_HTML}</div>
       </div>
     </div>
@@ -8073,6 +8353,14 @@ function getFreeLenAnchorId(){
 }
 
 async function upgradeCurrentReadingToPaid(){
+  const context=getConsultationCtaContext();
+  const discountReady=!!RASHIN_DISCOUNT_STATUS?.eligible;
+  trackEvent(discountReady?'discount_cta_clicked':'deep_cta_clicked',{
+    source:'result_upgrade',
+    theme_group:context.group,
+    discount_available:discountReady,
+    fragments:getRashinFragmentSnapshot().stones,
+  });
   if(!(await ensurePaidAccess('upgrade-paid'))) return;
   upgradeCurrentReadingToPaidUnlocked();
 }
@@ -12728,6 +13016,9 @@ if(typeof window!=='undefined'){
   window.startFlow=startFlow;
   window.drawDailyOracle=drawDailyOracle;
   window.shareDailyOracle=shareDailyOracle;
+  window.startDailyOracleDeepReading=startDailyOracleDeepReading;
+  window.openMonthlyPlanFromCta=openMonthlyPlanFromCta;
+  window.focusDailyOracleFromHistory=focusDailyOracleFromHistory;
   window.openMemberAccessModal=openMemberAccessModal;
   window.openPaidEntryGuide=openPaidEntryGuide;
   window.closePaidEntryGuide=closePaidEntryGuide;
