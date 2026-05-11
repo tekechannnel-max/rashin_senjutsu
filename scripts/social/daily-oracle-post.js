@@ -777,14 +777,22 @@ function hasPublicUrl(text) {
   return /https?:\/\//i.test(String(text || ''));
 }
 
+function normalizeDuplicateText(text) {
+  return String(text || '')
+    .replace(/https?:\/\/\S+/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 async function findExistingThreadsPost({ marker = null, text = '' } = {}) {
   if (process.env.SOCIAL_ALLOW_DUPLICATE_POSTS === 'true') return null;
   if (!marker && !text) throw new Error('Missing duplicate protection marker or text.');
   const recent = await threadsClient.listThreads({ limit: Number(process.env.THREADS_DUPLICATE_LOOKBACK || 25) });
+  const normalizedText = normalizeDuplicateText(text);
   return (recent.data || []).find(post => {
     const postText = String(post.text || '');
     if (marker && postText.includes(`utm_content=${marker}`)) return true;
-    return text && postText.trim() === String(text).trim();
+    return normalizedText && normalizeDuplicateText(postText) === normalizedText;
   }) || null;
 }
 
