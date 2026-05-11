@@ -5488,7 +5488,8 @@ function buildPaypayQrSvg(text=''){
 
 function openPaypayPaymentModal({paypay={},finalAmount=DEEP_READING_PRICE}={}){
   return new Promise(resolve=>{
-    const url=getPaypayPaymentUrl(paypay.url||'');
+    const url=getPaypayPaymentUrl(paypay.openUrl||paypay.qrUrl||paypay.url||'');
+    const displayUrl=getPaypayPaymentUrl(paypay.url||'')||url;
     if(!url){
       resolve('');
       return;
@@ -5504,13 +5505,14 @@ function openPaypayPaymentModal({paypay={},finalAmount=DEEP_READING_PRICE}={}){
     modal.innerHTML=`
       <div class="modal-box paypay-modal-box" role="dialog" aria-modal="true" aria-labelledby="paypay-payment-title">
         <div class="modal-title" id="paypay-payment-title">PayPayで支払う</div>
-        <div class="modal-desc">QRコードを読み取るか、PayPayを開いて支払いを完了してください。</div>
+        <div class="modal-desc">PCの場合はスマホの標準カメラでQRコードを読み取ってください。スマホの場合はPayPayを開いて支払いを完了してください。</div>
         <div class="paypay-payment-grid">
-          <div class="paypay-qr-card" aria-label="PayPay支払いQRコード">${qrSvg||'<div class="paypay-url-box">QRコードを作成できませんでした。支払いリンクを開いてください。</div>'}</div>
+          <div class="paypay-qr-card" aria-label="PayPay支払いQRコード">${qrSvg||'<div class="paypay-url-box">QRコードを作成できませんでした。PayPayを開いてください。</div>'}</div>
           <div class="paypay-payment-detail">
             <div class="paypay-amount">支払い金額：${escapeHtml(String(finalAmount))}円</div>
             <a class="paypay-open-link" href="${escapeHtml(url)}" target="_blank" rel="noopener">PayPayを開く</a>
-            <div class="paypay-url-box">${escapeHtml(url)}</div>
+            <div class="paypay-reference-hint">PayPayアプリ内のスキャンではなく、スマホの標準カメラでQRを読み取ってください。</div>
+            <div class="paypay-url-box">${escapeHtml(displayUrl)}</div>
             ${paypay.note?`<div class="paypay-reference-hint">${escapeHtml(paypay.note)}</div>`:''}
           </div>
         </div>

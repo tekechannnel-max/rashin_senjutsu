@@ -3199,11 +3199,34 @@ function normalizePaypayManualReference(value) {
   return String(value || '').replace(/\s+/g, ' ').trim().slice(0, 120);
 }
 
+function buildPaypayManualOpenUrl(paymentUrl = '') {
+  const normalized = normalizePaypayManualUrl(paymentUrl);
+  if (!normalized) return '';
+  try {
+    const url = new URL(normalized);
+    if (url.hostname.toLowerCase() !== 'qr.paypay.ne.jp') return normalized;
+    const params = new URLSearchParams();
+    params.set('pid', 'QRCode');
+    params.set('link_key', normalized);
+    params.set('af_dp', 'paypay://payment');
+    params.set('af_ios_url', 'https://paypay.ne.jp/');
+    params.set('af_android_url', 'https://paypay.ne.jp/');
+    params.set('af_web_dp', 'https://paypay.ne.jp/');
+    params.set('af_force_deeplink', 'true');
+    return `https://paypay.onelink.me/EUKm?${params.toString()}`;
+  } catch (_error) {
+    return normalized;
+  }
+}
+
 async function getPaypayManualPaymentPayload() {
   const config = await readPaypayManualConfig();
+  const openUrl = buildPaypayManualOpenUrl(config.url);
   return {
     provider: 'paypay_manual',
     url: config.url,
+    openUrl,
+    qrUrl: openUrl || config.url,
     label: config.label,
     note: config.note,
     expiresAt: config.expiresAt,
