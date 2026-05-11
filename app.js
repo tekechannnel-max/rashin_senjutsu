@@ -4239,6 +4239,7 @@ function getServerErrorMessage(data,fallback='処理に失敗しました'){
   if(code==='RASHIN_PAID_CODE_SOURCE_MISMATCH') return'この羅針コードは別の鑑定結果用です';
   if(code==='BOOTH_ORDER_ALREADY_USED') return'このBOOTH注文番号はすでに使用済みです';
   if(code==='BOOTH_ORDER_REFERENCE_REQUIRED') return'BOOTH注文番号を入力してください';
+  if(code==='BOOTH_ORDER_REFERENCE_INVALID') return'実際のBOOTH注文番号を入力してください';
   if(code==='BOOTH_ORDER_NOT_FOUND_IN_GMAIL') return'BOOTH購入メールが見つかりません。注文番号を確認してください';
   if(code==='BOOTH_GMAIL_NOT_CONFIGURED') return'BOOTH購入メール照合が未設定です';
   if(code==='BOOTH_GMAIL_AUTH_FAILED') return'BOOTH購入メール照合のログインに失敗しました';

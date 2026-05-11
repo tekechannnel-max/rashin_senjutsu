@@ -755,6 +755,13 @@ function normalizeBoothOrderReference(value) {
   return String(value || '').replace(/\s+/g, ' ').trim().slice(0, 120);
 }
 
+function isPlausibleBoothOrderReference(value) {
+  const normalized = normalizeBoothOrderReference(value);
+  if (!normalized || /booth\s*注文番号|注文番号|replace-with|example|sample|dummy|test/i.test(normalized)) return false;
+  if (!/^[\x20-\x7e]+$/.test(normalized)) return false;
+  return normalized.replace(/[^a-z0-9]/gi, '').length >= 5;
+}
+
 function boothGmailVerificationConfigured() {
   return !!(
     BOOTH_GMAIL_IMAP_HOST &&
@@ -796,6 +803,41 @@ function parseImapSearchUids(lines) {
   const searchLine = (lines || []).find(line => /^\* SEARCH\b/i.test(line));
   if (!searchLine) return [];
   return searchLine.split(/\s+/).slice(2).filter(value => /^\d+$/.test(value));
+}
+
+function sanitizeImapDiagnostic(value) {
+  let detail = String(value || '');
+  if (BOOTH_GMAIL_IMAP_USER) detail = detail.replace(BOOTH_GMAIL_IMAP_USER, '[gmail-user]');
+  if (BOOTH_GMAIL_IMAP_APP_PASSWORD) detail = detail.replace(BOOTH_GMAIL_IMAP_APP_PASSWORD, '[gmail-password]');
+  return detail.slice(0, 240);
+}
+
+function buildBoothGmailDiagnostic(error, publicCode) {
+  const detail = sanitizeImapDiagnostic(error?.imapLine || error?.message || '');
+  const stage = String(error?.stage || '').slice(0, 40);
+  let hint = 'Check Render logs for the BOOTH Gmail verification failure detail.';
+  if (/AUTHENTICATIONFAILED|LOGIN|PASSWORD|CREDENTIAL|APPLICATION-SPECIFIC|WEB LOGIN REQUIRED|ALERT/i.test(detail)) {
+    hint = 'Check the Gmail address, app password, 2-step verification, and IMAP setting.';
+  } else if (/BAD|parse|X-GM-RAW|SEARCH/i.test(detail)) {
+    hint = 'Check the BOOTH order number and Gmail search settings.';
+  } else if (/TIMEOUT|CONNECTION|ENOTFOUND|ECONN|TLS/i.test(detail)) {
+    hint = 'Check IMAP host, port, and network connection from Render.';
+  }
+  return {
+    code: publicCode,
+    stage,
+    detail,
+    hint,
+  };
+}
+
+async function runImapCommand(client, stage, commandText) {
+  try {
+    return await client.command(commandText);
+  } catch (error) {
+    error.stage = stage;
+    throw error;
+  }
 }
 
 class SimpleImapClient {
@@ -898,15 +940,20 @@ class SimpleImapClient {
 }
 
 async function connectSimpleImapClient() {
-  const socket = tls.connect({
-    host: BOOTH_GMAIL_IMAP_HOST,
-    port: BOOTH_GMAIL_IMAP_PORT,
-    servername: BOOTH_GMAIL_IMAP_HOST,
-    rejectUnauthorized: true,
-  });
-  const client = new SimpleImapClient(socket);
-  await client.waitForGreeting();
-  return client;
+  try {
+    const socket = tls.connect({
+      host: BOOTH_GMAIL_IMAP_HOST,
+      port: BOOTH_GMAIL_IMAP_PORT,
+      servername: BOOTH_GMAIL_IMAP_HOST,
+      rejectUnauthorized: true,
+    });
+    const client = new SimpleImapClient(socket);
+    await client.waitForGreeting();
+    return client;
+  } catch (error) {
+    error.stage = 'connect';
+    throw error;
+  }
 }
 
 async function searchBoothOrderInGmail(orderReference, userRecord = null) {
@@ -918,9 +965,9 @@ async function searchBoothOrderInGmail(orderReference, userRecord = null) {
   }
   const client = await connectSimpleImapClient();
   try {
-    await client.command(`LOGIN ${quoteImapString(BOOTH_GMAIL_IMAP_USER)} ${quoteImapString(BOOTH_GMAIL_IMAP_APP_PASSWORD)}`);
-    await client.command(`EXAMINE ${quoteImapString(BOOTH_GMAIL_IMAP_MAILBOX)}`);
-    const lines = await client.command(`UID SEARCH X-GM-RAW ${quoteImapString(query)}`);
+    await runImapCommand(client, 'login', `LOGIN ${quoteImapString(BOOTH_GMAIL_IMAP_USER)} ${quoteImapString(BOOTH_GMAIL_IMAP_APP_PASSWORD)}`);
+    await runImapCommand(client, 'mailbox', `EXAMINE ${quoteImapString(BOOTH_GMAIL_IMAP_MAILBOX)}`);
+    const lines = await runImapCommand(client, 'search', `UID SEARCH X-GM-RAW ${quoteImapString(query)}`);
     const uids = parseImapSearchUids(lines);
     return {
       verified: uids.length > 0,
@@ -952,13 +999,15 @@ async function verifyBoothOrderReferenceWithGmail(orderReference, { userRecord =
     return result;
   } catch (error) {
     if (error.statusCode) throw error;
-    const failed = new Error(/AUTHENTICATIONFAILED|LOGIN failed/i.test(error.imapLine || error.message || '')
+    const failed = new Error(/AUTHENTICATIONFAILED|LOGIN|PASSWORD|CREDENTIAL|APPLICATION-SPECIFIC|WEB LOGIN REQUIRED|ALERT/i.test(error.imapLine || error.message || '')
       ? 'BOOTH_GMAIL_AUTH_FAILED'
       : 'BOOTH_GMAIL_VERIFY_FAILED');
     failed.statusCode = 503;
+    failed.diagnostic = buildBoothGmailDiagnostic(error, failed.message);
     console.error('BOOTH Gmail verification failed', {
       error: failed.message,
       detail: error.imapLine || error.message || '',
+      stage: error.stage || '',
       host: BOOTH_GMAIL_IMAP_HOST,
       mailbox: BOOTH_GMAIL_IMAP_MAILBOX,
     });
@@ -5247,6 +5296,13 @@ async function handleBoothGmailVerificationTest(req, res) {
     });
     return;
   }
+  if (!isPlausibleBoothOrderReference(providerPaymentId)) {
+    sendJson(res, 400, {
+      error: 'BOOTH_ORDER_REFERENCE_INVALID',
+      message: 'A real BOOTH order number is required.',
+    });
+    return;
+  }
   try {
     const result = await verifyBoothOrderReferenceWithGmail(providerPaymentId, {
       userRecord: { email: normalizeCustomerEmail(body?.email || body?.buyerEmail || body?.buyer_email || '') },
@@ -5262,6 +5318,8 @@ async function handleBoothGmailVerificationTest(req, res) {
     sendJson(res, error.statusCode || 500, {
       error: error.message || 'BOOTH_GMAIL_VERIFY_FAILED',
       message: 'BOOTH Gmail verification could not be completed.',
+      diagnostic: error.diagnostic || undefined,
+      verification: error.verification || undefined,
     });
   }
 }
@@ -5306,6 +5364,13 @@ async function handleBoothOrderClaim(req, res) {
     sendJson(res, 400, {
       error: 'BOOTH_ORDER_REFERENCE_REQUIRED',
       message: 'BOOTH order number is required.',
+    });
+    return;
+  }
+  if (!isPlausibleBoothOrderReference(providerPaymentId)) {
+    sendJson(res, 400, {
+      error: 'BOOTH_ORDER_REFERENCE_INVALID',
+      message: 'A real BOOTH order number is required.',
     });
     return;
   }
