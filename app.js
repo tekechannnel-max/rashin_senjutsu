@@ -1569,9 +1569,14 @@ const STRIPE_CHECKOUT_COMPLETE_ENDPOINT='/api/stripe/checkout/complete';
 const STRIPE_PORTAL_ENDPOINT='/api/stripe/portal-session';
 const RASHIN_CODE_REDEEM_ENDPOINT='/api/rashin-code/redeem';
 const RASHIN_PAID_CODE_REDEEM_ENDPOINT='/api/rashin-paid-code/redeem';
+const RASHIN_PAID_CODE_PAYPAY_CLAIM_ENDPOINT='/api/rashin-paid-code/paypay/claim';
 const PAID_READING_PREPARE_ENDPOINT='/api/paid-reading/prepare-ticket';
 const PAID_READING_USE_ENDPOINT='/api/paid-reading/use-ticket';
 const PAID_READING_RELEASE_ENDPOINT='/api/paid-reading/release-ticket';
+const DEEP_READING_PRERELEASE_PRICE=780;
+const DEEP_READING_RELEASE_PRICE=1000;
+const DEEP_READING_PRICE=DEEP_READING_PRERELEASE_PRICE;
+const DEEP_READING_PRICE_COPY=`プレリリース価格${DEEP_READING_PRERELEASE_PRICE}円（正式リリース後は${DEEP_READING_RELEASE_PRICE}円予定）`;
 const VAULT_QUERY_ENDPOINT='/api/vault/history/query';
 const VAULT_SAVE_ENDPOINT='/api/vault/history/save';
 const VAULT_CLEAR_ENDPOINT='/api/vault/history/clear';
@@ -2040,7 +2045,7 @@ const BRAND_PROFILE={
     member:{
       badge:'深掘り',
       title:'深掘り鑑定で、進路を自分で選べるようになる',
-      price:'深掘り鑑定 1回780円',
+      price:'深掘り鑑定 プレリリース780円',
       items:[
         '具体的な悩みの構造と本音を整理できる',
         '次にどちらへ進むかが現実レベルで具体的に残る',
@@ -2051,7 +2056,7 @@ const BRAND_PROFILE={
 };
 
 const MEMBERSHIP_PLAN={
-  price:'深掘り鑑定 1回780円',
+  price:'深掘り鑑定 プレリリース780円',
   status:'読み返しと記録は準備中',
   promise:'無料で見えたことを、次にすることまで深く読む鑑定です',
   description:'無料で見えた「今の状態」をもとに、ここからは悩みをもっと深く読みます。現実を見ながら、次にどう動くかまで残せます。',
@@ -2095,8 +2100,8 @@ const MEMBERSHIP_PLAN={
     },
   ],
 };
-const CHECKOUT_DISCLOSURE_HTML='深掘り羅針鑑定は、カード決済で購入できる有料鑑定です。料金は単発1回780円、月額プランは月3回1,480円・月5回2,020円です。無料鑑定を先に作成する必要はありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
-const RESULT_CHECKOUT_DISCLOSURE_HTML='深掘り鑑定は単発1回780円、月額プランは月3回1,480円・月5回2,020円です。無料で引いたカードの続きから追加カードを展開することも、直接有料鑑定から始めることもできます。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
+const CHECKOUT_DISCLOSURE_HTML='深掘り羅針鑑定は、PayPay支払い後に利用できる有料鑑定です。料金はプレリリース価格780円、正式リリース後は1000円予定です。無料鑑定を先に作成する必要はありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
+const RESULT_CHECKOUT_DISCLOSURE_HTML='深掘り鑑定はプレリリース価格780円、正式リリース後は1000円予定です。無料で引いたカードの続きから追加カードを展開することも、直接有料鑑定から始めることもできます。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
 
 // 全カード・各3問の解釈絞り込みテンプレート
 const CLARIFY_DEF={
@@ -2577,7 +2582,7 @@ function getRashinFragmentSnapshot(status=RASHIN_BONUS_STATUS){
   });
   const freeReadingBenefit=status?.freeReadingBenefit||{
     requiredStones:30,
-    discountAmount:780,
+    discountAmount:DEEP_READING_PRICE,
     finalAmount:0,
     available:stones>=30,
     remainingStones:Math.max(0,30-stones),
@@ -2611,12 +2616,11 @@ async function startDailyOracleDeepReading(source='daily_oracle',useDiscount=fal
   void startFlow('paid');
 }
 
-function openMonthlyPlanFromCta(source='daily_oracle',plan='monthly_3'){
-  const normalized=plan==='monthly_5'?'monthly_5':'monthly_3';
-  trackEvent('monthly_plan_clicked',{
+function openMonthlyPlanFromCta(source='daily_oracle',plan='single_deep'){
+  trackEvent('single_deep_clicked',{
     source,
-    plan:normalized,
-    price:normalized==='monthly_5'?2020:1480,
+    plan:'single_deep',
+    price:DEEP_READING_PRICE,
   });
   void startFlow('paid');
 }
@@ -4240,7 +4244,7 @@ function getServerErrorMessage(data,fallback='処理に失敗しました'){
   if(code==='AUTH_REQUIRED'||code==='STRIPE_PORTAL_AUTH_REQUIRED'||code==='PAID_AUTH_REQUIRED') return'深掘り鑑定の購入確認が必要です';
   if(code==='PAID_SESSION_REQUIRED') return'深掘り鑑定の利用確認が必要です';
   if(code==='STRIPE_NOT_CONFIGURED') return'深掘り鑑定の購入準備がまだできていません';
-  if(code==='STRIPE_CHECKOUT_DISABLED') return'カード決済はKOMOJU申請中のため、まだ開けません';
+  if(code==='STRIPE_CHECKOUT_DISABLED') return'現在はPayPay支払いで受け付けています';
   if(code==='STRIPE_CUSTOMER_NOT_FOUND') return'決済情報がまだ作成されていません';
   if(code==='STRIPE_SUBSCRIPTION_NOT_ACTIVE') return'決済は完了しましたが、深掘り鑑定への反映がまだ終わっていません';
   if(code==='PAID_TICKET_REQUIRED') return'この結果の深掘り鑑定を購入すると利用できます';
@@ -4292,16 +4296,16 @@ function getMemberStatusMeta(){
     return{
       cls:'inactive',
       label:'深掘り鑑定',
-      copy:'深掘り羅針鑑定は、単発1回780円、月額は月3回1,480円・月5回2,020円です。無料鑑定から続きのカードを引くことも、直接有料鑑定から始めることもできます。',
-      action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openStripeCheckout('start-paid')">カード決済へ進む</button>`,
+      copy:'深掘り羅針鑑定は、プレリリース価格780円、正式リリース後は1000円予定です。無料鑑定から続きのカードを引くことも、直接有料鑑定から始めることもできます。',
+      action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">PayPayで始める</button>`,
     };
   }
   if(MEMBER_AUTH.authLoggedIn){
     return{
       cls:'inactive',
       label:'深掘り鑑定',
-      copy:'深掘り羅針鑑定は、単発1回780円、月額は月3回1,480円・月5回2,020円です。無料鑑定から続きのカードを引くことも、直接有料鑑定から始めることもできます。',
-      action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openStripeCheckout('start-paid')">カード決済へ進む</button>`,
+      copy:'深掘り羅針鑑定は、プレリリース価格780円、正式リリース後は1000円予定です。無料鑑定から続きのカードを引くことも、直接有料鑑定から始めることもできます。',
+      action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">PayPayで始める</button>`,
     };
   }
   return{
@@ -4309,10 +4313,10 @@ function getMemberStatusMeta(){
     label:canUseAccessCode()?'確認コード待ち':'公開準備中',
     copy:canUseAccessCode()
       ?'前回の鑑定をもとに、続きの悩みを読み解けます。確認コードを入力すると深掘り鑑定の利用状態を確認できます。'
-      :'深掘り羅針鑑定は、カード決済で直接購入できます。単発1回780円、月額は月3回1,480円・月5回2,020円です。',
+      :'深掘り羅針鑑定は、PayPay支払い後に利用できます。プレリリース価格780円、正式リリース後は1000円予定です。',
     action:canUseAccessCode()
       ?`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openMemberAccessModal('start-paid')">確認コードを入力</button>`
-      :`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openStripeCheckout('start-paid')">カード決済へ進む</button>`,
+      :`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">PayPayで始める</button>`,
   };
 }
 
@@ -4591,9 +4595,9 @@ function renderDailyOracleDeepCta(status=RASHIN_BONUS_STATUS){
           <div class="rashin-oracle-cta-sub">${escapeHtml(sub)}</div>
           <div class="rashin-oracle-cta-actions">
             ${primary}
-            <button class="rashin-bonus-link" type="button" onclick="openMonthlyPlanFromCta('daily_oracle','monthly_3')">月3回プランを見る</button>
+            <button class="rashin-bonus-link" type="button" onclick="startFlow('paid')">深掘り鑑定を見る</button>
           </div>
-          <div class="rashin-oracle-cta-sub">月3回の羅針で、迷いの変化を見つめられます。</div>
+          <div class="rashin-oracle-cta-sub">プレリリース中は単発780円で深掘りできます。</div>
         </div>`;
 }
 
@@ -4802,7 +4806,7 @@ async function claimRashinBonus(options={}){
 function trackPriceConfirmViewed(status=RASHIN_DISCOUNT_STATUS){
   const freeApplied=!!status?.freeReadingBenefit?.available;
   const discountApplied=freeApplied||!!status?.eligible;
-  const displayedPrice=freeApplied?0:(discountApplied?Number(status.finalAmount||580):780);
+  const displayedPrice=freeApplied?0:(discountApplied?Number(status.finalAmount||Math.max(0,DEEP_READING_PRICE-200)):DEEP_READING_PRICE);
   const key=`single_deep:${freeApplied?'free_fragment':(discountApplied?'discount':'normal')}:${displayedPrice}`;
   if(TRACKED_PRICE_CONFIRM_VIEW_KEYS.has(key)) return;
   TRACKED_PRICE_CONFIRM_VIEW_KEYS.add(key);
@@ -4820,9 +4824,9 @@ function updateResultUpgradePrice(status=RASHIN_DISCOUNT_STATUS){
   if(!priceEl) return;
   if(status?.freeReadingBenefit?.available){
     priceEl.innerHTML=`
-      <span class="upgrade-price-normal">通常 ${status.normalAmount||780}円</span>
+      <span class="upgrade-price-normal">価格 ${status.normalAmount||DEEP_READING_PRICE}円</span>
       <span class="upgrade-price-discount">羅針のかけら30個で 支払い金額：0円</span>`;
-    if(noteEl) noteEl.textContent='通常価格：780円 / 羅針のかけら特典：-780円 / 支払い金額：0円。深掘り鑑定を開始すると羅針のかけら30個を使用します。';
+    if(noteEl) noteEl.textContent=`価格：${status.normalAmount||DEEP_READING_PRICE}円 / 羅針のかけら特典：-${status.normalAmount||DEEP_READING_PRICE}円 / 支払い金額：0円。深掘り鑑定を開始すると羅針のかけら30個を使用します。`;
     const ctaBtn=document.querySelector('#result-upgrade-panel .result-unified-cta-btn');
     if(ctaBtn) ctaBtn.textContent='30個で深掘り鑑定へ';
     trackPriceConfirmViewed(status);
@@ -4830,13 +4834,13 @@ function updateResultUpgradePrice(status=RASHIN_DISCOUNT_STATUS){
   }
   if(status?.eligible){
     priceEl.innerHTML=`
-      <span class="upgrade-price-normal">通常 ${status.normalAmount||780}円</span>
-      <span class="upgrade-price-discount">支払い金額：${status.finalAmount||780}円</span>`;
-    if(noteEl) noteEl.textContent=`通常価格：${status.normalAmount||780}円 / 羅針のかけら特典：-${status.discountAmount||200}円 / 支払い金額：${status.finalAmount||780}円。決済完了時に羅針のかけら${status.stonesRequired}個を使用します。`;
+      <span class="upgrade-price-normal">価格 ${status.normalAmount||DEEP_READING_PRICE}円</span>
+      <span class="upgrade-price-discount">支払い金額：${status.finalAmount||DEEP_READING_PRICE}円</span>`;
+    if(noteEl) noteEl.textContent=`価格：${status.normalAmount||DEEP_READING_PRICE}円 / 羅針のかけら特典：-${status.discountAmount||200}円 / 支払い金額：${status.finalAmount||DEEP_READING_PRICE}円。決済完了時に羅針のかけら${status.stonesRequired}個を使用します。`;
     trackPriceConfirmViewed(status);
     return;
   }
-  priceEl.textContent='支払い金額：780円';
+  priceEl.textContent=`支払い金額：${DEEP_READING_PRICE}円`;
   if(noteEl) noteEl.textContent=status?.reason==='insufficient_stones'
     ?'ルノルマン9枚・数秘オラクル3枚・追加質問・履歴解析つき。羅針のかけらが10個集まると、この結果の深掘り鑑定で200円OFFが使えます。'
     :'ルノルマン9枚・数秘オラクル3枚・追加質問・履歴解析つき。';
@@ -5206,9 +5210,9 @@ async function requestRashinCodePurchase(intent='upgrade-paid'){
     const redeemed=await promptAndRedeemRashinPaidCode(sourceReadingId);
     trackEvent('rashin_paid_code_prompt',{
       source:checkoutSourceFromIntent(intent),
-      price:780,
-      final_amount:redeemed?0:780,
-      discount_amount:redeemed?780:0,
+      price:DEEP_READING_PRICE,
+      final_amount:redeemed?0:DEEP_READING_PRICE,
+      discount_amount:redeemed?DEEP_READING_PRICE:0,
       purchase_type:'deep_reading_once',
       payment_provider:'manual_free_code',
     });
@@ -5218,6 +5222,106 @@ async function requestRashinCodePurchase(intent='upgrade-paid'){
     return false;
   }
 }
+
+async function requestRashinCodePurchasePaypay(intent='upgrade-paid'){
+  if(!canUseProxy()){
+    showToast('羅針コードの発行はサーバー経由で利用できます');
+    return false;
+  }
+  if(!MEMBER_AUTH.authLoggedIn){
+    openMemberAccessModal(intent);
+    return false;
+  }
+  const sourceReadingId=(intent==='upgrade-paid')?CURRENT_READING_ID:'';
+  if(intent==='upgrade-paid'&&(!sourceReadingId||PLAN!=='free'||!canContinueCurrentReadingToPaid())){
+    showToast('羅針コードを使うには対象の無料鑑定結果が必要です');
+    return false;
+  }
+  try{
+    if(sourceReadingId){
+      try{ await saveHistoryRecordToVault(buildCurrentReadingRecord()); }catch(_error){}
+    }
+    const purchaseBody={intent};
+    if(sourceReadingId) purchaseBody.sourceReadingId=sourceReadingId;
+    const purchaseRes=await fetchApi('/api/rashin-paid-code/purchase-intent',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(purchaseBody),
+    });
+    const purchaseData=await readJsonSafe(purchaseRes);
+    if(!purchaseRes.ok){
+      showToast(getServerErrorMessage(purchaseData,'PayPay支払いの準備に失敗しました'));
+      return false;
+    }
+    const paypay=purchaseData?.paypay||{};
+    const finalAmount=Number(purchaseData?.finalAmount||DEEP_READING_PRICE);
+    const lines=[
+      `PayPayで${finalAmount}円を支払ってください。`,
+      paypay.url?`支払いURL: ${paypay.url}`:'',
+      paypay.note?`補足: ${paypay.note}`:'',
+      '',
+      '支払い後、PayPayの取引番号・決済番号・支払い完了画面に出ている番号を入力してください。',
+      '番号を入力すると、羅針コード発行と深掘り鑑定の解放を自動で行います。',
+    ].filter(Boolean);
+    const paypayReference=window.prompt(lines.join('\n'),'');
+    if(paypayReference===null) return false;
+    const normalizedReference=String(paypayReference||'').trim();
+    if(!normalizedReference){
+      showToast('PayPayの取引番号を入力してください');
+      return false;
+    }
+    const claimRes=await fetchApi(RASHIN_PAID_CODE_PAYPAY_CLAIM_ENDPOINT,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        purchaseOrderId:purchaseData.purchaseOrderId,
+        sourceReadingId:purchaseData.sourceReadingId||sourceReadingId,
+        paypayReference:normalizedReference,
+      }),
+    });
+    const claimData=await readJsonSafe(claimRes);
+    if(!claimRes.ok){
+      if(claimData?.pending){
+        showToast('支払い申請を保存しました。確認後に深掘り鑑定を解放します');
+        return false;
+      }
+      showToast(getServerErrorMessage(claimData,'PayPay支払いの確認に失敗しました'));
+      return false;
+    }
+    const paidSourceId=claimData?.sourceReadingId||purchaseData?.sourceReadingId||sourceReadingId;
+    trackEvent('rashin_paid_code_prompt',{
+      source:checkoutSourceFromIntent(intent),
+      price:DEEP_READING_PRICE,
+      final_amount:finalAmount,
+      discount_amount:Number(purchaseData?.discountAmount||0),
+      purchase_type:'deep_reading_once',
+      payment_provider:'paypay_manual',
+    });
+    showToast('PayPay支払い情報を確認し、深掘り鑑定を解放しました');
+    if(intent==='start-paid'){
+      ACTIVE_PAID_SOURCE_READING_ID=paidSourceId;
+      if(!PENDING_PAID_READING_ID) PENDING_PAID_READING_ID=createReadingId();
+      const prepared=await preparePaidReadingTicket(ACTIVE_PAID_SOURCE_READING_ID,PENDING_PAID_READING_ID);
+      if(prepared.ok){
+        startFlowUnlocked('paid');
+        return true;
+      }
+      showToast('深掘り鑑定の利用準備に失敗しました');
+      return false;
+    }
+    if(intent==='upgrade-paid'&&paidSourceId){
+      if(!PENDING_PAID_READING_ID) PENDING_PAID_READING_ID=createReadingId();
+      const prepared=await preparePaidReadingTicket(paidSourceId,PENDING_PAID_READING_ID);
+      return !!prepared.ok;
+    }
+    return true;
+  }catch(e){
+    showToast('PayPay支払い確認に失敗しました');
+    return false;
+  }
+}
+
+requestRashinCodePurchase=requestRashinCodePurchasePaypay;
 
 async function redeemRashinFragmentsForPaidTicket(sourceReadingId='',paidReadingId=''){
   const sourceId=String(sourceReadingId||'').trim();
@@ -5288,7 +5392,7 @@ async function preparePaidReadingTicket(sourceReadingId='',paidReadingId=''){
       sourceReadingId:data.sourceReadingId||sourceId,
       paidReadingId:data.paidReadingId||nextPaidId,
       status:data.ticketStatus||'unused',
-      finalAmount:Number(data.finalAmount??780),
+      finalAmount:Number(data.finalAmount??DEEP_READING_PRICE),
       discountStonesUsed:Number(data.discountStonesUsed||0),
       discountType:data.discountType||'',
     };
@@ -5318,9 +5422,9 @@ async function markPaidReadingTicketUsed(){
       ACTIVE_PAID_READING_TICKET={...ACTIVE_PAID_READING_TICKET,status:data?.ticketStatus||'used'};
       trackEvent('deep_ticket_used',{
         source:'result',
-        price:780,
-        final_amount:Number(ACTIVE_PAID_READING_TICKET.finalAmount??780),
-        discount_amount:Number(ACTIVE_PAID_READING_TICKET.finalAmount===0?780:0),
+        price:DEEP_READING_PRICE,
+        final_amount:Number(ACTIVE_PAID_READING_TICKET.finalAmount??DEEP_READING_PRICE),
+        discount_amount:Number(ACTIVE_PAID_READING_TICKET.finalAmount===0?DEEP_READING_PRICE:0),
         checkout_mode:ACTIVE_PAID_READING_TICKET.discountType==='rashin_fragments_free_reading'?'rashin_fragments':'payment',
         purchase_type:'deep_reading_once',
         ticket_status:ACTIVE_PAID_READING_TICKET.status,
@@ -5351,6 +5455,7 @@ async function releasePaidReadingTicketLock(){
 }
 
 async function openStripeCheckout(intent='start-paid'){
+  if(intent==='start-paid'||intent==='upgrade-paid') return requestRashinCodePurchase(intent);
   if(CHECKOUT_OPENING) return false;
   if(!canUseProxy()){
     showToast('深掘り鑑定の購入はサービス経由でのアクセスが必要です。直接ファイルを開いている場合は利用できません。');
@@ -5359,7 +5464,7 @@ async function openStripeCheckout(intent='start-paid'){
   const sourceReadingId=CURRENT_READING_ID;
   const needsSourceReading=intent==='upgrade-paid';
   if(needsSourceReading&&(!sourceReadingId||PLAN!=='free'||!canContinueCurrentReadingToPaid())){
-    showToast('この結果を深掘りするには、結果画面からカード決済へ進んでください');
+    showToast('この結果を深掘りするには、結果画面からPayPay支払いへ進んでください');
     return false;
   }
   CHECKOUT_OPENING=true;
@@ -5369,7 +5474,7 @@ async function openStripeCheckout(intent='start-paid'){
       product:'single_deep',
       source:checkoutSourceFromIntent(intent),
       discount_applied:discountPlanned,
-      displayed_price:discountPlanned?Number(RASHIN_DISCOUNT_STATUS?.finalAmount||580):780,
+      displayed_price:discountPlanned?Number(RASHIN_DISCOUNT_STATUS?.finalAmount||Math.max(0,DEEP_READING_PRICE-200)):DEEP_READING_PRICE,
     });
     if(sourceReadingId&&MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.userId){
       try{
@@ -5394,11 +5499,11 @@ async function openStripeCheckout(intent='start-paid'){
       return false;
     }
     saveStripeReturnIntent(intent);
-      const finalAmount=Number(data?.finalAmount||780);
+      const finalAmount=Number(data?.finalAmount||DEEP_READING_PRICE);
     const discountAmount=Number(data?.discountAmount||0);
     trackEvent('checkout_start',{
       plan:'one_time',
-        price:780,
+        price:DEEP_READING_PRICE,
       final_amount:finalAmount,
       discount_amount:discountAmount,
       checkout_mode:'payment',
@@ -5407,7 +5512,7 @@ async function openStripeCheckout(intent='start-paid'){
     });
     trackEvent('deep_payment_start',{
       source:checkoutSourceFromIntent(intent),
-        price:780,
+        price:DEEP_READING_PRICE,
       final_amount:finalAmount,
       discount_amount:discountAmount,
       checkout_mode:'payment',
@@ -5490,12 +5595,12 @@ async function handleStripeReturnFlow(){
     cleanupStripeReturnParams();
     const intent=consumeStripeReturnIntent();
   if(data?.ticketReady){
-    const finalAmount=Number(data?.finalAmount||780);
+    const finalAmount=Number(data?.finalAmount||DEEP_READING_PRICE);
       const discountAmount=Number(data?.discountAmount||0);
       restoreFreeReadingQuotaFromPaid(data.ticketId||sessionId);
       trackEvent('deep_payment_complete',{
         source:checkoutSourceFromIntent(intent),
-      price:780,
+      price:DEEP_READING_PRICE,
         final_amount:finalAmount,
         discount_amount:discountAmount,
         checkout_mode:'payment',
@@ -5509,7 +5614,7 @@ async function handleStripeReturnFlow(){
       });
       trackEvent('deep_ticket_created',{
         source:checkoutSourceFromIntent(intent),
-      price:780,
+      price:DEEP_READING_PRICE,
         final_amount:finalAmount,
         discount_amount:discountAmount,
         checkout_mode:'payment',
@@ -5622,7 +5727,7 @@ function openMemberAccessModal(intent=''){
       ?'<div class="runtime-status-title">このまま深掘り鑑定フローへ進めます</div><div class="runtime-status-detail">確認用の状態で深掘り鑑定フローを確認できます。</div>'
       :(usesGoogle
         ?'<div class="runtime-status-title">Googleログインで続行</div><div class="runtime-status-detail">履歴と購入確認を保存します。</div>'
-        :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':'深掘り羅針鑑定の準備中です'}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':'有料鑑定はカード決済から直接購入できます。単発1回780円、月3回1,480円、月5回2,020円です。'}</div>`);
+        :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':'深掘り羅針鑑定の準備中です'}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':'有料鑑定はPayPay支払い後に利用できます。プレリリース価格780円、正式リリース後は1000円予定です。'}</div>`);
   }
   if(disclosure) disclosure.style.display='none';
   if(localBtn){
@@ -5661,14 +5766,14 @@ function ensurePaidEntryGuideModal(){
   modal.setAttribute('inert','');
   modal.innerHTML=`
     <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="paid-entry-guide-title">
-      <div class="modal-title" id="paid-entry-guide-title">深掘り羅針鑑定のカード決済へ進みます</div>
-      <div class="modal-desc">無料鑑定を先に作成する必要はありません。単発1回780円、月3回1,480円、月5回2,020円です。</div>
+      <div class="modal-title" id="paid-entry-guide-title">深掘り羅針鑑定のPayPay支払いへ進みます</div>
+      <div class="modal-desc">無料鑑定を先に作成する必要はありません。プレリリース価格780円、正式リリース後は1000円予定です。</div>
       <div class="runtime-status ok">
-        <div class="runtime-status-title">カード決済後に有料鑑定を開始します</div>
-        <div class="runtime-status-detail">KOMOJUの申請・決済準備が完了していない場合は、購入画面に進めません。</div>
+        <div class="runtime-status-title">PayPay支払い後に有料鑑定を開始します</div>
+        <div class="runtime-status-detail">支払い完了画面の取引番号を入力すると、深掘り鑑定を解放します。</div>
       </div>
       <div class="modal-btns">
-        <button class="modal-save" type="button" onclick="openStripeCheckout('start-paid')">カード決済へ進む</button>
+        <button class="modal-save" type="button" onclick="startFlow('paid')">PayPayで始める</button>
         <button class="modal-cancel" type="button" onclick="closePaidEntryGuide()">閉じる</button>
       </div>
     </div>`;
@@ -5680,7 +5785,7 @@ function ensurePaidEntryGuideModal(){
 }
 
 function openPaidEntryGuide(){
-  void openStripeCheckout('start-paid');
+  void requestRashinCodePurchase('start-paid');
 }
 
 function closePaidEntryGuide(){
@@ -5792,8 +5897,8 @@ async function ensurePaidAccess(intent=''){
       showToast(fragmentTicket.message||'羅針のかけらを深掘り鑑定に使えませんでした');
       return false;
     }
-    const redeemed=await promptAndRedeemRashinPaidCode(sourceReadingId);
-    if(redeemed){
+    const purchased=await requestRashinCodePurchase('upgrade-paid');
+    if(purchased){
       const redeemedPrepared=await preparePaidReadingTicket(sourceReadingId,PENDING_PAID_READING_ID);
       if(redeemedPrepared.ok) return true;
     }
@@ -5983,19 +6088,19 @@ function repairStaticCopy(){
   }
   if(planCards[1]){
     setWithin(planCards[1],'.plan-compare-title','深掘り鑑定');
-  setWithin(planCards[1],'.plan-compare-price','単発780円 / 月3回1,480円 / 月5回2,020円');
-    setWithin(planCards[1],'.plan-compare-trial','月3回は変化を追う / 月5回は複数テーマ向け');
-    setWithin(planCards[1],'.plan-compare-badge','おすすめは月3回の羅針');
+  setWithin(planCards[1],'.plan-compare-price','プレリリース780円 / 通常1000円予定');
+    setWithin(planCards[1],'.plan-compare-trial','今は単発のみ');
+    setWithin(planCards[1],'.plan-compare-badge','プレリリース価格');
     const deepItems=planCards[1].querySelectorAll('.plan-compare-list li');
     [
-      '単発780円：まず1回だけ、いまの悩みを深く読む',
-      '月3回1,480円：今の状況、変化、次の行動を追う',
-      '月5回2,020円：恋愛・仕事・人間関係など複数テーマ向け',
+      'プレリリース780円：まず1回だけ、いまの悩みを深く読む',
+      '正式リリース後は1000円予定',
+      '今は単発のみ',
       '追加質問で悩みの前提を具体化',
       '鑑定履歴がある場合は、前回からの変化も読む'
     ].forEach((text,index)=>{ if(deepItems[index]) deepItems[index].textContent=text; });
-    setWithin(planCards[1],'.plan-compare-summary','深掘り鑑定では、同じ相談内容を前提に追加カードを引き、「なぜそうなるか」「どこで止まりやすいか」まで読み解きます。月3回の羅針では、今の状況、相手や環境の変化、次に取る行動を流れとして追えます。');
-    setWithin(planCards[1],'.plan-compare-action','月3回の羅針で変化を見る');
+    setWithin(planCards[1],'.plan-compare-summary','深掘り鑑定では、同じ相談内容を前提に追加カードを引き、「なぜそうなるか」「どこで止まりやすいか」まで読み解きます。');
+    setWithin(planCards[1],'.plan-compare-action','PayPayで始める');
     const deepAction=planCards[1].querySelector('.plan-compare-action');
     if(deepAction){
       deepAction.setAttribute('href','?flow=paid');
@@ -6004,13 +6109,13 @@ function repairStaticCopy(){
       deepAction.onclick=function(event){
         event.preventDefault();
         event.stopPropagation();
-        openMonthlyPlanFromCta('plan_compare','monthly_3');
+        startFlow('paid');
         return false;
       };
     }
   }
   document.querySelectorAll('.paid-band-note').forEach(el=>{
-  el.textContent='深掘り羅針鑑定 単発780円 / 月3回1,480円 / 月5回2,020円';
+  el.textContent='深掘り羅針鑑定 プレリリース780円 / 通常1000円予定';
   });
   document.querySelectorAll('.checkout-disclosure').forEach(el=>{
     if(el.closest('#member-access-modal')) return;
@@ -6023,7 +6128,7 @@ function repairStaticCopy(){
     ['数秘オラクルカードって何ですか？','誕生日などの数字の意味と、直感で選ぶカードを合わせて読むアドバイスカードです。<br>あなたの強み、背中を押す言葉、次の一手を示します。'],
     ['AIがどうやって占うのですか？','相談内容・名前・生年月日・カード結果をもとに、設計された占術ロジックに沿って鑑定文を生成します。<br>同じカードでも、相談内容やこれまでの流れによって読み方が変わります。'],
     ['無料鑑定では何ができますか？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。<br>自分自身の本質、本音、いまの現実、次に進むためのアドバイスを確認できます。'],
-    ['無料鑑定と深掘り鑑定の違いは？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。無料鑑定とミニ鑑定はあわせて1日5回までです。<br>深掘り鑑定では、同じ相談内容を前提に続きの追加カードを引くことも、直接有料鑑定から始めることもできます。ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>料金は単発1回780円、月額プランは月3回1,480円・月5回2,020円です。有料課金ごとに無料鑑定枠が1回分回復します。'],
+    ['無料鑑定と深掘り鑑定の違いは？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。無料鑑定とミニ鑑定はあわせて1日5回までです。<br>深掘り鑑定では、同じ相談内容を前提に続きの追加カードを引くことも、直接有料鑑定から始めることもできます。ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>料金はプレリリース価格780円、正式リリース後は1000円予定です。有料課金ごとに無料鑑定枠が1回分回復します。'],
     ['過去の鑑定は読み返せますか？','はい。これまでの鑑定は「過去の占いを読み返す」から確認できます。<br>前回のテーマやカードの流れを見返すことで、同じ悩みの続きや変化を確認しやすくなります。'],
     ['「鑑定履歴の流れを読み解く」って何ですか？','これまでの鑑定をまとめて、よく出るカード、相談テーマの変化、くり返し向き合っている悩みを時系列で読み解く機能です。<br>鑑定履歴があるほど、変化の流れが見えやすくなります。']
   ];
@@ -6323,7 +6428,7 @@ function renderPremiumEntrySection(){
         ${paidAction}
         <a class="today-cta today-cta-simple" href="?flow=simple" data-flow-target="simple" data-track="simple_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('simple');return false;}">${SIMPLE_READING_LABEL_HTML}</a>
       </div>
-      <div class="paid-band-note">深掘り羅針鑑定 単発780円 / 月3回1,480円 / 月5回2,020円</div>
+      <div class="paid-band-note">深掘り羅針鑑定 プレリリース780円 / 通常1000円予定</div>
       <div class="checkout-disclosure">${CHECKOUT_DISCLOSURE_HTML}</div>
     </div>`;
 }
@@ -7815,7 +7920,7 @@ function renderMemberStatusFallback(){
       <div class="member-benefit">前回との変化を見比べられる</div>
       <div class="member-benefit">鑑定履歴が積み上がるほど傾向が見える</div>
     </div>
-    <button class="vault-link" type="button" data-track="deepen_cta_click" data-track-position="top" onclick="openStripeCheckout('start-paid')">カード決済へ進む</button>`;
+    <button class="vault-link" type="button" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">PayPayで始める</button>`;
 }
 
 function renderPremiumEntryFallback(){
@@ -7828,7 +7933,7 @@ function renderPremiumEntryFallback(){
         <a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('paid');return false;}">${DEEP_PAID_CTA_LABEL}</a>
         <a class="today-cta today-cta-simple" href="?flow=simple" data-flow-target="simple" data-track="simple_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('simple');return false;}">${SIMPLE_READING_LABEL_HTML}</a>
       </div>
-      <div class="paid-band-note">深掘り羅針鑑定 単発780円 / 月3回1,480円 / 月5回2,020円</div>
+      <div class="paid-band-note">深掘り羅針鑑定 プレリリース780円 / 通常1000円予定</div>
       <div class="checkout-disclosure">${CHECKOUT_DISCLOSURE_HTML}</div>
     </div>`;
 }
@@ -7864,7 +7969,7 @@ function renderRashinFragmentHistoryProgress(){
         <div class="rashin-history-count">羅針のかけら ${snapshot.stones} / 30</div>
         <div class="rashin-history-actions">
           ${primary}
-          <button class="vault-link" type="button" onclick="event.stopPropagation();openMonthlyPlanFromCta('history_fragment','monthly_3')">月3回の羅針で変化を見る</button>
+          <button class="vault-link" type="button" onclick="event.stopPropagation();startFlow('paid')">深掘り鑑定を見る</button>
         </div>
       </div>
     </div>`;
@@ -8550,10 +8655,10 @@ function renderResultUpgradePanel(){
         <div class="upgrade-meta">
           <div class="upgrade-price">
             <div class="upgrade-price-label">料金</div>
-          <div class="upgrade-price-value" id="upgrade-price-value">通常 780円</div>
+          <div class="upgrade-price-value" id="upgrade-price-value">プレリリース 780円</div>
             <div class="upgrade-bonus-note" id="upgrade-bonus-note"></div>
           </div>
-          <div class="upgrade-note">単発780円 / 月3回1,480円 / 月5回2,020円</div>
+          <div class="upgrade-note">正式リリース後は1000円予定</div>
         </div>
       </div>
       <div class="upgrade-actions">
@@ -9658,10 +9763,6 @@ function showScreen(id,progress){
 
 async function startFlow(plan){
   const normalized=plan===SIMPLE_READING_PLAN?SIMPLE_READING_PLAN:(plan==='paid'?'paid':'free');
-  if(normalized==='paid'&&!isMemberActive()&&!ACTIVE_PAID_READING_TICKET?.id&&!canUsePaidTestMode()){
-    await openStripeCheckout('start-paid');
-    return;
-  }
   if(normalized==='paid'&&!(await ensurePaidAccess('start-paid'))) return;
   startFlowUnlocked(normalized);
 }
@@ -12058,9 +12159,9 @@ function renderMemberFollowupSection(){
     noteEl.textContent=canUsePaidTestMode()
       ?'深掘り鑑定では、追加カードで作成した有料鑑定に追加質問を使えます。'
       :((MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn)
-    ?'追加カードで有料鑑定を作る場合は、単発780円または月額プランへ進んでください。'
+    ?'追加カードで有料鑑定を作る場合は、プレリリース価格780円の深掘り鑑定へ進んでください。'
         :((MEMBER_AUTH.authLoggedIn)
-    ?'追加カードで有料鑑定を作る場合は、単発780円または月額プランへ進んでください。'
+    ?'追加カードで有料鑑定を作る場合は、プレリリース価格780円の深掘り鑑定へ進んでください。'
           :(canUseAccessCode()
             ?'確認コードがある場合は入力して利用状態を確認できます。'
             :'現在はまだ使えません。')));

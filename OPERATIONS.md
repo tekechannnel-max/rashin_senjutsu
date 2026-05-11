@@ -8,8 +8,12 @@
 
 ## Limited prerelease SNS operation
 
-Daily X / Threads posting is handled by `scripts/social/daily-oracle-post.js`.
+Daily Threads posting is handled by `scripts/social/daily-oracle-post.js`.
 Due-time execution is handled by `scripts/social/run-scheduled-posts.js`.
+
+Target Threads account: `https://www.threads.com/@sensai_teke`.
+
+Threads automation should use the official Threads API. Do not use Playwright or other browser automation to script the Threads website for posting.
 
 X automation should use the official API. Do not use Playwright or other browser automation to script the X website for posting. Before turning on X automation, enable the automated account label and make the account bio clear about who operates it.
 
@@ -19,6 +23,7 @@ Run without credentials to create or inspect the daily content:
 
 ```powershell
 npm run social:draft
+npm run social:threads:draft
 npm run social:write
 ```
 
@@ -29,17 +34,41 @@ Generated JSON drafts are written under `data/social-posts/`, which is intention
 Set these only in the machine or job runner that performs SNS posting:
 
 - `PUBLIC_ORIGIN=https://rashin-senjutsu.onrender.com`
-- `X_API_KEY`
-- `X_API_SECRET`
-- `X_ACCESS_TOKEN`
-- `X_ACCESS_TOKEN_SECRET`
+- `THREADS_EXPECTED_USERNAME=sensai_teke`
+- `THREADS_APP_ID`
+- `THREADS_APP_SECRET`
+- `THREADS_REDIRECT_URI=https://rashin-senjutsu.onrender.com/auth/threads/callback`
+- `THREADS_SCOPES=threads_basic,threads_content_publish`
 - `THREADS_USER_ID`
 - `THREADS_ACCESS_TOKEN`
 - `THREADS_PUBLISH_WAIT_MS=30000`
 - `SOCIAL_AUTOMATED_POSTING_ENABLED=true`
-- `SOCIAL_PLATFORMS=x,threads`
+- `SOCIAL_PLATFORMS=threads`
 - `SOCIAL_ORACLE_TIME=07:00`
 - `SOCIAL_CONCEPT_TIME=20:00`
+
+For initial Threads token setup:
+
+```powershell
+npm run threads:connect
+npm run threads:doctor
+```
+
+`threads:connect` prints the OAuth URL. With the HTTPS redirect URI, the callback page prints the exact exchange command. The exchange command writes `data/social-posts/threads-token.json`; that token file is intentionally gitignored.
+
+If Meta blocks the OAuth redirect, use the Threads settings page's User Token Generator, then run:
+
+```powershell
+node scripts/social/threads-tool.js save-token --token="<token-from-user-token-generator>"
+npm run threads:doctor
+```
+
+Optional X posting uses these only if X automation is explicitly enabled:
+
+- `X_API_KEY`
+- `X_API_SECRET`
+- `X_ACCESS_TOKEN`
+- `X_ACCESS_TOKEN_SECRET`
 
 Recommended schedule:
 
@@ -104,12 +133,53 @@ Set these on the Render service and redeploy before testing:
 - `MEMBER_SESSION_SECRET=<strong random secret>`
 - `AUTH_SESSION_SECRET=<strong random secret>`
 - `RASHIN_FREE_PAID_CODES=<comma-separated 12-character one-time codes>`
+- `DEEP_READING_ONCE_AMOUNT=780`
+- `DEEP_READING_PRERELEASE_AMOUNT=780`
+- `DEEP_READING_RELEASE_AMOUNT=1000`
+- `PAYPAY_MANUAL_PAYMENT_URL=<your PayPay QR/payment URL>`
+- `PAYPAY_MANUAL_PAYMENT_LABEL=Rashin Senjutsu PayPay`
+- `PAYPAY_MANUAL_PAYMENT_NOTE=<short user-facing PayPay instruction>`
+- `PAYPAY_MANUAL_AUTO_ISSUE_ENABLED=true` for prerelease auto-unlock after the user enters a PayPay transaction reference
 
 Do not publish a payment link until the payment account/provider has approved this business model.
 
+### PayPay manual auto-unlock
+
+This prerelease path removes manual Rashin-code handoff while still keeping paid access behind Google login and a purchase order.
+
+1. User starts paid deep reading.
+2. Server creates a `paypay_manual` purchase order.
+3. User pays through `PAYPAY_MANUAL_PAYMENT_URL`.
+4. User enters the PayPay transaction/reference number in the app.
+5. If `PAYPAY_MANUAL_AUTO_ISSUE_ENABLED=true`, the server creates and redeems an internal Rashin paid code, creates one paid-reading ticket, and the app continues automatically.
+6. If `PAYPAY_MANUAL_AUTO_ISSUE_ENABLED=false`, the payment claim is saved as `payment_requires_review` and no paid ticket is created.
+
+Security boundary: static PayPay QR payments are not automatically verified by PayPay. Auto-issue mode trusts the user's entered PayPay reference, so use it only for limited prerelease volume. For strict automated verification, replace this with PayPay's official online payment API/webhook flow.
+
+### Updating the PayPay URL without redeploy
+
+The PayPay payment URL in Render env is only the fallback/default. If the personal PayPay URL expires, update the active URL through the admin API. This writes `data/paypay-manual-config.json`, so the Render disk must persist `data/`.
+
+```powershell
+$env:RASHIN_CODE_ADMIN_SECRET="your-admin-secret"
+$body = @{
+  url = "https://qr.paypay.ne.jp/new-url"
+  label = "羅針占術 PayPay"
+  note = "支払い後、PayPayの取引番号を入力してください。"
+  expiresAt = "2026-05-25T23:59:59+09:00"
+} | ConvertTo-Json
+Invoke-RestMethod -Uri "https://rashin-senjutsu.onrender.com/api/rashin-paid-code/paypay/config" -Method Post -Headers @{"x-rashin-admin-secret"=$env:RASHIN_CODE_ADMIN_SECRET} -ContentType "application/json" -Body $body
+```
+
+Check the current active URL:
+
+```powershell
+Invoke-RestMethod -Uri "https://rashin-senjutsu.onrender.com/api/rashin-paid-code/paypay/config" -Method Get -Headers @{"x-rashin-admin-secret"=$env:RASHIN_CODE_ADMIN_SECRET}
+```
+
 ### Manual free Rashin codes
 
-Rashin paid codes are not auto-issued from payment. A code in `RASHIN_FREE_PAID_CODES` unlocks one deep reading once, for the Google account and free reading result used during redemption.
+Manual free Rashin codes remain available as a fallback. A code in `RASHIN_FREE_PAID_CODES` unlocks one deep reading once, for the Google account and free reading result used during redemption.
 
 1. Create a 12-character uppercase alphanumeric code.
 2. Add it to `RASHIN_FREE_PAID_CODES` and redeploy.
@@ -123,7 +193,7 @@ Rashin paid codes are not auto-issued from payment. A code in `RASHIN_FREE_PAID_
 
 Use a Google login account dedicated to test payments.
 
-1. Normal 780 yen order:
+1. Normal prerelease 780 yen order:
    - Start from the latest free reading result.
    - Confirm the payment provider creates or confirms a `780 JPY` payment.
    - Confirm a paid reading ticket is created under `data/paid-reading-tickets`.
@@ -187,8 +257,9 @@ Failure logs that require investigation before launch:
 
 Do not enable paid sales unless all are true:
 
-- `780`, `680`, and `580` JPY one-time amounts are confirmed.
-- `1,480` and `2,020` JPY monthly plan copy and provider settings are consistent.
+- `780` JPY prerelease one-time amount is confirmed.
+- Monthly plan copy is not visible while PayPay manual payment is active.
+- For release pricing, set `DEEP_READING_ONCE_AMOUNT=1000` and update visible price copy from prerelease to normal price.
 - Manual free codes create exactly one free paid ticket.
 - Duplicate code redemption does not create another ticket.
 - Unpaid orders do not consume stones.

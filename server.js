@@ -19,6 +19,7 @@ const RASHIN_DISCOUNT_CHECKOUT_LOCK_DIR = path.join(DATA_DIR, 'rashin-discount-c
 const USER_DIR = path.join(DATA_DIR, 'users');
 const INDEX_DIR = path.join(DATA_DIR, 'indexes');
 const LOG_DIR = path.join(DATA_DIR, 'logs');
+const PAYPAY_MANUAL_CONFIG_PATH = path.join(DATA_DIR, 'paypay-manual-config.json');
 const AI_USAGE_LOG_DIR = path.join(LOG_DIR, 'ai-usage');
 const CLIENT_ERROR_LOG_DIR = path.join(LOG_DIR, 'client-errors');
 const AI_EVENT_LOG_DIR = LOG_DIR;
@@ -165,6 +166,10 @@ const STRIPE_SUBSCRIPTION_NAME = process.env.STRIPE_SUBSCRIPTION_NAME || '\u6df1
 const STRIPE_TRIAL_PERIOD_DAYS = Math.max(0, parseInt(process.env.STRIPE_TRIAL_PERIOD_DAYS || '7', 10) || 0);
 const STRIPE_CHECKOUT_PAYMENT_METHOD_TYPES = parseStripePaymentMethodTypes(process.env.STRIPE_PAYMENT_METHOD_TYPES);
 const RASHIN_CODE_ADMIN_SECRET = normalizeEnvValue(process.env.RASHIN_CODE_ADMIN_SECRET || '');
+const PAYPAY_MANUAL_PAYMENT_URL = normalizeEnvValue(process.env.PAYPAY_MANUAL_PAYMENT_URL || '');
+const PAYPAY_MANUAL_PAYMENT_LABEL = normalizeEnvValue(process.env.PAYPAY_MANUAL_PAYMENT_LABEL || 'Rashin Senjutsu PayPay');
+const PAYPAY_MANUAL_PAYMENT_NOTE = normalizeEnvValue(process.env.PAYPAY_MANUAL_PAYMENT_NOTE || '');
+const PAYPAY_MANUAL_AUTO_ISSUE_ENABLED = normalizeEnvValue(process.env.PAYPAY_MANUAL_AUTO_ISSUE_ENABLED || '').toLowerCase() === 'true';
 const AI_MODELS = {
   free: process.env.OPENAI_FREE_MODEL || 'gpt-5.4-mini',
   paid: process.env.ANTHROPIC_PAID_MODEL || 'claude-sonnet-4-6',
@@ -249,6 +254,7 @@ const RATE_LIMIT_RULES = {
   rashin_code: { windowMs: 10 * 60 * 1000, max: 10 },
   rashin_paid_code: { windowMs: 10 * 60 * 1000, max: 10 },
   rashin_code_purchase: { windowMs: 10 * 60 * 1000, max: 8 },
+  paypay_manual_claim: { windowMs: 10 * 60 * 1000, max: 8 },
   rashin_code_admin: { windowMs: 10 * 60 * 1000, max: 30 },
   stripe_checkout: { windowMs: 10 * 60 * 1000, max: 8 },
   stripe_portal: { windowMs: 10 * 60 * 1000, max: 20 },
@@ -257,7 +263,9 @@ const RATE_LIMIT_RULES = {
 const RATE_LIMIT_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 const AI_FREE_DAILY_LIMIT = Math.max(1, parseInt(process.env.AI_FREE_DAILY_LIMIT || '5', 10) || 5);
 const PAID_MODELS = new Set([AI_MODELS.paid, AI_MODELS.history, AI_MODELS.paidFallback]);
-const DEEP_READING_NORMAL_AMOUNT = 780;
+const DEEP_READING_PRERELEASE_AMOUNT = Math.max(1, parseInt(process.env.DEEP_READING_PRERELEASE_AMOUNT || '780', 10) || 780);
+const DEEP_READING_RELEASE_AMOUNT = Math.max(1, parseInt(process.env.DEEP_READING_RELEASE_AMOUNT || '1000', 10) || 1000);
+const DEEP_READING_NORMAL_AMOUNT = Math.max(1, parseInt(process.env.DEEP_READING_ONCE_AMOUNT || String(DEEP_READING_PRERELEASE_AMOUNT), 10) || DEEP_READING_PRERELEASE_AMOUNT);
 const RASHIN_BONUS_REWARD_AMOUNT = 1;
 const RASHIN_BONUS_VALID_DAYS = 7;
 const RASHIN_BONUS_FREE_READING_REQUIRED_STONES = 30;
@@ -327,6 +335,66 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function handleThreadsCallbackPage(req, res) {
+  const requestUrl = new URL(req.url, PUBLIC_ORIGIN || 'https://rashin-senjutsu.onrender.com');
+  const code = requestUrl.searchParams.get('code') || '';
+  const error = requestUrl.searchParams.get('error')
+    || requestUrl.searchParams.get('error_message')
+    || requestUrl.searchParams.get('error_reason')
+    || requestUrl.searchParams.get('error_description')
+    || '';
+  const fullUrl = `${requestUrl.pathname}${requestUrl.search}`;
+  const exchangeCommand = code
+    ? `node scripts/social/threads-tool.js exchange --url="${escapeHtml(requestUrl.href)}"`
+    : '';
+  const body = `<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Threads OAuth callback</title>
+  <style>
+    body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.7;margin:32px;max-width:860px;color:#171717;background:#f7f7f8}
+    main{background:#fff;border:1px solid #ddd;border-radius:8px;padding:24px}
+    code,pre{background:#f1f2f4;border-radius:6px}
+    pre{white-space:pre-wrap;word-break:break-all;padding:14px}
+    .ok{color:#066b36;font-weight:700}.ng{color:#a40e10;font-weight:700}
+  </style>
+</head>
+<body>
+<main>
+  <h1>Threads callback</h1>
+  ${code ? '<p class="ok">認証コードを受け取りました。</p>' : '<p class="ng">認証コードがありません。</p>'}
+  ${error ? `<p class="ng">Error: ${escapeHtml(error)}</p>` : ''}
+  <p>PowerShellで次を実行してください。</p>
+  ${exchangeCommand ? `<pre>${exchangeCommand}</pre>` : '<pre>PowerShellに戻って、表示された https://threads.net/oauth/authorize?... のURLから開き直してください。</pre>'}
+  <p>受信URL:</p>
+  <pre>${escapeHtml(fullUrl)}</pre>
+</main>
+</body>
+</html>`;
+  sendText(res, code ? 200 : 400, body, 'text/html; charset=utf-8');
+}
+
+function handleThreadsLifecycleCallback(req, res, kind) {
+  const label = kind === 'delete' ? 'data deletion callback' : 'uninstall callback';
+  const body = `<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Threads ${escapeHtml(label)}</title>
+</head>
+<body>
+  <main>
+    <h1>Threads ${escapeHtml(label)}</h1>
+    <p>OK</p>
+  </main>
+</body>
+</html>`;
+  sendText(res, 200, body, 'text/html; charset=utf-8');
 }
 
 function applySecurityHeaders(req, res) {
@@ -665,7 +733,56 @@ function rashinPaidCodeReady() {
   return true;
 }
 
-function getRuntimeSetupStatus(req) {
+function normalizePaypayManualUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return '';
+    return url.href;
+  } catch (_error) {
+    return '';
+  }
+}
+
+function normalizePaypayManualConfig(raw = {}) {
+  const source = raw && typeof raw === 'object' ? raw : {};
+  const url = normalizePaypayManualUrl(source.url || source.paymentUrl || source.payment_url || PAYPAY_MANUAL_PAYMENT_URL);
+  return {
+    url,
+    label: normalizeEnvValue(source.label || PAYPAY_MANUAL_PAYMENT_LABEL || 'Rashin Senjutsu PayPay'),
+    note: normalizeEnvValue(source.note || PAYPAY_MANUAL_PAYMENT_NOTE || ''),
+    expiresAt: normalizeEnvValue(source.expiresAt || source.expires_at || ''),
+    updatedAt: normalizeEnvValue(source.updatedAt || source.updated_at || ''),
+  };
+}
+
+async function readPaypayManualConfig() {
+  const stored = await readJsonFileSafe(PAYPAY_MANUAL_CONFIG_PATH, null);
+  return normalizePaypayManualConfig(stored || {});
+}
+
+async function writePaypayManualConfig(config) {
+  const normalized = normalizePaypayManualConfig(config || {});
+  if (!normalized.url) {
+    const error = new Error('PAYPAY_MANUAL_PAYMENT_URL_INVALID');
+    error.statusCode = 400;
+    throw error;
+  }
+  const payload = {
+    ...normalized,
+    updatedAt: new Date().toISOString(),
+  };
+  await writeJsonFileAtomic(PAYPAY_MANUAL_CONFIG_PATH, payload);
+  return payload;
+}
+
+async function paypayManualReady() {
+  const config = await readPaypayManualConfig();
+  return !!config.url;
+}
+
+async function getRuntimeSetupStatus(req) {
   const issues = [];
   if (!OPENAI_KEY_CONFIGURED) issues.push('OPENAI_API_KEY');
   if (!ANTHROPIC_KEY_CONFIGURED) issues.push('ANTHROPIC_API_KEY');
@@ -677,6 +794,11 @@ function getRuntimeSetupStatus(req) {
     ok: productionReady,
     googleClientConfigured: GOOGLE_CLIENT_CONFIGURED,
     rashinPaidCodeReady: rashinPaidCodeReady(),
+    paypayManualReady: await paypayManualReady(),
+    paypayManualAutoIssueEnabled: PAYPAY_MANUAL_AUTO_ISSUE_ENABLED,
+    deepReadingAmount: DEEP_READING_NORMAL_AMOUNT,
+    deepReadingPrereleaseAmount: DEEP_READING_PRERELEASE_AMOUNT,
+    deepReadingReleaseAmount: DEEP_READING_RELEASE_AMOUNT,
     rashinCodeAdminSecretConfigured: isConfiguredAppSecret(RASHIN_CODE_ADMIN_SECRET),
     stripeSecretConfigured: STRIPE_SECRET_CONFIGURED,
     stripePriceConfigured: STRIPE_PRICE_CONFIGURED,
@@ -689,6 +811,8 @@ function getRuntimeSetupStatus(req) {
     codePurchasePath: '/api/rashin-paid-code/purchase-intent',
     codeRedeemPath: '/api/rashin-paid-code/redeem',
     codeAdminIssuePath: '/api/rashin-paid-code/admin/issue',
+    paypayManualClaimPath: '/api/rashin-paid-code/paypay/claim',
+    paypayManualConfigPath: '/api/rashin-paid-code/paypay/config',
     legacyStripeWebhookPath: '/api/stripe/webhook',
     legacyStripeWebhookUrl: makeAbsoluteUrl(req, '/api/stripe/webhook'),
   };
@@ -2585,6 +2709,173 @@ async function createRashinCodePurchaseOrder({ userRecord, sourceReadingId, inte
   });
 }
 
+function normalizePaypayManualReference(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim().slice(0, 120);
+}
+
+async function getPaypayManualPaymentPayload() {
+  const config = await readPaypayManualConfig();
+  return {
+    provider: 'paypay_manual',
+    url: config.url,
+    label: config.label,
+    note: config.note,
+    expiresAt: config.expiresAt,
+    updatedAt: config.updatedAt,
+    autoIssueEnabled: PAYPAY_MANUAL_AUTO_ISSUE_ENABLED,
+  };
+}
+
+async function createRashinCodePurchaseOrderForPaypay({ userRecord, sourceReadingId = '', intent = 'upgrade-paid' }) {
+  if (!userRecord?.userId) {
+    const error = new Error('GOOGLE_LOGIN_REQUIRED');
+    error.statusCode = 401;
+    error.publicCode = 'GOOGLE_LOGIN_REQUIRED';
+    throw error;
+  }
+  const safeIntent = String(intent || '').trim() || 'upgrade-paid';
+  const sourceId = normalizeVaultRecordId(sourceReadingId) || (safeIntent === 'start-paid' ? generateRecordId('direct') : '');
+  if (!sourceId) {
+    const error = new Error('SOURCE_READING_REQUIRED');
+    error.statusCode = 400;
+    error.publicCode = 'SOURCE_READING_REQUIRED';
+    throw error;
+  }
+  if (safeIntent !== 'start-paid') {
+    const order = await createRashinCodePurchaseOrder({ userRecord, sourceReadingId: sourceId, intent: safeIntent });
+    const paypayOrder = {
+      ...order,
+      paymentProvider: 'paypay_manual',
+      checkoutProvider: 'paypay_manual',
+      deliveryChannel: 'in_app',
+      updatedAt: new Date().toISOString(),
+    };
+    await writePurchaseOrder(paypayOrder);
+    return paypayOrder;
+  }
+  const owner = { ownerType: 'user', userId: userRecord.userId, vaultId: '' };
+  const order = await createPurchaseOrder({ owner, sourceReadingId: sourceId, rashinDiscount: null });
+  const email = normalizeCustomerEmail(userRecord.email || '');
+  const pendingOrder = {
+    ...order,
+    status: 'awaiting_payment',
+    paymentProvider: 'paypay_manual',
+    checkoutProvider: 'paypay_manual',
+    requestedIntent: safeIntent.slice(0, 40),
+    deliveryChannel: 'in_app',
+    recipientEmailHash: hashPrivateLookupValue('email', email),
+    recipientEmailMasked: maskEmail(email),
+    updatedAt: new Date().toISOString(),
+  };
+  await writePurchaseOrder(pendingOrder);
+  return pendingOrder;
+}
+
+async function createRashinPaidCodeRecordForOrder({ order, userRecord, providerPaymentId = '', deliveryChannel = 'in_app' }) {
+  const sourceId = normalizeVaultRecordId(order?.sourceReadingId || '');
+  if (!order?.id || !userRecord?.userId || !sourceId) throw new Error('INVALID_RASHIN_PAID_CODE_ORDER');
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const code = generateRashinPaidCode();
+    const codeHash = getRashinPaidCodeHash(code);
+    if (!codeHash) continue;
+    const existing = await readRashinPaidCodeRecordByHash(codeHash);
+    if (existing) continue;
+    return withRashinPaidCodeMutation(codeHash, async () => {
+      const lockedExisting = await readRashinPaidCodeRecordByHash(codeHash);
+      if (lockedExisting) throw new Error('RASHIN_PAID_CODE_COLLISION');
+      const now = new Date().toISOString();
+      const email = normalizeCustomerEmail(userRecord.email || '');
+      const record = {
+        codeHash,
+        codeSuffix: code.slice(-4),
+        product: 'deep_reading_once',
+        status: 'issued',
+        purchaseOrderId: normalizePurchaseOrderId(order.id),
+        sourceReadingId: sourceId,
+        ownerType: 'user',
+        userId: normalizeUserId(userRecord.userId),
+        vaultId: '',
+        paymentProvider: 'paypay_manual',
+        providerPaymentId: normalizePaypayManualReference(providerPaymentId),
+        recipientEmailHash: hashPrivateLookupValue('email', email),
+        recipientEmailMasked: maskEmail(email),
+        deliveryChannel,
+        deliveryStatus: 'issued_to_app',
+        baseAmount: Number(order.baseAmount || DEEP_READING_NORMAL_AMOUNT),
+        originalAmount: Number(order.originalAmount || DEEP_READING_NORMAL_AMOUNT),
+        discountAmount: Number(order.discountAmount || 0),
+        finalAmount: Number(order.finalAmount || DEEP_READING_NORMAL_AMOUNT),
+        discountStonesUsed: Number(order.discountStonesUsed || 0),
+        discountType: order.discountType || '',
+        currency: order.currency || 'jpy',
+        issuedAt: now,
+        expiresAt: addDaysIso(30),
+        redeemedAt: '',
+        redeemedByUserId: '',
+        redeemedSourceReadingId: '',
+        createdAt: now,
+        updatedAt: now,
+      };
+      await writeRashinPaidCodeRecord(record);
+      return { code, codeHash, record };
+    });
+  }
+  throw new Error('RASHIN_PAID_CODE_GENERATION_FAILED');
+}
+
+async function completePaypayManualOrderWithTicket({ order, userRecord, providerPaymentId = '', issuedBy = 'paypay_manual_claim' }) {
+  const owner = { ownerType: 'user', userId: userRecord.userId, vaultId: '' };
+  if (order.paidReadingTicketId) {
+    const existingTicket = await readPaidReadingTicket(order.paidReadingTicketId);
+    if (existingTicket) return { order, ticket: existingTicket, codeRecord: null };
+  }
+  if (await hasDeepReadingPurchaseForSource(owner, order.sourceReadingId)) {
+    const error = new Error('DEEP_READING_ALREADY_PURCHASED');
+    error.statusCode = 409;
+    error.publicCode = 'DEEP_READING_ALREADY_PURCHASED';
+    throw error;
+  }
+  const issued = await createRashinPaidCodeRecordForOrder({
+    order,
+    userRecord,
+    providerPaymentId,
+    deliveryChannel: issuedBy,
+  });
+  const ticket = await createPaidTicketFromRashinPaidCode({
+    codeRecord: issued.record,
+    owner,
+    sourceReadingId: order.sourceReadingId,
+  });
+  const now = new Date().toISOString();
+  const redeemedRecord = {
+    ...issued.record,
+    status: 'redeemed',
+    redeemedAt: now,
+    redeemedByUserId: userRecord.userId,
+    redeemedSourceReadingId: order.sourceReadingId,
+    paidReadingTicketId: ticket.id,
+    updatedAt: now,
+  };
+  await writeRashinPaidCodeRecord(redeemedRecord);
+  const completedOrder = {
+    ...order,
+    status: 'paid',
+    paymentProvider: 'paypay_manual',
+    checkoutProvider: 'paypay_manual',
+    providerPaymentId: normalizePaypayManualReference(providerPaymentId),
+    paidAt: now,
+    paymentClaimedAt: order.paymentClaimedAt || now,
+    paidReadingTicketId: ticket.id,
+    rashinPaidCodeHash: issued.codeHash,
+    codeSuffix: issued.record.codeSuffix,
+    deliveryChannel: issuedBy,
+    deliveryStatus: 'ticket_created',
+    updatedAt: now,
+  };
+  await writePurchaseOrder(completedOrder);
+  return { order: completedOrder, ticket, codeRecord: redeemedRecord };
+}
+
 async function createPaidTicketFromRashinPaidCode({ codeRecord, owner, sourceReadingId }) {
   const sourceId = normalizeVaultRecordId(sourceReadingId);
   if (!codeRecord?.codeHash || !owner || !sourceId) throw new Error('INVALID_RASHIN_PAID_CODE_TICKET');
@@ -4436,10 +4727,67 @@ async function handleDeepReadingDiscountStatus(req, res) {
 }
 
 async function handleRashinPaidCodePurchaseIntent(req, res) {
-  sendJson(res, 410, {
-    error: 'RASHIN_CODE_PURCHASE_DISABLED',
-    message: 'Rashin paid code purchase orders are disabled. Redeem a manually issued code instead.',
-  });
+  const rate = consumeRateLimit(req, 'rashin_code_purchase');
+  if (!rate.ok) {
+    sendRateLimitExceeded(res, rate, 'Too many code purchase attempts. Please wait and retry.');
+    return;
+  }
+  const paypayPayload = await getPaypayManualPaymentPayload();
+  if (!paypayPayload.url) {
+    sendJson(res, 503, {
+      error: 'PAYPAY_MANUAL_PAYMENT_NOT_CONFIGURED',
+      message: 'PayPay manual payment URL is not configured.',
+    });
+    return;
+  }
+  let body;
+  try {
+    body = await readJsonBody(req);
+  } catch (error) {
+    sendJson(res, 400, {
+      error: error.message || 'INVALID_JSON',
+      message: 'Rashin paid code purchase payload could not be parsed.',
+    });
+    return;
+  }
+  const userRecord = await readGoogleUserForRequest(req);
+  if (!userRecord) {
+    sendJson(res, 401, {
+      error: 'GOOGLE_LOGIN_REQUIRED',
+      message: 'Google login is required before starting PayPay payment.',
+    });
+    return;
+  }
+  const intent = String(body?.intent || '').trim() || 'upgrade-paid';
+  const sourceReadingId = normalizeVaultRecordId(
+    body?.sourceReadingId || body?.source_reading_id || body?.oracleResultId || body?.oracle_result_id || ''
+  );
+  try {
+    const order = await createRashinCodePurchaseOrderForPaypay({ userRecord, sourceReadingId, intent });
+    sendJson(res, 200, {
+      ok: true,
+      purchaseOrderId: order.id,
+      sourceReadingId: order.sourceReadingId,
+      status: order.status,
+      normalAmount: order.originalAmount,
+      discountAmount: order.discountAmount,
+      finalAmount: order.finalAmount,
+      currency: order.currency,
+      paypay: paypayPayload,
+      paymentClaimPath: '/api/rashin-paid-code/paypay/claim',
+    });
+  } catch (error) {
+    console.error('PayPay manual purchase order preparation failed', {
+      error: error.message,
+      stack: error.stack,
+      userId: userRecord?.userId || '',
+      sourceReadingId,
+    });
+    sendJson(res, error.statusCode || 500, {
+      error: error.publicCode || 'PAYPAY_MANUAL_PURCHASE_PREPARE_FAILED',
+      message: 'The request could not be completed. Please wait and try again.',
+    });
+  }
 }
 
 async function handleRashinPaidCodeRedeem(req, res) {
@@ -4563,10 +4911,269 @@ async function handleRashinPaidCodeRedeem(req, res) {
 }
 
 async function handleRashinPaidCodeAdminIssue(req, res) {
-  sendJson(res, 410, {
-    error: 'RASHIN_CODE_AUTO_ISSUE_DISABLED',
-    message: 'Automatic Rashin paid code issuing is disabled. Configure one-time free codes with RASHIN_FREE_PAID_CODES instead.',
-  });
+  const rate = consumeRateLimit(req, 'rashin_code_admin');
+  if (!rate.ok) {
+    sendRateLimitExceeded(res, rate, 'Too many admin issue attempts. Please wait and retry.');
+    return;
+  }
+  let body;
+  try {
+    body = await readJsonBody(req);
+  } catch (error) {
+    sendJson(res, 400, {
+      error: error.message || 'INVALID_JSON',
+      message: 'Rashin paid code admin payload could not be parsed.',
+    });
+    return;
+  }
+  const providedSecret = normalizeEnvValue(req.headers['x-rashin-admin-secret'] || body?.adminSecret || body?.admin_secret || '');
+  if (!isConfiguredAppSecret(RASHIN_CODE_ADMIN_SECRET) || !safeCompareText(providedSecret, RASHIN_CODE_ADMIN_SECRET)) {
+    sendJson(res, 403, {
+      error: 'RASHIN_CODE_ADMIN_DENIED',
+      message: 'Admin secret was not accepted.',
+    });
+    return;
+  }
+  const purchaseOrderId = normalizePurchaseOrderId(body?.purchaseOrderId || body?.purchase_order_id || '');
+  const providerPaymentId = normalizePaypayManualReference(body?.paypayReference || body?.paypay_reference || body?.providerPaymentId || '');
+  if (!purchaseOrderId) {
+    sendJson(res, 400, {
+      error: 'PURCHASE_ORDER_REQUIRED',
+      message: 'A purchase order id is required.',
+    });
+    return;
+  }
+  try {
+    const result = await withPurchaseOrderMutation(purchaseOrderId, async safeOrderId => {
+      const order = await readPurchaseOrder(safeOrderId);
+      if (!order) {
+        const error = new Error('PURCHASE_ORDER_NOT_FOUND');
+        error.statusCode = 404;
+        throw error;
+      }
+      const userRecord = order.userId ? await readUserRecord(order.userId) : null;
+      if (!userRecord?.userId) {
+        const error = new Error('GOOGLE_LOGIN_REQUIRED');
+        error.statusCode = 409;
+        throw error;
+      }
+      if (isExpiredIso(order.expiresAt)) {
+        const error = new Error('PURCHASE_ORDER_EXPIRED');
+        error.statusCode = 410;
+        throw error;
+      }
+      return completePaypayManualOrderWithTicket({
+        order,
+        userRecord,
+        providerPaymentId,
+        issuedBy: 'admin_confirmed_paypay',
+      });
+    });
+    sendJson(res, 200, {
+      ok: true,
+      purchaseOrderId: result.order.id,
+      sourceReadingId: result.order.sourceReadingId,
+      ticketId: result.ticket.id,
+      ticketStatus: result.ticket.status,
+      normalAmount: result.ticket.originalAmount,
+      discountAmount: result.ticket.discountAmount,
+      finalAmount: result.ticket.finalAmount,
+      currency: result.ticket.currency,
+    });
+  } catch (error) {
+    sendJson(res, error.statusCode || 500, {
+      error: error.message || 'RASHIN_CODE_ADMIN_ISSUE_FAILED',
+      message: 'The request could not be completed. Please wait and try again.',
+    });
+  }
+}
+
+async function handlePaypayManualClaim(req, res) {
+  const rate = consumeRateLimit(req, 'paypay_manual_claim');
+  if (!rate.ok) {
+    sendRateLimitExceeded(res, rate, 'Too many PayPay claim attempts. Please wait and retry.');
+    return;
+  }
+  let body;
+  try {
+    body = await readJsonBody(req);
+  } catch (error) {
+    sendJson(res, 400, {
+      error: error.message || 'INVALID_JSON',
+      message: 'PayPay payment claim payload could not be parsed.',
+    });
+    return;
+  }
+  const userRecord = await readGoogleUserForRequest(req);
+  if (!userRecord) {
+    sendJson(res, 401, {
+      error: 'GOOGLE_LOGIN_REQUIRED',
+      message: 'Google login is required before claiming PayPay payment.',
+    });
+    return;
+  }
+  const purchaseOrderId = normalizePurchaseOrderId(body?.purchaseOrderId || body?.purchase_order_id || '');
+  const sourceReadingId = normalizeVaultRecordId(body?.sourceReadingId || body?.source_reading_id || body?.oracleResultId || '');
+  const providerPaymentId = normalizePaypayManualReference(
+    body?.paypayReference || body?.paypay_reference || body?.providerPaymentId || body?.paymentReference || ''
+  );
+  if (!purchaseOrderId) {
+    sendJson(res, 400, {
+      error: 'PURCHASE_ORDER_REQUIRED',
+      message: 'A purchase order id is required.',
+    });
+    return;
+  }
+  if (providerPaymentId.length < 3) {
+    sendJson(res, 400, {
+      error: 'PAYPAY_REFERENCE_REQUIRED',
+      message: 'PayPay payment reference is required.',
+    });
+    return;
+  }
+  try {
+    const result = await withPurchaseOrderMutation(purchaseOrderId, async safeOrderId => {
+      const order = await readPurchaseOrder(safeOrderId);
+      if (!order) {
+        const error = new Error('PURCHASE_ORDER_NOT_FOUND');
+        error.statusCode = 404;
+        throw error;
+      }
+      if (order.ownerType !== 'user' || order.userId !== userRecord.userId) {
+        const error = new Error('PURCHASE_ORDER_OWNER_MISMATCH');
+        error.statusCode = 403;
+        throw error;
+      }
+      if (sourceReadingId && order.sourceReadingId !== sourceReadingId) {
+        const error = new Error('SOURCE_READING_MISMATCH');
+        error.statusCode = 403;
+        throw error;
+      }
+      if (isExpiredIso(order.expiresAt)) {
+        const error = new Error('PURCHASE_ORDER_EXPIRED');
+        error.statusCode = 410;
+        throw error;
+      }
+      if (order.paidReadingTicketId) {
+        const existingTicket = await readPaidReadingTicket(order.paidReadingTicketId);
+        if (existingTicket) return { pending: false, order, ticket: existingTicket };
+      }
+      if (!PAYPAY_MANUAL_AUTO_ISSUE_ENABLED) {
+        const now = new Date().toISOString();
+        const reviewOrder = {
+          ...order,
+          status: 'payment_requires_review',
+          paymentProvider: 'paypay_manual',
+          checkoutProvider: 'paypay_manual',
+          providerPaymentId,
+          paymentClaimedAt: now,
+          updatedAt: now,
+        };
+        await writePurchaseOrder(reviewOrder);
+        return { pending: true, order: reviewOrder };
+      }
+      const completed = await completePaypayManualOrderWithTicket({
+        order: {
+          ...order,
+          providerPaymentId,
+          paymentClaimedAt: order.paymentClaimedAt || new Date().toISOString(),
+        },
+        userRecord,
+        providerPaymentId,
+        issuedBy: 'paypay_manual_auto',
+      });
+      return { pending: false, ...completed };
+    });
+    if (result.pending) {
+      sendJson(res, 202, {
+        ok: false,
+        pending: true,
+        error: 'PAYPAY_MANUAL_REVIEW_REQUIRED',
+        purchaseOrderId: result.order.id,
+        sourceReadingId: result.order.sourceReadingId,
+        status: result.order.status,
+        message: 'PayPay payment claim was saved for manual review.',
+      });
+      return;
+    }
+    sendJson(res, 200, {
+      ok: true,
+      purchaseOrderId: result.order.id,
+      sourceReadingId: result.order.sourceReadingId,
+      ticketId: result.ticket.id,
+      ticketStatus: result.ticket.status,
+      normalAmount: result.ticket.originalAmount,
+      discountAmount: result.ticket.discountAmount,
+      finalAmount: result.ticket.finalAmount,
+      currency: result.ticket.currency,
+    });
+  } catch (error) {
+    sendJson(res, error.statusCode || 500, {
+      error: error.message || 'PAYPAY_MANUAL_CLAIM_FAILED',
+      message: 'The request could not be completed. Please wait and try again.',
+    });
+  }
+}
+
+async function handlePaypayManualConfig(req, res) {
+  const providedSecret = normalizeEnvValue(req.headers['x-rashin-admin-secret'] || '');
+  if (!isConfiguredAppSecret(RASHIN_CODE_ADMIN_SECRET) || !safeCompareText(providedSecret, RASHIN_CODE_ADMIN_SECRET)) {
+    sendJson(res, 403, {
+      error: 'RASHIN_CODE_ADMIN_DENIED',
+      message: 'Admin secret was not accepted.',
+    });
+    return;
+  }
+  if (req.method === 'GET') {
+    const config = await readPaypayManualConfig();
+    sendJson(res, 200, {
+      ok: true,
+      paypay: {
+        ...config,
+        configured: !!config.url,
+        autoIssueEnabled: PAYPAY_MANUAL_AUTO_ISSUE_ENABLED,
+      },
+    });
+    return;
+  }
+  if (req.method !== 'POST') {
+    sendJson(res, 405, {
+      error: 'METHOD_NOT_ALLOWED',
+      message: 'Use GET or POST.',
+    });
+    return;
+  }
+  let body;
+  try {
+    body = await readJsonBody(req);
+  } catch (error) {
+    sendJson(res, 400, {
+      error: error.message || 'INVALID_JSON',
+      message: 'PayPay config payload could not be parsed.',
+    });
+    return;
+  }
+  try {
+    const config = await writePaypayManualConfig({
+      url: body?.url || body?.paymentUrl || body?.payment_url,
+      label: body?.label,
+      note: body?.note,
+      expiresAt: body?.expiresAt || body?.expires_at,
+    });
+    sendJson(res, 200, {
+      ok: true,
+      paypay: {
+        ...config,
+        configured: !!config.url,
+        autoIssueEnabled: PAYPAY_MANUAL_AUTO_ISSUE_ENABLED,
+      },
+    });
+  } catch (error) {
+    sendJson(res, error.statusCode || 500, {
+      error: error.message || 'PAYPAY_MANUAL_CONFIG_FAILED',
+      message: 'PayPay payment URL could not be saved.',
+    });
+  }
 }
 
 async function handlePaidReadingTicketPrepare(req, res) {
@@ -5275,8 +5882,23 @@ async function handleRequest(req, res) {
     return;
   }
 
+  if (req.method === 'GET' && req.url.startsWith('/auth/threads/callback')) {
+    handleThreadsCallbackPage(req, res);
+    return;
+  }
+
+  if (req.method === 'GET' && req.url.startsWith('/auth/threads/uninstall')) {
+    handleThreadsLifecycleCallback(req, res, 'uninstall');
+    return;
+  }
+
+  if (req.method === 'GET' && req.url.startsWith('/auth/threads/delete')) {
+    handleThreadsLifecycleCallback(req, res, 'delete');
+    return;
+  }
+
   if (req.method === 'GET' && req.url.startsWith('/api/health')) {
-    const setup = getRuntimeSetupStatus(req);
+    const setup = await getRuntimeSetupStatus(req);
     const local = isLocalRequest(req);
     const health = {
       ok: true,
@@ -5336,6 +5958,16 @@ async function handleRequest(req, res) {
 
   if (req.method === 'POST' && req.url.startsWith('/api/rashin-paid-code/redeem')) {
     await handleRashinPaidCodeRedeem(req, res);
+    return;
+  }
+
+  if (req.method === 'POST' && req.url.startsWith('/api/rashin-paid-code/paypay/claim')) {
+    await handlePaypayManualClaim(req, res);
+    return;
+  }
+
+  if ((req.method === 'GET' || req.method === 'POST') && req.url.startsWith('/api/rashin-paid-code/paypay/config')) {
+    await handlePaypayManualConfig(req, res);
     return;
   }
 
