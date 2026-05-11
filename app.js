@@ -5232,6 +5232,345 @@ async function requestRashinCodePurchase(intent='upgrade-paid'){
   }
 }
 
+function getPaypayPaymentUrl(url=''){
+  const raw=String(url||'').trim();
+  if(!raw) return '';
+  try{
+    const parsed=new URL(raw,location.href);
+    if(parsed.protocol!=='https:'&&parsed.protocol!=='http:') return '';
+    return parsed.toString();
+  }catch(e){
+    return '';
+  }
+}
+
+function getQrDataBytes(text=''){
+  const raw=String(text||'');
+  if(typeof TextEncoder!=='undefined') return Array.from(new TextEncoder().encode(raw));
+  return raw.split('').map(ch=>ch.charCodeAt(0)&0xFF);
+}
+
+function appendQrBits(target,value,length){
+  for(let i=length-1;i>=0;i--) target.push((value>>>i)&1);
+}
+
+function initQrGfTables(){
+  const exp=new Array(512).fill(0);
+  const log=new Array(256).fill(0);
+  let x=1;
+  for(let i=0;i<255;i++){
+    exp[i]=x;
+    log[x]=i;
+    x<<=1;
+    if(x&0x100) x^=0x11D;
+  }
+  for(let i=255;i<512;i++) exp[i]=exp[i-255];
+  return{exp,log};
+}
+
+const PAYPAY_QR_GF=initQrGfTables();
+
+function qrGfMul(a,b){
+  if(!a||!b) return 0;
+  return PAYPAY_QR_GF.exp[PAYPAY_QR_GF.log[a]+PAYPAY_QR_GF.log[b]];
+}
+
+function buildQrGeneratorPoly(degree){
+  let poly=[1];
+  for(let i=0;i<degree;i++){
+    const next=new Array(poly.length+1).fill(0);
+    for(let j=0;j<poly.length;j++){
+      next[j]^=poly[j];
+      next[j+1]^=qrGfMul(poly[j],PAYPAY_QR_GF.exp[i]);
+    }
+    poly=next;
+  }
+  return poly;
+}
+
+function buildQrErrorCorrection(dataCodewords,degree){
+  const gen=buildQrGeneratorPoly(degree);
+  const ecc=new Array(degree).fill(0);
+  dataCodewords.forEach(codeword=>{
+    const factor=codeword^ecc.shift();
+    ecc.push(0);
+    for(let i=0;i<degree;i++) ecc[i]^=qrGfMul(gen[i+1],factor);
+  });
+  return ecc;
+}
+
+function makePaypayQrCodewords(text=''){
+  const bytes=getQrDataBytes(text);
+  const dataCodewordCount=108;
+  const eccCodewordCount=26;
+  if(!bytes.length||bytes.length>106) return null;
+  const bits=[];
+  appendQrBits(bits,0x4,4);
+  appendQrBits(bits,bytes.length,8);
+  bytes.forEach(byte=>appendQrBits(bits,byte,8));
+  const capacity=dataCodewordCount*8;
+  const terminator=Math.min(4,capacity-bits.length);
+  for(let i=0;i<terminator;i++) bits.push(0);
+  while(bits.length%8) bits.push(0);
+  const data=[];
+  for(let i=0;i<bits.length;i+=8){
+    let value=0;
+    for(let j=0;j<8;j++) value=(value<<1)|(bits[i+j]||0);
+    data.push(value);
+  }
+  for(let pad=0;data.length<dataCodewordCount;pad^=1) data.push(pad?0x11:0xEC);
+  return data.concat(buildQrErrorCorrection(data,eccCodewordCount));
+}
+
+function createQrBaseMatrix(size){
+  const modules=Array.from({length:size},()=>Array(size).fill(false));
+  const reserved=Array.from({length:size},()=>Array(size).fill(false));
+  const set=(x,y,dark,mark=true)=>{
+    if(x<0||y<0||x>=size||y>=size) return;
+    modules[y][x]=!!dark;
+    if(mark) reserved[y][x]=true;
+  };
+  const finder=(x0,y0)=>{
+    for(let y=-1;y<=7;y++){
+      for(let x=-1;x<=7;x++){
+        const xx=x0+x;
+        const yy=y0+y;
+        if(xx<0||yy<0||xx>=size||yy>=size) continue;
+        const inside=x>=0&&x<=6&&y>=0&&y<=6;
+        const dark=inside&&(x===0||x===6||y===0||y===6||(x>=2&&x<=4&&y>=2&&y<=4));
+        set(xx,yy,dark,true);
+      }
+    }
+  };
+  finder(0,0);
+  finder(size-7,0);
+  finder(0,size-7);
+  for(let i=8;i<=size-9;i++){
+    set(i,6,i%2===0,true);
+    set(6,i,i%2===0,true);
+  }
+  const alignment=(cx,cy)=>{
+    for(let y=-2;y<=2;y++){
+      for(let x=-2;x<=2;x++){
+        const dist=Math.max(Math.abs(x),Math.abs(y));
+        set(cx+x,cy+y,dist===2||dist===0,true);
+      }
+    }
+  };
+  alignment(30,30);
+  for(let i=0;i<=8;i++){
+    if(i!==6){
+      set(8,i,false,true);
+      set(i,8,false,true);
+    }
+  }
+  for(let i=0;i<8;i++){
+    set(size-1-i,8,false,true);
+    set(8,size-1-i,false,true);
+  }
+  set(8,size-8,true,true);
+  return{modules,reserved};
+}
+
+function qrMaskBit(mask,x,y){
+  switch(mask){
+    case 0:return (x+y)%2===0;
+    case 1:return y%2===0;
+    case 2:return x%3===0;
+    case 3:return (x+y)%3===0;
+    case 4:return (Math.floor(y/2)+Math.floor(x/3))%2===0;
+    case 5:return ((x*y)%2+(x*y)%3)===0;
+    case 6:return (((x*y)%2+(x*y)%3)%2)===0;
+    case 7:return (((x+y)%2+(x*y)%3)%2)===0;
+    default:return false;
+  }
+}
+
+function getQrFormatBits(mask){
+  const data=(1<<3)|mask;
+  let bits=data<<10;
+  for(let i=14;i>=10;i--){
+    if((bits>>>i)&1) bits^=0x537<<(i-10);
+  }
+  return ((data<<10)|bits)^0x5412;
+}
+
+function setQrFormatBits(modules,mask){
+  const size=modules.length;
+  const bits=getQrFormatBits(mask);
+  const getBit=i=>((bits>>>i)&1)!==0;
+  const set=(x,y,dark)=>{modules[y][x]=!!dark;};
+  for(let i=0;i<=5;i++) set(8,i,getBit(i));
+  set(8,7,getBit(6));
+  set(8,8,getBit(7));
+  set(7,8,getBit(8));
+  for(let i=9;i<15;i++) set(14-i,8,getBit(i));
+  for(let i=0;i<8;i++) set(size-1-i,8,getBit(i));
+  for(let i=8;i<15;i++) set(8,size-15+i,getBit(i));
+  set(8,size-8,true);
+}
+
+function placeQrData(modules,reserved,codewords,mask){
+  const size=modules.length;
+  const bits=[];
+  codewords.forEach(codeword=>appendQrBits(bits,codeword,8));
+  let bitIndex=0;
+  let upward=true;
+  for(let right=size-1;right>=1;right-=2){
+    if(right===6) right--;
+    for(let vert=0;vert<size;vert++){
+      const y=upward?size-1-vert:vert;
+      for(let dx=0;dx<2;dx++){
+        const x=right-dx;
+        if(reserved[y][x]) continue;
+        const bit=bitIndex<bits.length?bits[bitIndex++]:0;
+        modules[y][x]=!!(bit^(qrMaskBit(mask,x,y)?1:0));
+      }
+    }
+    upward=!upward;
+  }
+}
+
+function scoreQrMatrix(modules){
+  const size=modules.length;
+  let score=0;
+  const scoreLine=line=>{
+    let runColor=line[0];
+    let runLength=1;
+    for(let i=1;i<line.length;i++){
+      if(line[i]===runColor){
+        runLength++;
+      }else{
+        if(runLength>=5) score+=3+(runLength-5);
+        runColor=line[i];
+        runLength=1;
+      }
+    }
+    if(runLength>=5) score+=3+(runLength-5);
+    const text=line.map(Boolean).map(v=>v?'1':'0').join('');
+    for(let i=0;i<=text.length-11;i++){
+      const part=text.slice(i,i+11);
+      if(part==='10111010000'||part==='00001011101') score+=40;
+    }
+  };
+  for(let y=0;y<size;y++) scoreLine(modules[y]);
+  for(let x=0;x<size;x++) scoreLine(modules.map(row=>row[x]));
+  for(let y=0;y<size-1;y++){
+    for(let x=0;x<size-1;x++){
+      const c=modules[y][x];
+      if(modules[y][x+1]===c&&modules[y+1][x]===c&&modules[y+1][x+1]===c) score+=3;
+    }
+  }
+  let dark=0;
+  modules.forEach(row=>row.forEach(cell=>{if(cell) dark++;}));
+  const total=size*size;
+  score+=Math.floor(Math.abs(dark*20-total*10)/total)*10;
+  return score;
+}
+
+function buildPaypayQrSvg(text=''){
+  const codewords=makePaypayQrCodewords(text);
+  if(!codewords) return '';
+  const size=37;
+  let best=null;
+  for(let mask=0;mask<8;mask++){
+    const {modules,reserved}=createQrBaseMatrix(size);
+    placeQrData(modules,reserved,codewords,mask);
+    setQrFormatBits(modules,mask);
+    const score=scoreQrMatrix(modules);
+    if(!best||score<best.score) best={modules,score};
+  }
+  const quiet=4;
+  const total=size+quiet*2;
+  const path=[];
+  best.modules.forEach((row,y)=>{
+    row.forEach((dark,x)=>{
+      if(dark) path.push(`M${x+quiet} ${y+quiet}h1v1h-1z`);
+    });
+  });
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${total} ${total}" shape-rendering="crispEdges" role="img" aria-label="PayPay payment QR code"><rect width="${total}" height="${total}" fill="#fff"/><path fill="#000" d="${path.join('')}"/></svg>`;
+}
+
+function openPaypayPaymentModal({paypay={},finalAmount=DEEP_READING_PRICE}={}){
+  return new Promise(resolve=>{
+    const url=getPaypayPaymentUrl(paypay.url||'');
+    if(!url){
+      resolve('');
+      return;
+    }
+    const existing=document.getElementById('paypay-payment-modal');
+    if(existing) existing.remove();
+    const modal=document.createElement('div');
+    modal.className='modal-overlay';
+    modal.id='paypay-payment-modal';
+    modal.setAttribute('aria-hidden','true');
+    modal.setAttribute('inert','');
+    const qrSvg=buildPaypayQrSvg(url);
+    modal.innerHTML=`
+      <div class="modal-box paypay-modal-box" role="dialog" aria-modal="true" aria-labelledby="paypay-payment-title">
+        <div class="modal-title" id="paypay-payment-title">PayPayで支払う</div>
+        <div class="modal-desc">QRコードを読み取るか、PayPayを開いて支払いを完了してください。</div>
+        <div class="paypay-payment-grid">
+          <div class="paypay-qr-card" aria-label="PayPay支払いQRコード">${qrSvg||'<div class="paypay-url-box">QRコードを作成できませんでした。支払いリンクを開いてください。</div>'}</div>
+          <div class="paypay-payment-detail">
+            <div class="paypay-amount">支払い金額：${escapeHtml(String(finalAmount))}円</div>
+            <a class="paypay-open-link" href="${escapeHtml(url)}" target="_blank" rel="noopener">PayPayを開く</a>
+            <div class="paypay-url-box">${escapeHtml(url)}</div>
+            ${paypay.note?`<div class="paypay-reference-hint">${escapeHtml(paypay.note)}</div>`:''}
+          </div>
+        </div>
+        <div class="paypay-reference-row">
+          <label class="modal-label" for="paypay-reference-input">支払い後の取引番号</label>
+          <input class="modal-input" id="paypay-reference-input" type="text" inputmode="text" autocomplete="off" placeholder="取引番号・決済番号">
+          <div class="paypay-reference-hint">PayPayの支払い完了画面に出ている番号を入力すると、深掘り鑑定を開始します。</div>
+          <div class="paypay-modal-error" id="paypay-payment-error">取引番号を入力してください。</div>
+        </div>
+        <div class="modal-btns">
+          <button class="modal-save" type="button" id="paypay-reference-submit">支払い確認</button>
+          <button class="modal-cancel" type="button" id="paypay-reference-cancel">キャンセル</button>
+        </div>
+      </div>`;
+    let settled=false;
+    const finish=value=>{
+      if(settled) return;
+      settled=true;
+      setModalOpen(modal,false);
+      setTimeout(()=>modal.remove(),260);
+      resolve(value);
+    };
+    modal.addEventListener('click',event=>{
+      if(event.target===modal) finish(null);
+    });
+    document.body.appendChild(modal);
+    const input=modal.querySelector('#paypay-reference-input');
+    const error=modal.querySelector('#paypay-payment-error');
+    const submit=()=>{
+      const value=String(input?.value||'').trim();
+      if(!value){
+        if(error) error.style.display='block';
+        input?.focus();
+        return;
+      }
+      finish(value);
+    };
+    modal.querySelector('#paypay-reference-submit')?.addEventListener('click',submit);
+    modal.querySelector('#paypay-reference-cancel')?.addEventListener('click',()=>finish(null));
+    input?.addEventListener('input',()=>{if(error) error.style.display='none';});
+    input?.addEventListener('keydown',event=>{
+      if(event.key==='Enter'){
+        event.preventDefault();
+        submit();
+      }
+      if(event.key==='Escape'){
+        event.preventDefault();
+        finish(null);
+      }
+    });
+    setModalOpen(modal,true);
+    setTimeout(()=>input?.focus(),80);
+  });
+}
+
 async function requestRashinCodePurchasePaypay(intent='upgrade-paid'){
   if(!canUseProxy()){
     showToast('羅針コードの発行はサーバー経由で利用できます');
@@ -5264,15 +5603,7 @@ async function requestRashinCodePurchasePaypay(intent='upgrade-paid'){
     }
     const paypay=purchaseData?.paypay||{};
     const finalAmount=Number(purchaseData?.finalAmount||DEEP_READING_PRICE);
-    const lines=[
-      `PayPayで${finalAmount}円を支払ってください。`,
-      paypay.url?`支払いURL: ${paypay.url}`:'',
-      paypay.note?`補足: ${paypay.note}`:'',
-      '',
-      '支払い後、PayPayの取引番号・決済番号・支払い完了画面に出ている番号を入力してください。',
-      '番号を入力すると、羅針コード発行と深掘り鑑定の解放を自動で行います。',
-    ].filter(Boolean);
-    const paypayReference=window.prompt(lines.join('\n'),'');
+    const paypayReference=await openPaypayPaymentModal({paypay,finalAmount});
     if(paypayReference===null) return false;
     const normalizedReference=String(paypayReference||'').trim();
     if(!normalizedReference){
