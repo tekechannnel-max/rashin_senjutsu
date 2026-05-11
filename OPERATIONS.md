@@ -140,8 +140,17 @@ Set these on the Render service and redeploy before testing:
 - `PAYPAY_MANUAL_PAYMENT_LABEL=Rashin Senjutsu PayPay`
 - `PAYPAY_MANUAL_PAYMENT_NOTE=<short user-facing PayPay instruction>`
 - `PAYPAY_MANUAL_AUTO_ISSUE_ENABLED=true` for prerelease auto-unlock after the user enters a PayPay transaction reference
+- `OPENAI_PAID_AB_MODEL=gpt-5.5`
+- `PAID_MODEL_AB_TEST_ENABLED=true` to split paid readings between Sonnet 4.6 and GPT-5.5
+- `PAID_MODEL_AB_TEST_OPENAI_WEIGHT=50` for a 50/50 split
 
 Do not publish a payment link until the payment account/provider has approved this business model.
+
+### Paid model A/B test
+
+When `PAID_MODEL_AB_TEST_ENABLED=true`, paid reading generation is assigned per reading to either `ANTHROPIC_PAID_MODEL` or `OPENAI_PAID_AB_MODEL`.
+The default prerelease comparison is Sonnet 4.6 versus GPT-5.5 at `PAID_MODEL_AB_TEST_OPENAI_WEIGHT=50`.
+AI logs include the A/B test name, variant, provider, model, and bucket so quality, errors, latency, and token usage can be compared after real paid readings.
 
 ### PayPay manual auto-unlock
 

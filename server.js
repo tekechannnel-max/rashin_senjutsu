@@ -176,6 +176,7 @@ const AI_MODELS = {
   history: process.env.ANTHROPIC_HISTORY_MODEL || 'claude-sonnet-4-6',
   light: process.env.OPENAI_LIGHT_MODEL || 'gpt-5.4-mini',
   paidFallback: process.env.OPENAI_PAID_FALLBACK_MODEL || 'gpt-5.4',
+  paidAbOpenai: process.env.OPENAI_PAID_AB_MODEL || 'gpt-5.5',
   structure: process.env.OPENAI_STRUCTURE_MODEL || 'gpt-5.4-mini',
 };
 const MEMBER_ACCESS_CODES = new Set(
@@ -262,7 +263,13 @@ const RATE_LIMIT_RULES = {
 };
 const RATE_LIMIT_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 const AI_FREE_DAILY_LIMIT = Math.max(1, parseInt(process.env.AI_FREE_DAILY_LIMIT || '5', 10) || 5);
-const PAID_MODELS = new Set([AI_MODELS.paid, AI_MODELS.history, AI_MODELS.paidFallback]);
+const PAID_MODEL_AB_TEST_NAME = 'paid_model_gpt55_vs_sonnet46';
+const PAID_MODEL_AB_TEST_ENABLED = normalizeEnvValue(process.env.PAID_MODEL_AB_TEST_ENABLED || '').toLowerCase() === 'true';
+const PAID_MODEL_AB_TEST_OPENAI_WEIGHT_RAW = parseInt(process.env.PAID_MODEL_AB_TEST_OPENAI_WEIGHT || '50', 10);
+const PAID_MODEL_AB_TEST_OPENAI_WEIGHT = Number.isFinite(PAID_MODEL_AB_TEST_OPENAI_WEIGHT_RAW)
+  ? Math.min(100, Math.max(0, PAID_MODEL_AB_TEST_OPENAI_WEIGHT_RAW))
+  : 50;
+const PAID_MODELS = new Set([AI_MODELS.paid, AI_MODELS.history, AI_MODELS.paidFallback, AI_MODELS.paidAbOpenai]);
 const DEEP_READING_PRERELEASE_AMOUNT = Math.max(1, parseInt(process.env.DEEP_READING_PRERELEASE_AMOUNT || '780', 10) || 780);
 const DEEP_READING_RELEASE_AMOUNT = Math.max(1, parseInt(process.env.DEEP_READING_RELEASE_AMOUNT || '1000', 10) || 1000);
 const DEEP_READING_NORMAL_AMOUNT = Math.max(1, parseInt(process.env.DEEP_READING_ONCE_AMOUNT || String(DEEP_READING_PRERELEASE_AMOUNT), 10) || DEEP_READING_PRERELEASE_AMOUNT);
@@ -306,6 +313,7 @@ const ALLOWED_MODELS = {
     AI_MODELS.free,
     AI_MODELS.light,
     AI_MODELS.paidFallback,
+    AI_MODELS.paidAbOpenai,
     AI_MODELS.structure,
   ]),
 };
@@ -799,6 +807,13 @@ async function getRuntimeSetupStatus(req) {
     deepReadingAmount: DEEP_READING_NORMAL_AMOUNT,
     deepReadingPrereleaseAmount: DEEP_READING_PRERELEASE_AMOUNT,
     deepReadingReleaseAmount: DEEP_READING_RELEASE_AMOUNT,
+    paidModelAbTest: {
+      name: PAID_MODEL_AB_TEST_NAME,
+      enabled: PAID_MODEL_AB_TEST_ENABLED,
+      openaiWeight: PAID_MODEL_AB_TEST_OPENAI_WEIGHT,
+      anthropicModel: AI_MODELS.paid,
+      openaiModel: AI_MODELS.paidAbOpenai,
+    },
     rashinCodeAdminSecretConfigured: isConfiguredAppSecret(RASHIN_CODE_ADMIN_SECRET),
     stripeSecretConfigured: STRIPE_SECRET_CONFIGURED,
     stripePriceConfigured: STRIPE_PRICE_CONFIGURED,
@@ -1836,14 +1851,36 @@ function getSafePayloadCategory(payload) {
   return value ? value.slice(0, 40) : '邱丞粋';
 }
 
+function sanitizeAbTestPayload(value) {
+  if (!value || typeof value !== 'object') return null;
+  const name = String(value.name || '').trim().slice(0, 80);
+  const variant = String(value.variant || '').trim().slice(0, 40);
+  const bucket = Number(value.bucket);
+  const openaiWeight = Number(value.openaiWeight);
+  return {
+    name: name || PAID_MODEL_AB_TEST_NAME,
+    variant,
+    provider: value.provider === 'openai' ? 'openai' : (value.provider === 'anthropic' ? 'anthropic' : ''),
+    model: String(value.model || '').trim().slice(0, 80),
+    bucket: Number.isFinite(bucket) ? Math.min(99, Math.max(0, Math.floor(bucket))) : null,
+    openai_weight: Number.isFinite(openaiWeight) ? Math.min(100, Math.max(0, Math.floor(openaiWeight))) : PAID_MODEL_AB_TEST_OPENAI_WEIGHT,
+    seed: String(value.seed || '').trim().slice(0, 120),
+  };
+}
+
 function buildAiLogBase(payload, event) {
+  const abTest = payload?.ab_test || null;
   return {
     timestamp: new Date().toISOString(),
     event,
+    provider: String(payload?.provider || '').slice(0, 20),
     model: String(payload?.model || '').slice(0, 80),
     reading_type: getPayloadReadingType(payload),
     category: getSafePayloadCategory(payload),
     task_key: String(payload?.task_key || '').slice(0, 40),
+    ab_test_name: abTest?.name || '',
+    ab_test_variant: abTest?.variant || '',
+    ab_test_bucket: Number.isFinite(abTest?.bucket) ? abTest.bucket : null,
   };
 }
 
@@ -3308,6 +3345,7 @@ function sanitizePayload(body) {
       day: body.identity.day,
       vaultId: typeof body.identity.vaultId === 'string' ? body.identity.vaultId.slice(0, 100) : '',
     } : null,
+    ab_test: sanitizeAbTestPayload(body?.ab_test || body?.abTest || null),
     images: images.slice(0, 20).map(image => ({
       path: typeof image?.path === 'string' ? image.path.trim() : '',
       detail: image?.detail === 'high' ? 'high' : 'low',
@@ -4043,6 +4081,7 @@ async function handleAiProxy(req, res) {
         maxTokens: payload.max_tokens,
         imageCount: Array.isArray(payload.images) ? payload.images.length : 0,
         memberSource: memberSession?.source || '',
+        abTest: payload.ab_test || null,
         ...usageMetrics,
         ok: true,
       });
@@ -4065,6 +4104,7 @@ async function handleAiProxy(req, res) {
         maxTokens: payload.max_tokens,
         imageCount: Array.isArray(payload.images) ? payload.images.length : 0,
         memberSource: memberSession?.source || '',
+        abTest: payload.ab_test || null,
         ok: false,
         error: error.code || error.message || 'AI_PROXY_ERROR',
         upstreamStatus: error.upstreamStatus || 0,
@@ -5916,6 +5956,13 @@ async function handleRequest(req, res) {
       stripeCheckoutReady: false,
       stripePortalReady: false,
       stripeWebhookReady: false,
+      paidModelAbTest: setup?.paidModelAbTest || {
+        name: PAID_MODEL_AB_TEST_NAME,
+        enabled: PAID_MODEL_AB_TEST_ENABLED,
+        openaiWeight: PAID_MODEL_AB_TEST_OPENAI_WEIGHT,
+        anthropicModel: AI_MODELS.paid,
+        openaiModel: AI_MODELS.paidAbOpenai,
+      },
       setup: local ? setup : {
         ok: !!setup?.productionReady,
         checkedAt: setup?.checkedAt || new Date().toISOString(),

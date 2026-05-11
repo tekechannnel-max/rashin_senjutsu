@@ -1550,8 +1550,15 @@ const AI_MODELS={
   history:'claude-sonnet-4-6',
   light:'gpt-5.4-mini',
   paidFallback:'gpt-5.4',
+  paidAbOpenai:'gpt-5.5',
   structure:'gpt-5.4-mini',
 };
+const PAID_MODEL_AB_TEST={
+  name:'paid_model_gpt55_vs_sonnet46',
+  enabled:false,
+  openaiWeight:50,
+};
+const PAID_MODEL_AB_TEST_TASKS=new Set(['paid','dossier','followup']);
 
 // ▼ 開発確認用の直接接続設定。公開運用ではサーバー側の安全な設定を使うこと。
 const OPERATOR_API_KEY='';
@@ -1984,6 +1991,8 @@ let RUNTIME_HEALTH={
   rashinCodeConfigured:false,
   stripeCheckoutReady:false,
   stripePortalReady:false,
+  paidModelAbTestEnabled:false,
+  paidModelAbTestOpenaiWeight:50,
   error:'',
   mode:'',
 };
@@ -12692,6 +12701,8 @@ async function loadServerHealth(silent=false){
       rashinCodeConfigured:false,
       stripeCheckoutReady:false,
       stripePortalReady:false,
+      paidModelAbTestEnabled:false,
+      paidModelAbTestOpenaiWeight:50,
       error:'',
       mode:'',
     };
@@ -12710,6 +12721,8 @@ async function loadServerHealth(silent=false){
       rashinCodeConfigured:false,
       stripeCheckoutReady:false,
       stripePortalReady:false,
+      paidModelAbTestEnabled:false,
+      paidModelAbTestOpenaiWeight:50,
       error:'LOCAL_FILE',
       mode:'',
     };
@@ -12721,21 +12734,29 @@ async function loadServerHealth(silent=false){
     const res=await fetchApi('/api/health',{cache:'no-store'});
     const data=await readJsonSafe(res);
     if(data?.aiModels&&typeof data.aiModels==='object'){
-      ['free','paid','history','light','paidFallback','structure'].forEach(key=>{
+      ['free','paid','history','light','paidFallback','paidAbOpenai','structure'].forEach(key=>{
         if(typeof data.aiModels[key]==='string'&&data.aiModels[key].trim()) AI_MODELS[key]=data.aiModels[key].trim();
       });
-      AI_MODEL_CONFIG.free.model=AI_MODELS.free;
-      AI_MODEL_CONFIG.paid.model=AI_MODELS.paid;
-      AI_MODEL_CONFIG.paid.fallbackModel=AI_MODELS.paidFallback;
-      AI_MODEL_CONFIG.dossier.model=AI_MODELS.paid;
-      AI_MODEL_CONFIG.dossier.fallbackModel=AI_MODELS.paidFallback;
-      AI_MODEL_CONFIG.followup.model=AI_MODELS.paid;
-      AI_MODEL_CONFIG.followup.fallbackModel=AI_MODELS.paidFallback;
-      AI_MODEL_CONFIG.flow_analysis.model=AI_MODELS.history;
-      AI_MODEL_CONFIG.flow_analysis.fallbackModel=AI_MODELS.paidFallback;
-      AI_MODEL_CONFIG.light.model=AI_MODELS.light;
-      AI_MODEL_CONFIG.structure.model=AI_MODELS.structure;
     }
+    if(data?.paidModelAbTest&&typeof data.paidModelAbTest==='object'){
+      const ab=data.paidModelAbTest;
+      PAID_MODEL_AB_TEST.name=String(ab.name||PAID_MODEL_AB_TEST.name).trim()||PAID_MODEL_AB_TEST.name;
+      PAID_MODEL_AB_TEST.enabled=!!ab.enabled;
+      PAID_MODEL_AB_TEST.openaiWeight=normalizePercent(ab.openaiWeight,PAID_MODEL_AB_TEST.openaiWeight);
+      if(typeof ab.anthropicModel==='string'&&ab.anthropicModel.trim()) AI_MODELS.paid=ab.anthropicModel.trim();
+      if(typeof ab.openaiModel==='string'&&ab.openaiModel.trim()) AI_MODELS.paidAbOpenai=ab.openaiModel.trim();
+    }
+    AI_MODEL_CONFIG.free.model=AI_MODELS.free;
+    AI_MODEL_CONFIG.paid.model=AI_MODELS.paid;
+    AI_MODEL_CONFIG.paid.fallbackModel=AI_MODELS.paidFallback;
+    AI_MODEL_CONFIG.dossier.model=AI_MODELS.paid;
+    AI_MODEL_CONFIG.dossier.fallbackModel=AI_MODELS.paidFallback;
+    AI_MODEL_CONFIG.followup.model=AI_MODELS.paid;
+    AI_MODEL_CONFIG.followup.fallbackModel=AI_MODELS.paidFallback;
+    AI_MODEL_CONFIG.flow_analysis.model=AI_MODELS.history;
+    AI_MODEL_CONFIG.flow_analysis.fallbackModel=AI_MODELS.paidFallback;
+    AI_MODEL_CONFIG.light.model=AI_MODELS.light;
+    AI_MODEL_CONFIG.structure.model=AI_MODELS.structure;
     RUNTIME_HEALTH={
       checked:true,
       reachable:!!data?.ok,
@@ -12748,6 +12769,8 @@ async function loadServerHealth(silent=false){
       rashinCodeConfigured:!!data?.rashinCodeConfigured,
       stripeCheckoutReady:!!data?.stripeCheckoutReady,
       stripePortalReady:!!data?.stripePortalReady,
+      paidModelAbTestEnabled:!!PAID_MODEL_AB_TEST.enabled,
+      paidModelAbTestOpenaiWeight:PAID_MODEL_AB_TEST.openaiWeight,
       error:'',
       mode:data?.mode||'',
     };
@@ -12764,6 +12787,8 @@ async function loadServerHealth(silent=false){
       rashinCodeConfigured:false,
       stripeCheckoutReady:false,
       stripePortalReady:false,
+      paidModelAbTestEnabled:false,
+      paidModelAbTestOpenaiWeight:50,
       error:'FETCH_FAILED',
       mode:'',
     };
@@ -12772,9 +12797,94 @@ async function loadServerHealth(silent=false){
   await loadMemberStatus({silent:true,render:true});
 }
 
+function normalizePercent(value,fallback=50){
+  const num=Number(value);
+  if(!Number.isFinite(num)) return Math.min(100,Math.max(0,Math.floor(Number(fallback)||0)));
+  return Math.min(100,Math.max(0,Math.floor(num)));
+}
+
 function getTaskModelConfig(taskKey=''){
   if(taskKey&&AI_MODEL_CONFIG[taskKey]) return AI_MODEL_CONFIG[taskKey];
   return PLAN==='paid'?AI_MODEL_CONFIG.paid:AI_MODEL_CONFIG.free;
+}
+
+function hashStringToBucket(value=''){
+  let hash=2166136261;
+  const text=String(value||'');
+  for(let i=0;i<text.length;i+=1){
+    hash^=text.charCodeAt(i);
+    hash=Math.imul(hash,16777619);
+  }
+  return (hash>>>0)%100;
+}
+
+function getPaidModelAbSeed(options={}){
+  const input=getCurrentInputSnapshot();
+  return String(
+    options.abSeed||
+    CURRENT_READING_ID||
+    PENDING_PAID_READING_ID||
+    ACTIVE_PAID_READING_TICKET?.id||
+    ACTIVE_PAID_SOURCE_READING_ID||
+    `${PLAN}:${input.year||''}-${input.month||''}-${input.day||''}:${input.cat||''}:${(input.theme||'').slice(0,80)}`
+  );
+}
+
+function getPaidModelAbVariant(taskKey='',options={}){
+  if(options.disableAbTest||options.provider||options.model) return null;
+  if(PLAN!=='paid'||!PAID_MODEL_AB_TEST.enabled) return null;
+  if(!PAID_MODEL_AB_TEST_TASKS.has(taskKey)) return null;
+  const seed=getPaidModelAbSeed(options);
+  const bucket=hashStringToBucket(`${PAID_MODEL_AB_TEST.name}:${seed}`);
+  const openaiWeight=normalizePercent(PAID_MODEL_AB_TEST.openaiWeight,50);
+  if(bucket<openaiWeight){
+    return{
+      name:PAID_MODEL_AB_TEST.name,
+      variant:'openai_gpt55',
+      provider:'openai',
+      model:AI_MODELS.paidAbOpenai,
+      reasoningEffort:'medium',
+      fallbackProvider:'anthropic',
+      fallbackModel:AI_MODELS.paid,
+      bucket,
+      openaiWeight,
+      seed,
+    };
+  }
+  return{
+    name:PAID_MODEL_AB_TEST.name,
+    variant:'anthropic_sonnet46',
+    provider:'anthropic',
+    model:AI_MODELS.paid,
+    reasoningEffort:'high',
+    fallbackProvider:'openai',
+    fallbackModel:AI_MODELS.paidFallback,
+    bucket,
+    openaiWeight,
+    seed,
+  };
+}
+
+function applyPaidModelAbTestOptions(taskKey='',options={}){
+  const variant=getPaidModelAbVariant(taskKey,options);
+  if(!variant) return options;
+  return{
+    ...options,
+    provider:variant.provider,
+    model:variant.model,
+    reasoningEffort:variant.reasoningEffort,
+    fallbackProvider:variant.fallbackProvider,
+    fallbackModel:variant.fallbackModel,
+    abTest:{
+      name:variant.name,
+      variant:variant.variant,
+      provider:variant.provider,
+      model:variant.model,
+      bucket:variant.bucket,
+      openaiWeight:variant.openaiWeight,
+      seed:variant.seed,
+    },
+  };
 }
 
 function sanitizePromptInput(value,maxLength=1000){
@@ -12819,11 +12929,13 @@ ${AI_READING_QUALITY_RULES}`;
 }
 
 function buildAiPayload(userPrompt,maxTokens,sys,options={}){
-  const taskCfg=getTaskModelConfig(options.taskKey||'');
+  const taskKey=options.taskKey||'';
+  const effectiveOptions=applyPaidModelAbTestOptions(taskKey,options);
+  const taskCfg=getTaskModelConfig(taskKey);
   return{
-    provider:options.provider||taskCfg.provider,
-    model:options.model||taskCfg.model,
-    task_key:options.taskKey||'',
+    provider:effectiveOptions.provider||taskCfg.provider,
+    model:effectiveOptions.model||taskCfg.model,
+    task_key:taskKey,
     plan:PLAN,
     reading_id:CURRENT_READING_ID||'',
     category:document.getElementById('f-cat')?.value||'総合',
@@ -12834,10 +12946,11 @@ function buildAiPayload(userPrompt,maxTokens,sys,options={}){
     max_tokens:maxTokens,
     system:withPromptSafetyRules(sys),
     messages:[{role:'user',content:userPrompt}],
-    reasoning_effort:options.reasoningEffort||taskCfg.reasoningEffort||'',
-    fallbackProvider:options.fallbackProvider||taskCfg.fallbackProvider||'',
-    fallbackModel:options.fallbackModel||taskCfg.fallbackModel||'',
-    images:Array.isArray(options.images)?options.images:[],
+    reasoning_effort:effectiveOptions.reasoningEffort||taskCfg.reasoningEffort||'',
+    fallbackProvider:effectiveOptions.fallbackProvider||taskCfg.fallbackProvider||'',
+    fallbackModel:effectiveOptions.fallbackModel||taskCfg.fallbackModel||'',
+    ab_test:effectiveOptions.abTest||null,
+    images:Array.isArray(effectiveOptions.images)?effectiveOptions.images:[],
   };
 }
 
@@ -12932,10 +13045,10 @@ async function callAI(userPrompt,maxTokens=500,sys='',options={}){
           reasoning_effort:'',
           fallbackProvider:'',
           fallbackModel:'',
-          images:[],
+          images:payload.fallbackProvider==='anthropic'?payload.images:[],
         };
-        console.warn('[AI] Primary paid model failed. Falling back to OpenAI paidFallback.',error);
-        await sendClientLog({level:'warn',type:'ai_paid_fallback',message:'Primary paid model failed; OpenAI fallback used',meta:{taskKey:payload.task_key,primaryProvider:payload.provider,primaryModel:payload.model,fallbackModel:fallbackPayload.model}});
+        console.warn('[AI] Primary paid model failed. Falling back to configured paid fallback.',error);
+        await sendClientLog({level:'warn',type:'ai_paid_fallback',message:'Primary paid model failed; fallback used',meta:{taskKey:payload.task_key,primaryProvider:payload.provider,primaryModel:payload.model,fallbackProvider:fallbackPayload.provider,fallbackModel:fallbackPayload.model,abTest:payload.ab_test||null}});
         showToast('別の方法で鑑定を続けます。');
         return await callAIThroughProxy(fallbackPayload);
       }
@@ -12956,8 +13069,8 @@ async function comparePaidModelsForDev(userPrompt,maxTokens=2800,sys='',options=
     console.warn('[AI] Paid model comparison is available only in local development.');
     return null;
   }
-  const claudePayload=buildAiPayload(userPrompt,maxTokens,sys,{...options,taskKey:'paid',provider:'anthropic',model:AI_MODELS.paid,fallbackProvider:'',fallbackModel:'',images:options.images||[]});
-  const gptPayload=buildAiPayload(userPrompt,maxTokens,sys,{...options,taskKey:'paid_compare',provider:'openai',model:AI_MODELS.paidFallback,reasoningEffort:'medium',fallbackProvider:'',fallbackModel:'',images:[]});
+  const claudePayload=buildAiPayload(userPrompt,maxTokens,sys,{...options,taskKey:'paid',provider:'anthropic',model:AI_MODELS.paid,fallbackProvider:'',fallbackModel:'',images:options.images||[],disableAbTest:true});
+  const gptPayload=buildAiPayload(userPrompt,maxTokens,sys,{...options,taskKey:'paid_compare',provider:'openai',model:AI_MODELS.paidAbOpenai,reasoningEffort:'medium',fallbackProvider:'',fallbackModel:'',images:[],disableAbTest:true});
   const [claude,gpt]=await Promise.allSettled([callAIThroughProxy(claudePayload),callAIThroughProxy(gptPayload)]);
   const result={
     claude:claude.status==='fulfilled'?claude.value:'',
