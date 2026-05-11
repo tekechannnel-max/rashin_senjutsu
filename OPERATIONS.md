@@ -139,6 +139,13 @@ Set these on the Render service and redeploy before testing:
 - `BOOTH_DEEP_READING_URL=<your BOOTH product URL>`
 - `BOOTH_PAYMENT_LABEL=羅針占術 BOOTH`
 - `BOOTH_PAYMENT_NOTE=BOOTHで購入後、注文番号を入力してください。`
+- `BOOTH_GMAIL_VERIFICATION_REQUIRED=true`
+- `BOOTH_GMAIL_IMAP_USER=<Gmail address that receives BOOTH order mail>`
+- `BOOTH_GMAIL_IMAP_APP_PASSWORD=<Gmail app password>`
+- `BOOTH_GMAIL_IMAP_MAILBOX=INBOX`
+- `BOOTH_GMAIL_SEARCH_FROM=booth.pm`
+- `BOOTH_GMAIL_SEARCH_DAYS=90`
+- `BOOTH_GMAIL_MATCH_BUYER_EMAIL=false`
 - `OPENAI_PAID_AB_MODEL=gpt-5.5`
 - `PAID_MODEL_AB_TEST_ENABLED=false` for quality-first production. Set `true` only when intentionally testing GPT-5.5 against Sonnet 4.6.
 - `PAID_MODEL_AB_TEST_OPENAI_WEIGHT=50` for a 50/50 split
@@ -159,10 +166,26 @@ This prerelease path removes manual Rashin-code handoff while still keeping paid
 2. Server creates a `booth` purchase order.
 3. User buys the deep reading ticket or eligible goods on BOOTH.
 4. User enters the BOOTH order number in the app.
-5. The server creates and immediately redeems an internal Rashin paid code, creates one paid-reading ticket, and the app continues automatically.
-6. The same BOOTH order number cannot be used again.
+5. The server searches the configured Gmail inbox for a BOOTH purchase email containing that order number.
+6. If the Gmail match exists, the server creates and immediately redeems an internal Rashin paid code, creates one paid-reading ticket, and the app continues automatically.
+7. The same BOOTH order number cannot be used again.
 
-Security boundary: BOOTH order numbers are de-duplicated by the app, but the app does not verify BOOTH payment status through an official webhook. For stricter checks, add Gmail parsing for BOOTH purchase emails or CSV import before accepting order numbers automatically.
+Security boundary: Gmail verification confirms that a BOOTH purchase email containing the submitted order number exists in the configured mailbox. It is not an official BOOTH webhook. Keep the Gmail account private, use an app password, and keep duplicate-order blocking enabled.
+
+Admin Gmail test:
+
+```powershell
+$body = @{
+  boothOrderNumber = "replace-with-booth-order-number"
+} | ConvertTo-Json
+
+Invoke-RestMethod `
+  -Uri "https://rashin-senjutsu.onrender.com/api/rashin-paid-code/booth/gmail-test" `
+  -Method Post `
+  -Headers @{"x-rashin-admin-secret"=$env:RASHIN_CODE_ADMIN_SECRET} `
+  -ContentType "application/json" `
+  -Body $body
+```
 
 ### Manual free Rashin codes
 

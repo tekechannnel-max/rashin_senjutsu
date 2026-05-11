@@ -1,5 +1,6 @@
 const http = require('http');
 const https = require('https');
+const tls = require('tls');
 const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
@@ -168,6 +169,17 @@ const RASHIN_CODE_ADMIN_SECRET = normalizeEnvValue(process.env.RASHIN_CODE_ADMIN
 const BOOTH_DEEP_READING_URL = normalizeEnvValue(process.env.BOOTH_DEEP_READING_URL || process.env.BOOTH_PRODUCT_URL || process.env.BOOTH_SHOP_URL || '');
 const BOOTH_PAYMENT_LABEL = normalizeEnvValue(process.env.BOOTH_PAYMENT_LABEL || '羅針占術 BOOTH');
 const BOOTH_PAYMENT_NOTE = normalizeEnvValue(process.env.BOOTH_PAYMENT_NOTE || 'BOOTHで購入後、注文番号を入力してください。');
+const BOOTH_GMAIL_VERIFICATION_REQUIRED = normalizeEnvValue(process.env.BOOTH_GMAIL_VERIFICATION_REQUIRED || 'true').toLowerCase() !== 'false';
+const BOOTH_GMAIL_IMAP_USER = normalizeEnvValue(process.env.BOOTH_GMAIL_IMAP_USER || process.env.BOOTH_GMAIL_USER || '');
+const BOOTH_GMAIL_IMAP_APP_PASSWORD = normalizeEnvValue(process.env.BOOTH_GMAIL_IMAP_APP_PASSWORD || process.env.BOOTH_GMAIL_APP_PASSWORD || '');
+const BOOTH_GMAIL_IMAP_HOST = normalizeEnvValue(process.env.BOOTH_GMAIL_IMAP_HOST || 'imap.gmail.com');
+const BOOTH_GMAIL_IMAP_PORT = Math.max(1, parseInt(process.env.BOOTH_GMAIL_IMAP_PORT || '993', 10) || 993);
+const BOOTH_GMAIL_IMAP_MAILBOX = normalizeEnvValue(process.env.BOOTH_GMAIL_IMAP_MAILBOX || 'INBOX');
+const BOOTH_GMAIL_SEARCH_QUERY = normalizeEnvValue(process.env.BOOTH_GMAIL_SEARCH_QUERY || '');
+const BOOTH_GMAIL_SEARCH_FROM = normalizeEnvValue(process.env.BOOTH_GMAIL_SEARCH_FROM || 'booth.pm');
+const BOOTH_GMAIL_SEARCH_DAYS = Math.max(1, parseInt(process.env.BOOTH_GMAIL_SEARCH_DAYS || '90', 10) || 90);
+const BOOTH_GMAIL_VERIFY_TIMEOUT_MS = Math.min(30000, Math.max(3000, parseInt(process.env.BOOTH_GMAIL_VERIFY_TIMEOUT_MS || '12000', 10) || 12000));
+const BOOTH_GMAIL_MATCH_BUYER_EMAIL = normalizeEnvValue(process.env.BOOTH_GMAIL_MATCH_BUYER_EMAIL || '').toLowerCase() === 'true';
 const AI_MODELS = {
   free: process.env.OPENAI_FREE_MODEL || 'gpt-5.4-mini',
   paid: process.env.ANTHROPIC_PAID_MODEL || 'claude-sonnet-4-6',
@@ -743,6 +755,217 @@ function normalizeBoothOrderReference(value) {
   return String(value || '').replace(/\s+/g, ' ').trim().slice(0, 120);
 }
 
+function boothGmailVerificationConfigured() {
+  return !!(
+    BOOTH_GMAIL_IMAP_HOST &&
+    BOOTH_GMAIL_IMAP_PORT > 0 &&
+    BOOTH_GMAIL_IMAP_USER &&
+    BOOTH_GMAIL_IMAP_APP_PASSWORD &&
+    !isPlaceholderEnvValue(BOOTH_GMAIL_IMAP_USER) &&
+    !isPlaceholderEnvValue(BOOTH_GMAIL_IMAP_APP_PASSWORD)
+  );
+}
+
+function escapeGmailSearchPhrase(value) {
+  const normalized = String(value || '').replace(/["\\]/g, ' ').replace(/\s+/g, ' ').trim();
+  return normalized ? `"${normalized}"` : '';
+}
+
+function buildBoothGmailSearchQuery(orderReference, userRecord = null) {
+  const parts = [];
+  if (BOOTH_GMAIL_SEARCH_QUERY) {
+    parts.push(BOOTH_GMAIL_SEARCH_QUERY);
+  } else {
+    if (BOOTH_GMAIL_SEARCH_FROM) parts.push(`from:(${BOOTH_GMAIL_SEARCH_FROM})`);
+    if (BOOTH_GMAIL_SEARCH_DAYS > 0) parts.push(`newer_than:${BOOTH_GMAIL_SEARCH_DAYS}d`);
+  }
+  const referencePhrase = escapeGmailSearchPhrase(orderReference);
+  if (referencePhrase) parts.push(referencePhrase);
+  if (BOOTH_GMAIL_MATCH_BUYER_EMAIL) {
+    const emailPhrase = escapeGmailSearchPhrase(normalizeCustomerEmail(userRecord?.email || ''));
+    if (emailPhrase) parts.push(emailPhrase);
+  }
+  return parts.filter(Boolean).join(' ');
+}
+
+function quoteImapString(value) {
+  return `"${String(value || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\r?\n/g, ' ')}"`;
+}
+
+function parseImapSearchUids(lines) {
+  const searchLine = (lines || []).find(line => /^\* SEARCH\b/i.test(line));
+  if (!searchLine) return [];
+  return searchLine.split(/\s+/).slice(2).filter(value => /^\d+$/.test(value));
+}
+
+class SimpleImapClient {
+  constructor(socket) {
+    this.socket = socket;
+    this.buffer = '';
+    this.tagCounter = 0;
+    this.pending = null;
+    this.greeted = false;
+    this.closed = false;
+    this.greetingPromise = new Promise((resolve, reject) => {
+      this.greetingResolve = resolve;
+      this.greetingReject = reject;
+    });
+
+    socket.setEncoding('utf8');
+    socket.setTimeout(BOOTH_GMAIL_VERIFY_TIMEOUT_MS);
+    socket.on('data', chunk => this.handleData(chunk));
+    socket.on('timeout', () => this.fail(new Error('IMAP_TIMEOUT')));
+    socket.on('error', error => this.fail(error));
+    socket.on('close', () => {
+      this.closed = true;
+      if (!this.greeted) this.fail(new Error('IMAP_CONNECTION_CLOSED'));
+      if (this.pending) this.fail(new Error('IMAP_CONNECTION_CLOSED'));
+    });
+  }
+
+  handleData(chunk) {
+    this.buffer += chunk;
+    let lineEnd = this.buffer.indexOf('\n');
+    while (lineEnd >= 0) {
+      const rawLine = this.buffer.slice(0, lineEnd).replace(/\r$/, '');
+      this.buffer = this.buffer.slice(lineEnd + 1);
+      this.handleLine(rawLine);
+      lineEnd = this.buffer.indexOf('\n');
+    }
+  }
+
+  handleLine(line) {
+    if (!this.greeted) {
+      if (/^\* OK\b/i.test(line)) {
+        this.greeted = true;
+        this.greetingResolve();
+      } else if (/^\* (NO|BAD)\b/i.test(line)) {
+        const error = new Error('IMAP_GREETING_REJECTED');
+        error.imapLine = line;
+        this.greetingReject(error);
+      }
+      return;
+    }
+
+    if (!this.pending) return;
+    this.pending.lines.push(line);
+    if (line.toUpperCase().startsWith(`${this.pending.tag} `)) {
+      const pending = this.pending;
+      this.pending = null;
+      if (new RegExp(`^${pending.tag} OK\\b`, 'i').test(line)) {
+        pending.resolve(pending.lines);
+      } else {
+        const error = new Error('IMAP_COMMAND_FAILED');
+        error.imapLine = line;
+        pending.reject(error);
+      }
+    }
+  }
+
+  fail(error) {
+    if (!this.greeted && this.greetingReject) this.greetingReject(error);
+    if (this.pending) {
+      const pending = this.pending;
+      this.pending = null;
+      pending.reject(error);
+    }
+    if (!this.closed) this.socket.destroy();
+  }
+
+  waitForGreeting() {
+    return this.greetingPromise;
+  }
+
+  command(commandText) {
+    if (this.pending) return Promise.reject(new Error('IMAP_COMMAND_IN_PROGRESS'));
+    if (this.closed) return Promise.reject(new Error('IMAP_CONNECTION_CLOSED'));
+    const tag = `A${String(++this.tagCounter).padStart(4, '0')}`;
+    return new Promise((resolve, reject) => {
+      this.pending = { tag, lines: [], resolve, reject };
+      this.socket.write(`${tag} ${commandText}\r\n`);
+    });
+  }
+
+  async close() {
+    if (this.closed) return;
+    try {
+      await this.command('LOGOUT');
+    } catch (_error) {
+      // Closing the socket is enough after a failed verification attempt.
+    }
+    this.socket.end();
+  }
+}
+
+async function connectSimpleImapClient() {
+  const socket = tls.connect({
+    host: BOOTH_GMAIL_IMAP_HOST,
+    port: BOOTH_GMAIL_IMAP_PORT,
+    servername: BOOTH_GMAIL_IMAP_HOST,
+    rejectUnauthorized: true,
+  });
+  const client = new SimpleImapClient(socket);
+  await client.waitForGreeting();
+  return client;
+}
+
+async function searchBoothOrderInGmail(orderReference, userRecord = null) {
+  const query = buildBoothGmailSearchQuery(orderReference, userRecord);
+  if (!query) {
+    const error = new Error('BOOTH_GMAIL_QUERY_EMPTY');
+    error.statusCode = 500;
+    throw error;
+  }
+  const client = await connectSimpleImapClient();
+  try {
+    await client.command(`LOGIN ${quoteImapString(BOOTH_GMAIL_IMAP_USER)} ${quoteImapString(BOOTH_GMAIL_IMAP_APP_PASSWORD)}`);
+    await client.command(`EXAMINE ${quoteImapString(BOOTH_GMAIL_IMAP_MAILBOX)}`);
+    const lines = await client.command(`UID SEARCH X-GM-RAW ${quoteImapString(query)}`);
+    const uids = parseImapSearchUids(lines);
+    return {
+      verified: uids.length > 0,
+      matchCount: uids.length,
+      queryHash: hashPrivateLookupValue('booth_gmail_query', query),
+    };
+  } finally {
+    await client.close();
+  }
+}
+
+async function verifyBoothOrderReferenceWithGmail(orderReference, { userRecord = null } = {}) {
+  if (!BOOTH_GMAIL_VERIFICATION_REQUIRED) {
+    return { verified: true, skipped: true, reason: 'disabled', matchCount: 0, queryHash: '' };
+  }
+  if (!boothGmailVerificationConfigured()) {
+    const error = new Error('BOOTH_GMAIL_NOT_CONFIGURED');
+    error.statusCode = 503;
+    throw error;
+  }
+  try {
+    const result = await searchBoothOrderInGmail(orderReference, userRecord);
+    if (!result.verified) {
+      const error = new Error('BOOTH_ORDER_NOT_FOUND_IN_GMAIL');
+      error.statusCode = 404;
+      error.verification = result;
+      throw error;
+    }
+    return result;
+  } catch (error) {
+    if (error.statusCode) throw error;
+    const failed = new Error(/AUTHENTICATIONFAILED|LOGIN failed/i.test(error.imapLine || error.message || '')
+      ? 'BOOTH_GMAIL_AUTH_FAILED'
+      : 'BOOTH_GMAIL_VERIFY_FAILED');
+    failed.statusCode = 503;
+    console.error('BOOTH Gmail verification failed', {
+      error: failed.message,
+      detail: error.imapLine || error.message || '',
+      host: BOOTH_GMAIL_IMAP_HOST,
+      mailbox: BOOTH_GMAIL_IMAP_MAILBOX,
+    });
+    throw failed;
+  }
+}
+
 function getBoothPaymentPayload() {
   return {
     provider: 'booth',
@@ -753,7 +976,7 @@ function getBoothPaymentPayload() {
 }
 
 function boothPurchaseReady() {
-  return true;
+  return !!getBoothPaymentPayload().url && (!BOOTH_GMAIL_VERIFICATION_REQUIRED || boothGmailVerificationConfigured());
 }
 
 async function getRuntimeSetupStatus(req) {
@@ -763,6 +986,9 @@ async function getRuntimeSetupStatus(req) {
   if (!GOOGLE_CLIENT_CONFIGURED) issues.push('GOOGLE_CLIENT_ID');
   if (!MEMBER_SESSION_PERSISTENT) issues.push('MEMBER_SESSION_SECRET');
   if (!AUTH_SESSION_PERSISTENT) issues.push('AUTH_SESSION_SECRET');
+  if (BOOTH_GMAIL_VERIFICATION_REQUIRED && !boothGmailVerificationConfigured()) {
+    issues.push('BOOTH_GMAIL_IMAP_USER / BOOTH_GMAIL_IMAP_APP_PASSWORD');
+  }
   const productionReady = issues.length === 0;
   return {
     ok: productionReady,
@@ -770,6 +996,8 @@ async function getRuntimeSetupStatus(req) {
     rashinPaidCodeReady: rashinPaidCodeReady(),
     boothPurchaseReady: boothPurchaseReady(),
     boothProductUrlConfigured: !!getBoothPaymentPayload().url,
+    boothGmailVerificationRequired: BOOTH_GMAIL_VERIFICATION_REQUIRED,
+    boothGmailVerificationConfigured: boothGmailVerificationConfigured(),
     deepReadingAmount: DEEP_READING_NORMAL_AMOUNT,
     deepReadingPrereleaseAmount: DEEP_READING_PRERELEASE_AMOUNT,
     deepReadingReleaseAmount: DEEP_READING_RELEASE_AMOUNT,
@@ -793,6 +1021,7 @@ async function getRuntimeSetupStatus(req) {
     codeRedeemPath: '/api/rashin-paid-code/redeem',
     codeAdminIssuePath: '/api/rashin-paid-code/admin/issue',
     boothOrderClaimPath: '/api/rashin-paid-code/booth/claim',
+    boothGmailTestPath: '/api/rashin-paid-code/booth/gmail-test',
     legacyStripeWebhookPath: '/api/stripe/webhook',
     legacyStripeWebhookUrl: makeAbsoluteUrl(req, '/api/stripe/webhook'),
   };
@@ -4749,6 +4978,13 @@ async function handleRashinPaidCodePurchaseIntent(req, res) {
   const sourceReadingId = normalizeVaultRecordId(
     body?.sourceReadingId || body?.source_reading_id || body?.oracleResultId || body?.oracle_result_id || ''
   );
+  if (BOOTH_GMAIL_VERIFICATION_REQUIRED && !boothGmailVerificationConfigured()) {
+    sendJson(res, 503, {
+      error: 'BOOTH_GMAIL_NOT_CONFIGURED',
+      message: 'BOOTH Gmail verification is not configured.',
+    });
+    return;
+  }
   try {
     const order = await createRashinCodePurchaseOrderForBooth({ userRecord, sourceReadingId, intent });
     sendJson(res, 200, {
@@ -4977,6 +5213,59 @@ async function handleRashinPaidCodeAdminIssue(req, res) {
   }
 }
 
+async function handleBoothGmailVerificationTest(req, res) {
+  const rate = consumeRateLimit(req, 'rashin_code_admin');
+  if (!rate.ok) {
+    sendRateLimitExceeded(res, rate, 'Too many admin verification attempts. Please wait and retry.');
+    return;
+  }
+  let body;
+  try {
+    body = await readJsonBody(req);
+  } catch (error) {
+    sendJson(res, 400, {
+      error: error.message || 'INVALID_JSON',
+      message: 'BOOTH Gmail verification payload could not be parsed.',
+    });
+    return;
+  }
+  const providedSecret = normalizeEnvValue(req.headers['x-rashin-admin-secret'] || body?.adminSecret || body?.admin_secret || '');
+  if (!isConfiguredAppSecret(RASHIN_CODE_ADMIN_SECRET) || !safeCompareText(providedSecret, RASHIN_CODE_ADMIN_SECRET)) {
+    sendJson(res, 403, {
+      error: 'RASHIN_CODE_ADMIN_DENIED',
+      message: 'Admin secret was not accepted.',
+    });
+    return;
+  }
+  const providerPaymentId = normalizeBoothOrderReference(
+    body?.boothOrderNumber || body?.booth_order_number || body?.boothOrderId || body?.booth_order_id || body?.providerPaymentId || body?.paymentReference || ''
+  );
+  if (providerPaymentId.length < 3) {
+    sendJson(res, 400, {
+      error: 'BOOTH_ORDER_REFERENCE_REQUIRED',
+      message: 'BOOTH order number is required.',
+    });
+    return;
+  }
+  try {
+    const result = await verifyBoothOrderReferenceWithGmail(providerPaymentId, {
+      userRecord: { email: normalizeCustomerEmail(body?.email || body?.buyerEmail || body?.buyer_email || '') },
+    });
+    sendJson(res, 200, {
+      ok: true,
+      verified: result.verified,
+      skipped: !!result.skipped,
+      matchCount: result.matchCount || 0,
+      queryHash: result.queryHash || '',
+    });
+  } catch (error) {
+    sendJson(res, error.statusCode || 500, {
+      error: error.message || 'BOOTH_GMAIL_VERIFY_FAILED',
+      message: 'BOOTH Gmail verification could not be completed.',
+    });
+  }
+}
+
 async function handleBoothOrderClaim(req, res) {
   const rate = consumeRateLimit(req, 'booth_order_claim');
   if (!rate.ok) {
@@ -5053,11 +5342,16 @@ async function handleBoothOrderClaim(req, res) {
         error.statusCode = 409;
         throw error;
       }
+      const gmailVerification = await verifyBoothOrderReferenceWithGmail(providerPaymentId, { userRecord });
+      const now = new Date().toISOString();
       const completed = await completeBoothOrderWithTicket({
         order: {
           ...order,
           providerPaymentId,
-          paymentClaimedAt: order.paymentClaimedAt || new Date().toISOString(),
+          paymentClaimedAt: order.paymentClaimedAt || now,
+          boothGmailVerifiedAt: gmailVerification.skipped ? '' : now,
+          boothGmailMatchCount: gmailVerification.matchCount || 0,
+          boothGmailQueryHash: gmailVerification.queryHash || '',
         },
         userRecord,
         providerPaymentId,
@@ -5826,6 +6120,8 @@ async function handleRequest(req, res) {
       stripeWebhookReady: false,
       boothPurchaseReady: setup?.boothPurchaseReady ?? boothPurchaseReady(),
       boothProductUrlConfigured: setup?.boothProductUrlConfigured ?? !!getBoothPaymentPayload().url,
+      boothGmailVerificationRequired: setup?.boothGmailVerificationRequired ?? BOOTH_GMAIL_VERIFICATION_REQUIRED,
+      boothGmailVerificationConfigured: setup?.boothGmailVerificationConfigured ?? boothGmailVerificationConfigured(),
       paidModelAbTest: setup?.paidModelAbTest || {
         name: PAID_MODEL_AB_TEST_NAME,
         enabled: PAID_MODEL_AB_TEST_ENABLED,
@@ -5880,6 +6176,11 @@ async function handleRequest(req, res) {
 
   if (req.method === 'POST' && req.url.startsWith('/api/rashin-paid-code/booth/claim')) {
     await handleBoothOrderClaim(req, res);
+    return;
+  }
+
+  if (req.method === 'POST' && req.url.startsWith('/api/rashin-paid-code/booth/gmail-test')) {
+    await handleBoothGmailVerificationTest(req, res);
     return;
   }
 
