@@ -136,24 +136,14 @@ Set these on the Render service and redeploy before testing:
 - `DEEP_READING_ONCE_AMOUNT=780`
 - `DEEP_READING_PRERELEASE_AMOUNT=780`
 - `DEEP_READING_RELEASE_AMOUNT=1000`
-- `PAYPAY_MANUAL_PAYMENT_URL=<your PayPay QR/payment URL>`
-- `PAYPAY_MANUAL_PAYMENT_QR_IMAGE_URL=/images/payment/paypay-qr.png` if the app should show an official PayPay QR image instead of generating one from the URL
-- `PAYPAY_MANUAL_PAYMENT_LABEL=Rashin Senjutsu PayPay`
-- `PAYPAY_MANUAL_PAYMENT_NOTE=<short user-facing PayPay instruction>`
-- `PAYPAY_MANUAL_AUTO_ISSUE_ENABLED=true` for prerelease auto-unlock after the user enters a PayPay transaction reference
-- `PAYPAY_EXPIRY_NOTIFY_ENABLED=true`
-- `PAYPAY_EXPIRY_NOTIFY_LOOKAHEAD_DAYS=3`
-- `PAYPAY_NOTIFY_DISCORD_WEBHOOK_URL=<Discord incoming webhook URL>` as an env fallback, or save it without redeploy through `/api/rashin-paid-code/paypay/notify-config`
-- `PAYPAY_NOTIFY_LINE_CHANNEL_ACCESS_TOKEN=<LINE Messaging API channel access token>`
-- `PAYPAY_NOTIFY_LINE_TO=<LINE user ID or group ID>`
-- `PAYPAY_NOTIFY_GMAIL_TO=<recipient email>`
-- `PAYPAY_NOTIFY_GMAIL_USER=<Gmail address>`
-- `PAYPAY_NOTIFY_GMAIL_APP_PASSWORD=<Gmail app password>`
+- `BOOTH_DEEP_READING_URL=<your BOOTH product URL>`
+- `BOOTH_PAYMENT_LABEL=羅針占術 BOOTH`
+- `BOOTH_PAYMENT_NOTE=BOOTHで購入後、注文番号を入力してください。`
 - `OPENAI_PAID_AB_MODEL=gpt-5.5`
 - `PAID_MODEL_AB_TEST_ENABLED=false` for quality-first production. Set `true` only when intentionally testing GPT-5.5 against Sonnet 4.6.
 - `PAID_MODEL_AB_TEST_OPENAI_WEIGHT=50` for a 50/50 split
 
-Do not publish a payment link until the payment account/provider has approved this business model.
+Do not publish the paid purchase CTA until the BOOTH product page is ready and the item description tells buyers to enter the BOOTH order number in the app.
 
 ### Paid model A/B test
 
@@ -161,76 +151,18 @@ Quality-first production should keep `PAID_MODEL_AB_TEST_ENABLED=false`, which m
 The default prerelease comparison is Sonnet 4.6 versus GPT-5.5 at `PAID_MODEL_AB_TEST_OPENAI_WEIGHT=50`.
 AI logs include the A/B test name, variant, provider, model, and bucket so quality, errors, latency, and token usage can be compared after real paid readings.
 
-### PayPay manual auto-unlock
+### BOOTH order-number unlock
 
 This prerelease path removes manual Rashin-code handoff while still keeping paid access behind Google login and a purchase order.
 
 1. User starts paid deep reading.
-2. Server creates a `paypay_manual` purchase order.
-3. User pays through `PAYPAY_MANUAL_PAYMENT_URL`; if `PAYPAY_MANUAL_PAYMENT_QR_IMAGE_URL` or `qrImageUrl` is configured, the app shows that QR image in the payment modal.
-4. User enters the PayPay transaction/reference number in the app.
-5. If `PAYPAY_MANUAL_AUTO_ISSUE_ENABLED=true`, the server creates and redeems an internal Rashin paid code, creates one paid-reading ticket, and the app continues automatically.
-6. If `PAYPAY_MANUAL_AUTO_ISSUE_ENABLED=false`, the payment claim is saved as `payment_requires_review` and no paid ticket is created.
+2. Server creates a `booth` purchase order.
+3. User buys the deep reading ticket or eligible goods on BOOTH.
+4. User enters the BOOTH order number in the app.
+5. The server creates and immediately redeems an internal Rashin paid code, creates one paid-reading ticket, and the app continues automatically.
+6. The same BOOTH order number cannot be used again.
 
-Security boundary: static PayPay QR payments are not automatically verified by PayPay. Auto-issue mode trusts the user's entered PayPay reference, so use it only for limited prerelease volume. For strict automated verification, replace this with PayPay's official online payment API/webhook flow.
-
-### Updating the PayPay URL or QR image without redeploy
-
-The PayPay payment URL and QR image URL in Render env are only the fallback/default. If the personal PayPay URL expires, update the active URL and QR image URL through the admin API. This writes `data/paypay-manual-config.json`, so the Render disk must persist `data/`.
-
-```powershell
-$env:RASHIN_CODE_ADMIN_SECRET="your-admin-secret"
-$body = @{
-  url = "https://qr.paypay.ne.jp/new-url"
-  qrImageUrl = "/images/payment/paypay-qr.png"
-  label = "羅針占術 PayPay"
-  note = "支払い後、PayPayの取引番号を入力してください。"
-  expiresAt = "2026-05-25T23:59:59+09:00"
-} | ConvertTo-Json
-Invoke-RestMethod -Uri "https://rashin-senjutsu.onrender.com/api/rashin-paid-code/paypay/config" -Method Post -Headers @{"x-rashin-admin-secret"=$env:RASHIN_CODE_ADMIN_SECRET} -ContentType "application/json" -Body $body
-```
-
-Check the current active URL:
-
-```powershell
-Invoke-RestMethod -Uri "https://rashin-senjutsu.onrender.com/api/rashin-paid-code/paypay/config" -Method Get -Headers @{"x-rashin-admin-secret"=$env:RASHIN_CODE_ADMIN_SECRET}
-```
-
-### PayPay expiry notifications
-
-The server checks the active PayPay URL on startup and then every 6 hours. If `expiresAt` is missing, invalid, within `PAYPAY_EXPIRY_NOTIFY_LOOKAHEAD_DAYS`, or already expired, it sends one notice per day to configured channels.
-
-- Discord uses an incoming webhook URL. It can be stored by Render env or by the admin API below.
-- LINE uses the Messaging API push endpoint. LINE Notify is discontinued, so use a LINE Official Account channel access token and a user or group ID.
-- Gmail uses SMTP over `smtp.gmail.com:465` with a Gmail app password.
-
-Save or replace the Discord webhook without changing Render env:
-
-```powershell
-$env:RASHIN_CODE_ADMIN_SECRET="your-admin-secret"
-$body = @{
-  discordWebhookUrl = "https://discord.com/api/webhooks/..."
-} | ConvertTo-Json
-Invoke-RestMethod -Uri "https://rashin-senjutsu.onrender.com/api/rashin-paid-code/paypay/notify-config" -Method Post -Headers @{"x-rashin-admin-secret"=$env:RASHIN_CODE_ADMIN_SECRET} -ContentType "application/json" -Body $body
-```
-
-Check the saved notification channel:
-
-```powershell
-Invoke-RestMethod -Uri "https://rashin-senjutsu.onrender.com/api/rashin-paid-code/paypay/notify-config" -Method Get -Headers @{"x-rashin-admin-secret"=$env:RASHIN_CODE_ADMIN_SECRET}
-```
-
-Check notification status:
-
-```powershell
-Invoke-RestMethod -Uri "https://rashin-senjutsu.onrender.com/api/rashin-paid-code/paypay/notify" -Method Get -Headers @{"x-rashin-admin-secret"=$env:RASHIN_CODE_ADMIN_SECRET}
-```
-
-Send a forced test notice:
-
-```powershell
-Invoke-RestMethod -Uri "https://rashin-senjutsu.onrender.com/api/rashin-paid-code/paypay/notify" -Method Post -Headers @{"x-rashin-admin-secret"=$env:RASHIN_CODE_ADMIN_SECRET} -ContentType "application/json" -Body '{"force":true}'
-```
+Security boundary: BOOTH order numbers are de-duplicated by the app, but the app does not verify BOOTH payment status through an official webhook. For stricter checks, add Gmail parsing for BOOTH purchase emails or CSV import before accepting order numbers automatically.
 
 ### Manual free Rashin codes
 
@@ -313,7 +245,7 @@ Failure logs that require investigation before launch:
 Do not enable paid sales unless all are true:
 
 - `780` JPY prerelease one-time amount is confirmed.
-- Monthly plan copy is not visible while PayPay manual payment is active.
+- Monthly plan copy is not visible while BOOTH order-number purchase is active.
 - For release pricing, set `DEEP_READING_ONCE_AMOUNT=1000` and update visible price copy from prerelease to normal price.
 - Manual free codes create exactly one free paid ticket.
 - Duplicate code redemption does not create another ticket.

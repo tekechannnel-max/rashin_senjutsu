@@ -1576,7 +1576,7 @@ const STRIPE_CHECKOUT_COMPLETE_ENDPOINT='/api/stripe/checkout/complete';
 const STRIPE_PORTAL_ENDPOINT='/api/stripe/portal-session';
 const RASHIN_CODE_REDEEM_ENDPOINT='/api/rashin-code/redeem';
 const RASHIN_PAID_CODE_REDEEM_ENDPOINT='/api/rashin-paid-code/redeem';
-const RASHIN_PAID_CODE_PAYPAY_CLAIM_ENDPOINT='/api/rashin-paid-code/paypay/claim';
+const RASHIN_PAID_CODE_BOOTH_CLAIM_ENDPOINT='/api/rashin-paid-code/booth/claim';
 const PAID_READING_PREPARE_ENDPOINT='/api/paid-reading/prepare-ticket';
 const PAID_READING_USE_ENDPOINT='/api/paid-reading/use-ticket';
 const PAID_READING_RELEASE_ENDPOINT='/api/paid-reading/release-ticket';
@@ -2109,7 +2109,7 @@ const MEMBERSHIP_PLAN={
     },
   ],
 };
-const CHECKOUT_DISCLOSURE_HTML='深掘り羅針鑑定は、PayPay支払い後に利用できる有料鑑定です。料金はプレリリース価格780円、正式リリース後は1000円予定です。無料鑑定を先に作成する必要はありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
+const CHECKOUT_DISCLOSURE_HTML='深掘り羅針鑑定は、BOOTH購入後に注文番号を入力して利用できる有料鑑定です。料金はプレリリース価格780円、正式リリース後は1000円予定です。無料鑑定を先に作成する必要はありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
 const RESULT_CHECKOUT_DISCLOSURE_HTML='深掘り鑑定はプレリリース価格780円、正式リリース後は1000円予定です。無料で引いたカードの続きから追加カードを展開することも、直接有料鑑定から始めることもできます。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
 
 // 全カード・各3問の解釈絞り込みテンプレート
@@ -4237,6 +4237,8 @@ function getServerErrorMessage(data,fallback='処理に失敗しました'){
   if(code==='RASHIN_PAID_CODE_ALREADY_USED') return'この羅針コードはすでに使用済みです';
   if(code==='RASHIN_PAID_CODE_RECIPIENT_MISMATCH') return'この羅針コードは別のGoogleアカウント宛てです';
   if(code==='RASHIN_PAID_CODE_SOURCE_MISMATCH') return'この羅針コードは別の鑑定結果用です';
+  if(code==='BOOTH_ORDER_ALREADY_USED') return'このBOOTH注文番号はすでに使用済みです';
+  if(code==='BOOTH_ORDER_REFERENCE_REQUIRED') return'BOOTH注文番号を入力してください';
   if(code==='GOOGLE_LOGIN_REQUIRED') return'Googleログインが必要です';
   if(code==='RASHIN_CODE_PURCHASE_DISABLED') return'羅針コードの自動発行は停止中です。運営者から受け取った羅針コードを入力してください';
   if(code==='RASHIN_CODE_AUTO_ISSUE_DISABLED') return'羅針コードの自動発行は停止中です';
@@ -4253,7 +4255,7 @@ function getServerErrorMessage(data,fallback='処理に失敗しました'){
   if(code==='AUTH_REQUIRED'||code==='STRIPE_PORTAL_AUTH_REQUIRED'||code==='PAID_AUTH_REQUIRED') return'深掘り鑑定の購入確認が必要です';
   if(code==='PAID_SESSION_REQUIRED') return'深掘り鑑定の利用確認が必要です';
   if(code==='STRIPE_NOT_CONFIGURED') return'深掘り鑑定の購入準備がまだできていません';
-  if(code==='STRIPE_CHECKOUT_DISABLED') return'現在はPayPay支払いで受け付けています';
+  if(code==='STRIPE_CHECKOUT_DISABLED') return'現在はBOOTH購入番号で受け付けています';
   if(code==='STRIPE_CUSTOMER_NOT_FOUND') return'決済情報がまだ作成されていません';
   if(code==='STRIPE_SUBSCRIPTION_NOT_ACTIVE') return'決済は完了しましたが、深掘り鑑定への反映がまだ終わっていません';
   if(code==='PAID_TICKET_REQUIRED') return'この結果の深掘り鑑定を購入すると利用できます';
@@ -4306,7 +4308,7 @@ function getMemberStatusMeta(){
       cls:'inactive',
       label:'深掘り鑑定',
       copy:'深掘り羅針鑑定は、プレリリース価格780円、正式リリース後は1000円予定です。無料鑑定から続きのカードを引くことも、直接有料鑑定から始めることもできます。',
-      action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">PayPayで始める</button>`,
+      action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">BOOTH購入で始める</button>`,
     };
   }
   if(MEMBER_AUTH.authLoggedIn){
@@ -4314,7 +4316,7 @@ function getMemberStatusMeta(){
       cls:'inactive',
       label:'深掘り鑑定',
       copy:'深掘り羅針鑑定は、プレリリース価格780円、正式リリース後は1000円予定です。無料鑑定から続きのカードを引くことも、直接有料鑑定から始めることもできます。',
-      action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">PayPayで始める</button>`,
+      action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">BOOTH購入で始める</button>`,
     };
   }
   return{
@@ -4322,10 +4324,10 @@ function getMemberStatusMeta(){
     label:canUseAccessCode()?'確認コード待ち':'公開準備中',
     copy:canUseAccessCode()
       ?'前回の鑑定をもとに、続きの悩みを読み解けます。確認コードを入力すると深掘り鑑定の利用状態を確認できます。'
-      :'深掘り羅針鑑定は、PayPay支払い後に利用できます。プレリリース価格780円、正式リリース後は1000円予定です。',
+      :'深掘り羅針鑑定は、BOOTH購入後に注文番号を入力すると利用できます。プレリリース価格780円、正式リリース後は1000円予定です。',
     action:canUseAccessCode()
       ?`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openMemberAccessModal('start-paid')">確認コードを入力</button>`
-      :`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">PayPayで始める</button>`,
+      :`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">BOOTH購入で始める</button>`,
   };
 }
 
@@ -5232,7 +5234,7 @@ async function requestRashinCodePurchase(intent='upgrade-paid'){
   }
 }
 
-function getPaypayPaymentUrl(url=''){
+function getBoothPurchaseUrl(url=''){
   const raw=String(url||'').trim();
   if(!raw) return '';
   try{
@@ -5244,298 +5246,37 @@ function getPaypayPaymentUrl(url=''){
   }
 }
 
-function getQrDataBytes(text=''){
-  const raw=String(text||'');
-  if(typeof TextEncoder!=='undefined') return Array.from(new TextEncoder().encode(raw));
-  return raw.split('').map(ch=>ch.charCodeAt(0)&0xFF);
-}
-
-function appendQrBits(target,value,length){
-  for(let i=length-1;i>=0;i--) target.push((value>>>i)&1);
-}
-
-function initQrGfTables(){
-  const exp=new Array(512).fill(0);
-  const log=new Array(256).fill(0);
-  let x=1;
-  for(let i=0;i<255;i++){
-    exp[i]=x;
-    log[x]=i;
-    x<<=1;
-    if(x&0x100) x^=0x11D;
-  }
-  for(let i=255;i<512;i++) exp[i]=exp[i-255];
-  return{exp,log};
-}
-
-const PAYPAY_QR_GF=initQrGfTables();
-
-function qrGfMul(a,b){
-  if(!a||!b) return 0;
-  return PAYPAY_QR_GF.exp[PAYPAY_QR_GF.log[a]+PAYPAY_QR_GF.log[b]];
-}
-
-function buildQrGeneratorPoly(degree){
-  let poly=[1];
-  for(let i=0;i<degree;i++){
-    const next=new Array(poly.length+1).fill(0);
-    for(let j=0;j<poly.length;j++){
-      next[j]^=poly[j];
-      next[j+1]^=qrGfMul(poly[j],PAYPAY_QR_GF.exp[i]);
-    }
-    poly=next;
-  }
-  return poly;
-}
-
-function buildQrErrorCorrection(dataCodewords,degree){
-  const gen=buildQrGeneratorPoly(degree);
-  const ecc=new Array(degree).fill(0);
-  dataCodewords.forEach(codeword=>{
-    const factor=codeword^ecc.shift();
-    ecc.push(0);
-    for(let i=0;i<degree;i++) ecc[i]^=qrGfMul(gen[i+1],factor);
-  });
-  return ecc;
-}
-
-function makePaypayQrCodewords(text=''){
-  const bytes=getQrDataBytes(text);
-  const dataCodewordCount=108;
-  const eccCodewordCount=26;
-  if(!bytes.length||bytes.length>106) return null;
-  const bits=[];
-  appendQrBits(bits,0x4,4);
-  appendQrBits(bits,bytes.length,8);
-  bytes.forEach(byte=>appendQrBits(bits,byte,8));
-  const capacity=dataCodewordCount*8;
-  const terminator=Math.min(4,capacity-bits.length);
-  for(let i=0;i<terminator;i++) bits.push(0);
-  while(bits.length%8) bits.push(0);
-  const data=[];
-  for(let i=0;i<bits.length;i+=8){
-    let value=0;
-    for(let j=0;j<8;j++) value=(value<<1)|(bits[i+j]||0);
-    data.push(value);
-  }
-  for(let pad=0;data.length<dataCodewordCount;pad^=1) data.push(pad?0x11:0xEC);
-  return data.concat(buildQrErrorCorrection(data,eccCodewordCount));
-}
-
-function createQrBaseMatrix(size){
-  const modules=Array.from({length:size},()=>Array(size).fill(false));
-  const reserved=Array.from({length:size},()=>Array(size).fill(false));
-  const set=(x,y,dark,mark=true)=>{
-    if(x<0||y<0||x>=size||y>=size) return;
-    modules[y][x]=!!dark;
-    if(mark) reserved[y][x]=true;
-  };
-  const finder=(x0,y0)=>{
-    for(let y=-1;y<=7;y++){
-      for(let x=-1;x<=7;x++){
-        const xx=x0+x;
-        const yy=y0+y;
-        if(xx<0||yy<0||xx>=size||yy>=size) continue;
-        const inside=x>=0&&x<=6&&y>=0&&y<=6;
-        const dark=inside&&(x===0||x===6||y===0||y===6||(x>=2&&x<=4&&y>=2&&y<=4));
-        set(xx,yy,dark,true);
-      }
-    }
-  };
-  finder(0,0);
-  finder(size-7,0);
-  finder(0,size-7);
-  for(let i=8;i<=size-9;i++){
-    set(i,6,i%2===0,true);
-    set(6,i,i%2===0,true);
-  }
-  const alignment=(cx,cy)=>{
-    for(let y=-2;y<=2;y++){
-      for(let x=-2;x<=2;x++){
-        const dist=Math.max(Math.abs(x),Math.abs(y));
-        set(cx+x,cy+y,dist===2||dist===0,true);
-      }
-    }
-  };
-  alignment(30,30);
-  for(let i=0;i<=8;i++){
-    if(i!==6){
-      set(8,i,false,true);
-      set(i,8,false,true);
-    }
-  }
-  for(let i=0;i<8;i++){
-    set(size-1-i,8,false,true);
-    set(8,size-1-i,false,true);
-  }
-  set(8,size-8,true,true);
-  return{modules,reserved};
-}
-
-function qrMaskBit(mask,x,y){
-  switch(mask){
-    case 0:return (x+y)%2===0;
-    case 1:return y%2===0;
-    case 2:return x%3===0;
-    case 3:return (x+y)%3===0;
-    case 4:return (Math.floor(y/2)+Math.floor(x/3))%2===0;
-    case 5:return ((x*y)%2+(x*y)%3)===0;
-    case 6:return (((x*y)%2+(x*y)%3)%2)===0;
-    case 7:return (((x+y)%2+(x*y)%3)%2)===0;
-    default:return false;
-  }
-}
-
-function getQrFormatBits(mask){
-  const data=(1<<3)|mask;
-  let bits=data<<10;
-  for(let i=14;i>=10;i--){
-    if((bits>>>i)&1) bits^=0x537<<(i-10);
-  }
-  return ((data<<10)|bits)^0x5412;
-}
-
-function setQrFormatBits(modules,mask){
-  const size=modules.length;
-  const bits=getQrFormatBits(mask);
-  const getBit=i=>((bits>>>i)&1)!==0;
-  const set=(x,y,dark)=>{modules[y][x]=!!dark;};
-  for(let i=0;i<=5;i++) set(8,i,getBit(i));
-  set(8,7,getBit(6));
-  set(8,8,getBit(7));
-  set(7,8,getBit(8));
-  for(let i=9;i<15;i++) set(14-i,8,getBit(i));
-  for(let i=0;i<8;i++) set(size-1-i,8,getBit(i));
-  for(let i=8;i<15;i++) set(8,size-15+i,getBit(i));
-  set(8,size-8,true);
-}
-
-function placeQrData(modules,reserved,codewords,mask){
-  const size=modules.length;
-  const bits=[];
-  codewords.forEach(codeword=>appendQrBits(bits,codeword,8));
-  let bitIndex=0;
-  let upward=true;
-  for(let right=size-1;right>=1;right-=2){
-    if(right===6) right--;
-    for(let vert=0;vert<size;vert++){
-      const y=upward?size-1-vert:vert;
-      for(let dx=0;dx<2;dx++){
-        const x=right-dx;
-        if(reserved[y][x]) continue;
-        const bit=bitIndex<bits.length?bits[bitIndex++]:0;
-        modules[y][x]=!!(bit^(qrMaskBit(mask,x,y)?1:0));
-      }
-    }
-    upward=!upward;
-  }
-}
-
-function scoreQrMatrix(modules){
-  const size=modules.length;
-  let score=0;
-  const scoreLine=line=>{
-    let runColor=line[0];
-    let runLength=1;
-    for(let i=1;i<line.length;i++){
-      if(line[i]===runColor){
-        runLength++;
-      }else{
-        if(runLength>=5) score+=3+(runLength-5);
-        runColor=line[i];
-        runLength=1;
-      }
-    }
-    if(runLength>=5) score+=3+(runLength-5);
-    const text=line.map(Boolean).map(v=>v?'1':'0').join('');
-    for(let i=0;i<=text.length-11;i++){
-      const part=text.slice(i,i+11);
-      if(part==='10111010000'||part==='00001011101') score+=40;
-    }
-  };
-  for(let y=0;y<size;y++) scoreLine(modules[y]);
-  for(let x=0;x<size;x++) scoreLine(modules.map(row=>row[x]));
-  for(let y=0;y<size-1;y++){
-    for(let x=0;x<size-1;x++){
-      const c=modules[y][x];
-      if(modules[y][x+1]===c&&modules[y+1][x]===c&&modules[y+1][x+1]===c) score+=3;
-    }
-  }
-  let dark=0;
-  modules.forEach(row=>row.forEach(cell=>{if(cell) dark++;}));
-  const total=size*size;
-  score+=Math.floor(Math.abs(dark*20-total*10)/total)*10;
-  return score;
-}
-
-function buildPaypayQrSvg(text=''){
-  const value=String(text||'').trim();
-  if(!value||typeof qrcode!=='function') return '';
-  try{
-    const qr=qrcode(0,'M');
-    qr.addData(value,'Byte');
-    qr.make();
-    return qr.createSvgTag({
-      cellSize:5,
-      margin:4,
-      scalable:true,
-    }).replace('<svg ','<svg role="img" aria-label="PayPay payment QR code" shape-rendering="crispEdges" ');
-  }catch(e){
-    console.warn('PayPay QR generation failed',e);
-    return '';
-  }
-}
-
-function openPaypayPaymentModal({paypay={},finalAmount=DEEP_READING_PRICE}={}){
+function openBoothOrderModal({booth={},finalAmount=DEEP_READING_PRICE}={}){
   return new Promise(resolve=>{
-    const url=getPaypayPaymentUrl(paypay.openUrl||paypay.qrUrl||paypay.url||'');
-    const displayUrl=getPaypayPaymentUrl(paypay.url||'')||url;
-    if(!url){
-      resolve('');
-      return;
-    }
-    const existing=document.getElementById('paypay-payment-modal');
+    const url=getBoothPurchaseUrl(booth.url||booth.purchaseUrl||'');
+    const existing=document.getElementById('booth-order-modal');
     if(existing) existing.remove();
     const modal=document.createElement('div');
     modal.className='modal-overlay';
-    modal.id='paypay-payment-modal';
+    modal.id='booth-order-modal';
     modal.setAttribute('aria-hidden','true');
     modal.setAttribute('inert','');
-    const qrImageUrl=getPaypayPaymentUrl(paypay.qrImageUrl||paypay.qr_image_url||'');
-    const qrSvg=qrImageUrl?'':buildPaypayQrSvg(url);
-    const qrContent=qrImageUrl
-      ?`<img class="paypay-qr-image" src="${escapeHtml(qrImageUrl)}" alt="PayPay支払いQRコード">`
-      :(qrSvg||'<div class="paypay-url-box">QRコードを作成できませんでした。PayPayを開いてください。</div>');
-    const paymentLead=qrImageUrl
-      ?'PayPayアプリでQRコードを読み取って支払いを完了してください。スマホの場合はPayPayを開くボタンも使えます。'
-      :'PCの場合はスマホの標準カメラでQRコードを読み取ってください。スマホの場合はPayPayを開いて支払いを完了してください。';
-    const qrHint=qrImageUrl
-      ?'PayPayアプリのスキャンでこのQRコードを読み取ってください。'
-      :'PayPayアプリ内のスキャンではなく、スマホの標準カメラでQRを読み取ってください。';
-    const fallbackUrlBox=qrImageUrl?'':`<div class="paypay-url-box">${escapeHtml(displayUrl)}</div>`;
+    const purchaseLink=url
+      ?`<a class="booth-open-link" href="${escapeHtml(url)}" target="_blank" rel="noopener">BOOTHで購入する</a>`
+      :'<div class="booth-url-box">BOOTHの商品ページから対象商品を購入してください。</div>';
     modal.innerHTML=`
-      <div class="modal-box paypay-modal-box" role="dialog" aria-modal="true" aria-labelledby="paypay-payment-title">
-        <div class="modal-title" id="paypay-payment-title">PayPayで支払う</div>
-        <div class="modal-desc">${escapeHtml(paymentLead)}</div>
-        <div class="paypay-payment-grid">
-          <div class="paypay-qr-card" aria-label="PayPay支払いQRコード">${qrContent}</div>
-          <div class="paypay-payment-detail">
-            <div class="paypay-amount">支払い金額：${escapeHtml(String(finalAmount))}円</div>
-            <a class="paypay-open-link" href="${escapeHtml(url)}" target="_blank" rel="noopener">PayPayを開く</a>
-            <div class="paypay-reference-hint">${escapeHtml(qrHint)}</div>
-            ${fallbackUrlBox}
-            ${paypay.note?`<div class="paypay-reference-hint">${escapeHtml(paypay.note)}</div>`:''}
-          </div>
+      <div class="modal-box booth-modal-box" role="dialog" aria-modal="true" aria-labelledby="booth-order-title">
+        <div class="modal-title" id="booth-order-title">BOOTH購入番号を入力</div>
+        <div class="modal-desc">BOOTHで深掘り鑑定チケット、または対象グッズを購入後、BOOTH注文番号を入力してください。</div>
+        <div class="booth-payment-detail">
+          <div class="booth-amount">対象金額：${escapeHtml(String(finalAmount))}円</div>
+          ${purchaseLink}
+          <div class="booth-reference-hint">購入後にBOOTHの注文履歴・購入メールに表示される注文番号を入力すると、深掘り鑑定を開始します。</div>
+          ${booth.note?`<div class="booth-reference-hint">${escapeHtml(booth.note)}</div>`:''}
         </div>
-        <div class="paypay-reference-row">
-          <label class="modal-label" for="paypay-reference-input">支払い後の取引番号</label>
-          <input class="modal-input" id="paypay-reference-input" type="text" inputmode="text" autocomplete="off" placeholder="取引番号・決済番号">
-          <div class="paypay-reference-hint">PayPayの支払い完了画面に出ている番号を入力すると、深掘り鑑定を開始します。</div>
-          <div class="paypay-modal-error" id="paypay-payment-error">取引番号を入力してください。</div>
+        <div class="booth-reference-row">
+          <label class="modal-label" for="booth-reference-input">BOOTH注文番号</label>
+          <input class="modal-input" id="booth-reference-input" type="text" inputmode="text" autocomplete="off" placeholder="BOOTH注文番号">
+          <div class="booth-modal-error" id="booth-order-error">BOOTH注文番号を入力してください。</div>
         </div>
         <div class="modal-btns">
-          <button class="modal-save" type="button" id="paypay-reference-submit">支払い確認</button>
-          <button class="modal-cancel" type="button" id="paypay-reference-cancel">キャンセル</button>
+          <button class="modal-save" type="button" id="booth-reference-submit">購入番号で解放</button>
+          <button class="modal-cancel" type="button" id="booth-reference-cancel">キャンセル</button>
         </div>
       </div>`;
     let settled=false;
@@ -5550,8 +5291,8 @@ function openPaypayPaymentModal({paypay={},finalAmount=DEEP_READING_PRICE}={}){
       if(event.target===modal) finish(null);
     });
     document.body.appendChild(modal);
-    const input=modal.querySelector('#paypay-reference-input');
-    const error=modal.querySelector('#paypay-payment-error');
+    const input=modal.querySelector('#booth-reference-input');
+    const error=modal.querySelector('#booth-order-error');
     const submit=()=>{
       const value=String(input?.value||'').trim();
       if(!value){
@@ -5561,8 +5302,8 @@ function openPaypayPaymentModal({paypay={},finalAmount=DEEP_READING_PRICE}={}){
       }
       finish(value);
     };
-    modal.querySelector('#paypay-reference-submit')?.addEventListener('click',submit);
-    modal.querySelector('#paypay-reference-cancel')?.addEventListener('click',()=>finish(null));
+    modal.querySelector('#booth-reference-submit')?.addEventListener('click',submit);
+    modal.querySelector('#booth-reference-cancel')?.addEventListener('click',()=>finish(null));
     input?.addEventListener('input',()=>{if(error) error.style.display='none';});
     input?.addEventListener('keydown',event=>{
       if(event.key==='Enter'){
@@ -5579,7 +5320,7 @@ function openPaypayPaymentModal({paypay={},finalAmount=DEEP_READING_PRICE}={}){
   });
 }
 
-async function requestRashinCodePurchasePaypay(intent='upgrade-paid'){
+async function requestRashinCodePurchaseBooth(intent='upgrade-paid'){
   if(!canUseProxy()){
     showToast('羅針コードの発行はサーバー経由で利用できます');
     return false;
@@ -5606,34 +5347,30 @@ async function requestRashinCodePurchasePaypay(intent='upgrade-paid'){
     });
     const purchaseData=await readJsonSafe(purchaseRes);
     if(!purchaseRes.ok){
-      showToast(getServerErrorMessage(purchaseData,'PayPay支払いの準備に失敗しました'));
+      showToast(getServerErrorMessage(purchaseData,'BOOTH購入番号の受付準備に失敗しました'));
       return false;
     }
-    const paypay=purchaseData?.paypay||{};
+    const booth=purchaseData?.booth||{};
     const finalAmount=Number(purchaseData?.finalAmount||DEEP_READING_PRICE);
-    const paypayReference=await openPaypayPaymentModal({paypay,finalAmount});
-    if(paypayReference===null) return false;
-    const normalizedReference=String(paypayReference||'').trim();
+    const boothOrderNumber=await openBoothOrderModal({booth,finalAmount});
+    if(boothOrderNumber===null) return false;
+    const normalizedReference=String(boothOrderNumber||'').trim();
     if(!normalizedReference){
-      showToast('PayPayの取引番号を入力してください');
+      showToast('BOOTH注文番号を入力してください');
       return false;
     }
-    const claimRes=await fetchApi(RASHIN_PAID_CODE_PAYPAY_CLAIM_ENDPOINT,{
+    const claimRes=await fetchApi(RASHIN_PAID_CODE_BOOTH_CLAIM_ENDPOINT,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         purchaseOrderId:purchaseData.purchaseOrderId,
         sourceReadingId:purchaseData.sourceReadingId||sourceReadingId,
-        paypayReference:normalizedReference,
+        boothOrderNumber:normalizedReference,
       }),
     });
     const claimData=await readJsonSafe(claimRes);
     if(!claimRes.ok){
-      if(claimData?.pending){
-        showToast('支払い申請を保存しました。確認後に深掘り鑑定を解放します');
-        return false;
-      }
-      showToast(getServerErrorMessage(claimData,'PayPay支払いの確認に失敗しました'));
+      showToast(getServerErrorMessage(claimData,'BOOTH注文番号の確認に失敗しました'));
       return false;
     }
     const paidSourceId=claimData?.sourceReadingId||purchaseData?.sourceReadingId||sourceReadingId;
@@ -5643,9 +5380,9 @@ async function requestRashinCodePurchasePaypay(intent='upgrade-paid'){
       final_amount:finalAmount,
       discount_amount:Number(purchaseData?.discountAmount||0),
       purchase_type:'deep_reading_once',
-      payment_provider:'paypay_manual',
+      payment_provider:'booth',
     });
-    showToast('PayPay支払い情報を確認し、深掘り鑑定を解放しました');
+    showToast('BOOTH注文番号を確認し、深掘り鑑定を解放しました');
     if(intent==='start-paid'){
       ACTIVE_PAID_SOURCE_READING_ID=paidSourceId;
       if(!PENDING_PAID_READING_ID) PENDING_PAID_READING_ID=createReadingId();
@@ -5664,12 +5401,12 @@ async function requestRashinCodePurchasePaypay(intent='upgrade-paid'){
     }
     return true;
   }catch(e){
-    showToast('PayPay支払い確認に失敗しました');
+    showToast('BOOTH注文番号の確認に失敗しました');
     return false;
   }
 }
 
-requestRashinCodePurchase=requestRashinCodePurchasePaypay;
+requestRashinCodePurchase=requestRashinCodePurchaseBooth;
 
 async function redeemRashinFragmentsForPaidTicket(sourceReadingId='',paidReadingId=''){
   const sourceId=String(sourceReadingId||'').trim();
@@ -5812,7 +5549,7 @@ async function openStripeCheckout(intent='start-paid'){
   const sourceReadingId=CURRENT_READING_ID;
   const needsSourceReading=intent==='upgrade-paid';
   if(needsSourceReading&&(!sourceReadingId||PLAN!=='free'||!canContinueCurrentReadingToPaid())){
-    showToast('この結果を深掘りするには、結果画面からPayPay支払いへ進んでください');
+    showToast('この結果を深掘りするには、結果画面からBOOTH注文番号の入力へ進んでください');
     return false;
   }
   CHECKOUT_OPENING=true;
@@ -6075,7 +5812,7 @@ function openMemberAccessModal(intent=''){
       ?'<div class="runtime-status-title">このまま深掘り鑑定フローへ進めます</div><div class="runtime-status-detail">確認用の状態で深掘り鑑定フローを確認できます。</div>'
       :(usesGoogle
         ?'<div class="runtime-status-title">Googleログインで続行</div><div class="runtime-status-detail">履歴と購入確認を保存します。</div>'
-        :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':'深掘り羅針鑑定の準備中です'}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':'有料鑑定はPayPay支払い後に利用できます。プレリリース価格780円、正式リリース後は1000円予定です。'}</div>`);
+        :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':'深掘り羅針鑑定の準備中です'}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':'有料鑑定はBOOTH購入後に注文番号を入力すると利用できます。プレリリース価格780円、正式リリース後は1000円予定です。'}</div>`);
   }
   if(disclosure) disclosure.style.display='none';
   if(localBtn){
@@ -6114,14 +5851,14 @@ function ensurePaidEntryGuideModal(){
   modal.setAttribute('inert','');
   modal.innerHTML=`
     <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="paid-entry-guide-title">
-      <div class="modal-title" id="paid-entry-guide-title">深掘り羅針鑑定のPayPay支払いへ進みます</div>
+      <div class="modal-title" id="paid-entry-guide-title">深掘り羅針鑑定のBOOTH購入番号入力へ進みます</div>
       <div class="modal-desc">無料鑑定を先に作成する必要はありません。プレリリース価格780円、正式リリース後は1000円予定です。</div>
       <div class="runtime-status ok">
-        <div class="runtime-status-title">PayPay支払い後に有料鑑定を開始します</div>
-        <div class="runtime-status-detail">支払い完了画面の取引番号を入力すると、深掘り鑑定を解放します。</div>
+        <div class="runtime-status-title">BOOTH購入後に有料鑑定を開始します</div>
+        <div class="runtime-status-detail">BOOTH注文番号を入力すると、深掘り鑑定を解放します。</div>
       </div>
       <div class="modal-btns">
-        <button class="modal-save" type="button" onclick="startFlow('paid')">PayPayで始める</button>
+        <button class="modal-save" type="button" onclick="startFlow('paid')">BOOTH購入で始める</button>
         <button class="modal-cancel" type="button" onclick="closePaidEntryGuide()">閉じる</button>
       </div>
     </div>`;
@@ -6452,7 +6189,7 @@ function repairStaticCopy(){
       '鑑定履歴がある場合は、前回からの変化も読む'
     ].forEach((text,index)=>{ if(deepItems[index]) deepItems[index].textContent=text; });
     setWithin(planCards[1],'.plan-compare-summary','深掘り鑑定では、同じ相談内容を前提に追加カードを引き、「なぜそうなるか」「どこで止まりやすいか」まで読み解きます。');
-    setWithin(planCards[1],'.plan-compare-action','PayPayで始める');
+    setWithin(planCards[1],'.plan-compare-action','BOOTH購入で始める');
     const deepAction=planCards[1].querySelector('.plan-compare-action');
     if(deepAction){
       deepAction.setAttribute('href','?flow=paid');
@@ -8272,7 +8009,7 @@ function renderMemberStatusFallback(){
       <div class="member-benefit">前回との変化を見比べられる</div>
       <div class="member-benefit">鑑定履歴が積み上がるほど傾向が見える</div>
     </div>
-    <button class="vault-link" type="button" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">PayPayで始める</button>`;
+    <button class="vault-link" type="button" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">BOOTH購入で始める</button>`;
 }
 
 function renderPremiumEntryFallback(){

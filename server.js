@@ -1,6 +1,5 @@
 const http = require('http');
 const https = require('https');
-const tls = require('tls');
 const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
@@ -20,9 +19,6 @@ const RASHIN_DISCOUNT_CHECKOUT_LOCK_DIR = path.join(DATA_DIR, 'rashin-discount-c
 const USER_DIR = path.join(DATA_DIR, 'users');
 const INDEX_DIR = path.join(DATA_DIR, 'indexes');
 const LOG_DIR = path.join(DATA_DIR, 'logs');
-const PAYPAY_MANUAL_CONFIG_PATH = path.join(DATA_DIR, 'paypay-manual-config.json');
-const PAYPAY_MANUAL_NOTIFY_STATE_PATH = path.join(DATA_DIR, 'paypay-manual-notify-state.json');
-const PAYPAY_NOTIFY_CHANNELS_CONFIG_PATH = path.join(DATA_DIR, 'paypay-notify-channels.json');
 const AI_USAGE_LOG_DIR = path.join(LOG_DIR, 'ai-usage');
 const CLIENT_ERROR_LOG_DIR = path.join(LOG_DIR, 'client-errors');
 const AI_EVENT_LOG_DIR = LOG_DIR;
@@ -169,23 +165,9 @@ const STRIPE_SUBSCRIPTION_NAME = process.env.STRIPE_SUBSCRIPTION_NAME || '\u6df1
 const STRIPE_TRIAL_PERIOD_DAYS = Math.max(0, parseInt(process.env.STRIPE_TRIAL_PERIOD_DAYS || '7', 10) || 0);
 const STRIPE_CHECKOUT_PAYMENT_METHOD_TYPES = parseStripePaymentMethodTypes(process.env.STRIPE_PAYMENT_METHOD_TYPES);
 const RASHIN_CODE_ADMIN_SECRET = normalizeEnvValue(process.env.RASHIN_CODE_ADMIN_SECRET || '');
-const PAYPAY_MANUAL_PAYMENT_URL = normalizeEnvValue(process.env.PAYPAY_MANUAL_PAYMENT_URL || '');
-const PAYPAY_MANUAL_PAYMENT_LABEL = normalizeEnvValue(process.env.PAYPAY_MANUAL_PAYMENT_LABEL || 'Rashin Senjutsu PayPay');
-const PAYPAY_MANUAL_PAYMENT_NOTE = normalizeEnvValue(process.env.PAYPAY_MANUAL_PAYMENT_NOTE || '');
-const PAYPAY_MANUAL_PAYMENT_QR_IMAGE_URL = normalizeEnvValue(process.env.PAYPAY_MANUAL_PAYMENT_QR_IMAGE_URL || '');
-const PAYPAY_MANUAL_AUTO_ISSUE_ENABLED = normalizeEnvValue(process.env.PAYPAY_MANUAL_AUTO_ISSUE_ENABLED || '').toLowerCase() === 'true';
-const PAYPAY_EXPIRY_NOTIFY_ENABLED = normalizeEnvValue(process.env.PAYPAY_EXPIRY_NOTIFY_ENABLED || 'true').toLowerCase() !== 'false';
-const PAYPAY_EXPIRY_NOTIFY_LOOKAHEAD_DAYS = Math.max(0, parseInt(process.env.PAYPAY_EXPIRY_NOTIFY_LOOKAHEAD_DAYS || '3', 10) || 3);
-const PAYPAY_EXPIRY_NOTIFY_INTERVAL_MS = Math.max(5 * 60 * 1000, parseInt(process.env.PAYPAY_EXPIRY_NOTIFY_INTERVAL_MS || String(6 * 60 * 60 * 1000), 10) || (6 * 60 * 60 * 1000));
-const PAYPAY_NOTIFY_DISCORD_WEBHOOK_URL = normalizeEnvValue(process.env.PAYPAY_NOTIFY_DISCORD_WEBHOOK_URL || process.env.DISCORD_WEBHOOK_URL || '');
-const PAYPAY_NOTIFY_LINE_CHANNEL_ACCESS_TOKEN = normalizeEnvValue(process.env.PAYPAY_NOTIFY_LINE_CHANNEL_ACCESS_TOKEN || process.env.LINE_CHANNEL_ACCESS_TOKEN || '');
-const PAYPAY_NOTIFY_LINE_TO = normalizeEnvValue(process.env.PAYPAY_NOTIFY_LINE_TO || process.env.LINE_USER_ID || process.env.LINE_GROUP_ID || '');
-const PAYPAY_NOTIFY_GMAIL_TO = normalizeEnvValue(process.env.PAYPAY_NOTIFY_GMAIL_TO || process.env.GMAIL_NOTIFY_TO || '');
-const PAYPAY_NOTIFY_GMAIL_USER = normalizeEnvValue(process.env.PAYPAY_NOTIFY_GMAIL_USER || process.env.GMAIL_SMTP_USER || '');
-const PAYPAY_NOTIFY_GMAIL_APP_PASSWORD = normalizeEnvValue(process.env.PAYPAY_NOTIFY_GMAIL_APP_PASSWORD || process.env.GMAIL_SMTP_APP_PASSWORD || process.env.GMAIL_APP_PASSWORD || '');
-const PAYPAY_NOTIFY_GMAIL_FROM = normalizeEnvValue(process.env.PAYPAY_NOTIFY_GMAIL_FROM || PAYPAY_NOTIFY_GMAIL_USER);
-const PAYPAY_NOTIFY_GMAIL_SMTP_HOST = normalizeEnvValue(process.env.PAYPAY_NOTIFY_GMAIL_SMTP_HOST || 'smtp.gmail.com');
-const PAYPAY_NOTIFY_GMAIL_SMTP_PORT = Math.max(1, parseInt(process.env.PAYPAY_NOTIFY_GMAIL_SMTP_PORT || '465', 10) || 465);
+const BOOTH_DEEP_READING_URL = normalizeEnvValue(process.env.BOOTH_DEEP_READING_URL || process.env.BOOTH_PRODUCT_URL || process.env.BOOTH_SHOP_URL || '');
+const BOOTH_PAYMENT_LABEL = normalizeEnvValue(process.env.BOOTH_PAYMENT_LABEL || '羅針占術 BOOTH');
+const BOOTH_PAYMENT_NOTE = normalizeEnvValue(process.env.BOOTH_PAYMENT_NOTE || 'BOOTHで購入後、注文番号を入力してください。');
 const AI_MODELS = {
   free: process.env.OPENAI_FREE_MODEL || 'gpt-5.4-mini',
   paid: process.env.ANTHROPIC_PAID_MODEL || 'claude-sonnet-4-6',
@@ -271,7 +253,7 @@ const RATE_LIMIT_RULES = {
   rashin_code: { windowMs: 10 * 60 * 1000, max: 10 },
   rashin_paid_code: { windowMs: 10 * 60 * 1000, max: 10 },
   rashin_code_purchase: { windowMs: 10 * 60 * 1000, max: 8 },
-  paypay_manual_claim: { windowMs: 10 * 60 * 1000, max: 8 },
+  booth_order_claim: { windowMs: 10 * 60 * 1000, max: 8 },
   rashin_code_admin: { windowMs: 10 * 60 * 1000, max: 30 },
   stripe_checkout: { windowMs: 10 * 60 * 1000, max: 8 },
   stripe_portal: { windowMs: 10 * 60 * 1000, max: 20 },
@@ -757,499 +739,21 @@ function rashinPaidCodeReady() {
   return true;
 }
 
-function normalizePaypayManualUrl(value) {
-  const raw = String(value || '').trim();
-  if (!raw) return '';
-  try {
-    const url = new URL(raw);
-    if (url.protocol !== 'https:' && url.protocol !== 'http:') return '';
-    return url.href;
-  } catch (_error) {
-    return '';
-  }
+function normalizeBoothOrderReference(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim().slice(0, 120);
 }
 
-function firstDefinedProperty(source, keys) {
-  if (!source || typeof source !== 'object') return undefined;
-  for (const key of keys) {
-    if (Object.prototype.hasOwnProperty.call(source, key)) return source[key];
-  }
-  return undefined;
-}
-
-function normalizeDiscordWebhookUrl(value) {
-  const raw = normalizeEnvValue(value);
-  if (!raw || isPlaceholderEnvValue(raw)) return '';
-  try {
-    const url = new URL(raw);
-    const hostname = url.hostname.toLowerCase();
-    if (url.protocol !== 'https:') return '';
-    if (hostname !== 'discord.com' && hostname !== 'discordapp.com') return '';
-    if (!/^\/api\/webhooks\/\d+\/[^/]+\/?$/.test(url.pathname)) return '';
-    url.hash = '';
-    return url.toString();
-  } catch (_error) {
-    return '';
-  }
-}
-
-function normalizePaypayManualConfig(raw = {}) {
-  const source = raw && typeof raw === 'object' ? raw : {};
-  const sourceUrl = firstDefinedProperty(source, ['url', 'paymentUrl', 'payment_url']);
-  const sourceQrImageUrl = firstDefinedProperty(source, ['qrImageUrl', 'qr_image_url', 'qrImage', 'qr_image']);
-  const url = normalizePaypayManualUrl(sourceUrl ?? PAYPAY_MANUAL_PAYMENT_URL);
+function getBoothPaymentPayload() {
   return {
-    url,
-    qrImageUrl: normalizePaymentAssetUrl(sourceQrImageUrl ?? PAYPAY_MANUAL_PAYMENT_QR_IMAGE_URL),
-    label: normalizeEnvValue((firstDefinedProperty(source, ['label']) ?? PAYPAY_MANUAL_PAYMENT_LABEL) || 'Rashin Senjutsu PayPay'),
-    note: normalizeEnvValue((firstDefinedProperty(source, ['note']) ?? PAYPAY_MANUAL_PAYMENT_NOTE) || ''),
-    expiresAt: normalizeEnvValue(firstDefinedProperty(source, ['expiresAt', 'expires_at']) ?? ''),
-    updatedAt: normalizeEnvValue(firstDefinedProperty(source, ['updatedAt', 'updated_at']) ?? ''),
+    provider: 'booth',
+    url: normalizePublicUrl(BOOTH_DEEP_READING_URL),
+    label: BOOTH_PAYMENT_LABEL,
+    note: BOOTH_PAYMENT_NOTE,
   };
 }
 
-function normalizePaypayNotifyChannelsConfig(raw = {}) {
-  const source = raw && typeof raw === 'object' ? raw : {};
-  const rawDiscordWebhookUrl = source.discordWebhookUrl || source.discord_webhook_url || '';
-  return {
-    discordWebhookUrl: normalizeDiscordWebhookUrl(rawDiscordWebhookUrl),
-    updatedAt: normalizeEnvValue(source.updatedAt || source.updated_at || ''),
-  };
-}
-
-async function readPaypayManualConfig() {
-  const stored = await readJsonFileSafe(PAYPAY_MANUAL_CONFIG_PATH, null);
-  return normalizePaypayManualConfig(stored || {});
-}
-
-async function writePaypayManualConfig(config) {
-  const current = await readPaypayManualConfig();
-  const normalized = normalizePaypayManualConfig({
-    ...current,
-    ...(config || {}),
-  });
-  if (!normalized.url) {
-    const error = new Error('PAYPAY_MANUAL_PAYMENT_URL_INVALID');
-    error.statusCode = 400;
-    throw error;
-  }
-  const payload = {
-    ...normalized,
-    updatedAt: new Date().toISOString(),
-  };
-  await writeJsonFileAtomic(PAYPAY_MANUAL_CONFIG_PATH, payload);
-  return payload;
-}
-
-async function readPaypayNotifyChannelsConfig() {
-  const stored = await readJsonFileSafe(PAYPAY_NOTIFY_CHANNELS_CONFIG_PATH, null);
-  return normalizePaypayNotifyChannelsConfig(stored || {});
-}
-
-async function writePaypayNotifyChannelsConfig(config = {}) {
-  const rawDiscordWebhookUrl = normalizeEnvValue(config.discordWebhookUrl || config.discord_webhook_url || '');
-  const normalizedDiscordWebhookUrl = normalizeDiscordWebhookUrl(rawDiscordWebhookUrl);
-  if (rawDiscordWebhookUrl && !normalizedDiscordWebhookUrl) {
-    const error = new Error('DISCORD_WEBHOOK_URL_INVALID');
-    error.statusCode = 400;
-    throw error;
-  }
-  const current = await readPaypayNotifyChannelsConfig();
-  const payload = {
-    ...current,
-    discordWebhookUrl: normalizedDiscordWebhookUrl,
-    updatedAt: new Date().toISOString(),
-  };
-  await writeJsonFileAtomic(PAYPAY_NOTIFY_CHANNELS_CONFIG_PATH, payload);
-  return payload;
-}
-
-async function paypayManualReady() {
-  const config = await readPaypayManualConfig();
-  return !!config.url;
-}
-
-function splitNotificationList(value) {
-  return String(value || '')
-    .split(/[\s,;]+/)
-    .map(item => item.trim())
-    .filter(Boolean);
-}
-
-function isConfiguredNotifyValue(value) {
-  const normalized = normalizeEnvValue(value);
-  return !!normalized && !isPlaceholderEnvValue(normalized);
-}
-
-function maskNotificationTarget(value = '') {
-  const text = String(value || '').trim();
-  if (!text) return '';
-  if (text.includes('@')) return maskEmail(text);
-  if (text.length <= 8) return `${text.slice(0, 2)}***`;
-  return `${text.slice(0, 4)}***${text.slice(-4)}`;
-}
-
-function getEffectiveDiscordWebhookUrl(config = {}) {
-  return normalizeDiscordWebhookUrl(config.discordWebhookUrl || PAYPAY_NOTIFY_DISCORD_WEBHOOK_URL);
-}
-
-function summarizePaypayNotifyChannels(config = {}) {
-  const discordWebhookUrl = getEffectiveDiscordWebhookUrl(config);
-  const gmailRecipients = splitNotificationList(PAYPAY_NOTIFY_GMAIL_TO);
-  return {
-    enabled: PAYPAY_EXPIRY_NOTIFY_ENABLED,
-    discord: isConfiguredNotifyValue(discordWebhookUrl),
-    discordTarget: discordWebhookUrl ? maskNotificationTarget(discordWebhookUrl) : '',
-    line: !!(isConfiguredNotifyValue(PAYPAY_NOTIFY_LINE_CHANNEL_ACCESS_TOKEN) && isConfiguredNotifyValue(PAYPAY_NOTIFY_LINE_TO)),
-    gmail: !!(isConfiguredNotifyValue(PAYPAY_NOTIFY_GMAIL_USER) && isConfiguredNotifyValue(PAYPAY_NOTIFY_GMAIL_APP_PASSWORD) && gmailRecipients.length),
-    gmailRecipients: gmailRecipients.map(maskNotificationTarget),
-    lookaheadDays: PAYPAY_EXPIRY_NOTIFY_LOOKAHEAD_DAYS,
-    intervalMs: PAYPAY_EXPIRY_NOTIFY_INTERVAL_MS,
-  };
-}
-
-async function getPaypayNotifyChannelsStatus() {
-  const config = await readPaypayNotifyChannelsConfig();
-  return summarizePaypayNotifyChannels(config);
-}
-
-function getJstDateStampFromMs(ms = Date.now()) {
-  return new Date(ms + (9 * 60 * 60 * 1000)).toISOString().slice(0, 10);
-}
-
-function getPaypayExpiryStatus(config = {}, nowMs = Date.now()) {
-  const url = normalizePaypayManualUrl(config.url || '');
-  const expiresAt = normalizeEnvValue(config.expiresAt || '');
-  if (!url) {
-    return {
-      ok: false,
-      state: 'not_configured',
-      severity: 'error',
-      notify: true,
-      message: 'PayPay payment URL is not configured.',
-      url,
-      expiresAt,
-      daysRemaining: null,
-    };
-  }
-  if (!expiresAt) {
-    return {
-      ok: false,
-      state: 'expires_at_missing',
-      severity: 'warning',
-      notify: true,
-      message: 'PayPay payment URL is configured but expiresAt is missing.',
-      url,
-      expiresAt,
-      daysRemaining: null,
-    };
-  }
-  const expiresMs = new Date(expiresAt).getTime();
-  if (!Number.isFinite(expiresMs)) {
-    return {
-      ok: false,
-      state: 'expires_at_invalid',
-      severity: 'error',
-      notify: true,
-      message: 'PayPay payment URL expiresAt is invalid.',
-      url,
-      expiresAt,
-      daysRemaining: null,
-    };
-  }
-  const remainingMs = expiresMs - nowMs;
-  const daysRemaining = Math.ceil(remainingMs / (24 * 60 * 60 * 1000));
-  if (remainingMs < 0) {
-    return {
-      ok: false,
-      state: 'expired',
-      severity: 'error',
-      notify: true,
-      message: 'PayPay payment URL has expired.',
-      url,
-      expiresAt,
-      daysRemaining,
-    };
-  }
-  if (remainingMs <= PAYPAY_EXPIRY_NOTIFY_LOOKAHEAD_DAYS * 24 * 60 * 60 * 1000) {
-    return {
-      ok: false,
-      state: 'expiring_soon',
-      severity: 'warning',
-      notify: true,
-      message: `PayPay payment URL expires in ${daysRemaining} day(s).`,
-      url,
-      expiresAt,
-      daysRemaining,
-    };
-  }
-  return {
-    ok: true,
-    state: 'ok',
-    severity: 'info',
-    notify: false,
-    message: 'PayPay payment URL is within the configured expiry window.',
-    url,
-    expiresAt,
-    daysRemaining,
-  };
-}
-
-function buildPaypayExpiryNotification(status = {}, config = {}) {
-  const origin = PUBLIC_ORIGIN || `http://${HOST}:${PORT}`;
-  const title = status.state === 'expired'
-    ? '羅針占術 PayPay URL expired'
-    : status.state === 'expiring_soon'
-      ? '羅針占術 PayPay URL expiring soon'
-      : '羅針占術 PayPay URL needs attention';
-  const lines = [
-    title,
-    '',
-    `Status: ${status.state || 'unknown'}`,
-    `Message: ${status.message || ''}`,
-    `Current URL: ${status.url || '(not configured)'}`,
-    `Current QR image URL: ${config.qrImageUrl || '(missing)'}`,
-    `Expires at: ${status.expiresAt || '(missing)'}`,
-    `Days remaining: ${Number.isFinite(status.daysRemaining) ? status.daysRemaining : 'unknown'}`,
-    `Label: ${config.label || PAYPAY_MANUAL_PAYMENT_LABEL || 'PayPay'}`,
-    '',
-    'Action: create a new PayPay payment URL, then update url and expiresAt from the PayPay config admin API.',
-    `Admin API: ${origin}/api/rashin-paid-code/paypay/config`,
-    '',
-    'PowerShell update format:',
-    '```powershell',
-    '$env:RASHIN_CODE_ADMIN_SECRET="your-admin-secret"',
-    '',
-    '$body = @{',
-    '  url = "https://qr.paypay.ne.jp/new-url"',
-    '  qrImageUrl = "/images/payment/paypay-qr.png"',
-    '  label = "Rashin Senjutsu PayPay"',
-    '  note = ""',
-    '  expiresAt = "2026-06-08T23:59:59+09:00"',
-    '} | ConvertTo-Json',
-    '',
-    'Invoke-RestMethod `',
-    `  -Uri "${origin}/api/rashin-paid-code/paypay/config" \``,
-    '  -Method Post `',
-    '  -Headers @{"x-rashin-admin-secret"=$env:RASHIN_CODE_ADMIN_SECRET} `',
-    '  -ContentType "application/json" `',
-    '  -Body $body',
-    '```',
-  ];
-  return {
-    title,
-    text: lines.join('\n'),
-  };
-}
-
-async function sendDiscordOperationalNotification(text, config = {}) {
-  const discordWebhookUrl = getEffectiveDiscordWebhookUrl(config);
-  if (!isConfiguredNotifyValue(discordWebhookUrl)) return { channel: 'discord', skipped: true };
-  const upstream = await makeHttpsRequest(
-    discordWebhookUrl,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    },
-    {
-      content: text.slice(0, 1900),
-      allowed_mentions: { parse: [] },
-    }
-  );
-  return {
-    channel: 'discord',
-    ok: upstream.statusCode >= 200 && upstream.statusCode < 300,
-    status: upstream.statusCode,
-  };
-}
-
-async function sendLineOperationalNotification(text) {
-  if (!isConfiguredNotifyValue(PAYPAY_NOTIFY_LINE_CHANNEL_ACCESS_TOKEN) || !isConfiguredNotifyValue(PAYPAY_NOTIFY_LINE_TO)) {
-    return { channel: 'line', skipped: true };
-  }
-  const upstream = await makeHttpsRequest(
-    'https://api.line.me/v2/bot/message/push',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${PAYPAY_NOTIFY_LINE_CHANNEL_ACCESS_TOKEN}`,
-      },
-    },
-    {
-      to: PAYPAY_NOTIFY_LINE_TO,
-      messages: [{ type: 'text', text: text.slice(0, 4900) }],
-    }
-  );
-  return {
-    channel: 'line',
-    ok: upstream.statusCode >= 200 && upstream.statusCode < 300,
-    status: upstream.statusCode,
-  };
-}
-
-function encodeMimeHeader(value = '') {
-  return `=?UTF-8?B?${Buffer.from(String(value || ''), 'utf8').toString('base64')}?=`;
-}
-
-function waitForSmtpResponse(socket, bufferRef) {
-  return new Promise((resolve, reject) => {
-    const onData = chunk => {
-      bufferRef.value += chunk;
-      const lines = bufferRef.value.split(/\r?\n/).filter(Boolean);
-      const lastLine = lines[lines.length - 1] || '';
-      const match = lastLine.match(/^(\d{3})\s/);
-      if (!match) return;
-      socket.off('data', onData);
-      socket.off('error', onError);
-      bufferRef.value = '';
-      resolve({ code: Number(match[1]), raw: lines.join('\n') });
-    };
-    const onError = error => {
-      socket.off('data', onData);
-      reject(error);
-    };
-    socket.on('data', onData);
-    socket.once('error', onError);
-  });
-}
-
-async function sendSmtpCommand(socket, bufferRef, command, expectedCodes) {
-  if (command) socket.write(`${command}\r\n`);
-  const response = await waitForSmtpResponse(socket, bufferRef);
-  const allowed = Array.isArray(expectedCodes) ? expectedCodes : [expectedCodes];
-  if (!allowed.includes(response.code)) {
-    throw new Error(`SMTP_${response.code}_${String(command || 'connect').slice(0, 20)}`);
-  }
-  return response;
-}
-
-async function sendGmailOperationalNotification(subject, text) {
-  const recipients = splitNotificationList(PAYPAY_NOTIFY_GMAIL_TO);
-  if (!isConfiguredNotifyValue(PAYPAY_NOTIFY_GMAIL_USER) || !isConfiguredNotifyValue(PAYPAY_NOTIFY_GMAIL_APP_PASSWORD) || !recipients.length) {
-    return { channel: 'gmail', skipped: true };
-  }
-  const from = PAYPAY_NOTIFY_GMAIL_FROM || PAYPAY_NOTIFY_GMAIL_USER;
-  const messageId = `<paypay-${Date.now()}-${crypto.randomBytes(4).toString('hex')}@rashin-senjutsu>`;
-  const safeBody = String(text || '').replace(/\r/g, '').split('\n').map(line => (line.startsWith('.') ? `.${line}` : line)).join('\r\n');
-  const message = [
-    `From: ${encodeMimeHeader('Rashin Senjutsu')} <${from}>`,
-    `To: ${recipients.join(', ')}`,
-    `Subject: ${encodeMimeHeader(subject)}`,
-    'MIME-Version: 1.0',
-    'Content-Type: text/plain; charset=UTF-8',
-    'Content-Transfer-Encoding: 8bit',
-    `Date: ${new Date().toUTCString()}`,
-    `Message-ID: ${messageId}`,
-    '',
-    safeBody,
-    '.',
-  ].join('\r\n');
-
-  const socket = tls.connect({
-    host: PAYPAY_NOTIFY_GMAIL_SMTP_HOST,
-    port: PAYPAY_NOTIFY_GMAIL_SMTP_PORT,
-    servername: PAYPAY_NOTIFY_GMAIL_SMTP_HOST,
-  });
-  socket.setEncoding('utf8');
-  socket.setTimeout(15000);
-  const bufferRef = { value: '' };
-  try {
-    await new Promise((resolve, reject) => {
-      socket.once('secureConnect', resolve);
-      socket.once('error', reject);
-      socket.once('timeout', () => reject(new Error('SMTP_TIMEOUT')));
-    });
-    await sendSmtpCommand(socket, bufferRef, '', 220);
-    await sendSmtpCommand(socket, bufferRef, 'EHLO rashin-senjutsu', 250);
-    const auth = Buffer.from(`\u0000${PAYPAY_NOTIFY_GMAIL_USER}\u0000${PAYPAY_NOTIFY_GMAIL_APP_PASSWORD}`, 'utf8').toString('base64');
-    await sendSmtpCommand(socket, bufferRef, `AUTH PLAIN ${auth}`, 235);
-    await sendSmtpCommand(socket, bufferRef, `MAIL FROM:<${from}>`, 250);
-    for (const recipient of recipients) {
-      await sendSmtpCommand(socket, bufferRef, `RCPT TO:<${recipient}>`, [250, 251]);
-    }
-    await sendSmtpCommand(socket, bufferRef, 'DATA', 354);
-    await sendSmtpCommand(socket, bufferRef, message, 250);
-    await sendSmtpCommand(socket, bufferRef, 'QUIT', 221).catch(() => null);
-    return { channel: 'gmail', ok: true, recipients: recipients.map(maskNotificationTarget) };
-  } finally {
-    socket.destroy();
-  }
-}
-
-async function sendPaypayExpiryNotifications(status, config) {
-  const notification = buildPaypayExpiryNotification(status, config);
-  const channelsConfig = await readPaypayNotifyChannelsConfig();
-  const results = [];
-  for (const sender of [
-    () => sendDiscordOperationalNotification(notification.text, channelsConfig),
-    () => sendLineOperationalNotification(notification.text),
-    () => sendGmailOperationalNotification(notification.title, notification.text),
-  ]) {
-    try {
-      results.push(await sender());
-    } catch (error) {
-      results.push({ ok: false, error: error.message || 'NOTIFICATION_FAILED' });
-    }
-  }
-  await appendJsonlRecord(LOG_DIR, 'paypay-notify', {
-    at: new Date().toISOString(),
-    status,
-    channels: results,
-  }).catch(() => null);
-  return results;
-}
-
-async function checkPaypayManualExpiryAndNotify(options = {}) {
-  const force = !!options.force;
-  const config = await readPaypayManualConfig();
-  const status = getPaypayExpiryStatus(config);
-  const channels = await getPaypayNotifyChannelsStatus();
-  const hasAnyChannel = channels.discord || channels.line || channels.gmail;
-  if (!PAYPAY_EXPIRY_NOTIFY_ENABLED || !hasAnyChannel) {
-    return { ok: true, notified: false, reason: !PAYPAY_EXPIRY_NOTIFY_ENABLED ? 'disabled' : 'no_channels', status, channels };
-  }
-  if (!force && !status.notify) {
-    return { ok: true, notified: false, reason: 'not_due', status, channels };
-  }
-  const state = await readJsonFileSafe(PAYPAY_MANUAL_NOTIFY_STATE_PATH, {});
-  const hash = crypto.createHash('sha256').update(`${status.url}|${status.expiresAt}|${status.state}`).digest('hex').slice(0, 16);
-  const notifyKey = `${status.state}:${hash}:${getJstDateStampFromMs()}`;
-  if (!force && state.lastNotifyKey === notifyKey) {
-    return { ok: true, notified: false, reason: 'already_sent_today', status, channels };
-  }
-  const results = await sendPaypayExpiryNotifications(status, config);
-  const notificationPreview = buildPaypayExpiryNotification(status, config);
-  await writeJsonFileAtomic(PAYPAY_MANUAL_NOTIFY_STATE_PATH, {
-    lastNotifyKey: notifyKey,
-    lastCheckedAt: new Date().toISOString(),
-    lastStatus: status,
-    lastResults: results,
-  });
-  return {
-    ok: results.some(result => result.ok),
-    notified: true,
-    status,
-    channels,
-    results,
-    notificationPreview: {
-      title: notificationPreview.title,
-      text: notificationPreview.text,
-    },
-  };
-}
-
-function startPaypayManualExpiryNotifier() {
-  if (!PAYPAY_EXPIRY_NOTIFY_ENABLED) return null;
-  const run = () => {
-    checkPaypayManualExpiryAndNotify({ source: 'interval' }).catch(error => {
-      console.warn('[paypay-notify] expiry notification check failed', error?.message || error);
-    });
-  };
-  const timer = setInterval(run, PAYPAY_EXPIRY_NOTIFY_INTERVAL_MS);
-  if (typeof timer.unref === 'function') timer.unref();
-  setTimeout(run, 5000).unref?.();
-  return timer;
+function boothPurchaseReady() {
+  return true;
 }
 
 async function getRuntimeSetupStatus(req) {
@@ -1264,9 +768,8 @@ async function getRuntimeSetupStatus(req) {
     ok: productionReady,
     googleClientConfigured: GOOGLE_CLIENT_CONFIGURED,
     rashinPaidCodeReady: rashinPaidCodeReady(),
-    paypayManualReady: await paypayManualReady(),
-    paypayManualAutoIssueEnabled: PAYPAY_MANUAL_AUTO_ISSUE_ENABLED,
-    paypayExpiryNotify: await getPaypayNotifyChannelsStatus(),
+    boothPurchaseReady: boothPurchaseReady(),
+    boothProductUrlConfigured: !!getBoothPaymentPayload().url,
     deepReadingAmount: DEEP_READING_NORMAL_AMOUNT,
     deepReadingPrereleaseAmount: DEEP_READING_PRERELEASE_AMOUNT,
     deepReadingReleaseAmount: DEEP_READING_RELEASE_AMOUNT,
@@ -1289,9 +792,7 @@ async function getRuntimeSetupStatus(req) {
     codePurchasePath: '/api/rashin-paid-code/purchase-intent',
     codeRedeemPath: '/api/rashin-paid-code/redeem',
     codeAdminIssuePath: '/api/rashin-paid-code/admin/issue',
-    paypayManualClaimPath: '/api/rashin-paid-code/paypay/claim',
-    paypayManualConfigPath: '/api/rashin-paid-code/paypay/config',
-    paypayManualNotifyConfigPath: '/api/rashin-paid-code/paypay/notify-config',
+    boothOrderClaimPath: '/api/rashin-paid-code/booth/claim',
     legacyStripeWebhookPath: '/api/stripe/webhook',
     legacyStripeWebhookUrl: makeAbsoluteUrl(req, '/api/stripe/webhook'),
   };
@@ -2042,13 +1543,6 @@ function normalizePublicUrl(value) {
   }
 }
 
-function normalizePaymentAssetUrl(value) {
-  const raw = normalizeEnvValue(value);
-  if (!raw || isPlaceholderEnvValue(raw)) return '';
-  if (raw.startsWith('/')) return raw.startsWith('//') ? '' : raw;
-  return normalizePublicUrl(raw);
-}
-
 function readDeveloperEmailFromHeader(req) {
   if (!DEV_ACCESS_ENABLED) return '';
   if (!isLocalRequest(req)) return '';
@@ -2416,9 +1910,6 @@ function getAllowedStaticPath(urlPath) {
   }
   if (pathname === '/app.js') {
     return path.join(ROOT_DIR, 'app.js');
-  }
-  if (pathname === '/vendor/qrcode-generator/qrcode.js') {
-    return path.join(ROOT_DIR, 'vendor', 'qrcode-generator', 'qrcode.js');
   }
   if (pathname === '/solar-term-boundaries.json') {
     return path.join(ROOT_DIR, 'solar-term-boundaries.json');
@@ -3213,48 +2704,20 @@ async function createRashinCodePurchaseOrder({ userRecord, sourceReadingId, inte
   });
 }
 
-function normalizePaypayManualReference(value) {
-  return String(value || '').replace(/\s+/g, ' ').trim().slice(0, 120);
+async function findPurchaseOrderByProviderPaymentId(paymentProvider, providerPaymentId, exceptOrderId = '') {
+  const provider = String(paymentProvider || '').trim();
+  const reference = normalizeBoothOrderReference(providerPaymentId);
+  const skipOrderId = normalizePurchaseOrderId(exceptOrderId);
+  if (!provider || !reference) return null;
+  const orders = await listJsonRecords(PURCHASE_ORDER_DIR);
+  return orders.find(order => {
+    if (skipOrderId && order?.id === skipOrderId) return false;
+    return String(order?.paymentProvider || '') === provider
+      && normalizeBoothOrderReference(order?.providerPaymentId || '') === reference;
+  }) || null;
 }
 
-function buildPaypayManualOpenUrl(paymentUrl = '') {
-  const normalized = normalizePaypayManualUrl(paymentUrl);
-  if (!normalized) return '';
-  try {
-    const url = new URL(normalized);
-    if (url.hostname.toLowerCase() !== 'qr.paypay.ne.jp') return normalized;
-    const params = new URLSearchParams();
-    params.set('pid', 'QRCode');
-    params.set('link_key', normalized);
-    params.set('af_dp', 'paypay://payment');
-    params.set('af_ios_url', 'https://paypay.ne.jp/');
-    params.set('af_android_url', 'https://paypay.ne.jp/');
-    params.set('af_web_dp', 'https://paypay.ne.jp/');
-    params.set('af_force_deeplink', 'true');
-    return `https://paypay.onelink.me/EUKm?${params.toString()}`;
-  } catch (_error) {
-    return normalized;
-  }
-}
-
-async function getPaypayManualPaymentPayload() {
-  const config = await readPaypayManualConfig();
-  const openUrl = buildPaypayManualOpenUrl(config.url);
-  return {
-    provider: 'paypay_manual',
-    url: config.url,
-    qrImageUrl: config.qrImageUrl,
-    openUrl,
-    qrUrl: openUrl || config.url,
-    label: config.label,
-    note: config.note,
-    expiresAt: config.expiresAt,
-    updatedAt: config.updatedAt,
-    autoIssueEnabled: PAYPAY_MANUAL_AUTO_ISSUE_ENABLED,
-  };
-}
-
-async function createRashinCodePurchaseOrderForPaypay({ userRecord, sourceReadingId = '', intent = 'upgrade-paid' }) {
+async function createRashinCodePurchaseOrderForBooth({ userRecord, sourceReadingId = '', intent = 'upgrade-paid' }) {
   if (!userRecord?.userId) {
     const error = new Error('GOOGLE_LOGIN_REQUIRED');
     error.statusCode = 401;
@@ -3271,15 +2734,15 @@ async function createRashinCodePurchaseOrderForPaypay({ userRecord, sourceReadin
   }
   if (safeIntent !== 'start-paid') {
     const order = await createRashinCodePurchaseOrder({ userRecord, sourceReadingId: sourceId, intent: safeIntent });
-    const paypayOrder = {
+    const boothOrder = {
       ...order,
-      paymentProvider: 'paypay_manual',
-      checkoutProvider: 'paypay_manual',
+      paymentProvider: 'booth',
+      checkoutProvider: 'booth',
       deliveryChannel: 'in_app',
       updatedAt: new Date().toISOString(),
     };
-    await writePurchaseOrder(paypayOrder);
-    return paypayOrder;
+    await writePurchaseOrder(boothOrder);
+    return boothOrder;
   }
   const owner = { ownerType: 'user', userId: userRecord.userId, vaultId: '' };
   const order = await createPurchaseOrder({ owner, sourceReadingId: sourceId, rashinDiscount: null });
@@ -3287,8 +2750,8 @@ async function createRashinCodePurchaseOrderForPaypay({ userRecord, sourceReadin
   const pendingOrder = {
     ...order,
     status: 'awaiting_payment',
-    paymentProvider: 'paypay_manual',
-    checkoutProvider: 'paypay_manual',
+    paymentProvider: 'booth',
+    checkoutProvider: 'booth',
     requestedIntent: safeIntent.slice(0, 40),
     deliveryChannel: 'in_app',
     recipientEmailHash: hashPrivateLookupValue('email', email),
@@ -3299,7 +2762,7 @@ async function createRashinCodePurchaseOrderForPaypay({ userRecord, sourceReadin
   return pendingOrder;
 }
 
-async function createRashinPaidCodeRecordForOrder({ order, userRecord, providerPaymentId = '', deliveryChannel = 'in_app' }) {
+async function createRashinPaidCodeRecordForOrder({ order, userRecord, providerPaymentId = '', paymentProvider = 'booth', deliveryChannel = 'in_app' }) {
   const sourceId = normalizeVaultRecordId(order?.sourceReadingId || '');
   if (!order?.id || !userRecord?.userId || !sourceId) throw new Error('INVALID_RASHIN_PAID_CODE_ORDER');
   for (let attempt = 0; attempt < 8; attempt += 1) {
@@ -3323,8 +2786,8 @@ async function createRashinPaidCodeRecordForOrder({ order, userRecord, providerP
         ownerType: 'user',
         userId: normalizeUserId(userRecord.userId),
         vaultId: '',
-        paymentProvider: 'paypay_manual',
-        providerPaymentId: normalizePaypayManualReference(providerPaymentId),
+        paymentProvider,
+        providerPaymentId: normalizeBoothOrderReference(providerPaymentId),
         recipientEmailHash: hashPrivateLookupValue('email', email),
         recipientEmailMasked: maskEmail(email),
         deliveryChannel,
@@ -3351,7 +2814,7 @@ async function createRashinPaidCodeRecordForOrder({ order, userRecord, providerP
   throw new Error('RASHIN_PAID_CODE_GENERATION_FAILED');
 }
 
-async function completePaypayManualOrderWithTicket({ order, userRecord, providerPaymentId = '', issuedBy = 'paypay_manual_claim' }) {
+async function completeBoothOrderWithTicket({ order, userRecord, providerPaymentId = '', issuedBy = 'booth_order_claim' }) {
   const owner = { ownerType: 'user', userId: userRecord.userId, vaultId: '' };
   if (order.paidReadingTicketId) {
     const existingTicket = await readPaidReadingTicket(order.paidReadingTicketId);
@@ -3367,6 +2830,7 @@ async function completePaypayManualOrderWithTicket({ order, userRecord, provider
     order,
     userRecord,
     providerPaymentId,
+    paymentProvider: 'booth',
     deliveryChannel: issuedBy,
   });
   const ticket = await createPaidTicketFromRashinPaidCode({
@@ -3388,9 +2852,9 @@ async function completePaypayManualOrderWithTicket({ order, userRecord, provider
   const completedOrder = {
     ...order,
     status: 'paid',
-    paymentProvider: 'paypay_manual',
-    checkoutProvider: 'paypay_manual',
-    providerPaymentId: normalizePaypayManualReference(providerPaymentId),
+    paymentProvider: 'booth',
+    checkoutProvider: 'booth',
+    providerPaymentId: normalizeBoothOrderReference(providerPaymentId),
     paidAt: now,
     paymentClaimedAt: order.paymentClaimedAt || now,
     paidReadingTicketId: ticket.id,
@@ -5263,14 +4727,6 @@ async function handleRashinPaidCodePurchaseIntent(req, res) {
     sendRateLimitExceeded(res, rate, 'Too many code purchase attempts. Please wait and retry.');
     return;
   }
-  const paypayPayload = await getPaypayManualPaymentPayload();
-  if (!paypayPayload.url) {
-    sendJson(res, 503, {
-      error: 'PAYPAY_MANUAL_PAYMENT_NOT_CONFIGURED',
-      message: 'PayPay manual payment URL is not configured.',
-    });
-    return;
-  }
   let body;
   try {
     body = await readJsonBody(req);
@@ -5285,7 +4741,7 @@ async function handleRashinPaidCodePurchaseIntent(req, res) {
   if (!userRecord) {
     sendJson(res, 401, {
       error: 'GOOGLE_LOGIN_REQUIRED',
-      message: 'Google login is required before starting PayPay payment.',
+      message: 'Google login is required before claiming BOOTH purchase.',
     });
     return;
   }
@@ -5294,7 +4750,7 @@ async function handleRashinPaidCodePurchaseIntent(req, res) {
     body?.sourceReadingId || body?.source_reading_id || body?.oracleResultId || body?.oracle_result_id || ''
   );
   try {
-    const order = await createRashinCodePurchaseOrderForPaypay({ userRecord, sourceReadingId, intent });
+    const order = await createRashinCodePurchaseOrderForBooth({ userRecord, sourceReadingId, intent });
     sendJson(res, 200, {
       ok: true,
       purchaseOrderId: order.id,
@@ -5304,18 +4760,18 @@ async function handleRashinPaidCodePurchaseIntent(req, res) {
       discountAmount: order.discountAmount,
       finalAmount: order.finalAmount,
       currency: order.currency,
-      paypay: paypayPayload,
-      paymentClaimPath: '/api/rashin-paid-code/paypay/claim',
+      booth: getBoothPaymentPayload(),
+      paymentClaimPath: '/api/rashin-paid-code/booth/claim',
     });
   } catch (error) {
-    console.error('PayPay manual purchase order preparation failed', {
+    console.error('BOOTH purchase order preparation failed', {
       error: error.message,
       stack: error.stack,
       userId: userRecord?.userId || '',
       sourceReadingId,
     });
     sendJson(res, error.statusCode || 500, {
-      error: error.publicCode || 'PAYPAY_MANUAL_PURCHASE_PREPARE_FAILED',
+      error: error.publicCode || 'BOOTH_PURCHASE_PREPARE_FAILED',
       message: 'The request could not be completed. Please wait and try again.',
     });
   }
@@ -5466,7 +4922,9 @@ async function handleRashinPaidCodeAdminIssue(req, res) {
     return;
   }
   const purchaseOrderId = normalizePurchaseOrderId(body?.purchaseOrderId || body?.purchase_order_id || '');
-  const providerPaymentId = normalizePaypayManualReference(body?.paypayReference || body?.paypay_reference || body?.providerPaymentId || '');
+  const providerPaymentId = normalizeBoothOrderReference(
+    body?.boothOrderNumber || body?.booth_order_number || body?.boothOrderId || body?.booth_order_id || body?.providerPaymentId || ''
+  );
   if (!purchaseOrderId) {
     sendJson(res, 400, {
       error: 'PURCHASE_ORDER_REQUIRED',
@@ -5493,11 +4951,11 @@ async function handleRashinPaidCodeAdminIssue(req, res) {
         error.statusCode = 410;
         throw error;
       }
-      return completePaypayManualOrderWithTicket({
+      return completeBoothOrderWithTicket({
         order,
         userRecord,
         providerPaymentId,
-        issuedBy: 'admin_confirmed_paypay',
+        issuedBy: 'admin_confirmed_booth',
       });
     });
     sendJson(res, 200, {
@@ -5519,10 +4977,10 @@ async function handleRashinPaidCodeAdminIssue(req, res) {
   }
 }
 
-async function handlePaypayManualClaim(req, res) {
-  const rate = consumeRateLimit(req, 'paypay_manual_claim');
+async function handleBoothOrderClaim(req, res) {
+  const rate = consumeRateLimit(req, 'booth_order_claim');
   if (!rate.ok) {
-    sendRateLimitExceeded(res, rate, 'Too many PayPay claim attempts. Please wait and retry.');
+    sendRateLimitExceeded(res, rate, 'Too many BOOTH claim attempts. Please wait and retry.');
     return;
   }
   let body;
@@ -5531,7 +4989,7 @@ async function handlePaypayManualClaim(req, res) {
   } catch (error) {
     sendJson(res, 400, {
       error: error.message || 'INVALID_JSON',
-      message: 'PayPay payment claim payload could not be parsed.',
+      message: 'BOOTH order claim payload could not be parsed.',
     });
     return;
   }
@@ -5539,14 +4997,14 @@ async function handlePaypayManualClaim(req, res) {
   if (!userRecord) {
     sendJson(res, 401, {
       error: 'GOOGLE_LOGIN_REQUIRED',
-      message: 'Google login is required before claiming PayPay payment.',
+      message: 'Google login is required before claiming BOOTH purchase.',
     });
     return;
   }
   const purchaseOrderId = normalizePurchaseOrderId(body?.purchaseOrderId || body?.purchase_order_id || '');
   const sourceReadingId = normalizeVaultRecordId(body?.sourceReadingId || body?.source_reading_id || body?.oracleResultId || '');
-  const providerPaymentId = normalizePaypayManualReference(
-    body?.paypayReference || body?.paypay_reference || body?.providerPaymentId || body?.paymentReference || ''
+  const providerPaymentId = normalizeBoothOrderReference(
+    body?.boothOrderNumber || body?.booth_order_number || body?.boothOrderId || body?.booth_order_id || body?.providerPaymentId || body?.paymentReference || ''
   );
   if (!purchaseOrderId) {
     sendJson(res, 400, {
@@ -5557,8 +5015,8 @@ async function handlePaypayManualClaim(req, res) {
   }
   if (providerPaymentId.length < 3) {
     sendJson(res, 400, {
-      error: 'PAYPAY_REFERENCE_REQUIRED',
-      message: 'PayPay payment reference is required.',
+      error: 'BOOTH_ORDER_REFERENCE_REQUIRED',
+      message: 'BOOTH order number is required.',
     });
     return;
   }
@@ -5589,21 +5047,13 @@ async function handlePaypayManualClaim(req, res) {
         const existingTicket = await readPaidReadingTicket(order.paidReadingTicketId);
         if (existingTicket) return { pending: false, order, ticket: existingTicket };
       }
-      if (!PAYPAY_MANUAL_AUTO_ISSUE_ENABLED) {
-        const now = new Date().toISOString();
-        const reviewOrder = {
-          ...order,
-          status: 'payment_requires_review',
-          paymentProvider: 'paypay_manual',
-          checkoutProvider: 'paypay_manual',
-          providerPaymentId,
-          paymentClaimedAt: now,
-          updatedAt: now,
-        };
-        await writePurchaseOrder(reviewOrder);
-        return { pending: true, order: reviewOrder };
+      const duplicateOrder = await findPurchaseOrderByProviderPaymentId('booth', providerPaymentId, order.id);
+      if (duplicateOrder) {
+        const error = new Error('BOOTH_ORDER_ALREADY_USED');
+        error.statusCode = 409;
+        throw error;
       }
-      const completed = await completePaypayManualOrderWithTicket({
+      const completed = await completeBoothOrderWithTicket({
         order: {
           ...order,
           providerPaymentId,
@@ -5611,22 +5061,10 @@ async function handlePaypayManualClaim(req, res) {
         },
         userRecord,
         providerPaymentId,
-        issuedBy: 'paypay_manual_auto',
+        issuedBy: 'booth_order_claim',
       });
       return { pending: false, ...completed };
     });
-    if (result.pending) {
-      sendJson(res, 202, {
-        ok: false,
-        pending: true,
-        error: 'PAYPAY_MANUAL_REVIEW_REQUIRED',
-        purchaseOrderId: result.order.id,
-        sourceReadingId: result.order.sourceReadingId,
-        status: result.order.status,
-        message: 'PayPay payment claim was saved for manual review.',
-      });
-      return;
-    }
     sendJson(res, 200, {
       ok: true,
       purchaseOrderId: result.order.id,
@@ -5640,193 +5078,8 @@ async function handlePaypayManualClaim(req, res) {
     });
   } catch (error) {
     sendJson(res, error.statusCode || 500, {
-      error: error.message || 'PAYPAY_MANUAL_CLAIM_FAILED',
+      error: error.message || 'BOOTH_ORDER_CLAIM_FAILED',
       message: 'The request could not be completed. Please wait and try again.',
-    });
-  }
-}
-
-async function handlePaypayManualConfig(req, res) {
-  const providedSecret = normalizeEnvValue(req.headers['x-rashin-admin-secret'] || '');
-  if (!isConfiguredAppSecret(RASHIN_CODE_ADMIN_SECRET) || !safeCompareText(providedSecret, RASHIN_CODE_ADMIN_SECRET)) {
-    sendJson(res, 403, {
-      error: 'RASHIN_CODE_ADMIN_DENIED',
-      message: 'Admin secret was not accepted.',
-    });
-    return;
-  }
-  if (req.method === 'GET') {
-    const config = await readPaypayManualConfig();
-    sendJson(res, 200, {
-      ok: true,
-      paypay: {
-        ...config,
-        configured: !!config.url,
-        autoIssueEnabled: PAYPAY_MANUAL_AUTO_ISSUE_ENABLED,
-      },
-    });
-    return;
-  }
-  if (req.method !== 'POST') {
-    sendJson(res, 405, {
-      error: 'METHOD_NOT_ALLOWED',
-      message: 'Use GET or POST.',
-    });
-    return;
-  }
-  let body;
-  try {
-    body = await readJsonBody(req);
-  } catch (error) {
-    sendJson(res, 400, {
-      error: error.message || 'INVALID_JSON',
-      message: 'PayPay config payload could not be parsed.',
-    });
-    return;
-  }
-  try {
-    const config = await writePaypayManualConfig({
-      url: firstDefinedProperty(body, ['url', 'paymentUrl', 'payment_url']),
-      qrImageUrl: firstDefinedProperty(body, ['qrImageUrl', 'qr_image_url', 'qrImage', 'qr_image']),
-      label: firstDefinedProperty(body, ['label']),
-      note: firstDefinedProperty(body, ['note']),
-      expiresAt: firstDefinedProperty(body, ['expiresAt', 'expires_at']),
-    });
-    checkPaypayManualExpiryAndNotify({ source: 'config_update' }).catch(error => {
-      console.warn('[paypay-notify] config update check failed', error?.message || error);
-    });
-    sendJson(res, 200, {
-      ok: true,
-      paypay: {
-        ...config,
-        configured: !!config.url,
-        autoIssueEnabled: PAYPAY_MANUAL_AUTO_ISSUE_ENABLED,
-      },
-    });
-  } catch (error) {
-    sendJson(res, error.statusCode || 500, {
-      error: error.message || 'PAYPAY_MANUAL_CONFIG_FAILED',
-      message: 'PayPay payment URL could not be saved.',
-    });
-  }
-}
-
-async function handlePaypayManualNotify(req, res) {
-  const providedSecret = normalizeEnvValue(req.headers['x-rashin-admin-secret'] || '');
-  if (!isConfiguredAppSecret(RASHIN_CODE_ADMIN_SECRET) || !safeCompareText(providedSecret, RASHIN_CODE_ADMIN_SECRET)) {
-    sendJson(res, 403, {
-      error: 'RASHIN_CODE_ADMIN_DENIED',
-      message: 'Admin secret was not accepted.',
-    });
-    return;
-  }
-  if (req.method === 'GET') {
-    const config = await readPaypayManualConfig();
-    sendJson(res, 200, {
-      ok: true,
-      status: getPaypayExpiryStatus(config),
-      channels: await getPaypayNotifyChannelsStatus(),
-    });
-    return;
-  }
-  if (req.method !== 'POST') {
-    sendJson(res, 405, {
-      error: 'METHOD_NOT_ALLOWED',
-      message: 'Use GET or POST.',
-    });
-    return;
-  }
-  let body = {};
-  try {
-    body = await readJsonBody(req);
-  } catch (error) {
-    if (error.message !== 'EMPTY_BODY') {
-      sendJson(res, 400, {
-        error: error.message || 'INVALID_JSON',
-        message: 'PayPay notification payload could not be parsed.',
-      });
-      return;
-    }
-  }
-  const result = await checkPaypayManualExpiryAndNotify({ force: !!body?.force, source: 'admin' });
-  sendJson(res, result.ok ? 200 : 502, result);
-}
-
-async function handlePaypayManualNotifyConfig(req, res) {
-  const providedSecret = normalizeEnvValue(req.headers['x-rashin-admin-secret'] || '');
-  if (!isConfiguredAppSecret(RASHIN_CODE_ADMIN_SECRET) || !safeCompareText(providedSecret, RASHIN_CODE_ADMIN_SECRET)) {
-    sendJson(res, 403, {
-      error: 'RASHIN_CODE_ADMIN_DENIED',
-      message: 'Admin secret was not accepted.',
-    });
-    return;
-  }
-  if (req.method === 'GET') {
-    const config = await readPaypayNotifyChannelsConfig();
-    sendJson(res, 200, {
-      ok: true,
-      channels: summarizePaypayNotifyChannels(config),
-      config: {
-        discordConfigured: !!getEffectiveDiscordWebhookUrl(config),
-        discordTarget: getEffectiveDiscordWebhookUrl(config) ? maskNotificationTarget(getEffectiveDiscordWebhookUrl(config)) : '',
-        updatedAt: config.updatedAt || '',
-      },
-    });
-    return;
-  }
-  if (req.method !== 'POST') {
-    sendJson(res, 405, {
-      error: 'METHOD_NOT_ALLOWED',
-      message: 'Use GET or POST.',
-    });
-    return;
-  }
-  let body;
-  try {
-    body = await readJsonBody(req);
-  } catch (error) {
-    sendJson(res, 400, {
-      error: error.message || 'INVALID_JSON',
-      message: 'PayPay notification config payload could not be parsed.',
-    });
-    return;
-  }
-  const hasDiscordWebhookUrl = Object.prototype.hasOwnProperty.call(body || {}, 'discordWebhookUrl')
-    || Object.prototype.hasOwnProperty.call(body || {}, 'discord_webhook_url')
-    || Object.prototype.hasOwnProperty.call(body || {}, 'discord');
-  if (!hasDiscordWebhookUrl) {
-    sendJson(res, 400, {
-      error: 'DISCORD_WEBHOOK_URL_REQUIRED',
-      message: 'discordWebhookUrl is required.',
-    });
-    return;
-  }
-  try {
-    const config = await writePaypayNotifyChannelsConfig({
-      discordWebhookUrl: body?.discordWebhookUrl || body?.discord_webhook_url || body?.discord || '',
-    });
-    const testResult = await sendDiscordOperationalNotification(
-      [
-        'Rashin Senjutsu PayPay notification connected.',
-        `At: ${new Date().toISOString()}`,
-        'Future PayPay URL expiry warnings will be sent to this Discord channel.',
-      ].join('\n'),
-      config
-    );
-    sendJson(res, testResult.ok ? 200 : 502, {
-      ok: !!testResult.ok,
-      channels: summarizePaypayNotifyChannels(config),
-      config: {
-        discordConfigured: !!getEffectiveDiscordWebhookUrl(config),
-        discordTarget: getEffectiveDiscordWebhookUrl(config) ? maskNotificationTarget(getEffectiveDiscordWebhookUrl(config)) : '',
-        updatedAt: config.updatedAt || '',
-      },
-      testResult,
-    });
-  } catch (error) {
-    sendJson(res, error.statusCode || 500, {
-      error: error.message || 'PAYPAY_NOTIFY_CONFIG_FAILED',
-      message: 'PayPay notification config could not be saved.',
     });
   }
 }
@@ -6571,7 +5824,8 @@ async function handleRequest(req, res) {
       stripeCheckoutReady: false,
       stripePortalReady: false,
       stripeWebhookReady: false,
-      paypayExpiryNotify: setup?.paypayExpiryNotify || await getPaypayNotifyChannelsStatus(),
+      boothPurchaseReady: setup?.boothPurchaseReady ?? boothPurchaseReady(),
+      boothProductUrlConfigured: setup?.boothProductUrlConfigured ?? !!getBoothPaymentPayload().url,
       paidModelAbTest: setup?.paidModelAbTest || {
         name: PAID_MODEL_AB_TEST_NAME,
         enabled: PAID_MODEL_AB_TEST_ENABLED,
@@ -6624,23 +5878,8 @@ async function handleRequest(req, res) {
     return;
   }
 
-  if (req.method === 'POST' && req.url.startsWith('/api/rashin-paid-code/paypay/claim')) {
-    await handlePaypayManualClaim(req, res);
-    return;
-  }
-
-  if ((req.method === 'GET' || req.method === 'POST') && req.url.startsWith('/api/rashin-paid-code/paypay/notify-config')) {
-    await handlePaypayManualNotifyConfig(req, res);
-    return;
-  }
-
-  if ((req.method === 'GET' || req.method === 'POST') && req.url.startsWith('/api/rashin-paid-code/paypay/notify')) {
-    await handlePaypayManualNotify(req, res);
-    return;
-  }
-
-  if ((req.method === 'GET' || req.method === 'POST') && req.url.startsWith('/api/rashin-paid-code/paypay/config')) {
-    await handlePaypayManualConfig(req, res);
+  if (req.method === 'POST' && req.url.startsWith('/api/rashin-paid-code/booth/claim')) {
+    await handleBoothOrderClaim(req, res);
     return;
   }
 
@@ -6766,7 +6005,6 @@ function createServer() {
 
 if (require.main === module) {
   const server = createServer();
-  startPaypayManualExpiryNotifier();
   server.on('error', error => {
     if (error && error.code === 'EADDRINUSE') {
       console.error(`Port ${PORT} is already in use. Try a different port, for example: .\\start-uranai.ps1 -Port 3001`);
