@@ -1201,13 +1201,24 @@ async function checkPaypayManualExpiryAndNotify(options = {}) {
     return { ok: true, notified: false, reason: 'already_sent_today', status, channels };
   }
   const results = await sendPaypayExpiryNotifications(status, config);
+  const notificationPreview = buildPaypayExpiryNotification(status, config);
   await writeJsonFileAtomic(PAYPAY_MANUAL_NOTIFY_STATE_PATH, {
     lastNotifyKey: notifyKey,
     lastCheckedAt: new Date().toISOString(),
     lastStatus: status,
     lastResults: results,
   });
-  return { ok: results.some(result => result.ok), notified: true, status, channels, results };
+  return {
+    ok: results.some(result => result.ok),
+    notified: true,
+    status,
+    channels,
+    results,
+    notificationPreview: {
+      title: notificationPreview.title,
+      text: notificationPreview.text,
+    },
+  };
 }
 
 function startPaypayManualExpiryNotifier() {
