@@ -171,10 +171,10 @@ THREADS_USER_ID
 
 The workflow file is `.github/workflows/threads-social.yml`.
 
-GitHub schedule runs in UTC. The minutes are intentionally not `00` because GitHub scheduled workflows at the top of the hour can be delayed or dropped under load. Each lane has a short retry window; duplicate protection checks existing Threads posts by `utm_content` before publishing:
+GitHub schedule runs in UTC. The minutes are intentionally not `00` because GitHub scheduled workflows at the top of the hour can be delayed or dropped under load. Each lane has an extended retry window; duplicate protection checks existing Threads posts by `utm_content` before publishing:
 
-- `13,28,43,58 22 * * *`: 07:13/07:28/07:43/07:58 JST oracle image post
-- `13,28,43,58 11 * * *`: 20:13/20:28/20:43/20:58 JST concept post
+- `13/28/43/58 22 UTC` and `13/28 23 UTC`: 07:13/07:28/07:43/07:58/08:13/08:28 JST oracle image post retry window
+- `13/28/43/58 11 UTC` and `13/28 12 UTC`: 20:13/20:28/20:43/20:58/21:13/21:28 JST concept post retry window
 
 The workflow uses `--only-kind=oracle` and `--only-kind=concept` so the evening run cannot accidentally publish a missed morning post.
 

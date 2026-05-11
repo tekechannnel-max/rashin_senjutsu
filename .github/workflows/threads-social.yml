@@ -2,10 +2,20 @@ name: Threads social posts
 
 on:
   schedule:
-    # 07:13, 07:28, 07:43, 07:58 JST
-    - cron: '13,28,43,58 22 * * *'
-    # 20:13, 20:28, 20:43, 20:58 JST
-    - cron: '13,28,43,58 11 * * *'
+    # 07:13, 07:28, 07:43, 07:58, 08:13, 08:28 JST
+    - cron: '13 22 * * *'
+    - cron: '28 22 * * *'
+    - cron: '43 22 * * *'
+    - cron: '58 22 * * *'
+    - cron: '13 23 * * *'
+    - cron: '28 23 * * *'
+    # 20:13, 20:28, 20:43, 20:58, 21:13, 21:28 JST
+    - cron: '13 11 * * *'
+    - cron: '28 11 * * *'
+    - cron: '43 11 * * *'
+    - cron: '58 11 * * *'
+    - cron: '13 12 * * *'
+    - cron: '28 12 * * *'
   workflow_dispatch:
     inputs:
       kind:
@@ -80,8 +90,8 @@ jobs:
           kind="${{ github.event.inputs.kind || 'auto' }}"
           if [ "$kind" = "auto" ]; then
             case "${{ github.event.schedule }}" in
-              "13,28,43,58 22 * * *") kind="oracle" ;;
-              "13,28,43,58 11 * * *") kind="concept" ;;
+              "13 22 * * *"|"28 22 * * *"|"43 22 * * *"|"58 22 * * *"|"13 23 * * *"|"28 23 * * *") kind="oracle" ;;
+              "13 11 * * *"|"28 11 * * *"|"43 11 * * *"|"58 11 * * *"|"13 12 * * *"|"28 12 * * *") kind="concept" ;;
               *) kind="all" ;;
             esac
           fi
