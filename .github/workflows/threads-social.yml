@@ -2,10 +2,10 @@ name: Threads social posts
 
 on:
   schedule:
-    # 07:13 JST
-    - cron: '13 22 * * *'
-    # 20:13 JST
-    - cron: '13 11 * * *'
+    # 07:13, 07:28, 07:43, 07:58 JST
+    - cron: '13,28,43,58 22 * * *'
+    # 20:13, 20:28, 20:43, 20:58 JST
+    - cron: '13,28,43,58 11 * * *'
   workflow_dispatch:
     inputs:
       kind:
@@ -40,6 +40,10 @@ jobs:
       SOCIAL_RELEASE_MODE: prelaunch
       SOCIAL_BOOTH_ENABLED: 'false'
       SOCIAL_UTM_CAMPAIGN: 202605_prerelease
+      SOCIAL_STATELESS_MODE: 'true'
+      SOCIAL_THREADS_IMAGE_FALLBACK_TEXT: 'true'
+      THREADS_CONTAINER_TIMEOUT_MS: '120000'
+      THREADS_POST_VERIFY_TIMEOUT_MS: '120000'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -76,8 +80,8 @@ jobs:
           kind="${{ github.event.inputs.kind || 'auto' }}"
           if [ "$kind" = "auto" ]; then
             case "${{ github.event.schedule }}" in
-              "13 22 * * *") kind="oracle" ;;
-              "13 11 * * *") kind="concept" ;;
+              "13,28,43,58 22 * * *") kind="oracle" ;;
+              "13,28,43,58 11 * * *") kind="concept" ;;
               *) kind="all" ;;
             esac
           fi

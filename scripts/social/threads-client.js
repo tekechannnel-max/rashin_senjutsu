@@ -125,6 +125,10 @@ async function requestJson(url, options = {}) {
   return json;
 }
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function buildThreadsAuthUrl(options = {}) {
   const clientId = requireValue('THREADS_APP_ID', options.clientId || process.env.THREADS_APP_ID);
   const redirectUri = requireValue('THREADS_REDIRECT_URI', options.redirectUri || process.env.THREADS_REDIRECT_URI);
@@ -181,6 +185,66 @@ async function getThreadsMe(credentials = null) {
   return requestJson(`${GRAPH_BASE}/me?${params.toString()}`);
 }
 
+async function listThreads({ limit = 25, credentials = null } = {}) {
+  const creds = credentials || await getThreadsCredentials();
+  requireThreadsCredentials(creds);
+  const params = new URLSearchParams({
+    fields: 'id,permalink,text,timestamp,media_type',
+    limit: String(limit),
+    access_token: creds.accessToken,
+  });
+  return requestJson(`${GRAPH_BASE}/${encodeURIComponent(creds.userId)}/threads?${params.toString()}`);
+}
+
+async function getThreadPost(threadId, credentials = null) {
+  const creds = credentials || await getThreadsCredentials();
+  requireThreadsCredentials(creds);
+  const params = new URLSearchParams({
+    fields: 'id,permalink,text,timestamp,media_type',
+    access_token: creds.accessToken,
+  });
+  return requestJson(`${GRAPH_BASE}/${encodeURIComponent(threadId)}?${params.toString()}`);
+}
+
+async function getThreadsContainerStatus(containerId, credentials = null) {
+  const creds = credentials || await getThreadsCredentials();
+  requireThreadsCredentials(creds);
+  const params = new URLSearchParams({
+    fields: 'id,status,error_message',
+    access_token: creds.accessToken,
+  });
+  return requestJson(`${GRAPH_BASE}/${encodeURIComponent(containerId)}?${params.toString()}`);
+}
+
+async function waitForThreadsContainer(containerId, { credentials = null, timeoutMs = 90000, intervalMs = 5000 } = {}) {
+  const started = Date.now();
+  let last = null;
+  while (Date.now() - started <= timeoutMs) {
+    last = await getThreadsContainerStatus(containerId, credentials);
+    const status = String(last.status || '').toUpperCase();
+    if (['FINISHED', 'READY', 'PUBLISHED'].includes(status)) return last;
+    if (['ERROR', 'EXPIRED'].includes(status)) {
+      throw new Error(`Threads media container ${containerId} failed with status ${status}: ${last.error_message || 'no error_message'}`);
+    }
+    await sleep(intervalMs);
+  }
+  throw new Error(`Threads media container ${containerId} was not ready within ${timeoutMs}ms. Last status: ${JSON.stringify(last)}`);
+}
+
+async function verifyPublishedThread(threadId, { credentials = null, timeoutMs = 90000, intervalMs = 10000 } = {}) {
+  const started = Date.now();
+  let lastError = null;
+  while (Date.now() - started <= timeoutMs) {
+    try {
+      return await getThreadPost(threadId, credentials);
+    } catch (error) {
+      lastError = error;
+      await sleep(intervalMs);
+    }
+  }
+  throw new Error(`Threads post ${threadId} could not be verified within ${timeoutMs}ms: ${lastError?.message || 'unknown error'}`);
+}
+
 async function assertExpectedThreadsAccount(credentials = null) {
   const expected = normalizeUsername(process.env.THREADS_EXPECTED_USERNAME);
   if (!expected) {
@@ -227,16 +291,31 @@ async function postTextToThreads({ text, credentials = null }) {
   const creds = credentials || await getThreadsCredentials();
   await assertExpectedThreadsAccount(creds);
   const created = await createThreadsContainer({ mediaType: 'TEXT', text, credentials: creds });
-  return publishThreadsContainer(created.id, creds);
+  const published = await publishThreadsContainer(created.id, creds);
+  const verified = await verifyPublishedThread(published.id, {
+    credentials: creds,
+    timeoutMs: Number(process.env.THREADS_POST_VERIFY_TIMEOUT_MS || 90000),
+    intervalMs: Number(process.env.THREADS_POST_VERIFY_INTERVAL_MS || 10000),
+  });
+  return { ...published, permalink: verified.permalink, verified: true };
 }
 
 async function postImageToThreads({ text, imageUrl, altText = '', waitMs = null, credentials = null }) {
   const creds = credentials || await getThreadsCredentials();
   await assertExpectedThreadsAccount(creds);
   const created = await createThreadsContainer({ mediaType: 'IMAGE', text, imageUrl, altText, credentials: creds });
-  const delayMs = waitMs === null ? Number(process.env.THREADS_PUBLISH_WAIT_MS || 30000) : Number(waitMs);
-  if (delayMs > 0) await new Promise(resolve => setTimeout(resolve, delayMs));
-  return publishThreadsContainer(created.id, creds);
+  await waitForThreadsContainer(created.id, {
+    credentials: creds,
+    timeoutMs: waitMs === null ? Number(process.env.THREADS_CONTAINER_TIMEOUT_MS || 90000) : Number(waitMs),
+    intervalMs: Number(process.env.THREADS_CONTAINER_POLL_MS || 5000),
+  });
+  const published = await publishThreadsContainer(created.id, creds);
+  const verified = await verifyPublishedThread(published.id, {
+    credentials: creds,
+    timeoutMs: Number(process.env.THREADS_POST_VERIFY_TIMEOUT_MS || 90000),
+    intervalMs: Number(process.env.THREADS_POST_VERIFY_INTERVAL_MS || 10000),
+  });
+  return { ...published, permalink: verified.permalink, verified: true };
 }
 
 function sanitizeTokenResult(value) {
@@ -255,6 +334,11 @@ module.exports = {
   refreshLongLivedToken,
   getThreadsCredentials,
   getThreadsMe,
+  listThreads,
+  getThreadPost,
+  getThreadsContainerStatus,
+  waitForThreadsContainer,
+  verifyPublishedThread,
   saveStoredToken,
   postTextToThreads,
   postImageToThreads,

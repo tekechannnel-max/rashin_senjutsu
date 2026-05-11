@@ -13,8 +13,12 @@ const THREADS_CHARACTER_LIMIT = 500;
 const X_CHARACTER_LIMIT = 280;
 const DEFAULT_SOCIAL_CAMPAIGN = '202605_prerelease';
 const RELEASE_DATE = '2026-05-16';
+const CARD_CYCLE_START_DATE = '2026-05-12';
 const SOCIAL_PAID_CTA_MODES = new Set(['off', 'soft', 'active']);
 const SOCIAL_RELEASE_MODES = new Set(['prelaunch', 'launch', 'postrelease']);
+const CARD_OVERRIDES_BY_DATE = {
+  '2026-05-12': 8,
+};
 
 const NG_WORDS = [
   '絶対当たる',
@@ -64,7 +68,7 @@ const PRE_RELEASE_ORACLE_PROMOS = {
       '公開後は、今日のオラクルと無料鑑定で',
       '本質・本音・いまの現実・次の一手まで見られます。',
     ],
-    closing: '5/16から、あなたも今日の1枚を引かない？',
+    closing: 'あなたも今日の1枚を引かない？',
   },
   '2026-05-13': {
     intro: [
@@ -75,7 +79,7 @@ const PRE_RELEASE_ORACLE_PROMOS = {
       '羅針占術は、当てて終わりではなく、',
       '迷いを今日の小さな行動に落とす占いです。',
     ],
-    closing: '5/16から、あなたも今日の1枚を引かない？',
+    closing: 'あなたも今日の1枚を引かない？',
   },
   '2026-05-14': {
     intro: [
@@ -86,7 +90,7 @@ const PRE_RELEASE_ORACLE_PROMOS = {
       '1枚のカードから、今日の確認点と',
       '次にできる小さな一手を見つけます。',
     ],
-    closing: '5/16から、あなたも今日の1枚を引かない？',
+    closing: 'あなたも今日の1枚を引かない？',
   },
   '2026-05-15': {
     intro: [
@@ -97,7 +101,7 @@ const PRE_RELEASE_ORACLE_PROMOS = {
       '明日からは、今日のオラクルと無料鑑定で',
       '迷いを次の一手に整理できます。',
     ],
-    closing: '明日から、あなたも今日の1枚を引かない？',
+    closing: 'あなたも今日の1枚を引かない？',
   },
 };
 
@@ -325,6 +329,14 @@ function validateDraft(draft, args) {
   if (platforms.includes('threads')) {
     validatePostText(draft.oracle.text, { label: 'oracle Threads post', platforms: ['threads'] });
     validatePostText(draft.concept.text, { label: 'concept Threads post', platforms: ['threads'] });
+    const requiredHashtag = draft.meta?.policy?.hashtag || DEFAULT_HASHTAG;
+    if (!draft.oracle.text.includes(requiredHashtag)) throw new Error('oracle Threads post is missing the required hashtag.');
+    if (!draft.concept.text.includes(requiredHashtag)) throw new Error('concept Threads post is missing the required hashtag.');
+    if (!extractUtmContent(draft.oracle.text)) throw new Error('oracle Threads post is missing utm_content.');
+    if (!extractUtmContent(draft.concept.text)) throw new Error('concept Threads post is missing utm_content.');
+    if (!draft.oracle.text.trim().endsWith('あなたも今日の1枚を引かない？')) {
+      throw new Error('oracle Threads post must end with the required closing line.');
+    }
   }
   if (platforms.includes('x')) {
     validatePostText(draft.oracle.xText, { label: 'oracle X post', platforms: ['x'] });
@@ -393,8 +405,43 @@ function shuffle(ids) {
   return copy;
 }
 
+function seededShuffle(ids, seed) {
+  const copy = [...ids];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const digest = crypto.createHash('sha256').update(`${seed}:${i}`).digest();
+    const j = digest.readUInt32BE(0) % (i + 1);
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function dateToUtcDay(dateKey) {
+  const [year, month, day] = String(dateKey || '').split('-').map(Number);
+  if (!year || !month || !day) return 0;
+  return Math.floor(Date.UTC(year, month - 1, day) / 86400000);
+}
+
+function deterministicCardId(ids, dateKey) {
+  if (CARD_OVERRIDES_BY_DATE[dateKey] && ids.includes(CARD_OVERRIDES_BY_DATE[dateKey])) {
+    return CARD_OVERRIDES_BY_DATE[dateKey];
+  }
+  const seed = process.env.SOCIAL_CARD_SEED || process.env.SOCIAL_UTM_CAMPAIGN || DEFAULT_SOCIAL_CAMPAIGN;
+  const order = seededShuffle(ids, seed);
+  const offset = dateToUtcDay(dateKey) - dateToUtcDay(CARD_CYCLE_START_DATE);
+  const index = ((offset % order.length) + order.length) % order.length;
+  return order[index];
+}
+
+function useStatelessCardPicking() {
+  return process.env.SOCIAL_STATELESS_MODE === 'true' || process.env.GITHUB_ACTIONS === 'true';
+}
+
 async function pickCard(messages, dateKey, writeState) {
   const ids = messages.map(item => item.id);
+  if (useStatelessCardPicking()) {
+    const picked = deterministicCardId(ids, dateKey);
+    return messages.find(item => item.id === picked) || messages[0];
+  }
   const state = await readJson(STATE_FILE, { remaining: [], pickedByDate: {} });
   if (state.pickedByDate?.[dateKey]) {
     return messages.find(item => item.id === state.pickedByDate[dateKey]) || messages[0];
@@ -701,6 +748,62 @@ async function postTextToThreads(text) {
   return threadsClient.postTextToThreads({ text });
 }
 
+function buildContentMarker(kind, dateKey) {
+  return `${kind}_${dateKey.replace(/-/g, '')}`;
+}
+
+function extractUtmContent(text) {
+  const match = String(text || '').match(/[?&]utm_content=([^&#\s]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+async function findExistingThreadsPost(marker) {
+  if (process.env.SOCIAL_ALLOW_DUPLICATE_POSTS === 'true') return null;
+  if (!marker) throw new Error('Missing utm_content marker for duplicate protection.');
+  const recent = await threadsClient.listThreads({ limit: Number(process.env.THREADS_DUPLICATE_LOOKBACK || 25) });
+  return (recent.data || []).find(post => String(post.text || '').includes(`utm_content=${marker}`)) || null;
+}
+
+async function postImageToThreadsOnce({ text, imageUrl, altText, marker }) {
+  const existing = await findExistingThreadsPost(marker);
+  if (existing) {
+    return {
+      skipped: true,
+      reason: 'existing_threads_post',
+      marker,
+      id: existing.id,
+      permalink: existing.permalink,
+      timestamp: existing.timestamp,
+    };
+  }
+  try {
+    return await postToThreads(text, imageUrl, altText);
+  } catch (error) {
+    if (process.env.SOCIAL_THREADS_IMAGE_FALLBACK_TEXT !== 'true') throw error;
+    const fallback = await postTextToThreads(text);
+    return {
+      ...fallback,
+      fallback: 'text_after_image_failure',
+      imageError: error.message,
+    };
+  }
+}
+
+async function postTextToThreadsOnce({ text, marker }) {
+  const existing = await findExistingThreadsPost(marker);
+  if (existing) {
+    return {
+      skipped: true,
+      reason: 'existing_threads_post',
+      marker,
+      id: existing.id,
+      permalink: existing.permalink,
+      timestamp: existing.timestamp,
+    };
+  }
+  return postTextToThreads(text);
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const draft = await buildDraft(args);
@@ -712,8 +815,20 @@ async function main() {
     if (args.kind === 'all' || args.kind === 'concept') results.xConcept = await postTextToX(draft.concept.xText);
   }
   if (args.platforms.includes('threads')) {
-    if (args.kind === 'all' || args.kind === 'oracle') results.threadsOracle = await postToThreads(draft.oracle.text, draft.oracle.imageUrl, draft.oracle.altText);
-    if (args.kind === 'all' || args.kind === 'concept') results.threadsConcept = await postTextToThreads(draft.concept.text);
+    if (args.kind === 'all' || args.kind === 'oracle') {
+      results.threadsOracle = await postImageToThreadsOnce({
+        text: draft.oracle.text,
+        imageUrl: draft.oracle.imageUrl,
+        altText: draft.oracle.altText,
+        marker: extractUtmContent(draft.oracle.text) || buildContentMarker('oracle', draft.date),
+      });
+    }
+    if (args.kind === 'all' || args.kind === 'concept') {
+      results.threadsConcept = await postTextToThreadsOnce({
+        text: draft.concept.text,
+        marker: extractUtmContent(draft.concept.text) || buildContentMarker('concept', draft.date),
+      });
+    }
   }
   console.log(JSON.stringify({ posted: results }, null, 2));
 }
