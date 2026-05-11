@@ -171,10 +171,10 @@ THREADS_USER_ID
 
 The workflow file is `.github/workflows/threads-social.yml`.
 
-GitHub schedule runs in UTC:
+GitHub schedule runs in UTC. The minutes are intentionally not `00` because GitHub scheduled workflows at the top of the hour can be delayed or dropped under load:
 
-- `0 22 * * *`: 07:00 JST oracle image post
-- `0 11 * * *`: 20:00 JST concept post
+- `13 22 * * *`: 07:13 JST oracle image post
+- `13 11 * * *`: 20:13 JST concept post
 
 The workflow uses `--only-kind=oracle` and `--only-kind=concept` so the evening run cannot accidentally publish a missed morning post.
 

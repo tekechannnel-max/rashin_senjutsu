@@ -2,10 +2,10 @@ name: Threads social posts
 
 on:
   schedule:
-    # 07:00 JST
-    - cron: '0 22 * * *'
-    # 20:00 JST
-    - cron: '0 11 * * *'
+    # 07:13 JST
+    - cron: '13 22 * * *'
+    # 20:13 JST
+    - cron: '13 11 * * *'
   workflow_dispatch:
     inputs:
       kind:
@@ -76,8 +76,8 @@ jobs:
           kind="${{ github.event.inputs.kind || 'auto' }}"
           if [ "$kind" = "auto" ]; then
             case "${{ github.event.schedule }}" in
-              "0 22 * * *") kind="oracle" ;;
-              "0 11 * * *") kind="concept" ;;
+              "13 22 * * *") kind="oracle" ;;
+              "13 11 * * *") kind="concept" ;;
               *) kind="all" ;;
             esac
           fi
