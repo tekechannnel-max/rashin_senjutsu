@@ -140,6 +140,14 @@ Set these on the Render service and redeploy before testing:
 - `PAYPAY_MANUAL_PAYMENT_LABEL=Rashin Senjutsu PayPay`
 - `PAYPAY_MANUAL_PAYMENT_NOTE=<short user-facing PayPay instruction>`
 - `PAYPAY_MANUAL_AUTO_ISSUE_ENABLED=true` for prerelease auto-unlock after the user enters a PayPay transaction reference
+- `PAYPAY_EXPIRY_NOTIFY_ENABLED=true`
+- `PAYPAY_EXPIRY_NOTIFY_LOOKAHEAD_DAYS=3`
+- `PAYPAY_NOTIFY_DISCORD_WEBHOOK_URL=<Discord incoming webhook URL>`
+- `PAYPAY_NOTIFY_LINE_CHANNEL_ACCESS_TOKEN=<LINE Messaging API channel access token>`
+- `PAYPAY_NOTIFY_LINE_TO=<LINE user ID or group ID>`
+- `PAYPAY_NOTIFY_GMAIL_TO=<recipient email>`
+- `PAYPAY_NOTIFY_GMAIL_USER=<Gmail address>`
+- `PAYPAY_NOTIFY_GMAIL_APP_PASSWORD=<Gmail app password>`
 - `OPENAI_PAID_AB_MODEL=gpt-5.5`
 - `PAID_MODEL_AB_TEST_ENABLED=false` for quality-first production. Set `true` only when intentionally testing GPT-5.5 against Sonnet 4.6.
 - `PAID_MODEL_AB_TEST_OPENAI_WEIGHT=50` for a 50/50 split
@@ -184,6 +192,26 @@ Check the current active URL:
 
 ```powershell
 Invoke-RestMethod -Uri "https://rashin-senjutsu.onrender.com/api/rashin-paid-code/paypay/config" -Method Get -Headers @{"x-rashin-admin-secret"=$env:RASHIN_CODE_ADMIN_SECRET}
+```
+
+### PayPay expiry notifications
+
+The server checks the active PayPay URL on startup and then every 6 hours. If `expiresAt` is missing, invalid, within `PAYPAY_EXPIRY_NOTIFY_LOOKAHEAD_DAYS`, or already expired, it sends one notice per day to configured channels.
+
+- Discord uses an incoming webhook URL.
+- LINE uses the Messaging API push endpoint. LINE Notify is discontinued, so use a LINE Official Account channel access token and a user or group ID.
+- Gmail uses SMTP over `smtp.gmail.com:465` with a Gmail app password.
+
+Check notification status:
+
+```powershell
+Invoke-RestMethod -Uri "https://rashin-senjutsu.onrender.com/api/rashin-paid-code/paypay/notify" -Method Get -Headers @{"x-rashin-admin-secret"=$env:RASHIN_CODE_ADMIN_SECRET}
+```
+
+Send a forced test notice:
+
+```powershell
+Invoke-RestMethod -Uri "https://rashin-senjutsu.onrender.com/api/rashin-paid-code/paypay/notify" -Method Post -Headers @{"x-rashin-admin-secret"=$env:RASHIN_CODE_ADMIN_SECRET} -ContentType "application/json" -Body '{"force":true}'
 ```
 
 ### Manual free Rashin codes

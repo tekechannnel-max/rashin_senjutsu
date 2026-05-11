@@ -1,5 +1,6 @@
 const http = require('http');
 const https = require('https');
+const tls = require('tls');
 const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
@@ -20,6 +21,7 @@ const USER_DIR = path.join(DATA_DIR, 'users');
 const INDEX_DIR = path.join(DATA_DIR, 'indexes');
 const LOG_DIR = path.join(DATA_DIR, 'logs');
 const PAYPAY_MANUAL_CONFIG_PATH = path.join(DATA_DIR, 'paypay-manual-config.json');
+const PAYPAY_MANUAL_NOTIFY_STATE_PATH = path.join(DATA_DIR, 'paypay-manual-notify-state.json');
 const AI_USAGE_LOG_DIR = path.join(LOG_DIR, 'ai-usage');
 const CLIENT_ERROR_LOG_DIR = path.join(LOG_DIR, 'client-errors');
 const AI_EVENT_LOG_DIR = LOG_DIR;
@@ -170,6 +172,18 @@ const PAYPAY_MANUAL_PAYMENT_URL = normalizeEnvValue(process.env.PAYPAY_MANUAL_PA
 const PAYPAY_MANUAL_PAYMENT_LABEL = normalizeEnvValue(process.env.PAYPAY_MANUAL_PAYMENT_LABEL || 'Rashin Senjutsu PayPay');
 const PAYPAY_MANUAL_PAYMENT_NOTE = normalizeEnvValue(process.env.PAYPAY_MANUAL_PAYMENT_NOTE || '');
 const PAYPAY_MANUAL_AUTO_ISSUE_ENABLED = normalizeEnvValue(process.env.PAYPAY_MANUAL_AUTO_ISSUE_ENABLED || '').toLowerCase() === 'true';
+const PAYPAY_EXPIRY_NOTIFY_ENABLED = normalizeEnvValue(process.env.PAYPAY_EXPIRY_NOTIFY_ENABLED || 'true').toLowerCase() !== 'false';
+const PAYPAY_EXPIRY_NOTIFY_LOOKAHEAD_DAYS = Math.max(0, parseInt(process.env.PAYPAY_EXPIRY_NOTIFY_LOOKAHEAD_DAYS || '3', 10) || 3);
+const PAYPAY_EXPIRY_NOTIFY_INTERVAL_MS = Math.max(5 * 60 * 1000, parseInt(process.env.PAYPAY_EXPIRY_NOTIFY_INTERVAL_MS || String(6 * 60 * 60 * 1000), 10) || (6 * 60 * 60 * 1000));
+const PAYPAY_NOTIFY_DISCORD_WEBHOOK_URL = normalizeEnvValue(process.env.PAYPAY_NOTIFY_DISCORD_WEBHOOK_URL || process.env.DISCORD_WEBHOOK_URL || '');
+const PAYPAY_NOTIFY_LINE_CHANNEL_ACCESS_TOKEN = normalizeEnvValue(process.env.PAYPAY_NOTIFY_LINE_CHANNEL_ACCESS_TOKEN || process.env.LINE_CHANNEL_ACCESS_TOKEN || '');
+const PAYPAY_NOTIFY_LINE_TO = normalizeEnvValue(process.env.PAYPAY_NOTIFY_LINE_TO || process.env.LINE_USER_ID || process.env.LINE_GROUP_ID || '');
+const PAYPAY_NOTIFY_GMAIL_TO = normalizeEnvValue(process.env.PAYPAY_NOTIFY_GMAIL_TO || process.env.GMAIL_NOTIFY_TO || '');
+const PAYPAY_NOTIFY_GMAIL_USER = normalizeEnvValue(process.env.PAYPAY_NOTIFY_GMAIL_USER || process.env.GMAIL_SMTP_USER || '');
+const PAYPAY_NOTIFY_GMAIL_APP_PASSWORD = normalizeEnvValue(process.env.PAYPAY_NOTIFY_GMAIL_APP_PASSWORD || process.env.GMAIL_SMTP_APP_PASSWORD || process.env.GMAIL_APP_PASSWORD || '');
+const PAYPAY_NOTIFY_GMAIL_FROM = normalizeEnvValue(process.env.PAYPAY_NOTIFY_GMAIL_FROM || PAYPAY_NOTIFY_GMAIL_USER);
+const PAYPAY_NOTIFY_GMAIL_SMTP_HOST = normalizeEnvValue(process.env.PAYPAY_NOTIFY_GMAIL_SMTP_HOST || 'smtp.gmail.com');
+const PAYPAY_NOTIFY_GMAIL_SMTP_PORT = Math.max(1, parseInt(process.env.PAYPAY_NOTIFY_GMAIL_SMTP_PORT || '465', 10) || 465);
 const AI_MODELS = {
   free: process.env.OPENAI_FREE_MODEL || 'gpt-5.4-mini',
   paid: process.env.ANTHROPIC_PAID_MODEL || 'claude-sonnet-4-6',
@@ -790,6 +804,344 @@ async function paypayManualReady() {
   return !!config.url;
 }
 
+function splitNotificationList(value) {
+  return String(value || '')
+    .split(/[\s,;]+/)
+    .map(item => item.trim())
+    .filter(Boolean);
+}
+
+function isConfiguredNotifyValue(value) {
+  const normalized = normalizeEnvValue(value);
+  return !!normalized && !isPlaceholderEnvValue(normalized);
+}
+
+function maskNotificationTarget(value = '') {
+  const text = String(value || '').trim();
+  if (!text) return '';
+  if (text.includes('@')) return maskEmail(text);
+  if (text.length <= 8) return `${text.slice(0, 2)}***`;
+  return `${text.slice(0, 4)}***${text.slice(-4)}`;
+}
+
+function getPaypayNotifyChannelsStatus() {
+  const gmailRecipients = splitNotificationList(PAYPAY_NOTIFY_GMAIL_TO);
+  return {
+    enabled: PAYPAY_EXPIRY_NOTIFY_ENABLED,
+    discord: isConfiguredNotifyValue(PAYPAY_NOTIFY_DISCORD_WEBHOOK_URL),
+    line: !!(isConfiguredNotifyValue(PAYPAY_NOTIFY_LINE_CHANNEL_ACCESS_TOKEN) && isConfiguredNotifyValue(PAYPAY_NOTIFY_LINE_TO)),
+    gmail: !!(isConfiguredNotifyValue(PAYPAY_NOTIFY_GMAIL_USER) && isConfiguredNotifyValue(PAYPAY_NOTIFY_GMAIL_APP_PASSWORD) && gmailRecipients.length),
+    gmailRecipients: gmailRecipients.map(maskNotificationTarget),
+    lookaheadDays: PAYPAY_EXPIRY_NOTIFY_LOOKAHEAD_DAYS,
+    intervalMs: PAYPAY_EXPIRY_NOTIFY_INTERVAL_MS,
+  };
+}
+
+function getJstDateStampFromMs(ms = Date.now()) {
+  return new Date(ms + (9 * 60 * 60 * 1000)).toISOString().slice(0, 10);
+}
+
+function getPaypayExpiryStatus(config = {}, nowMs = Date.now()) {
+  const url = normalizePaypayManualUrl(config.url || '');
+  const expiresAt = normalizeEnvValue(config.expiresAt || '');
+  if (!url) {
+    return {
+      ok: false,
+      state: 'not_configured',
+      severity: 'error',
+      notify: true,
+      message: 'PayPay payment URL is not configured.',
+      url,
+      expiresAt,
+      daysRemaining: null,
+    };
+  }
+  if (!expiresAt) {
+    return {
+      ok: false,
+      state: 'expires_at_missing',
+      severity: 'warning',
+      notify: true,
+      message: 'PayPay payment URL is configured but expiresAt is missing.',
+      url,
+      expiresAt,
+      daysRemaining: null,
+    };
+  }
+  const expiresMs = new Date(expiresAt).getTime();
+  if (!Number.isFinite(expiresMs)) {
+    return {
+      ok: false,
+      state: 'expires_at_invalid',
+      severity: 'error',
+      notify: true,
+      message: 'PayPay payment URL expiresAt is invalid.',
+      url,
+      expiresAt,
+      daysRemaining: null,
+    };
+  }
+  const remainingMs = expiresMs - nowMs;
+  const daysRemaining = Math.ceil(remainingMs / (24 * 60 * 60 * 1000));
+  if (remainingMs < 0) {
+    return {
+      ok: false,
+      state: 'expired',
+      severity: 'error',
+      notify: true,
+      message: 'PayPay payment URL has expired.',
+      url,
+      expiresAt,
+      daysRemaining,
+    };
+  }
+  if (remainingMs <= PAYPAY_EXPIRY_NOTIFY_LOOKAHEAD_DAYS * 24 * 60 * 60 * 1000) {
+    return {
+      ok: false,
+      state: 'expiring_soon',
+      severity: 'warning',
+      notify: true,
+      message: `PayPay payment URL expires in ${daysRemaining} day(s).`,
+      url,
+      expiresAt,
+      daysRemaining,
+    };
+  }
+  return {
+    ok: true,
+    state: 'ok',
+    severity: 'info',
+    notify: false,
+    message: 'PayPay payment URL is within the configured expiry window.',
+    url,
+    expiresAt,
+    daysRemaining,
+  };
+}
+
+function buildPaypayExpiryNotification(status = {}, config = {}) {
+  const origin = PUBLIC_ORIGIN || `http://${HOST}:${PORT}`;
+  const title = status.state === 'expired'
+    ? '羅針占術 PayPay URL expired'
+    : status.state === 'expiring_soon'
+      ? '羅針占術 PayPay URL expiring soon'
+      : '羅針占術 PayPay URL needs attention';
+  const lines = [
+    title,
+    '',
+    `Status: ${status.state || 'unknown'}`,
+    `Message: ${status.message || ''}`,
+    `Current URL: ${status.url || '(not configured)'}`,
+    `Expires at: ${status.expiresAt || '(missing)'}`,
+    `Days remaining: ${Number.isFinite(status.daysRemaining) ? status.daysRemaining : 'unknown'}`,
+    `Label: ${config.label || PAYPAY_MANUAL_PAYMENT_LABEL || 'PayPay'}`,
+    '',
+    'Action: create a new PayPay payment URL, then update url and expiresAt from the PayPay config admin API.',
+    `Admin API: ${origin}/api/rashin-paid-code/paypay/config`,
+  ];
+  return {
+    title,
+    text: lines.join('\n'),
+  };
+}
+
+async function sendDiscordOperationalNotification(text) {
+  if (!isConfiguredNotifyValue(PAYPAY_NOTIFY_DISCORD_WEBHOOK_URL)) return { channel: 'discord', skipped: true };
+  const upstream = await makeHttpsRequest(
+    PAYPAY_NOTIFY_DISCORD_WEBHOOK_URL,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    },
+    {
+      content: text.slice(0, 1900),
+      allowed_mentions: { parse: [] },
+    }
+  );
+  return {
+    channel: 'discord',
+    ok: upstream.statusCode >= 200 && upstream.statusCode < 300,
+    status: upstream.statusCode,
+  };
+}
+
+async function sendLineOperationalNotification(text) {
+  if (!isConfiguredNotifyValue(PAYPAY_NOTIFY_LINE_CHANNEL_ACCESS_TOKEN) || !isConfiguredNotifyValue(PAYPAY_NOTIFY_LINE_TO)) {
+    return { channel: 'line', skipped: true };
+  }
+  const upstream = await makeHttpsRequest(
+    'https://api.line.me/v2/bot/message/push',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${PAYPAY_NOTIFY_LINE_CHANNEL_ACCESS_TOKEN}`,
+      },
+    },
+    {
+      to: PAYPAY_NOTIFY_LINE_TO,
+      messages: [{ type: 'text', text: text.slice(0, 4900) }],
+    }
+  );
+  return {
+    channel: 'line',
+    ok: upstream.statusCode >= 200 && upstream.statusCode < 300,
+    status: upstream.statusCode,
+  };
+}
+
+function encodeMimeHeader(value = '') {
+  return `=?UTF-8?B?${Buffer.from(String(value || ''), 'utf8').toString('base64')}?=`;
+}
+
+function waitForSmtpResponse(socket, bufferRef) {
+  return new Promise((resolve, reject) => {
+    const onData = chunk => {
+      bufferRef.value += chunk;
+      const lines = bufferRef.value.split(/\r?\n/).filter(Boolean);
+      const lastLine = lines[lines.length - 1] || '';
+      const match = lastLine.match(/^(\d{3})\s/);
+      if (!match) return;
+      socket.off('data', onData);
+      socket.off('error', onError);
+      bufferRef.value = '';
+      resolve({ code: Number(match[1]), raw: lines.join('\n') });
+    };
+    const onError = error => {
+      socket.off('data', onData);
+      reject(error);
+    };
+    socket.on('data', onData);
+    socket.once('error', onError);
+  });
+}
+
+async function sendSmtpCommand(socket, bufferRef, command, expectedCodes) {
+  if (command) socket.write(`${command}\r\n`);
+  const response = await waitForSmtpResponse(socket, bufferRef);
+  const allowed = Array.isArray(expectedCodes) ? expectedCodes : [expectedCodes];
+  if (!allowed.includes(response.code)) {
+    throw new Error(`SMTP_${response.code}_${String(command || 'connect').slice(0, 20)}`);
+  }
+  return response;
+}
+
+async function sendGmailOperationalNotification(subject, text) {
+  const recipients = splitNotificationList(PAYPAY_NOTIFY_GMAIL_TO);
+  if (!isConfiguredNotifyValue(PAYPAY_NOTIFY_GMAIL_USER) || !isConfiguredNotifyValue(PAYPAY_NOTIFY_GMAIL_APP_PASSWORD) || !recipients.length) {
+    return { channel: 'gmail', skipped: true };
+  }
+  const from = PAYPAY_NOTIFY_GMAIL_FROM || PAYPAY_NOTIFY_GMAIL_USER;
+  const messageId = `<paypay-${Date.now()}-${crypto.randomBytes(4).toString('hex')}@rashin-senjutsu>`;
+  const safeBody = String(text || '').replace(/\r/g, '').split('\n').map(line => (line.startsWith('.') ? `.${line}` : line)).join('\r\n');
+  const message = [
+    `From: ${encodeMimeHeader('Rashin Senjutsu')} <${from}>`,
+    `To: ${recipients.join(', ')}`,
+    `Subject: ${encodeMimeHeader(subject)}`,
+    'MIME-Version: 1.0',
+    'Content-Type: text/plain; charset=UTF-8',
+    'Content-Transfer-Encoding: 8bit',
+    `Date: ${new Date().toUTCString()}`,
+    `Message-ID: ${messageId}`,
+    '',
+    safeBody,
+    '.',
+  ].join('\r\n');
+
+  const socket = tls.connect({
+    host: PAYPAY_NOTIFY_GMAIL_SMTP_HOST,
+    port: PAYPAY_NOTIFY_GMAIL_SMTP_PORT,
+    servername: PAYPAY_NOTIFY_GMAIL_SMTP_HOST,
+  });
+  socket.setEncoding('utf8');
+  socket.setTimeout(15000);
+  const bufferRef = { value: '' };
+  try {
+    await new Promise((resolve, reject) => {
+      socket.once('secureConnect', resolve);
+      socket.once('error', reject);
+      socket.once('timeout', () => reject(new Error('SMTP_TIMEOUT')));
+    });
+    await sendSmtpCommand(socket, bufferRef, '', 220);
+    await sendSmtpCommand(socket, bufferRef, 'EHLO rashin-senjutsu', 250);
+    const auth = Buffer.from(`\u0000${PAYPAY_NOTIFY_GMAIL_USER}\u0000${PAYPAY_NOTIFY_GMAIL_APP_PASSWORD}`, 'utf8').toString('base64');
+    await sendSmtpCommand(socket, bufferRef, `AUTH PLAIN ${auth}`, 235);
+    await sendSmtpCommand(socket, bufferRef, `MAIL FROM:<${from}>`, 250);
+    for (const recipient of recipients) {
+      await sendSmtpCommand(socket, bufferRef, `RCPT TO:<${recipient}>`, [250, 251]);
+    }
+    await sendSmtpCommand(socket, bufferRef, 'DATA', 354);
+    await sendSmtpCommand(socket, bufferRef, message, 250);
+    await sendSmtpCommand(socket, bufferRef, 'QUIT', 221).catch(() => null);
+    return { channel: 'gmail', ok: true, recipients: recipients.map(maskNotificationTarget) };
+  } finally {
+    socket.destroy();
+  }
+}
+
+async function sendPaypayExpiryNotifications(status, config) {
+  const notification = buildPaypayExpiryNotification(status, config);
+  const results = [];
+  for (const sender of [
+    () => sendDiscordOperationalNotification(notification.text),
+    () => sendLineOperationalNotification(notification.text),
+    () => sendGmailOperationalNotification(notification.title, notification.text),
+  ]) {
+    try {
+      results.push(await sender());
+    } catch (error) {
+      results.push({ ok: false, error: error.message || 'NOTIFICATION_FAILED' });
+    }
+  }
+  await appendJsonlRecord(LOG_DIR, 'paypay-notify', {
+    at: new Date().toISOString(),
+    status,
+    channels: results,
+  }).catch(() => null);
+  return results;
+}
+
+async function checkPaypayManualExpiryAndNotify(options = {}) {
+  const force = !!options.force;
+  const config = await readPaypayManualConfig();
+  const status = getPaypayExpiryStatus(config);
+  const channels = getPaypayNotifyChannelsStatus();
+  const hasAnyChannel = channels.discord || channels.line || channels.gmail;
+  if (!PAYPAY_EXPIRY_NOTIFY_ENABLED || !hasAnyChannel) {
+    return { ok: true, notified: false, reason: !PAYPAY_EXPIRY_NOTIFY_ENABLED ? 'disabled' : 'no_channels', status, channels };
+  }
+  if (!force && !status.notify) {
+    return { ok: true, notified: false, reason: 'not_due', status, channels };
+  }
+  const state = await readJsonFileSafe(PAYPAY_MANUAL_NOTIFY_STATE_PATH, {});
+  const hash = crypto.createHash('sha256').update(`${status.url}|${status.expiresAt}|${status.state}`).digest('hex').slice(0, 16);
+  const notifyKey = `${status.state}:${hash}:${getJstDateStampFromMs()}`;
+  if (!force && state.lastNotifyKey === notifyKey) {
+    return { ok: true, notified: false, reason: 'already_sent_today', status, channels };
+  }
+  const results = await sendPaypayExpiryNotifications(status, config);
+  await writeJsonFileAtomic(PAYPAY_MANUAL_NOTIFY_STATE_PATH, {
+    lastNotifyKey: notifyKey,
+    lastCheckedAt: new Date().toISOString(),
+    lastStatus: status,
+    lastResults: results,
+  });
+  return { ok: results.some(result => result.ok), notified: true, status, channels, results };
+}
+
+function startPaypayManualExpiryNotifier() {
+  if (!PAYPAY_EXPIRY_NOTIFY_ENABLED) return null;
+  const run = () => {
+    checkPaypayManualExpiryAndNotify({ source: 'interval' }).catch(error => {
+      console.warn('[paypay-notify] expiry notification check failed', error?.message || error);
+    });
+  };
+  const timer = setInterval(run, PAYPAY_EXPIRY_NOTIFY_INTERVAL_MS);
+  if (typeof timer.unref === 'function') timer.unref();
+  setTimeout(run, 5000).unref?.();
+  return timer;
+}
+
 async function getRuntimeSetupStatus(req) {
   const issues = [];
   if (!OPENAI_KEY_CONFIGURED) issues.push('OPENAI_API_KEY');
@@ -804,6 +1156,7 @@ async function getRuntimeSetupStatus(req) {
     rashinPaidCodeReady: rashinPaidCodeReady(),
     paypayManualReady: await paypayManualReady(),
     paypayManualAutoIssueEnabled: PAYPAY_MANUAL_AUTO_ISSUE_ENABLED,
+    paypayExpiryNotify: getPaypayNotifyChannelsStatus(),
     deepReadingAmount: DEEP_READING_NORMAL_AMOUNT,
     deepReadingPrereleaseAmount: DEEP_READING_PRERELEASE_AMOUNT,
     deepReadingReleaseAmount: DEEP_READING_RELEASE_AMOUNT,
@@ -5200,6 +5553,9 @@ async function handlePaypayManualConfig(req, res) {
       note: body?.note,
       expiresAt: body?.expiresAt || body?.expires_at,
     });
+    checkPaypayManualExpiryAndNotify({ source: 'config_update' }).catch(error => {
+      console.warn('[paypay-notify] config update check failed', error?.message || error);
+    });
     sendJson(res, 200, {
       ok: true,
       paypay: {
@@ -5214,6 +5570,47 @@ async function handlePaypayManualConfig(req, res) {
       message: 'PayPay payment URL could not be saved.',
     });
   }
+}
+
+async function handlePaypayManualNotify(req, res) {
+  const providedSecret = normalizeEnvValue(req.headers['x-rashin-admin-secret'] || '');
+  if (!isConfiguredAppSecret(RASHIN_CODE_ADMIN_SECRET) || !safeCompareText(providedSecret, RASHIN_CODE_ADMIN_SECRET)) {
+    sendJson(res, 403, {
+      error: 'RASHIN_CODE_ADMIN_DENIED',
+      message: 'Admin secret was not accepted.',
+    });
+    return;
+  }
+  if (req.method === 'GET') {
+    const config = await readPaypayManualConfig();
+    sendJson(res, 200, {
+      ok: true,
+      status: getPaypayExpiryStatus(config),
+      channels: getPaypayNotifyChannelsStatus(),
+    });
+    return;
+  }
+  if (req.method !== 'POST') {
+    sendJson(res, 405, {
+      error: 'METHOD_NOT_ALLOWED',
+      message: 'Use GET or POST.',
+    });
+    return;
+  }
+  let body = {};
+  try {
+    body = await readJsonBody(req);
+  } catch (error) {
+    if (error.message !== 'EMPTY_BODY') {
+      sendJson(res, 400, {
+        error: error.message || 'INVALID_JSON',
+        message: 'PayPay notification payload could not be parsed.',
+      });
+      return;
+    }
+  }
+  const result = await checkPaypayManualExpiryAndNotify({ force: !!body?.force, source: 'admin' });
+  sendJson(res, result.ok ? 200 : 502, result);
 }
 
 async function handlePaidReadingTicketPrepare(req, res) {
@@ -5956,6 +6353,7 @@ async function handleRequest(req, res) {
       stripeCheckoutReady: false,
       stripePortalReady: false,
       stripeWebhookReady: false,
+      paypayExpiryNotify: setup?.paypayExpiryNotify || getPaypayNotifyChannelsStatus(),
       paidModelAbTest: setup?.paidModelAbTest || {
         name: PAID_MODEL_AB_TEST_NAME,
         enabled: PAID_MODEL_AB_TEST_ENABLED,
@@ -6010,6 +6408,11 @@ async function handleRequest(req, res) {
 
   if (req.method === 'POST' && req.url.startsWith('/api/rashin-paid-code/paypay/claim')) {
     await handlePaypayManualClaim(req, res);
+    return;
+  }
+
+  if ((req.method === 'GET' || req.method === 'POST') && req.url.startsWith('/api/rashin-paid-code/paypay/notify')) {
+    await handlePaypayManualNotify(req, res);
     return;
   }
 
@@ -6140,6 +6543,7 @@ function createServer() {
 
 if (require.main === module) {
   const server = createServer();
+  startPaypayManualExpiryNotifier();
   server.on('error', error => {
     if (error && error.code === 'EADDRINUSE') {
       console.error(`Port ${PORT} is already in use. Try a different port, for example: .\\start-uranai.ps1 -Port 3001`);
