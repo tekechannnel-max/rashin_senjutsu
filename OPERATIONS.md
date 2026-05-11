@@ -13,6 +13,8 @@ Due-time execution is handled by `scripts/social/run-scheduled-posts.js`.
 
 Target Threads account: `https://www.threads.com/@sensai_teke`.
 
+Morning oracle posts are the free entry point: random daily card, matching image, image alt text, a concrete "today's action", and the `あなたも今日の1枚を引かない？` CTA. Evening concept posts should build trust around self-understanding, non-dependence, and next-action framing rather than paid conversion.
+
 Threads automation should use the official Threads API. Do not use Playwright or other browser automation to script the Threads website for posting.
 
 X automation should use the official API. Do not use Playwright or other browser automation to script the X website for posting. Before turning on X automation, enable the automated account label and make the account bio clear about who operates it.
@@ -46,6 +48,10 @@ Set these only in the machine or job runner that performs SNS posting:
 - `SOCIAL_PLATFORMS=threads`
 - `SOCIAL_ORACLE_TIME=07:00`
 - `SOCIAL_CONCEPT_TIME=20:00`
+- `SOCIAL_UTM_CAMPAIGN=202605_prerelease`
+- `SOCIAL_PAID_CTA_MODE=soft`
+- `SOCIAL_RELEASE_MODE=prelaunch`
+- `SOCIAL_BOOTH_ENABLED=false`
 
 For initial Threads token setup:
 
@@ -94,6 +100,13 @@ npm run social:daemon
 ```
 
 The scheduler writes `data/social-posts/scheduled-post-state.json` and will not post the same kind twice on the same JST date after a successful post.
+
+Prerelease monetization guardrails:
+
+- Keep SNS paid CTA soft while BOOTH verification is not production-confirmed.
+- Do not set `SOCIAL_PAID_CTA_MODE=active` unless `SOCIAL_BOOTH_ENABLED=true` and the BOOTH product URL is configured.
+- SNS may explain deep readings, but purchase/order-number handling stays inside the app.
+- Generated posts are rejected if they include blocked dependency-building or fear-based wording.
 
 ## File-backed state
 

@@ -1,6 +1,7 @@
 const { spawnSync } = require('child_process');
 const fs = require('fs/promises');
 const path = require('path');
+require('./threads-client');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const OUT_DIR = path.join(ROOT, 'data', 'social-posts');
@@ -8,7 +9,7 @@ const STATE_FILE = path.join(OUT_DIR, 'scheduled-post-state.json');
 const DAILY_SCRIPT = path.join(__dirname, 'daily-oracle-post.js');
 
 function parseArgs(argv) {
-  const args = { once: false, daemon: false, dryRun: false, forceKind: '' };
+  const args = { once: false, daemon: false, dryRun: false, forceKind: '', onlyKind: '' };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--once') args.once = true;
@@ -16,6 +17,8 @@ function parseArgs(argv) {
     else if (arg === '--dry-run') args.dryRun = true;
     else if (arg === '--force-kind') args.forceKind = argv[++i] || '';
     else if (arg.startsWith('--force-kind=')) args.forceKind = arg.split('=')[1] || '';
+    else if (arg === '--only-kind') args.onlyKind = argv[++i] || '';
+    else if (arg.startsWith('--only-kind=')) args.onlyKind = arg.split('=')[1] || '';
   }
   if (!args.once && !args.daemon && !args.forceKind) args.once = true;
   return args;
@@ -71,6 +74,14 @@ function getSchedule() {
   ];
 }
 
+function filterScheduleByKind(schedule, onlyKind) {
+  if (!onlyKind || onlyKind === 'all') return schedule;
+  if (!['oracle', 'concept'].includes(onlyKind)) {
+    throw new Error(`Invalid --only-kind: ${onlyKind}`);
+  }
+  return schedule.filter(item => item.kind === onlyKind);
+}
+
 async function readJson(file, fallback) {
   try {
     return JSON.parse(await fs.readFile(file, 'utf8'));
@@ -91,7 +102,7 @@ function requirePostingEnabled() {
 }
 
 function runPost(kind, dateKey) {
-  const platforms = process.env.SOCIAL_PLATFORMS || 'x,threads';
+  const platforms = process.env.SOCIAL_PLATFORMS || 'threads';
   const result = spawnSync(process.execPath, [
     DAILY_SCRIPT,
     '--write',
@@ -115,7 +126,7 @@ function runPost(kind, dateKey) {
 async function runDue(args) {
   const dateKey = getJstDateKey();
   const nowMinute = getJstMinutes();
-  const schedule = getSchedule();
+  const schedule = filterScheduleByKind(getSchedule(), args.onlyKind);
   const state = await readJson(STATE_FILE, {});
   state[dateKey] = state[dateKey] || {};
 
@@ -127,6 +138,7 @@ async function runDue(args) {
     date: dateKey,
     nowMinute,
     schedule: schedule.map(item => ({ kind: item.kind, time: item.time })),
+    onlyKind: args.onlyKind || null,
     due: due.map(item => item.kind),
     dryRun: args.dryRun,
   };

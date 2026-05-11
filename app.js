@@ -5271,7 +5271,7 @@ function openBoothOrderModal({booth={},finalAmount=DEEP_READING_PRICE}={}){
         <div class="booth-payment-detail">
           <div class="booth-amount">対象金額：${escapeHtml(String(finalAmount))}円</div>
           ${purchaseLink}
-          <div class="booth-reference-hint">購入後にBOOTHの注文履歴・購入メールに表示される注文番号を入力すると、深掘り鑑定を開始します。</div>
+          <div class="booth-reference-hint">注文番号は、BOOTHの注文内容確認メール、または購入履歴から確認できます。公開投稿やリプライには書かず、この画面に入力してください。</div>
           ${booth.note?`<div class="booth-reference-hint">${escapeHtml(booth.note)}</div>`:''}
         </div>
         <div class="booth-reference-row">
@@ -5280,7 +5280,7 @@ function openBoothOrderModal({booth={},finalAmount=DEEP_READING_PRICE}={}){
           <div class="booth-modal-error" id="booth-order-error">BOOTH注文番号を入力してください。</div>
         </div>
         <div class="modal-btns">
-          <button class="modal-save" type="button" id="booth-reference-submit">購入番号で解放</button>
+          <button class="modal-save" type="button" id="booth-reference-submit">注文番号を入力して始める</button>
           <button class="modal-cancel" type="button" id="booth-reference-cancel">キャンセル</button>
         </div>
       </div>`;
@@ -6093,9 +6093,9 @@ function repairStaticCopy(){
   };
 
   const settingsBtn=document.getElementById('settings-btn');
-  if(settingsBtn) settingsBtn.title='接続設定（確認用）';
+  if(settingsBtn) settingsBtn.title=DEV_MODE?'接続設定（確認用）':'接続設定';
   setText('#settings-modal .modal-title','接続設定');
-  setHtml('#settings-modal .modal-desc','これは開発確認用の接続設定です。<br>公開環境では、サーバー側の安全な設定を使います。<br>入力内容はこのタブだけに保存され、タブを閉じると消えます。');
+  setHtml('#settings-modal .modal-desc',DEV_MODE?'これは開発確認用の接続設定です。<br>公開環境では、サーバー側の安全な設定を使います。<br>入力内容はこのタブだけに保存され、タブを閉じると消えます。':'');
   setButtons('#settings-modal .modal-btns button',['接続テスト','保存して閉じる','キャンセル']);
 
   setText('#member-access-modal .modal-title','深掘り鑑定の確認');
@@ -8743,8 +8743,8 @@ function renderResultUpgradePanel(){
       <div class="upgrade-head">
         <div>
           <div class="upgrade-badge">深掘り鑑定</div>
-          <div class="upgrade-title">追加カードで、有料の深掘り鑑定を作る</div>
-          <div class="upgrade-copy">無料鑑定はここで完了です。<br>深掘り鑑定は、無料で引いたカードを軸に、有料分の追加カードを展開して作成する別の鑑定です。</div>
+          <div class="upgrade-title">この相談を、もう少し深く整理しますか？</div>
+          <div class="upgrade-copy">無料鑑定はここで完了です。<br>深掘り鑑定では、追加カード・追加質問・これまでの鑑定履歴をもとに、止まりやすい点、見落としやすい注意点、次に取る一手まで読み解きます。</div>
         </div>
         <div class="upgrade-meta">
           <div class="upgrade-price">
@@ -12487,7 +12487,10 @@ function loadApiKey(){
     const btn=document.getElementById('settings-btn');
     if(btn) btn.style.display='flex';
     const badge=document.getElementById('dev-badge');
-    if(badge) badge.style.display='block';
+    if(badge){
+      badge.textContent='確認モード';
+      badge.style.display='block';
+    }
   }
   updateKeyIndicator();
 }

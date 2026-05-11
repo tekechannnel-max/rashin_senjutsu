@@ -5623,35 +5623,32 @@ body{
 
 
 
-<!-- 開発者モードバッジ（dev 時のみ表示）-->
+<!-- 管理者用バッジ（dev 時のみ表示）-->
 
-<div class="dev-badge" id="dev-badge" style="display:none">🔧 確認モード</div>
+<div class="dev-badge" id="dev-badge" style="display:none"></div>
 
 
 
-<!-- 設定ボタン（開発者モード時のみ表示）-->
+<!-- 設定ボタン（dev 時のみ表示）-->
 
 <button class="settings-btn" id="settings-btn" onclick="openSettings()" title="接続設定" style="display:none">⚙</button>
 
 
 
-<!-- 接続設定モーダル -->
+<!-- 管理者用接続設定モーダル -->
 
 <div class="modal-overlay" id="settings-modal" aria-hidden="true" inert>
   <div class="modal-box">
     <div class="modal-title">接続設定</div>
 
-    <div class="modal-desc">
-      これは開発確認用の接続設定です。<br>
-      公開環境では、サーバー側の安全な設定を使います。<br>
-      入力内容はこのタブだけに保存され、タブを閉じると消えます。</div>
+    <div class="modal-desc"></div>
     <div class="runtime-status warn" id="modal-ai-status">
       <div class="runtime-status-title">鑑定の準備を確認しています</div>
       <div class="runtime-status-detail">鑑定を始められる状態か確認しています。</div>
     </div>
     <div class="modal-guide" id="modal-ai-guide">公開前の確認では、サーバー側の接続設定を先に整えてください。</div>
     <label class="modal-label">接続キー</label>
-    <input class="modal-input" type="password" id="apikey-input" placeholder="開発確認用のキー" autocomplete="off">
+    <input class="modal-input" type="password" id="apikey-input" placeholder="接続キー" autocomplete="off">
     <div class="key-status" id="key-status"></div>
     <div class="modal-btns">
       <button class="modal-cancel" type="button" onclick="runProviderCheck()">接続テスト</button>
@@ -5684,7 +5681,7 @@ body{
     <div id="developer-access-shell" style="display:none;margin:14px 0 18px;">
       <div class="modal-label" style="margin-bottom:10px;">確認用アクセス</div>
       <div id="developer-access-copy" style="font-size:12px;color:var(--muted);line-height:1.8;margin-bottom:12px;">確認用アクセスで深掘り鑑定フローを確認できます。</div>
-      <input class="modal-input" type="email" id="developer-email-input" placeholder="開発確認用メール" autocomplete="email">
+      <input class="modal-input" type="email" id="developer-email-input" placeholder="メールアドレス" autocomplete="email">
       <div class="key-status" id="developer-access-error" style="display:none;margin-top:10px;"></div>
       <div style="display:flex;justify-content:center;margin-top:12px;">
         <button class="modal-save" type="button" id="developer-access-btn" onclick="submitDeveloperAccess()">確認用アクセスで進む</button>

@@ -1,0 +1,88 @@
+name: Threads social posts
+
+on:
+  schedule:
+    # 07:00 JST
+    - cron: '0 22 * * *'
+    # 20:00 JST
+    - cron: '0 11 * * *'
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: 'Post kind to run'
+        required: true
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - oracle
+          - concept
+
+permissions:
+  contents: read
+
+concurrency:
+  group: threads-social-${{ github.event.schedule || github.event.inputs.kind || 'manual' }}
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PUBLIC_ORIGIN: https://rashin-senjutsu.onrender.com
+      THREADS_EXPECTED_USERNAME: sensai_teke
+      THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+      THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+      SOCIAL_AUTOMATED_POSTING_ENABLED: 'true'
+      SOCIAL_PLATFORMS: threads
+      SOCIAL_PAID_CTA_MODE: soft
+      SOCIAL_RELEASE_MODE: prelaunch
+      SOCIAL_BOOTH_ENABLED: 'false'
+      SOCIAL_UTM_CAMPAIGN: 202605_prerelease
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Check posting secrets
+        id: secrets
+        shell: bash
+        run: |
+          if [ -z "$THREADS_ACCESS_TOKEN" ] || [ -z "$THREADS_USER_ID" ]; then
+            echo "GitHub Secrets THREADS_ACCESS_TOKEN / THREADS_USER_ID are not set. Skipping post."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate scripts
+        if: steps.secrets.outputs.ready == 'true'
+        run: npm run check
+
+      - name: Confirm Threads token account
+        if: steps.secrets.outputs.ready == 'true'
+        run: npm run threads:doctor
+
+      - name: Pick scheduled post kind
+        if: steps.secrets.outputs.ready == 'true'
+        id: pick
+        shell: bash
+        run: |
+          kind="${{ github.event.inputs.kind || 'auto' }}"
+          if [ "$kind" = "auto" ]; then
+            case "${{ github.event.schedule }}" in
+              "0 22 * * *") kind="oracle" ;;
+              "0 11 * * *") kind="concept" ;;
+              *) kind="all" ;;
+            esac
+          fi
+          echo "kind=$kind" >> "$GITHUB_OUTPUT"
+
+      - name: Publish due Threads post
+        if: steps.secrets.outputs.ready == 'true'
+        run: node scripts/social/run-scheduled-posts.js --once --only-kind=${{ steps.pick.outputs.kind }}
