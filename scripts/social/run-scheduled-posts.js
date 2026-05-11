@@ -82,6 +82,16 @@ function filterScheduleByKind(schedule, onlyKind) {
   return schedule.filter(item => item.kind === onlyKind);
 }
 
+function splitCsv(value) {
+  return String(value || '').split(',').map(item => item.trim()).filter(Boolean);
+}
+
+function isSkippedByEnv(kind, dateKey) {
+  const specific = process.env[`SOCIAL_SKIP_${kind.toUpperCase()}_DATES`];
+  const all = process.env.SOCIAL_SKIP_DATES;
+  return splitCsv(specific).includes(dateKey) || splitCsv(all).includes(dateKey);
+}
+
 async function readJson(file, fallback) {
   try {
     return JSON.parse(await fs.readFile(file, 'utf8'));
@@ -133,21 +143,23 @@ async function runDue(args) {
   const due = args.forceKind
     ? schedule.filter(item => args.forceKind === 'all' || item.kind === args.forceKind)
     : schedule.filter(item => nowMinute >= item.minute && !state[dateKey][item.kind]);
+  const dueAfterSkips = due.filter(item => !isSkippedByEnv(item.kind, dateKey));
 
   const report = {
     date: dateKey,
     nowMinute,
     schedule: schedule.map(item => ({ kind: item.kind, time: item.time })),
     onlyKind: args.onlyKind || null,
-    due: due.map(item => item.kind),
+    due: dueAfterSkips.map(item => item.kind),
+    skippedByEnv: due.filter(item => isSkippedByEnv(item.kind, dateKey)).map(item => item.kind),
     dryRun: args.dryRun,
   };
   console.log(JSON.stringify(report, null, 2));
 
-  if (args.dryRun || !due.length) return;
+  if (args.dryRun || !dueAfterSkips.length) return;
   requirePostingEnabled();
 
-  for (const item of due) {
+  for (const item of dueAfterSkips) {
     runPost(item.kind, dateKey);
     state[dateKey][item.kind] = new Date().toISOString();
     await writeJson(STATE_FILE, state);
