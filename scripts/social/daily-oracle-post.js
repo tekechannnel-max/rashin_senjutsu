@@ -330,10 +330,16 @@ function validateDraft(draft, args) {
     validatePostText(draft.oracle.text, { label: 'oracle Threads post', platforms: ['threads'] });
     validatePostText(draft.concept.text, { label: 'concept Threads post', platforms: ['threads'] });
     const requiredHashtag = draft.meta?.policy?.hashtag || DEFAULT_HASHTAG;
+    const preRelease = isPreReleasePosting(draft.date, draft.meta?.socialConfig || {});
     if (!draft.oracle.text.includes(requiredHashtag)) throw new Error('oracle Threads post is missing the required hashtag.');
     if (!draft.concept.text.includes(requiredHashtag)) throw new Error('concept Threads post is missing the required hashtag.');
-    if (!extractUtmContent(draft.oracle.text)) throw new Error('oracle Threads post is missing utm_content.');
-    if (!extractUtmContent(draft.concept.text)) throw new Error('concept Threads post is missing utm_content.');
+    if (preRelease) {
+      if (hasPublicUrl(draft.oracle.text)) throw new Error('pre-release oracle Threads post must not include a URL.');
+      if (hasPublicUrl(draft.concept.text)) throw new Error('pre-release concept Threads post must not include a URL.');
+    } else {
+      if (!extractUtmContent(draft.oracle.text)) throw new Error('oracle Threads post is missing utm_content.');
+      if (!extractUtmContent(draft.concept.text)) throw new Error('concept Threads post is missing utm_content.');
+    }
     if (!draft.oracle.text.trim().endsWith('あなたも今日の1枚を引かない？')) {
       throw new Error('oracle Threads post must end with the required closing line.');
     }
@@ -484,8 +490,6 @@ function buildOracleText(card, publicOrigin, options = {}) {
       '',
       ...promo.pitch,
       '',
-      shareUrl,
-      '',
       config.defaultHashtag || DEFAULT_HASHTAG,
       '',
       promo.closing,
@@ -536,7 +540,6 @@ function buildXOracleText(card, publicOrigin, options = {}) {
       `今日の一手：${truncateText(card.action, 42)}`,
       '',
       promo.closing,
-      shareUrl,
       config.defaultHashtag || DEFAULT_HASHTAG,
     ].join('\n');
   }
@@ -567,6 +570,15 @@ function buildConceptText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config 
     : 'concept';
   const link = buildTrackedUrl(publicOrigin, '/', buildUtmParams(config, `${contentType}_${dateKey.replace(/-/g, '')}`));
   const ctaLine = buildThreadsCtaLine(paidCta, dateKey, config);
+  if (isPreReleasePosting(dateKey, config)) {
+    return [
+      body,
+      '',
+      ctaLine,
+      '',
+      config.defaultHashtag || DEFAULT_HASHTAG,
+    ].join('\n');
+  }
   return [
     body,
     '',
@@ -605,6 +617,14 @@ function buildXConceptText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config
   const contentType = paidCta === 'soft_paid' || paidCta === 'active_paid' ? 'deep' : 'concept';
   const link = buildTrackedUrl(publicOrigin, '/', buildUtmParams(config, `${contentType}_${dateKey.replace(/-/g, '')}`));
   const ctaLine = buildXCtaLine(paidCta, dateKey, config);
+  if (isPreReleasePosting(dateKey, config)) {
+    return [
+      body,
+      '',
+      ctaLine,
+      config.defaultHashtag || DEFAULT_HASHTAG,
+    ].join('\n');
+  }
   return [
     body,
     '',
@@ -748,24 +768,28 @@ async function postTextToThreads(text) {
   return threadsClient.postTextToThreads({ text });
 }
 
-function buildContentMarker(kind, dateKey) {
-  return `${kind}_${dateKey.replace(/-/g, '')}`;
-}
-
 function extractUtmContent(text) {
   const match = String(text || '').match(/[?&]utm_content=([^&#\s]+)/);
   return match ? decodeURIComponent(match[1]) : null;
 }
 
-async function findExistingThreadsPost(marker) {
+function hasPublicUrl(text) {
+  return /https?:\/\//i.test(String(text || ''));
+}
+
+async function findExistingThreadsPost({ marker = null, text = '' } = {}) {
   if (process.env.SOCIAL_ALLOW_DUPLICATE_POSTS === 'true') return null;
-  if (!marker) throw new Error('Missing utm_content marker for duplicate protection.');
+  if (!marker && !text) throw new Error('Missing duplicate protection marker or text.');
   const recent = await threadsClient.listThreads({ limit: Number(process.env.THREADS_DUPLICATE_LOOKBACK || 25) });
-  return (recent.data || []).find(post => String(post.text || '').includes(`utm_content=${marker}`)) || null;
+  return (recent.data || []).find(post => {
+    const postText = String(post.text || '');
+    if (marker && postText.includes(`utm_content=${marker}`)) return true;
+    return text && postText.trim() === String(text).trim();
+  }) || null;
 }
 
 async function postImageToThreadsOnce({ text, imageUrl, altText, marker }) {
-  const existing = await findExistingThreadsPost(marker);
+  const existing = await findExistingThreadsPost({ marker, text });
   if (existing) {
     return {
       skipped: true,
@@ -790,7 +814,7 @@ async function postImageToThreadsOnce({ text, imageUrl, altText, marker }) {
 }
 
 async function postTextToThreadsOnce({ text, marker }) {
-  const existing = await findExistingThreadsPost(marker);
+  const existing = await findExistingThreadsPost({ marker, text });
   if (existing) {
     return {
       skipped: true,
@@ -820,13 +844,13 @@ async function main() {
         text: draft.oracle.text,
         imageUrl: draft.oracle.imageUrl,
         altText: draft.oracle.altText,
-        marker: extractUtmContent(draft.oracle.text) || buildContentMarker('oracle', draft.date),
+        marker: extractUtmContent(draft.oracle.text),
       });
     }
     if (args.kind === 'all' || args.kind === 'concept') {
       results.threadsConcept = await postTextToThreadsOnce({
         text: draft.concept.text,
-        marker: extractUtmContent(draft.concept.text) || buildContentMarker('concept', draft.date),
+        marker: extractUtmContent(draft.concept.text),
       });
     }
   }

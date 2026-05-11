@@ -180,6 +180,8 @@ The workflow uses `--only-kind=oracle` and `--only-kind=concept` so the evening 
 
 Threads posts are not treated as successful only because the publish API returned an ID. The client verifies the published post by ID after publishing. Image posts also wait for the media container to become ready before publishing; if image publication cannot be verified, the GitHub workflow falls back to a text-only Threads post instead of silently reporting success.
 
+Pre-release posts before `2026-05-16` are teaser posts only. They must not include public URLs or UTM links in the visible post text; links start on the release date.
+
 Recommended split:
 
 - `07:00 Asia/Tokyo`: oracle image post
