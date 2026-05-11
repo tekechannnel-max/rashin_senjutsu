@@ -171,12 +171,14 @@ THREADS_USER_ID
 
 The workflow file is `.github/workflows/threads-social.yml`.
 
-GitHub schedule runs in UTC. The minutes are intentionally not `00` because GitHub scheduled workflows at the top of the hour can be delayed or dropped under load. Each lane has an extended retry window; duplicate protection checks existing Threads posts by `utm_content` before publishing:
+GitHub schedule runs in UTC. The minutes are intentionally not `00` because GitHub scheduled workflows at the top of the hour can be delayed or dropped under load. The workflow runs four times per hour and the script decides whether a post is due; duplicate protection checks existing Threads posts before publishing:
 
-- `13/28/43/58 22 UTC` and `13/28 23 UTC`: 07:13/07:28/07:43/07:58/08:13/08:28 JST oracle image post retry window
-- `13/28/43/58 11 UTC` and `13/28 12 UTC`: 20:13/20:28/20:43/20:58/21:13/21:28 JST concept post retry window
+- `3,18,33,48 * * * *`: checks for due posts at roughly `:03/:18/:33/:48` every hour
+- Before 07:00 JST nothing is due.
+- After 07:00 JST the oracle post is due unless an existing matching Threads post is found.
+- After 20:00 JST the concept post is due unless an existing matching Threads post is found.
 
-The workflow uses `--only-kind=oracle` and `--only-kind=concept` so the evening run cannot accidentally publish a missed morning post.
+Manual dispatch can still force `oracle` or `concept` for emergency retries.
 
 Threads posts are not treated as successful only because the publish API returned an ID. The client verifies the published post by ID after publishing. Image posts also wait for the media container to become ready before publishing; if image publication cannot be verified, the GitHub workflow falls back to a text-only Threads post instead of silently reporting success.
 

@@ -2,20 +2,9 @@ name: Threads social posts
 
 on:
   schedule:
-    # 07:13, 07:28, 07:43, 07:58, 08:13, 08:28 JST
-    - cron: '13 22 * * *'
-    - cron: '28 22 * * *'
-    - cron: '43 22 * * *'
-    - cron: '58 22 * * *'
-    - cron: '13 23 * * *'
-    - cron: '28 23 * * *'
-    # 20:13, 20:28, 20:43, 20:58, 21:13, 21:28 JST
-    - cron: '13 11 * * *'
-    - cron: '28 11 * * *'
-    - cron: '43 11 * * *'
-    - cron: '58 11 * * *'
-    - cron: '13 12 * * *'
-    - cron: '28 12 * * *'
+    # GitHub schedule can be delayed or dropped; run off the top of each hour
+    # and let scripts/social/run-scheduled-posts.js decide whether a post is due.
+    - cron: '3,18,33,48 * * * *'
   workflow_dispatch:
     inputs:
       kind:
@@ -96,8 +85,6 @@ jobs:
           kind="${{ github.event.inputs.kind || 'auto' }}"
           if [ "$kind" = "auto" ]; then
             case "${{ github.event.schedule }}" in
-              "13 22 * * *"|"28 22 * * *"|"43 22 * * *"|"58 22 * * *"|"13 23 * * *"|"28 23 * * *") kind="oracle" ;;
-              "13 11 * * *"|"28 11 * * *"|"43 11 * * *"|"58 11 * * *"|"13 12 * * *"|"28 12 * * *") kind="concept" ;;
               *) kind="all" ;;
             esac
           fi
