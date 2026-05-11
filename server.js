@@ -264,7 +264,7 @@ const RATE_LIMIT_RULES = {
 const RATE_LIMIT_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 const AI_FREE_DAILY_LIMIT = Math.max(1, parseInt(process.env.AI_FREE_DAILY_LIMIT || '5', 10) || 5);
 const PAID_MODEL_AB_TEST_NAME = 'paid_model_gpt55_vs_sonnet46';
-const PAID_MODEL_AB_TEST_ENABLED = normalizeEnvValue(process.env.PAID_MODEL_AB_TEST_ENABLED || (IS_DEPLOYED_RUNTIME ? 'true' : '')).toLowerCase() === 'true';
+const PAID_MODEL_AB_TEST_ENABLED = normalizeEnvValue(process.env.PAID_MODEL_AB_TEST_ENABLED || '').toLowerCase() === 'true';
 const PAID_MODEL_AB_TEST_OPENAI_WEIGHT_RAW = parseInt(process.env.PAID_MODEL_AB_TEST_OPENAI_WEIGHT || '50', 10);
 const PAID_MODEL_AB_TEST_OPENAI_WEIGHT = Number.isFinite(PAID_MODEL_AB_TEST_OPENAI_WEIGHT_RAW)
   ? Math.min(100, Math.max(0, PAID_MODEL_AB_TEST_OPENAI_WEIGHT_RAW))
