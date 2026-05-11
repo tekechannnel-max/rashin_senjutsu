@@ -5501,18 +5501,29 @@ function openPaypayPaymentModal({paypay={},finalAmount=DEEP_READING_PRICE}={}){
     modal.id='paypay-payment-modal';
     modal.setAttribute('aria-hidden','true');
     modal.setAttribute('inert','');
-    const qrSvg=buildPaypayQrSvg(url);
+    const qrImageUrl=getPaypayPaymentUrl(paypay.qrImageUrl||paypay.qr_image_url||'');
+    const qrSvg=qrImageUrl?'':buildPaypayQrSvg(url);
+    const qrContent=qrImageUrl
+      ?`<img class="paypay-qr-image" src="${escapeHtml(qrImageUrl)}" alt="PayPay支払いQRコード">`
+      :(qrSvg||'<div class="paypay-url-box">QRコードを作成できませんでした。PayPayを開いてください。</div>');
+    const paymentLead=qrImageUrl
+      ?'PayPayアプリでQRコードを読み取って支払いを完了してください。スマホの場合はPayPayを開くボタンも使えます。'
+      :'PCの場合はスマホの標準カメラでQRコードを読み取ってください。スマホの場合はPayPayを開いて支払いを完了してください。';
+    const qrHint=qrImageUrl
+      ?'PayPayアプリのスキャンでこのQRコードを読み取ってください。'
+      :'PayPayアプリ内のスキャンではなく、スマホの標準カメラでQRを読み取ってください。';
+    const fallbackUrlBox=qrImageUrl?'':`<div class="paypay-url-box">${escapeHtml(displayUrl)}</div>`;
     modal.innerHTML=`
       <div class="modal-box paypay-modal-box" role="dialog" aria-modal="true" aria-labelledby="paypay-payment-title">
         <div class="modal-title" id="paypay-payment-title">PayPayで支払う</div>
-        <div class="modal-desc">PCの場合はスマホの標準カメラでQRコードを読み取ってください。スマホの場合はPayPayを開いて支払いを完了してください。</div>
+        <div class="modal-desc">${escapeHtml(paymentLead)}</div>
         <div class="paypay-payment-grid">
-          <div class="paypay-qr-card" aria-label="PayPay支払いQRコード">${qrSvg||'<div class="paypay-url-box">QRコードを作成できませんでした。PayPayを開いてください。</div>'}</div>
+          <div class="paypay-qr-card" aria-label="PayPay支払いQRコード">${qrContent}</div>
           <div class="paypay-payment-detail">
             <div class="paypay-amount">支払い金額：${escapeHtml(String(finalAmount))}円</div>
             <a class="paypay-open-link" href="${escapeHtml(url)}" target="_blank" rel="noopener">PayPayを開く</a>
-            <div class="paypay-reference-hint">PayPayアプリ内のスキャンではなく、スマホの標準カメラでQRを読み取ってください。</div>
-            <div class="paypay-url-box">${escapeHtml(displayUrl)}</div>
+            <div class="paypay-reference-hint">${escapeHtml(qrHint)}</div>
+            ${fallbackUrlBox}
             ${paypay.note?`<div class="paypay-reference-hint">${escapeHtml(paypay.note)}</div>`:''}
           </div>
         </div>

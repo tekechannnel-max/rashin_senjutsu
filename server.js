@@ -172,6 +172,7 @@ const RASHIN_CODE_ADMIN_SECRET = normalizeEnvValue(process.env.RASHIN_CODE_ADMIN
 const PAYPAY_MANUAL_PAYMENT_URL = normalizeEnvValue(process.env.PAYPAY_MANUAL_PAYMENT_URL || '');
 const PAYPAY_MANUAL_PAYMENT_LABEL = normalizeEnvValue(process.env.PAYPAY_MANUAL_PAYMENT_LABEL || 'Rashin Senjutsu PayPay');
 const PAYPAY_MANUAL_PAYMENT_NOTE = normalizeEnvValue(process.env.PAYPAY_MANUAL_PAYMENT_NOTE || '');
+const PAYPAY_MANUAL_PAYMENT_QR_IMAGE_URL = normalizeEnvValue(process.env.PAYPAY_MANUAL_PAYMENT_QR_IMAGE_URL || '');
 const PAYPAY_MANUAL_AUTO_ISSUE_ENABLED = normalizeEnvValue(process.env.PAYPAY_MANUAL_AUTO_ISSUE_ENABLED || '').toLowerCase() === 'true';
 const PAYPAY_EXPIRY_NOTIFY_ENABLED = normalizeEnvValue(process.env.PAYPAY_EXPIRY_NOTIFY_ENABLED || 'true').toLowerCase() !== 'false';
 const PAYPAY_EXPIRY_NOTIFY_LOOKAHEAD_DAYS = Math.max(0, parseInt(process.env.PAYPAY_EXPIRY_NOTIFY_LOOKAHEAD_DAYS || '3', 10) || 3);
@@ -768,6 +769,14 @@ function normalizePaypayManualUrl(value) {
   }
 }
 
+function firstDefinedProperty(source, keys) {
+  if (!source || typeof source !== 'object') return undefined;
+  for (const key of keys) {
+    if (Object.prototype.hasOwnProperty.call(source, key)) return source[key];
+  }
+  return undefined;
+}
+
 function normalizeDiscordWebhookUrl(value) {
   const raw = normalizeEnvValue(value);
   if (!raw || isPlaceholderEnvValue(raw)) return '';
@@ -786,13 +795,16 @@ function normalizeDiscordWebhookUrl(value) {
 
 function normalizePaypayManualConfig(raw = {}) {
   const source = raw && typeof raw === 'object' ? raw : {};
-  const url = normalizePaypayManualUrl(source.url || source.paymentUrl || source.payment_url || PAYPAY_MANUAL_PAYMENT_URL);
+  const sourceUrl = firstDefinedProperty(source, ['url', 'paymentUrl', 'payment_url']);
+  const sourceQrImageUrl = firstDefinedProperty(source, ['qrImageUrl', 'qr_image_url', 'qrImage', 'qr_image']);
+  const url = normalizePaypayManualUrl(sourceUrl ?? PAYPAY_MANUAL_PAYMENT_URL);
   return {
     url,
-    label: normalizeEnvValue(source.label || PAYPAY_MANUAL_PAYMENT_LABEL || 'Rashin Senjutsu PayPay'),
-    note: normalizeEnvValue(source.note || PAYPAY_MANUAL_PAYMENT_NOTE || ''),
-    expiresAt: normalizeEnvValue(source.expiresAt || source.expires_at || ''),
-    updatedAt: normalizeEnvValue(source.updatedAt || source.updated_at || ''),
+    qrImageUrl: normalizePaymentAssetUrl(sourceQrImageUrl ?? PAYPAY_MANUAL_PAYMENT_QR_IMAGE_URL),
+    label: normalizeEnvValue((firstDefinedProperty(source, ['label']) ?? PAYPAY_MANUAL_PAYMENT_LABEL) || 'Rashin Senjutsu PayPay'),
+    note: normalizeEnvValue((firstDefinedProperty(source, ['note']) ?? PAYPAY_MANUAL_PAYMENT_NOTE) || ''),
+    expiresAt: normalizeEnvValue(firstDefinedProperty(source, ['expiresAt', 'expires_at']) ?? ''),
+    updatedAt: normalizeEnvValue(firstDefinedProperty(source, ['updatedAt', 'updated_at']) ?? ''),
   };
 }
 
@@ -811,7 +823,11 @@ async function readPaypayManualConfig() {
 }
 
 async function writePaypayManualConfig(config) {
-  const normalized = normalizePaypayManualConfig(config || {});
+  const current = await readPaypayManualConfig();
+  const normalized = normalizePaypayManualConfig({
+    ...current,
+    ...(config || {}),
+  });
   if (!normalized.url) {
     const error = new Error('PAYPAY_MANUAL_PAYMENT_URL_INVALID');
     error.statusCode = 400;
@@ -992,6 +1008,7 @@ function buildPaypayExpiryNotification(status = {}, config = {}) {
     `Status: ${status.state || 'unknown'}`,
     `Message: ${status.message || ''}`,
     `Current URL: ${status.url || '(not configured)'}`,
+    `Current QR image URL: ${config.qrImageUrl || '(missing)'}`,
     `Expires at: ${status.expiresAt || '(missing)'}`,
     `Days remaining: ${Number.isFinite(status.daysRemaining) ? status.daysRemaining : 'unknown'}`,
     `Label: ${config.label || PAYPAY_MANUAL_PAYMENT_LABEL || 'PayPay'}`,
@@ -1005,6 +1022,7 @@ function buildPaypayExpiryNotification(status = {}, config = {}) {
     '',
     '$body = @{',
     '  url = "https://qr.paypay.ne.jp/new-url"',
+    '  qrImageUrl = "/images/payment/paypay-qr.png"',
     '  label = "Rashin Senjutsu PayPay"',
     '  note = ""',
     '  expiresAt = "2026-06-08T23:59:59+09:00"',
@@ -3225,6 +3243,7 @@ async function getPaypayManualPaymentPayload() {
   return {
     provider: 'paypay_manual',
     url: config.url,
+    qrImageUrl: config.qrImageUrl,
     openUrl,
     qrUrl: openUrl || config.url,
     label: config.label,
@@ -5667,10 +5686,11 @@ async function handlePaypayManualConfig(req, res) {
   }
   try {
     const config = await writePaypayManualConfig({
-      url: body?.url || body?.paymentUrl || body?.payment_url,
-      label: body?.label,
-      note: body?.note,
-      expiresAt: body?.expiresAt || body?.expires_at,
+      url: firstDefinedProperty(body, ['url', 'paymentUrl', 'payment_url']),
+      qrImageUrl: firstDefinedProperty(body, ['qrImageUrl', 'qr_image_url', 'qrImage', 'qr_image']),
+      label: firstDefinedProperty(body, ['label']),
+      note: firstDefinedProperty(body, ['note']),
+      expiresAt: firstDefinedProperty(body, ['expiresAt', 'expires_at']),
     });
     checkPaypayManualExpiryAndNotify({ source: 'config_update' }).catch(error => {
       console.warn('[paypay-notify] config update check failed', error?.message || error);

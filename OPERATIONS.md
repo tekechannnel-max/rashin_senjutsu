@@ -137,6 +137,7 @@ Set these on the Render service and redeploy before testing:
 - `DEEP_READING_PRERELEASE_AMOUNT=780`
 - `DEEP_READING_RELEASE_AMOUNT=1000`
 - `PAYPAY_MANUAL_PAYMENT_URL=<your PayPay QR/payment URL>`
+- `PAYPAY_MANUAL_PAYMENT_QR_IMAGE_URL=/images/payment/paypay-qr.png` if the app should show an official PayPay QR image instead of generating one from the URL
 - `PAYPAY_MANUAL_PAYMENT_LABEL=Rashin Senjutsu PayPay`
 - `PAYPAY_MANUAL_PAYMENT_NOTE=<short user-facing PayPay instruction>`
 - `PAYPAY_MANUAL_AUTO_ISSUE_ENABLED=true` for prerelease auto-unlock after the user enters a PayPay transaction reference
@@ -166,21 +167,22 @@ This prerelease path removes manual Rashin-code handoff while still keeping paid
 
 1. User starts paid deep reading.
 2. Server creates a `paypay_manual` purchase order.
-3. User pays through `PAYPAY_MANUAL_PAYMENT_URL`.
+3. User pays through `PAYPAY_MANUAL_PAYMENT_URL`; if `PAYPAY_MANUAL_PAYMENT_QR_IMAGE_URL` or `qrImageUrl` is configured, the app shows that QR image in the payment modal.
 4. User enters the PayPay transaction/reference number in the app.
 5. If `PAYPAY_MANUAL_AUTO_ISSUE_ENABLED=true`, the server creates and redeems an internal Rashin paid code, creates one paid-reading ticket, and the app continues automatically.
 6. If `PAYPAY_MANUAL_AUTO_ISSUE_ENABLED=false`, the payment claim is saved as `payment_requires_review` and no paid ticket is created.
 
 Security boundary: static PayPay QR payments are not automatically verified by PayPay. Auto-issue mode trusts the user's entered PayPay reference, so use it only for limited prerelease volume. For strict automated verification, replace this with PayPay's official online payment API/webhook flow.
 
-### Updating the PayPay URL without redeploy
+### Updating the PayPay URL or QR image without redeploy
 
-The PayPay payment URL in Render env is only the fallback/default. If the personal PayPay URL expires, update the active URL through the admin API. This writes `data/paypay-manual-config.json`, so the Render disk must persist `data/`.
+The PayPay payment URL and QR image URL in Render env are only the fallback/default. If the personal PayPay URL expires, update the active URL and QR image URL through the admin API. This writes `data/paypay-manual-config.json`, so the Render disk must persist `data/`.
 
 ```powershell
 $env:RASHIN_CODE_ADMIN_SECRET="your-admin-secret"
 $body = @{
   url = "https://qr.paypay.ne.jp/new-url"
+  qrImageUrl = "/images/payment/paypay-qr.png"
   label = "羅針占術 PayPay"
   note = "支払い後、PayPayの取引番号を入力してください。"
   expiresAt = "2026-05-25T23:59:59+09:00"
