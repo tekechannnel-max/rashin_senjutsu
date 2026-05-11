@@ -5469,26 +5469,21 @@ function scoreQrMatrix(modules){
 }
 
 function buildPaypayQrSvg(text=''){
-  const codewords=makePaypayQrCodewords(text);
-  if(!codewords) return '';
-  const size=37;
-  let best=null;
-  for(let mask=0;mask<8;mask++){
-    const {modules,reserved}=createQrBaseMatrix(size);
-    placeQrData(modules,reserved,codewords,mask);
-    setQrFormatBits(modules,mask);
-    const score=scoreQrMatrix(modules);
-    if(!best||score<best.score) best={modules,score};
+  const value=String(text||'').trim();
+  if(!value||typeof qrcode!=='function') return '';
+  try{
+    const qr=qrcode(0,'M');
+    qr.addData(value,'Byte');
+    qr.make();
+    return qr.createSvgTag({
+      cellSize:5,
+      margin:4,
+      scalable:true,
+    }).replace('<svg ','<svg role="img" aria-label="PayPay payment QR code" shape-rendering="crispEdges" ');
+  }catch(e){
+    console.warn('PayPay QR generation failed',e);
+    return '';
   }
-  const quiet=4;
-  const total=size+quiet*2;
-  const path=[];
-  best.modules.forEach((row,y)=>{
-    row.forEach((dark,x)=>{
-      if(dark) path.push(`M${x+quiet} ${y+quiet}h1v1h-1z`);
-    });
-  });
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${total} ${total}" shape-rendering="crispEdges" role="img" aria-label="PayPay payment QR code"><rect width="${total}" height="${total}" fill="#fff"/><path fill="#000" d="${path.join('')}"/></svg>`;
 }
 
 function openPaypayPaymentModal({paypay={},finalAmount=DEEP_READING_PRICE}={}){

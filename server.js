@@ -2399,6 +2399,9 @@ function getAllowedStaticPath(urlPath) {
   if (pathname === '/app.js') {
     return path.join(ROOT_DIR, 'app.js');
   }
+  if (pathname === '/vendor/qrcode-generator/qrcode.js') {
+    return path.join(ROOT_DIR, 'vendor', 'qrcode-generator', 'qrcode.js');
+  }
   if (pathname === '/solar-term-boundaries.json') {
     return path.join(ROOT_DIR, 'solar-term-boundaries.json');
   }
