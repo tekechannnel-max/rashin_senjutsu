@@ -142,7 +142,7 @@ Set these on the Render service and redeploy before testing:
 - `PAYPAY_MANUAL_AUTO_ISSUE_ENABLED=true` for prerelease auto-unlock after the user enters a PayPay transaction reference
 - `PAYPAY_EXPIRY_NOTIFY_ENABLED=true`
 - `PAYPAY_EXPIRY_NOTIFY_LOOKAHEAD_DAYS=3`
-- `PAYPAY_NOTIFY_DISCORD_WEBHOOK_URL=<Discord incoming webhook URL>`
+- `PAYPAY_NOTIFY_DISCORD_WEBHOOK_URL=<Discord incoming webhook URL>` as an env fallback, or save it without redeploy through `/api/rashin-paid-code/paypay/notify-config`
 - `PAYPAY_NOTIFY_LINE_CHANNEL_ACCESS_TOKEN=<LINE Messaging API channel access token>`
 - `PAYPAY_NOTIFY_LINE_TO=<LINE user ID or group ID>`
 - `PAYPAY_NOTIFY_GMAIL_TO=<recipient email>`
@@ -198,9 +198,25 @@ Invoke-RestMethod -Uri "https://rashin-senjutsu.onrender.com/api/rashin-paid-cod
 
 The server checks the active PayPay URL on startup and then every 6 hours. If `expiresAt` is missing, invalid, within `PAYPAY_EXPIRY_NOTIFY_LOOKAHEAD_DAYS`, or already expired, it sends one notice per day to configured channels.
 
-- Discord uses an incoming webhook URL.
+- Discord uses an incoming webhook URL. It can be stored by Render env or by the admin API below.
 - LINE uses the Messaging API push endpoint. LINE Notify is discontinued, so use a LINE Official Account channel access token and a user or group ID.
 - Gmail uses SMTP over `smtp.gmail.com:465` with a Gmail app password.
+
+Save or replace the Discord webhook without changing Render env:
+
+```powershell
+$env:RASHIN_CODE_ADMIN_SECRET="your-admin-secret"
+$body = @{
+  discordWebhookUrl = "https://discord.com/api/webhooks/..."
+} | ConvertTo-Json
+Invoke-RestMethod -Uri "https://rashin-senjutsu.onrender.com/api/rashin-paid-code/paypay/notify-config" -Method Post -Headers @{"x-rashin-admin-secret"=$env:RASHIN_CODE_ADMIN_SECRET} -ContentType "application/json" -Body $body
+```
+
+Check the saved notification channel:
+
+```powershell
+Invoke-RestMethod -Uri "https://rashin-senjutsu.onrender.com/api/rashin-paid-code/paypay/notify-config" -Method Get -Headers @{"x-rashin-admin-secret"=$env:RASHIN_CODE_ADMIN_SECRET}
+```
 
 Check notification status:
 

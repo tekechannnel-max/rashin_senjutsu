@@ -22,6 +22,7 @@ const INDEX_DIR = path.join(DATA_DIR, 'indexes');
 const LOG_DIR = path.join(DATA_DIR, 'logs');
 const PAYPAY_MANUAL_CONFIG_PATH = path.join(DATA_DIR, 'paypay-manual-config.json');
 const PAYPAY_MANUAL_NOTIFY_STATE_PATH = path.join(DATA_DIR, 'paypay-manual-notify-state.json');
+const PAYPAY_NOTIFY_CHANNELS_CONFIG_PATH = path.join(DATA_DIR, 'paypay-notify-channels.json');
 const AI_USAGE_LOG_DIR = path.join(LOG_DIR, 'ai-usage');
 const CLIENT_ERROR_LOG_DIR = path.join(LOG_DIR, 'client-errors');
 const AI_EVENT_LOG_DIR = LOG_DIR;
@@ -767,6 +768,22 @@ function normalizePaypayManualUrl(value) {
   }
 }
 
+function normalizeDiscordWebhookUrl(value) {
+  const raw = normalizeEnvValue(value);
+  if (!raw || isPlaceholderEnvValue(raw)) return '';
+  try {
+    const url = new URL(raw);
+    const hostname = url.hostname.toLowerCase();
+    if (url.protocol !== 'https:') return '';
+    if (hostname !== 'discord.com' && hostname !== 'discordapp.com') return '';
+    if (!/^\/api\/webhooks\/\d+\/[^/]+\/?$/.test(url.pathname)) return '';
+    url.hash = '';
+    return url.toString();
+  } catch (_error) {
+    return '';
+  }
+}
+
 function normalizePaypayManualConfig(raw = {}) {
   const source = raw && typeof raw === 'object' ? raw : {};
   const url = normalizePaypayManualUrl(source.url || source.paymentUrl || source.payment_url || PAYPAY_MANUAL_PAYMENT_URL);
@@ -775,6 +792,15 @@ function normalizePaypayManualConfig(raw = {}) {
     label: normalizeEnvValue(source.label || PAYPAY_MANUAL_PAYMENT_LABEL || 'Rashin Senjutsu PayPay'),
     note: normalizeEnvValue(source.note || PAYPAY_MANUAL_PAYMENT_NOTE || ''),
     expiresAt: normalizeEnvValue(source.expiresAt || source.expires_at || ''),
+    updatedAt: normalizeEnvValue(source.updatedAt || source.updated_at || ''),
+  };
+}
+
+function normalizePaypayNotifyChannelsConfig(raw = {}) {
+  const source = raw && typeof raw === 'object' ? raw : {};
+  const rawDiscordWebhookUrl = source.discordWebhookUrl || source.discord_webhook_url || '';
+  return {
+    discordWebhookUrl: normalizeDiscordWebhookUrl(rawDiscordWebhookUrl),
     updatedAt: normalizeEnvValue(source.updatedAt || source.updated_at || ''),
   };
 }
@@ -796,6 +822,29 @@ async function writePaypayManualConfig(config) {
     updatedAt: new Date().toISOString(),
   };
   await writeJsonFileAtomic(PAYPAY_MANUAL_CONFIG_PATH, payload);
+  return payload;
+}
+
+async function readPaypayNotifyChannelsConfig() {
+  const stored = await readJsonFileSafe(PAYPAY_NOTIFY_CHANNELS_CONFIG_PATH, null);
+  return normalizePaypayNotifyChannelsConfig(stored || {});
+}
+
+async function writePaypayNotifyChannelsConfig(config = {}) {
+  const rawDiscordWebhookUrl = normalizeEnvValue(config.discordWebhookUrl || config.discord_webhook_url || '');
+  const normalizedDiscordWebhookUrl = normalizeDiscordWebhookUrl(rawDiscordWebhookUrl);
+  if (rawDiscordWebhookUrl && !normalizedDiscordWebhookUrl) {
+    const error = new Error('DISCORD_WEBHOOK_URL_INVALID');
+    error.statusCode = 400;
+    throw error;
+  }
+  const current = await readPaypayNotifyChannelsConfig();
+  const payload = {
+    ...current,
+    discordWebhookUrl: normalizedDiscordWebhookUrl,
+    updatedAt: new Date().toISOString(),
+  };
+  await writeJsonFileAtomic(PAYPAY_NOTIFY_CHANNELS_CONFIG_PATH, payload);
   return payload;
 }
 
@@ -824,17 +873,28 @@ function maskNotificationTarget(value = '') {
   return `${text.slice(0, 4)}***${text.slice(-4)}`;
 }
 
-function getPaypayNotifyChannelsStatus() {
+function getEffectiveDiscordWebhookUrl(config = {}) {
+  return normalizeDiscordWebhookUrl(config.discordWebhookUrl || PAYPAY_NOTIFY_DISCORD_WEBHOOK_URL);
+}
+
+function summarizePaypayNotifyChannels(config = {}) {
+  const discordWebhookUrl = getEffectiveDiscordWebhookUrl(config);
   const gmailRecipients = splitNotificationList(PAYPAY_NOTIFY_GMAIL_TO);
   return {
     enabled: PAYPAY_EXPIRY_NOTIFY_ENABLED,
-    discord: isConfiguredNotifyValue(PAYPAY_NOTIFY_DISCORD_WEBHOOK_URL),
+    discord: isConfiguredNotifyValue(discordWebhookUrl),
+    discordTarget: discordWebhookUrl ? maskNotificationTarget(discordWebhookUrl) : '',
     line: !!(isConfiguredNotifyValue(PAYPAY_NOTIFY_LINE_CHANNEL_ACCESS_TOKEN) && isConfiguredNotifyValue(PAYPAY_NOTIFY_LINE_TO)),
     gmail: !!(isConfiguredNotifyValue(PAYPAY_NOTIFY_GMAIL_USER) && isConfiguredNotifyValue(PAYPAY_NOTIFY_GMAIL_APP_PASSWORD) && gmailRecipients.length),
     gmailRecipients: gmailRecipients.map(maskNotificationTarget),
     lookaheadDays: PAYPAY_EXPIRY_NOTIFY_LOOKAHEAD_DAYS,
     intervalMs: PAYPAY_EXPIRY_NOTIFY_INTERVAL_MS,
   };
+}
+
+async function getPaypayNotifyChannelsStatus() {
+  const config = await readPaypayNotifyChannelsConfig();
+  return summarizePaypayNotifyChannels(config);
 }
 
 function getJstDateStampFromMs(ms = Date.now()) {
@@ -945,10 +1005,11 @@ function buildPaypayExpiryNotification(status = {}, config = {}) {
   };
 }
 
-async function sendDiscordOperationalNotification(text) {
-  if (!isConfiguredNotifyValue(PAYPAY_NOTIFY_DISCORD_WEBHOOK_URL)) return { channel: 'discord', skipped: true };
+async function sendDiscordOperationalNotification(text, config = {}) {
+  const discordWebhookUrl = getEffectiveDiscordWebhookUrl(config);
+  if (!isConfiguredNotifyValue(discordWebhookUrl)) return { channel: 'discord', skipped: true };
   const upstream = await makeHttpsRequest(
-    PAYPAY_NOTIFY_DISCORD_WEBHOOK_URL,
+    discordWebhookUrl,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1081,9 +1142,10 @@ async function sendGmailOperationalNotification(subject, text) {
 
 async function sendPaypayExpiryNotifications(status, config) {
   const notification = buildPaypayExpiryNotification(status, config);
+  const channelsConfig = await readPaypayNotifyChannelsConfig();
   const results = [];
   for (const sender of [
-    () => sendDiscordOperationalNotification(notification.text),
+    () => sendDiscordOperationalNotification(notification.text, channelsConfig),
     () => sendLineOperationalNotification(notification.text),
     () => sendGmailOperationalNotification(notification.title, notification.text),
   ]) {
@@ -1105,7 +1167,7 @@ async function checkPaypayManualExpiryAndNotify(options = {}) {
   const force = !!options.force;
   const config = await readPaypayManualConfig();
   const status = getPaypayExpiryStatus(config);
-  const channels = getPaypayNotifyChannelsStatus();
+  const channels = await getPaypayNotifyChannelsStatus();
   const hasAnyChannel = channels.discord || channels.line || channels.gmail;
   if (!PAYPAY_EXPIRY_NOTIFY_ENABLED || !hasAnyChannel) {
     return { ok: true, notified: false, reason: !PAYPAY_EXPIRY_NOTIFY_ENABLED ? 'disabled' : 'no_channels', status, channels };
@@ -1156,7 +1218,7 @@ async function getRuntimeSetupStatus(req) {
     rashinPaidCodeReady: rashinPaidCodeReady(),
     paypayManualReady: await paypayManualReady(),
     paypayManualAutoIssueEnabled: PAYPAY_MANUAL_AUTO_ISSUE_ENABLED,
-    paypayExpiryNotify: getPaypayNotifyChannelsStatus(),
+    paypayExpiryNotify: await getPaypayNotifyChannelsStatus(),
     deepReadingAmount: DEEP_READING_NORMAL_AMOUNT,
     deepReadingPrereleaseAmount: DEEP_READING_PRERELEASE_AMOUNT,
     deepReadingReleaseAmount: DEEP_READING_RELEASE_AMOUNT,
@@ -1181,6 +1243,7 @@ async function getRuntimeSetupStatus(req) {
     codeAdminIssuePath: '/api/rashin-paid-code/admin/issue',
     paypayManualClaimPath: '/api/rashin-paid-code/paypay/claim',
     paypayManualConfigPath: '/api/rashin-paid-code/paypay/config',
+    paypayManualNotifyConfigPath: '/api/rashin-paid-code/paypay/notify-config',
     legacyStripeWebhookPath: '/api/stripe/webhook',
     legacyStripeWebhookUrl: makeAbsoluteUrl(req, '/api/stripe/webhook'),
   };
@@ -5586,7 +5649,7 @@ async function handlePaypayManualNotify(req, res) {
     sendJson(res, 200, {
       ok: true,
       status: getPaypayExpiryStatus(config),
-      channels: getPaypayNotifyChannelsStatus(),
+      channels: await getPaypayNotifyChannelsStatus(),
     });
     return;
   }
@@ -5611,6 +5674,85 @@ async function handlePaypayManualNotify(req, res) {
   }
   const result = await checkPaypayManualExpiryAndNotify({ force: !!body?.force, source: 'admin' });
   sendJson(res, result.ok ? 200 : 502, result);
+}
+
+async function handlePaypayManualNotifyConfig(req, res) {
+  const providedSecret = normalizeEnvValue(req.headers['x-rashin-admin-secret'] || '');
+  if (!isConfiguredAppSecret(RASHIN_CODE_ADMIN_SECRET) || !safeCompareText(providedSecret, RASHIN_CODE_ADMIN_SECRET)) {
+    sendJson(res, 403, {
+      error: 'RASHIN_CODE_ADMIN_DENIED',
+      message: 'Admin secret was not accepted.',
+    });
+    return;
+  }
+  if (req.method === 'GET') {
+    const config = await readPaypayNotifyChannelsConfig();
+    sendJson(res, 200, {
+      ok: true,
+      channels: summarizePaypayNotifyChannels(config),
+      config: {
+        discordConfigured: !!getEffectiveDiscordWebhookUrl(config),
+        discordTarget: getEffectiveDiscordWebhookUrl(config) ? maskNotificationTarget(getEffectiveDiscordWebhookUrl(config)) : '',
+        updatedAt: config.updatedAt || '',
+      },
+    });
+    return;
+  }
+  if (req.method !== 'POST') {
+    sendJson(res, 405, {
+      error: 'METHOD_NOT_ALLOWED',
+      message: 'Use GET or POST.',
+    });
+    return;
+  }
+  let body;
+  try {
+    body = await readJsonBody(req);
+  } catch (error) {
+    sendJson(res, 400, {
+      error: error.message || 'INVALID_JSON',
+      message: 'PayPay notification config payload could not be parsed.',
+    });
+    return;
+  }
+  const hasDiscordWebhookUrl = Object.prototype.hasOwnProperty.call(body || {}, 'discordWebhookUrl')
+    || Object.prototype.hasOwnProperty.call(body || {}, 'discord_webhook_url')
+    || Object.prototype.hasOwnProperty.call(body || {}, 'discord');
+  if (!hasDiscordWebhookUrl) {
+    sendJson(res, 400, {
+      error: 'DISCORD_WEBHOOK_URL_REQUIRED',
+      message: 'discordWebhookUrl is required.',
+    });
+    return;
+  }
+  try {
+    const config = await writePaypayNotifyChannelsConfig({
+      discordWebhookUrl: body?.discordWebhookUrl || body?.discord_webhook_url || body?.discord || '',
+    });
+    const testResult = await sendDiscordOperationalNotification(
+      [
+        'Rashin Senjutsu PayPay notification connected.',
+        `At: ${new Date().toISOString()}`,
+        'Future PayPay URL expiry warnings will be sent to this Discord channel.',
+      ].join('\n'),
+      config
+    );
+    sendJson(res, testResult.ok ? 200 : 502, {
+      ok: !!testResult.ok,
+      channels: summarizePaypayNotifyChannels(config),
+      config: {
+        discordConfigured: !!getEffectiveDiscordWebhookUrl(config),
+        discordTarget: getEffectiveDiscordWebhookUrl(config) ? maskNotificationTarget(getEffectiveDiscordWebhookUrl(config)) : '',
+        updatedAt: config.updatedAt || '',
+      },
+      testResult,
+    });
+  } catch (error) {
+    sendJson(res, error.statusCode || 500, {
+      error: error.message || 'PAYPAY_NOTIFY_CONFIG_FAILED',
+      message: 'PayPay notification config could not be saved.',
+    });
+  }
 }
 
 async function handlePaidReadingTicketPrepare(req, res) {
@@ -6353,7 +6495,7 @@ async function handleRequest(req, res) {
       stripeCheckoutReady: false,
       stripePortalReady: false,
       stripeWebhookReady: false,
-      paypayExpiryNotify: setup?.paypayExpiryNotify || getPaypayNotifyChannelsStatus(),
+      paypayExpiryNotify: setup?.paypayExpiryNotify || await getPaypayNotifyChannelsStatus(),
       paidModelAbTest: setup?.paidModelAbTest || {
         name: PAID_MODEL_AB_TEST_NAME,
         enabled: PAID_MODEL_AB_TEST_ENABLED,
@@ -6408,6 +6550,11 @@ async function handleRequest(req, res) {
 
   if (req.method === 'POST' && req.url.startsWith('/api/rashin-paid-code/paypay/claim')) {
     await handlePaypayManualClaim(req, res);
+    return;
+  }
+
+  if ((req.method === 'GET' || req.method === 'POST') && req.url.startsWith('/api/rashin-paid-code/paypay/notify-config')) {
+    await handlePaypayManualNotifyConfig(req, res);
     return;
   }
 
