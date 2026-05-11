@@ -6032,7 +6032,7 @@ function openMemberAccessModal(intent=''){
   clearDeveloperAccessError();
   if(title) title.textContent=bonusLogin?'今日の羅針':(compactPaidStart?'深掘り鑑定の購入':'深掘り鑑定の確認');
   if(desc){
-    desc.style.display=compactPaidStart?'none':'';
+    desc.style.display='';
     desc.textContent=bonusLogin
       ?'Googleログインで今日のカードを記録し、羅針のかけらを1つ受け取ります。'
       :canUseDeveloperQuickAccess()
@@ -6042,7 +6042,7 @@ function openMemberAccessModal(intent=''){
         :'深掘り鑑定は、利用状態を確認できたときだけ開きます。');
   }
   if(guide){
-    guide.style.display=(compactPaidStart||bonusLogin)?'none':'';
+    guide.style.display=bonusLogin?'none':'';
     guide.textContent=canUseDeveloperQuickAccess()
       ?'確認用アクセスは上のボタン。その他の確認方法は下から選べます。'
       :(MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn
@@ -6052,7 +6052,7 @@ function openMemberAccessModal(intent=''){
           :'深掘り鑑定はGoogleログインを優先しています。'));
   }
   if(status){
-    status.style.display=(compactPaidStart||bonusLogin)?'none':'';
+    status.style.display=bonusLogin?'none':'';
     const usesGoogle=MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn&&!canUsePaidTestMode();
     const usesDeveloper=canUseDeveloperQuickAccess();
     status.className=`runtime-status ${usesDeveloper||canUsePaidTestMode()||usesGoogle?'ok':'warn'}`;
@@ -6213,6 +6213,10 @@ async function submitDeveloperAccess(){
 
 async function ensurePaidAccess(intent=''){
   if(isMemberActive()) return true;
+  if(canUseProxy()&&!canUsePaidTestMode()&&(!MEMBER_AUTH.checked||(!MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn))){
+    await loadMemberStatus({render:true});
+    if(isMemberActive()) return true;
+  }
   if(location.protocol==='file:'){
     openMemberAccessModal(intent);
     return false;
