@@ -267,7 +267,7 @@ function buildThreadsCtaLine(paidCta, dateKey, config) {
 function buildXCtaLine(paidCta, dateKey, config) {
   if (isPreReleasePosting(dateKey, config)) {
     if (paidCta === 'soft_paid' || paidCta === 'active_paid') {
-      return '深掘り鑑定も準備中です。必要な方だけ無料鑑定のあとに。';
+      return '深掘り鑑定も準備中です。必要な方だけ無料鑑定のあとに。明日の公開を待っていてください。';
     }
     return '気になる方は5/16の公開を待っていてください。';
   }

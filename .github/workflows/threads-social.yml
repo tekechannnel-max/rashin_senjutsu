@@ -68,6 +68,13 @@ jobs:
         if: steps.secrets.outputs.ready == 'true'
         run: npm run check
 
+      - name: Audit today's social draft
+        if: steps.secrets.outputs.ready == 'true'
+        shell: bash
+        run: |
+          today="$(TZ=Asia/Tokyo date +%F)"
+          npm run social:audit -- --from="$today" --to="$today" --platforms=threads
+
       - name: Confirm Threads token account
         if: steps.secrets.outputs.ready == 'true'
         run: npm run threads:doctor

@@ -5,7 +5,8 @@
   "type": "commonjs",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check app.js && node --check scripts/social/daily-oracle-post.js && node --check scripts/social/run-scheduled-posts.js && node --check scripts/social/threads-client.js && node --check scripts/social/threads-tool.js",
+    "check": "node --check server.js && node --check app.js && node --check scripts/social/daily-oracle-post.js && node --check scripts/social/run-scheduled-posts.js && node --check scripts/social/threads-client.js && node --check scripts/social/threads-tool.js && node --check scripts/social/audit-social-drafts.js",
+    "social:audit": "node scripts/social/audit-social-drafts.js",
     "social:draft": "node scripts/social/daily-oracle-post.js --dry-run",
     "social:write": "node scripts/social/daily-oracle-post.js --write",
     "social:post": "node scripts/social/daily-oracle-post.js --write --post",

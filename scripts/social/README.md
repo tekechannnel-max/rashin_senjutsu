@@ -83,6 +83,18 @@ npm run social:draft
 npm run social:threads:draft
 ```
 
+## Final review gate
+
+Before posting or enabling a new calendar range, run the mechanical audit and then review the copy with `docs/sns-final-review-protocol.md`.
+
+```powershell
+npm run social:audit -- --from=2026-05-12 --to=2026-05-29 --platforms=threads
+```
+
+The audit blocks hard failures such as pre-release URLs, live-use CTAs before release, purchase/price wording before the BOOTH flow is ready, missing `#羅針占術`, excess hashtags, character-limit violations, and deterministic or fear-based fortune wording.
+
+The GitHub Actions workflow also audits the current JST date before publishing. A successful script check is not enough; pre-release posts must still be checked against the final review protocol for reader psychology, funnel fit, and whether the requested action is actually available that day.
+
 ## Write today's draft
 
 ```powershell
