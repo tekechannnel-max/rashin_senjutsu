@@ -18,7 +18,7 @@ Morning oracle posts are the free entry point: random daily card, matching image
 
 Threads automation should use the official Threads API. Do not use Playwright or other browser automation to script the Threads website for posting.
 
-X automation should use the official API. Do not use Playwright or other browser automation to script the X website for posting. Before turning on X automation, enable the automated account label and make the account bio clear about who operates it.
+X automation should use the official API. Do not use Playwright or other browser automation to script the X website for posting. Before turning on X automation, enable the automated account label and make the account bio clear about who operates it. Until official X API posting is explicitly enabled, GitHub Actions may only generate checked manual-post draft artifacts for X.
 
 ### Draft generation
 
@@ -83,6 +83,8 @@ Recommended schedule:
 
 - `07:00 Asia/Tokyo`: oracle image post
 - `20:00 Asia/Tokyo`: concept post
+
+GitHub Actions checks Threads due posts at `:07/:22/:37/:52` every hour. GitHub Actions checks X draft artifacts at `07:08/07:23/07:38/07:53` and `20:08/20:23/20:38/20:53` JST; scheduled X draft runs must produce draft files or fail.
 
 Run a dry check before enabling real posting on any new machine:
 

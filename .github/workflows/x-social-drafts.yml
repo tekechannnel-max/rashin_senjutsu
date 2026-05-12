@@ -10,9 +10,10 @@ on:
       - 'package.json'
       - 'package-lock.json'
   schedule:
-    # 07:03 and 20:03 JST. This creates manual-post draft artifacts only.
-    # Minute changed from :03 to refresh GitHub's cron registration.
-    - cron: '8 22,11 * * *'
+    # 07:08/07:23/07:38/07:53 and 20:08/20:23/20:38/20:53 JST.
+    # This creates manual-post draft artifacts only. Multiple checks reduce the
+    # chance that one dropped GitHub schedule event leaves no due X draft.
+    - cron: '8,23,38,53 22,11 * * *'
   workflow_dispatch:
     inputs:
       kind:
@@ -73,6 +74,15 @@ jobs:
             args+=(--due)
           fi
           npm run social:x:drafts -- "${args[@]}"
+
+      - name: Require scheduled X draft output
+        if: github.event_name == 'schedule'
+        shell: bash
+        run: |
+          if ! compgen -G "x-drafts/*.md" > /dev/null; then
+            echo "::error::Scheduled X draft run produced no draft files. Do not treat this as successful X operation."
+            exit 1
+          fi
 
       - name: Add X drafts to workflow summary
         shell: bash
