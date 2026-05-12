@@ -1578,6 +1578,7 @@ const RASHIN_CODE_REDEEM_ENDPOINT='/api/rashin-code/redeem';
 const RASHIN_PAID_CODE_REDEEM_ENDPOINT='/api/rashin-paid-code/redeem';
 const RASHIN_PAID_CODE_BOOTH_CLAIM_ENDPOINT='/api/rashin-paid-code/booth/claim';
 const PAID_READING_PREPARE_ENDPOINT='/api/paid-reading/prepare-ticket';
+const RASHIN_BOOTH_PURCHASE_ENABLED=false;
 const PAID_READING_USE_ENDPOINT='/api/paid-reading/use-ticket';
 const PAID_READING_RELEASE_ENDPOINT='/api/paid-reading/release-ticket';
 const DEEP_READING_PRERELEASE_PRICE=780;
@@ -5388,6 +5389,10 @@ async function requestRashinCodePurchaseBooth(intent='upgrade-paid'){
       if(!prepared.ok&&prepared.message) showToast(prepared.message);
       if(prepared.ok&&intent==='start-paid') startFlowUnlocked('paid');
       return !!prepared.ok;
+    }
+    if(!RASHIN_BOOTH_PURCHASE_ENABLED){
+      showToast('BOOTHでの購入受付は現在停止中です。羅針コードをお持ちの場合のみ有料鑑定を利用できます。');
+      return false;
     }
     const purchaseBody={intent};
     if(sourceReadingId) purchaseBody.sourceReadingId=sourceReadingId;
