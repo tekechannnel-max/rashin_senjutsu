@@ -14,7 +14,7 @@ Target public accounts:
 - Creates one lightweight concept post for the same day, focused on trust, self-understanding, and next-action framing.
 - Writes a JSON draft under `data/social-posts/` when `--write` is used.
 - Posts to Threads only when credentials are present and `--post` is used.
-- Keeps X support available only when `--platforms=x` is explicitly used.
+- Exports X manual-post drafts with text, image path, image alt text, schedule, and release phase.
 - Runs due daily posts with `run-scheduled-posts.js`.
 
 `data/` is gitignored, so generated drafts and state are not committed.
@@ -29,9 +29,18 @@ Official Threads references:
 
 Threads automation uses the official Threads API. Do not use browser automation to script the Threads website for posting.
 
-X automation should use the official X API. Do not use browser automation to script the X website for posting.
+X automation should use the official X API. Do not use browser automation to script the X website for posting or draft saving.
 
-For an automated X account, enable the automated account label and make the account bio clear about who operates it. Keep posts non-duplicative, avoid unsolicited mentions/replies/DMs, and keep the volume low.
+This project does not use X API credentials. The supported X flow is: generate a checked draft artifact, attach the listed image, paste the text, add the alt text, then post manually in X.
+
+## Release flow
+
+The same phase schedule applies to Threads and X:
+
+- Until `2026-05-15`: prelaunch promotion. No public URL, no "try it now" CTA, no purchase/price CTA.
+- `2026-05-16` to `2026-05-29`: two-week prerelease. Free oracle/free reading links can appear. Paid CTA stays soft.
+- `2026-05-30` to `2026-06-05`: fix/improvement period. Keep trust, feedback, and free-entry messaging dominant.
+- From `2026-06-06`: full release. Monetization and deep-reading funnel can become clearer after BOOTH/order verification is confirmed.
 
 ## Threads first setup
 
@@ -88,10 +97,15 @@ npm run social:threads:draft
 Before posting or enabling a new calendar range, run the mechanical audit and then review the copy with `docs/sns-final-review-protocol.md`.
 
 ```powershell
-npm run social:audit -- --from=2026-05-12 --to=2026-05-29 --platforms=threads
+npm run social:audit -- --from=2026-05-12 --to=2026-05-29 --platforms=threads,x
 ```
 
 The audit blocks hard failures such as pre-release URLs, live-use CTAs before release, purchase/price wording before the BOOTH flow is ready, missing `#羅針占術`, excess hashtags, character-limit violations, and deterministic or fear-based fortune wording.
+
+Hashtag policy:
+
+- Threads: `#羅針占術` only.
+- X: `#羅針占術 #AI占い` by default, up to two hashtags. Override with `SOCIAL_X_HASHTAGS` if needed.
 
 The GitHub Actions workflow also audits the current JST date before publishing. A successful script check is not enough; pre-release posts must still be checked against the final review protocol for reader psychology, funnel fit, and whether the requested action is actually available that day.
 
@@ -107,12 +121,35 @@ npm run social:write
 npm run social:threads:post
 ```
 
+## X drafts, no API
+
+Generate today's X drafts:
+
+```powershell
+npm run social:x:today
+```
+
+Generate a range:
+
+```powershell
+npm run social:x:drafts -- --from=2026-05-12 --to=2026-05-15 --kind=all
+```
+
+The output files are written under `data/social-posts/x-drafts/` by default. Each draft contains:
+
+- X text under 280 characters.
+- Image path and image URL.
+- Alt text.
+- Release phase.
+- Manual posting notes.
+
 You can limit platforms:
 
 ```powershell
-node scripts/social/daily-oracle-post.js --write --post --platforms=x
 node scripts/social/daily-oracle-post.js --write --post --platforms=threads
 ```
+
+X posting through `daily-oracle-post.js --post --platforms=x` is disabled unless `SOCIAL_X_API_POSTING_ENABLED=true` is explicitly set with official X API credentials. Do not use browser automation for X posting.
 
 You can limit the post kind:
 
@@ -129,7 +166,7 @@ node scripts/social/threads-tool.js post-image --file="post.txt" --image-url="ht
 
 ## Required environment variables for posting
 
-X:
+X, official API only, not used in the current operation:
 
 ```env
 X_API_KEY=
@@ -159,12 +196,13 @@ SOCIAL_UTM_CAMPAIGN=202605_prerelease
 SOCIAL_PAID_CTA_MODE=soft
 SOCIAL_RELEASE_MODE=prelaunch
 SOCIAL_BOOTH_ENABLED=false
+SOCIAL_X_HASHTAGS=#羅針占術 #AI占い
 ```
 
 `SOCIAL_PAID_CTA_MODE` accepts `off`, `soft`, or `active`.
 Keep it at `soft` until the BOOTH product page, order-number input, and verification flow are confirmed in production. `active` only produces stronger paid CTA copy when `SOCIAL_BOOTH_ENABLED=true` and `BOOTH_DEEP_READING_URL` or `BOOTH_PRODUCT_URL` is configured.
 
-Draft validation blocks dependency-building or fear-based wording, keeps Threads text under 500 characters, keeps X text under 280 characters, and keeps posts to the single `#羅針占術` hashtag.
+Draft validation blocks dependency-building or fear-based wording, keeps Threads text under 500 characters, keeps X text under 280 characters, keeps Threads posts to the single `#羅針占術` hashtag, and keeps X posts to one or two hashtags.
 
 When X is explicitly enabled with `--platforms=x` or `SOCIAL_PLATFORMS=x`, the script uses `xText` fields instead of reusing the Threads copy. X posts are shorter and use `utm_source=x`.
 
@@ -182,6 +220,8 @@ THREADS_USER_ID
 ```
 
 The workflow file is `.github/workflows/threads-social.yml`.
+
+X draft artifacts are generated by `.github/workflows/x-social-drafts.yml`. This workflow has no X credentials and does not post. It exports the checked manual-post draft package as a GitHub Actions artifact.
 
 GitHub schedule runs in UTC. The minutes are intentionally not `00` because GitHub scheduled workflows at the top of the hour can be delayed or dropped under load. The workflow runs four times per hour and the script decides whether a post is due; duplicate protection checks existing Threads posts before publishing:
 

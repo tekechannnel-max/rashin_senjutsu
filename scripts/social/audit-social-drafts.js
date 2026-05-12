@@ -1,9 +1,13 @@
 const { spawnSync } = require('child_process');
+const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const DAILY_SCRIPT = path.join(__dirname, 'daily-oracle-post.js');
-const RELEASE_DATE = '2026-05-16';
+const PRERELEASE_START_DATE = '2026-05-16';
+const PRERELEASE_END_DATE = '2026-05-29';
+const FIX_PERIOD_END_DATE = '2026-06-05';
+const RELEASE_DATE = PRERELEASE_START_DATE;
 const THREADS_LIMIT = 500;
 const X_LIMIT = 280;
 const REQUIRED_HASHTAG = '#羅針占術';
@@ -85,8 +89,15 @@ function hasUtm(text) {
   return /[?&]utm_content=/i.test(String(text || ''));
 }
 
-function isPrelaunchDate(dateKey, releaseMode) {
-  return dateKey < RELEASE_DATE && releaseMode === 'prelaunch';
+function getReleasePhase(dateKey) {
+  if (dateKey < PRERELEASE_START_DATE) return 'prelaunch';
+  if (dateKey <= PRERELEASE_END_DATE) return 'prerelease';
+  if (dateKey <= FIX_PERIOD_END_DATE) return 'fix';
+  return 'release';
+}
+
+function isPrelaunchDate(dateKey) {
+  return getReleasePhase(dateKey) === 'prelaunch';
 }
 
 function hasPrelaunchAnchor(text) {
@@ -101,17 +112,24 @@ function addIssue(issues, severity, code, message) {
   issues.push({ severity, code, message });
 }
 
-function auditText({ text, dateKey, kind, platform, releaseMode }) {
+function auditText({ text, dateKey, kind, platform }) {
   const issues = [];
   const value = String(text || '');
   const length = textLength(value);
-  const prelaunch = isPrelaunchDate(dateKey, releaseMode);
+  const prelaunch = isPrelaunchDate(dateKey);
+  const releasePhase = getReleasePhase(dateKey);
   const limit = platform === 'x' ? X_LIMIT : THREADS_LIMIT;
 
   if (!value.trim()) addIssue(issues, 'error', 'empty', '投稿文が空です。');
   if (length > limit) addIssue(issues, 'error', 'length', `${platform}の文字数上限を超えています: ${length}/${limit}`);
   if (!value.includes(REQUIRED_HASHTAG)) addIssue(issues, 'error', 'hashtag_missing', `${REQUIRED_HASHTAG} がありません。`);
-  if (countHashtags(value) !== 1) addIssue(issues, 'error', 'hashtag_count', `ハッシュタグは1つだけにします: ${countHashtags(value)}`);
+  const hashtagCount = countHashtags(value);
+  if (platform === 'threads' && hashtagCount !== 1) {
+    addIssue(issues, 'error', 'hashtag_count', `Threadsのハッシュタグは1つだけにします: ${hashtagCount}`);
+  }
+  if (platform === 'x' && (hashtagCount < 1 || hashtagCount > 2)) {
+    addIssue(issues, 'error', 'hashtag_count', `Xのハッシュタグは1〜2個にします: ${hashtagCount}`);
+  }
 
   for (const [label, pattern] of HARD_NG_PATTERNS) {
     if (pattern.test(value)) addIssue(issues, 'error', 'hard_ng', `${label}に該当する表現があります。`);
@@ -139,6 +157,13 @@ function auditText({ text, dateKey, kind, platform, releaseMode }) {
     }
   }
 
+  if (releasePhase === 'prerelease' && /正式リリース|本リリース/.test(value)) {
+    addIssue(issues, 'error', 'prerelease_false_release', 'プレリリース期間中に正式リリース済みのような表現があります。');
+  }
+  if (releasePhase === 'fix' && /正式リリース|本リリース/.test(value)) {
+    addIssue(issues, 'error', 'fix_false_release', '修正期間中に正式リリース済みのような表現があります。');
+  }
+
   if (kind === 'oracle' && !/今日の1枚|テーマ|一手/.test(value)) {
     addIssue(issues, 'warn', 'oracle_structure', '朝オラクルとしてカード、テーマ、一手のどれかが弱いです。');
   }
@@ -147,6 +172,21 @@ function auditText({ text, dateKey, kind, platform, releaseMode }) {
   }
 
   return { length, issues };
+}
+
+function auditImage({ draft, kind, platform }) {
+  const issues = [];
+  if (platform !== 'x') return issues;
+  const entry = draft[kind] || {};
+  if (!entry.imagePath) {
+    addIssue(issues, 'error', 'x_image_missing', 'X用投稿に画像パスがありません。');
+  } else if (!fs.existsSync(entry.imagePath)) {
+    addIssue(issues, 'error', 'x_image_not_found', `X用画像が見つかりません: ${entry.imagePath}`);
+  }
+  if (!String(entry.altText || '').trim()) {
+    addIssue(issues, 'error', 'x_alt_missing', 'X用画像のalt textがありません。');
+  }
+  return issues;
 }
 
 function generateDraft(dateKey, args) {
@@ -201,12 +241,14 @@ function main() {
       for (const platform of platforms) {
         const text = platform === 'x' ? draft[kind].xText : draft[kind].text;
         const audit = auditText({ text, dateKey, kind, platform, releaseMode: args.releaseMode });
+        const imageIssues = auditImage({ draft, kind, platform });
         result.entries.push({
           date: dateKey,
           kind,
           platform,
+          releasePhase: getReleasePhase(dateKey),
           length: audit.length,
-          issues: audit.issues,
+          issues: [...audit.issues, ...imageIssues],
         });
       }
     }

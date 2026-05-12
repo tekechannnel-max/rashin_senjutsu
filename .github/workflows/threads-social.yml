@@ -73,7 +73,7 @@ jobs:
         shell: bash
         run: |
           today="$(TZ=Asia/Tokyo date +%F)"
-          npm run social:audit -- --from="$today" --to="$today" --platforms=threads
+          npm run social:audit -- --from="$today" --to="$today" --platforms=threads,x
 
       - name: Confirm Threads token account
         if: steps.secrets.outputs.ready == 'true'

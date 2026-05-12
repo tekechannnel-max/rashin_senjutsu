@@ -12,10 +12,14 @@ const DEFAULT_HASHTAG = '#羅針占術';
 const THREADS_CHARACTER_LIMIT = 500;
 const X_CHARACTER_LIMIT = 280;
 const DEFAULT_SOCIAL_CAMPAIGN = '202605_prerelease';
-const RELEASE_DATE = '2026-05-16';
+const PRERELEASE_START_DATE = '2026-05-16';
+const PRERELEASE_END_DATE = '2026-05-29';
+const FIX_PERIOD_END_DATE = '2026-06-05';
+const FULL_RELEASE_DATE = '2026-06-06';
+const RELEASE_DATE = PRERELEASE_START_DATE;
 const CARD_CYCLE_START_DATE = '2026-05-12';
 const SOCIAL_PAID_CTA_MODES = new Set(['off', 'soft', 'active']);
-const SOCIAL_RELEASE_MODES = new Set(['prelaunch', 'launch', 'postrelease']);
+const SOCIAL_RELEASE_MODES = new Set(['prelaunch', 'prerelease', 'fix', 'release', 'launch', 'postrelease']);
 const CARD_OVERRIDES_BY_DATE = {
   '2026-05-12': 8,
 };
@@ -107,7 +111,7 @@ const PRE_RELEASE_ORACLE_PROMOS = {
 
 const CALENDAR_CONCEPT_POSTS = {
   '先行版: 羅針占術とは': '自作のAI占いアプリ「羅針占術」を、5/16にプレリリースします。\n\n未来を断定する占いではありません。\n本質・本音・いまの現実を整理して、次の一手を見つけるための占いです。\n\n公開前の4日間は、先行オラクル、無料鑑定で見えること、結果を記録する価値を順に投稿します。',
-  '羅針占術とは': '羅針占術は、「未来を当てる」よりも、「今の迷いを整理する」ことを大切にしています。\n\n本質。本音。いまの現実。\n\nこの3つを重ねて、次に進む方角を見つける占いです。',
+  '羅針占術とは': '本日、自作のAI占いアプリ「羅針占術」をプレリリースしました。\n\n羅針占術は、「未来を当てる」よりも、「今の迷いを整理する」ことを大切にしています。\n\n本質。本音。いまの現実。\n\nこの3つを重ねて、次に進む方角を見つける占いです。',
   '今日のオラクルの使い方': '今日のオラクルは、読んで終わりではなく、今日の行動をひとつ決めるために使うのがおすすめです。\n\n連絡する。休む。調べる。書き出す。\n\n小さくても、次の一手が決まると迷いは少し軽くなります。',
   '無料鑑定で見えるもの': '5/16公開後、羅針占術の無料鑑定では、今の迷いを4つに分けて見ます。\n\n本質。\n本音。\nいまの現実。\n次の一手。\n\n「何となく不安」なまま動くのではなく、まず何に迷っているのかを見える形にするための入口です。',
   '二択にしない迷いの整理': '迷っているときは、選択肢が2つしかないように見えることがあります。\n\nやるか、やめるか。進むか、止まるか。\n\nでも本当は、「少し試す」「期限を決める」「情報を集める」という一手もあります。',
@@ -226,6 +230,14 @@ function isBeforeRelease(dateKey) {
   return String(dateKey || '') < RELEASE_DATE;
 }
 
+function getReleasePhase(dateKey) {
+  const key = String(dateKey || '');
+  if (!key || key < PRERELEASE_START_DATE) return 'prelaunch';
+  if (key <= PRERELEASE_END_DATE) return 'prerelease';
+  if (key <= FIX_PERIOD_END_DATE) return 'fix';
+  return 'release';
+}
+
 function resolvePaidCta(entry, config) {
   const requested = entry?.paidCta || 'none';
   if (requested === 'none') return 'none';
@@ -239,7 +251,7 @@ function resolvePaidCta(entry, config) {
 }
 
 function isPreReleasePosting(dateKey, config) {
-  return isBeforeRelease(dateKey) && config.releaseMode === 'prelaunch';
+  return isBeforeRelease(dateKey);
 }
 
 function buildThreadsCtaLine(paidCta, dateKey, config) {
@@ -306,6 +318,11 @@ function countHashtags(text) {
   return (String(text || '').match(/(^|\s)#[^\s#]+/g) || []).length;
 }
 
+function getXHashtagLine(config = {}) {
+  const configured = String(process.env.SOCIAL_X_HASHTAGS || '').trim();
+  return configured || `${config.defaultHashtag || DEFAULT_HASHTAG} #AI占い`;
+}
+
 function validatePostText(text, options = {}) {
   const label = options.label || 'post';
   const value = String(text || '');
@@ -313,8 +330,12 @@ function validatePostText(text, options = {}) {
   if (blocked.length) {
     throw new Error(`${label} contains blocked wording: ${blocked.join(', ')}`);
   }
-  if (countHashtags(value) > 1) {
-    throw new Error(`${label} must use only one hashtag.`);
+  const hashtagCount = countHashtags(value);
+  if (options.platforms?.includes('threads') && hashtagCount > 1) {
+    throw new Error(`${label} must use only one hashtag on Threads.`);
+  }
+  if (options.platforms?.includes('x') && hashtagCount > 2) {
+    throw new Error(`${label} must use at most two hashtags on X.`);
   }
   if (options.platforms?.includes('threads') && [...value].length > THREADS_CHARACTER_LIMIT) {
     throw new Error(`${label} is too long for Threads: ${[...value].length}/${THREADS_CHARACTER_LIMIT}`);
@@ -527,6 +548,7 @@ function buildOracleText(card, publicOrigin, options = {}) {
 function buildXOracleText(card, publicOrigin, options = {}) {
   const dateKey = options.dateKey || getJstDateString();
   const config = options.config || getSocialConfig({ platforms: ['x'] });
+  const hashtags = getXHashtagLine(config);
   const shareUrl = buildTrackedUrl(publicOrigin, '/share/card', {
     type: 'oracle',
     id: card.id,
@@ -543,7 +565,7 @@ function buildXOracleText(card, publicOrigin, options = {}) {
       `今日の一手：${truncateText(card.action, 42)}`,
       '',
       promo.closing,
-      config.defaultHashtag || DEFAULT_HASHTAG,
+      hashtags,
     ].join('\n');
   }
   return [
@@ -554,7 +576,7 @@ function buildXOracleText(card, publicOrigin, options = {}) {
     `今日の一手：${truncateText(card.action, 42)}`,
     '',
     shareUrl,
-    config.defaultHashtag || DEFAULT_HASHTAG,
+    hashtags,
   ].join('\n');
 }
 
@@ -594,7 +616,7 @@ function buildConceptText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config 
 
 const X_CONCEPT_POSTS = {
   '先行版: 羅針占術とは': '自作AI占いアプリ「羅針占術」を5/16にプレリリースします。\n\n未来を断定せず、本質・本音・いまの現実から次の一手を整理する占いです。',
-  '羅針占術とは': '羅針占術は、迷いを「次の一手」に変える占いです。\n\n本質、本音、いまの現実を整理します。',
+  '羅針占術とは': '本日、自作AI占いアプリ「羅針占術」をプレリリースしました。\n\n迷いを「次の一手」に変える占いです。',
   '今日のオラクルの使い方': '今日のオラクルは、読むだけで終わらせず、今日の行動をひとつ決めるために使えます。',
   '無料鑑定で見えるもの': '無料鑑定では、本質・本音・いまの現実・次の一手まで整理できます。',
   '二択にしない迷いの整理': '迷っているときは、二択に見えるものを「試す・待つ・相談する」に分けてみてください。',
@@ -615,6 +637,7 @@ const X_CONCEPT_POSTS = {
 function buildXConceptText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['x'] })) {
   const entry = getCalendarEntry(dateKey);
   const paidCta = resolvePaidCta(entry, config);
+  const hashtags = getXHashtagLine(config);
   const fallback = CONCEPT_POSTS[crypto.createHash('sha256').update(`x:${dateKey}`).digest()[0] % CONCEPT_POSTS.length];
   const body = (entry && X_CONCEPT_POSTS[entry.eveningTheme]) || truncateText(fallback, 96);
   const contentType = paidCta === 'soft_paid' || paidCta === 'active_paid' ? 'deep' : 'concept';
@@ -625,7 +648,7 @@ function buildXConceptText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config
       body,
       '',
       ctaLine,
-      config.defaultHashtag || DEFAULT_HASHTAG,
+      hashtags,
     ].join('\n');
   }
   return [
@@ -633,7 +656,7 @@ function buildXConceptText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config
     '',
     ctaLine,
     link,
-    config.defaultHashtag || DEFAULT_HASHTAG,
+    hashtags,
   ].join('\n');
 }
 
@@ -645,6 +668,7 @@ async function buildDraft(args) {
   const xConfig = withPlatform(config, 'x');
   const calendar = getCalendarEntry(dateKey);
   const paidCta = resolvePaidCta(calendar, config);
+  const conceptImagePath = path.join(ROOT, 'images', 'ui', 'app-hero-wide.png');
   const messages = await loadDailyOracleMessages();
   const card = await pickCard(messages, dateKey, args.write || args.post);
   const imageName = `${String(card.id).padStart(2, '0')}.jpg`;
@@ -663,10 +687,22 @@ async function buildDraft(args) {
       xText: buildXOracleText(card, publicOrigin, { dateKey, config: xConfig }),
     },
     concept: {
+      imagePath: conceptImagePath,
+      imageUrl: `${publicOrigin}/images/ui/app-hero-wide.png`,
+      altText: '星空と占星術モチーフを背景に、銀髪のキャラクターと金色の「羅針占術」の文字が入った告知画像。',
       text: buildConceptText(dateKey, publicOrigin, threadsConfig),
       xText: buildXConceptText(dateKey, publicOrigin, xConfig),
     },
     meta: {
+      releasePhase: getReleasePhase(dateKey),
+      releasePlan: {
+        prelaunchUntil: '2026-05-15',
+        prereleaseStart: PRERELEASE_START_DATE,
+        prereleaseEnd: PRERELEASE_END_DATE,
+        fixPeriodStart: '2026-05-30',
+        fixPeriodEnd: FIX_PERIOD_END_DATE,
+        fullReleaseDate: FULL_RELEASE_DATE,
+      },
       socialConfig: {
         primaryPlatform: config.primaryPlatform,
         paidCtaMode: config.paidCtaMode,
@@ -846,8 +882,11 @@ async function main() {
   if (!args.post) return;
   const results = {};
   if (args.platforms.includes('x')) {
+    if (process.env.SOCIAL_X_API_POSTING_ENABLED !== 'true') {
+      throw new Error('X API posting is disabled. Generate X drafts with npm run social:x:drafts and post manually, or set SOCIAL_X_API_POSTING_ENABLED=true when official X API credentials are intentionally configured.');
+    }
     if (args.kind === 'all' || args.kind === 'oracle') results.xOracle = await postToX(draft.oracle.xText, draft.oracle.imagePath);
-    if (args.kind === 'all' || args.kind === 'concept') results.xConcept = await postTextToX(draft.concept.xText);
+    if (args.kind === 'all' || args.kind === 'concept') results.xConcept = await postToX(draft.concept.xText, draft.concept.imagePath);
   }
   if (args.platforms.includes('threads')) {
     if (args.kind === 'all' || args.kind === 'oracle') {

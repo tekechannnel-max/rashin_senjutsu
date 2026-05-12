@@ -1,0 +1,73 @@
+name: X social drafts
+
+on:
+  schedule:
+    # Same timing lane as Threads. This creates manual-post draft artifacts only.
+    - cron: '3,18,33,48 * * * *'
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: 'Draft kind to export'
+        required: true
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - oracle
+          - concept
+          - all
+
+permissions:
+  contents: read
+
+concurrency:
+  group: x-social-drafts-${{ github.event.schedule || github.event.inputs.kind || 'manual' }}
+  cancel-in-progress: false
+
+jobs:
+  draft:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PUBLIC_ORIGIN: https://rashin-senjutsu.onrender.com
+      SOCIAL_PLATFORMS: threads,x
+      SOCIAL_PAID_CTA_MODE: soft
+      SOCIAL_RELEASE_MODE: prelaunch
+      SOCIAL_BOOTH_ENABLED: 'false'
+      SOCIAL_UTM_CAMPAIGN: 202605_prerelease
+      SOCIAL_STATELESS_MODE: 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Validate scripts
+        run: npm run check
+
+      - name: Audit today's Threads/X drafts
+        shell: bash
+        run: |
+          today="$(TZ=Asia/Tokyo date +%F)"
+          npm run social:audit -- --from="$today" --to="$today" --platforms=threads,x
+
+      - name: Export X draft artifacts
+        shell: bash
+        run: |
+          today="$(TZ=Asia/Tokyo date +%F)"
+          kind="${{ github.event.inputs.kind || 'auto' }}"
+          args=(--date="$today" --kind="$kind" --out="x-drafts")
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            args+=(--due)
+          fi
+          npm run social:x:drafts -- "${args[@]}"
+
+      - name: Upload X draft artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: x-drafts-${{ github.run_id }}
+          path: x-drafts/
+          if-no-files-found: ignore
