@@ -87,4 +87,11 @@ jobs:
 
       - name: Publish due Threads post
         if: steps.secrets.outputs.ready == 'true'
-        run: node scripts/social/run-scheduled-posts.js --once --only-kind=${{ steps.pick.outputs.kind }}
+        shell: bash
+        run: |
+          kind="${{ steps.pick.outputs.kind }}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "$kind" != "auto" ] && [ "$kind" != "all" ]; then
+            node scripts/social/run-scheduled-posts.js --force-kind="$kind"
+          else
+            node scripts/social/run-scheduled-posts.js --once --only-kind="$kind"
+          fi
