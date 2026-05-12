@@ -143,6 +143,12 @@ The output files are written under `data/social-posts/x-drafts/` by default. Eac
 - Release phase.
 - Manual posting notes.
 
+Concept-image selection uses the available app assets:
+
+- `images/ui/app-promo-vertical.png`: prelaunch, launch, and brand announcement posts.
+- `images/ui/app-icon.png`: app/free-reading/how-to posts.
+- `images/ui/app-hero-wide.png`: general concept/trust posts.
+
 You can limit platforms:
 
 ```powershell

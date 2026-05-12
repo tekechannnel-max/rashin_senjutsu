@@ -365,6 +365,12 @@ npm run social:x:drafts -- --from=2026-05-12 --to=2026-05-15 --kind=all
 
 X下書きは `data/social-posts/x-drafts/` に出力する。朝投稿はカード画像、夜投稿は羅針占術の告知画像を添付対象にし、alt textも一緒に出力する。
 
+SNS用画像は固定しない。投稿意図で使い分ける。
+
+- `app-promo-vertical.png`: プレリリース前、公開日、ブランド告知。
+- `app-icon.png`: アプリ説明、無料鑑定、使い方。
+- `app-hero-wide.png`: 信頼形成、考え方、一般コンセプト。
+
 スケジュール確認:
 
 ```powershell

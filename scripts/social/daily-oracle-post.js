@@ -24,6 +24,21 @@ const CARD_OVERRIDES_BY_DATE = {
   '2026-05-12': 8,
 };
 
+const SOCIAL_CONCEPT_IMAGES = {
+  wide: {
+    file: 'app-hero-wide.png',
+    altText: '星空と占星術モチーフを背景に、銀髪のキャラクターが水晶を持つ羅針占術の横長告知画像。',
+  },
+  vertical: {
+    file: 'app-promo-vertical.png',
+    altText: '星空と占星術モチーフを背景に、銀髪のキャラクターと金色の「羅針占術」の文字が入った縦長告知画像。',
+  },
+  icon: {
+    file: 'app-icon.png',
+    altText: '銀髪のキャラクターと金色の「羅針占術」の文字が入ったアプリアイコン。',
+  },
+};
+
 const NG_WORDS = [
   '絶対当たる',
   '100%当たる',
@@ -584,6 +599,17 @@ function buildOracleAltText(card) {
   return `数秘オラクルカード No.${card.id}「${card.name}」。テーマは「${card.title}」。`;
 }
 
+function pickConceptImage(entry, dateKey) {
+  const theme = String(entry?.eveningTheme || '');
+  if (theme.includes('プレリリース') || theme.includes('羅針占術とは') || isBeforeRelease(dateKey)) {
+    return SOCIAL_CONCEPT_IMAGES.vertical;
+  }
+  if (theme.includes('使い方') || theme.includes('無料鑑定') || theme.includes('今日のオラクル')) {
+    return SOCIAL_CONCEPT_IMAGES.icon;
+  }
+  return SOCIAL_CONCEPT_IMAGES.wide;
+}
+
 function buildConceptText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['threads'] })) {
   const entry = getCalendarEntry(dateKey);
   const paidCta = resolvePaidCta(entry, config);
@@ -668,7 +694,8 @@ async function buildDraft(args) {
   const xConfig = withPlatform(config, 'x');
   const calendar = getCalendarEntry(dateKey);
   const paidCta = resolvePaidCta(calendar, config);
-  const conceptImagePath = path.join(ROOT, 'images', 'ui', 'app-hero-wide.png');
+  const conceptImage = pickConceptImage(calendar, dateKey);
+  const conceptImagePath = path.join(ROOT, 'images', 'ui', conceptImage.file);
   const messages = await loadDailyOracleMessages();
   const card = await pickCard(messages, dateKey, args.write || args.post);
   const imageName = `${String(card.id).padStart(2, '0')}.jpg`;
@@ -688,8 +715,8 @@ async function buildDraft(args) {
     },
     concept: {
       imagePath: conceptImagePath,
-      imageUrl: `${publicOrigin}/images/ui/app-hero-wide.png`,
-      altText: '星空と占星術モチーフを背景に、銀髪のキャラクターと金色の「羅針占術」の文字が入った告知画像。',
+      imageUrl: `${publicOrigin}/images/ui/${conceptImage.file}`,
+      altText: conceptImage.altText,
       text: buildConceptText(dateKey, publicOrigin, threadsConfig),
       xText: buildXConceptText(dateKey, publicOrigin, xConfig),
     },
