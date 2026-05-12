@@ -10,6 +10,7 @@
 
 Daily Threads posting is handled by `scripts/social/daily-oracle-post.js`.
 Due-time execution is handled by `scripts/social/run-scheduled-posts.js`.
+Before reporting SNS automation as complete, use `docs/sns-auto-operation-agent-checklist.md`.
 
 Target Threads account: `https://www.threads.com/@sensai_teke`.
 
@@ -75,6 +76,8 @@ Optional X posting uses these only if X automation is explicitly enabled:
 - `X_API_SECRET`
 - `X_ACCESS_TOKEN`
 - `X_ACCESS_TOKEN_SECRET`
+
+Primary automation must run on GitHub Actions. Local Windows Task Scheduler or `npm run social:daemon` is backup only because it depends on the PC being awake.
 
 Recommended schedule:
 
