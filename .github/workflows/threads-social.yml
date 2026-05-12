@@ -16,11 +16,6 @@ on:
           - auto
           - oracle
           - concept
-          - delete-post
-      post_id:
-        description: 'Threads post id to delete when kind=delete-post'
-        required: false
-        type: string
 
 permissions:
   contents: read
@@ -49,7 +44,6 @@ jobs:
       SOCIAL_THREADS_IMAGE_FALLBACK_TEXT: 'true'
       THREADS_CONTAINER_TIMEOUT_MS: '120000'
       THREADS_POST_VERIFY_TIMEOUT_MS: '120000'
-      THREADS_DELETE_POST_ID: ${{ github.event.inputs.post_id || '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -92,14 +86,5 @@ jobs:
           echo "kind=$kind" >> "$GITHUB_OUTPUT"
 
       - name: Publish due Threads post
-        if: steps.secrets.outputs.ready == 'true' && steps.pick.outputs.kind != 'delete-post'
+        if: steps.secrets.outputs.ready == 'true'
         run: node scripts/social/run-scheduled-posts.js --once --only-kind=${{ steps.pick.outputs.kind }}
-
-      - name: Delete Threads post
-        if: steps.secrets.outputs.ready == 'true' && steps.pick.outputs.kind == 'delete-post'
-        run: |
-          if [ -z "$THREADS_DELETE_POST_ID" ]; then
-            echo "post_id is required when kind=delete-post."
-            exit 1
-          fi
-          node scripts/social/threads-tool.js delete-post --id="$THREADS_DELETE_POST_ID" --yes

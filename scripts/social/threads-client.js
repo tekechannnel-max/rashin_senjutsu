@@ -206,16 +206,6 @@ async function getThreadPost(threadId, credentials = null) {
   return requestJson(`${GRAPH_BASE}/${encodeURIComponent(threadId)}?${params.toString()}`);
 }
 
-async function deleteThreadPost(threadId, credentials = null) {
-  const id = requireValue('Threads post id', threadId);
-  const creds = credentials || await getThreadsCredentials();
-  requireThreadsCredentials(creds);
-  const params = new URLSearchParams({
-    access_token: creds.accessToken,
-  });
-  return requestJson(`${GRAPH_BASE}/${encodeURIComponent(id)}?${params.toString()}`, { method: 'DELETE' });
-}
-
 async function getThreadsContainerStatus(containerId, credentials = null) {
   const creds = credentials || await getThreadsCredentials();
   requireThreadsCredentials(creds);
@@ -346,7 +336,6 @@ module.exports = {
   getThreadsMe,
   listThreads,
   getThreadPost,
-  deleteThreadPost,
   getThreadsContainerStatus,
   waitForThreadsContainer,
   verifyPublishedThread,

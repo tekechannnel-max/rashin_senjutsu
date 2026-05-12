@@ -9,7 +9,6 @@ const {
   refreshLongLivedToken,
   getThreadsCredentials,
   getThreadsMe,
-  deleteThreadPost,
   saveStoredToken,
   postTextToThreads,
   postImageToThreads,
@@ -265,13 +264,6 @@ async function runPostImage(options, flags) {
   print({ posted: result });
 }
 
-async function runDeletePost(options, flags) {
-  const id = requireOption(options, 'id');
-  requirePostingConfirmation(flags);
-  const result = await deleteThreadPost(id);
-  print({ deleted: { id, result } });
-}
-
 async function main() {
   const { command, options, flags } = parseArgs(process.argv.slice(2));
   if (command === 'auth-url') {
@@ -304,10 +296,6 @@ async function main() {
   }
   if (command === 'post-image') {
     await runPostImage(options, flags);
-    return;
-  }
-  if (command === 'delete-post') {
-    await runDeletePost(options, flags);
     return;
   }
   if (command === 'doctor') {
