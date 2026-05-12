@@ -192,6 +192,7 @@ function markdownForEntry(entry) {
     `- Status: ${entry.status}`,
     `- Characters: ${entry.characterCount}/${X_LIMIT}`,
     `- Image: ${entry.imagePathRelative}`,
+    entry.imageUrl ? `- Image URL: ${entry.imageUrl}` : null,
     `- Alt: ${entry.altText}`,
     '',
     '## Text',
@@ -206,7 +207,7 @@ function markdownForEntry(entry) {
     '- Browser automation is not used.',
     '- Attach the image first, add the alt text, then paste the text.',
     '',
-  ].join('\n');
+  ].filter(line => line !== null).join('\n');
 }
 
 async function writeEntry(entry, outDir) {

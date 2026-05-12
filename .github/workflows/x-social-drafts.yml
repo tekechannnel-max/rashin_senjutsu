@@ -65,6 +65,30 @@ jobs:
           fi
           npm run social:x:drafts -- "${args[@]}"
 
+      - name: Add X drafts to workflow summary
+        shell: bash
+        run: |
+          if compgen -G "x-drafts/*.md" > /dev/null; then
+            {
+              echo "# X posting drafts"
+              echo
+              echo "Open this summary on mobile, copy the text, open the image URL, attach the image, set alt text, then post in X."
+              echo
+              for file in x-drafts/*.md; do
+                cat "$file"
+                echo
+                echo "---"
+                echo
+              done
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "# X posting drafts"
+              echo
+              echo "No X draft is due yet."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Upload X draft artifacts
         uses: actions/upload-artifact@v4
         with:
