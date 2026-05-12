@@ -2,8 +2,8 @@ name: X social drafts
 
 on:
   schedule:
-    # Same timing lane as Threads. This creates manual-post draft artifacts only.
-    - cron: '3,18,33,48 * * * *'
+    # 07:03 and 20:03 JST. This creates manual-post draft artifacts only.
+    - cron: '3 22,11 * * *'
   workflow_dispatch:
     inputs:
       kind:

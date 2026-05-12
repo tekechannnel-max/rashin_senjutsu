@@ -97,7 +97,7 @@ function getKinds(args) {
   if (args.kind === 'concept') return ['concept'];
   if (args.due || args.kind === 'auto') {
     const minutes = getJstMinutes();
-    if (minutes >= 20 * 60) return ['oracle', 'concept'];
+    if (minutes >= 20 * 60) return ['concept'];
     if (minutes >= 7 * 60) return ['oracle'];
     return [];
   }
