@@ -1,10 +1,14 @@
 name: Threads social posts
 
 on:
+  push:
+    branches:
+      - main
   schedule:
-    # GitHub schedule can be delayed or dropped; run off the top of each hour
+    # GitHub schedule can be delayed or dropped; run off the top of each hour.
+    # Changing the minute set also forces GitHub to refresh the cron registration.
     # and let scripts/social/run-scheduled-posts.js decide whether a post is due.
-    - cron: '3,18,33,48 * * * *'
+    - cron: '7,22,37,52 * * * *'
   workflow_dispatch:
     inputs:
       kind:
@@ -58,8 +62,8 @@ jobs:
         shell: bash
         run: |
           if [ -z "$THREADS_ACCESS_TOKEN" ] || [ -z "$THREADS_USER_ID" ]; then
-            echo "GitHub Secrets THREADS_ACCESS_TOKEN / THREADS_USER_ID are not set. Skipping post."
-            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::error::GitHub Secrets THREADS_ACCESS_TOKEN / THREADS_USER_ID are not set. Scheduled posting cannot run."
+            exit 1
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
