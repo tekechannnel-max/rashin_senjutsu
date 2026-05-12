@@ -3190,7 +3190,7 @@ function installDailyOracleStageStyles(){
       border:1px solid rgba(228,184,74,.42);border-radius:6px;
       background:
         linear-gradient(180deg,rgba(16,20,42,.96),rgba(5,7,18,.98)),
-        url('images/ui/app-wide.jpg') center/cover no-repeat;
+        url('images/ui/app-hero-wide.png') center/cover no-repeat;
       box-shadow:0 28px 90px rgba(0,0,0,.58),0 0 0 1px rgba(255,255,255,.04) inset;
     }
     .daily-oracle-stage-head{
