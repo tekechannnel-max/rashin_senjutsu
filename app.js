@@ -4511,13 +4511,13 @@ async function submitRashinCode(){
   try{
     savePendingRashinPaidCode(code);
     setRashinCodeStatus('羅針コードを保存しました。無料鑑定後、深掘り鑑定で使用します','ok');
+    setRashinCodeStatus('羅針コードを保存しました。有料鑑定を開きます。','ok');
     trackEvent('rashin_paid_code_saved',{source:'hero'});
-    if(PLAN==='free'&&CURRENT_READING_ID&&canContinueCurrentReadingToPaid()){
-      const purchased=await requestRashinCodePurchase('upgrade-paid');
-      if(purchased) upgradeCurrentReadingToPaidUnlocked();
-      return;
-    }
-    setTimeout(()=>startFlow('free'),550);
+    const intent=PLAN==='free'&&CURRENT_READING_ID&&canContinueCurrentReadingToPaid()?'upgrade-paid':'start-paid';
+    const purchased=await requestRashinCodePurchase(intent);
+    if(!purchased) return;
+    if(intent==='upgrade-paid') upgradeCurrentReadingToPaidUnlocked();
+    else startFlowUnlocked('paid');
   }catch(_error){
     setRashinCodeStatus('羅針コードの保存に失敗しました','ng');
   }finally{
@@ -5355,7 +5355,7 @@ async function requestRashinCodePurchaseBooth(intent='upgrade-paid'){
     openMemberAccessModal(intent);
     return false;
   }
-  const sourceReadingId=(intent==='upgrade-paid')?CURRENT_READING_ID:'';
+  let sourceReadingId=(intent==='upgrade-paid')?CURRENT_READING_ID:'';
   if(intent==='upgrade-paid'&&(!sourceReadingId||PLAN!=='free'||!canContinueCurrentReadingToPaid())){
     showToast('羅針コードを使うには対象の無料鑑定結果が必要です');
     return false;
@@ -5364,8 +5364,13 @@ async function requestRashinCodePurchaseBooth(intent='upgrade-paid'){
     if(sourceReadingId){
       try{ await saveHistoryRecordToVault(buildCurrentReadingRecord()); }catch(_error){}
     }
-    const pendingCode=intent==='upgrade-paid'?readPendingRashinPaidCode():'';
+    const pendingCode=readPendingRashinPaidCode();
     if(pendingCode){
+      if(!sourceReadingId){
+        sourceReadingId=ACTIVE_PAID_SOURCE_READING_ID||createReadingId();
+        ACTIVE_PAID_SOURCE_READING_ID=sourceReadingId;
+      }
+      if(!PENDING_PAID_READING_ID) PENDING_PAID_READING_ID=createReadingId();
       const redeemed=await redeemRashinPaidCodeForReading(pendingCode,sourceReadingId);
       if(!redeemed.ok){
         showToast(redeemed.message||'羅針コードを確認できませんでした');
@@ -5380,6 +5385,8 @@ async function requestRashinCodePurchaseBooth(intent='upgrade-paid'){
       });
       if(!PENDING_PAID_READING_ID) PENDING_PAID_READING_ID=createReadingId();
       const prepared=await preparePaidReadingTicket(sourceReadingId,PENDING_PAID_READING_ID);
+      if(!prepared.ok&&prepared.message) showToast(prepared.message);
+      if(prepared.ok&&intent==='start-paid') startFlowUnlocked('paid');
       return !!prepared.ok;
     }
     const purchaseBody={intent};
