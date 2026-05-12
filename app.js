@@ -1617,6 +1617,7 @@ const DAILY_ORACLE_FALLBACK_ID_STORAGE_KEY='uranai-daily-oracle-fallback-id-v1';
 const DAILY_ORACLE_ACTIVE_RECORD_KEY='uranai-daily-oracle-active-v1';
 const MEMBER_STORAGE_KEY='uranai-member-preview-v1';
 const STRIPE_RETURN_INTENT_KEY='uranai-stripe-return-intent-v1';
+const RASHIN_PENDING_PAID_CODE_KEY='uranai-pending-rashin-paid-code-v1';
 const EVENT_LOG_STORAGE_KEY='uranai-event-log-v1';
 const FREE_READING_QUOTA_STORAGE_KEY='uranai-free-reading-quota-v1';
 const FREE_READING_DAILY_LIMIT=5;
@@ -4228,7 +4229,7 @@ function getServerErrorMessage(data,fallback='処理に失敗しました'){
   const message=String(data?.message||'').trim();
   if(code==='ACCESS_CODE_INVALID') return'確認コードが一致しませんでした';
   if(code==='ACCESS_CODE_DISABLED') return'確認コードが設定されていません';
-  if(code==='RASHIN_CODE_FORMAT_INVALID') return'羅針コードは7桁の数字で入力してください';
+  if(code==='RASHIN_CODE_FORMAT_INVALID') return'羅針コードは12文字の英数字で入力してください';
   if(code==='RASHIN_CODE_INVALID') return'羅針コードが一致しませんでした';
   if(code==='RASHIN_CODE_ALREADY_USED') return'この羅針コードはすでに使用済みです';
   if(code==='RASHIN_CODE_DISABLED') return'羅針コードはまだ設定されていません';
@@ -4439,7 +4440,35 @@ async function loadMemberStatus(options={}){
 }
 
 function normalizeRashinCode(value=''){
-  return String(value||'').replace(/\D+/g,'').slice(0,7);
+  return normalizeRashinPaidCodeInput(value);
+}
+
+function formatRashinCode(value=''){
+  const code=normalizeRashinCode(value);
+  return code
+    .replace(/(.{4})/g,'$1-')
+    .replace(/-$/,'')
+    .slice(0,14);
+}
+
+function readPendingRashinPaidCode(){
+  try{
+    return normalizeRashinPaidCodeInput(sessionStorage.getItem(RASHIN_PENDING_PAID_CODE_KEY)||'');
+  }catch(_error){
+    return'';
+  }
+}
+
+function savePendingRashinPaidCode(code=''){
+  const normalized=normalizeRashinPaidCodeInput(code);
+  try{
+    if(normalized) sessionStorage.setItem(RASHIN_PENDING_PAID_CODE_KEY,normalized);
+  }catch(_error){}
+  return normalized;
+}
+
+function clearPendingRashinPaidCode(){
+  try{ sessionStorage.removeItem(RASHIN_PENDING_PAID_CODE_KEY); }catch(_error){}
 }
 
 function setRashinCodeStatus(message='',state=''){
@@ -4453,7 +4482,7 @@ function setRashinCodeStatus(message='',state=''){
 function handleRashinCodeInput(event){
   const input=event?.target;
   if(!input) return;
-  input.value=normalizeRashinCode(input.value);
+  input.value=formatRashinCode(input.value);
   setRashinCodeStatus('', '');
 }
 
@@ -4468,9 +4497,9 @@ async function submitRashinCode(){
   const input=document.getElementById('rashin-code-input');
   const submitBtn=document.getElementById('rashin-code-submit');
   const code=normalizeRashinCode(input?.value||'');
-  if(input) input.value=code;
-  if(!code||code.length!==7){
-    setRashinCodeStatus('7桁の羅針コードを入力してください','ng');
+  if(input) input.value=formatRashinCode(code);
+  if(!code||code.length!==12){
+    setRashinCodeStatus('12文字の羅針コードを入力してください','ng');
     return;
   }
   if(!canUseProxy()){
@@ -4478,27 +4507,19 @@ async function submitRashinCode(){
     return;
   }
   submitBtn?.setAttribute('disabled','');
-  setRashinCodeStatus('羅針コードを確認しています','');
+  setRashinCodeStatus('羅針コードを保存しています','');
   try{
-    const res=await fetchApi(RASHIN_CODE_REDEEM_ENDPOINT,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({rashinCode:code}),
-    });
-    const data=await readJsonSafe(res);
-    if(!res.ok){
-      setRashinCodeStatus(getServerErrorMessage(data,'羅針コードを確認できませんでした'),'ng');
+    savePendingRashinPaidCode(code);
+    setRashinCodeStatus('羅針コードを保存しました。無料鑑定後、深掘り鑑定で使用します','ok');
+    trackEvent('rashin_paid_code_saved',{source:'hero'});
+    if(PLAN==='free'&&CURRENT_READING_ID&&canContinueCurrentReadingToPaid()){
+      const purchased=await requestRashinCodePurchase('upgrade-paid');
+      if(purchased) upgradeCurrentReadingToPaidUnlocked();
       return;
     }
-    applyMemberAuthData(data);
-    renderHomeVault();
-    renderMemberFollowupSection();
-    renderGoogleAuthShell();
-    setRashinCodeStatus('羅針コードを確認しました。深掘り鑑定へ進みます','ok');
-    trackEvent('rashin_code_redeem',{source:'hero'});
-    setTimeout(()=>startFlow('paid'),250);
+    setTimeout(()=>startFlow('free'),550);
   }catch(_error){
-    setRashinCodeStatus('羅針コードの確認に失敗しました','ng');
+    setRashinCodeStatus('羅針コードの保存に失敗しました','ng');
   }finally{
     submitBtn?.removeAttribute('disabled');
   }
@@ -5343,6 +5364,24 @@ async function requestRashinCodePurchaseBooth(intent='upgrade-paid'){
     if(sourceReadingId){
       try{ await saveHistoryRecordToVault(buildCurrentReadingRecord()); }catch(_error){}
     }
+    const pendingCode=intent==='upgrade-paid'?readPendingRashinPaidCode():'';
+    if(pendingCode){
+      const redeemed=await redeemRashinPaidCodeForReading(pendingCode,sourceReadingId);
+      if(!redeemed.ok){
+        showToast(redeemed.message||'羅針コードを確認できませんでした');
+        return false;
+      }
+      clearPendingRashinPaidCode();
+      showToast('羅針コードを確認し、深掘り鑑定を解放しました');
+      trackEvent('rashin_paid_code_redeem',{
+        source:checkoutSourceFromIntent(intent),
+        purchase_type:'deep_reading_once',
+        payment_provider:'manual_free_code',
+      });
+      if(!PENDING_PAID_READING_ID) PENDING_PAID_READING_ID=createReadingId();
+      const prepared=await preparePaidReadingTicket(sourceReadingId,PENDING_PAID_READING_ID);
+      return !!prepared.ok;
+    }
     const purchaseBody={intent};
     if(sourceReadingId) purchaseBody.sourceReadingId=sourceReadingId;
     const purchaseRes=await fetchApi('/api/rashin-paid-code/purchase-intent',{
@@ -6136,7 +6175,7 @@ function repairStaticCopy(){
     rashinCodeForm.innerHTML=`
       <label class="rashin-code-label" for="rashin-code-input">羅針コード</label>
       <div class="rashin-code-row">
-        <input class="rashin-code-input" id="rashin-code-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="7" autocomplete="one-time-code" placeholder="7桁">
+        <input class="rashin-code-input" id="rashin-code-input" type="text" inputmode="text" pattern="[A-Za-z0-9\\-]*" maxlength="14" autocomplete="one-time-code" placeholder="12文字">
         <button class="rashin-code-submit" id="rashin-code-submit" type="button">認証</button>
       </div>
       <div class="rashin-code-status" id="rashin-code-status" aria-live="polite" style="display:none"></div>`;
