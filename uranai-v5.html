@@ -2293,6 +2293,9 @@ body{
   background-image:
     linear-gradient(180deg,rgba(4,3,10,.04),rgba(4,3,10,.2)),
     url('images/ui/oracle-card-back.jpg');
+  background-size:cover,contain;
+  background-repeat:no-repeat;
+  background-position:center;
 }
 
 .shuffle-card::before{
@@ -2551,7 +2554,7 @@ body{
 
 }
 
-.result-card-img{width:100%;height:100%;object-fit:cover;display:block;}
+.result-card-img{width:100%;height:100%;object-fit:contain;background:#080a18;display:block;}
 
 .result-card-placeholder{
 
@@ -2572,7 +2575,13 @@ body{
 }
 
 .result-card-placeholder.len-placeholder{background-image:linear-gradient(180deg,rgba(4,3,10,.1),rgba(4,3,10,.42)),url('images/ui/lenormand-card-back.jpg?v=20260428-len-frame');}
-.result-card-placeholder.orc-placeholder{background-image:linear-gradient(180deg,rgba(4,3,10,.1),rgba(4,3,10,.42)),url('images/ui/oracle-card-back.jpg');}
+.result-card-placeholder.orc-placeholder{
+  background-image:linear-gradient(180deg,rgba(4,3,10,.1),rgba(4,3,10,.42)),url('images/ui/oracle-card-back.jpg');
+  background-size:100% 100%,contain;
+  background-repeat:no-repeat;
+  background-position:center;
+  background-color:#080512;
+}
 .result-card-placeholder::after{
   content:'';
   position:absolute;
@@ -2635,7 +2644,7 @@ body{
 
 
 
-.result-card-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .45s cubic-bezier(.25,.46,.45,.94);}
+.result-card-img{width:100%;height:100%;object-fit:contain;background:#080a18;display:block;transition:transform .45s cubic-bezier(.25,.46,.45,.94);}
 
 .result-card:hover .result-card-img{transform:scale(1.1);}
 .result-card:hover{cursor:zoom-in;}
@@ -5429,7 +5438,7 @@ body{
 
   background:
     linear-gradient(180deg,rgba(4,3,10,.04),rgba(4,3,10,.18)),
-    url('images/ui/oracle-card-back.jpg') center/cover no-repeat;
+    url('images/ui/oracle-card-back.jpg') center/contain no-repeat;
 
   border:1.5px solid rgba(201,149,42,.35);
 
@@ -5449,7 +5458,7 @@ body{
 
   background:
     linear-gradient(180deg,rgba(201,149,42,.08),rgba(4,3,10,.18)),
-    url('images/ui/oracle-card-back.jpg') center/cover no-repeat;
+    url('images/ui/oracle-card-back.jpg') center/contain no-repeat;
 
   box-shadow:0 0 16px rgba(201,149,42,.35);color:transparent;
 
@@ -5479,7 +5488,7 @@ body{
 .orc-sel-card{
   background:
     linear-gradient(180deg,rgba(4,3,10,.04),rgba(4,3,10,.18)),
-    url('images/ui/oracle-card-back.jpg') center/cover no-repeat;
+    url('images/ui/oracle-card-back.jpg') center/contain no-repeat;
 }
 .orc-sel-card::before{
   content:'';position:absolute;inset:7px;border-radius:4px;

@@ -9678,13 +9678,15 @@ function installLiveCardMotionStyles(){
     .shuffle-area.live-shuffling .shuffle-card::after{
       opacity:.14 !important;
     }
-    .result-card-placeholder.len-placeholder{
+    .result-card-placeholder.len-placeholder,
+    .result-card-placeholder.orc-placeholder{
       background-size:100% 100%, contain !important;
       background-repeat:no-repeat !important;
       background-position:center !important;
       background-color:#080512 !important;
     }
-    .result-card-back.len-placeholder{
+    .result-card-back.len-placeholder,
+    .result-card-back.orc-placeholder{
       box-shadow:inset 0 0 0 1px rgba(201,149,42,.24), inset 0 0 28px rgba(0,0,0,.38);
     }
     .result-card.card-type-len .result-card-front .result-card-img{
