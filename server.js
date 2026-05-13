@@ -4383,6 +4383,15 @@ async function handleAiProxy(req, res) {
     } catch (_error) {}
     sendJson(res, 200, data);
   } catch (error) {
+    console.error('[AI proxy] request failed', {
+      provider: payload.provider,
+      model: payload.model,
+      taskKey: payload.task_key || '',
+      plan: payload.plan || '',
+      error: error.code || error.message || 'AI_PROXY_ERROR',
+      upstreamStatus: error.upstreamStatus || 0,
+      durationMs: Date.now() - startedAt,
+    });
     await writeAiEventLog({
       ...buildAiLogBase(payload, 'ai_error'),
       latency_ms: Date.now() - startedAt,

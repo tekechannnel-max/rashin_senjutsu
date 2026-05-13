@@ -11175,6 +11175,43 @@ async function runBasicInfo(){
   setResultStageStatus('basic','done');
 }
 
+function detectPaidReadingSectionHeading(line=''){
+  const cleaned=String(line||'')
+    .trim()
+    .replace(/^#{1,6}\s*/,'')
+    .replace(/^\*\*(.*?)\*\*$/,'$1')
+    .replace(/^[\-*]\s+/,'')
+    .replace(/[【】\[\]「」『』]/g,'')
+    .replace(/[:：]$/,'')
+    .trim();
+  const compact=cleaned.replace(/[=\s　]/g,'').toUpperCase();
+  if(/^(LEN|LENORMAND|ルノルマン|ルノルマンカード|ルノルマン鑑定)$/.test(compact)) return 'len';
+  if(/^(ORC|ORACLE|オラクル|オラクルカード|数秘オラクル|数秘オラクルカード)$/.test(compact)) return 'orc';
+  if(/^(INTEGRATION|INTEGRATED|統合|総合|結論|最終結論|まとめ)$/.test(compact)) return 'integration';
+  return '';
+}
+
+function getMissingPaidReadingSections(parsed={}){
+  return ['len','orc','integration'].filter(key=>!String(parsed[key]||'').trim());
+}
+
+async function logPaidParseFailure(stage,raw='',parsed={}){
+  const text=String(raw||'');
+  await sendClientLog({
+    level:'warn',
+    type:'paid_parse_error',
+    message:`Paid reading parse failed at ${stage}`,
+    meta:{
+      stage,
+      missing:getMissingPaidReadingSections(parsed),
+      rawLength:text.length,
+      hasLenMarker:/LEN|LENORMAND|ルノルマン/i.test(text),
+      hasOrcMarker:/ORC|ORACLE|オラクル/i.test(text),
+      hasIntegrationMarker:/INTEGRATION|統合|総合|結論/i.test(text),
+    },
+  });
+}
+
 function parseCombinedPaidReading(raw=''){
   const sections={len:'',orc:'',integration:''};
   const normalized=String(raw||'').replace(/\r\n?/g,'\n');
@@ -11183,9 +11220,8 @@ function parseCombinedPaidReading(raw=''){
   const bucket={len:[],orc:[],integration:[]};
   lines.forEach(line=>{
     const trimmed=line.trim();
-    if(/^===\s*LEN\s*===$/i.test(trimmed)){ current='len'; return; }
-    if(/^===\s*ORC\s*===$/i.test(trimmed)||/^===\s*ORACLE\s*===$/i.test(trimmed)){ current='orc'; return; }
-    if(/^===\s*INTEGRATION\s*===$/i.test(trimmed)){ current='integration'; return; }
+    const heading=detectPaidReadingSectionHeading(trimmed);
+    if(heading){ current=heading; return; }
     if(current) bucket[current].push(line);
   });
   sections.len=bucket.len.join('\n').trim();
@@ -11557,7 +11593,29 @@ ${orcFull}
     });
     parsed=parseCombinedPaidReading(res);
     if(!parsed.len||!parsed.orc||!parsed.integration){
-      throw makeAppError('PAID_PARSE_ERROR','深掘り鑑定の形式を確認できませんでした。');
+      await logPaidParseFailure('initial',res,parsed);
+      const parseRetrySystemPrompt=`${systemPrompt}
+
+【出力形式の厳守】
+前回は本文は返りましたが、システムが区切りを読み取れませんでした。
+次は必ず次の3つの見出しを、この表記のまま単独行で出してください。
+
+===LEN===
+===ORC===
+===INTEGRATION===`;
+      const parseRetryPrompt=`${prompt}
+
+前回は出力形式を読み取れませんでした。
+内容を最初から書き直し、必ず ===LEN=== / ===ORC=== / ===INTEGRATION=== の3区切りで返してください。`;
+      const parseRetryRes=await callAI(parseRetryPrompt,7000,parseRetrySystemPrompt,{
+        taskKey:'paid',
+        images:buildCardImageRefs('all','paid'),
+      });
+      parsed=parseCombinedPaidReading(parseRetryRes);
+      if(!parsed.len||!parsed.orc||!parsed.integration){
+        await logPaidParseFailure('format_retry',parseRetryRes,parsed);
+        throw makeAppError('PAID_PARSE_ERROR','深掘り鑑定の形式を確認できませんでした。');
+      }
     }
     let qualityResult=await evaluatePaidReadingQuality(parsed,{userDataText:paidUserData});
     if(qualityResult.issues.length){
@@ -11592,6 +11650,7 @@ ${qualityResult.issues.map(issue=>`- ${issue}`).join('\n')}
       });
       const retryParsed=parseCombinedPaidReading(retryRes);
       if(!retryParsed.len||!retryParsed.orc||!retryParsed.integration){
+        await logPaidParseFailure('quality_retry',retryRes,retryParsed);
         throw makeAppError('PAID_PARSE_ERROR','深掘り鑑定の形式を確認できませんでした。');
       }
       const retryQualityIssues=validatePaidReadingQuality(retryParsed);
@@ -11601,6 +11660,19 @@ ${qualityResult.issues.map(issue=>`- ${issue}`).join('\n')}
       parsed=retryParsed;
     }
   }catch(e){
+    await sendClientLog({
+      level:'error',
+      type:'paid_generation_failed',
+      message:e?.code||e?.message||'paid generation failed',
+      stack:e?.stack||'',
+      meta:{
+        code:e?.code||'',
+        hasActiveTicket:!!ACTIVE_PAID_READING_TICKET?.id,
+        ticketStatus:ACTIVE_PAID_READING_TICKET?.status||'',
+        hasSourceReadingId:!!ACTIVE_PAID_SOURCE_READING_ID,
+        hasCurrentReadingId:!!CURRENT_READING_ID,
+      },
+    });
     paidGenerationFailed=true;
     parsed={len:'',orc:'',integration:''};
   }
