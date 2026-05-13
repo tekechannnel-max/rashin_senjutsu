@@ -4,10 +4,6 @@ on:
   push:
     branches:
       - main
-  schedule:
-    # GitHub-hosted schedule check. The script publishes only inside the
-    # 07:00/20:00 JST due windows and refuses missed posts after the grace window.
-    - cron: '3,8,13,18,23,28 * * * *'
   workflow_dispatch:
     inputs:
       kind:

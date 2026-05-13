@@ -8,6 +8,7 @@
 
 ## Limited prerelease SNS operation
 
+Primary scheduled operation is handled by `.github/workflows/sns-automation.yml`.
 Daily Threads posting is handled by `scripts/social/daily-oracle-post.js`.
 Due-time execution is handled by `scripts/social/run-scheduled-posts.js`.
 Before reporting SNS automation as complete, use `docs/sns-auto-operation-agent-checklist.md`.
@@ -86,7 +87,7 @@ Recommended schedule:
 - `07:00 Asia/Tokyo`: oracle image post
 - `20:00 Asia/Tokyo`: concept post
 
-GitHub Actions checks Threads every hour at `:03/:08/:13/:18/:23/:28`. Automatic Threads posting must stay within `SOCIAL_POST_GRACE_MINUTES`; late missed runs are reported as expired instead of being published hours later. GitHub Actions checks X draft artifacts every hour at `:08/:23/:38/:53`; only the `07:00` and `20:00` JST draft windows write files.
+GitHub Actions primary schedule is `.github/workflows/sns-automation.yml`, which ticks every hour at `:03/:08/:13/:18/:23/:28/:33/:38/:43/:48/:53/:58`. Automatic Threads posting must stay within `SOCIAL_POST_GRACE_MINUTES`; late missed runs are reported as expired instead of being published hours later. X draft artifacts are written only inside the `07:00` and `20:00` JST draft windows.
 
 Run a dry check before enabling real posting on any new machine:
 

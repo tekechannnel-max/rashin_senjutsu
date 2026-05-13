@@ -20,14 +20,14 @@
 - 本命の実行基盤はGitHub Actionsになっているか。
 - Windows Task Scheduler、可視PowerShell、ローカルdaemonを使っていないか。
 - `scripts/social/run-scheduled-post.ps1` や `npm run social:daemon` のようなローカル常駐入口が残っていないか。
-- `.github/workflows/threads-social.yml` がdefault branch `main` に存在し、workflow stateがactiveであることを確認したか。
-- `.github/workflows/x-social-drafts.yml` は下書き生成用で、自動投稿ではないことを確認したか。
+- `.github/workflows/sns-automation.yml` がdefault branch `main` に存在し、workflow stateがactiveであることを確認したか。
+- `.github/workflows/threads-social.yml` と `.github/workflows/x-social-drafts.yml` はpush確認・手動用であり、schedule本命と混同していないか。
 
 ## 2. スケジュールは実際に登録されているか
 
 - JSTの予定時刻とUTC cronの対応を確認したか。
 - Threads workflowが遅延やドロップに備えて複数回チェックする設定になっているか。
-- X draft workflowもscheduleイベントで発火し、期限外はno-op、期限内はdraft artifactを出す設計になっているか。
+- SNS automation workflowのscheduleイベントでThreadsとX draftの両方が発火し、期限外はno-op、期限内は投稿またはdraft artifactを出す設計になっているか。
 - 最新のcron定義をdocsとworkflowで一致させたか。
 - workflow修正後、pushイベントでGitHub Actions runが実際に作成されることを確認したか。
 - cron更新後、次のscheduleイベントが実際に作成されるところまで確認したか。
