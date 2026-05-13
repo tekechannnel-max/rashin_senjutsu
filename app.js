@@ -4270,7 +4270,7 @@ function getServerErrorMessage(data,fallback='処理に失敗しました'){
   if(code==='AUTH_REQUIRED'||code==='STRIPE_PORTAL_AUTH_REQUIRED'||code==='PAID_AUTH_REQUIRED') return'深掘り鑑定の購入確認が必要です';
   if(code==='PAID_SESSION_REQUIRED') return'深掘り鑑定の利用確認が必要です';
   if(code==='STRIPE_NOT_CONFIGURED') return'深掘り鑑定の購入準備がまだできていません';
-  if(code==='STRIPE_CHECKOUT_DISABLED') return'現在はBOOTH購入番号で受け付けています';
+  if(code==='STRIPE_CHECKOUT_DISABLED') return'現在は羅針コードで受け付けています';
   if(code==='STRIPE_CUSTOMER_NOT_FOUND') return'決済情報がまだ作成されていません';
   if(code==='STRIPE_SUBSCRIPTION_NOT_ACTIVE') return'決済は完了しましたが、深掘り鑑定への反映がまだ終わっていません';
   if(code==='PAID_TICKET_REQUIRED') return'この結果の深掘り鑑定を購入すると利用できます';
@@ -5894,7 +5894,7 @@ function openMemberAccessModal(intent=''){
       ?'<div class="runtime-status-title">このまま深掘り鑑定フローへ進めます</div><div class="runtime-status-detail">確認用の状態で深掘り鑑定フローを確認できます。</div>'
       :(usesGoogle
         ?'<div class="runtime-status-title">Googleログインで続行</div><div class="runtime-status-detail">履歴と購入確認を保存します。</div>'
-        :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':'深掘り羅針鑑定の準備中です'}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':'有料鑑定はBOOTH購入後に注文番号を入力すると利用できます。プレリリース価格780円、正式リリース後は1000円予定です。'}</div>`);
+        :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':'深掘り羅針鑑定の準備中です'}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':(RASHIN_BOOTH_PURCHASE_ENABLED?'有料鑑定はBOOTH購入後に注文番号を入力すると利用できます。プレリリース価格780円、正式リリース後は1000円予定です。':'有料鑑定は羅針コードを入力すると利用できます。プレリリース価格780円、正式リリース後は1000円予定です。')}</div>`);
   }
   if(disclosure) disclosure.style.display='none';
   if(localBtn){
@@ -11461,7 +11461,7 @@ function renderPaidCombinedOutputs(parsed,name,cat,theme,options={}){
     LAST_OUTPUTS.integration=parsed.integration||message;
     setReadingBlockError('r-len-block','鑑定を作れませんでした','通信または生成結果の確認に失敗しました。時間をおいて、もう一度お試しください。');
     setReadingBlockError('r-orc-block','続きの鑑定を止めています','途中で途切れた結果を出さないため、今回は表示を止めています。');
-    setIntegrationError('最終結論を作れませんでした','入力内容は保持されています。少し時間をおいて再度お試しください。');
+    setIntegrationError('最終結論を整えています','入力内容をもとに補助結果を表示します。');
     return;
   }else{
     LAST_OUTPUTS.len=normalizePaidReadingText(parsed.len||buildRichLenFallback(name,cat));
@@ -11752,14 +11752,25 @@ ${qualityResult.issues.map(issue=>`- ${issue}`).join('\n')}
       },
     });
     paidGenerationFailed=true;
-    parsed={len:'',orc:'',integration:''};
+    parsed={
+      len:buildRichLenFallback(name,cat),
+      orc:buildRichOrcFallback(name,cat,true),
+      integration:buildIntegratedFallback(name,cat,theme),
+    };
   }
 
-  renderPaidCombinedOutputs(parsed,name,cat,theme,{allowFallback:!paidGenerationFailed});
+  renderPaidCombinedOutputs(parsed,name,cat,theme,{allowFallback:true});
   if(paidGenerationFailed){
-    await releasePaidReadingTicketLock();
-    completeFailedResultGenerationUI();
-    return;
+    await sendClientLog({
+      level:'warn',
+      type:'paid_generation_fallback_rendered',
+      message:'Paid reading fallback was rendered after generation failure',
+      meta:{
+        hasLen:!!LAST_OUTPUTS.len,
+        hasOrc:!!LAST_OUTPUTS.orc,
+        hasIntegration:!!LAST_OUTPUTS.integration,
+      },
+    });
   }
 
   await ensureStageMinimumTime('len',lenStageStartedAt);
