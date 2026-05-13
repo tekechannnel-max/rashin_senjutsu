@@ -1,4 +1,4 @@
-# Operations Notes
+﻿# Operations Notes
 
 ## Render deployment assumptions
 
@@ -8,108 +8,14 @@
 
 ## Limited prerelease SNS operation
 
-Primary Threads scheduled operation is handled by the Render Cron Job `rashin-threads-scheduler`.
-Daily Threads posting is handled by `scripts/social/daily-oracle-post.js`.
-Due-time execution is handled by `scripts/social/run-scheduled-posts.js`.
-GitHub Actions remains available for push/manual validation and X manual-post draft export.
-Before reporting SNS automation as complete, use `docs/sns-auto-operation-agent-checklist.md`.
+SNS operation is documented in `docs/sns-runbook.md`.
 
-Target Threads account: `https://www.threads.com/@sensai_teke`.
+Current summary:
 
-Morning oracle posts are the free entry point: random daily card, matching image, image alt text, a concrete "today's action", and the `あなたも今日の1枚を引かない？` CTA. Evening concept posts should build trust around self-understanding, non-dependence, and next-action framing rather than paid conversion.
-
-Threads automation should use the official Threads API. Do not use Playwright or other browser automation to script the Threads website for posting.
-
-X automation should use the official API. Do not use Playwright or other browser automation to script the X website for posting. Before turning on X automation, enable the automated account label and make the account bio clear about who operates it. Until official X API posting is explicitly enabled, GitHub Actions may only generate checked manual-post draft artifacts for X.
-
-### Draft generation
-
-Run without credentials to create or inspect the daily content:
-
-```powershell
-npm run social:draft
-npm run social:threads:draft
-npm run social:write
-```
-
-Generated JSON drafts are written under `data/social-posts/`, which is intentionally gitignored.
-
-### Auto posting
-
-Set these only in the machine or job runner that performs SNS posting:
-
-- `PUBLIC_ORIGIN=https://rashin-senjutsu.onrender.com`
-- `THREADS_EXPECTED_USERNAME=sensai_teke`
-- `THREADS_APP_ID`
-- `THREADS_APP_SECRET`
-- `THREADS_REDIRECT_URI=https://rashin-senjutsu.onrender.com/auth/threads/callback`
-- `THREADS_SCOPES=threads_basic,threads_content_publish`
-- `THREADS_USER_ID`
-- `THREADS_ACCESS_TOKEN`
-- `THREADS_PUBLISH_WAIT_MS=30000`
-- `SOCIAL_AUTOMATED_POSTING_ENABLED=true`
-- `SOCIAL_PLATFORMS=threads`
-- `SOCIAL_ORACLE_TIME=07:00`
-- `SOCIAL_CONCEPT_TIME=20:00`
-- `SOCIAL_POST_GRACE_MINUTES=30`
-- `SOCIAL_UTM_CAMPAIGN=202605_prerelease`
-- `SOCIAL_PAID_CTA_MODE=soft`
-- `SOCIAL_BOOTH_ENABLED=false`
-
-Do not pin `SOCIAL_RELEASE_MODE` for normal scheduled operation. The scripts derive the phase from the JST date. Set it only for an explicit one-off override.
-
-For initial Threads token setup:
-
-```powershell
-npm run threads:connect
-npm run threads:doctor
-```
-
-`threads:connect` prints the OAuth URL. With the HTTPS redirect URI, the callback page prints the exact exchange command. The exchange command writes `data/social-posts/threads-token.json`; that token file is intentionally gitignored.
-
-If Meta blocks the OAuth redirect, use the Threads settings page's User Token Generator, then run:
-
-```powershell
-node scripts/social/threads-tool.js save-token --token="<token-from-user-token-generator>"
-npm run threads:doctor
-```
-
-Optional X posting uses these only if X automation is explicitly enabled:
-
-- `X_API_KEY`
-- `X_API_SECRET`
-- `X_ACCESS_TOKEN`
-- `X_ACCESS_TOKEN_SECRET`
-
-Primary Threads automation must run on Render Cron Job `rashin-threads-scheduler`. Do not use local Windows Task Scheduler tasks, `powershell.exe` pop-up launches, or local daemon processes for SNS operation. Local runs are manual foreground diagnostics only, from an already-open terminal.
-
-Recommended schedule:
-
-- `07:00 Asia/Tokyo`: oracle image post
-- `20:00 Asia/Tokyo`: concept post
-
-Render Cron Job `rashin-threads-scheduler` should use `0,5,10,15,20,25,30 22,11 * * *` UTC and run `node scripts/social/run-scheduled-posts.js --once --only-kind=all`. That is `07:00-07:30` and `20:00-20:30` JST. Automatic Threads posting must stay within `SOCIAL_POST_GRACE_MINUTES`; late missed runs are reported as expired instead of being published hours later. GitHub Actions schedule in `.github/workflows/sns-automation.yml` is for X draft export only; it must not run the Threads posting job.
-
-Run a dry check before enabling real posting on any new machine:
-
-```powershell
-node scripts/social/run-scheduled-posts.js --dry-run
-```
-
-Run due posts once:
-
-```powershell
-npm run social:run-due
-```
-
-The scheduler writes `data/social-posts/scheduled-post-state.json` and will not post the same kind twice on the same JST date after a successful post.
-
-Prerelease monetization guardrails:
-
-- Keep SNS paid CTA soft while BOOTH verification is not production-confirmed.
-- Do not set `SOCIAL_PAID_CTA_MODE=active` unless `SOCIAL_BOOTH_ENABLED=true` and the BOOTH product URL is configured.
-- SNS may explain deep readings, but purchase/order-number handling stays inside the app.
-- Generated posts are rejected if they include blocked dependency-building or fear-based wording.
+- Threads scheduled posting runs on Render Cron Job `rashin-threads-scheduler`.
+- X is draft-only until official X API posting is explicitly enabled.
+- Local Windows Task Scheduler, visible PowerShell launches, and local daemon processes are not allowed for SNS operation.
+- Posting scripts live under `scripts/social/`.
 
 ## File-backed state
 
@@ -127,7 +33,7 @@ The following production paths are part of the app's state and must persist acro
 
 Before horizontal scaling, move these operations to a database with transactions or conditional writes:
 
-- Google user record updates for `rashin_stones` (displayed as 羅針のかけら) and `last_rashin_bonus_claimed_date`
+- Google user record updates for `rashin_stones` (displayed as 鄒・・縺ｮ縺九￠繧・ and `last_rashin_bonus_claimed_date`
 - Rashin bonus discount checkout lock acquisition
 - Purchase order creation and status changes
 - Rashin paid code issue and redemption
@@ -153,8 +59,8 @@ Set these on the Render service and redeploy before testing:
 - `DEEP_READING_PRERELEASE_AMOUNT=780`
 - `DEEP_READING_RELEASE_AMOUNT=1000`
 - `BOOTH_DEEP_READING_URL=<your BOOTH product URL>`
-- `BOOTH_PAYMENT_LABEL=羅針占術 BOOTH`
-- `BOOTH_PAYMENT_NOTE=BOOTHで購入後、注文番号を入力してください。`
+- `BOOTH_PAYMENT_LABEL=鄒・・蜊陦・BOOTH`
+- `BOOTH_PAYMENT_NOTE=BOOTH縺ｧ雉ｼ蜈･蠕後∵ｳｨ譁・分蜿ｷ繧貞・蜉帙＠縺ｦ縺上□縺輔＞縲Ａ
 - `BOOTH_GMAIL_VERIFICATION_REQUIRED=true`
 - `BOOTH_GMAIL_IMAP_USER=<Gmail address that receives BOOTH order mail>`
 - `BOOTH_GMAIL_IMAP_APP_PASSWORD=<Gmail app password>`

@@ -15,7 +15,7 @@ function parseArgs(argv) {
     const arg = argv[i];
     if (arg === '--once') args.once = true;
     else if (arg === '--daemon') {
-      throw new Error('Local daemon mode is disabled. SNS automation must run from GitHub Actions schedule, not a local PC process.');
+      throw new Error('Local daemon mode is disabled. Threads automation must run from Render Cron Job, not a local PC process.');
     }
     else if (arg === '--dry-run') args.dryRun = true;
     else if (arg === '--force-kind') args.forceKind = argv[++i] || '';
