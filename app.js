@@ -2195,8 +2195,12 @@ const MEMBERSHIP_PLAN={
     },
   ],
 };
-const CHECKOUT_DISCLOSURE_HTML='深掘り羅針鑑定は、BOOTH購入後に注文番号を入力して利用できる有料鑑定です。料金はプレリリース価格780円、正式リリース後は1000円予定です。無料鑑定を先に作成する必要はありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
-const RESULT_CHECKOUT_DISCLOSURE_HTML='深掘り鑑定はプレリリース価格780円、正式リリース後は1000円予定です。無料で引いたカードの続きから追加カードを展開することも、直接有料鑑定から始めることもできます。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
+const CHECKOUT_DISCLOSURE_HTML=RASHIN_BOOTH_PURCHASE_ENABLED
+  ?'深掘り羅針鑑定は、BOOTH購入後に注文番号を入力して利用できる有料鑑定です。料金はプレリリース価格780円、正式リリース後は1000円予定です。無料鑑定を先に作成する必要はありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。'
+  :'深掘り羅針鑑定は、運営者から受け取った羅針コードを入力して利用できます。料金はプレリリース価格780円、正式リリース後は1000円予定です。無料鑑定を先に作成する必要はありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
+const RESULT_CHECKOUT_DISCLOSURE_HTML=RASHIN_BOOTH_PURCHASE_ENABLED
+  ?'深掘り鑑定はプレリリース価格780円、正式リリース後は1000円予定です。無料で引いたカードの続きから追加カードを展開することも、直接有料鑑定から始めることもできます。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。'
+  :'深掘り鑑定は、羅針コードを入力すると利用できます。無料で引いたカードの続きから追加カードを展開することも、直接有料鑑定から始めることもできます。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
 
 // 全カード・各3問の解釈絞り込みテンプレート
 const CLARIFY_DEF={
@@ -4290,6 +4294,10 @@ function canUseAccessCode(){
   return !isProductionRuntime()&&(DEV_MODE||LOCAL_TEST_RUNTIME)&&!!MEMBER_AUTH.codeConfigured;
 }
 
+function getPaidEntryActionLabel(){
+  return RASHIN_BOOTH_PURCHASE_ENABLED?'BOOTH購入で始める':'羅針コードで始める';
+}
+
 function canUseRashinCode(){
   return canUseProxy()&&!!MEMBER_AUTH.rashinCodeConfigured;
 }
@@ -4402,7 +4410,7 @@ function getMemberStatusMeta(){
       cls:'inactive',
       label:'深掘り鑑定',
       copy:'深掘り羅針鑑定は、プレリリース価格780円、正式リリース後は1000円予定です。無料鑑定から続きのカードを引くことも、直接有料鑑定から始めることもできます。',
-      action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">BOOTH購入で始める</button>`,
+      action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">${getPaidEntryActionLabel()}</button>`,
     };
   }
   if(MEMBER_AUTH.authLoggedIn){
@@ -4410,7 +4418,7 @@ function getMemberStatusMeta(){
       cls:'inactive',
       label:'深掘り鑑定',
       copy:'深掘り羅針鑑定は、プレリリース価格780円、正式リリース後は1000円予定です。無料鑑定から続きのカードを引くことも、直接有料鑑定から始めることもできます。',
-      action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">BOOTH購入で始める</button>`,
+      action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">${getPaidEntryActionLabel()}</button>`,
     };
   }
   return{
@@ -4418,10 +4426,12 @@ function getMemberStatusMeta(){
     label:canUseAccessCode()?'確認コード待ち':'公開準備中',
     copy:canUseAccessCode()
       ?'前回の鑑定をもとに、続きの悩みを読み解けます。確認コードを入力すると深掘り鑑定の利用状態を確認できます。'
-      :'深掘り羅針鑑定は、BOOTH購入後に注文番号を入力すると利用できます。プレリリース価格780円、正式リリース後は1000円予定です。',
+      :(RASHIN_BOOTH_PURCHASE_ENABLED
+        ?'深掘り羅針鑑定は、BOOTH購入後に注文番号を入力すると利用できます。プレリリース価格780円、正式リリース後は1000円予定です。'
+        :'深掘り羅針鑑定は、運営者から受け取った羅針コードを入力すると利用できます。プレリリース価格780円、正式リリース後は1000円予定です。'),
     action:canUseAccessCode()
       ?`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openMemberAccessModal('start-paid')">確認コードを入力</button>`
-      :`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">BOOTH購入で始める</button>`,
+      :`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">${getPaidEntryActionLabel()}</button>`,
   };
 }
 
@@ -5316,6 +5326,18 @@ async function promptAndRedeemRashinPaidCode(sourceReadingId=CURRENT_READING_ID)
   return true;
 }
 
+async function promptForPendingRashinPaidCode(){
+  const raw=window.prompt('運営者から受け取った羅針コードを入力してください。羅針コードは1回限り、深掘り鑑定を利用できます。','');
+  if(raw===null) return '';
+  const code=normalizeRashinPaidCodeInput(raw);
+  if(!code||code.length!==12){
+    showToast('羅針コードは12文字の英数字で入力してください');
+    return '';
+  }
+  savePendingRashinPaidCode(code);
+  return code;
+}
+
 async function requestRashinCodePurchase(intent='upgrade-paid'){
   if(!canUseProxy()){
     showToast('羅針コードの入力はサーバー経由で利用できます');
@@ -5452,7 +5474,11 @@ async function requestRashinCodePurchaseBooth(intent='upgrade-paid'){
     if(sourceReadingId){
       try{ await saveHistoryRecordToVault(buildCurrentReadingRecord()); }catch(_error){}
     }
-    const pendingCode=readPendingRashinPaidCode();
+    let pendingCode=readPendingRashinPaidCode();
+    if(!pendingCode&&!RASHIN_BOOTH_PURCHASE_ENABLED){
+      pendingCode=await promptForPendingRashinPaidCode();
+      if(!pendingCode) return false;
+    }
     if(pendingCode){
       if(!sourceReadingId){
         sourceReadingId=ACTIVE_PAID_SOURCE_READING_ID||createReadingId();
@@ -5692,7 +5718,7 @@ async function openStripeCheckout(intent='start-paid'){
   const sourceReadingId=CURRENT_READING_ID;
   const needsSourceReading=intent==='upgrade-paid';
   if(needsSourceReading&&(!sourceReadingId||PLAN!=='free'||!canContinueCurrentReadingToPaid())){
-    showToast('この結果を深掘りするには、結果画面からBOOTH注文番号の入力へ進んでください');
+    showToast(RASHIN_BOOTH_PURCHASE_ENABLED?'この結果を深掘りするには、結果画面からBOOTH注文番号の入力へ進んでください':'この結果を深掘りするには、結果画面から羅針コードの入力へ進んでください');
     return false;
   }
   CHECKOUT_OPENING=true;
@@ -5923,7 +5949,7 @@ function openMemberAccessModal(intent=''){
   clearMemberAccessError();
   clearGoogleAuthError();
   clearDeveloperAccessError();
-  if(title) title.textContent=bonusLogin?'今日の羅針':(compactPaidStart?'深掘り鑑定の購入':'深掘り鑑定の確認');
+  if(title) title.textContent=bonusLogin?'今日の羅針':(compactPaidStart&&RASHIN_BOOTH_PURCHASE_ENABLED?'深掘り鑑定の購入':'深掘り鑑定の確認');
   if(desc){
     desc.style.display='';
     desc.textContent=bonusLogin
@@ -5931,7 +5957,7 @@ function openMemberAccessModal(intent=''){
       :canUseDeveloperQuickAccess()
       ?'確認用アクセスは上のボタンから進めます。'
       :(MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn
-        ?'Googleログインで購入を続けます。'
+        ?(RASHIN_BOOTH_PURCHASE_ENABLED?'Googleログインで購入を続けます。':'Googleログイン後、羅針コードを入力します。')
         :'深掘り鑑定は、利用状態を確認できたときだけ開きます。');
   }
   if(guide){
@@ -5994,14 +6020,14 @@ function ensurePaidEntryGuideModal(){
   modal.setAttribute('inert','');
   modal.innerHTML=`
     <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="paid-entry-guide-title">
-      <div class="modal-title" id="paid-entry-guide-title">深掘り羅針鑑定のBOOTH購入番号入力へ進みます</div>
+      <div class="modal-title" id="paid-entry-guide-title">${RASHIN_BOOTH_PURCHASE_ENABLED?'深掘り羅針鑑定のBOOTH購入番号入力へ進みます':'深掘り羅針鑑定の羅針コード入力へ進みます'}</div>
       <div class="modal-desc">無料鑑定を先に作成する必要はありません。プレリリース価格780円、正式リリース後は1000円予定です。</div>
       <div class="runtime-status ok">
-        <div class="runtime-status-title">BOOTH購入後に有料鑑定を開始します</div>
-        <div class="runtime-status-detail">BOOTH注文番号を入力すると、深掘り鑑定を解放します。</div>
+        <div class="runtime-status-title">${RASHIN_BOOTH_PURCHASE_ENABLED?'BOOTH購入後に有料鑑定を開始します':'羅針コードで有料鑑定を開始します'}</div>
+        <div class="runtime-status-detail">${RASHIN_BOOTH_PURCHASE_ENABLED?'BOOTH注文番号を入力すると、深掘り鑑定を解放します。':'羅針コードを入力すると、深掘り鑑定を解放します。'}</div>
       </div>
       <div class="modal-btns">
-        <button class="modal-save" type="button" onclick="startFlow('paid')">BOOTH購入で始める</button>
+        <button class="modal-save" type="button" onclick="startFlow('paid')">${getPaidEntryActionLabel()}</button>
         <button class="modal-cancel" type="button" onclick="closePaidEntryGuide()">閉じる</button>
       </div>
     </div>`;
@@ -6332,7 +6358,7 @@ function repairStaticCopy(){
       '鑑定履歴がある場合は、前回からの変化も読む'
     ].forEach((text,index)=>{ if(deepItems[index]) deepItems[index].textContent=text; });
     setWithin(planCards[1],'.plan-compare-summary','深掘り鑑定では、同じ相談内容を前提に追加カードを引き、「なぜそうなるか」「どこで止まりやすいか」まで読み解きます。');
-    setWithin(planCards[1],'.plan-compare-action','BOOTH購入で始める');
+    setWithin(planCards[1],'.plan-compare-action',getPaidEntryActionLabel());
     const deepAction=planCards[1].querySelector('.plan-compare-action');
     if(deepAction){
       deepAction.setAttribute('href','?flow=paid');
@@ -8153,7 +8179,7 @@ function renderMemberStatusFallback(){
       <div class="member-benefit">前回との変化を見比べられる</div>
       <div class="member-benefit">鑑定履歴が積み上がるほど傾向が見える</div>
     </div>
-    <button class="vault-link" type="button" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">BOOTH購入で始める</button>`;
+    <button class="vault-link" type="button" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">${getPaidEntryActionLabel()}</button>`;
 }
 
 function renderPremiumEntryFallback(){
