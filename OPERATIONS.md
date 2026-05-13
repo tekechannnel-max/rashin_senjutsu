@@ -52,8 +52,9 @@ Set these only in the machine or job runner that performs SNS posting:
 - `SOCIAL_POST_GRACE_MINUTES=30`
 - `SOCIAL_UTM_CAMPAIGN=202605_prerelease`
 - `SOCIAL_PAID_CTA_MODE=soft`
-- `SOCIAL_RELEASE_MODE=prelaunch`
 - `SOCIAL_BOOTH_ENABLED=false`
+
+Do not pin `SOCIAL_RELEASE_MODE` for normal scheduled operation. The scripts derive the phase from the JST date. Set it only for an explicit one-off override.
 
 For initial Threads token setup:
 
@@ -78,14 +79,14 @@ Optional X posting uses these only if X automation is explicitly enabled:
 - `X_ACCESS_TOKEN`
 - `X_ACCESS_TOKEN_SECRET`
 
-Primary automation must run on GitHub Actions. Local Windows Task Scheduler or `npm run social:daemon` is backup only because it depends on the PC being awake.
+Primary automation must run on GitHub Actions. Do not use local Windows Task Scheduler tasks, `powershell.exe` pop-up launches, or local daemon processes for SNS operation. Local runs are manual foreground diagnostics only, from an already-open terminal.
 
 Recommended schedule:
 
 - `07:00 Asia/Tokyo`: oracle image post
 - `20:00 Asia/Tokyo`: concept post
 
-GitHub Actions checks Threads due posts at `07:03/07:08/07:13/07:18/07:23/07:28` and `20:03/20:08/20:13/20:18/20:23/20:28` JST. Automatic Threads posting must stay within `SOCIAL_POST_GRACE_MINUTES`; late missed runs are reported as expired instead of being published hours later. GitHub Actions checks X draft artifacts at `07:08/07:23/07:38/07:53` and `20:08/20:23/20:38/20:53` JST; scheduled X draft runs must produce draft files or fail.
+GitHub Actions checks Threads every hour at `:03/:08/:13/:18/:23/:28`. Automatic Threads posting must stay within `SOCIAL_POST_GRACE_MINUTES`; late missed runs are reported as expired instead of being published hours later. GitHub Actions checks X draft artifacts every hour at `:08/:23/:38/:53`; only the `07:00` and `20:00` JST draft windows write files.
 
 Run a dry check before enabling real posting on any new machine:
 
@@ -97,12 +98,6 @@ Run due posts once:
 
 ```powershell
 npm run social:run-due
-```
-
-Run as a long-lived local process:
-
-```powershell
-npm run social:daemon
 ```
 
 The scheduler writes `data/social-posts/scheduled-post-state.json` and will not post the same kind twice on the same JST date after a successful post.

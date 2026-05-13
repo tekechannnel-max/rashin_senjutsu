@@ -41,7 +41,7 @@ function parseArgs(argv) {
     from: process.env.SOCIAL_AUDIT_FROM || '2026-05-12',
     to: process.env.SOCIAL_AUDIT_TO || '2026-05-29',
     platforms: process.env.SOCIAL_PLATFORMS || 'threads',
-    releaseMode: process.env.SOCIAL_RELEASE_MODE || 'prelaunch',
+    releaseMode: process.env.SOCIAL_RELEASE_MODE || 'auto',
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];

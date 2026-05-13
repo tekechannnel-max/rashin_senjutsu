@@ -15,7 +15,6 @@
     "social:x:drafts": "node scripts/social/export-x-drafts.js",
     "social:x:today": "node scripts/social/export-x-drafts.js --date=today",
     "social:run-due": "node scripts/social/run-scheduled-posts.js --once",
-    "social:daemon": "node scripts/social/run-scheduled-posts.js --daemon",
     "threads:doctor": "node scripts/social/threads-tool.js doctor",
     "threads:auth-url": "node scripts/social/threads-tool.js auth-url",
     "threads:connect": "node scripts/social/threads-tool.js connect",

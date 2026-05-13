@@ -19,7 +19,7 @@ const FULL_RELEASE_DATE = '2026-06-06';
 const RELEASE_DATE = PRERELEASE_START_DATE;
 const CARD_CYCLE_START_DATE = '2026-05-12';
 const SOCIAL_PAID_CTA_MODES = new Set(['off', 'soft', 'active']);
-const SOCIAL_RELEASE_MODES = new Set(['prelaunch', 'prerelease', 'fix', 'release', 'launch', 'postrelease']);
+const SOCIAL_RELEASE_MODES = new Set(['auto', 'prelaunch', 'prerelease', 'fix', 'release', 'launch', 'postrelease']);
 const CARD_OVERRIDES_BY_DATE = {
   '2026-05-12': 8,
   '2026-05-13': 8,
@@ -204,7 +204,7 @@ function getSocialConfig(args) {
     primaryPlatform,
     enableX: platforms.includes('x'),
     paidCtaMode,
-    releaseMode: normalizeMode(process.env.SOCIAL_RELEASE_MODE, SOCIAL_RELEASE_MODES, 'prelaunch'),
+    releaseMode: normalizeMode(process.env.SOCIAL_RELEASE_MODE, SOCIAL_RELEASE_MODES, 'auto'),
     boothEnabled: boolFromEnv(process.env.SOCIAL_BOOTH_ENABLED) && !!boothUrl,
     stripeEnabled: false,
     campaign: String(process.env.SOCIAL_UTM_CAMPAIGN || DEFAULT_SOCIAL_CAMPAIGN).trim() || DEFAULT_SOCIAL_CAMPAIGN,

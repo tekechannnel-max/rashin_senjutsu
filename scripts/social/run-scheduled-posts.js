@@ -10,18 +10,20 @@ const DAILY_SCRIPT = path.join(__dirname, 'daily-oracle-post.js');
 const DEFAULT_POST_GRACE_MINUTES = 30;
 
 function parseArgs(argv) {
-  const args = { once: false, daemon: false, dryRun: false, forceKind: '', onlyKind: '' };
+  const args = { once: false, dryRun: false, forceKind: '', onlyKind: '' };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--once') args.once = true;
-    else if (arg === '--daemon') args.daemon = true;
+    else if (arg === '--daemon') {
+      throw new Error('Local daemon mode is disabled. SNS automation must run from GitHub Actions schedule, not a local PC process.');
+    }
     else if (arg === '--dry-run') args.dryRun = true;
     else if (arg === '--force-kind') args.forceKind = argv[++i] || '';
     else if (arg.startsWith('--force-kind=')) args.forceKind = arg.split('=')[1] || '';
     else if (arg === '--only-kind') args.onlyKind = argv[++i] || '';
     else if (arg.startsWith('--only-kind=')) args.onlyKind = arg.split('=')[1] || '';
   }
-  if (!args.once && !args.daemon && !args.forceKind) args.once = true;
+  if (!args.once && !args.forceKind) args.once = true;
   return args;
 }
 
@@ -201,15 +203,6 @@ async function runDue(args) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  if (args.daemon) {
-    await runDue(args);
-    setInterval(() => {
-      runDue(args).catch(error => {
-        console.error(error?.stack || error?.message || String(error));
-      });
-    }, 60 * 1000);
-    return;
-  }
   await runDue(args);
 }
 

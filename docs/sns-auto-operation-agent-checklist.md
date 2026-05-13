@@ -18,15 +18,16 @@
 ## 1. 実行基盤はPC起動不要になっているか
 
 - 本命の実行基盤はGitHub Actionsになっているか。
-- Windows Task Schedulerやローカルdaemonを本命扱いしていないか。
-- ローカルタスクを使う場合でも、PC起動前提の保険であることを明示しているか。
+- Windows Task Scheduler、可視PowerShell、ローカルdaemonを使っていないか。
+- `scripts/social/run-scheduled-post.ps1` や `npm run social:daemon` のようなローカル常駐入口が残っていないか。
 - `.github/workflows/threads-social.yml` がdefault branch `main` に存在し、workflow stateがactiveであることを確認したか。
 - `.github/workflows/x-social-drafts.yml` は下書き生成用で、自動投稿ではないことを確認したか。
 
 ## 2. スケジュールは実際に登録されているか
 
 - JSTの予定時刻とUTC cronの対応を確認したか。
-- Threads workflowが1日2回だけではなく、遅延やドロップに備えて複数回チェックする設定になっているか。
+- Threads workflowが遅延やドロップに備えて複数回チェックする設定になっているか。
+- X draft workflowもscheduleイベントで発火し、期限外はno-op、期限内はdraft artifactを出す設計になっているか。
 - 最新のcron定義をdocsとworkflowで一致させたか。
 - workflow修正後、pushイベントでGitHub Actions runが実際に作成されることを確認したか。
 - cron更新後、次のscheduleイベントが実際に作成されるところまで確認したか。
@@ -76,8 +77,7 @@
 
 - Secrets未設定、token不一致、audit失敗、投稿API失敗はjob failureとして表に出るか。
 - GitHub Actionsのrun履歴で、失敗が成功に見えないか。
-- ローカル保険を使う場合、`data/social-posts/logs/scheduled-post-YYYY-MM-DD.log` に開始、出力、終了コードが残るか。
-- 失敗時の復旧手順は、手動投稿ではなく、まずGitHub Actions本命の修正から始める形になっているか。
+- 失敗時の復旧手順は、ローカルWindows保険ではなく、まずGitHub Actions本命の修正から始める形になっているか。
 
 ## 9. コード変更後の検証は足りているか
 
@@ -105,6 +105,7 @@
 - `投稿できました`、ただしpermalinkまたは取得結果を確認していない場合
 - `Xも自動投稿されます`、ただしX API投稿を有効化していない場合
 - `ローカルタスクを有効化したので大丈夫です`
+- `バックグラウンドなのでローカルPowerShellでも大丈夫です`
 - `dry-runが通ったので大丈夫です`
 
 ## ユーザーに確認が必要な場合

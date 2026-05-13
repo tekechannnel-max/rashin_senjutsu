@@ -5,10 +5,9 @@ on:
     branches:
       - main
   schedule:
-    # 07:03/07:08/07:13/07:18/07:23/07:28 and
-    # 20:03/20:08/20:13/20:18/20:23/20:28 JST.
-    # The script refuses missed automatic posts after the grace window.
-    - cron: '3,8,13,18,23,28 22,11 * * *'
+    # GitHub-hosted schedule check. The script publishes only inside the
+    # 07:00/20:00 JST due windows and refuses missed posts after the grace window.
+    - cron: '3,8,13,18,23,28 * * * *'
   workflow_dispatch:
     inputs:
       kind:
@@ -40,7 +39,6 @@ jobs:
       SOCIAL_AUTOMATED_POSTING_ENABLED: 'true'
       SOCIAL_PLATFORMS: threads
       SOCIAL_PAID_CTA_MODE: soft
-      SOCIAL_RELEASE_MODE: prelaunch
       SOCIAL_BOOTH_ENABLED: 'false'
       SOCIAL_UTM_CAMPAIGN: 202605_prerelease
       SOCIAL_STATELESS_MODE: 'true'

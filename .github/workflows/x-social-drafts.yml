@@ -10,10 +10,9 @@ on:
       - 'package.json'
       - 'package-lock.json'
   schedule:
-    # 07:08/07:23/07:38/07:53 and 20:08/20:23/20:38/20:53 JST.
-    # This creates manual-post draft artifacts only. Multiple checks reduce the
-    # chance that one dropped GitHub schedule event leaves no due X draft.
-    - cron: '8,23,38,53 22,11 * * *'
+    # GitHub-hosted schedule check. Draft artifacts are written only inside the
+    # 07:00/20:00 JST X draft windows; outside those windows this is a no-op health run.
+    - cron: '8,23,38,53 * * * *'
   workflow_dispatch:
     inputs:
       kind:
@@ -42,10 +41,10 @@ jobs:
       PUBLIC_ORIGIN: https://rashin-senjutsu.onrender.com
       SOCIAL_PLATFORMS: threads,x
       SOCIAL_PAID_CTA_MODE: soft
-      SOCIAL_RELEASE_MODE: prelaunch
       SOCIAL_BOOTH_ENABLED: 'false'
       SOCIAL_UTM_CAMPAIGN: 202605_prerelease
       SOCIAL_STATELESS_MODE: 'true'
+      SOCIAL_X_DRAFT_GRACE_MINUTES: '60'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -73,15 +72,19 @@ jobs:
           if [ "${{ github.event_name }}" = "schedule" ]; then
             args+=(--due)
           fi
-          npm run social:x:drafts -- "${args[@]}"
+          node scripts/social/export-x-drafts.js "${args[@]}" | tee x-drafts-report.json
 
       - name: Require scheduled X draft output
         if: github.event_name == 'schedule'
         shell: bash
         run: |
-          if ! compgen -G "x-drafts/*.md" > /dev/null; then
+          status="$(node -e 'console.log(require("./x-drafts-report.json").status)')"
+          if [ "$status" = "x_drafts_written" ] && ! compgen -G "x-drafts/*.md" > /dev/null; then
             echo "::error::Scheduled X draft run produced no draft files. Do not treat this as successful X operation."
             exit 1
+          fi
+          if [ "$status" = "no_due_x_drafts" ]; then
+            echo "No X draft is due in this scheduled health run."
           fi
 
       - name: Add X drafts to workflow summary

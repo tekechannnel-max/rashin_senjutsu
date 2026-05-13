@@ -10,6 +10,7 @@ const PRERELEASE_END_DATE = '2026-05-29';
 const FIX_PERIOD_END_DATE = '2026-06-05';
 const FULL_RELEASE_DATE = '2026-06-06';
 const X_LIMIT = 280;
+const DEFAULT_X_DRAFT_GRACE_MINUTES = 60;
 
 function parseArgs(argv) {
   const args = {
@@ -55,7 +56,15 @@ function getJstDateString(date = new Date()) {
   return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
-function getJstMinutes(date = new Date()) {
+function getNow() {
+  const override = String(process.env.SOCIAL_NOW_ISO || '').trim();
+  if (!override) return new Date();
+  const date = new Date(override);
+  if (Number.isNaN(date.getTime())) throw new Error(`Invalid SOCIAL_NOW_ISO: ${override}`);
+  return date;
+}
+
+function getJstMinutes(date = getNow()) {
   const parts = new Intl.DateTimeFormat('en-GB', {
     timeZone: 'Asia/Tokyo',
     hour: '2-digit',
@@ -66,6 +75,13 @@ function getJstMinutes(date = new Date()) {
     return acc;
   }, {});
   return Number(parts.hour) * 60 + Number(parts.minute);
+}
+
+function getDraftGraceMinutes() {
+  const raw = String(process.env.SOCIAL_X_DRAFT_GRACE_MINUTES || DEFAULT_X_DRAFT_GRACE_MINUTES).trim();
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value < 0) throw new Error(`Invalid SOCIAL_X_DRAFT_GRACE_MINUTES: ${raw}`);
+  return value;
 }
 
 function addDays(dateKey, days) {
@@ -92,15 +108,33 @@ function getDateRange(args) {
   return eachDate(args.from, args.to || args.from);
 }
 
+function getSchedule() {
+  return [
+    { kind: 'oracle', time: '07:00', minute: 7 * 60 },
+    { kind: 'concept', time: '20:00', minute: 20 * 60 },
+  ];
+}
+
+function getDueKinds() {
+  const minutes = getJstMinutes();
+  const graceMinutes = getDraftGraceMinutes();
+  return getSchedule()
+    .filter(item => {
+      const lateByMinutes = minutes - item.minute;
+      return lateByMinutes >= 0 && lateByMinutes <= graceMinutes;
+    })
+    .map(item => item.kind);
+}
+
 function getKinds(args) {
+  if (args.due || args.kind === 'auto') {
+    const due = getDueKinds();
+    if (args.kind === 'oracle') return due.includes('oracle') ? ['oracle'] : [];
+    if (args.kind === 'concept') return due.includes('concept') ? ['concept'] : [];
+    return due;
+  }
   if (args.kind === 'oracle') return ['oracle'];
   if (args.kind === 'concept') return ['concept'];
-  if (args.due || args.kind === 'auto') {
-    const minutes = getJstMinutes();
-    if (minutes >= 20 * 60) return ['concept'];
-    if (minutes >= 7 * 60) return ['oracle'];
-    return [];
-  }
   return ['oracle', 'concept'];
 }
 
@@ -116,7 +150,7 @@ function runDailyDraft(dateKey) {
     env: {
       ...process.env,
       SOCIAL_STATELESS_MODE: 'true',
-      SOCIAL_RELEASE_MODE: process.env.SOCIAL_RELEASE_MODE || 'prelaunch',
+      SOCIAL_RELEASE_MODE: process.env.SOCIAL_RELEASE_MODE || 'auto',
       SOCIAL_PLATFORMS: 'threads,x',
     },
     encoding: 'utf8',
@@ -231,7 +265,10 @@ async function main() {
     console.log(JSON.stringify({
       status: 'no_due_x_drafts',
       date: getJstDateString(),
-      reason: 'No X lane is due before 07:00 JST.',
+      nowMinute: getJstMinutes(),
+      graceMinutes: getDraftGraceMinutes(),
+      schedule: getSchedule().map(item => ({ kind: item.kind, time: item.time })),
+      reason: 'No X draft lane is inside its JST due window.',
     }, null, 2));
     return;
   }
@@ -258,6 +295,8 @@ async function main() {
   console.log(JSON.stringify({
     status: 'x_drafts_written',
     outputDir: rel(outDir),
+    nowMinute: getJstMinutes(),
+    graceMinutes: getDraftGraceMinutes(),
     entries: written,
   }, null, 2));
 }

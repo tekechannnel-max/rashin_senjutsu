@@ -36,7 +36,7 @@ SNSでは有料を強く売らない。SNSの役割は、毎日触れる無料�
 - Optional: X `https://x.com/Teke_Sensai`
 - 公開URL: `https://rashin-senjutsu.onrender.com/uranai-v5.html`
 
-XはAPIキーを使わないため、投稿ボタン押下や下書き保存をブラウザ自動操作で行わない。Codex/GitHub Actionsが行うのは、X用投稿文、画像、alt text、投稿時刻、フェーズのドラフト生成と監査まで。投稿は人間がX画面で確認して行う。
+XはAPIキーを使わないため、投稿ボタン押下や下書き保存をブラウザ自動操作で行わない。Codex/GitHub Actionsが行うのは、X用投稿文、画像、alt text、投稿時刻、フェーズのドラフト生成と監査まで。投稿は人間がX画面で確認して行う。Xを完全自動投稿に変える場合は、公式X APIの認証情報と有料クレジットが必要になるため、実行前に別途確認する。
 
 ハッシュタグは、Threadsでは `#羅針占術` だけにする。Xでは検索流入も見るため、既定は `#羅針占術 #AI占い` の2つまでにする。3つ以上はノイズ化しやすいので避ける。
 
@@ -325,9 +325,10 @@ SOCIAL_ORACLE_TIME=07:00
 SOCIAL_CONCEPT_TIME=20:00
 SOCIAL_UTM_CAMPAIGN=202605_prerelease
 SOCIAL_PAID_CTA_MODE=soft
-SOCIAL_RELEASE_MODE=prelaunch
 SOCIAL_BOOTH_ENABLED=false
 ```
+
+通常運用では `SOCIAL_RELEASE_MODE` を固定しない。投稿フェーズはJST日付から自動判定する。明示的な一時上書きが必要な場合だけ設定する。
 
 `SOCIAL_PAID_CTA_MODE`:
 
@@ -383,11 +384,13 @@ node scripts/social/run-scheduled-posts.js --dry-run
 npm run social:threads:post
 ```
 
-期限到来分だけ投稿:
+期限到来分だけ投稿する手動診断:
 
 ```powershell
 npm run social:run-due
 ```
+
+このコマンドは自動運用の本命ではない。自動運用はGitHub Actions scheduleで実行する。
 
 ## KPI
 
