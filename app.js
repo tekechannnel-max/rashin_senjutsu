@@ -1559,6 +1559,90 @@ const PAID_MODEL_AB_TEST={
   openaiWeight:50,
 };
 const PAID_MODEL_AB_TEST_TASKS=new Set(['paid','dossier','followup']);
+const COMING_SOON_RELEASE_AT=Number(window.RASHIN_COMING_SOON_RELEASE_AT)||Date.UTC(2026,4,15,15,0,0);
+const COMING_SOON_LOCK_EVENTS=['click','submit','input','beforeinput','change','keydown','pointerdown','touchstart'];
+let COMING_SOON_UNLOCK_TIMER=null;
+
+function isComingSoonLocked(now=Date.now()){
+  return Number.isFinite(COMING_SOON_RELEASE_AT)&&now<COMING_SOON_RELEASE_AT;
+}
+
+function getComingSoonOverlay(){
+  return document.getElementById('coming-soon-lock');
+}
+
+function setComingSoonDocumentState(locked){
+  document.documentElement.classList.toggle('coming-soon-prerelease',locked);
+  document.documentElement.classList.toggle('coming-soon-released',!locked);
+  document.body?.classList.toggle('coming-soon-locked',locked);
+}
+
+function setComingSoonPageInert(locked){
+  if(!document.body) return;
+  [...document.body.children].forEach(el=>{
+    if(el.id==='coming-soon-lock'||el.tagName==='SCRIPT') return;
+    if(locked){
+      if(!el.hasAttribute('data-coming-soon-prev-inert')){
+        el.setAttribute('data-coming-soon-prev-inert',el.hasAttribute('inert')?'1':'0');
+      }
+      if(!el.hasAttribute('data-coming-soon-prev-aria-hidden')){
+        el.setAttribute('data-coming-soon-prev-aria-hidden',el.getAttribute('aria-hidden')??'');
+      }
+      el.setAttribute('inert','');
+      el.setAttribute('aria-hidden','true');
+      return;
+    }
+    const prevInert=el.getAttribute('data-coming-soon-prev-inert');
+    if(prevInert!==null){
+      if(prevInert==='1') el.setAttribute('inert','');
+      else el.removeAttribute('inert');
+      el.removeAttribute('data-coming-soon-prev-inert');
+    }
+    const prevAria=el.getAttribute('data-coming-soon-prev-aria-hidden');
+    if(prevAria!==null){
+      if(prevAria==='') el.removeAttribute('aria-hidden');
+      else el.setAttribute('aria-hidden',prevAria);
+      el.removeAttribute('data-coming-soon-prev-aria-hidden');
+    }
+  });
+}
+
+function updateComingSoonLock(){
+  const locked=isComingSoonLocked();
+  setComingSoonDocumentState(locked);
+  const overlay=getComingSoonOverlay();
+  if(overlay){
+    overlay.hidden=!locked;
+    overlay.setAttribute('aria-hidden',locked?'false':'true');
+    if(locked) overlay.removeAttribute('inert');
+    else overlay.setAttribute('inert','');
+  }
+  setComingSoonPageInert(locked);
+  if(COMING_SOON_UNLOCK_TIMER) window.clearTimeout(COMING_SOON_UNLOCK_TIMER);
+  COMING_SOON_UNLOCK_TIMER=null;
+  if(locked){
+    const delay=Math.max(0,COMING_SOON_RELEASE_AT-Date.now());
+    COMING_SOON_UNLOCK_TIMER=window.setTimeout(updateComingSoonLock,Math.min(delay,60000));
+  }
+  return locked;
+}
+
+function preventComingSoonInteraction(event){
+  if(!isComingSoonLocked()) return;
+  const overlay=getComingSoonOverlay();
+  if(overlay&&overlay.contains(event.target)) return;
+  event.preventDefault();
+  event.stopPropagation();
+  if(typeof event.stopImmediatePropagation==='function') event.stopImmediatePropagation();
+  updateComingSoonLock();
+}
+
+function installComingSoonLock(){
+  updateComingSoonLock();
+  COMING_SOON_LOCK_EVENTS.forEach(type=>{
+    document.addEventListener(type,preventComingSoonInteraction,true);
+  });
+}
 
 // ▼ 開発確認用の直接接続設定。公開運用ではサーバー側の安全な設定を使うこと。
 const OPERATOR_API_KEY='';
@@ -3548,7 +3632,9 @@ async function shareDailyOracle(channel='x'){
 document.addEventListener('DOMContentLoaded',()=>{
   document.addEventListener('keydown',event=>{
     if(event.key==='Escape'&&document.getElementById('daily-oracle-stage')) closeDailyOracleStage();
+    if(event.key==='Escape'&&isDossierViewerOpen()) closeDossierViewer();
   });
+  safeRun('installComingSoonLock',()=>installComingSoonLock());
   safeRun('installGlobalClientLogging',()=>installGlobalClientLogging());
   safeRun('installLiveCardMotionStyles',()=>installLiveCardMotionStyles());
   safeRun('installRashinBonusStyles',()=>installRashinBonusStyles());
@@ -3572,6 +3658,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 document.addEventListener('click',event=>{
+  if(isComingSoonLocked()) return;
   const target=event.target&&typeof event.target.closest==='function'
     ? event.target
     : event.target?.parentElement||null;
@@ -6448,6 +6535,7 @@ function repairStaticCopy(){
   setText('#rs-integration .rs-copy','迷ったときにここだけ読み返せば、優先順位と次の一歩がわかる形にまとめます。');
   setText('#r-aiload .ai-load-title','結論を整えています');
   setText('#r-aiload .ai-load-detail','ここまでの読みを一本にまとめ、今どう動くかまで落とし込んでいます。');
+  setText('#dossier-open-btn','保存版の鑑定書を見る');
   setText('#dossier-save-btn','PDF保存');
   setText('#dossier-copy-inline-btn','鑑定書コピー');
   const shareBtn=document.getElementById('share-x-btn');
@@ -8696,10 +8784,7 @@ function initializeResultLoadingState(){
   if(progressCard) progressCard.style.display='block';
   setResultContentVisibility(false);
   setResultShareButtonsVisible(false);
-  const dossierSaveBtn=document.getElementById('dossier-save-btn');
-  if(dossierSaveBtn) dossierSaveBtn.style.display='none';
-  const dossierCopyBtn=document.getElementById('dossier-copy-inline-btn');
-  if(dossierCopyBtn) dossierCopyBtn.style.display='none';
+  setDossierActionButtonsVisible(false);
   setReadingBlockLoading('r-len-block','いま起きていることを整理しています','迷いを増やさないように、今見るべきことだけを言葉にしています。');
   setReadingBlockLoading('r-orc-block','気持ちの流れを整理しています','これまでの流れと、今から整えることをつなげてまとめています。');
   setIntegrationLoading('結論を整えています','ここまでの読みを一本にまとめ、今どう動くかまで落とし込んでいます。');
@@ -8758,10 +8843,7 @@ function renderStoredResult(){
   }
   renderPremiumDossier();
   setResultShareButtonsVisible(true);
-  const dossierSaveBtn=document.getElementById('dossier-save-btn');
-  if(dossierSaveBtn) dossierSaveBtn.style.display=PLAN==='paid'?'inline-flex':'none';
-  const dossierCopyBtn=document.getElementById('dossier-copy-inline-btn');
-  if(dossierCopyBtn) dossierCopyBtn.style.display=PLAN==='paid'?'inline-flex':'none';
+  syncDossierActionButtons();
   document.getElementById('progress').style.width='100%';
   renderMemberFollowupSection();
   renderReturnRitual();
@@ -9495,7 +9577,7 @@ function renderPremiumDossier(loading=false){
   if(!section||!titleEl||!subtitleEl||!loadingEl||!proofEl||!renderedEl||!printBtn||!copyBtn) return;
 
   const shouldPrepare=PLAN==='paid'||!!LAST_OUTPUTS.dossier;
-  section.style.display='none';
+  section.style.display=shouldPrepare?'':'none';
   if(!shouldPrepare) return;
 
   if(loading){
@@ -9520,6 +9602,69 @@ function renderPremiumDossier(loading=false){
   renderedEl.innerHTML=renderDossierCards(safeData);
   printBtn.style.display='inline-flex';
   copyBtn.style.display='inline-flex';
+  if(isDossierViewerOpen()) renderDossierViewerContent();
+}
+
+function shouldShowDossierActions(){
+  return PLAN==='paid'||!!LAST_OUTPUTS.dossier;
+}
+
+function setDossierActionButtonsVisible(visible){
+  const display=visible?'inline-flex':'none';
+  ['dossier-open-btn','dossier-save-btn','dossier-copy-inline-btn'].forEach(id=>{
+    const btn=document.getElementById(id);
+    if(btn) btn.style.display=display;
+  });
+}
+
+function syncDossierActionButtons(){
+  setDossierActionButtonsVisible(shouldShowDossierActions());
+}
+
+function isDossierViewerOpen(){
+  const viewer=document.getElementById('dossier-viewer');
+  return !!(viewer&&!viewer.hidden);
+}
+
+function renderDossierViewerContent(){
+  const source=document.querySelector('#rs-dossier .dossier-shell');
+  const target=document.getElementById('dossier-viewer-content');
+  if(!source||!target) return false;
+  const clone=source.cloneNode(true);
+  clone.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));
+  target.innerHTML='';
+  target.appendChild(clone);
+  return true;
+}
+
+async function openDossierViewer(){
+  const ready=await ensureDossierReady();
+  if(!ready){
+    showToast('鑑定書の準備に失敗しました');
+    return;
+  }
+  renderPremiumDossier(false);
+  if(!renderDossierViewerContent()){
+    showToast('鑑定書を開けませんでした');
+    return;
+  }
+  const viewer=document.getElementById('dossier-viewer');
+  if(!viewer) return;
+  viewer.hidden=false;
+  viewer.setAttribute('aria-hidden','false');
+  document.body.classList.add('dossier-viewer-open');
+  const scroll=document.getElementById('dossier-viewer-scroll');
+  if(scroll) scroll.scrollTop=0;
+  const closeBtn=document.getElementById('dossier-viewer-close-btn');
+  if(closeBtn) closeBtn.focus({preventScroll:true});
+}
+
+function closeDossierViewer(){
+  const viewer=document.getElementById('dossier-viewer');
+  if(!viewer) return;
+  viewer.hidden=true;
+  viewer.setAttribute('aria-hidden','true');
+  document.body.classList.remove('dossier-viewer-open');
 }
 
 async function ensureDossierReady(){
@@ -9680,7 +9825,7 @@ function installLiveCardMotionStyles(){
     }
     .result-card-placeholder.len-placeholder,
     .result-card-placeholder.orc-placeholder{
-      background-size:100% 100%, contain !important;
+      background-size:100% 100%, 100% 100% !important;
       background-repeat:no-repeat !important;
       background-position:center !important;
       background-color:#080512 !important;
@@ -9894,6 +10039,11 @@ function armResultCardMotion(card,index,options={}){
 // NAVIGATION
 // ══════════════════════════════════════════════════
 function showScreen(id,progress){
+  if(id!=='s-top'&&isComingSoonLocked()){
+    id='s-top';
+    progress=0;
+    updateComingSoonLock();
+  }
   stopMotionAudioForScreen(id);
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -9909,12 +10059,14 @@ function showScreen(id,progress){
 }
 
 async function startFlow(plan){
+  if(updateComingSoonLock()) return;
   const normalized=plan===SIMPLE_READING_PLAN?SIMPLE_READING_PLAN:(plan==='paid'?'paid':'free');
   if(normalized==='paid'&&!(await ensurePaidAccess('start-paid'))) return;
   startFlowUnlocked(normalized);
 }
 
 function startFlowUnlocked(plan){
+  if(updateComingSoonLock()) return;
   if(plan==='paid'&&!isMemberActive()&&!ACTIVE_PAID_READING_TICKET?.id){
     openPaidEntryGuide();
     return;
@@ -10533,10 +10685,7 @@ function renderResult(){
     updateAnimalReveal();
     renderFoundationMiniSummary();
     setResultShareButtonsVisible(true);
-    const saveBtn=document.getElementById('dossier-save-btn');
-    if(saveBtn) saveBtn.style.display='none';
-    const copyBtn=document.getElementById('dossier-copy-inline-btn');
-    if(copyBtn) copyBtn.style.display='none';
+    setDossierActionButtonsVisible(false);
     document.getElementById('progress').style.width='100%';
     renderMemberFollowupSection();
     updateResultActionState();
@@ -10560,6 +10709,7 @@ function renderResult(){
     // シェアボタンも表示
     setTimeout(()=>{
       setResultShareButtonsVisible(true);
+      setDossierActionButtonsVisible(false);
     },400);
     renderPremiumDossier(false);
     renderMemberFollowupSection();
@@ -11407,10 +11557,7 @@ async function completeResultGenerationUI(){
   playResultCompleteSound();
   setTimeout(()=>{
     setResultShareButtonsVisible(true);
-    const saveBtn=document.getElementById('dossier-save-btn');
-    if(saveBtn) saveBtn.style.display=PLAN==='paid'?'inline-flex':'none';
-    const copyBtn=document.getElementById('dossier-copy-inline-btn');
-    if(copyBtn) copyBtn.style.display=PLAN==='paid'?'inline-flex':'none';
+    syncDossierActionButtons();
   },800);
 }
 
@@ -11419,10 +11566,7 @@ function completeFailedResultGenerationUI(){
   const progressCard=document.getElementById('result-progress-card');
   if(progressCard) progressCard.style.display='none';
   setResultShareButtonsVisible(false);
-  const saveBtn=document.getElementById('dossier-save-btn');
-  if(saveBtn) saveBtn.style.display='none';
-  const copyBtn=document.getElementById('dossier-copy-inline-btn');
-  if(copyBtn) copyBtn.style.display='none';
+  setDossierActionButtonsVisible(false);
   const progress=document.getElementById('progress');
   if(progress) progress.style.width='100%';
 }
@@ -12098,10 +12242,7 @@ ${buildReadingOutputFormatGuide('integration')}`;
   trackReadingComplete();
   setTimeout(()=>{
     setResultShareButtonsVisible(true);
-    const saveBtn=document.getElementById('dossier-save-btn');
-    if(saveBtn) saveBtn.style.display=PLAN==='paid'?'inline-flex':'none';
-    const copyBtn=document.getElementById('dossier-copy-inline-btn');
-    if(copyBtn) copyBtn.style.display=PLAN==='paid'?'inline-flex':'none';
+    syncDossierActionButtons();
   },800);
 }
 
@@ -13701,6 +13842,8 @@ if(typeof window!=='undefined'){
   window.runFlowAnalysis=runFlowAnalysis;
   window.openFlowAnalysisModal=openFlowAnalysisModal;
   window.closeFlowAnalysisModal=closeFlowAnalysisModal;
+  window.openDossierViewer=openDossierViewer;
+  window.closeDossierViewer=closeDossierViewer;
   window.openCardLightbox=openCardLightbox;
   window.closeCardLightbox=closeCardLightbox;
   window.openCardLightboxFromThumb=openCardLightboxFromThumb;

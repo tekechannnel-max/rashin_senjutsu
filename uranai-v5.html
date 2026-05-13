@@ -34,6 +34,10 @@ if(window.GA_TRACKING_ID){
   window.gtag('config',window.GA_TRACKING_ID,{send_page_view:false});
 }
 </script>
+<script>
+window.RASHIN_COMING_SOON_RELEASE_AT=Date.UTC(2026,4,15,15,0,0);
+document.documentElement.classList.add(Date.now()>=window.RASHIN_COMING_SOON_RELEASE_AT?'coming-soon-released':'coming-soon-prerelease');
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700&family=Cinzel+Decorative:wght@400;700&family=Noto+Sans+JP:wght@300;400&display=swap" rel="stylesheet">
 
 <style>
@@ -90,6 +94,49 @@ body{
 
   overflow-x:hidden;
 
+}
+
+body.coming-soon-locked{
+  overflow:hidden;
+}
+
+.coming-soon-lock{
+  position:fixed;inset:0;z-index:10050;display:grid;place-items:center;
+  padding:24px;background:
+    radial-gradient(circle at 50% 30%,rgba(228,184,74,.18),transparent 34%),
+    linear-gradient(180deg,rgba(4,3,10,.94),rgba(12,8,24,.98));
+  pointer-events:auto;
+}
+
+.coming-soon-lock[hidden],
+.coming-soon-released .coming-soon-lock{
+  display:none!important;
+}
+
+.coming-soon-lock-card{
+  width:min(520px,calc(100vw - 40px));border:1px solid rgba(228,184,74,.34);
+  border-radius:8px;padding:34px 28px 32px;text-align:center;background:rgba(8,6,18,.88);
+  box-shadow:0 28px 80px rgba(0,0,0,.54),inset 0 0 42px rgba(228,184,74,.08);
+}
+
+.coming-soon-kicker{
+  font-family:'Cinzel Decorative',serif;font-size:13px;letter-spacing:.32em;color:var(--gold-l);
+  margin-bottom:16px;
+}
+
+.coming-soon-title{
+  font-family:'Shippori Mincho',serif;font-size:clamp(24px,6vw,34px);line-height:1.35;
+  color:var(--cream);margin-bottom:12px;
+}
+
+.coming-soon-copy{
+  font-size:14px;line-height:1.9;color:rgba(240,234,216,.82);letter-spacing:.06em;overflow-wrap:anywhere;
+}
+
+@media(max-width:520px){
+  .coming-soon-lock{padding:18px;}
+  .coming-soon-lock-card{width:100%;padding:30px 22px;}
+  .coming-soon-copy{font-size:13px;letter-spacing:.02em;}
 }
 
 
@@ -2577,7 +2624,7 @@ body{
 .result-card-placeholder.len-placeholder{background-image:linear-gradient(180deg,rgba(4,3,10,.1),rgba(4,3,10,.42)),url('images/ui/lenormand-card-back.jpg?v=20260428-len-frame');}
 .result-card-placeholder.orc-placeholder{
   background-image:linear-gradient(180deg,rgba(4,3,10,.1),rgba(4,3,10,.42)),url('images/ui/oracle-card-back.jpg');
-  background-size:100% 100%,contain;
+  background-size:100% 100%,100% 100%;
   background-repeat:no-repeat;
   background-position:center;
   background-color:#080512;
@@ -4333,6 +4380,94 @@ body{
 
 
 
+body.dossier-viewer-open{
+  overflow:hidden;
+}
+
+.dossier-viewer[hidden]{
+  display:none!important;
+}
+
+.dossier-viewer{
+  position:fixed;inset:0;z-index:10020;
+  display:grid;place-items:center;
+  padding:clamp(12px,3vw,30px);
+  background:
+    radial-gradient(circle at 50% 10%,rgba(201,149,42,.16),transparent 35%),
+    rgba(3,3,10,.86);
+}
+
+.dossier-viewer-panel{
+  width:min(1120px,100%);
+  height:min(92vh,980px);
+  display:grid;grid-template-rows:auto minmax(0,1fr);
+  border:1px solid rgba(228,184,74,.34);
+  background:linear-gradient(180deg,rgba(10,10,20,.98),rgba(5,6,14,.98));
+  box-shadow:0 30px 90px rgba(0,0,0,.72),inset 0 0 44px rgba(201,149,42,.06);
+  overflow:hidden;
+}
+
+.dossier-viewer-toolbar{
+  display:flex;align-items:center;justify-content:space-between;gap:18px;
+  padding:16px 18px;
+  border-bottom:1px solid rgba(201,149,42,.22);
+  background:rgba(0,0,0,.28);
+}
+
+.dossier-viewer-kicker{
+  font-size:10px;letter-spacing:.26em;color:var(--muted);margin-bottom:4px;
+}
+
+.dossier-viewer-title{
+  font-family:'Shippori Mincho',serif;
+  font-size:18px;letter-spacing:.14em;color:var(--gold-l);
+}
+
+.dossier-viewer-actions{
+  display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;
+}
+
+.dossier-viewer-btn{
+  min-height:40px;padding:0 14px;
+  border:1px solid rgba(201,149,42,.22);
+  background:rgba(255,255,255,.035);
+  color:rgba(240,234,216,.88);
+  font-family:'Shippori Mincho',serif;
+  font-size:12px;letter-spacing:.08em;
+  cursor:pointer;transition:all .2s;
+}
+
+.dossier-viewer-btn:hover{
+  border-color:rgba(228,184,74,.55);
+  color:var(--gold-l);
+  background:rgba(201,149,42,.08);
+}
+
+.dossier-viewer-scroll{
+  overflow:auto;
+  padding:clamp(14px,3vw,28px);
+  background:
+    radial-gradient(circle at top left,rgba(201,149,42,.08),transparent 28%),
+    linear-gradient(180deg,rgba(240,234,216,.035),rgba(255,255,255,.012));
+}
+
+.dossier-viewer-content{
+  width:min(980px,100%);
+  margin:0 auto;
+}
+
+.dossier-viewer-content .dossier-shell{
+  background:
+    linear-gradient(180deg,rgba(25,21,30,.94),rgba(9,9,18,.96)),
+    rgba(255,255,255,.02);
+  border-color:rgba(228,184,74,.28);
+  box-shadow:0 24px 70px rgba(0,0,0,.42),inset 0 0 0 1px rgba(255,255,255,.025);
+}
+
+.dossier-viewer-content .dossier-actions{
+  display:none;
+}
+
 @media print{
 
   body.print-dossier *{visibility:hidden !important;}
@@ -5070,6 +5205,20 @@ body{
 
 
 
+.share-x-btn.dossier-open-btn{
+  color:#05040a;
+  border-color:rgba(228,184,74,.72);
+  background:linear-gradient(135deg,var(--gold-d),var(--gold-l),#fff4c6);
+  font-weight:700;
+  box-shadow:0 14px 34px rgba(201,149,42,.22),inset 0 1px 0 rgba(255,255,255,.42);
+}
+
+.share-x-btn.dossier-open-btn:hover{
+  color:#05040a;
+  background:linear-gradient(135deg,#b98720,#f3d46b,#fff8d8);
+  border-color:rgba(255,232,158,.92);
+}
+
 .toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:rgba(12,8,24,.95);border:1px solid rgba(201,149,42,.3);color:var(--cream);padding:10px 24px;border-radius:20px;font-size:12px;letter-spacing:.08em;opacity:0;transition:opacity .28s;pointer-events:none;z-index:9999;white-space:nowrap;}
 
 .toast.on{opacity:1;}
@@ -5284,6 +5433,11 @@ body{
   .dossier-grid{grid-template-columns:1fr;}
   .dossier-title{font-size:22px;}
   .dossier-shell{padding:22px 20px 24px;}
+  .dossier-viewer{padding:0;}
+  .dossier-viewer-panel{height:100vh;border-left:none;border-right:none;}
+  .dossier-viewer-toolbar{align-items:flex-start;flex-direction:column;}
+  .dossier-viewer-actions{width:100%;justify-content:flex-start;}
+  .dossier-viewer-btn{flex:1 1 auto;}
   .fortune-grid{grid-template-columns:1fr;}
   .fortune-track{grid-template-columns:1fr;}
   .fortune-year-grid{grid-template-columns:1fr;}
@@ -5629,6 +5783,14 @@ body{
 <div class="progress-bar" id="progress" style="width:0%"></div>
 
 <div class="toast" id="toast"></div>
+
+<div class="coming-soon-lock" id="coming-soon-lock" role="dialog" aria-modal="true" aria-labelledby="coming-soon-title" data-release-at="2026-05-15T15:00:00.000Z">
+  <div class="coming-soon-lock-card">
+    <div class="coming-soon-kicker">COMING SOON</div>
+    <div class="coming-soon-title" id="coming-soon-title">羅針占術は準備中です</div>
+    <div class="coming-soon-copy">2026年5月16日 0:00（日本時間）<br>に自動で開きます。</div>
+  </div>
+</div>
 
 
 
@@ -6517,6 +6679,7 @@ body{
       <button class="nav-btn" onclick="gotoTop()">最初に戻る</button>
       <button class="nav-btn nav-btn-primary" onclick="gotoTop()">もう一度占う</button>
       <button class="nav-btn" onclick="goToHistory()">過去の占いへ</button>
+      <button class="share-x-btn dossier-open-btn" id="dossier-open-btn" onclick="openDossierViewer()" style="display:none">保存版の鑑定書を見る</button>
       <button class="share-x-btn" id="dossier-save-btn" onclick="printDossier()" style="display:none">PDF保存</button>
       <button class="share-x-btn" id="dossier-copy-inline-btn" onclick="copyDossier()" style="display:none">鑑定書コピー</button>
       <button class="share-x-btn" id="share-x-btn" onclick="shareToX()" style="display:none">
@@ -6535,6 +6698,25 @@ body{
 
   </div>
 
+</div>
+
+<div class="dossier-viewer" id="dossier-viewer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="dossier-viewer-title" hidden onclick="if(event.target===this)closeDossierViewer()">
+  <div class="dossier-viewer-panel" onclick="event.stopPropagation()">
+    <div class="dossier-viewer-toolbar">
+      <div>
+        <div class="dossier-viewer-kicker">SAVED DOSSIER</div>
+        <div class="dossier-viewer-title" id="dossier-viewer-title">保存版の鑑定書</div>
+      </div>
+      <div class="dossier-viewer-actions">
+        <button class="dossier-viewer-btn" type="button" onclick="printDossier()">PDF保存</button>
+        <button class="dossier-viewer-btn" type="button" onclick="copyDossier()">コピー</button>
+        <button class="dossier-viewer-btn" id="dossier-viewer-close-btn" type="button" onclick="closeDossierViewer()">閉じる</button>
+      </div>
+    </div>
+    <div class="dossier-viewer-scroll" id="dossier-viewer-scroll">
+      <div class="dossier-viewer-content" id="dossier-viewer-content"></div>
+    </div>
+  </div>
 </div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
