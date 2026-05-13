@@ -289,16 +289,63 @@ const RASHIN_BONUS_FREE_READING_REQUIRED_STONES = 30;
 const RASHIN_BONUS_DISCOUNTS = [
   { requiredStones: 10, discountAmount: 200 },
 ];
-const RASHIN_FREE_PAID_CODE_HASHES = new Set(
-  String(process.env.RASHIN_FREE_PAID_CODES || process.env.RASHIN_PROMO_PAID_CODES || '')
+const RASHIN_FREE_PAID_CODE_HASH_FILE = normalizeEnvValue(process.env.RASHIN_FREE_PAID_CODE_HASH_FILE || 'config/rashin-free-paid-code-hashes.json');
+const RASHIN_FREE_PAID_CODE_HASHES = loadRashinFreePaidCodeHashes();
+
+function normalizeRashinPaidCodeHash(value) {
+  const hash = String(value || '').trim().toLowerCase();
+  return /^[a-f0-9]{64}$/.test(hash) ? hash : '';
+}
+
+function readRashinFreePaidCodeHashFilePath() {
+  const configured = normalizeEnvValue(RASHIN_FREE_PAID_CODE_HASH_FILE);
+  if (!configured || isPlaceholderEnvValue(configured)) return '';
+  return path.isAbsolute(configured) ? configured : path.join(ROOT_DIR, configured);
+}
+
+function readRashinFreePaidCodeHashFile() {
+  const filePath = readRashinFreePaidCodeHashFilePath();
+  if (!filePath || !fs.existsSync(filePath)) return [];
+  let parsed;
+  try {
+    parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch (error) {
+    throw new Error(`RASHIN_FREE_PAID_CODE_HASH_FILE could not be parsed: ${error.message}`);
+  }
+  const entries = Array.isArray(parsed) ? parsed : parsed?.hashes;
+  if (!Array.isArray(entries)) {
+    throw new Error('RASHIN_FREE_PAID_CODE_HASH_FILE must contain an array or a hashes array.');
+  }
+  const hashes = [];
+  const invalid = [];
+  entries.forEach((entry, index) => {
+    const hash = normalizeRashinPaidCodeHash(entry);
+    if (hash) hashes.push(hash);
+    else invalid.push(index + 1);
+  });
+  if (invalid.length) {
+    throw new Error(`RASHIN_FREE_PAID_CODE_HASH_FILE has invalid hash entries at positions: ${invalid.slice(0, 10).join(', ')}`);
+  }
+  return hashes;
+}
+
+function readRashinFreePaidCodeEnvHashes() {
+  return String(process.env.RASHIN_FREE_PAID_CODES || process.env.RASHIN_PROMO_PAID_CODES || '')
     .split(/[\s,]+/)
     .map(value => value.trim())
     .filter(value => value && !isPlaceholderEnvValue(value))
     .map(value => normalizeRashinPaidCode(value))
     .filter(value => /^[A-Z0-9]{12}$/.test(value))
     .map(value => getRashinPaidCodeHash(value))
-    .filter(Boolean)
-);
+    .filter(Boolean);
+}
+
+function loadRashinFreePaidCodeHashes() {
+  return new Set([
+    ...readRashinFreePaidCodeEnvHashes(),
+    ...readRashinFreePaidCodeHashFile(),
+  ]);
+}
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -1285,6 +1332,21 @@ function getRashinFreeReadingBenefit(stones) {
     available: count >= RASHIN_BONUS_FREE_READING_REQUIRED_STONES,
     remainingStones: Math.max(0, RASHIN_BONUS_FREE_READING_REQUIRED_STONES - count),
   };
+}
+
+function readAmount(value, fallback) {
+  if (value === undefined || value === null || value === '') return fallback;
+  const amount = Number(value);
+  return Number.isFinite(amount) ? amount : fallback;
+}
+
+function readFirstAmount(fallback, ...values) {
+  for (const value of values) {
+    if (value === undefined || value === null || value === '') continue;
+    const amount = Number(value);
+    if (Number.isFinite(amount)) return amount;
+  }
+  return fallback;
 }
 
 function buildRashinBonusView(userRecord, today = getJstDateStamp()) {
@@ -3070,10 +3132,10 @@ async function createRashinPaidCodeRecordForOrder({ order, userRecord, providerP
         recipientEmailMasked: maskEmail(email),
         deliveryChannel,
         deliveryStatus: 'issued_to_app',
-        baseAmount: Number(order.baseAmount || DEEP_READING_NORMAL_AMOUNT),
-        originalAmount: Number(order.originalAmount || DEEP_READING_NORMAL_AMOUNT),
-        discountAmount: Number(order.discountAmount || 0),
-        finalAmount: Number(order.finalAmount || DEEP_READING_NORMAL_AMOUNT),
+        baseAmount: readAmount(order.baseAmount, DEEP_READING_NORMAL_AMOUNT),
+        originalAmount: readAmount(order.originalAmount, DEEP_READING_NORMAL_AMOUNT),
+        discountAmount: readAmount(order.discountAmount, 0),
+        finalAmount: readAmount(order.finalAmount, DEEP_READING_NORMAL_AMOUNT),
         discountStonesUsed: Number(order.discountStonesUsed || 0),
         discountType: order.discountType || '',
         currency: order.currency || 'jpy',
@@ -3163,10 +3225,10 @@ async function createPaidTicketFromRashinPaidCode({ codeRecord, owner, sourceRea
     paymentProvider: codeRecord.paymentProvider || 'rashin_code',
     rashinPaidCodeHash: codeRecord.codeHash,
     codeSuffix: codeRecord.codeSuffix || '',
-    baseAmount: Number(codeRecord.originalAmount || codeRecord.baseAmount || DEEP_READING_NORMAL_AMOUNT),
-    originalAmount: Number(codeRecord.originalAmount || codeRecord.baseAmount || DEEP_READING_NORMAL_AMOUNT),
-    discountAmount: Number(codeRecord.discountAmount || 0),
-    finalAmount: Number(codeRecord.finalAmount || DEEP_READING_NORMAL_AMOUNT),
+    baseAmount: readFirstAmount(DEEP_READING_NORMAL_AMOUNT, codeRecord.originalAmount, codeRecord.baseAmount),
+    originalAmount: readFirstAmount(DEEP_READING_NORMAL_AMOUNT, codeRecord.originalAmount, codeRecord.baseAmount),
+    discountAmount: readAmount(codeRecord.discountAmount, 0),
+    finalAmount: readAmount(codeRecord.finalAmount, DEEP_READING_NORMAL_AMOUNT),
     discountStonesUsed: Number(codeRecord.discountStonesUsed || 0),
     discountType: codeRecord.discountType || '',
     currency: 'jpy',
@@ -3327,10 +3389,10 @@ async function issueRashinPaidCodeForOrder(order, issueMeta = {}) {
     recipientEmailMasked: consumedOrder.recipientEmailMasked || '',
     deliveryChannel: consumedOrder.deliveryChannel || 'google_email',
     deliveryStatus: issueMeta.deliveryStatus || 'pending_delivery',
-    baseAmount: Number(consumedOrder.originalAmount || consumedOrder.baseAmount || DEEP_READING_NORMAL_AMOUNT),
-    originalAmount: Number(consumedOrder.originalAmount || consumedOrder.baseAmount || DEEP_READING_NORMAL_AMOUNT),
-    discountAmount: Number(consumedOrder.discountAmount || 0),
-    finalAmount: Number(consumedOrder.finalAmount || DEEP_READING_NORMAL_AMOUNT),
+    baseAmount: readFirstAmount(DEEP_READING_NORMAL_AMOUNT, consumedOrder.originalAmount, consumedOrder.baseAmount),
+    originalAmount: readFirstAmount(DEEP_READING_NORMAL_AMOUNT, consumedOrder.originalAmount, consumedOrder.baseAmount),
+    discountAmount: readAmount(consumedOrder.discountAmount, 0),
+    finalAmount: readAmount(consumedOrder.finalAmount, DEEP_READING_NORMAL_AMOUNT),
     discountStonesUsed: Number(consumedOrder.discountStonesUsed || 0),
     discountType: consumedOrder.discountType || '',
     currency: 'jpy',
@@ -3486,10 +3548,10 @@ async function fulfillDeepReadingCheckoutSessionLocked(session, ids) {
     sourceReadingId,
     stripeCheckoutSessionId: sessionId,
     stripePaymentIntentId: paymentIntentId,
-    baseAmount: Number(consumedOrder.originalAmount || consumedOrder.baseAmount || DEEP_READING_NORMAL_AMOUNT),
-    originalAmount: Number(consumedOrder.originalAmount || consumedOrder.baseAmount || DEEP_READING_NORMAL_AMOUNT),
-    discountAmount: Number(consumedOrder.discountAmount || 0),
-    finalAmount: Number(consumedOrder.finalAmount || DEEP_READING_NORMAL_AMOUNT),
+    baseAmount: readFirstAmount(DEEP_READING_NORMAL_AMOUNT, consumedOrder.originalAmount, consumedOrder.baseAmount),
+    originalAmount: readFirstAmount(DEEP_READING_NORMAL_AMOUNT, consumedOrder.originalAmount, consumedOrder.baseAmount),
+    discountAmount: readAmount(consumedOrder.discountAmount, 0),
+    finalAmount: readAmount(consumedOrder.finalAmount, DEEP_READING_NORMAL_AMOUNT),
     discountStonesUsed: Number(consumedOrder.discountStonesUsed || 0),
     discountType: consumedOrder.discountType || '',
     currency: 'jpy',
@@ -5963,10 +6025,10 @@ async function handleStripeCheckoutComplete(req, res) {
         ticketId: ticket?.id || '',
         ticketStatus: ticket?.status || '',
         sourceReadingId: ticket?.sourceReadingId || '',
-        normalAmount: Number(ticket?.originalAmount || ticket?.baseAmount || DEEP_READING_NORMAL_AMOUNT),
-        discountAmount: Number(ticket?.discountAmount || 0),
-        finalAmount: Number(ticket?.finalAmount || DEEP_READING_NORMAL_AMOUNT),
-        discountStonesUsed: Number(ticket?.discountStonesUsed || 0),
+        normalAmount: readFirstAmount(DEEP_READING_NORMAL_AMOUNT, ticket?.originalAmount, ticket?.baseAmount),
+        discountAmount: readAmount(ticket?.discountAmount, 0),
+        finalAmount: readAmount(ticket?.finalAmount, DEEP_READING_NORMAL_AMOUNT),
+        discountStonesUsed: readAmount(ticket?.discountStonesUsed, 0),
       });
       return;
     }

@@ -54,7 +54,7 @@ Set these on the Render service and redeploy before testing:
 - `GOOGLE_CLIENT_ID=...apps.googleusercontent.com`
 - `MEMBER_SESSION_SECRET=<strong random secret>`
 - `AUTH_SESSION_SECRET=<strong random secret>`
-- `RASHIN_FREE_PAID_CODES=<comma-separated 12-character one-time codes>`
+- `RASHIN_FREE_PAID_CODE_HASH_FILE=config/rashin-free-paid-code-hashes.json`
 - `DEEP_READING_ONCE_AMOUNT=780`
 - `DEEP_READING_PRERELEASE_AMOUNT=780`
 - `DEEP_READING_RELEASE_AMOUNT=1000`
@@ -111,12 +111,13 @@ Invoke-RestMethod `
 
 ### Manual free Rashin codes
 
-Manual free Rashin codes remain available as a fallback. A code in `RASHIN_FREE_PAID_CODES` unlocks one deep reading once, for the Google account and free reading result used during redemption.
+Manual free Rashin codes remain available as a fallback. The normal manual-code pool is the prepared 100+ code hash list at `config/rashin-free-paid-code-hashes.json`; `RASHIN_FREE_PAID_CODES` is only an emergency override for extra one-off codes.
 
-1. Create a 12-character uppercase alphanumeric code.
-2. Add it to `RASHIN_FREE_PAID_CODES` and redeploy.
-3. Send the code to the intended user by your chosen support channel.
-4. Confirm Render logs show:
+1. Pick an unused 12-character code from the private ledger `data/rashin-free-paid-codes-2026-04-30.csv`.
+2. Send the code to the intended user by your chosen support channel.
+3. Do not edit Render environment variables for codes already covered by the hash pool.
+4. When the private ledger changes, run `npm run rashin:build-code-pool` and deploy the updated hash pool. The command fails if fewer than 100 active codes are available.
+5. Confirm Render logs show:
    - `Runtime: NODE_ENV=production`
    - `devAccess=disabled`
    - `Public origin: configured`
@@ -138,7 +139,7 @@ Use a Google login account dedicated to test payments.
    - Confirm `rashin_stones` decreases by 10 only after successful payment confirmation.
 
 3. Manual free code:
-   - Add a test code to `RASHIN_FREE_PAID_CODES`.
+   - Use a code from the prepared hash pool or add a temporary override to `RASHIN_FREE_PAID_CODES`.
    - Redeem the code from a logged-in Google account on the latest free reading result.
    - Confirm a paid ticket is created with `finalAmount: 0`, `discountAmount: 780`, and `paymentProvider: manual_free_code`.
    - Confirm the code hash record under `data/rashin-paid-codes` moves to `status: redeemed`.
