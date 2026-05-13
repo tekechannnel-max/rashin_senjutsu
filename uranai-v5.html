@@ -34,6 +34,11 @@ if(window.GA_TRACKING_ID){
   window.gtag('config',window.GA_TRACKING_ID,{send_page_view:false});
 }
 </script>
+<script>
+window.RASHIN_COMING_SOON_RELEASE_AT=Date.UTC(2026,4,15,15,0,0);
+window.RASHIN_COMING_SOON_ENABLED=window.RASHIN_COMING_SOON_ENABLED===true||new URLSearchParams(location.search).has('comingSoonPreview');
+document.documentElement.classList.add(window.RASHIN_COMING_SOON_ENABLED&&Date.now()<window.RASHIN_COMING_SOON_RELEASE_AT?'coming-soon-prerelease':'coming-soon-released');
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700&family=Cinzel+Decorative:wght@400;700&family=Noto+Sans+JP:wght@300;400&display=swap" rel="stylesheet">
 
 <style>
@@ -90,6 +95,49 @@ body{
 
   overflow-x:hidden;
 
+}
+
+body.coming-soon-locked{
+  overflow:hidden;
+}
+
+.coming-soon-lock{
+  position:fixed;inset:0;z-index:10050;display:grid;place-items:center;
+  padding:24px;background:
+    radial-gradient(circle at 50% 30%,rgba(228,184,74,.18),transparent 34%),
+    linear-gradient(180deg,rgba(4,3,10,.94),rgba(12,8,24,.98));
+  pointer-events:auto;
+}
+
+.coming-soon-lock[hidden],
+.coming-soon-released .coming-soon-lock{
+  display:none!important;
+}
+
+.coming-soon-lock-card{
+  width:min(520px,calc(100vw - 40px));border:1px solid rgba(228,184,74,.34);
+  border-radius:8px;padding:34px 28px 32px;text-align:center;background:rgba(8,6,18,.88);
+  box-shadow:0 28px 80px rgba(0,0,0,.54),inset 0 0 42px rgba(228,184,74,.08);
+}
+
+.coming-soon-kicker{
+  font-family:'Cinzel Decorative',serif;font-size:13px;letter-spacing:.32em;color:var(--gold-l);
+  margin-bottom:16px;
+}
+
+.coming-soon-title{
+  font-family:'Shippori Mincho',serif;font-size:clamp(24px,6vw,34px);line-height:1.35;
+  color:var(--cream);margin-bottom:12px;
+}
+
+.coming-soon-copy{
+  font-size:14px;line-height:1.9;color:rgba(240,234,216,.82);letter-spacing:.06em;overflow-wrap:anywhere;
+}
+
+@media(max-width:520px){
+  .coming-soon-lock{padding:18px;}
+  .coming-soon-lock-card{width:100%;padding:30px 22px;}
+  .coming-soon-copy{font-size:13px;letter-spacing:.02em;}
 }
 
 .screen{display:none;min-height:100vh;position:relative;}
@@ -2517,7 +2565,7 @@ body{
 
 }
 
-.result-card:hover{transform:translateY(-8px) scale(1.03);box-shadow:0 16px 48px rgba(0,0,0,.6),0 0 20px rgba(201,149,42,.2);}
+.result-card:hover{transform:translateY(-4px);box-shadow:0 16px 48px rgba(0,0,0,.6),0 0 20px rgba(201,149,42,.2);}
 
 .result-card.card-type-len{box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 18px rgba(201,149,42,.28),0 0 40px rgba(201,149,42,.12);border-color:rgba(201,149,42,.5);}
 .result-card.card-type-orc{box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 18px rgba(120,80,220,.32),0 0 40px rgba(80,100,220,.14);border-color:rgba(130,90,220,.42);}
@@ -2540,7 +2588,7 @@ body{
   83% {box-shadow:0 12px 40px rgba(0,0,0,.6),0 0 0 2px rgba(220,80,220,.8),0 0 28px 6px rgba(220,80,220,.4);}
   100%{box-shadow:0 12px 40px rgba(0,0,0,.6),0 0 0 2px rgba(255,80,80,.8),0 0 28px 6px rgba(255,80,80,.4);}
 }
-.result-card:hover{animation:cardRainbow 2.4s linear infinite !important;}
+.result-card:hover{box-shadow:0 16px 48px rgba(0,0,0,.6),0 0 22px rgba(201,149,42,.32),0 0 42px rgba(120,80,220,.18);}
 
 @keyframes cardReveal{
 
@@ -2550,7 +2598,7 @@ body{
 
 }
 
-.result-card-img{width:100%;height:100%;object-fit:contain;background:#080a18;display:block;}
+.result-card-img{width:100%;height:100%;object-fit:cover;background:transparent;display:block;}
 
 .result-card-placeholder{
 
@@ -2640,9 +2688,9 @@ body{
 
 
 
-.result-card-img{width:100%;height:100%;object-fit:contain;background:#080a18;display:block;transition:transform .45s cubic-bezier(.25,.46,.45,.94);}
+.result-card-img{width:100%;height:100%;object-fit:cover;background:transparent;display:block;transition:none;}
 
-.result-card:hover .result-card-img{transform:scale(1.1);}
+.result-card:hover .result-card-img{transform:none;}
 .result-card:hover{cursor:zoom-in;}
 
 .result-card{
@@ -2650,7 +2698,7 @@ body{
   perspective:900px;
   background:transparent;
 }
-.result-card.is-flipped:hover{transform:translateY(-8px) scale(1.03);box-shadow:0 16px 48px rgba(0,0,0,.6),0 0 20px rgba(201,149,42,.2);}
+.result-card.is-flipped:hover{transform:translateY(-4px);box-shadow:0 16px 48px rgba(0,0,0,.6),0 0 20px rgba(201,149,42,.2);}
 .result-card.card-draw-in{
   animation:cardDrawFromDeck .74s cubic-bezier(.16,.8,.22,1) both;
   animation-delay:var(--draw-delay,0ms);
@@ -2690,7 +2738,7 @@ body{
 .result-card-back .rc-num,
 .result-card-back .rc-name,
 .result-card-back .rc-kw{display:none;}
-.result-card.is-flipped:hover .result-card-img{transform:scale(1.1);}
+.result-card.is-flipped:hover .result-card-img{transform:none;}
 .result-card.is-flipped:hover{cursor:zoom-in;}
 
 
@@ -3086,16 +3134,89 @@ body{
 }
 .basis-readmore > summary::-webkit-details-marker{display:none;}
 .basis-readmore > summary::after{
-  content:'+';
+  content:'▼';
   color:rgba(240,234,216,.58);
-  font-size:13px;
+  font-size:10px;
 }
-.basis-readmore[open] > summary::after{content:'-';}
+.basis-readmore[open] > summary::after{content:'▲';}
 .basis-readmore-body{
   margin-top:14px;
   font-size:13px;
   line-height:2.05;
   color:rgba(240,234,216,.78);
+}
+.foundation-embedded-basis{
+  margin-top:14px;
+  margin-bottom:0;
+}
+.foundation-embedded-basis .result-detail-accordion{
+  margin-top:0;
+}
+.reading-evidence{
+  width:min(100%,840px);
+  margin:14px auto 0;
+  border:1px solid rgba(201,149,42,.22);
+  background:rgba(5,8,20,.86);
+  border-radius:3px;
+}
+.reading-evidence > summary{
+  list-style:none;
+  cursor:pointer;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  min-height:42px;
+  padding:10px 14px;
+  color:var(--gold-l);
+  font-size:12px;
+  letter-spacing:.12em;
+}
+.reading-evidence > summary::-webkit-details-marker{display:none;}
+.reading-evidence > summary::after{
+  content:'▼';
+  color:rgba(240,234,216,.58);
+  font-size:10px;
+}
+.reading-evidence[open] > summary::after{content:'▲';}
+.reading-evidence-body{
+  border-top:1px solid rgba(201,149,42,.14);
+  padding:14px;
+}
+.evidence-intro{
+  margin:0 0 12px;
+  color:rgba(240,234,216,.76);
+  font-size:13px;
+  line-height:1.8;
+}
+.evidence-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:10px;
+}
+.evidence-item{
+  border:1px solid rgba(201,149,42,.16);
+  background:rgba(255,255,255,.035);
+  padding:11px 12px;
+  border-radius:3px;
+}
+.evidence-label{
+  color:rgba(201,149,42,.88);
+  font-size:11px;
+  line-height:1.5;
+  letter-spacing:.1em;
+}
+.evidence-name{
+  margin-top:3px;
+  color:rgba(255,250,232,.95);
+  font-size:14px;
+  line-height:1.55;
+}
+.evidence-copy{
+  margin-top:6px;
+  color:rgba(240,234,216,.72);
+  font-size:12px;
+  line-height:1.7;
 }
 .basis-panel #r-reaction-content::-webkit-scrollbar,
 .basis-panel #r-namejudge-content::-webkit-scrollbar,
@@ -3545,12 +3666,15 @@ body{
 
 
 .reading-block{
-  background:rgba(255,255,255,.02);
-  border:1px solid var(--border2);
-  padding:22px 24px;border-radius:1px;
+  width:min(100%,840px);
+  margin-left:auto;
+  margin-right:auto;
+  background:rgba(5,8,20,.88);
+  border:1px solid rgba(201,149,42,.18);
+  padding:24px 26px;border-radius:3px;
   font-family:'Shippori Mincho',serif;
 
-  font-size:14px;line-height:2.1;
+  font-size:16px;line-height:1.85;
 
   color:rgba(240,234,216,.88);
 
@@ -3568,14 +3692,16 @@ body{
 }
 .reading-rich-shell{
   display:grid;
-  gap:14px;
+  gap:16px;
+  width:min(100%,840px);
+  margin:0 auto;
 }
 .reading-rich-hero{
   padding:20px 22px 22px;
-  border:1px solid rgba(201,149,42,.22);
+  border:1px solid rgba(201,149,42,.28);
   background:
-    radial-gradient(circle at top right, rgba(201,149,42,.14), transparent 36%),
-    rgba(8,5,20,.62);
+    linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.26)),
+    rgba(5,8,20,.9);
   backdrop-filter:blur(8px);
   -webkit-backdrop-filter:blur(8px);
   position:relative;
@@ -3619,8 +3745,8 @@ body{
 .reading-rich-card-body p,
 .foundation-card-body p{
   margin:0;
-  font-size:13px;
-  line-height:2;
+  font-size:16px;
+  line-height:1.85;
   color:rgba(240,234,216,.88);
   text-shadow:0 1px 3px rgba(0,0,0,.6);
 }
@@ -3629,21 +3755,24 @@ body{
   grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
   gap:12px;
 }
+.kind-len .reading-rich-grid{
+  grid-template-columns:minmax(0,1fr);
+}
 .reading-rich-card{
   padding:18px 18px 20px;
-  border:1px solid rgba(201,149,42,.15);
-  background:rgba(8,5,20,.58);
+  border:1px solid rgba(201,149,42,.2);
+  background:rgba(5,8,20,.88);
   backdrop-filter:blur(6px);
   -webkit-backdrop-filter:blur(6px);
   border-top:2px solid rgba(201,149,42,.28);
 }
 .reading-rich-card.card-warning{
   border-top-color:rgba(214,120,80,.6);
-  background:rgba(18,8,5,.62);
+  background:rgba(20,10,8,.9);
 }
 .reading-rich-card.card-structure{
   border-top-color:rgba(122,155,201,.5);
-  background:rgba(5,10,18,.62);
+  background:rgba(5,10,18,.9);
 }
 .reading-rich-card-title{
   font-family:'Shippori Mincho',serif;
@@ -3668,7 +3797,7 @@ body{
 .reading-rich-list-item{
   position:relative;
   padding-left:16px;
-  font-size:12px;
+  font-size:15px;
   line-height:1.9;
   color:rgba(240,234,216,.72);
 }
@@ -5733,6 +5862,14 @@ body.dossier-viewer-open{
 
 <div class="toast" id="toast"></div>
 
+<div class="coming-soon-lock" id="coming-soon-lock" role="dialog" aria-modal="true" aria-labelledby="coming-soon-title" data-release-at="2026-05-15T15:00:00.000Z">
+  <div class="coming-soon-lock-card">
+    <div class="coming-soon-kicker">COMING SOON</div>
+    <div class="coming-soon-title" id="coming-soon-title">羅針占術は準備中です</div>
+    <div class="coming-soon-copy">2026年5月16日 0:00（日本時間）<br>に自動で開きます。</div>
+  </div>
+</div>
+
 <!-- 管理者用バッジ（dev 時のみ表示）-->
 
 <div class="dev-badge" id="dev-badge" style="display:none"></div>
@@ -6480,7 +6617,7 @@ body.dossier-viewer-open{
     </div>
 
     <div id="rs-animal-reveal" class="rs-animal-reveal" style="display:none">
-      <div class="rs-animal-reveal-eyebrow">あなたの魂の形は</div>
+      <div class="rs-animal-reveal-eyebrow">あなたの反応タイプは</div>
       <div class="rs-animal-reveal-name" id="rs-animal-reveal-name"></div>
       <div class="rs-animal-reveal-copy" id="rs-animal-reveal-copy"></div>
     </div>
@@ -6513,7 +6650,7 @@ body.dossier-viewer-open{
               <div class="basis-panel-title" id="basis-animal-title">動物タイプ診断から見える傾向</div>
               <div class="basis-panel-copy" id="basis-animal-copy">本音・強み・注意点を整理します。</div>
               <details class="basis-readmore">
-                <summary>詳しく読む</summary>
+                <summary data-closed-label="詳しく読む" data-open-label="閉じる">詳しく読む</summary>
                 <div class="basis-readmore-body" id="r-reaction-content"></div>
               </details>
             </div>
@@ -6522,7 +6659,7 @@ body.dossier-viewer-open{
               <div class="basis-panel-title">名前と生まれが示す性質・運気の流れ</div>
               <div class="basis-panel-copy" id="basis-namebirth-copy">名前と生まれから、力の出し方と流れをまとめます。</div>
               <details class="basis-readmore">
-                <summary>詳しく読む</summary>
+                <summary data-closed-label="詳しく読む" data-open-label="閉じる">詳しく読む</summary>
                 <div class="basis-readmore-body">
                   <div id="r-namejudge-content"></div>
                   <div id="r-meimei-content" style="margin-top:20px"></div>
@@ -6550,6 +6687,10 @@ body.dossier-viewer-open{
         <div class="ai-load"><div class="ai-dots"><span></span><span></span><span></span></div><div class="ai-load-copy"><div class="ai-load-title">いま起きていることを整理しています</div><div class="ai-load-detail">迷いを増やさないように、今見るべきことだけを言葉にしています。</div></div></div>
       </div>
       <!-- 占いモード：カード参照表 -->
+      <details class="reading-evidence" id="r-len-evidence" style="display:none">
+        <summary data-closed-label="根拠を見る" data-open-label="根拠を閉じる">根拠を見る</summary>
+        <div class="reading-evidence-body" id="r-len-evidence-body"></div>
+      </details>
       <div id="r-len-ref" style="display:none"></div>
     </div>
 
@@ -6564,12 +6705,16 @@ body.dossier-viewer-open{
         <div class="ai-load"><div class="ai-dots"><span></span><span></span><span></span></div><div class="ai-load-copy"><div class="ai-load-title">気持ちの整理を進めています</div><div class="ai-load-detail">迷った日に戻れる言葉と、今日からできる一歩へ絞ってまとめています。</div></div></div>
       </div>
       <!-- 占いモード：カード参照表 -->
+      <details class="reading-evidence" id="r-orc-evidence" style="display:none">
+        <summary data-closed-label="根拠を見る" data-open-label="根拠を閉じる">根拠を見る</summary>
+        <div class="reading-evidence-body" id="r-orc-evidence-body"></div>
+      </details>
       <div id="r-orc-ref" style="display:none"></div>
     </div>
 
     <!-- 統合メッセージ -->
     <div class="rs rs-conclusion-accent" id="rs-integration">
-      <div class="rs-eyebrow">最終結論</div>
+      <div class="rs-eyebrow">今回の答え</div>
       <div class="rs-title"><span class="rs-icon">✧</span>いまの答え</div>
       <div class="rs-copy">迷ったときにここだけ読み返せば、優先順位と次の一歩がわかる形にまとめます。</div>
       <div class="integration">
@@ -6593,7 +6738,7 @@ body.dossier-viewer-open{
 
             <button class="dossier-action-btn" id="dossier-print-btn" onclick="printDossier()" style="display:none">印刷 / PDF保存</button>
 
-            <button class="dossier-action-btn" id="dossier-copy-btn" onclick="copyDossier()" style="display:none">要約をコピー</button>
+            <button class="dossier-action-btn" id="dossier-copy-btn" onclick="copyDossier()" style="display:none">全文コピー</button>
 
           </div>
 
@@ -6620,7 +6765,7 @@ body.dossier-viewer-open{
       <button class="nav-btn" onclick="goToHistory()">過去の占いへ</button>
       <button class="share-x-btn dossier-open-btn" id="dossier-open-btn" onclick="openDossierViewer()" style="display:none">保存版の鑑定書を見る</button>
       <button class="share-x-btn" id="dossier-save-btn" onclick="printDossier()" style="display:none">PDF保存</button>
-      <button class="share-x-btn" id="dossier-copy-inline-btn" onclick="copyDossier()" style="display:none">鑑定書コピー</button>
+      <button class="share-x-btn" id="dossier-copy-inline-btn" onclick="copyDossier()" style="display:none">全文コピー</button>
       <button class="share-x-btn" id="share-x-btn" onclick="shareToX()" style="display:none">
         <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
         Xでシェア

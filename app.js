@@ -1559,6 +1559,91 @@ const PAID_MODEL_AB_TEST={
   openaiWeight:50,
 };
 const PAID_MODEL_AB_TEST_TASKS=new Set(['paid','dossier','followup']);
+const COMING_SOON_RELEASE_AT=Number(window.RASHIN_COMING_SOON_RELEASE_AT)||Date.UTC(2026,4,15,15,0,0);
+const COMING_SOON_ENABLED=window.RASHIN_COMING_SOON_ENABLED===true;
+const COMING_SOON_LOCK_EVENTS=['click','submit','input','beforeinput','change','keydown','pointerdown','touchstart'];
+let COMING_SOON_UNLOCK_TIMER=null;
+
+function isComingSoonLocked(now=Date.now()){
+  return COMING_SOON_ENABLED&&Number.isFinite(COMING_SOON_RELEASE_AT)&&now<COMING_SOON_RELEASE_AT;
+}
+
+function getComingSoonOverlay(){
+  return document.getElementById('coming-soon-lock');
+}
+
+function setComingSoonDocumentState(locked){
+  document.documentElement.classList.toggle('coming-soon-prerelease',locked);
+  document.documentElement.classList.toggle('coming-soon-released',!locked);
+  document.body?.classList.toggle('coming-soon-locked',locked);
+}
+
+function setComingSoonPageInert(locked){
+  if(!document.body) return;
+  [...document.body.children].forEach(el=>{
+    if(el.id==='coming-soon-lock'||el.tagName==='SCRIPT') return;
+    if(locked){
+      if(!el.hasAttribute('data-coming-soon-prev-inert')){
+        el.setAttribute('data-coming-soon-prev-inert',el.hasAttribute('inert')?'1':'0');
+      }
+      if(!el.hasAttribute('data-coming-soon-prev-aria-hidden')){
+        el.setAttribute('data-coming-soon-prev-aria-hidden',el.getAttribute('aria-hidden')??'');
+      }
+      el.setAttribute('inert','');
+      el.setAttribute('aria-hidden','true');
+      return;
+    }
+    const prevInert=el.getAttribute('data-coming-soon-prev-inert');
+    if(prevInert!==null){
+      if(prevInert==='1') el.setAttribute('inert','');
+      else el.removeAttribute('inert');
+      el.removeAttribute('data-coming-soon-prev-inert');
+    }
+    const prevAria=el.getAttribute('data-coming-soon-prev-aria-hidden');
+    if(prevAria!==null){
+      if(prevAria==='') el.removeAttribute('aria-hidden');
+      else el.setAttribute('aria-hidden',prevAria);
+      el.removeAttribute('data-coming-soon-prev-aria-hidden');
+    }
+  });
+}
+
+function updateComingSoonLock(){
+  const locked=isComingSoonLocked();
+  setComingSoonDocumentState(locked);
+  const overlay=getComingSoonOverlay();
+  if(overlay){
+    overlay.hidden=!locked;
+    overlay.setAttribute('aria-hidden',locked?'false':'true');
+    if(locked) overlay.removeAttribute('inert');
+    else overlay.setAttribute('inert','');
+  }
+  setComingSoonPageInert(locked);
+  if(COMING_SOON_UNLOCK_TIMER) window.clearTimeout(COMING_SOON_UNLOCK_TIMER);
+  COMING_SOON_UNLOCK_TIMER=null;
+  if(locked){
+    const delay=Math.max(0,COMING_SOON_RELEASE_AT-Date.now());
+    COMING_SOON_UNLOCK_TIMER=window.setTimeout(updateComingSoonLock,Math.min(delay,60000));
+  }
+  return locked;
+}
+
+function preventComingSoonInteraction(event){
+  if(!isComingSoonLocked()) return;
+  const overlay=getComingSoonOverlay();
+  if(overlay&&overlay.contains(event.target)) return;
+  event.preventDefault();
+  event.stopPropagation();
+  if(typeof event.stopImmediatePropagation==='function') event.stopImmediatePropagation();
+  updateComingSoonLock();
+}
+
+function installComingSoonLock(){
+  updateComingSoonLock();
+  COMING_SOON_LOCK_EVENTS.forEach(type=>{
+    document.addEventListener(type,preventComingSoonInteraction,true);
+  });
+}
 // ▼ 開発確認用の直接接続設定。公開運用ではサーバー側の安全な設定を使うこと。
 const OPERATOR_API_KEY='';
 const API_PROXY_ENDPOINT='/api/ai/generate';
@@ -2005,7 +2090,7 @@ const FOLLOWUP_PRESETS={
   },
   feelings:{
     label:'相手やまわりの気持ち',
-    intro:'関係性や人物カードの気配をもとに、相手や周囲の心理を慎重に読み解いてください。断言しすぎず、複数可能性も扱ってください。',
+    intro:'関係性や人物カードの気配をもとに、相手や周囲の心理を慎重に読み解いてください。断言しすぎず、条件ごとの分岐として扱ってください。',
   },
   week:{
     label:'この7日でやること',
@@ -3553,6 +3638,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(event.key==='Escape'&&document.getElementById('daily-oracle-stage')) closeDailyOracleStage();
     if(event.key==='Escape'&&isDossierViewerOpen()) closeDossierViewer();
   });
+  safeRun('installComingSoonLock',()=>installComingSoonLock());
   safeRun('installGlobalClientLogging',()=>installGlobalClientLogging());
   safeRun('installLiveCardMotionStyles',()=>installLiveCardMotionStyles());
   safeRun('installRashinBonusStyles',()=>installRashinBonusStyles());
@@ -3576,6 +3662,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 document.addEventListener('click',event=>{
+  if(isComingSoonLocked()) return;
   const target=event.target&&typeof event.target.closest==='function'
     ? event.target
     : event.target?.parentElement||null;
@@ -6426,7 +6513,7 @@ function repairStaticCopy(){
   setText('#s-result .result-progress-eyebrow','鑑定の進み');
   setText('#result-progress-title','結果をまとめています');
   setText('#result-progress-copy','今の状態と次にすることを順番にまとめています。まとまったところから下に出していきます。');
-  setText('#rs-animal-reveal .rs-animal-reveal-eyebrow','あなたの魂の形は');
+  setText('#rs-animal-reveal .rs-animal-reveal-eyebrow','あなたの反応タイプは');
   setText('#rs-foundation-mini .rs-eyebrow','土台の要約');
   setHtml('#rs-foundation-mini .rs-title','<span class="rs-icon">✧</span>この答えを支える、あなたの土台');
   setText('#rs-basis .result-detail-title','あなたの土台を詳しく見る');
@@ -6469,14 +6556,14 @@ function repairStaticCopy(){
   setText('#r-orc-block .ai-load-title','気持ちの整理を進めています');
   setText('#r-orc-block .ai-load-detail','迷った日に戻れる言葉と、今日からできる一歩へ絞ってまとめています。');
   setButtons('#result-actions .nav-btn',['最初に戻る','もう一度占う','過去の占いへ']);
-  setText('#rs-integration .rs-eyebrow','最終結論');
+  setText('#rs-integration .rs-eyebrow','今回の答え');
   setHtml('#rs-integration .rs-title','<span class="rs-icon">✧</span>いまの答え');
   setText('#rs-integration .rs-copy','迷ったときにここだけ読み返せば、優先順位と次の一歩がわかる形にまとめます。');
   setText('#r-aiload .ai-load-title','結論を整えています');
   setText('#r-aiload .ai-load-detail','ここまでの読みを一本にまとめ、今どう動くかまで落とし込んでいます。');
   setText('#dossier-open-btn','保存版の鑑定書を見る');
   setText('#dossier-save-btn','PDF保存');
-  setText('#dossier-copy-inline-btn','鑑定書コピー');
+  setText('#dossier-copy-inline-btn','全文コピー');
   const shareBtn=document.getElementById('share-x-btn');
   if(shareBtn){
     const svg=shareBtn.querySelector('svg');
@@ -6490,7 +6577,7 @@ function repairStaticCopy(){
   setText('#dossier-title','鑑定書を整えています');
   setText('#dossier-subtitle','今回の鑑定結果を、PDFやコピーで残しやすい形へ整えています。');
   setText('#dossier-print-btn','印刷 / PDF保存');
-  setText('#dossier-copy-btn','要約をコピー');
+  setText('#dossier-copy-btn','全文コピー');
   setText('#dossier-loading span','鑑定書を製本しています…');
 }
 
@@ -7515,6 +7602,11 @@ function renderFormattedResultText(id,text,kind='default'){
 function buildReadingOutputFormatGuide(kind='len',is9=false){
   if(kind==='len'){
     const baseLines=[
+      '【文章量のルール】',
+      '1ブロックは160〜220字を目安にし、3文を超える場合は小見出しで分けてください。',
+      '1文は45〜60字を目安に短くし、結論は必ず先頭の1文で言い切ってください。',
+      '次にやることは必ず箇条書きにし、同じ意味の文を繰り返さないでください。',
+      '',
       '【出力形式・厳守事項】',
       '見出しは必ず次の順で固定してください。',
       '',
@@ -7535,9 +7627,15 @@ function buildReadingOutputFormatGuide(kind='len',is9=false){
       '',
       '【強調マークアップ】最も重要な結論・断言フレーズを1〜2箇所だけ **テキスト** で囲むこと（例：**今は動く時期です**）。多用しない。',
     ].join('\n');
+    return baseLines;
   }
   if(kind==='orc'){
     return [
+      '【文章量のルール】',
+      '1ブロックは160〜220字を目安にし、3文を超える場合は小見出しで分けてください。',
+      '1文は45〜60字を目安に短くし、結論は必ず先頭の1文で言い切ってください。',
+      '次の一手は必ず箇条書きにし、同じ助言を繰り返さないでください。',
+      '',
       '【出力形式・厳守事項】',
       '見出しは必ず次の順で固定してください。',
       '',
@@ -7562,6 +7660,11 @@ function buildReadingOutputFormatGuide(kind='len',is9=false){
   }
   if(kind==='integration'){
     return [
+      '【文章量のルール】',
+      '1ブロックは160〜220字を目安にし、3文を超える場合は小見出しで分けてください。',
+      '1文は45〜60字を目安に短くし、今回の答えは必ず先頭の1文で言い切ってください。',
+      '次にやることは必ず箇条書きにし、同じ判断を繰り返さないでください。',
+      '',
       '【出力形式・厳守事項】',
       '見出しは必ず次の順で固定してください。',
       '',
@@ -7743,6 +7846,9 @@ function renderFoundationMiniSummary(){
   const section=document.getElementById('rs-foundation-mini');
   const grid=document.getElementById('foundation-mini-grid');
   if(!section||!grid) return;
+  attachBasisDetailsToFoundation();
+  const basis=document.getElementById('rs-basis');
+  if(basis) basis.style.display='';
   const animal=getAnimalTypeSummaryParts();
   const nameBirth=getNameBirthSummaryParts();
   const consultation=truncateText(getConsultationBasisSummary(),90);
@@ -7785,6 +7891,41 @@ function renderFoundationMiniSummary(){
   const consultationPanel=document.getElementById('basis-consultation-panel');
   if(consultationPanel) consultationPanel.style.display=isSimpleReadingPlan()?'none':'';
   if(!isSimpleReadingPlan()) ensureBasisConsultationDetail(consultation,animal,nameBirth);
+  installDetailsToggleLabels(section);
+}
+
+function attachBasisDetailsToFoundation(){
+  const foundation=document.getElementById('rs-foundation-mini');
+  const basis=document.getElementById('rs-basis');
+  const grid=document.getElementById('foundation-mini-grid');
+  if(!foundation||!basis||basis.parentElement===foundation) return;
+  basis.classList.add('foundation-embedded-basis');
+  if(grid&&grid.parentElement===foundation){
+    grid.insertAdjacentElement('afterend',basis);
+  }else{
+    foundation.appendChild(basis);
+  }
+}
+
+function syncDetailsSummaryLabel(summary){
+  if(!summary) return;
+  const closed=summary.dataset.closedLabel;
+  const open=summary.dataset.openLabel;
+  if(!closed||!open) return;
+  const details=summary.closest('details');
+  summary.textContent=details?.open?open:closed;
+}
+
+function installDetailsToggleLabels(root=document){
+  const summaries=Array.from(root.querySelectorAll('summary[data-closed-label][data-open-label]'));
+  summaries.forEach(summary=>{
+    const details=summary.closest('details');
+    syncDetailsSummaryLabel(summary);
+    if(details&&!details.dataset.toggleLabelBound){
+      details.dataset.toggleLabelBound='1';
+      details.addEventListener('toggle',()=>syncDetailsSummaryLabel(summary));
+    }
+  });
 }
 
 function ensureBasisConsultationDetail(consultation,animal,nameBirth){
@@ -7795,6 +7936,8 @@ function ensureBasisConsultationDetail(consultation,animal,nameBirth){
     const details=document.createElement('details');
     details.className='basis-readmore';
     const summary=document.createElement('summary');
+    summary.dataset.closedLabel='詳しく読む';
+    summary.dataset.openLabel='閉じる';
     summary.textContent='詳しく読む';
     detail=document.createElement('div');
     detail.className='basis-readmore-body';
@@ -7808,6 +7951,7 @@ function ensureBasisConsultationDetail(consultation,animal,nameBirth){
     `名前と生まれでは、${nameBirth.summary} ${nameBirth.caution}`,
     '今回の答えは、気持ちだけで急いで決めるより、確認すべき条件と自分が安心できる基準を分けて見ることで読みやすくなります。',
   ].join('\n\n');
+  installDetailsToggleLabels(panel);
 }
 
 function joinCompactSentences(...parts){
@@ -9366,6 +9510,11 @@ function getDossierDiagnosticSections(){
 
 function getDossierIncludedSections(){
   const clarifyPlain=buildClarifyPromptText('plain');
+  const lenEvidence=buildCardEvidencePlainText('len');
+  const orcEvidence=buildCardEvidencePlainText('orc');
+  const lenMemo=[getSectionBody(LAST_OUTPUTS.len,0),lenEvidence].filter(Boolean).join('\n\n');
+  const orcMemo=[getSectionBody(LAST_OUTPUTS.orc,2)||getSectionBody(LAST_OUTPUTS.orc,0),orcEvidence].filter(Boolean).join('\n\n');
+  const integrationMemo=getSectionBody(LAST_OUTPUTS.integration,0)||getSectionBody(LAST_OUTPUTS.integration,1)||'統合判断はまだ生成されていません。';
   return[
     ...getDossierDiagnosticSections(),
     clarifyPlain?{
@@ -9374,19 +9523,19 @@ function getDossierIncludedSections(){
       body:clarifyPlain
     }:null,
     {
-      eyebrow:'カード鑑定',
-      title:'ルノルマン9枚から見た現実と注意点',
-      body:LAST_OUTPUTS.len||'ルノルマンカード鑑定はまだ生成されていません。'
+      eyebrow:'根拠',
+      title:'ルノルマンカードから見た現実と注意点',
+      body:lenMemo||'ルノルマンカードの根拠はまだ生成されていません。'
     },
     {
-      eyebrow:'カード鑑定',
-      title:'オラクル3枚から見た判断軸',
-      body:LAST_OUTPUTS.orc||'オラクルカード鑑定はまだ生成されていません。'
+      eyebrow:'根拠',
+      title:'オラクルカードから見た次の行動',
+      body:orcMemo||'オラクルカードの根拠はまだ生成されていません。'
     },
     {
-      eyebrow:'最終結論',
-      title:'カード占いの最終結論',
-      body:LAST_OUTPUTS.integration||'最終結論はまだ生成されていません。'
+      eyebrow:'保存用',
+      title:'統合判断の短いメモ',
+      body:integrationMemo
     }
   ].filter(Boolean).filter(section=>String(section.body||'').trim());
 }
@@ -9435,7 +9584,8 @@ function buildDossierPlainText(data){
     safeData.TITLE||'鑑定書',
     safeData.SUBTITLE||'',
     `■ 今回の答え\n${safeData.HEADLINE||''}`,
-    `■ なぜそう読めるのか\n${[safeData.CORE,safeData.TIMING].filter(Boolean).join('\n')}`,
+    `■ なぜそう読めるのか\n${safeData.CORE||''}`,
+    `■ 白黒を分ける条件\n${safeData.TIMING||''}`,
     clarifyPlain?`■ 追加質問から見えたこと\n${clarifyPlain}`:'',
     `■ 今週やること\n${sectionLines(safeData.ACTION7).map((item,index)=>`${index+1}. ${item}`).join('\n')}`,
     `■ 30日以内に整えること\n${sectionLines(safeData.ACTION30).map((item,index)=>`${index+1}. ${item}`).join('\n')}`,
@@ -9452,7 +9602,8 @@ function buildDossierPlainText(data){
 function renderDossierCards(data){
   const keywords=sectionLines(data.KEYWORDS||'').join('\n')||data.KEYWORDS||'';
   const keywordItems=keywords.split(/[\/\n]/).map(v=>v.trim()).filter(Boolean).slice(0,6);
-  const whyText=[data.CORE,data.TIMING].filter(Boolean).join('\n');
+  const reasonText=data.CORE||'';
+  const conditionText=data.TIMING||'';
   const recurringText=data.RECURRING||buildDossierRecurringThemeText();
   return`
     <div class="dossier-hero">
@@ -9463,7 +9614,12 @@ function renderDossierCards(data){
       <div class="dossier-card wide">
         <div class="dossier-card-eyebrow">根拠</div>
         <div class="dossier-card-title">なぜそう読めるのか</div>
-        <div class="dossier-card-body">${escapeHtml(whyText)}</div>
+        <div class="dossier-card-body">${escapeHtml(reasonText)}</div>
+      </div>
+      <div class="dossier-card wide">
+        <div class="dossier-card-eyebrow">判断条件</div>
+        <div class="dossier-card-title">白黒を分ける条件</div>
+        <div class="dossier-card-body">${escapeHtml(conditionText)}</div>
       </div>
       <div class="dossier-card">
         <div class="dossier-card-eyebrow">7日</div>
@@ -9773,12 +9929,14 @@ function installLiveCardMotionStyles(){
     .result-card-back.orc-placeholder{
       box-shadow:inset 0 0 0 1px rgba(201,149,42,.24), inset 0 0 28px rgba(0,0,0,.38);
     }
-    .result-card.card-type-len .result-card-front .result-card-img{
-      width:104% !important;
-      height:104% !important;
+    .result-card.card-type-len .result-card-front .result-card-img,
+    .result-card.card-type-orc .result-card-front .result-card-img{
+      width:100% !important;
+      height:100% !important;
       max-width:none !important;
-      margin:-2% !important;
+      margin:0 !important;
       object-fit:cover !important;
+      background:transparent !important;
     }
     .result-card:hover .result-card-img,
     .result-card.is-flipped:hover .result-card-img{
@@ -9786,7 +9944,7 @@ function installLiveCardMotionStyles(){
     }
     .result-card:hover,
     .result-card.is-flipped:hover{
-      transform:translateY(-6px) scale(1.035) !important;
+      transform:translateY(-4px) !important;
     }
     @media (max-width:520px){
       .shuffle-area.live-shuffling{
@@ -9978,6 +10136,11 @@ function armResultCardMotion(card,index,options={}){
 // NAVIGATION
 // ══════════════════════════════════════════════════
 function showScreen(id,progress){
+  if(id!=='s-top'&&isComingSoonLocked()){
+    id='s-top';
+    progress=0;
+    updateComingSoonLock();
+  }
   stopMotionAudioForScreen(id);
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -9993,12 +10156,14 @@ function showScreen(id,progress){
 }
 
 async function startFlow(plan){
+  if(updateComingSoonLock()) return;
   const normalized=plan===SIMPLE_READING_PLAN?SIMPLE_READING_PLAN:(plan==='paid'?'paid':'free');
   if(normalized==='paid'&&!(await ensurePaidAccess('start-paid'))) return;
   startFlowUnlocked(normalized);
 }
 
 function startFlowUnlocked(plan){
+  if(updateComingSoonLock()) return;
   if(plan==='paid'&&!isMemberActive()&&!ACTIVE_PAID_READING_TICKET?.id){
     openPaidEntryGuide();
     return;
@@ -10582,21 +10747,33 @@ function hasClarifyAnswers(){
   return getClarifyEntries().length>0;
 }
 
+function getClarifyDisplayLabel(entry={}){
+  const map={
+    core:'大事な点',
+    mismatch:'頭と気持ちのズレ',
+    branch:'白黒を分ける条件',
+    readiness:'行動の準備',
+    locus:'影響の整理',
+    ideal:'理想の着地点',
+  };
+  return map[entry.id]||entry.badge||'補足確認';
+}
+
 function buildClarifyPromptText(mode='detail'){
   const entries=getClarifyEntries();
   if(!entries.length) return mode==='plain'?'なし':'';
-  const summary=`【相談者の補足整理（心理的背景含む）】\n${entries.map(entry=>`- ${entry.badge}：${entry.a}`).join('\n')}`;
+  const summary=`【相談者の補足整理（心理的背景含む）】\n${entries.map(entry=>`- ${getClarifyDisplayLabel(entry)}：${entry.a}`).join('\n')}`;
   if(mode==='detail'){
-    const detail=entries.map(entry=>`▼${entry.badge}${entry.anchor?`｜${entry.anchor}`:''}\nQ：${entry.q}${entry.hint?`\n推定：${entry.hint}`:''}\nA：${entry.a}`).join('\n');
+    const detail=entries.map(entry=>`▼${getClarifyDisplayLabel(entry)}\nQ：${entry.q}${entry.hint?`\n推定：${entry.hint}`:''}${entry.anchor?`\n根拠メモ：${entry.anchor}`:''}\nA：${entry.a}`).join('\n');
     return `\n${summary}\n【相談者の補足回答（推定背景と実回答）】\n${detail}\n\n※上記補足は、相談者が動きにくくなっている理由、変わる準備ができているか、理想の着地点を読むために使ってください。決める目印の精度向上に活用してください。`;
   }
   if(mode==='compact'){
     return `\n${summary}`;
   }
   if(mode==='inline'){
-    return '\n【相談者補足回答】\n'+entries.map(entry=>`▼${entry.badge}${entry.anchor?`｜${entry.anchor}`:''}：${entry.a}`).join('\n');
+    return '\n【相談者補足回答】\n'+entries.map(entry=>`▼${getClarifyDisplayLabel(entry)}：${entry.a}`).join('\n');
   }
-  return entries.map(entry=>`${entry.badge}${entry.anchor?`(${entry.anchor})`:''}: ${entry.a}`).join('\n');
+  return entries.map(entry=>`${getClarifyDisplayLabel(entry)}: ${entry.a}`).join('\n');
 }
 
 function renderResult(){
@@ -10754,7 +10931,7 @@ function strengthenClarifyQuestionText(id,q){
 }
 
 function makeClarifyQuestion(id,badge,anchor,q,hint,templates){
-  return{id,badge,anchor,q:strengthenClarifyQuestionText(id,q),hint:'',templates};
+  return{id,badge,anchor,q,hint:hint||'',templates};
 }
 
 // ─── Q1: 核心確認（CBT ＝ 状況の認知整理）────────────────────────────
@@ -10955,6 +11132,42 @@ function buildIdealOutcomeQuestion(ctx){
 }
 
 // ─── 質問組み立てロジック（最大5問、最低3問）─────────────────────
+function buildBranchClarifyQuestion(ctx){
+  const card=ctx.ambiguityCard||ctx.blockerCard||ctx.peopleCard||ctx.externalCard;
+  if(!card&&!ctx.hasWarningCard) return null;
+  const anchor=buildClarifyAnchor(card,'判断を分けるカード');
+  if(ctx.category==='恋愛'||ctx.category==='人間関係'){
+    return makeClarifyQuestion(
+      'branch','白黒を分ける条件',anchor,
+      'この関係で「進めてよい」と思える条件は、どれに一番近いですか？',
+      '曖昧なカードや人物カードがあるときは、気持ちだけで断定せず、進む条件と止まる条件を分けると読みが強くなります。',
+      ['相手の行動が言葉と一致すること','連絡や会う流れが自然に続くこと','自分だけが我慢していないこと','今は進める条件がまだ足りない']
+    );
+  }
+  if(ctx.category==='仕事'){
+    return makeClarifyQuestion(
+      'branch','白黒を分ける条件',anchor,
+      '仕事の判断で「進めてよい」と思える条件は、どれに一番近いですか？',
+      '障害カードや外部カードがあるときは、やる気ではなく条件で分けるほど結論がぶれにくくなります。',
+      ['役割と評価条件がはっきりすること','人間関係の負担が増えすぎないこと','収入や時間の条件が現実的なこと','今は止まって整える条件が多い']
+    );
+  }
+  if(ctx.category==='金運'){
+    return makeClarifyQuestion(
+      'branch','白黒を分ける条件',anchor,
+      'お金の判断で「動いてよい」と思える条件は、どれに一番近いですか？',
+      '不安カードや障害カードがあるときは、期待だけで進めず、損失ラインと回収目安を先に分けます。',
+      ['失っても困らない上限を決めていること','回収や節約の目安が見えていること','焦りではなく計画で動けること','今は守りを優先したい']
+    );
+  }
+  return makeClarifyQuestion(
+    'branch','白黒を分ける条件',anchor,
+    '今回の判断で「進む」と「止まる」を分ける条件は、どれに一番近いですか？',
+    '曖昧なカードや障害カードがあるときは、可能性の話で終わらせず、条件Aなら進む、条件Bなら止まると分けます。',
+    ['条件がそろえば進みたい','まだ確認が足りないので止まりたい','相手や環境の反応を見て決めたい','自分の準備が整うかで決めたい']
+  );
+}
+
 function buildClarifyQuestions(){
   const ctx=buildClarifyCardContext();
   const cat=ctx.category;
@@ -10969,6 +11182,9 @@ function buildClarifyQuestions(){
 
   // Q2: 頭と気持ちのズレ（ブロッカーや曖昧カードがある場合、またはカテゴリに関係なく追加）
   questions.push(buildCognitiveMismatchQuestion(ctx));
+
+  const branchQuestion=buildBranchClarifyQuestion(ctx);
+  if(branchQuestion) questions.push(branchQuestion);
 
   // Q3: 動く準備の確認（未来カードがある場合、またはテーマが明確な場合）
   if(ctx.futureCard||ctx.futureOrc||ctx.themeShort||SEL_LEN.length>=9){
@@ -10985,11 +11201,16 @@ function buildClarifyQuestions(){
 
   // 重複排除
   const seen=new Set();
-  return questions.filter(question=>{
+  const filtered=questions.filter(question=>{
     if(!question||seen.has(question.id)) return false;
     seen.add(question.id);
     return true;
-  }).slice(0,5);
+  });
+  if(filtered.length<=5) return filtered;
+  const priorityIds=['core','mismatch','branch','readiness','ideal'];
+  const priority=filtered.filter(question=>priorityIds.includes(question.id));
+  const optional=filtered.filter(question=>!priorityIds.includes(question.id));
+  return [...priority,...optional].slice(0,5);
 }
 
 
@@ -11219,6 +11440,82 @@ function renderCards(){
   if(or) or.innerHTML=SEL_ORC.map((id,index)=>makeSmCard(id,'orc',index===0?'助言':'')).join('');
   if(lr&&lenAll.length) lr.style.display='flex';
   if(or&&SEL_ORC.length) or.style.display='flex';
+  renderCardEvidenceLayers();
+}
+
+function buildCardEvidenceItems(type='len'){
+  if(type==='orc'){
+    const labels=getOrcSpreadLabels();
+    return SEL_ORC.map((id,index)=>{
+      const card=ORACLE[id]||{};
+      return{
+        label:labels[index]||`オラクル${index+1}`,
+        name:`No.${id} ${card.name||''}`.trim(),
+        copy:card.msg||card.essence||''
+      };
+    });
+  }
+  const items=[];
+  if(FIXED_GENDER_CARD){
+    const fixed=LENORMAND[FIXED_GENDER_CARD]||{};
+    items.push({
+      label:'人物補助',
+      name:`No.${FIXED_GENDER_CARD} ${fixed.name||''}`.trim(),
+      copy:'人物カードは、相談の中で誰の動きや距離感を見るかを補助する根拠です。'
+    });
+  }
+  SEL_LEN.forEach((id,index)=>{
+    const card=LENORMAND[id]||{};
+    items.push({
+      label:getLenSpreadLabel(index,SEL_LEN.length)||`ルノルマン${index+1}`,
+      name:`No.${id} ${card.name||''}`.trim(),
+      copy:[card.kw,card.pos||card.love||card.work||card.rel].filter(Boolean).join(' / ')
+    });
+  });
+  return items;
+}
+
+function buildCardEvidenceHTML(type='len'){
+  const items=buildCardEvidenceItems(type);
+  if(!items.length) return '';
+  const intro=type==='orc'
+    ?'オラクルカードは、気持ちの整理と次の行動を見る補助層です。本文では専門用語を減らし、ここではカード名と配置を確認できます。'
+    :'ルノルマンカードは、現実・障害・注意点を見る層です。本文では判断軸に翻訳し、ここではカード名と配置を確認できます。';
+  return`
+    <p class="evidence-intro">${escapeHtml(intro)}</p>
+    <div class="evidence-grid">
+      ${items.map(item=>`
+        <div class="evidence-item">
+          <div class="evidence-label">${escapeHtml(item.label)}</div>
+          <div class="evidence-name">${escapeHtml(item.name)}</div>
+          <div class="evidence-copy">${escapeHtml(truncateText(item.copy||'',96))}</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function buildCardEvidencePlainText(type='len'){
+  const items=buildCardEvidenceItems(type);
+  if(!items.length) return '';
+  const intro=type==='orc'
+    ?'オラクルカードから見た次の行動'
+    :'ルノルマンカードから見た現実と注意点';
+  return [intro,...items.map(item=>`${item.label}: ${item.name} - ${truncateText(item.copy||'',80)}`)].join('\n');
+}
+
+function renderCardEvidenceLayers(){
+  const pairs=[
+    ['len','r-len-evidence','r-len-evidence-body'],
+    ['orc','r-orc-evidence','r-orc-evidence-body'],
+  ];
+  pairs.forEach(([type,detailsId,bodyId])=>{
+    const details=document.getElementById(detailsId);
+    const body=document.getElementById(bodyId);
+    if(!details||!body) return;
+    const html=buildCardEvidenceHTML(type);
+    details.style.display=html?'':'none';
+    body.innerHTML=html;
+    installDetailsToggleLabels(details);
+  });
 }
 
 function makeSmCard(id,type,roleLabel=''){
@@ -11341,7 +11638,7 @@ function validatePaidReadingQuality(parsed={}){
   if(/([0-9０-９]{1,2}月(?!以上|前|後)|月末|月初|今春|来春|今夏|来夏|今秋|来秋|今冬|来冬|年末|年始|来年)/.test(joined)){
     issues.push('相談文から言えない時期表現がある');
   }
-  if(/本音|本質|魂|波動|宇宙/.test(joined)){
+  if(/魂|波動|宇宙/.test(joined)){
     issues.push('断定的・抽象的に見える語が残っている');
   }
   if(!/(7日以内|1週間以内|今週)/.test(parsed.integration||'')){
@@ -11586,7 +11883,7 @@ ${buildDecisionSupportPromptGuide(cat,theme)}
 - 根拠のない月日・季節・期限の断定
 - 「必ず」「絶対」「無駄」「悪化するだけ」など、脅しや決めつけに聞こえる言葉
 - 相手の本音を見てきたように断定すること
-- 「本音」「本質」「魂」「波動」「宇宙」のような、根拠が薄く見える抽象語
+- 「魂」「波動」「宇宙」のような、根拠が薄く見える抽象語（「本音」「本質」は根拠付きなら使用可）
 - Markdown記号（**、###、箇条書き記号の乱用）
 
 【共鳴・根拠付け】
@@ -11660,7 +11957,7 @@ ${lenFull}
 ${orcFull}
 
 ルノルマンを主軸に読み、オラクルは補助線として使ってください。
-出力ではカード名や占術名を一切出さず、相談者の現実の言葉に翻訳してください。`;
+メイン本文ではカード名や占術名を最小限にし、相談者の現実の言葉に翻訳してください。根拠は別レイヤーに残します。`;
 
   let parsed={len:'',orc:'',integration:''};
   let paidGenerationFailed=false;
@@ -11713,7 +12010,7 @@ ${orcFull}
 【品質チェックで落ちた場合の書き直し】
 - 次の出力は必ず文字量を満たす。短くまとめない
 - 相談文から言えない季節、月、時期を作らない
-- 「本音」「本質」「魂」「波動」「宇宙」は使わない
+- 「魂」「波動」「宇宙」は使わない。「本音」「本質」は根拠付きなら使ってよい
 - 判断ポイントは3つの小見出しを改行し、各項目を「・」で1行ずつ書く
 - 次にやることは「今日」「次に会う時」「7日以内」の3つを分けて書く`;
       const retryPrompt=`${prompt}
@@ -11819,7 +12116,7 @@ async function runLenReading(){
 
   // 曖昧カード検出（対話型絞り込み候補）
   const ambigIds=SEL_LEN.filter(id=>[6,22,26].includes(id));
-  const ambigInfo=ambigIds.length>0?`\n【曖昧カード出現】${ambigIds.map(id=>LENORMAND[id].name).join('・')}が出ています。複数の解釈が可能なため、相談テーマ「${cat}：${theme}」に最も近い意味で解釈してください。解釈に迷う場合は「〜の可能性と〜の可能性が示されています」と両方伝えてください。`:'';
+  const ambigInfo=ambigIds.length>0?`\n【曖昧カード出現】${ambigIds.map(id=>LENORMAND[id].name).join('・')}が出ています。相談テーマ「${cat}：${theme}」に最も近い意味で解釈し、迷う場合は「条件Aなら進めてよい／条件Bなら止まるべき」のように判断条件へ変換してください。「可能性があります」で終わらせないでください。`:'';
 
   // 人物カード検出
   const personIds=SEL_LEN.filter(id=>[7,15,18].includes(id));
@@ -11836,7 +12133,7 @@ async function runLenReading(){
 
   const systemPrompt=`あなたは、「答えを出す」ことを使命とする一流の鑑定者です。
 役割は状況を説明することではなく、「相談者が今日から動ける目印」を与えることです。
-カードは内部で使い切り、出力にはカード名もシステム説明も一切出さない。
+カードは内部で使い切り、メイン本文にはカード名もシステム説明も詰め込まない。根拠は別レイヤーに残す。
 
 ${buildDecisionSupportPromptGuide(cat,theme)}
 
@@ -11918,7 +12215,7 @@ ${fixedCardText?`${fixedCardText}\n`:''}
 ${lenInfo}${spreadAxisInfo}${pairAndChainInfo}${advancedLenInfo}
 ${keyCardInSpread}${ambigInfo}${personInfo}${cloudInfo}${ringInfo}
 
-上記の全情報を内部で使い切りつつ、出力ではカードや占術の説明を完全に消してください。
+上記の全情報を内部で使い切りつつ、メイン本文ではカード名や占術用語を最小限にしてください。カード名・配置・占術根拠は別の根拠レイヤーで表示するため、本文は現実の判断軸へ翻訳してください。
 相談者が読みたいのは「背景から何が続いているか」「いま何を意識しておくべきか」「今週どう動けばいいか」です。
 ${buildReadingOutputFormatGuide('len',is9)}`;
 
@@ -12031,7 +12328,7 @@ ${baseEssenceText}
 【引いた${SEL_ORC.length}枚のカード（全データ）】
 ${orcInfo}
 
-上記の全情報を内部で使い切りつつ、出力ではカードや占術の説明を完全に消してください。
+上記の全情報を内部で使い切りつつ、メイン本文ではカード名や占術用語を最小限にしてください。カード名・配置・占術根拠は別の根拠レイヤーで表示するため、本文は現実の判断軸へ翻訳してください。
 相談者が読みたいのは「背景から何が続いているか」「自分の根っこはどこにあるか」「どう整えれば望む未来へ近づけるか」です。
 ${buildReadingOutputFormatGuide('orc')}`;
 
@@ -12153,7 +12450,7 @@ ${lenFull}
 ${orcFull}
 
 以上を踏まえ、相談者への統括メッセージを書いてください。
-出力ではカードや占術の説明を一切出さず、読み手が行動に移れる文章だけを残してください。
+メイン本文ではカードや占術の説明を最小限にし、読み手が行動に移れる文章を優先してください。根拠は別レイヤーに分ける前提で、本文へ専門用語を詰め込まないでください。
 ${buildReadingOutputFormatGuide('integration')}`;
 
   try{
@@ -12303,7 +12600,7 @@ async function runPremiumDossier(){
 
 以下を厳守してください。
 - HEADLINE では相談者の知りたい答えを冒頭2〜3文で「進む・止まる・様子を見る」のどれかが分かる形で断言する。「〜かもしれない」は禁止
-- 全体として「今回の答え / なぜそう読めるのか / 追加質問から見えたこと / ルノルマン9枚から見た現実と注意点 / オラクル3枚から見た判断軸 / 今週やること / 30日以内に整えること / 進んでいいサイン / 止まるべきサイン / 繰り返し出ているテーマ / 保存用キーワード / 締めのメッセージ」が埋まるように書く
+- 全体として「今回の答え / なぜそう読めるのか / 白黒を分ける条件 / 追加質問から見えたこと / 7日以内にやること / 30日以内に整えること / 進んでいいサイン / 止まるべきサイン / 保存用の一文」が埋まるように書く
 - CORE では、動物タイプ診断のsummary（行動パターン）とstress（しんどくなりやすい場面）を軸にその人らしさを描く。名前・生まれは補足として添える程度にとどめる
 - TIMING は現実の時系列で近い判断ポイントを言い切る。「近い将来」などの抽象表現は禁止
 - ただし、相談文や元資料に明確な根拠がない月名・季節・年末年始・来年などは作らない。月名を使えるのは、相談者がその月を出している場合だけ
