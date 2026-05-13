@@ -5,8 +5,9 @@ require('./threads-client');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const OUT_DIR = path.join(ROOT, 'data', 'social-posts');
-const STATE_FILE = path.join(OUT_DIR, 'scheduled-post-state.json');
+const DEFAULT_STATE_FILE = path.join(OUT_DIR, 'scheduled-post-state.json');
 const DAILY_SCRIPT = path.join(__dirname, 'daily-oracle-post.js');
+const DEFAULT_POST_GRACE_MINUTES = 30;
 
 function parseArgs(argv) {
   const args = { once: false, daemon: false, dryRun: false, forceKind: '', onlyKind: '' };
@@ -37,6 +38,27 @@ function getJstParts(date = new Date()) {
     acc[part.type] = part.value;
     return acc;
   }, {});
+}
+
+function getNow() {
+  const override = String(process.env.SOCIAL_NOW_ISO || '').trim();
+  if (!override) return new Date();
+  const date = new Date(override);
+  if (Number.isNaN(date.getTime())) throw new Error(`Invalid SOCIAL_NOW_ISO: ${override}`);
+  return date;
+}
+
+function getStateFile() {
+  const configured = String(process.env.SOCIAL_SCHEDULE_STATE_FILE || '').trim();
+  if (!configured) return DEFAULT_STATE_FILE;
+  return path.isAbsolute(configured) ? configured : path.resolve(ROOT, configured);
+}
+
+function getPostGraceMinutes() {
+  const raw = String(process.env.SOCIAL_POST_GRACE_MINUTES || DEFAULT_POST_GRACE_MINUTES).trim();
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value < 0) throw new Error(`Invalid SOCIAL_POST_GRACE_MINUTES: ${raw}`);
+  return value;
 }
 
 function getJstDateKey(date = new Date()) {
@@ -134,23 +156,34 @@ function runPost(kind, dateKey) {
 }
 
 async function runDue(args) {
-  const dateKey = getJstDateKey();
-  const nowMinute = getJstMinutes();
+  const now = getNow();
+  const dateKey = getJstDateKey(now);
+  const nowMinute = getJstMinutes(now);
+  const graceMinutes = getPostGraceMinutes();
   const schedule = filterScheduleByKind(getSchedule(), args.onlyKind);
-  const state = await readJson(STATE_FILE, {});
+  const stateFile = getStateFile();
+  const state = await readJson(stateFile, {});
   state[dateKey] = state[dateKey] || {};
 
   const due = args.forceKind
     ? schedule.filter(item => args.forceKind === 'all' || item.kind === args.forceKind)
-    : schedule.filter(item => nowMinute >= item.minute && !state[dateKey][item.kind]);
+    : schedule.filter(item => {
+      const lateByMinutes = nowMinute - item.minute;
+      return lateByMinutes >= 0 && lateByMinutes <= graceMinutes && !state[dateKey][item.kind];
+    });
   const dueAfterSkips = due.filter(item => !isSkippedByEnv(item.kind, dateKey));
+  const expired = args.forceKind ? [] : schedule
+    .filter(item => nowMinute - item.minute > graceMinutes && !state[dateKey][item.kind])
+    .map(item => item.kind);
 
   const report = {
     date: dateKey,
     nowMinute,
+    graceMinutes,
     schedule: schedule.map(item => ({ kind: item.kind, time: item.time })),
     onlyKind: args.onlyKind || null,
     due: dueAfterSkips.map(item => item.kind),
+    expired,
     skippedByEnv: due.filter(item => isSkippedByEnv(item.kind, dateKey)).map(item => item.kind),
     dryRun: args.dryRun,
   };
@@ -162,7 +195,7 @@ async function runDue(args) {
   for (const item of dueAfterSkips) {
     runPost(item.kind, dateKey);
     state[dateKey][item.kind] = new Date().toISOString();
-    await writeJson(STATE_FILE, state);
+    await writeJson(stateFile, state);
   }
 }
 

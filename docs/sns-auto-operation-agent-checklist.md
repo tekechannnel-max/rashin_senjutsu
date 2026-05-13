@@ -52,7 +52,8 @@
 
 - `scripts/social/run-scheduled-posts.js` でJST日付とJST分を判定していることを確認したか。
 - 07:00前に朝投稿、20:00前に夜投稿を出そうとしていないか。
-- 期限到来後に同日同種の投稿が未投稿ならdueになることを確認したか。
+- 期限到来後、`SOCIAL_POST_GRACE_MINUTES` 内だけ同日同種の投稿がdueになることを確認したか。
+- grace windowを過ぎた未投稿分が `expired` になり、PC起動後などに遅刻投稿されないことを確認したか。
 - GitHub Actionsの `SOCIAL_STATELESS_MODE=true` で、ローカルstateがなくてもカード選定と重複確認が破綻しないことを確認したか。
 - `SOCIAL_SKIP_*` が誤って今日の投稿を止めていないか。
 

@@ -22,6 +22,7 @@ const SOCIAL_PAID_CTA_MODES = new Set(['off', 'soft', 'active']);
 const SOCIAL_RELEASE_MODES = new Set(['prelaunch', 'prerelease', 'fix', 'release', 'launch', 'postrelease']);
 const CARD_OVERRIDES_BY_DATE = {
   '2026-05-12': 8,
+  '2026-05-13': 8,
 };
 
 const SOCIAL_CONCEPT_IMAGES = {
@@ -224,6 +225,28 @@ function truncateText(text, maxChars) {
   return `${chars.slice(0, Math.max(0, maxChars - 1)).join('')}…`;
 }
 
+function normalizeForDuplicateCheck(text) {
+  return String(text || '')
+    .replace(/[「」『』（）()[\]【】]/g, '')
+    .replace(/[、。,.!?！？\s]/g, '')
+    .trim();
+}
+
+function buildOracleLeadLine(card) {
+  const message = String(card?.message || '').trim();
+  if (message) return message;
+
+  const share = String(card?.share || '').trim();
+  const title = String(card?.title || '').trim();
+  if (share) {
+    const normalizedShare = normalizeForDuplicateCheck(share);
+    const normalizedTitle = normalizeForDuplicateCheck(title);
+    if (!normalizedTitle || !normalizedShare.includes(normalizedTitle)) return share;
+  }
+
+  return 'このカードが示すテーマを、今日の行動に少しだけ移してみてください。';
+}
+
 function getJstDateString(date = new Date()) {
   const parts = new Intl.DateTimeFormat('sv-SE', {
     timeZone: 'Asia/Tokyo',
@@ -333,6 +356,27 @@ function countHashtags(text) {
   return (String(text || '').match(/(^|\s)#[^\s#]+/g) || []).length;
 }
 
+function stripLineRolePrefix(text) {
+  return String(text || '').replace(/^(今日の1枚|先行版 今日の1枚|今日の数秘オラクル|テーマ|今日の一手|このカードからの一手)[:：]\s*/, '');
+}
+
+function findAdjacentRepeatedLine(text) {
+  const lines = String(text || '')
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(line => line && !line.startsWith('#') && !/^https?:\/\//i.test(line));
+
+  for (let i = 0; i < lines.length - 1; i += 1) {
+    const left = normalizeForDuplicateCheck(stripLineRolePrefix(lines[i]));
+    const right = normalizeForDuplicateCheck(stripLineRolePrefix(lines[i + 1]));
+    if (left.length < 8 || right.length < 8) continue;
+    if (left === right || left.includes(right) || right.includes(left)) {
+      return { previous: lines[i], next: lines[i + 1] };
+    }
+  }
+  return null;
+}
+
 function getXHashtagLine(config = {}) {
   const configured = String(process.env.SOCIAL_X_HASHTAGS || '').trim();
   return configured || `${config.defaultHashtag || DEFAULT_HASHTAG} #AI占い`;
@@ -344,6 +388,10 @@ function validatePostText(text, options = {}) {
   const blocked = NG_WORDS.filter(word => value.includes(word));
   if (blocked.length) {
     throw new Error(`${label} contains blocked wording: ${blocked.join(', ')}`);
+  }
+  const repeated = findAdjacentRepeatedLine(value);
+  if (repeated) {
+    throw new Error(`${label} has adjacent repeated wording: "${repeated.previous}" / "${repeated.next}"`);
   }
   const hashtagCount = countHashtags(value);
   if (options.platforms?.includes('threads') && hashtagCount > 1) {
@@ -483,21 +531,15 @@ function useStatelessCardPicking() {
 
 async function pickCard(messages, dateKey, writeState) {
   const ids = messages.map(item => item.id);
-  if (useStatelessCardPicking()) {
-    const picked = deterministicCardId(ids, dateKey);
-    return messages.find(item => item.id === picked) || messages[0];
-  }
-  const state = await readJson(STATE_FILE, { remaining: [], pickedByDate: {} });
-  if (state.pickedByDate?.[dateKey]) {
-    return messages.find(item => item.id === state.pickedByDate[dateKey]) || messages[0];
-  }
-  if (!Array.isArray(state.remaining) || !state.remaining.length) {
-    state.remaining = shuffle(ids);
-  }
-  const picked = state.remaining.shift();
-  state.pickedByDate = state.pickedByDate || {};
-  state.pickedByDate[dateKey] = picked;
-  if (writeState) {
+  const picked = deterministicCardId(ids, dateKey);
+
+  if (!useStatelessCardPicking() && writeState) {
+    const state = await readJson(STATE_FILE, { remaining: [], pickedByDate: {} });
+    state.pickedByDate = state.pickedByDate || {};
+    state.pickedByDate[dateKey] = picked;
+    state.remaining = Array.isArray(state.remaining)
+      ? state.remaining.filter(id => id !== picked)
+      : ids.filter(id => id !== picked);
     await fs.mkdir(OUT_DIR, { recursive: true });
     await fs.writeFile(STATE_FILE, `${JSON.stringify(state, null, 2)}\n`);
   }
@@ -522,7 +564,7 @@ function buildOracleText(card, publicOrigin, options = {}) {
       `今日の1枚：${card.name}`,
       `テーマ：${card.title}`,
       '',
-      card.share || `今日は、${card.title}を少し意識したい日。`,
+      buildOracleLeadLine(card),
       '',
       'このカードからの一手：',
       card.action,
@@ -540,14 +582,8 @@ function buildOracleText(card, publicOrigin, options = {}) {
     `今日の1枚：${card.name}`,
     `テーマ：${card.title}`,
     '',
-    card.share || `今日は、${card.title}を少し意識したい日。`,
-    '',
-    '迷っていることがあるなら、',
-    'まずは「今すぐ決めること」と',
-    '「もう少し見てもいいこと」を分けてみてください。',
-    '',
     'カードからのメッセージ：',
-    card.message,
+    buildOracleLeadLine(card),
     '',
     '今日の一手：',
     card.action,
@@ -574,8 +610,10 @@ function buildXOracleText(card, publicOrigin, options = {}) {
     return [
       promo.intro[0],
       '',
-      `先行版 今日の1枚：${card.title}`,
-      card.share || `今日は、${card.title}を少し意識したい日。`,
+      `先行版 今日の1枚：${card.name}`,
+      `テーマ：${card.title}`,
+      '',
+      truncateText(buildOracleLeadLine(card), 58),
       '',
       `今日の一手：${truncateText(card.action, 42)}`,
       '',
@@ -584,9 +622,10 @@ function buildXOracleText(card, publicOrigin, options = {}) {
     ].join('\n');
   }
   return [
-    `今日の数秘オラクル：${card.title}`,
+    `今日の数秘オラクル：${card.name}`,
+    `テーマ：${card.title}`,
     '',
-    card.share || `今日は、${card.title}を少し意識したい日。`,
+    truncateText(buildOracleLeadLine(card), 58),
     '',
     `今日の一手：${truncateText(card.action, 42)}`,
     '',

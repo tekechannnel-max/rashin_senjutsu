@@ -49,6 +49,7 @@ Set these only in the machine or job runner that performs SNS posting:
 - `SOCIAL_PLATFORMS=threads`
 - `SOCIAL_ORACLE_TIME=07:00`
 - `SOCIAL_CONCEPT_TIME=20:00`
+- `SOCIAL_POST_GRACE_MINUTES=30`
 - `SOCIAL_UTM_CAMPAIGN=202605_prerelease`
 - `SOCIAL_PAID_CTA_MODE=soft`
 - `SOCIAL_RELEASE_MODE=prelaunch`
@@ -84,7 +85,7 @@ Recommended schedule:
 - `07:00 Asia/Tokyo`: oracle image post
 - `20:00 Asia/Tokyo`: concept post
 
-GitHub Actions checks Threads due posts at `:07/:22/:37/:52` every hour. GitHub Actions checks X draft artifacts at `07:08/07:23/07:38/07:53` and `20:08/20:23/20:38/20:53` JST; scheduled X draft runs must produce draft files or fail.
+GitHub Actions checks Threads due posts at `07:03/07:08/07:13/07:18/07:23/07:28` and `20:03/20:08/20:13/20:18/20:23/20:28` JST. Automatic Threads posting must stay within `SOCIAL_POST_GRACE_MINUTES`; late missed runs are reported as expired instead of being published hours later. GitHub Actions checks X draft artifacts at `07:08/07:23/07:38/07:53` and `20:08/20:23/20:38/20:53` JST; scheduled X draft runs must produce draft files or fail.
 
 Run a dry check before enabling real posting on any new machine:
 

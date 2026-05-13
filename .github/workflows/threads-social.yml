@@ -5,10 +5,10 @@ on:
     branches:
       - main
   schedule:
-    # GitHub schedule can be delayed or dropped; run off the top of each hour.
-    # Changing the minute set also forces GitHub to refresh the cron registration.
-    # and let scripts/social/run-scheduled-posts.js decide whether a post is due.
-    - cron: '7,22,37,52 * * * *'
+    # 07:03/07:08/07:13/07:18/07:23/07:28 and
+    # 20:03/20:08/20:13/20:18/20:23/20:28 JST.
+    # The script refuses missed automatic posts after the grace window.
+    - cron: '3,8,13,18,23,28 22,11 * * *'
   workflow_dispatch:
     inputs:
       kind:
@@ -45,6 +45,7 @@ jobs:
       SOCIAL_UTM_CAMPAIGN: 202605_prerelease
       SOCIAL_STATELESS_MODE: 'true'
       SOCIAL_SKIP_ORACLE_DATES: '2026-05-12'
+      SOCIAL_POST_GRACE_MINUTES: '30'
       SOCIAL_THREADS_IMAGE_FALLBACK_TEXT: 'true'
       THREADS_CONTAINER_TIMEOUT_MS: '120000'
       THREADS_POST_VERIFY_TIMEOUT_MS: '120000'
@@ -97,7 +98,7 @@ jobs:
           echo "kind=$kind" >> "$GITHUB_OUTPUT"
 
       - name: Publish due Threads post
-        if: steps.secrets.outputs.ready == 'true'
+        if: steps.secrets.outputs.ready == 'true' && github.event_name != 'push'
         shell: bash
         run: |
           kind="${{ steps.pick.outputs.kind }}"
