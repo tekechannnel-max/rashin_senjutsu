@@ -8,9 +8,10 @@
 
 ## Limited prerelease SNS operation
 
-Primary scheduled operation is handled by `.github/workflows/sns-automation.yml`.
+Primary Threads scheduled operation is handled by the Render Cron Job `rashin-threads-scheduler`.
 Daily Threads posting is handled by `scripts/social/daily-oracle-post.js`.
 Due-time execution is handled by `scripts/social/run-scheduled-posts.js`.
+GitHub Actions remains available for push/manual validation and X manual-post draft export.
 Before reporting SNS automation as complete, use `docs/sns-auto-operation-agent-checklist.md`.
 
 Target Threads account: `https://www.threads.com/@sensai_teke`.
@@ -80,14 +81,14 @@ Optional X posting uses these only if X automation is explicitly enabled:
 - `X_ACCESS_TOKEN`
 - `X_ACCESS_TOKEN_SECRET`
 
-Primary automation must run on GitHub Actions. Do not use local Windows Task Scheduler tasks, `powershell.exe` pop-up launches, or local daemon processes for SNS operation. Local runs are manual foreground diagnostics only, from an already-open terminal.
+Primary Threads automation must run on Render Cron Job `rashin-threads-scheduler`. Do not use local Windows Task Scheduler tasks, `powershell.exe` pop-up launches, or local daemon processes for SNS operation. Local runs are manual foreground diagnostics only, from an already-open terminal.
 
 Recommended schedule:
 
 - `07:00 Asia/Tokyo`: oracle image post
 - `20:00 Asia/Tokyo`: concept post
 
-GitHub Actions primary schedule is `.github/workflows/sns-automation.yml`, which ticks every hour at `:03/:08/:13/:18/:23/:28/:33/:38/:43/:48/:53/:58`. Automatic Threads posting must stay within `SOCIAL_POST_GRACE_MINUTES`; late missed runs are reported as expired instead of being published hours later. X draft artifacts are written only inside the `07:00` and `20:00` JST draft windows.
+Render Cron Job `rashin-threads-scheduler` should use `0,5,10,15,20,25,30 22,11 * * *` UTC and run `node scripts/social/run-scheduled-posts.js --once --only-kind=all`. That is `07:00-07:30` and `20:00-20:30` JST. Automatic Threads posting must stay within `SOCIAL_POST_GRACE_MINUTES`; late missed runs are reported as expired instead of being published hours later. GitHub Actions schedule in `.github/workflows/sns-automation.yml` is for X draft export only; it must not run the Threads posting job.
 
 Run a dry check before enabling real posting on any new machine:
 
