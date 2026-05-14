@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-13T14:57:58.853Z",
+  "generatedAt": "2026-05-14T13:59:47.279Z",
   "source": "data/rashin-free-paid-codes-2026-04-30.csv",
   "purpose": "Prepared manual free Rashin paid-code hash pool. Plain codes stay in the private ledger.",
   "hashAlgorithm": "sha256(\"rashin_paid_code:\" + NORMALIZED_12_CHAR_CODE)",
