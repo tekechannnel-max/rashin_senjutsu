@@ -6599,11 +6599,11 @@ function repairStaticCopy(){
   if(lineBtn){
     lineBtn.innerHTML='<span class="share-line-mark" aria-hidden="true">L</span>LINEで送る';
   }
-  setText('#dossier-title','保存用鑑定カードを整えています');
+  setText('#dossier-title','羅針カードを整えています');
   setText('#dossier-subtitle','今回の答えを、SNSで保存しやすい短い羅針カードへ整えています。');
   setText('#dossier-print-btn','PDFで残す');
   setText('#dossier-copy-btn','要約をコピー');
-  setText('#dossier-loading span','保存用鑑定カードを整えています…');
+  setText('#dossier-loading span','羅針カードを整えています…');
 }
 
 function renderBrandLayer(){
@@ -10022,7 +10022,7 @@ function normalizeDossierCardData(data={}){
   }
   const closingFallback=getIntegrationSupplementItems('背中を押す一文',focus)[0]||fallback.CLOSING;
   return{
-    TITLE:limitTextByChars(source.TITLE||fallback.TITLE||'保存用羅針カード',28,12),
+    TITLE:limitTextByChars(source.TITLE||fallback.TITLE||'羅針カード',28,12),
     ONE_LINE:limitTextByChars(source.ONE_LINE||source.HEADLINE||fallback.ONE_LINE,42,18),
     VERDICT:normalizeDossierParagraph(source.VERDICT||source.HEADLINE,fallback.VERDICT,180),
     POSITIVE_LABEL:ctx.positiveLabel,
@@ -10056,7 +10056,7 @@ function buildWorkLifeDossierData(focus={}){
     ACTION7:buildThemeSpecificActionPlan(focus).slice(0,1).join('\n'),
     KEYWORDS:buildDossierKeywords(focus),
     CLOSING:`今週は、${ctx.positiveLabel}と${ctx.negativeLabel}を選べる材料を集める週です。`,
-    EVIDENCE_SUMMARY:`追加質問と相談文から、主テーマは${ctx.primaryLabel}として整理しています。保存カードでは、${ctx.criteriaText}を判断軸に短く残します。`,
+    EVIDENCE_SUMMARY:`追加質問と相談文から、主テーマは${ctx.primaryLabel}として整理しています。羅針カードでは、${ctx.criteriaText}を判断軸に短く残します。`,
   };
 }
 
@@ -10581,7 +10581,7 @@ function renderDossierIncludedSections(){
 function buildDossierPlainText(data){
   const safeData=normalizeDossierCardData(data);
   const blocks=[
-    'RASHIN SAVE CARD',
+    'RASHIN CARD',
     safeData.TITLE,
     `一言結論：\n${safeData.ONE_LINE}`,
     `今回の答え：\n${safeData.VERDICT}`,
@@ -10605,7 +10605,7 @@ function buildDossierPlainText(data){
     CLOSING:normalizeDossierSentence(safeData.CLOSING,safeData.CLOSING,{max:54}),
   };
   return [
-    'RASHIN SAVE CARD',
+    'RASHIN CARD',
     compact.TITLE,
     `一言結論：\n${compact.ONE_LINE}`,
     `今回の答え：\n${compact.VERDICT}`,
@@ -10625,7 +10625,7 @@ function renderDossierEvidenceDetails(card){
     <details class="dossier-evidence-details">
       <summary data-closed-label="根拠を見る" data-open-label="根拠を閉じる">根拠を見る</summary>
       <div class="dossier-evidence-body">
-        <div class="dossier-evidence-lead">${escapeHtml(card.EVIDENCE_SUMMARY||'この保存カードは、土台・カード・追加質問を現実の判断軸へ翻訳してまとめています。')}</div>
+        <div class="dossier-evidence-lead">${escapeHtml(card.EVIDENCE_SUMMARY||'この羅針カードは、土台・カード・追加質問を現実の判断軸へ翻訳してまとめています。')}</div>
         ${sections.map(section=>`
           <div class="dossier-evidence-section">
             <div class="dossier-evidence-section-title">${escapeHtml(section.title||'根拠')}</div>
@@ -10644,7 +10644,7 @@ function renderDossierSaveCard(card){
   return`
     <article class="dossier-save-card">
       <div class="dossier-save-top">
-        <div class="dossier-save-kicker">RASHIN SAVE CARD</div>
+        <div class="dossier-save-kicker">RASHIN CARD</div>
         <div class="dossier-save-title">${escapeHtml(card.TITLE)}</div>
         <div class="dossier-save-one">${escapeHtml(card.ONE_LINE)}</div>
       </div>
@@ -10694,10 +10694,10 @@ function detectDossierCardQualityIssues(data={}){
     {label:card.NEGATIVE_LABEL||'止まる/動く条件',items:card.MOVE_CONDITIONS||[]},
     {label:card.HOLD_LABEL||'保留条件',items:card.HOLD_CONDITIONS||[]},
   ];
-  if(text.length>1000) issues.push('保存カードが1000字を超えている');
-  if(/[^\n。]{10,},[^\n。]{10,}/.test(text)) issues.push('保存カードにカンマ区切り配列のような表示がある');
-  if(/Q[:：]|A[:：]|【相談者の補足|相談者の補足整理|追加質問への回答/.test(text)) issues.push('保存カード本体に追加質問rawが混入している');
-  if(/No\.\d+|カード番号|配置名|中心十字|下の段|上の段|現状の列|未来の列|右側の流れ|左側の流れ/.test(text)) issues.push('保存カード本体に内部根拠やカード番号が混入している');
+  if(text.length>1000) issues.push('羅針カードが1000字を超えている');
+  if(/[^\n。]{10,},[^\n。]{10,}/.test(text)) issues.push('羅針カードにカンマ区切り配列のような表示がある');
+  if(/Q[:：]|A[:：]|【相談者の補足|相談者の補足整理|追加質問への回答/.test(text)) issues.push('羅針カード本体に追加質問rawが混入している');
+  if(/No\.\d+|カード番号|配置名|中心十字|下の段|上の段|現状の列|未来の列|右側の流れ|左側の流れ/.test(text)) issues.push('羅針カード本体に内部根拠やカード番号が混入している');
   conditionGroups.forEach(group=>{
     if((group.items||[]).length<2) issues.push(`${group.label}が2項目未満`);
     if((group.items||[]).length>2) issues.push(`${group.label}が2項目を超えている`);
@@ -10732,7 +10732,7 @@ function renderPremiumDossier(loading=false){
   if(!shouldPrepare) return;
 
   if(loading){
-    titleEl.textContent='保存用鑑定カードを整えています';
+    titleEl.textContent='羅針カードを整えています';
     subtitleEl.textContent='本編とは別に、スクショやPDFで残しやすい短いカードへ整えています。';
     loadingEl.style.display='block';
     proofEl.style.display='none';
@@ -10744,7 +10744,7 @@ function renderPremiumDossier(loading=false){
 
   const parsed=LAST_OUTPUTS.dossier?parseTaggedDossier(LAST_OUTPUTS.dossier):buildFallbackDossier();
   const safeData=normalizeDossierCardData(parsed);
-  titleEl.textContent=safeData.TITLE||'保存用鑑定カード';
+  titleEl.textContent=safeData.TITLE||'羅針カード';
   subtitleEl.textContent='SNSでスクショ保存しやすい短い羅針カードです。';
   loadingEl.style.display='none';
   proofEl.style.display='none';
@@ -10792,9 +10792,9 @@ function renderDossierViewerContent(mode='card'){
 
 function setDossierViewerMode(mode='card'){
   const title=document.getElementById('dossier-viewer-title');
-  if(title) title.textContent=mode==='evidence'?'根拠を見る':'保存用鑑定カード';
+  if(title) title.textContent=mode==='evidence'?'根拠を見る':'羅針カード';
   const kicker=document.querySelector('#dossier-viewer .dossier-viewer-kicker');
-  if(kicker) kicker.textContent=mode==='evidence'?'EVIDENCE':'SAVE CARD';
+  if(kicker) kicker.textContent=mode==='evidence'?'EVIDENCE':'RASHIN CARD';
 }
 
 function openDossierEvidenceDetails(){
@@ -10810,12 +10810,12 @@ function openDossierEvidenceDetails(){
 async function openDossierViewer(mode='card'){
   const ready=await ensureDossierReady();
   if(!ready){
-    showToast('保存用鑑定カードの準備に失敗しました');
+    showToast('羅針カードの準備に失敗しました');
     return;
   }
   renderPremiumDossier(false);
   if(!renderDossierViewerContent(mode)){
-    showToast('保存用鑑定カードを開けませんでした');
+    showToast('羅針カードを開けませんでした');
     return;
   }
   const viewer=document.getElementById('dossier-viewer');
@@ -10845,7 +10845,7 @@ async function ensureDossierReady(){
   if(DOSSIER_LOADING) return false;
   DOSSIER_LOADING=true;
   renderPremiumDossier(true);
-  showToast('保存用鑑定カードを整えています');
+  showToast('羅針カードを整えています');
   try{
     await runPremiumDossier();
     persistCurrentReading();
@@ -10862,7 +10862,7 @@ async function ensureDossierReady(){
 async function copyDossier(){
   const ready=await ensureDossierReady();
   if(!ready){
-    showToast('保存用鑑定カードの準備に失敗しました');
+    showToast('羅針カードの準備に失敗しました');
     return;
   }
   const parsed=LAST_OUTPUTS.dossier?parseTaggedDossier(LAST_OUTPUTS.dossier):buildFallbackDossier();
@@ -10879,7 +10879,7 @@ async function copyDossier(){
 async function printDossier(){
   const ready=await ensureDossierReady();
   if(!ready){
-    showToast('保存用鑑定カードの準備に失敗しました');
+    showToast('羅針カードの準備に失敗しました');
     return;
   }
   renderPremiumDossier(false);
@@ -13725,7 +13725,7 @@ ${sanitizePromptInput(parsed.integration,3000)}
 - 土台詳細表示にも文途中省略が混じっていないか
 - 同じ助言を3回以上繰り返していないか
 - ルノルマン・オラクル・統合判断が同じ役割の助言を繰り返していないか
-- 保存カードが長文鑑定書ではなく、一言結論・${ctx.positiveLabel}・${ctx.negativeLabel}・今週の一手・保存キーワード・背中押し文の短い判断カードになっているか
+- 羅針カードが長文鑑定書ではなく、一言結論・${ctx.positiveLabel}・${ctx.negativeLabel}・今週の一手・保存キーワード・背中押し文の短い判断カードになっているか
 - 「整理してください」だけで終わっていないか
 - ルノルマン9枚の読みがあるか
 - オラクル3枚の助言があるか
@@ -14044,7 +14044,7 @@ ${decisionPromptBlock}
 - LEN: 現実で何が起きているか、判断を誤りやすい場所、主テーマが副テーマへ影響する構造
 - ORC: 今週どう動くか、内面の整え方、選択肢を増やす行動
 - INTEGRATION: ${decisionLabels.positiveLabel}、${decisionLabels.negativeLabel}、${decisionLabels.holdLabel}、7日以内、30日以内、背中押し
-- 保存カード: 判断軸だけを短く残す
+- 羅針カード: 判断軸だけを短く残す
 ${decisionLabels.explicitUserPriority?'- 明示された優先テーマがある場合、「恋愛と仕事を同じ重さで同時に解決しようとしている」は主構造にしない。':'- 優先順位が明示されていない複合相談では、dual concern型の読みを使ってよい。'}
 
 【断定方針】
@@ -14834,14 +14834,14 @@ ${sourceContext}`;
 function buildPremiumDossierCardSystemPrompt(todayText){
   const focus=getCurrentRefinedFocus();
   const ctx=buildDecisionContext(focus);
-  return `あなたは羅針占術の保存用鑑定カード編集者です。
+  return `あなたは羅針占術の羅針カード編集者です。
 目的は長文鑑定書ではなく、SNSでスクショ保存したくなる短い羅針カードを作ることです。
 今日の日付は${todayText}です。根拠のない月名、季節、年末年始、来年などの時期表現は使わないでください。
 
 守ること:
 - メインは一言結論、${ctx.positiveLabel}、${ctx.negativeLabel}、${ctx.holdLabel}、今週の一手、保存キーワード、背中を押す一文だけに絞る
-- 保存カードは占い結果の全文ではなく、あとで読み返す判断軸にする
-- 本編のトップ結論、最終判断カード、保存カードで同じ判断軸を一貫させる
+- 羅針カードは占い結果の全文ではなく、あとで読み返す判断軸にする
+- 本編のトップ結論、最終判断カード、羅針カードで同じ判断軸を一貫させる
 - 追加質問の回答をそのまま再掲しない。内部で要約して使う
 - カード番号、配置名、履歴の生データ、画数や命式の羅列は通常表示に出さない
 - 根拠はEVIDENCE_SUMMARYに短くまとめる。専門用語だけを並べず、一般ユーザー向けの翻訳文を先に書く
@@ -14853,7 +14853,7 @@ function buildPremiumDossierCardSystemPrompt(todayText){
 - 文途中で切らない。読点、カンマ、中点、未完の名詞で終わらせない
 
 文字量:
-- 保存カード全体は400〜800字以内
+- 羅針カード全体は400〜800字以内
 - SNSで見える主部分は220〜450字程度
 - TITLEは最大28字
 - ONE_LINEは最大42字
@@ -14865,7 +14865,7 @@ function buildPremiumDossierCardSystemPrompt(todayText){
 - CLOSINGは最大60字
 
 出力タグ:
-[[TITLE]]保存カードのタイトル[[/TITLE]]
+[[TITLE]]羅針カードのタイトル[[/TITLE]]
 [[ONE_LINE]]一言結論[[/ONE_LINE]]
 [[VERDICT]]今回の答え。2〜3文[[/VERDICT]]
 [[DECISION_AXIS]]${ctx.positiveLabel}と${ctx.negativeLabel}だけ。各2行まで。1行1項目[[/DECISION_AXIS]]
@@ -14879,9 +14879,9 @@ function buildPremiumDossierCardSystemPrompt(todayText){
 function buildPremiumDossierCardPrompt(source){
   return `${source.contextText}
 
-上記を内部資料として使い、「長い鑑定書」ではなく短い保存用鑑定カードを作成してください。
+上記を内部資料として使い、「長い鑑定書」ではなく短い羅針カードを作成してください。
 本編で読んだ内容の再掲ではなく、あとで見返すための判断軸と行動だけに再編集してください。
-追加質問のraw回答、カード番号、配置名、履歴データは保存カード本体に出さないでください。
+追加質問のraw回答、カード番号、配置名、履歴データは羅針カード本体に出さないでください。
 進む/残る条件、止まる/動く条件、保留条件は最大2項目ずつ、今週の一手は1文だけにしてください。
 配列やカンマ区切りを本文に出さず、文途中で終わらせないでください。
 EVIDENCE_SUMMARYだけは、根拠を見る人向けに短く残してください。`;
