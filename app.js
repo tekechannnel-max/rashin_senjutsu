@@ -7082,10 +7082,88 @@ function analyzeConsultationFocus(cat='',theme=''){
     shortLabel,
     answerNeed,
     dossierTitle,
+    primaryTheme:isDualConcern?'dual_love_work':hasWork?'work':hasLove?'love':'general',
+    secondaryTheme:isDualConcern?'love':null,
+    explicitUserPriority:'',
+    decisionFrame:answerNeed,
+    actionReadiness:null,
+    decisionCriteria:'',
+    targetTiming:'',
   };
 }
 
+function stringifyFocusSupplement(input=''){
+  if(!input) return '';
+  if(typeof input==='string') return input;
+  if(typeof input==='object'){
+    return Object.values(input)
+      .flatMap(value=>{
+        if(value&&typeof value==='object') return Object.values(value);
+        return [value];
+      })
+      .map(value=>String(value||'').trim())
+      .filter(Boolean)
+      .join(' ');
+  }
+  return String(input||'');
+}
+
+function refineFocusWithClarify(focus={},clarifyText='',paidUserData={}){
+  const base={...(focus||{})};
+  const source=[base.raw,clarifyText,stringifyFocusSupplement(paidUserData)].join(' ');
+  const workLifeSignal=/今の仕事|続けるべき|別の道|2026年後半|準備|経験|収入|働きやすさ|成長|求人|スキル整理|残る条件|自分を育てる|今後の生き方|SNS担当/.test(source);
+  const workFirstSignal=/恋愛も気になるが、?今回はまず仕事|まず仕事と今後の生き方|仕事を先に|仕事と今後の生き方を先に|まず仕事|今回は仕事/.test(source);
+  const decisionFrameSignal=/今すぐ辞めるかではなく|残る条件があるか|残る条件を見る|残る条件を見/.test(source);
+  const decisionCriteriaSignal=/半年後|経験|収入|働きやすさ|成長|SNS担当/.test(source);
+  if(workLifeSignal||workFirstSignal){
+    base.hasWork=true;
+    base.needsCareerDecision=true;
+    base.needsDecision=true;
+    base.workSubtype=base.workSubtype&&base.workSubtype!=='general'?base.workSubtype:'career_change';
+    base.primaryTheme='work_life_direction';
+    base.secondaryTheme=base.hasLove||/恋愛|相手|彼氏|彼女|結婚|パートナー/.test(source)?'love':base.secondaryTheme||null;
+    base.explicitUserPriority=workFirstSignal?'仕事と今後の生き方を先に見る':'今の仕事と今後の生き方を先に見る';
+    base.decisionFrame=decisionFrameSignal
+      ?'今すぐ辞めるかではなく、残る条件があるかを見る'
+      :'今すぐ辞めるかではなく、今の職場に残る条件があるかを見る';
+    base.actionReadiness=6;
+    base.targetTiming=/2026\s*年\s*後半|2026年後半/.test(source)?'2026年後半':'次の半年';
+    base.decisionCriteria=decisionCriteriaSignal
+      ?'半年後に経験・収入・働きやすさ・成長が残るか'
+      :'経験・収入・働きやすさ・成長が残るか';
+    base.answerNeed='今すぐ辞めるかではなく、今の職場に残る条件があるかを判断したい';
+    base.shortLabel=base.secondaryTheme==='love'?'仕事と今後の生き方':'仕事';
+    base.dossierTitle='残る条件と動く条件を見極める羅針カード';
+    base.isDualConcern=false;
+  }
+  return base;
+}
+
+function getCurrentRefinedFocus(cat='',theme='',clarifyText=''){
+  const input=getCurrentInputSnapshot();
+  const resolvedCat=cat||input.cat||'総合';
+  const resolvedTheme=theme!==''?theme:(input.theme||'');
+  const resolvedClarify=clarifyText||buildClarifyPromptText('compact');
+  return refineFocusWithClarify(analyzeConsultationFocus(resolvedCat,resolvedTheme),resolvedClarify,input);
+}
+
+function isWorkLifeDirectionFocus(focus={}){
+  return focus?.primaryTheme==='work_life_direction';
+}
+
+function getFocusForContext(cat='',theme='',context={}){
+  if(context?.focus) return context.focus;
+  return refineFocusWithClarify(
+    analyzeConsultationFocus(cat,theme),
+    context?.clarifyText||'',
+    context?.paidUserData||context?.userDataText||{}
+  );
+}
+
 function buildCurrentDilemmaTranslation(focus){
+  if(isWorkLifeDirectionFocus(focus)){
+    return '大きな不満で辞めたいのではなく、安定しているからこそ動く理由を決めきれない状態です。今すぐ辞めるかではなく、今の職場に残る条件があるかを見たい状態です。';
+  }
   if(focus?.isDualConcern){
     return '恋愛も仕事も同時に決めたいというより、どちらの不安を先に切り分ければ自分が落ち着いて選べるのかを確認したい状態です。';
   }
@@ -7105,8 +7183,8 @@ function buildCurrentDilemmaTranslation(focus){
   return '答えを急いで決めたいというより、何を基準にすれば納得して進めるのかを確認したい状態です。';
 }
 
-function buildDecisionSupportPromptGuide(cat='',theme=''){
-  const focus=analyzeConsultationFocus(cat,theme);
+function buildDecisionSupportPromptGuide(cat='',theme='',focusOverride=null){
+  const focus=focusOverride||analyzeConsultationFocus(cat,theme);
   const lines=[
     `【相談者が欲しい答え】`,
     `相談者が本当に欲しいのは「${focus.answerNeed}」という実感です。`,
@@ -7134,6 +7212,11 @@ function buildDecisionSupportPromptGuide(cat='',theme=''){
     '- 「必ず」「絶対」「運命の人です」「相手はあなたを好きです」のような依存や断定につながる表現は禁止',
     '- 行動提案は「いつ・何を・どこまで確認するか」が分かる小さな実行単位にする',
   ];
+  if(isWorkLifeDirectionFocus(focus)){
+    lines.push('- 追加質問で仕事と今後の生き方が優先されている場合、主結論は「恋愛と仕事を同時に片づけない」ではなく、「今の職場に残る条件があるかを見る」にする');
+    lines.push('- 仕事中心の結論では、今すぐ辞める答えでも無条件に残る答えでもなく、経験・収入・働きやすさ・成長が半年後に残るかを判断軸にする');
+    lines.push('- 恋愛は補助説明として扱い、仕事の方向性が見えてから動くほうが安定する、という位置づけに留める');
+  }
   if(focus.isDualConcern){
     lines.push('- 恋愛と仕事が同時に出てくる場合は、必ず論点を「恋愛では〜、仕事では〜」と分けて書く');
   }
@@ -7183,6 +7266,13 @@ function getLenCoreFocusText(id){
 }
 
 function buildThemeSpecificActionPlan(focus){
+  if(isWorkLifeDirectionFocus(focus)){
+    return[
+      'この半年で増えたものを、経験・収入・働きやすさ・成長の4つに分けて書き出す。',
+      '求人を3件だけ見て、気持ちが軽くなる条件をメモする。',
+      '今の職場で評価される条件を1つ確認する。'
+    ];
+  }
   if(focus.isDualConcern){
     return[
       '恋愛と仕事を同じ紙に混ぜず、別ページで「続ける理由」「離れる・変える理由」を3つずつ書く。',
@@ -7212,6 +7302,13 @@ function buildThemeSpecificActionPlan(focus){
 }
 
 function buildThirtyDayActionPlan(focus){
+  if(isWorkLifeDirectionFocus(focus)){
+    return[
+      '今の職場に残る条件が実際にあるか確認する。',
+      '残る条件が見えない場合は、求人確認・スキル整理・副業準備の材料を集める。',
+      '1か月後に「残るなら改善すること」「動くなら始めること」を決める。'
+    ];
+  }
   if(focus.isDualConcern){
     return[
       '恋愛と仕事の決める目印を決め、毎週同じ基準で見直す。',
@@ -7241,6 +7338,13 @@ function buildThirtyDayActionPlan(focus){
 }
 
 function buildDossierWarnings(focus){
+  if(isWorkLifeDirectionFocus(focus)){
+    return[
+      '比較材料が足りない日に辞めるか残るかを決めない',
+      '役割だけ増えて評価が変わらない状態を放置しない',
+      '安定しているからという理由だけで無条件に残らない'
+    ];
+  }
   if(focus.isDualConcern){
     return[
       '恋愛と仕事を同じ気分で一気に決めない',
@@ -7270,6 +7374,13 @@ function buildDossierWarnings(focus){
 }
 
 function buildDossierLuck(focus){
+  if(isWorkLifeDirectionFocus(focus)){
+    return[
+      '半年後に残る経験が具体的に見えたとき',
+      '評価・収入・働きやすさのどれかが確認できたとき',
+      '求人や別ルートを見て気持ちが軽くなったとき'
+    ];
+  }
   if(focus.isDualConcern){
     return[
       '話しづらいことを言葉にできた日',
@@ -7299,6 +7410,9 @@ function buildDossierLuck(focus){
 }
 
 function buildDossierKeywords(focus){
+  if(isWorkLifeDirectionFocus(focus)){
+    return '残る条件 / 動く条件 / 2026年後半 / 経験と収入 / 働きやすさ / 今週の確認';
+  }
   const base=[focus.shortLabel,'条件整理','本音を言葉にする','優先順位','決める目印'];
   return Array.from(new Set(base)).join(' / ');
 }
@@ -7396,8 +7510,7 @@ function uniqueAdviceItems(items=[]){
 }
 
 function completeAdviceItems(items=[]){
-  const input=getCurrentInputSnapshot();
-  const focus=analyzeConsultationFocus(input.cat,input.theme);
+  const focus=getCurrentRefinedFocus();
   return uniqueAdviceItems([...items,...buildThemeSpecificActionPlan(focus)]).slice(0,3);
 }
 
@@ -7413,18 +7526,27 @@ function getOracleNextActions(text=''){
 }
 
 function getOracleCompassFallback(){
-  const input=getCurrentInputSnapshot();
-  const focus=analyzeConsultationFocus(input.cat,input.theme);
+  const focus=getCurrentRefinedFocus();
+  if(isWorkLifeDirectionFocus(focus)){
+    const target=focus.targetTiming==='2026年後半'?'2026年後半':'次の半年';
+    return `判断軸は、今すぐ辞めるかどうかではなく、今の職場に残る条件があるかです。半年後に経験・収入・働きやすさ・成長のどれかが増えるなら残って育てる。どれも増えないなら、${target}に向けて別の道の準備を始める、という順番で見てください。`;
+  }
   if(focus.isDualConcern) return '判断軸は、恋愛と仕事を同じ不安で処理しないことです。恋愛では安心できるやり取りか、仕事では続けた先に納得が残るかを分けて見てください。';
   if(focus.hasLove) return '判断軸は、相手の言葉よりも連絡の安定感、会う目的、自分の消耗度を見ることです。好きかどうかだけで進めると、同じ迷いに戻りやすくなります。';
   if(focus.hasWork) return '判断軸は、今の我慢が成長につながっているか、ただ消耗を増やしているだけかを分けることです。条件、役割、続けた時の負荷を順番に見てください。';
   return '判断軸は、気持ちだけで決めず、現実に確認できる条件を分けて見ることです。いま確認できること、相手や環境に聞くこと、自分で決めることを混ぜないでください。';
 }
 
-function normalizeOracleReadingText(text=''){
-  const sections=splitSections(text).map(parseStructuredSection);
+function normalizeOracleReadingText(text='',context={}){
+  let source=String(text||'');
+  const focus=context.focus||getCurrentRefinedFocus();
+  if(/ルノルマンカード/.test(source)){
+    recordPaidDebugQuality('orc_normalize',['ORC本文内にルノルマンカードが混入していたためオラクルカードへ置換しました']);
+    source=source.replace(/ルノルマンカード/g,'オラクルカード');
+  }
+  const sections=splitSections(source).map(parseStructuredSection);
   const findSection=label=>sections.find(section=>section.title.includes(label));
-  const message=findSection('光のメッセージ')||sections[0]||{title:'光のメッセージ',body:String(text||'').trim()};
+  const message=findSection('光のメッセージ')||sections[0]||{title:'光のメッセージ',body:source.trim()};
   const compass=findSection('内なる羅針盤')||sections[1]||{title:'内なる羅針盤',body:''};
   const nextActions=getOracleNextActions(text);
   let compassBody=removeListLines(compass.body);
@@ -7433,7 +7555,7 @@ function normalizeOracleReadingText(text=''){
   return[
     `■ 背景と光のメッセージ\n${message.body||'今は、目の前の状況を落ち着いて見直すことが大切です。'}`,
     `■ 内なる羅針盤\n${compassBody}`,
-    `■ 次の一手\n${nextBody||uniqueAdviceItems(buildThemeSpecificActionPlan(analyzeConsultationFocus(getCurrentInputSnapshot().cat,getCurrentInputSnapshot().theme))).slice(0,3).map(item=>`・${item}`).join('\n')}`,
+    `■ 次の一手\n${nextBody||uniqueAdviceItems(buildThemeSpecificActionPlan(focus)).slice(0,3).map(item=>`・${item}`).join('\n')}`,
   ].join('\n\n');
 }
 
@@ -7839,8 +7961,11 @@ function getNameBirthSummaryParts(){
 
 function getConsultationBasisSummary(){
   const input=getCurrentInputSnapshot();
-  const focus=analyzeConsultationFocus(input.cat,input.theme);
+  const focus=getCurrentRefinedFocus(input.cat,input.theme);
   const themeText=input.theme&&input.theme!=='全般'?`「${input.theme}」`:'今回の相談';
+  if(isWorkLifeDirectionFocus(focus)){
+    return '今回の迷いは、職場が悪いかどうかではなく、この場所で自分の力が育つかどうかを見極める流れです。';
+  }
   if(/恋|愛|相手|復縁|出会|片思い|結婚|関係/.test(`${input.cat||''}${input.theme||''}`)){
     return `${themeText}では、「好きかどうか」だけで決めるより、連絡の安定感、会う目的、相手の意思表示を見ることが大切です。`;
   }
@@ -7850,6 +7975,42 @@ function getConsultationBasisSummary(){
   return focus?.answerNeed
     ?`${themeText}では、気持ちだけで決めず、何を確認すれば安心して進めるかを整理することが大切です。`
     :'「好きかどうか」だけで決めるより、連絡の安定感、会う目的、相手の意思表示を見ることが大切です。';
+}
+
+function makeFoundationSummary(type='',fullText='',context={}){
+  const focus=context.focus||getCurrentRefinedFocus();
+  if(type==='animal'){
+    if(isWorkLifeDirectionFocus(focus)){
+      return '適応力と表現力があり、良い手本を取り入れて自分の形に変える力があります。今回の判断では、自分の本音を仕事の条件として言葉にできるかが鍵です。';
+    }
+    if(focus.hasLove){
+      return '相手に合わせる力がある一方で、自分の消耗を後回しにしやすい傾向があります。今回の判断では、安心して話せる関係かを見ることが大切です。';
+    }
+    if(focus.hasWork){
+      return '状況を読みながら力を出せる一方で、負荷を抱えすぎると消耗しやすい傾向があります。今回の判断では、役割と見返りの釣り合いが鍵です。';
+    }
+    return '周りの状況を読みながら、自分なりの形に整える力があります。今回の判断では、気持ちと現実条件を分けて見るほど選びやすくなります。';
+  }
+  if(type==='nameBirth'){
+    if(isWorkLifeDirectionFocus(focus)){
+      return '名前からは調整力と対話力、生まれからは現実を整える力が出ています。急な決断より、条件を確認しながら進むほど安定しやすい傾向です。';
+    }
+    return '名前と生まれからは、対話しながら現実を整える力が出ています。急いで白黒をつけるより、確認できる条件を増やすほど判断が安定します。';
+  }
+  if(type==='consultation'){
+    if(isWorkLifeDirectionFocus(focus)){
+      return '今回の迷いは、職場が悪いかどうかではなく、この場所で自分の力が育つかどうかを見極める流れです。';
+    }
+    if(focus.hasLove){
+      return '今回の迷いは、好きかどうかだけでなく、安心して向き合える関係かを見極める流れです。';
+    }
+    if(focus.hasWork){
+      return '今回の迷いは、今の環境で自分の力が育つか、別の場所で活かす準備を始めるかを見極める流れです。';
+    }
+    return '今回の迷いは、正解を急ぐより、何を確認すれば納得して選べるかを見極める流れです。';
+  }
+  const clean=String(fullText||'').trim();
+  return clean&&/[。！？]$/.test(clean)?clean:'今回の判断では、気持ちだけでなく現実に確認できる条件を見ていくことが大切です。';
 }
 
 function buildFoundationDetailHTML(items=[]){
@@ -7914,16 +8075,20 @@ function renderFoundationMiniSummary(){
   }
   const animal=getAnimalTypeSummaryParts();
   const nameBirth=getNameBirthSummaryParts();
-  const consultation=truncateText(getConsultationBasisSummary(),90);
+  const input=getCurrentInputSnapshot();
+  const focus=getCurrentRefinedFocus(input.cat,input.theme);
+  const animalSummary=makeFoundationSummary('animal','',{focus,animal});
+  const nameBirthSummary=makeFoundationSummary('nameBirth','',{focus,nameBirth});
+  const consultation=makeFoundationSummary('consultation',getConsultationBasisSummary(),{focus,animal,nameBirth});
   const cards=[
     {
       title:`動物タイプ：${animal.name}`,
-      body:`${truncateText(animal.strength,70)}<br>${truncateText(animal.inConsultation,82)}`,
+      body:animalSummary,
       detail:buildAnimalFoundationDetail(animal),
     },
     {
       title:'名前と生まれが示す傾向',
-      body:`${nameBirth.summary}<br>${nameBirth.caution}`,
+      body:nameBirthSummary,
       detail:buildNameBirthFoundationDetail(),
     }
   ];
@@ -8728,6 +8893,24 @@ function openHistoryItem(id){
   if(!LAST_OUTPUTS.foundationDeep) LAST_OUTPUTS.foundationDeep='';
   if(!LAST_OUTPUTS.dossier) LAST_OUTPUTS.dossier='';
   if(!LAST_OUTPUTS.followups) LAST_OUTPUTS.followups={};
+  if(record.plan==='paid'){
+    const historyClarify=buildClarifyPromptText('compact');
+    const historyFocus=refineFocusWithClarify(
+      analyzeConsultationFocus(record.input?.cat||'総合',record.input?.theme||''),
+      historyClarify,
+      record.input||{}
+    );
+    if(LAST_OUTPUTS.orc) LAST_OUTPUTS.orc=normalizeOracleReadingText(LAST_OUTPUTS.orc,{focus:historyFocus,clarifyText:historyClarify});
+    if(LAST_OUTPUTS.integration){
+      LAST_OUTPUTS.integration=ensureFinalJudgmentText(
+        LAST_OUTPUTS.integration,
+        record.input?.fullname||'あなた',
+        record.input?.cat||'総合',
+        record.input?.theme||'',
+        {focus:historyFocus,clarifyText:historyClarify}
+      );
+    }
+  }
   CURRENT_READING_ID=record.id;
   CURRENT_READING_CREATED_AT=record.createdAt||new Date().toISOString();
   ACTIVE_FOLLOWUP_KEY=Object.keys(LAST_OUTPUTS.followups||{})[0]||'';
@@ -9238,6 +9421,22 @@ function splitDossierDecisionAxis(data={}){
 function normalizeDossierCardData(data={}){
   const fallback=buildFallbackDossier();
   const source={...fallback,...(data||{})};
+  const focus=getCurrentRefinedFocus();
+  if(isWorkLifeDirectionFocus(focus)){
+    const workFallback=buildWorkLifeDossierData(focus);
+    if(/恋愛と仕事を同時に片づけようとしない|同時に片づけない/.test(`${source.ONE_LINE||''} ${source.VERDICT||''}`)){
+      source.ONE_LINE=workFallback.ONE_LINE;
+      source.VERDICT=workFallback.VERDICT;
+    }
+    if(!/今の職場|残る条件|経験|収入|働きやすさ|成長/.test(`${source.ONE_LINE||''} ${source.VERDICT||''} ${source.DECISION_AXIS||''}`)){
+      Object.assign(source,workFallback,{EVIDENCE_SUMMARY:source.EVIDENCE_SUMMARY||workFallback.EVIDENCE_SUMMARY});
+    }else{
+      source.DECISION_AXIS=source.DECISION_AXIS||workFallback.DECISION_AXIS;
+      source.ACTION7=source.ACTION7||workFallback.ACTION7;
+      source.KEYWORDS=source.KEYWORDS||workFallback.KEYWORDS;
+      source.CLOSING=source.CLOSING||workFallback.CLOSING;
+    }
+  }
   const decisionAxis=splitDossierDecisionAxis(source);
   const action7=limitDossierLines(source.ACTION7,3,24);
   const keywords=normalizeDossierKeywords(source.KEYWORDS);
@@ -9252,6 +9451,30 @@ function normalizeDossierCardData(data={}){
     KEYWORDS:keywords.length?keywords:normalizeDossierKeywords(fallback.KEYWORDS),
     CLOSING:limitTextByChars(source.CLOSING||fallback.CLOSING,60,24),
     EVIDENCE_SUMMARY:limitTextByChars(source.EVIDENCE_SUMMARY||fallback.EVIDENCE_SUMMARY,360,120),
+  };
+}
+
+function buildWorkLifeDossierData(focus={}){
+  const target=focus.targetTiming||(/2026\s*年\s*後半|2026年後半/.test(focus.raw||'')?'2026年後半':'次の半年');
+  const targetPhrase=target==='2026年後半'?'2026年後半に向けて':'次の半年に向けて';
+  return{
+    TITLE:'残る条件を見極める羅針カード',
+    ONE_LINE:'今すぐ辞めず、残る条件があるかを見る。',
+    VERDICT:`今の答えは、無条件に残ることでも、勢いで辞めることでもありません。経験・収入・働きやすさ・成長が増えるなら残って育てる。どれも増えないなら、${targetPhrase}別の道の準備を始める判断です。`,
+    DECISION_AXIS:[
+      '残る条件：半年後に経験・収入・働きやすさ・成長のどれかが増える',
+      '残る条件：SNS担当など実績として残せる役割がある',
+      '動く条件：役割だけ増えて評価や働きやすさが変わらない',
+      '動く条件：求人や別ルートを見たときに気持ちが軽くなる'
+    ].join('\n'),
+    ACTION7:[
+      '4項目で現職を棚卸しする',
+      '求人を3件だけ見る',
+      '評価条件を1つ確認する'
+    ].join('\n'),
+    KEYWORDS:'残る条件 / 動く条件 / 経験と収入 / 働きやすさ / 2026年後半',
+    CLOSING:'今週は、辞める決断ではなく、選べる自分に戻る材料を集める週です。',
+    EVIDENCE_SUMMARY:'追加質問では、恋愛よりも仕事と今後の生き方を先に見たい意図が出ています。保存カードでは、今の職場に残る条件があるかを中心に再編集しています。',
   };
 }
 
@@ -9276,9 +9499,25 @@ function buildDossierRecurringThemeText(focus=analyzeConsultationFocus()){
 
 function buildFallbackDossier(){
   const input=getCurrentInputSnapshot();
-  const focus=analyzeConsultationFocus(input.cat,input.theme);
+  const focus=getCurrentRefinedFocus(input.cat,input.theme);
   const action7=buildThemeSpecificActionPlan(focus);
   const action30=buildThirtyDayActionPlan(focus);
+  if(isWorkLifeDirectionFocus(focus)){
+    const workData=buildWorkLifeDossierData(focus);
+    return{
+      ...workData,
+      ACTION30:action30.join('\n'),
+      STOP_SIGN:buildDossierWarnings(focus).join('\n'),
+      GO_SIGN:buildDossierLuck(focus).join('\n'),
+      SUBTITLE:'これは未来を決めつける結果ではなく、あなたが次に動くための作戦書です。',
+      HEADLINE:workData.ONE_LINE,
+      CORE:workData.VERDICT,
+      TIMING:workData.DECISION_AXIS,
+      WARNING:buildDossierWarnings(focus).join('\n'),
+      LUCK:buildDossierLuck(focus).join('\n'),
+      RECURRING:buildDossierRecurringThemeText(focus),
+    };
+  }
   const headline=getSectionBody(LAST_OUTPUTS.integration,0)||`${focus.shortLabel}を一度に決め切るより、決める目印を先に整えるほうが前に進みやすい時期です。`;
   const core=getSectionBody(LAST_OUTPUTS.len,0)||getSectionBody(LAST_OUTPUTS.foundationDeep,0)||getSectionBody(LAST_OUTPUTS.orc,0)||'いまは感情の強さより、何が判断を止めているのかを整理することが先です。';
   const timing=getSectionBody(LAST_OUTPUTS.integration,1)||getSectionBody(LAST_OUTPUTS.orc,2)||'大きな結論は急がず、今週の確認で見えてくる変化を手がかりにしてください。';
@@ -11879,16 +12118,32 @@ function completeDanglingReadingLine(line=''){
   return `${indent}${marker}${body}。`;
 }
 
-function buildWorkFinalJudgmentText(name='あなた',cat='総合',theme=''){
-  const focus=analyzeConsultationFocus(cat,theme);
-  const target=/2026\s*年\s*後半|2026年後半/.test(String(theme||''))
+function buildWorkLifeTopVerdictText(name='あなた',focus={},theme=''){
+  const target=focus.targetTiming||(/2026\s*年\s*後半|2026年後半/.test(`${theme||''} ${focus.raw||''}`)
+    ?'2026年後半'
+    :'次の半年');
+  const criteria=focus.decisionCriteria||'半年後に経験・収入・働きやすさ・成長が残るか';
+  return `大きな不満があるから辞めたいのではありません。
+安定しているからこそ、動く理由を決めきれない状態です。
+今回の答えは、今すぐ辞めることではなく、今の職場に残る条件があるかを確認することです。
+${criteria}なら、今の仕事を使って自分を育てる判断です。
+どれも増えないなら、${target}に向けて別の道の準備を始めてください。
+恋愛は、仕事の方向性が見えてから動くほうが安定します。`;
+}
+
+function buildWorkFinalJudgmentText(name='あなた',cat='総合',theme='',context={}){
+  const focus=getFocusForContext(cat,theme,context);
+  const target=focus.targetTiming==='2026年後半'||/2026\s*年\s*後半|2026年後半/.test(`${theme||''} ${focus.raw||''}`)
     ?'2026年後半に向けて'
     :'次の半年に向けて';
   const loveLine=focus.hasLove
     ?'\n\n恋愛は今すぐ結論を出すより、仕事の方向性が見えてから動くほうが安定します。相手の気持ちを決め打ちせず、不安を伝えたときに向き合えるかを見てください。'
     :'';
+  const topVerdict=isWorkLifeDirectionFocus(focus)
+    ?buildWorkLifeTopVerdictText(name,focus,theme)
+    :`今すぐ辞める流れではありません。ただし、今の職場に何も条件をつけず残る流れでもありません。仕事を先に見る理由は、生活と将来の見通しが恋愛や生き方の判断にも影響しているためです。${loveLine}`;
   return `■ 今回の最終判断
-今すぐ辞める流れではありません。ただし、今の職場に何も条件をつけず残る流れでもありません。仕事を先に見る理由は、生活と将来の見通しが恋愛や生き方の判断にも影響しているためです。${loveLine}
+${topVerdict}
 
 ■ 残る条件
 ・半年後に、経験・収入・働きやすさ・成長のどれかが増える。
@@ -11944,9 +12199,9 @@ function buildDefaultFinalJudgmentText(name='あなた',cat='総合',theme=''){
 迷いを消すのではなく、判断に使える条件へ変えることから始めてください。`;
 }
 
-function getFinalJudgmentFallback(name='あなた',cat='総合',theme=''){
-  const focus=analyzeConsultationFocus(cat,theme);
-  return focus.hasWork?buildWorkFinalJudgmentText(name,cat,theme):buildDefaultFinalJudgmentText(name,cat,theme);
+function getFinalJudgmentFallback(name='あなた',cat='総合',theme='',context={}){
+  const focus=getFocusForContext(cat,theme,context);
+  return focus.hasWork?buildWorkFinalJudgmentText(name,cat,theme,{...context,focus}):buildDefaultFinalJudgmentText(name,cat,theme);
 }
 
 function extractHeadingBody(text='',heading=''){
@@ -11962,17 +12217,162 @@ function replaceHeadingBody(text='',heading='',body=''){
   return `${source}\n\n■ ${heading}\n${body.trim()}`.trim();
 }
 
-function ensureIntegrationSlots(text='',name='あなた',cat='総合',theme=''){
+function removeLegacyIntegrationSections(text=''){
+  return String(text||'')
+    .replace(/\n?■\s*(判断ポイント|次にやること)\s*\n[\s\S]*?(?=\n■\s|$)/g,'')
+    .replace(/\n{3,}/g,'\n\n')
+    .trim();
+}
+
+const INTEGRATION_HEADING_REQUIREMENTS={
+  '残る条件':{min:2,max:4},
+  '動く条件':{min:2,max:4},
+  '保留条件':{min:2,max:4},
+  '7日以内の一手':{min:1,max:3},
+  '30日以内に見ること':{min:1,max:3},
+};
+
+function stripIntegrationListMarker(line=''){
+  return String(line||'').replace(/^(\d+[\.\)]|[-・])\s*/,'').trim();
+}
+
+function normalizeIntegrationItemKey(text=''){
+  return String(text||'')
+    .replace(/[「」『』（）()\s、。,.，．・]/g,'')
+    .replace(/です|ます|してください|すること|しておくこと/g,'')
+    .slice(0,42);
+}
+
+function ensureJapaneseSentence(text=''){
+  const clean=String(text||'').trim().replace(/[。.!?！？]+$/,'');
+  return clean?`${clean}。`:'';
+}
+
+function splitIntegrationItems(body=''){
+  const lines=String(body||'').split('\n').map(line=>line.trim()).filter(Boolean);
+  const listLines=lines.filter(line=>/^(\d+[\.\)]|[-・])\s*/.test(line));
+  const source=listLines.length?listLines:lines;
+  const items=source.flatMap(line=>{
+    const stripped=stripIntegrationListMarker(line);
+    if(!stripped) return [];
+    if(listLines.length) return [stripped];
+    return stripped.split(/(?<=。)/).map(item=>item.trim()).filter(Boolean);
+  });
+  return items.map(ensureJapaneseSentence).filter(Boolean);
+}
+
+function getIntegrationSupplementItems(heading='',focus={},cat='総合',theme=''){
+  if(isWorkLifeDirectionFocus(focus)||focus?.hasWork){
+    const target=focus.targetTiming==='2026年後半'||/2026\s*年\s*後半|2026年後半/.test(`${theme||''} ${focus.raw||''}`)?'2026年後半までに':'次の半年までに';
+    const workItems={
+      '残る条件':[
+        '半年後に経験が増えている。',
+        '収入、役割、評価のどれかが上がっている。',
+        'SNS担当として実績に残せるものがある。',
+        '働きやすさが改善している。'
+      ],
+      '動く条件':[
+        '役割だけ増えて評価が変わらない。',
+        '本音を出すほど居づらくなる。',
+        '求人や別ルートを見たときに気持ちが軽くなる。',
+        `${target}準備できる材料が見えている。`
+      ],
+      '保留条件':[
+        '比較材料が足りない。',
+        '不安が強い日に決めようとしている。',
+        '職場の反応や条件を確認していない。',
+        '辞めるか残るかを一気に決めようとしている。'
+      ],
+      '7日以内の一手':[
+        'この半年で増えたものを、経験・収入・働きやすさ・成長の4つに分けて書き出す。',
+        '求人を3件だけ見て、気持ちが軽くなる条件をメモする。',
+        '今の職場で評価される条件を1つ確認する。'
+      ],
+      '30日以内に見ること':[
+        '今の職場に残る条件が実際にあるか確認する。',
+        '残る条件が見えない場合は、求人確認・スキル整理・副業準備の材料を集める。',
+        '1か月後に「残るなら改善すること」「動くなら始めること」を決める。'
+      ],
+      '背中を押す一文':[
+        '今週は、辞める決断ではなく、選べる自分に戻るための材料を集める週です。'
+      ],
+    };
+    return workItems[heading]||[];
+  }
+  const fallback=getFinalJudgmentFallback('あなた',cat,theme,{focus});
+  const fallbackItems=splitIntegrationItems(extractHeadingBody(fallback,heading));
+  if(fallbackItems.length) return fallbackItems;
+  return{
+    '残る条件':['続けた先に安心、信頼、具体的な前進のどれかが残る。','相手や環境が、言葉だけでなく行動で変化を見せる。'],
+    '動く条件':['同じ不安が繰り返され、確認しても状況が動かない。','あなたばかりが合わせて、次の一手が見えない。'],
+    '保留条件':['まだ確認していないことが多い。','不安な日に結論を出そうとしている。'],
+    '7日以内の一手':['続けたい理由と変えたい理由を、別々に3つずつ書き出す。'],
+    '30日以内に見ること':['残る条件、動く条件、保留条件のどれが増えたかを見直す。'],
+    '背中を押す一文':['迷いを消すのではなく、判断に使える条件へ変えることから始めてください。'],
+  }[heading]||[];
+}
+
+function completeIntegrationItems(existingItems=[],supplementItems=[],min=1,max=4){
+  const seen=new Set();
+  const result=[];
+  [...existingItems,...supplementItems].forEach(item=>{
+    const sentence=ensureJapaneseSentence(item);
+    const key=normalizeIntegrationItemKey(sentence);
+    if(!sentence||!key||seen.has(key)) return;
+    seen.add(key);
+    result.push(sentence);
+  });
+  while(result.length<min&&supplementItems[result.length]){
+    const sentence=ensureJapaneseSentence(supplementItems[result.length]);
+    if(sentence) result.push(sentence);
+  }
+  return result.slice(0,max);
+}
+
+function ensureIntegrationHeadingItems(output='',heading='',focus={},cat='総合',theme=''){
+  const requirement=INTEGRATION_HEADING_REQUIREMENTS[heading];
+  if(!requirement) return output;
+  const body=extractHeadingBody(output,heading);
+  const existing=splitIntegrationItems(body);
+  const supplement=getIntegrationSupplementItems(heading,focus,cat,theme);
+  const items=completeIntegrationItems(existing,supplement,requirement.min,requirement.max);
+  return replaceHeadingBody(output,heading,items.map(item=>`・${item}`).join('\n'));
+}
+
+function ensureIntegrationPushLine(output='',focus={},cat='総合',theme=''){
+  const body=extractHeadingBody(output,'背中を押す一文');
+  const sentence=String(body||'').split(/(?<=。)/).map(item=>stripIntegrationListMarker(item).trim()).find(Boolean)
+    ||getIntegrationSupplementItems('背中を押す一文',focus,cat,theme)[0]
+    ||'今週は、答えを急ぐより判断材料を集める一歩から始めてください。';
+  return replaceHeadingBody(output,'背中を押す一文',ensureJapaneseSentence(sentence));
+}
+
+function ensureTopVerdictInIntegration(output='',name='あなた',focus={},theme=''){
+  if(!isWorkLifeDirectionFocus(focus)) return output;
+  const body=extractHeadingBody(output,'今回の最終判断');
+  const needsReplace=!/今の職場に残る条件|経験・収入・働きやすさ・成長|自分を育てる/.test(body)
+    ||/恋愛と仕事を同時に片づけようとしないこと/.test(body);
+  if(!needsReplace) return output;
+  return replaceHeadingBody(output,'今回の最終判断',buildWorkLifeTopVerdictText(name,focus,theme));
+}
+
+function ensureIntegrationSlots(text='',name='あなた',cat='総合',theme='',context={}){
   let output=String(text||'').trim();
-  const fallback=getFinalJudgmentFallback(name,cat,theme);
+  const focus=getFocusForContext(cat,theme,context);
+  const fallback=getFinalJudgmentFallback(name,cat,theme,{...context,focus});
   output=output.replace(/^■\s*今週の一手/m,'■ 7日以内の一手');
+  if(/^■\s*結論/m.test(output)&&!/^■\s*今回の最終判断/m.test(output)){
+    output=output.replace(/^■\s*結論/m,'■ 今回の最終判断');
+  }
+  if(/^■\s*今回の最終判断/m.test(output)){
+    output=removeLegacyIntegrationSections(output);
+  }
   const required=['今回の最終判断','残る条件','動く条件','保留条件','7日以内の一手','30日以内に見ること','背中を押す一文'];
   required.forEach(heading=>{
     if(!new RegExp(`^■\\s*${heading}`,'m').test(output)){
       output=replaceHeadingBody(output,heading,extractHeadingBody(fallback,heading));
     }
   });
-  const focus=analyzeConsultationFocus(cat,theme);
   if(focus.hasWork){
     const workAxis=/経験|収入|働きやすさ|成長/.test(output);
     if(!workAxis){
@@ -11982,13 +12382,18 @@ function ensureIntegrationSlots(text='',name='あなた',cat='総合',theme=''){
       output=replaceHeadingBody(output,'30日以内に見ること',extractHeadingBody(fallback,'30日以内に見ること'));
     }
   }
+  output=ensureTopVerdictInIntegration(output,name,focus,theme);
+  Object.keys(INTEGRATION_HEADING_REQUIREMENTS).forEach(heading=>{
+    output=ensureIntegrationHeadingItems(output,heading,focus,cat,theme);
+  });
+  output=ensureIntegrationPushLine(output,focus,cat,theme);
   return output.trim();
 }
 
-function ensureFinalJudgmentText(text='',name='あなた',cat='総合',theme=''){
+function ensureFinalJudgmentText(text='',name='あなた',cat='総合',theme='',context={}){
   const normalized=normalizePaidReadingText(text);
-  const base=normalized||getFinalJudgmentFallback(name,cat,theme);
-  return ensureIntegrationSlots(base,name,cat,theme);
+  const base=normalized||getFinalJudgmentFallback(name,cat,theme,context);
+  return ensureIntegrationSlots(base,name,cat,theme,context);
 }
 
 function countMeaningfulChars(text=''){
@@ -12052,7 +12457,18 @@ function detectRepeatedAdviceIssues(text=''){
     .filter(item=>item.length>=12);
   const counts=new Map();
   sentences.forEach(sentence=>counts.set(sentence,(counts.get(sentence)||0)+1));
-  return [...counts.entries()].filter(([,count])=>count>=3).map(([sentence])=>`同じ助言が3回以上繰り返されています: ${limitTextByChars(sentence,40,20)}`);
+  const issues=[...counts.entries()].filter(([,count])=>count>=3).map(([sentence])=>`同じ助言が3回以上繰り返されています: ${limitTextByChars(sentence,40,20)}`);
+  const meaningPatterns=[
+    {label:'恋愛と仕事を同じ重さで抱える話',re:/恋愛.*仕事|仕事.*恋愛|同時に片づけ|同じ不安|同じ重さ/},
+    {label:'条件を整理する話',re:/条件を整理|条件整理|整理.*条件|続ける条件と|切り替える条件|分けて書|条件を書/},
+    {label:'恋愛は安心、仕事は続ける意味の話',re:/恋愛.*安心|安心.*恋愛|仕事.*続ける意味|続ける意味.*仕事/},
+    {label:'本音や見落としている条件の話',re:/本音|見落としている条件|まだ見えていない/},
+  ];
+  meaningPatterns.forEach(pattern=>{
+    const count=sentences.filter(sentence=>pattern.re.test(sentence)).length;
+    if(count>=3) issues.push(`${pattern.label}が3回以上繰り返されています`);
+  });
+  return [...new Set(issues)];
 }
 
 function detectIrresponsibleAssertionIssues(text=''){
@@ -12085,9 +12501,55 @@ function detectWeakEscapeIssues(text=''){
   return [...new Set(issues)];
 }
 
+function countIntegrationItemsForHeading(text='',heading=''){
+  return splitIntegrationItems(extractHeadingBody(text,heading)).length;
+}
+
+function getOpeningSentences(text='',count=3){
+  return String(text||'')
+    .replace(/^■[^\n]*\n?/,'')
+    .split(/(?<=。)/)
+    .map(item=>item.trim())
+    .filter(Boolean)
+    .slice(0,count)
+    .join('');
+}
+
+function detectOracleLabelIssues(text=''){
+  const issues=[];
+  if(/ルノルマンカード/.test(String(text||''))){
+    issues.push('ORC本文内にルノルマンカードが混入しています');
+  }
+  return issues;
+}
+
+function detectOracleFallbackJapaneseIssues(text=''){
+  const source=String(text||'');
+  const issues=[];
+  if(/ここまでの[^。\n]+さんは、(?:ここまでのあなたは|これまでのあなたは)/.test(source)){
+    issues.push('ORACLE fallbackの主語が重複しています');
+  }
+  if(/キーワード[:：]?[^。\n]+形で力を出しやすい|、[^。\n、。]+、[^。\n、。]+、[^。\n、。]+ 形で/.test(source)){
+    issues.push('ORACLE fallbackにキーワード列挙の直結があります');
+  }
+  return issues;
+}
+
+function detectTruncatedSummaryIssues(text=''){
+  const issues=[];
+  String(text||'').split('\n').forEach((line,index)=>{
+    const trimmed=line.trim();
+    if(/[^\s。！？.!?」』）)](?:…|\.{3})$/.test(trimmed)){
+      issues.push(`${index+1}行目が文途中の省略表示で終わっています`);
+    }
+  });
+  return issues;
+}
+
 function validateIntegrationSatisfaction(text='',context={}){
   const issues=[];
   const source=String(text||'');
+  const focus=context.focus||getFocusForContext(context.cat||'',context.theme||'',context);
   if(!/今回の最終判断|結論|答え/.test(source)) issues.push('integrationが相談者の質問に直接答えていません');
   if(!/残る条件/.test(source)) issues.push('integrationに残る条件がありません');
   if(!/動く条件/.test(source)) issues.push('integrationに動く条件がありません');
@@ -12101,9 +12563,27 @@ function validateIntegrationSatisfaction(text='',context={}){
   if(!/条件|目印|一手|行動|確認|書き出|分ける|始める|止める|保留|30日/.test(source)){
     issues.push('integrationが入力内容の再掲に寄っています');
   }
-  const focus=context.focus||analyzeConsultationFocus(context.cat||'',context.theme||'');
   if(focus.hasWork&&!/経験|収入|働きやすさ|成長/.test(source)){
     issues.push('integrationに仕事の残る/動く判断軸が足りません');
+  }
+  Object.entries(INTEGRATION_HEADING_REQUIREMENTS).forEach(([heading,requirement])=>{
+    const count=countIntegrationItemsForHeading(source,heading);
+    if(count<requirement.min) issues.push(`integrationの${heading}が${requirement.min}項目未満です`);
+    if(count>requirement.max) issues.push(`integrationの${heading}が${requirement.max}項目を超えています`);
+  });
+  const pushLine=extractHeadingBody(source,'背中を押す一文');
+  if(!pushLine) issues.push('integrationに背中を押す一文の本文がありません');
+  if(isWorkLifeDirectionFocus(focus)){
+    const opening=getOpeningSentences(extractHeadingBody(source,'今回の最終判断')||source,3);
+    if(!/大きな不満|安定|動く理由|残る条件|今の職場/.test(opening)){
+      issues.push('冒頭3文で仕事の迷いの核心が言語化されていません');
+    }
+    if(!/今の職場に残る条件|経験・収入・働きやすさ・成長|仕事を先/.test(source)){
+      issues.push('トップ結論が追加質問の仕事中心テーマに直接答えていません');
+    }
+    if(/恋愛と仕事を同時に片づけようとしないこと/.test(extractHeadingBody(source,'今回の最終判断'))){
+      issues.push('仕事中心の追加質問なのにdual concern型が主結論になっています');
+    }
   }
   return issues;
 }
@@ -12131,8 +12611,11 @@ function validatePaidReadingQuality(parsed={},context={}){
   ['len','orc','integration'].forEach(key=>{
     issues.push(...detectPaidTextQualityIssues(key,parsed[key]||''));
     issues.push(...detectWeakEscapeIssues(parsed[key]||'').map(issue=>`${key}: ${issue}`));
+    issues.push(...detectTruncatedSummaryIssues(parsed[key]||'').map(issue=>`${key}: ${issue}`));
   });
   issues.push(...validateIntegrationSatisfaction(parsed.integration||'',context));
+  issues.push(...detectOracleLabelIssues(parsed.orc||''));
+  issues.push(...detectOracleFallbackJapaneseIssues(parsed.orc||''));
   issues.push(...detectIrresponsibleAssertionIssues(joined));
   issues.push(...detectRepeatedAdviceIssues(joined));
   return [...new Set(issues)];
@@ -12167,19 +12650,26 @@ ${sanitizePromptInput(parsed.integration,3000)}
 </section>
 
 チェック対象:
+- 冒頭3文で迷いの核心が言語化されているか
+- トップ結論が追加質問の主テーマに直接答えているか
+- 仕事中心の追加質問ならトップ結論が「今の職場に残る条件があるかを見る」になっているか
 - 結論があるか
 - 判断ポイントがあるか
 - 次の一手があるか
 - この鑑定を読んだ有料ユーザーが、次に何をすればいいか分かるか
 - 条件Aなら進む、条件Bなら止まる、条件Cなら保留があるか
-- 残る条件、動く条件、保留条件がそろっているか
-- 7日以内の行動と30日以内に見ることがあるか
+- 残る条件、動く条件、保留条件が各2項目以上あるか
+- 7日以内の行動が1〜3項目で具体的か
+- 30日以内に見る基準が1〜3項目で具体的か
 - 相談者の入力文の言い換えだけで終わらず、内面の矛盾を解釈しているか
 - 無責任な断定を避けつつ、判断条件は明確か
 - 最後の一文が背中を押しているか
 - 相談者の質問に直接答えているか
 - 判断期限があるか
 - 文が途中で切れていないか
+- ORC本文内に「ルノルマンカード」が混入していないか
+- ORACLE fallbackの主語重複やキーワード列挙直結がないか
+- collapsed summaryのような文途中省略が混じっていないか
 - 同じ助言を3回以上繰り返していないか
 - 「整理してください」だけで終わっていないか
 - ルノルマン9枚の読みがあるか
@@ -12239,7 +12729,9 @@ ${sanitizePromptInput(parsed.orc,3000)}
 ${sanitizePromptInput(parsed.integration,3000)}
 
 補完対象: ${sections.join(', ')}
-返却は ===INTEGRATION=== だけにしてください。必ず「今回の最終判断 / 残る条件 / 動く条件 / 保留条件 / 7日以内の一手 / 30日以内に見ること / 背中を押す一文」を含めてください。`;
+返却は ===INTEGRATION=== だけにしてください。必ず「今回の最終判断 / 残る条件 / 動く条件 / 保留条件 / 7日以内の一手 / 30日以内に見ること / 背中を押す一文」を含めてください。
+残る条件・動く条件・保留条件は各2〜4項目、7日以内・30日以内は各1〜3項目にしてください。
+追加質問で仕事が優先されている場合は、主結論を「今の職場に残る条件があるかを見る」にしてください。`;
   const raw=await callAI(prompt,2600,'あなたは有料鑑定の最終判断カード補完担当です。無責任な断定は避け、判断条件は明確に言い切ってください。LENとORCは書き直さず、最後の判断カードで満足度を補ってください。',{
     taskKey:'structure',
     images:[],
@@ -12257,7 +12749,8 @@ async function strengthenPaidIntegration(parsed={},context={}){
     parsed.integration||'',
     context.name||'あなた',
     context.cat||'総合',
-    context.theme||''
+    context.theme||'',
+    context
   );
   const localIssues=[
     ...detectPaidTextQualityIssues('integration',baseIntegration),
@@ -12299,6 +12792,7 @@ LENとORCは書き直さず、INTEGRATIONだけを強化してください。
 
 仕事相談では、経験・収入・働きやすさ・自分の成長のどれが増えるかを必ず判断軸に入れてください。
 相談文に2026年後半がある場合は、2026年後半に向けて準備を始める条件を明示してください。
+追加質問で「仕事を先に」「今の仕事」「別の道」「残る条件」「経験・収入・働きやすさ・成長」が出ている場合、主結論は必ず「今の職場に残る条件があるかを見る」にしてください。「恋愛と仕事を同時に片づけない」は補助説明に留め、主結論にしないでください。
 「整理してください」だけで終わらせないでください。`;
   const prompt=`【相談者入力データ】
 ${context.paidUserData||''}
@@ -12336,7 +12830,7 @@ ${sanitizePromptInput(parsed.integration||'',1600)}
     recordPaidDebugRaw('integration_strengthen',raw,null);
     const parsedPatch=parseCombinedPaidReading(raw);
     const candidate=normalizePaidReadingText(parsedPatch.integration||raw||'');
-    const strengthened=ensureFinalJudgmentText(candidate,context.name||'あなた',context.cat||'総合',context.theme||'');
+    const strengthened=ensureFinalJudgmentText(candidate,context.name||'あなた',context.cat||'総合',context.theme||'',context);
     const issues=[
       ...detectPaidTextQualityIssues('integration',strengthened),
       ...validateIntegrationSatisfaction(strengthened,context),
@@ -12354,6 +12848,7 @@ ${sanitizePromptInput(parsed.integration||'',1600)}
 
 function renderPaidCombinedOutputs(parsed,name,cat,theme,options={}){
   const allowFallback=options.allowFallback!==false;
+  const focus=getFocusForContext(cat,theme,options);
   if(!allowFallback&&(!parsed.len||!parsed.orc||!parsed.integration)){
     const message='深掘り鑑定を作れませんでした。少し時間をおいて、もう一度お試しください。';
     LAST_OUTPUTS.len=parsed.len||message;
@@ -12368,9 +12863,9 @@ function renderPaidCombinedOutputs(parsed,name,cat,theme,options={}){
     const orcSource=parsed.orc||buildRichOrcFallback(name,cat,true);
     const integrationSource=parsed.integration||buildIntegratedFallback(name,cat,theme);
     LAST_OUTPUTS.len=normalizePaidReadingText(lenSource);
-    LAST_OUTPUTS.orc=normalizeOracleReadingText(normalizePaidReadingText(orcSource));
+    LAST_OUTPUTS.orc=normalizeOracleReadingText(normalizePaidReadingText(orcSource),{...options,focus});
     const integrationText=normalizePaidReadingText(integrationSource);
-    LAST_OUTPUTS.integration=ensureFinalJudgmentText(integrationText,name,cat,theme);
+    LAST_OUTPUTS.integration=ensureFinalJudgmentText(integrationText,name,cat,theme,{...options,focus});
     recordPaidDebugNormalization('len',lenSource,LAST_OUTPUTS.len);
     recordPaidDebugNormalization('orc',orcSource,LAST_OUTPUTS.orc);
     recordPaidDebugNormalization('integration',integrationSource,LAST_OUTPUTS.integration);
@@ -12424,7 +12919,7 @@ async function runPaidCombinedReading(){
   const name=getFullname()||'あなた';
   const cat=document.getElementById('f-cat')?.value||'総合';
   const theme=document.getElementById('f-theme')?.value||'';
-  const focus=analyzeConsultationFocus(cat,theme);
+  let focus=analyzeConsultationFocus(cat,theme);
   const lenSpreadContext=buildLenSpreadPromptContext(cat);
   const lenFull=SEL_LEN.length===9
     ?`${lenSpreadContext.cardDetails}
@@ -12450,12 +12945,13 @@ ${lenSpreadContext.chainDetails}`;
   const orcFull=SEL_ORC.map((id,i)=>{
     const o=ORACLE[id];
     const kw=o.keywords?o.keywords.join('・'):'';
-    return`${getOrcSpreadLabel(i,SEL_ORC.length)}：No.${id}「${o.name}」${o.master?' ★マスターナンバー':''}\n  大事な意味：${o.essence||''} ／ キーワード：${kw}\n  メッセージ：${o.msg}`;
+    return`${getOrcSpreadLabel(i,SEL_ORC.length)}：No.${id}「${o.name}」${o.master?' ★マスターナンバー':''}\n  大事な意味：${o.essence||''} ／ キーワード素材：${kw}\n  メッセージ素材（本文へ丸写し禁止）：${o.msg}`;
   }).join('\n');
   const birthPlain=buildBirthPlainInsight(MEIMEI);
   const namePlain=buildNamePlainInsight(NAMEJUDGE);
   const reactionText=buildReactionPromptSnippet();
   const clarifyText=buildClarifyPromptText('compact');
+  focus=refineFocusWithClarify(focus,clarifyText,{name,cat,theme});
   const birthDetail=birthPlain?[birthPlain.overview,birthPlain.timing,birthPlain.advice].filter(Boolean).join(' '):'なし';
   const nameDetail=namePlain?[namePlain.overview,namePlain.timing,namePlain.advice].filter(Boolean).join(' '):'なし';
   const lifeDetail=buildLifePatternPlainText();
@@ -12478,7 +12974,7 @@ ${lenSpreadContext.chainDetails}`;
 役割は、ルノルマンを主軸に、オラクルを補助線として使い、相談者が判断できる文章を書くことです。
 今日の日付は${todayText}です。過去の日付や過ぎた月を、これから来る時期のように書かないでください。
 
-${buildDecisionSupportPromptGuide(cat,theme)}
+${buildDecisionSupportPromptGuide(cat,theme,focus)}
 
 【断定方針】
 - 無根拠な未来、他人の心、医療・法律・投資などの専門判断は断定しない
@@ -12535,6 +13031,7 @@ ${SEL_LEN.length===9?`- LENの「今の流れ」または「迷いの構造」�
 - ORCの「内なる羅針盤」は判断軸だけを書く。箇条書きは禁止。「次の一手」と同じ文や同じ助言を繰り返さない
 - ORCの「次の一手」は3項目に絞り、整理する・確認する・止める/始めるなど役割の違う行動にする
 - ORCは全ての文を完結させる。「仕事の判断軸は『今の職場で、経験・収入」のような途中切れや、「経験 / 収入 / 成長」だけの断片は禁止
+- ORC block 内で「ルノルマンカード」という語を使わない。ORCは「オラクルカード」「内なる羅針盤」「次の一手」として書く
 - 隣接2枚は、前のカードを主題、後のカードを修飾・答えとして読む
 - ${SEL_LEN.length===9?'3枚連鎖は途中で切らず、一本の流れとして読む':'2枚を別々に解説せず、「主題がどう色づき、どう動くか」という一つの答えにする'}
 - ${SEL_LEN.length===9?'9枚では⑤の中心十字、角、対称ペア、距離差、ナイト先、テーマカード周辺を補助根拠に使う':'2枚では、1枚目で相談の核を取り、2枚目で原因・状態・対処の方向を絞る'}
@@ -12675,6 +13172,8 @@ ${orcFull}
 - 「魂」「波動」「宇宙」は使わない。「本音」「本質」は根拠付きなら使ってよい
 - 無根拠な未来・他人の心・専門判断は断定しない。ただし判断条件は言い切る
 - INTEGRATIONには「今回の最終判断 / 残る条件 / 動く条件 / 保留条件 / 7日以内の一手 / 30日以内に見ること / 背中を押す一文」を必ず入れる
+- 残る条件・動く条件・保留条件は各2〜4項目、7日以内・30日以内は各1〜3項目にする
+- 仕事中心の追加質問なら、主結論を「今の職場に残る条件があるかを見る」にする
 - 条件は「条件Aなら進む、条件Bなら止まる、条件Cなら保留」の形にする`;
       const retryPrompt=`${prompt}
 
@@ -12723,7 +13222,7 @@ ${qualityResult.issues.map(issue=>`- ${issue}`).join('\n')}
     recordPaidDebugParsed('fallback',parsed);
   }
 
-  renderPaidCombinedOutputs(parsed,name,cat,theme,{allowFallback:true});
+  renderPaidCombinedOutputs(parsed,name,cat,theme,{...paidDebugContext,allowFallback:true});
   if(paidGenerationFailed){
     await sendClientLog({
       level:'warn',
@@ -12761,7 +13260,8 @@ async function runLenReading(){
   const name=getFullname()||'あなた';
   const cat=document.getElementById('f-cat')?.value||'総合';
   const theme=document.getElementById('f-theme')?.value||'';
-  const focus=analyzeConsultationFocus(cat,theme);
+  const clarifyText=buildClarifyPromptText('detail');
+  const focus=refineFocusWithClarify(analyzeConsultationFocus(cat,theme),clarifyText,{cat,theme});
   const is9=(SEL_LEN.length===9);
   const isFreePair=(SEL_LEN.length===FREE_LEN_COUNT);
   const lenSpreadContext=buildLenSpreadPromptContext(cat);
@@ -12802,7 +13302,7 @@ async function runLenReading(){
 役割は状況を説明することではなく、「相談者が今日から動ける目印」を与えることです。
 カードは内部で使い切り、メイン本文にはカード名もシステム説明も詰め込まない。根拠は別レイヤーに残す。
 
-${buildDecisionSupportPromptGuide(cat,theme)}
+${buildDecisionSupportPromptGuide(cat,theme,focus)}
 
 【絶対禁止 ─ これをやると鑑定書として失敗とみなす】
 - カード名、カード枚数、並び、過去/現在/未来、顕在/潜在、占術名、システム説明
@@ -12865,7 +13365,6 @@ ${is9?`■ 迷いの構造
 なぜいまも迷っているのかの構造的な原因を1文で断言する。9枚の行・列・中心と周辺のズレを根拠として使い、表面の問題ではなく深層のパターンを書く。「このパターンに気づくと動きやすくなる」という視点で書く。精神論なしで構造と事実だけを使う。`:''}
 合計${is9?'1200字前後':isFreePair?'520字前後':'260字前後'}。冒頭だけは短く締め、その後は脱線しない範囲で必要なら深く書いてよい。1文は短く、難しい言葉は禁止。`;
   // 絞り込み回答があれば注入
-  const clarifyText=buildClarifyPromptText('detail');
   const fixedCardText=buildFixedGenderCardPromptText();
   const userDataText=[
     formatUserDataBlock('相談者名',name,120),
@@ -12909,15 +13408,15 @@ async function runOrcReading(){
   const name=getFullname()||'あなた';
   const cat=document.getElementById('f-cat')?.value||'総合';
   const theme=document.getElementById('f-theme')?.value||'';
-  const focus=analyzeConsultationFocus(cat,theme);
+  const clarifyText=buildClarifyPromptText('compact');
+  const focus=refineFocusWithClarify(analyzeConsultationFocus(cat,theme),clarifyText,{cat,theme});
   const is3=(SEL_ORC.length===3);
   const orcLabels=getOrcSpreadLabels();
-  const orcInfo=SEL_ORC.map((id,i)=>{const o=ORACLE[id];const kw=o.keywords?o.keywords.join('・'):'';return`${orcLabels[i]||''}：No.${id}「${o.name}」${o.master?' ★マスターナンバー':''}\n大事な意味：${o.essence||''} ／ キーワード：${kw}\nメッセージ：${o.msg}`;}).join('\n');
+  const orcInfo=SEL_ORC.map((id,i)=>{const o=ORACLE[id];const kw=o.keywords?o.keywords.join('・'):'';return`${orcLabels[i]||''}：No.${id}「${o.name}」${o.master?' ★マスターナンバー':''}\n大事な意味：${o.essence||''} ／ キーワード素材：${kw}\nメッセージ素材（本文へ丸写し禁止）：${o.msg}`;}).join('\n');
   const lpCard=LP?ORACLE[LP]:null;
   const lpGuide=LP
     ?'誕生日から見えるその人らしさと、今回の状況のつながりを必ず見出すこと。'
     :'誕生日の日が未入力のため、この観点への言及はせず、引いたカード同士の流れから性質と行動を読んでください。';
-  const clarifyText=buildClarifyPromptText('compact');
   const birthPlain=buildBirthPlainInsight(MEIMEI);
   const namePlain=buildNamePlainInsight(NAMEJUDGE);
   const reactionText=buildReactionPromptSnippet();
@@ -12934,10 +13433,11 @@ ${reactionText}`;
 役割は気持ちを甘やかすことではなく、迷いの扱い方と「次にとる具体的な行動」を分かりやすく言葉にすることです。
 オラクルカードはアドバイスの媒体です。各カードのメッセージを相談者への行動提案に変換することが最重要の仕事です。
 
-${buildDecisionSupportPromptGuide(cat,theme)}
+${buildDecisionSupportPromptGuide(cat,theme,focus)}
 
 【絶対禁止】
 - カード名、枚数、並び、過去/現在/未来、占術名、システム説明
+- ORC本文内で「ルノルマンカード」という語を使わない。「オラクルカード」「内なる羅針盤」「次の一手」として書く
 - メッセージの丸写し
 - 「カードが示すのは〜」という説明口調
 - 根拠の薄い断言
@@ -12985,8 +13485,8 @@ ${formatUserDataBlock('追加質問への回答',clarifyText,1600)}
 ${LP?`【ライフパスナンバー：${LP}${lpCard?.master?' (マスターナンバー)':''}】
 カード名：「${lpCard?.name||''}」
 大事な意味：${lpCard?.essence||''}
-キーワード：${lpCard?.keywords?.join('・')||''}
-ヒント：${lpCard?.msg||''}
+キーワード素材：${lpCard?.keywords?.join('・')||''}
+ヒント素材（本文へ丸写し禁止）：${lpCard?.msg||''}
 数秘的意味：${lpCard?.note||''}`:`【補足】
 誕生日の日が未入力のため、今回はこの観点を使わず、引いたカード同士の流れを優先して読んでください。`}
 
@@ -13022,7 +13522,8 @@ async function runIntegration(){
   const name=getFullname()||'あなた';
   const cat=document.getElementById('f-cat')?.value||'総合';
   const theme=document.getElementById('f-theme')?.value||'';
-  const focus=analyzeConsultationFocus(cat,theme);
+  const clarifyFull=buildClarifyPromptText('compact');
+  const focus=refineFocusWithClarify(analyzeConsultationFocus(cat,theme),clarifyFull,{name,cat,theme});
   const is9=(SEL_LEN.length===9);
   const lenSpreadContext=buildLenSpreadPromptContext(cat);
   const lpCard=LP?ORACLE[LP]:null;
@@ -13041,11 +13542,10 @@ ${lenSpreadContext.diagonalDetails}`
   const orcFull=SEL_ORC.map((id,i)=>{
     const o=ORACLE[id];
     const kw=o.keywords?o.keywords.join('・'):'';
-    return`${getOrcSpreadLabel(i,SEL_ORC.length)}：No.${id}「${o.name}」${o.master?' ★マスターナンバー':''}\n  大事な意味：${o.essence||''} ／ キーワード：${kw}\n  メッセージ：${o.msg}`;
+    return`${getOrcSpreadLabel(i,SEL_ORC.length)}：No.${id}「${o.name}」${o.master?' ★マスターナンバー':''}\n  大事な意味：${o.essence||''} ／ キーワード素材：${kw}\n  メッセージ素材（本文へ丸写し禁止）：${o.msg}`;
   }).join('\n');
 
   // 補足回答
-  const clarifyFull=buildClarifyPromptText('compact');
   const hasClarify=hasClarifyAnswers();
   const targetChars=hasClarify?'3000':'2500';
 
@@ -13064,7 +13564,7 @@ ${lenSpreadContext.diagonalDetails}`
 - オラクルは本人の内面・動機・行動の整え方を示す補助線
 - 結論はルノルマンの現実診断を土台に、オラクルで方向性を補強する形にする
 
-${buildDecisionSupportPromptGuide(cat,theme)}
+${buildDecisionSupportPromptGuide(cat,theme,focus)}
 
 【絶対禁止】
 - カード名、占術名、システム説明
@@ -13125,12 +13625,12 @@ ${buildReadingOutputFormatGuide('integration')}`;
       taskKey:PLAN==='paid'?'paid':'free',
       images:buildCardImageRefs('all',PLAN==='paid'?'paid':'free'),
     });
-    LAST_OUTPUTS.integration=res;
+    LAST_OUTPUTS.integration=ensureFinalJudgmentText(res,name,cat,theme,{focus,clarifyText:clarifyFull});
     document.getElementById('r-aiload').style.display='none';
     document.getElementById('r-integration').style.display='block';
-    renderFormattedResultText('r-integration',res,'integration');
+    renderFormattedResultText('r-integration',LAST_OUTPUTS.integration,'integration');
   }catch(e){
-    LAST_OUTPUTS.integration=buildIntegratedFallback(name,cat,theme);
+    LAST_OUTPUTS.integration=ensureFinalJudgmentText(buildIntegratedFallback(name,cat,theme,{focus,clarifyText:clarifyFull}),name,cat,theme,{focus,clarifyText:clarifyFull});
     document.getElementById('r-aiload').style.display='none';
     document.getElementById('r-integration').style.display='block';
     renderFormattedResultText('r-integration',LAST_OUTPUTS.integration,'integration');
@@ -13155,10 +13655,10 @@ ${buildReadingOutputFormatGuide('integration')}`;
 
 function buildPremiumDossierSourceContext(){
   const input=getCurrentInputSnapshot();
-  const focus=analyzeConsultationFocus(input.cat,input.theme);
+  const clarifyText=buildClarifyPromptText('plain');
+  const focus=refineFocusWithClarify(analyzeConsultationFocus(input.cat,input.theme),clarifyText,input);
   const lenNames=SEL_LEN.map(id=>`No.${id} ${LENORMAND[id]?.name||''}`).join(' / ');
   const orcNames=SEL_ORC.map(id=>`No.${id} ${ORACLE[id]?.name||''}`).join(' / ');
-  const clarifyText=buildClarifyPromptText('plain');
   const birthPlain=buildBirthPlainInsight(MEIMEI);
   const namePlain=buildNamePlainInsight(NAMEJUDGE);
   const reactionText=buildReactionPromptSnippet();
@@ -13262,6 +13762,8 @@ function buildPremiumDossierCardSystemPrompt(todayText){
 
 守ること:
 - メインは一言結論、残る条件、動く条件、今週の一手、保存キーワード、背中を押す一文だけに絞る
+- 保存カードは占い結果の全文ではなく、あとで読み返す判断軸にする
+- 本編のトップ結論、最終判断カード、保存カードで同じ判断軸を一貫させる
 - 追加質問の回答をそのまま再掲しない。内部で要約して使う
 - カード番号、配置名、履歴の生データ、画数や命式の羅列は通常表示に出さない
 - 根拠はEVIDENCE_SUMMARYに短くまとめる。専門用語だけを並べず、一般ユーザー向けの翻訳文を先に書く
@@ -14476,9 +14978,28 @@ function buildRichLenFallback(name,cat){
   return lines.join('\n');
 }
 
+function buildOracleLifePathUserText(card={},focus={}){
+  const source=[card.msg,card.essence,(card.keywords||[]).join(' ')].join(' ');
+  if(/表現|見せ方|プレゼン|コミュニケーション|創造/.test(source)){
+    return isWorkLifeDirectionFocus(focus)||focus?.hasWork
+      ?'あなたは、場の空気を読み、良い手本を取り入れて自分の表現に変える力があります。仕事では、SNS担当や接客のように、見せ方と対話を使う場面で力が出やすいです。'
+      :'あなたは、感じたことを自分の言葉に変え、人に伝わる形へ整える力があります。その良さを、いまは我慢ではなく判断のために使う段階です。';
+  }
+  if(/調整|バランス|調和|支え|協力/.test(source)){
+    return 'あなたは、相手や場の状態を見ながら全体を整える力があります。ただ今は、周りに合わせるだけでなく、自分が無理なく続けられる条件も同じ重さで見てください。';
+  }
+  if(/基盤|努力|積み重ね|安定|現実/.test(source)){
+    return 'あなたは、一度決めたことを現実に積み上げる力があります。だからこそ、今回の判断では我慢の長さではなく、積み上げた先に何が残るかを見てください。';
+  }
+  if(/変化|自由|新しい|探求|更新/.test(source)){
+    return 'あなたは、変化の中で自分に合う形を探し直せる人です。今は大きく飛ぶより、選択肢を増やしてから動くほうが力を使いやすくなります。';
+  }
+  return 'あなたには、状況に合わせながらも最後は自分で選び直す力があります。いまはその力を、誰かの期待ではなく自分の判断条件に向けて使う段階です。';
+}
+
 function buildRichOrcFallback(name,cat,is3){
   const input=getCurrentInputSnapshot();
-  const focus=analyzeConsultationFocus(cat,input.theme||'');
+  const focus=getCurrentRefinedFocus(cat,input.theme||'');
   const lpCard=LP?ORACLE[LP]:null;
   const birthPlain=buildBirthPlainInsight(MEIMEI);
   const namePlain=buildNamePlainInsight(NAMEJUDGE);
@@ -14533,7 +15054,7 @@ function buildRichOrcFallback(name,cat,is3){
   const lines=[];
   lines.push('■ 光のメッセージ','');
   if(reflective){
-    lines.push(`ここまでの${name}さんは、${reflective}`);
+    lines.push(reflective);
   }else{
     lines.push(`${name}さんはここまで、状況に合わせながら何とか崩れずにやってこようとしてきたはずです。`);
   }
@@ -14541,16 +15062,18 @@ function buildRichOrcFallback(name,cat,is3){
     lines.push(`ただ今は、${currentNeed}`);
   }
   if(reaction?.power){
-    lines.push(`反応の出方では、${reaction.power} 形で力を出しやすい人です。`);
+    lines.push('反応の出方を見ると、場に合わせるだけでなく、自分が力を出しやすい条件を言葉にしたときに判断が安定しやすい人です。');
   }else if(reaction?.summary){
     lines.push(reaction.summary);
   }
   if(LP&&lpCard){
-    lines.push(`もともとの持ち味として、${lpCard.msg.replace(/してください。?$/,'できる人です。')} その良さを、いまは他人のためだけでなく自分の判断にも使う段階です。`);
+    lines.push(buildOracleLifePathUserText(lpCard,focus));
   }
 
   lines.push('','■ 内なる羅針盤','');
-  if(focus.isDualConcern){
+  if(isWorkLifeDirectionFocus(focus)){
+    lines.push('今の羅針盤は、辞めるか残るかを今日決めることではありません。今の職場に残る条件があるかを見て、経験・収入・働きやすさ・成長のどれが半年後に増えるかを確かめることです。恋愛は、その仕事の方向性が見えてから動くほうが安定します。');
+  }else if(focus.isDualConcern){
     lines.push('恋愛と仕事を同じ不安で抱えないことが最優先です。恋愛では「安心できるか」、仕事では「続ける意味があるか」と、問いを分けるだけで頭の混乱がかなり減ります。');
   }else if(focus.hasLove){
     lines.push('相手の気持ちを読むことより先に、自分がこの関係で何を我慢しすぎているのかを認めることが先です。');
@@ -14571,8 +15094,8 @@ function buildRichOrcFallback(name,cat,is3){
   return lines.join('\n');
 }
 
-function buildIntegratedFallback(name,cat,theme=''){
-  const focus=analyzeConsultationFocus(cat,theme);
+function buildIntegratedFallback(name,cat,theme='',context={}){
+  const focus=getFocusForContext(cat,theme,context);
   const ids=[...SEL_LEN];
   const hasHidden=hasLenGroup(ids,'hidden');
   const hasEnding=hasLenGroup(ids,'ending');
@@ -14581,7 +15104,9 @@ function buildIntegratedFallback(name,cat,theme=''){
   const actionPlan=buildThemeSpecificActionPlan(focus);
   const lines=['■ 結論',''];
 
-  if(focus.isDualConcern){
+  if(isWorkLifeDirectionFocus(focus)){
+    lines.push(buildWorkLifeTopVerdictText(name,focus,theme));
+  }else if(focus.isDualConcern){
     lines.push(`${name}さんの答えは、「恋愛と仕事を同時に片づけようとしないこと」です。いまは両方を一気に決めるより、恋愛では安心感、仕事では納得感という別々の軸で見直したほうが前に進めます。`);
   }else if(focus.hasLove){
     lines.push(`${name}さんの答えは、「情の強さ」ではなく「向き合える関係か」で見極めることです。`);
