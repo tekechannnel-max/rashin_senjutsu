@@ -5104,6 +5104,11 @@ function setGoogleAuthError(message){
   el.style.display='block';
 }
 
+function isPendingRashinPaidCodeIntent(intent=''){
+  const value=String(intent||MEMBER_PENDING_INTENT||'');
+  return (value==='start-paid'||value==='upgrade-paid')&&!!readPendingRashinPaidCode();
+}
+
 function renderGoogleAuthShell(){
   const shell=document.getElementById('google-auth-shell');
   const copy=document.getElementById('google-auth-copy');
@@ -5114,7 +5119,10 @@ function renderGoogleAuthShell(){
     clearGoogleAuthError();
     return;
   }
-  copy.textContent=MEMBER_PENDING_INTENT==='start-paid'
+  const pendingRashinCode=isPendingRashinPaidCodeIntent(MEMBER_PENDING_INTENT);
+  copy.textContent=pendingRashinCode
+    ?'ログイン後、保存済みの羅針コードを確認します。'
+    :MEMBER_PENDING_INTENT==='start-paid'
     ?'ログインして購入へ進む'
     :MEMBER_PENDING_INTENT==='rashin-bonus'
     ?'ログインして羅針のかけらを受け取る'
@@ -5925,13 +5933,16 @@ function openMemberAccessModal(intent=''){
   const submitBtn=document.getElementById('member-access-submit-btn');
   const compactPaidStart=MEMBER_PENDING_INTENT==='start-paid';
   const bonusLogin=MEMBER_PENDING_INTENT==='rashin-bonus';
+  const pendingRashinCode=isPendingRashinPaidCodeIntent(MEMBER_PENDING_INTENT);
   clearMemberAccessError();
   clearGoogleAuthError();
   clearDeveloperAccessError();
-  if(title) title.textContent=bonusLogin?'今日の羅針':(compactPaidStart&&RASHIN_BOOTH_PURCHASE_ENABLED?'深掘り鑑定の購入':'深掘り鑑定の確認');
+  if(title) title.textContent=pendingRashinCode?'羅針コードの確認':(bonusLogin?'今日の羅針':(compactPaidStart&&RASHIN_BOOTH_PURCHASE_ENABLED?'深掘り鑑定の購入':'深掘り鑑定の確認'));
   if(desc){
     desc.style.display='';
-    desc.textContent=bonusLogin
+    desc.textContent=pendingRashinCode
+      ?'羅針コードは保存済みです。ログイン後に自動で確認します。'
+      :bonusLogin
       ?'Googleログインで今日のカードを記録し、羅針のかけらを1つ受け取ります。'
       :canUseDeveloperQuickAccess()
       ?'確認用アクセスは上のボタンから進めます。'
@@ -5940,8 +5951,10 @@ function openMemberAccessModal(intent=''){
         :'深掘り鑑定は、利用状態を確認できたときだけ開きます。');
   }
   if(guide){
-    guide.style.display=bonusLogin?'none':'';
-    guide.textContent=canUseDeveloperQuickAccess()
+    guide.style.display=bonusLogin||pendingRashinCode?'none':'';
+    guide.textContent=pendingRashinCode
+      ?''
+      :canUseDeveloperQuickAccess()
       ?'確認用アクセスは上のボタン。その他の確認方法は下から選べます。'
       :(MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn
         ?'購入履歴と深掘り鑑定を安全に保存します。'
@@ -5950,17 +5963,23 @@ function openMemberAccessModal(intent=''){
           :'深掘り鑑定はGoogleログインを優先しています。'));
   }
   if(status){
-    status.style.display=bonusLogin?'none':'';
-    const usesGoogle=MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn&&!canUsePaidTestMode();
-    const usesDeveloper=canUseDeveloperQuickAccess();
-    status.className=`runtime-status ${usesDeveloper||canUsePaidTestMode()||usesGoogle?'ok':'warn'}`;
-    status.innerHTML=usesDeveloper
-        ?'<div class="runtime-status-title">確認用アクセスを使えます</div><div class="runtime-status-detail">このまま深掘り鑑定フローへ進めます。</div>'
-      :canUsePaidTestMode()
-      ?'<div class="runtime-status-title">このまま深掘り鑑定フローへ進めます</div><div class="runtime-status-detail">確認用の状態で深掘り鑑定フローを確認できます。</div>'
-      :(usesGoogle
-        ?'<div class="runtime-status-title">Googleログインで続行</div><div class="runtime-status-detail">履歴と購入確認を保存します。</div>'
-        :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':'深掘り羅針鑑定の準備中です'}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':(RASHIN_BOOTH_PURCHASE_ENABLED?'有料鑑定はBOOTH購入後に注文番号を入力すると利用できます。プレリリース価格780円、正式リリース後は1000円予定です。':'有料鑑定は羅針のかけら30個、または羅針コードで利用できます。プレリリース価格780円、正式リリース後は1000円予定です。')}</div>`);
+    if(pendingRashinCode){
+      status.style.display='none';
+      status.className='runtime-status';
+      status.innerHTML='';
+    }else{
+      status.style.display=bonusLogin?'none':'';
+      const usesGoogle=MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn&&!canUsePaidTestMode();
+      const usesDeveloper=canUseDeveloperQuickAccess();
+      status.className=`runtime-status ${usesDeveloper||canUsePaidTestMode()||usesGoogle?'ok':'warn'}`;
+      status.innerHTML=usesDeveloper
+          ?'<div class="runtime-status-title">確認用アクセスを使えます</div><div class="runtime-status-detail">このまま深掘り鑑定フローへ進めます。</div>'
+        :canUsePaidTestMode()
+        ?'<div class="runtime-status-title">このまま深掘り鑑定フローへ進めます</div><div class="runtime-status-detail">確認用の状態で深掘り鑑定フローを確認できます。</div>'
+        :(usesGoogle
+          ?'<div class="runtime-status-title">Googleログインで続行</div><div class="runtime-status-detail">履歴と購入確認を保存します。</div>'
+          :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':'深掘り羅針鑑定の準備中です'}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':(RASHIN_BOOTH_PURCHASE_ENABLED?'有料鑑定はBOOTH購入後に注文番号を入力すると利用できます。プレリリース価格780円、正式リリース後は1000円予定です。':'有料鑑定は羅針のかけら30個、または羅針コードで利用できます。プレリリース価格780円、正式リリース後は1000円予定です。')}</div>`);
+    }
   }
   if(disclosure) disclosure.style.display='none';
   if(localBtn){
