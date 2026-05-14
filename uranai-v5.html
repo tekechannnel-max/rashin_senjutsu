@@ -4402,6 +4402,176 @@ body.coming-soon-locked{
 
 }
 
+.dossier-save-card{
+  position:relative;z-index:1;
+  width:min(760px,100%);
+  margin:0 auto;
+  padding:clamp(20px,4vw,32px);
+  border:1px solid rgba(228,184,74,.34);
+  background:
+    linear-gradient(145deg,rgba(6,9,20,.96),rgba(22,12,30,.94) 54%,rgba(8,18,24,.95));
+  box-shadow:0 24px 72px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.035);
+  color:rgba(246,240,220,.9);
+  overflow:hidden;
+}
+
+.dossier-save-top{
+  padding-bottom:16px;
+  border-bottom:1px solid rgba(228,184,74,.22);
+}
+
+.dossier-save-kicker{
+  font-size:11px;
+  color:rgba(176,226,218,.84);
+  margin-bottom:8px;
+}
+
+.dossier-save-title{
+  font-family:'Shippori Mincho',serif;
+  font-size:clamp(24px,4vw,34px);
+  line-height:1.35;
+  color:var(--gold-l);
+  margin-bottom:12px;
+}
+
+.dossier-save-one{
+  font-size:15px;
+  line-height:1.75;
+  color:rgba(255,246,210,.92);
+}
+
+.dossier-save-verdict{
+  margin:18px 0;
+  font-size:16px;
+  line-height:1.85;
+  color:rgba(248,242,222,.9);
+}
+
+.dossier-save-section,
+.dossier-save-block{
+  padding-top:14px;
+  border-top:1px solid rgba(228,184,74,.16);
+}
+
+.dossier-save-heading{
+  font-size:12px;
+  color:rgba(176,226,218,.82);
+  margin-bottom:9px;
+}
+
+.dossier-save-axis{
+  display:grid;
+  gap:8px;
+  font-size:13px;
+  line-height:1.7;
+  color:rgba(246,240,220,.84);
+}
+
+.dossier-save-columns{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:18px;
+  margin-top:16px;
+}
+
+.dossier-save-list{
+  display:grid;
+  gap:7px;
+  margin:0;
+  padding:0;
+  list-style:none;
+}
+
+.dossier-save-item{
+  position:relative;
+  padding-left:14px;
+  font-size:13px;
+  line-height:1.7;
+  color:rgba(246,240,220,.82);
+}
+
+.dossier-save-item::before{
+  content:'';
+  position:absolute;
+  left:0;
+  top:.72em;
+  width:5px;
+  height:5px;
+  background:rgba(228,184,74,.82);
+}
+
+.dossier-save-keywords{
+  margin-top:18px;
+  padding-top:14px;
+  border-top:1px solid rgba(228,184,74,.16);
+}
+
+.dossier-save-keywords .dossier-chip{
+  background:rgba(176,226,218,.08);
+  border-color:rgba(176,226,218,.24);
+  color:rgba(232,248,244,.88);
+}
+
+.dossier-save-closing{
+  margin-top:18px;
+  padding-top:16px;
+  border-top:1px solid rgba(228,184,74,.22);
+  font-family:'Shippori Mincho',serif;
+  font-size:17px;
+  line-height:1.8;
+  color:rgba(255,232,171,.94);
+}
+
+.dossier-evidence-details{
+  width:min(760px,100%);
+  margin:16px auto 0;
+  border:1px solid rgba(176,226,218,.18);
+  background:rgba(5,8,20,.86);
+}
+
+.dossier-evidence-details > summary{
+  cursor:pointer;
+  padding:14px 16px;
+  color:var(--gold-l);
+  font-family:'Shippori Mincho',serif;
+  font-size:15px;
+}
+
+.dossier-evidence-body{
+  padding:0 16px 16px;
+  display:grid;
+  gap:12px;
+}
+
+.dossier-evidence-lead{
+  font-size:13px;
+  line-height:1.85;
+  color:rgba(246,240,220,.84);
+}
+
+.dossier-evidence-note{
+  font-size:12px;
+  line-height:1.7;
+  color:rgba(246,240,220,.58);
+}
+
+.dossier-evidence-section{
+  padding-top:12px;
+  border-top:1px solid rgba(228,184,74,.12);
+}
+
+.dossier-evidence-section-title{
+  font-size:12px;
+  color:rgba(176,226,218,.82);
+  margin-bottom:6px;
+}
+
+.dossier-evidence-section-copy{
+  font-size:13px;
+  line-height:1.85;
+  color:rgba(246,240,220,.76);
+}
+
 .dossier-loading{
 
   padding:18px 0 8px;
@@ -4583,6 +4753,10 @@ body.dossier-viewer-open{
   box-shadow:0 24px 70px rgba(0,0,0,.42),inset 0 0 0 1px rgba(255,255,255,.025);
 }
 
+.dossier-viewer-content .dossier-meta{
+  display:none;
+}
+
 .dossier-viewer-content .dossier-actions{
   display:none;
 }
@@ -4605,7 +4779,9 @@ body.dossier-viewer-open{
 
   body.print-dossier .dossier-card,
 
-  body.print-dossier .dossier-hero{
+  body.print-dossier .dossier-hero,
+
+  body.print-dossier .dossier-save-card{
 
     background:#fff !important;border-color:#bbb !important;box-shadow:none !important;
 
@@ -4613,7 +4789,11 @@ body.dossier-viewer-open{
 
   body.print-dossier .dossier-title,
 
-  body.print-dossier .dossier-card-title{color:#111 !important;}
+  body.print-dossier .dossier-card-title,
+
+  body.print-dossier .dossier-save-title,
+
+  body.print-dossier .dossier-save-closing{color:#111 !important;}
 
   body.print-dossier .dossier-subtitle,
 
@@ -4631,7 +4811,17 @@ body.dossier-viewer-open{
 
   body.print-dossier .dossier-proof-section-title,
 
-  body.print-dossier .dossier-proof-pill{color:#222 !important;}
+  body.print-dossier .dossier-proof-pill,
+
+  body.print-dossier .dossier-save-one,
+
+  body.print-dossier .dossier-save-verdict,
+
+  body.print-dossier .dossier-save-axis,
+
+  body.print-dossier .dossier-save-item,
+
+  body.print-dossier .dossier-save-heading{color:#222 !important;}
 
   body.print-dossier .dossier-proof,
 
@@ -4641,9 +4831,19 @@ body.dossier-viewer-open{
 
   body.print-dossier .dossier-proof-title{color:#111 !important;}
 
-  body.print-dossier .dossier-actions{display:none !important;}
+  body.print-dossier .dossier-meta,
+
+  body.print-dossier .dossier-actions,
+
+  body.print-dossier .dossier-evidence-details,
+
+  body.print-dossier .dossier-loading{display:none !important;visibility:hidden !important;}
 
   body.print-dossier .dossier-grid{gap:10px;}
+
+  body.print-dossier .dossier-save-card{width:100%;max-width:720px;margin:0 auto;page-break-inside:avoid;}
+
+  body.print-dossier .dossier-save-columns{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
 
 }
 
@@ -5550,6 +5750,7 @@ body.dossier-viewer-open{
   .ritual-grid{grid-template-columns:1fr;}
   .dossier-proof-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
   .dossier-grid{grid-template-columns:1fr;}
+  .dossier-save-columns{grid-template-columns:1fr;gap:14px;}
   .dossier-title{font-size:22px;}
   .dossier-shell{padding:22px 20px 24px;}
   .dossier-viewer{padding:0;}
@@ -6771,15 +6972,15 @@ body.dossier-viewer-open{
       <div class="dossier-shell">
         <div class="dossier-meta">
           <div>
-            <div class="dossier-badge">鑑定書</div>
-            <div class="dossier-title" id="dossier-title">鑑定書を整えています</div>
-            <div class="dossier-subtitle" id="dossier-subtitle">今回の鑑定結果を、PDFやコピーで残しやすい形へ整えています。</div>
+            <div class="dossier-badge">保存カード</div>
+            <div class="dossier-title" id="dossier-title">保存用鑑定カードを整えています</div>
+            <div class="dossier-subtitle" id="dossier-subtitle">今回の答えを、SNSで保存しやすい短い羅針カードへ整えています。</div>
           </div>
           <div class="dossier-actions">
 
-            <button class="dossier-action-btn" id="dossier-print-btn" onclick="printDossier()" style="display:none">印刷 / PDF保存</button>
+            <button class="dossier-action-btn" id="dossier-print-btn" onclick="printDossier()" style="display:none">PDF保存</button>
 
-            <button class="dossier-action-btn" id="dossier-copy-btn" onclick="copyDossier()" style="display:none">全文コピー</button>
+            <button class="dossier-action-btn" id="dossier-copy-btn" onclick="copyDossier()" style="display:none">要約をコピー</button>
 
           </div>
 
@@ -6787,7 +6988,7 @@ body.dossier-viewer-open{
 
         <div class="dossier-loading" id="dossier-loading">
 
-          <div class="ai-load"><div class="ai-dots"><span></span><span></span><span></span></div><span>鑑定書を製本しています…</span></div>
+          <div class="ai-load"><div class="ai-dots"><span></span><span></span><span></span></div><span>保存用鑑定カードを整えています…</span></div>
 
         </div>
 
@@ -6804,9 +7005,10 @@ body.dossier-viewer-open{
       <button class="nav-btn" onclick="gotoTop()">最初に戻る</button>
       <button class="nav-btn nav-btn-primary" onclick="gotoTop()">もう一度占う</button>
       <button class="nav-btn" onclick="goToHistory()">過去の占いへ</button>
-      <button class="share-x-btn dossier-open-btn" id="dossier-open-btn" onclick="openDossierViewer()" style="display:none">保存版の鑑定書を見る</button>
+      <button class="share-x-btn dossier-open-btn" id="dossier-open-btn" onclick="openDossierViewer()" style="display:none">鑑定カードを保存</button>
       <button class="share-x-btn" id="dossier-save-btn" onclick="printDossier()" style="display:none">PDF保存</button>
-      <button class="share-x-btn" id="dossier-copy-inline-btn" onclick="copyDossier()" style="display:none">全文コピー</button>
+      <button class="share-x-btn" id="dossier-copy-inline-btn" onclick="copyDossier()" style="display:none">要約をコピー</button>
+      <button class="share-x-btn" id="dossier-evidence-btn" onclick="openDossierViewer('evidence')" style="display:none">根拠を見る</button>
       <button class="share-x-btn" id="share-x-btn" onclick="shareToX()" style="display:none">
         <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
         Xでシェア
@@ -6829,12 +7031,12 @@ body.dossier-viewer-open{
   <div class="dossier-viewer-panel" onclick="event.stopPropagation()">
     <div class="dossier-viewer-toolbar">
       <div>
-        <div class="dossier-viewer-kicker">SAVED DOSSIER</div>
-        <div class="dossier-viewer-title" id="dossier-viewer-title">保存版の鑑定書</div>
+        <div class="dossier-viewer-kicker">SAVE CARD</div>
+        <div class="dossier-viewer-title" id="dossier-viewer-title">保存用鑑定カード</div>
       </div>
       <div class="dossier-viewer-actions">
         <button class="dossier-viewer-btn" type="button" onclick="printDossier()">PDF保存</button>
-        <button class="dossier-viewer-btn" type="button" onclick="copyDossier()">コピー</button>
+        <button class="dossier-viewer-btn" type="button" onclick="copyDossier()">要約をコピー</button>
         <button class="dossier-viewer-btn" id="dossier-viewer-close-btn" type="button" onclick="closeDossierViewer()">閉じる</button>
       </div>
     </div>

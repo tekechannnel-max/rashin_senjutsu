@@ -1857,7 +1857,7 @@ const REACTION_PROFILE_DEFS={
     label:'タコタイプ',
     motivation:'何者かになりたいが、自分で理想を出力できない。外部の人物や思想・振る舞いを取り込み、それを自分の理想として追いかける。',
     summary:'理想を追求したい欲求は強いものの、その理想を自分の内側から生み出すことが難しく、外部の人物や思想を取り込むことで自分の方向性とするタイプです。「何者かになりたいが何をしたらいいか分からない」という感覚を抱えやすく、強い承認欲求があります。',
-    stress:'自分の内面のなさが露わになること、偽物であることを指摘されること、理想と現実のギャップを突きつけられること',
+    stress:'自分らしさが曖昧なまま、人に合わせすぎていると感じる場面、理想と現実のギャップを突きつけられること',
     power:'表現力、適応力、外部の良いものを吸収して活かす力、プレゼンや見せ方の巧みさ',
     handling:'取り込む先の良い手本と、それを安全に試せる場が必要です。承認欲求の強さを理解し、小さな認定を積み重ねることで安定します。自分の言葉に置き換えるプロセスが整いやすさにつながります。',
     tags:['外部取り込み型','承認欲求','何者かになりたい'],
@@ -6561,9 +6561,10 @@ function repairStaticCopy(){
   setText('#rs-integration .rs-copy','迷ったときにここだけ読み返せば、優先順位と次の一歩がわかる形にまとめます。');
   setText('#r-aiload .ai-load-title','結論を整えています');
   setText('#r-aiload .ai-load-detail','ここまでの読みを一本にまとめ、今どう動くかまで落とし込んでいます。');
-  setText('#dossier-open-btn','保存版の鑑定書を見る');
+  setText('#dossier-open-btn','鑑定カードを保存');
   setText('#dossier-save-btn','PDF保存');
-  setText('#dossier-copy-inline-btn','全文コピー');
+  setText('#dossier-copy-inline-btn','要約をコピー');
+  setText('#dossier-evidence-btn','根拠を見る');
   const shareBtn=document.getElementById('share-x-btn');
   if(shareBtn){
     const svg=shareBtn.querySelector('svg');
@@ -6574,11 +6575,11 @@ function repairStaticCopy(){
   if(lineBtn){
     lineBtn.innerHTML='<span class="share-line-mark" aria-hidden="true">L</span>LINEで送る';
   }
-  setText('#dossier-title','鑑定書を整えています');
-  setText('#dossier-subtitle','今回の鑑定結果を、PDFやコピーで残しやすい形へ整えています。');
-  setText('#dossier-print-btn','印刷 / PDF保存');
-  setText('#dossier-copy-btn','全文コピー');
-  setText('#dossier-loading span','鑑定書を製本しています…');
+  setText('#dossier-title','保存用鑑定カードを整えています');
+  setText('#dossier-subtitle','今回の答えを、SNSで保存しやすい短い羅針カードへ整えています。');
+  setText('#dossier-print-btn','PDF保存');
+  setText('#dossier-copy-btn','要約をコピー');
+  setText('#dossier-loading span','保存用鑑定カードを整えています…');
 }
 
 function renderBrandLayer(){
@@ -9145,13 +9146,22 @@ function upgradeCurrentReadingToPaidUnlocked(){
 
 function parseTaggedDossier(raw){
   const text=String(raw||'');
-  const tags=['TITLE','SUBTITLE','HEADLINE','CORE','TIMING','ACTION7','ACTION30','WARNING','LUCK','RECURRING','KEYWORDS','CLOSING'];
+  const tags=[
+    'TITLE','ONE_LINE','VERDICT','DECISION_AXIS','ACTION7','ACTION30','GO_SIGN','STOP_SIGN','KEYWORDS','CLOSING','EVIDENCE_SUMMARY',
+    'SUBTITLE','HEADLINE','CORE','TIMING','WARNING','LUCK','RECURRING'
+  ];
   const data={};
   tags.forEach(tag=>{
     const re=new RegExp(`\\[\\[${tag}\\]\\]([\\s\\S]*?)\\[\\[\\/${tag}\\]\\]`);
     const match=text.match(re);
     if(match) data[tag]=match[1].trim();
   });
+  if(!data.ONE_LINE&&data.HEADLINE) data.ONE_LINE=data.HEADLINE;
+  if(!data.VERDICT&&data.HEADLINE) data.VERDICT=data.HEADLINE;
+  if(!data.DECISION_AXIS&&data.TIMING) data.DECISION_AXIS=data.TIMING;
+  if(!data.GO_SIGN&&data.LUCK) data.GO_SIGN=data.LUCK;
+  if(!data.STOP_SIGN&&data.WARNING) data.STOP_SIGN=data.WARNING;
+  if(!data.EVIDENCE_SUMMARY&&data.CORE) data.EVIDENCE_SUMMARY=data.CORE;
   return data;
 }
 
@@ -9160,6 +9170,65 @@ function sectionLines(text){
     .split('\n')
     .map(line=>line.replace(/^[\-\u2022・\d\.\)\s]+/,'').trim())
     .filter(Boolean);
+}
+
+function limitTextByChars(text='',max=120,minKeep=0){
+  const clean=String(text||'').replace(/\s+/g,' ').trim();
+  if(clean.length<=max) return clean;
+  const sliced=clean.slice(0,max);
+  const boundary=Math.max(sliced.lastIndexOf('。'),sliced.lastIndexOf('、'),sliced.lastIndexOf(' '));
+  if(boundary>=minKeep) return sliced.slice(0,boundary+1).trim();
+  return sliced.trim();
+}
+
+function limitDossierLines(text='',count=3,maxEach=32){
+  const lines=sectionLines(text);
+  return lines.slice(0,count).map(line=>limitTextByChars(line,maxEach,12)).filter(Boolean);
+}
+
+function normalizeDossierKeywords(text=''){
+  const raw=String(text||'').split(/[\/\n,、・]/).map(item=>item.trim()).filter(Boolean);
+  return Array.from(new Set(raw)).slice(0,6);
+}
+
+function compactFinalSummaryText(text='',max=350){
+  const clean=String(text||'')
+    .replace(/\[\[\/?[A-Z0-9_]+\]\]/g,'')
+    .replace(/^[#\-\s]+/gm,'')
+    .replace(/\n{2,}/g,'\n')
+    .trim();
+  if(clean.length<=max) return clean;
+  const sentences=clean.split(/(?<=。)/).map(item=>item.trim()).filter(Boolean);
+  let out='';
+  for(const sentence of sentences){
+    if((out+sentence).length>max) break;
+    out+=sentence;
+  }
+  return limitTextByChars(out||clean,max,220);
+}
+
+function normalizeDossierCardData(data={}){
+  const fallback=buildFallbackDossier();
+  const source={...fallback,...(data||{})};
+  const decision=limitDossierLines(source.DECISION_AXIS||source.TIMING,2,80);
+  const action7=limitDossierLines(source.ACTION7,3,24);
+  const action30=limitDossierLines(source.ACTION30,3,32);
+  const goSigns=limitDossierLines(source.GO_SIGN||source.LUCK,3,34);
+  const stopSigns=limitDossierLines(source.STOP_SIGN||source.WARNING,3,34);
+  const keywords=normalizeDossierKeywords(source.KEYWORDS);
+  return{
+    TITLE:limitTextByChars(source.TITLE||fallback.TITLE||'保存用羅針カード',28,12),
+    ONE_LINE:limitTextByChars(source.ONE_LINE||source.HEADLINE||fallback.ONE_LINE,42,18),
+    VERDICT:limitTextByChars(source.VERDICT||source.HEADLINE||fallback.VERDICT,180,90),
+    DECISION_AXIS:decision.length?decision:limitDossierLines(fallback.DECISION_AXIS,2,80),
+    ACTION7:action7.length?action7:limitDossierLines(fallback.ACTION7,3,24),
+    ACTION30:action30.length?action30:limitDossierLines(fallback.ACTION30,3,32),
+    GO_SIGN:goSigns.length?goSigns:limitDossierLines(fallback.GO_SIGN,3,34),
+    STOP_SIGN:stopSigns.length?stopSigns:limitDossierLines(fallback.STOP_SIGN,3,34),
+    KEYWORDS:keywords.length?keywords:normalizeDossierKeywords(fallback.KEYWORDS),
+    CLOSING:limitTextByChars(source.CLOSING||fallback.CLOSING,60,24),
+    EVIDENCE_SUMMARY:limitTextByChars(source.EVIDENCE_SUMMARY||fallback.EVIDENCE_SUMMARY,360,120),
+  };
 }
 
 function buildDossierRecurringThemeText(focus=analyzeConsultationFocus()){
@@ -9189,8 +9258,24 @@ function buildFallbackDossier(){
   const headline=getSectionBody(LAST_OUTPUTS.integration,0)||`${focus.shortLabel}を一度に決め切るより、決める目印を先に整えるほうが前に進みやすい時期です。`;
   const core=getSectionBody(LAST_OUTPUTS.len,0)||getSectionBody(LAST_OUTPUTS.foundationDeep,0)||getSectionBody(LAST_OUTPUTS.orc,0)||'いまは感情の強さより、何が判断を止めているのかを整理することが先です。';
   const timing=getSectionBody(LAST_OUTPUTS.integration,1)||getSectionBody(LAST_OUTPUTS.orc,2)||'大きな結論は急がず、今週の確認で見えてくる変化を手がかりにしてください。';
+  const decisionAxis=[
+    '進めてよい条件：確認したい点を言葉にしても、関係や状況が崩れないこと',
+    '止まる条件：不安を埋めるためだけに、急いで結論を出そうとしていること',
+  ].join('\n');
+  const verdict=limitTextByChars(`${headline} ${core}`,180,90);
+  const evidenceSummary=limitTextByChars(`土台では、${core} ルノルマンとオラクルでは、${timing}`,360,120);
   return{
     TITLE:focus.dossierTitle,
+    ONE_LINE:headline,
+    VERDICT:verdict,
+    DECISION_AXIS:decisionAxis,
+    ACTION7:action7.join('\n'),
+    ACTION30:action30.join('\n'),
+    STOP_SIGN:buildDossierWarnings(focus).join('\n'),
+    GO_SIGN:buildDossierLuck(focus).join('\n'),
+    KEYWORDS:buildDossierKeywords(focus),
+    CLOSING:`${input.fullname||'あなた'}さんの答えは、急ぐほどではなく整えるほど見えてきます。`,
+    EVIDENCE_SUMMARY:evidenceSummary,
     SUBTITLE:'これは未来を決めつける結果ではなく、あなたが次に動くための作戦書です。',
     HEADLINE:headline,
     CORE:core,
@@ -9620,7 +9705,7 @@ function renderDossierIncludedSections(){
       <div class="dossier-proof-head">
         <div>
           <div class="dossier-proof-eyebrow">保存内容</div>
-          <div class="dossier-proof-title">この鑑定書に入る内容</div>
+          <div class="dossier-proof-title">根拠の補助情報</div>
         </div>
         <div class="dossier-proof-copy">カード占いの結果だけでなく、名前・生まれ・動物タイプ診断から見えた傾向まで含めて、保存して読み返せる作戦書の形にしています。</div>
       </div>
@@ -9637,86 +9722,79 @@ function renderDossierIncludedSections(){
 }
 
 function buildDossierPlainText(data){
-  const safeData={...buildFallbackDossier(),...(data||{})};
-  const clarifyPlain=buildClarifyPromptText('plain');
+  const safeData=normalizeDossierCardData(data);
   const blocks=[
-    safeData.TITLE||'鑑定書',
-    safeData.SUBTITLE||'',
-    `■ 今回の答え\n${safeData.HEADLINE||''}`,
-    `■ なぜそう読めるのか\n${safeData.CORE||''}`,
-    `■ 白黒を分ける条件\n${safeData.TIMING||''}`,
-    clarifyPlain?`■ 追加質問から見えたこと\n${clarifyPlain}`:'',
-    `■ 今週やること\n${sectionLines(safeData.ACTION7).map((item,index)=>`${index+1}. ${item}`).join('\n')}`,
-    `■ 30日以内に整えること\n${sectionLines(safeData.ACTION30).map((item,index)=>`${index+1}. ${item}`).join('\n')}`,
-    `■ 進んでいいサイン\n${sectionLines(safeData.LUCK).join('\n')}`,
-    `■ 止まるべきサイン\n${sectionLines(safeData.WARNING).join('\n')}`,
-    `■ 繰り返し出ているテーマ\n${safeData.RECURRING||buildDossierRecurringThemeText()}`,
-    `■ 保存用キーワード\n${sectionLines(safeData.KEYWORDS).join('\n')||String(safeData.KEYWORDS||'').split('/').map(item=>item.trim()).filter(Boolean).join('\n')}`,
-    `■ 締めのメッセージ\n${safeData.CLOSING||''}`,
-    ...getDossierIncludedSections().map(section=>`■ ${section.title}\n${section.body}`)
+    safeData.TITLE,
+    `一言結論：${safeData.ONE_LINE}`,
+    `今回の答え：${safeData.VERDICT}`,
+    `白黒を分ける条件\n${safeData.DECISION_AXIS.map((item,index)=>`${index+1}. ${item}`).join('\n')}`,
+    `7日以内にやること\n${safeData.ACTION7.map((item,index)=>`${index+1}. ${item}`).join('\n')}`,
+    `30日以内に整えること\n${safeData.ACTION30.map((item,index)=>`${index+1}. ${item}`).join('\n')}`,
+    `進んでいいサイン\n${safeData.GO_SIGN.join('\n')}`,
+    `止まるべきサイン\n${safeData.STOP_SIGN.join('\n')}`,
+    `保存用キーワード：${safeData.KEYWORDS.join(' / ')}`,
+    safeData.CLOSING,
   ];
-  return blocks.map(block=>String(block||'').trim()).filter(Boolean).join('\n\n');
+  return limitTextByChars(blocks.map(block=>String(block||'').trim()).filter(Boolean).join('\n\n'),1000,620);
+}
+
+function renderDossierEvidenceDetails(card){
+  const sections=getDossierIncludedSections();
+  const detailSections=sections.slice(0,6);
+  return`
+    <details class="dossier-evidence-details">
+      <summary data-closed-label="根拠を見る" data-open-label="根拠を閉じる">根拠を見る</summary>
+      <div class="dossier-evidence-body">
+        <div class="dossier-evidence-lead">${escapeHtml(card.EVIDENCE_SUMMARY||'この保存カードは、土台・カード・追加質問を現実の判断軸へ翻訳してまとめています。')}</div>
+        <div class="dossier-evidence-note">以下は詳しく確認したい人向けの補助情報です。保存カードやPDFには含めません。</div>
+        ${detailSections.map(section=>`
+          <div class="dossier-evidence-section">
+            <div class="dossier-evidence-section-title">${escapeHtml(section.title||'根拠')}</div>
+            <div class="dossier-evidence-section-copy">${escapeHtml(limitTextByChars(section.body||'',520,160)).replace(/\n/g,'<br>')}</div>
+          </div>
+        `).join('')}
+      </div>
+    </details>`;
 }
 
 function renderDossierCards(data){
-  const keywords=sectionLines(data.KEYWORDS||'').join('\n')||data.KEYWORDS||'';
-  const keywordItems=keywords.split(/[\/\n]/).map(v=>v.trim()).filter(Boolean).slice(0,6);
-  const reasonText=data.CORE||'';
-  const conditionText=data.TIMING||'';
-  const recurringText=data.RECURRING||buildDossierRecurringThemeText();
+  const card=normalizeDossierCardData(data);
   return`
-    <div class="dossier-hero">
-      <div class="dossier-hero-title">今回の答え</div>
-      <div class="dossier-hero-body">${escapeHtml(data.HEADLINE||'')}</div>
-    </div>
-    <div class="dossier-grid">
-      <div class="dossier-card wide">
-        <div class="dossier-card-eyebrow">根拠</div>
-        <div class="dossier-card-title">なぜそう読めるのか</div>
-        <div class="dossier-card-body">${escapeHtml(reasonText)}</div>
+    <article class="dossier-save-card">
+      <div class="dossier-save-top">
+        <div class="dossier-save-kicker">RASHIN SAVE CARD</div>
+        <div class="dossier-save-title">${escapeHtml(card.TITLE)}</div>
+        <div class="dossier-save-one">${escapeHtml(card.ONE_LINE)}</div>
       </div>
-      <div class="dossier-card wide">
-        <div class="dossier-card-eyebrow">判断条件</div>
-        <div class="dossier-card-title">白黒を分ける条件</div>
-        <div class="dossier-card-body">${escapeHtml(conditionText)}</div>
+      <div class="dossier-save-verdict">${escapeHtml(card.VERDICT)}</div>
+      <div class="dossier-save-section">
+        <div class="dossier-save-heading">白黒を分ける条件</div>
+        <div class="dossier-save-axis">${card.DECISION_AXIS.map(item=>`<div>${escapeHtml(item)}</div>`).join('')}</div>
       </div>
-      <div class="dossier-card">
-        <div class="dossier-card-eyebrow">7日</div>
-        <div class="dossier-card-title">今週やること</div>
-        <div class="dossier-list">${sectionLines(data.ACTION7).map(item=>`<div class="dossier-list-item">${escapeHtml(item)}</div>`).join('')}</div>
+      <div class="dossier-save-columns">
+        <div>
+          <div class="dossier-save-heading">7日以内</div>
+          <ul class="dossier-save-list">${card.ACTION7.map(item=>`<li class="dossier-save-item">${escapeHtml(item)}</li>`).join('')}</ul>
+        </div>
+        <div>
+          <div class="dossier-save-heading">30日以内</div>
+          <ul class="dossier-save-list">${card.ACTION30.map(item=>`<li class="dossier-save-item">${escapeHtml(item)}</li>`).join('')}</ul>
+        </div>
       </div>
-      <div class="dossier-card">
-        <div class="dossier-card-eyebrow">30日</div>
-        <div class="dossier-card-title">30日以内に整えること</div>
-        <div class="dossier-list">${sectionLines(data.ACTION30).map(item=>`<div class="dossier-list-item">${escapeHtml(item)}</div>`).join('')}</div>
+      <div class="dossier-save-columns">
+        <div>
+          <div class="dossier-save-heading">進んでいいサイン</div>
+          <ul class="dossier-save-list">${card.GO_SIGN.map(item=>`<li class="dossier-save-item">${escapeHtml(item)}</li>`).join('')}</ul>
+        </div>
+        <div>
+          <div class="dossier-save-heading">止まるべきサイン</div>
+          <ul class="dossier-save-list">${card.STOP_SIGN.map(item=>`<li class="dossier-save-item">${escapeHtml(item)}</li>`).join('')}</ul>
+        </div>
       </div>
-      <div class="dossier-card">
-        <div class="dossier-card-eyebrow">変化</div>
-        <div class="dossier-card-title">進んでいいサイン</div>
-        <div class="dossier-list">${sectionLines(data.LUCK).map(item=>`<div class="dossier-list-item">${escapeHtml(item)}</div>`).join('')}</div>
-      </div>
-      <div class="dossier-card">
-        <div class="dossier-card-eyebrow">注意</div>
-        <div class="dossier-card-title">止まるべきサイン</div>
-        <div class="dossier-list">${sectionLines(data.WARNING).map(item=>`<div class="dossier-list-item">${escapeHtml(item)}</div>`).join('')}</div>
-      </div>
-      <div class="dossier-card">
-        <div class="dossier-card-eyebrow">履歴</div>
-        <div class="dossier-card-title">繰り返し出ているテーマ</div>
-        <div class="dossier-card-body">${escapeHtml(recurringText)}</div>
-      </div>
-      <div class="dossier-card">
-        <div class="dossier-card-eyebrow">保存</div>
-        <div class="dossier-card-title">保存用キーワード</div>
-        <div class="dossier-chip-row">${keywordItems.map(item=>`<div class="dossier-chip">${escapeHtml(item)}</div>`).join('')}</div>
-      </div>
-      <div class="dossier-card wide">
-        <div class="dossier-card-eyebrow">最後に</div>
-        <div class="dossier-card-title">締めのメッセージ</div>
-        <div class="dossier-card-body">${escapeHtml(data.CLOSING||'')}</div>
-      </div>
-    </div>
-    ${renderDossierIncludedSections()}`;
+      <div class="dossier-chip-row dossier-save-keywords">${card.KEYWORDS.map(item=>`<div class="dossier-chip">${escapeHtml(item)}</div>`).join('')}</div>
+      <div class="dossier-save-closing">${escapeHtml(card.CLOSING)}</div>
+    </article>
+    ${renderDossierEvidenceDetails(card)}`;
 }
 
 function renderPremiumDossier(loading=false){
@@ -9731,12 +9809,12 @@ function renderPremiumDossier(loading=false){
   if(!section||!titleEl||!subtitleEl||!loadingEl||!proofEl||!renderedEl||!printBtn||!copyBtn) return;
 
   const shouldPrepare=PLAN==='paid'||!!LAST_OUTPUTS.dossier;
-  section.style.display=shouldPrepare?'':'none';
+  section.style.display='none';
   if(!shouldPrepare) return;
 
   if(loading){
-    titleEl.textContent='鑑定書を整えています';
-    subtitleEl.textContent='カード鑑定と診断をまとめて、PDFやコピーで残しやすい形へ整えています。';
+    titleEl.textContent='保存用鑑定カードを整えています';
+    subtitleEl.textContent='本編とは別に、スクショやPDFで残しやすい短いカードへ整えています。';
     loadingEl.style.display='block';
     proofEl.style.display='none';
     renderedEl.style.display='none';
@@ -9746,12 +9824,12 @@ function renderPremiumDossier(loading=false){
   }
 
   const parsed=LAST_OUTPUTS.dossier?parseTaggedDossier(LAST_OUTPUTS.dossier):buildFallbackDossier();
-  const safeData={...buildFallbackDossier(),...parsed};
-  titleEl.textContent=safeData.TITLE||'鑑定書';
-  subtitleEl.textContent=safeData.SUBTITLE||'今回のカード鑑定と診断を、まとめてPDFやコピーで残しやすい形へ整えました。';
+  const safeData=normalizeDossierCardData(parsed);
+  titleEl.textContent=safeData.TITLE||'保存用鑑定カード';
+  subtitleEl.textContent='SNSでスクショ保存しやすい短い羅針カードです。';
   loadingEl.style.display='none';
-  proofEl.style.display='block';
-  proofEl.innerHTML=buildDossierProof();
+  proofEl.style.display='none';
+  proofEl.innerHTML='';
   renderedEl.style.display='block';
   renderedEl.innerHTML=renderDossierCards(safeData);
   printBtn.style.display='inline-flex';
@@ -9765,7 +9843,7 @@ function shouldShowDossierActions(){
 
 function setDossierActionButtonsVisible(visible){
   const display=visible?'inline-flex':'none';
-  ['dossier-open-btn','dossier-save-btn','dossier-copy-inline-btn'].forEach(id=>{
+  ['dossier-open-btn','dossier-save-btn','dossier-copy-inline-btn','dossier-evidence-btn'].forEach(id=>{
     const btn=document.getElementById(id);
     if(btn) btn.style.display=display;
   });
@@ -9791,24 +9869,43 @@ function renderDossierViewerContent(){
   return true;
 }
 
-async function openDossierViewer(){
+function setDossierViewerMode(mode='card'){
+  const title=document.getElementById('dossier-viewer-title');
+  if(title) title.textContent=mode==='evidence'?'根拠を見る':'保存用鑑定カード';
+  const kicker=document.querySelector('#dossier-viewer .dossier-viewer-kicker');
+  if(kicker) kicker.textContent=mode==='evidence'?'EVIDENCE':'SAVE CARD';
+}
+
+function openDossierEvidenceDetails(){
+  const target=document.getElementById('dossier-viewer-content');
+  const details=target?.querySelector('.dossier-evidence-details');
+  if(!details) return;
+  details.open=true;
+  requestAnimationFrame(()=>{
+    details.scrollIntoView({block:'start',behavior:'smooth'});
+  });
+}
+
+async function openDossierViewer(mode='card'){
   const ready=await ensureDossierReady();
   if(!ready){
-    showToast('鑑定書の準備に失敗しました');
+    showToast('保存用鑑定カードの準備に失敗しました');
     return;
   }
   renderPremiumDossier(false);
   if(!renderDossierViewerContent()){
-    showToast('鑑定書を開けませんでした');
+    showToast('保存用鑑定カードを開けませんでした');
     return;
   }
   const viewer=document.getElementById('dossier-viewer');
   if(!viewer) return;
+  setDossierViewerMode(mode);
   viewer.hidden=false;
   viewer.setAttribute('aria-hidden','false');
   document.body.classList.add('dossier-viewer-open');
   const scroll=document.getElementById('dossier-viewer-scroll');
   if(scroll) scroll.scrollTop=0;
+  if(mode==='evidence') openDossierEvidenceDetails();
   const closeBtn=document.getElementById('dossier-viewer-close-btn');
   if(closeBtn) closeBtn.focus({preventScroll:true});
 }
@@ -9826,7 +9923,7 @@ async function ensureDossierReady(){
   if(DOSSIER_LOADING) return false;
   DOSSIER_LOADING=true;
   renderPremiumDossier(true);
-  showToast('鑑定書を整えています');
+  showToast('保存用鑑定カードを整えています');
   try{
     await runPremiumDossier();
     persistCurrentReading();
@@ -9843,7 +9940,7 @@ async function ensureDossierReady(){
 async function copyDossier(){
   const ready=await ensureDossierReady();
   if(!ready){
-    showToast('鑑定書の準備に失敗しました');
+    showToast('保存用鑑定カードの準備に失敗しました');
     return;
   }
   const parsed=LAST_OUTPUTS.dossier?parseTaggedDossier(LAST_OUTPUTS.dossier):buildFallbackDossier();
@@ -9853,16 +9950,17 @@ async function copyDossier(){
     return;
   }
   navigator.clipboard.writeText(raw.replace(/\[\[\/?[A-Z0-9_]+\]\]/g,'').trim())
-    .then(()=>showToast('鑑定書の内容をコピーしました'))
+    .then(()=>showToast('要約をコピーしました'))
     .catch(()=>showToast('コピーに失敗しました'));
 }
 
 async function printDossier(){
   const ready=await ensureDossierReady();
   if(!ready){
-    showToast('鑑定書の準備に失敗しました');
+    showToast('保存用鑑定カードの準備に失敗しました');
     return;
   }
+  renderPremiumDossier(false);
   const section=document.getElementById('rs-dossier');
   const prevDisplay=section?section.style.display:'';
   if(section) section.style.display='block';
@@ -11694,7 +11792,7 @@ function countMeaningfulChars(text=''){
 
 function validatePaidReadingQuality(parsed={}){
   const issues=[];
-  const limits={len:800,orc:450,integration:520};
+  const limits={len:800,orc:450,integration:220};
   Object.entries(limits).forEach(([key,min])=>{
     const count=countMeaningfulChars(parsed[key]||'');
     if(count<min) issues.push(`${key}が短い（${count}字）`);
@@ -11828,7 +11926,8 @@ function renderPaidCombinedOutputs(parsed,name,cat,theme,options={}){
   }else{
     LAST_OUTPUTS.len=normalizePaidReadingText(parsed.len||buildRichLenFallback(name,cat));
     LAST_OUTPUTS.orc=normalizeOracleReadingText(normalizePaidReadingText(parsed.orc||buildRichOrcFallback(name,cat,true)));
-    LAST_OUTPUTS.integration=normalizePaidReadingText(parsed.integration||buildIntegratedFallback(name,cat,theme));
+    const integrationText=normalizePaidReadingText(parsed.integration||buildIntegratedFallback(name,cat,theme));
+    LAST_OUTPUTS.integration=compactFinalSummaryText(integrationText,350);
   }
   renderFormattedResultText('r-len-block',LAST_OUTPUTS.len,'len');
   renderFormattedResultText('r-orc-block',LAST_OUTPUTS.orc,'orc');
@@ -11965,7 +12064,7 @@ ${SEL_LEN.length===9?`- LENの「今の流れ」または「迷いの構造」�
 - 行動は7日以内にできる内容だけにする
 - 恋愛相談に「仕事が忙しい」と出ても、仕事鑑定に広げない。仕事は恋愛判断を遅らせる背景としてだけ扱う
 - 時期を書く場合は「今日から7日以内」「今週」「次に会う時」のように、相談文から自然に言える範囲だけにする
-- LENは1000〜1300字、ORCは600〜800字、INTEGRATIONは700〜900字で書く。短い出力は失敗
+- LENは900〜1200字、ORCは500〜700字で書く。INTEGRATIONは250〜350字の「最後のまとめ」だけにする。INTEGRATIONを長文鑑定書にしない
 - 相手の気持ちは「行動から見ると〜」の形で読む。心の中を断定しない
 - 判断ポイントは「進めてよい目印」「止まる目印」「確認する質問」を分けて書く
 - 次にやることは、今日・次に会う時・7日以内の3段階で書く
@@ -12073,7 +12172,7 @@ ${orcFull}
       const retrySystemPrompt=`${systemPrompt}
 
 【品質チェックで落ちた場合の書き直し】
-- 次の出力は必ず文字量を満たす。短くまとめない
+- 次の出力は必ず指定文字量を満たす。LENとORCは短くしすぎず、INTEGRATIONは250〜350字に収める
 - 相談文から言えない季節、月、時期を作らない
 - 「魂」「波動」「宇宙」は使わない。「本音」「本質」は根拠付きなら使ってよい
 - 判断ポイントは3つの小見出しを改行し、各項目を「・」で1行ずつ書く
@@ -12653,66 +12752,69 @@ ${sourceContext}`;
   });
 }
 
+function buildPremiumDossierCardSystemPrompt(todayText){
+  return `あなたは羅針占術の保存用鑑定カード編集者です。
+目的は長文鑑定書ではなく、SNSでスクショ保存したくなる短い羅針カードを作ることです。
+今日の日付は${todayText}です。根拠のない月名、季節、年末年始、来年などの時期表現は使わないでください。
+
+守ること:
+- メインは結論、判断条件、次の行動だけに絞る
+- 追加質問の回答をそのまま再掲しない。内部で要約して使う
+- カード番号、配置名、履歴の生データ、画数や命式の羅列は通常表示に出さない
+- 根拠はEVIDENCE_SUMMARYに短くまとめる。専門用語だけを並べず、一般ユーザー向けの翻訳文を先に書く
+- 「魂」「波動」「宇宙」は使わない
+- 「本音」「本質」は、相談文・追加質問・占術根拠から読める場合だけ使う
+- 人を傷つける強すぎる未翻訳表現は使わない
+- 出力は指定タグだけ。Markdown、説明文、タグ外テキストは禁止
+
+文字量:
+- 保存カード全体は400〜800字以内
+- SNSで見える主部分は220〜450字程度
+- TITLEは最大28字
+- ONE_LINEは最大42字
+- VERDICTは2〜3文、最大180字
+- DECISION_AXISは2項目、各80字以内
+- ACTION7は3項目、各24字以内
+- ACTION30は最大3項目、各32字以内
+- CLOSINGは最大60字
+
+出力タグ:
+[[TITLE]]保存カードのタイトル[[/TITLE]]
+[[ONE_LINE]]一言結論[[/ONE_LINE]]
+[[VERDICT]]今回の答え。2〜3文[[/VERDICT]]
+[[DECISION_AXIS]]白黒を分ける条件を2行[[/DECISION_AXIS]]
+[[ACTION7]]7日以内にやることを3行[[/ACTION7]]
+[[ACTION30]]30日以内に整えることを最大3行[[/ACTION30]]
+[[GO_SIGN]]進んでいいサインを2〜3行[[/GO_SIGN]]
+[[STOP_SIGN]]止まるべきサインを2〜3行[[/STOP_SIGN]]
+[[KEYWORDS]]4〜6個を / 区切り[[/KEYWORDS]]
+[[CLOSING]]最後の一文[[/CLOSING]]
+[[EVIDENCE_SUMMARY]]根拠を見る用の短い要約。通常表示には出さない[[/EVIDENCE_SUMMARY]]`;
+}
+
+function buildPremiumDossierCardPrompt(source){
+  return `${source.contextText}
+
+上記を内部資料として使い、「長い鑑定書」ではなく短い保存用鑑定カードを作成してください。
+本編で読んだ内容の再掲ではなく、あとで見返すための判断軸と行動だけに再編集してください。
+追加質問のraw回答、カード番号、配置名、履歴データは保存カード本体に出さないでください。
+EVIDENCE_SUMMARYだけは、根拠を見る人向けに短く残してください。`;
+}
+
 async function runPremiumDossier(){
   const source=buildPremiumDossierSourceContext();
   const todayText=new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'});
 
-  const systemPrompt=`あなたはトップクラスの占い師兼、鑑定書を仕立てる編集者です。
-目的は「普通の長文鑑定」ではなく、相談者が保存して何度も見返したくなるプロ品質の鑑定書を作ることです。
-この鑑定書の最大の使命は「答えを出す」ことです。結論が曖昧な鑑定書は価値がありません。
-今日の日付は${todayText}です。過去の日付や根拠のない月名を、これから起きる時期のように書かないでください。
-これは未来を決めつける結果ではなく、相談者が次に動くための作戦書です。
-
-以下を厳守してください。
-- HEADLINE では相談者の知りたい答えを冒頭2〜3文で「進む・止まる・様子を見る」のどれかが分かる形で断言する。「〜かもしれない」は禁止
-- 全体として「今回の答え / なぜそう読めるのか / 白黒を分ける条件 / 追加質問から見えたこと / 7日以内にやること / 30日以内に整えること / 進んでいいサイン / 止まるべきサイン / 保存用の一文」が埋まるように書く
-- CORE では、動物タイプ診断のsummary（行動パターン）とstress（しんどくなりやすい場面）を軸にその人らしさを描く。名前・生まれは補足として添える程度にとどめる
-- TIMING は現実の時系列で近い判断ポイントを言い切る。「近い将来」などの抽象表現は禁止
-- ただし、相談文や元資料に明確な根拠がない月名・季節・年末年始・来年などは作らない。月名を使えるのは、相談者がその月を出している場合だけ
-- 根拠がない場合は「今日から7日以内」「次に会う時」「次に連絡するとき」「30日以内」のような短期目安で強く具体化する
-- ACTION7 と ACTION30 は「〜する」「〜を確認する」「〜を止める」の動詞形で書く。精神論・励ましは禁止
-- WARNING は正直に書く。「注意したほうがよいかも」ではなく「これをすると〜になりやすい」と言い切る
-- LUCK は単なる「幸運のサイン」ではなく、「この行動をとると流れが良くなりやすい」という実用的なサインにする
-- これまでの鑑定文を繰り返すだけにしない（HEADLINEとCOREとCLOSINGの中身が同じになることは禁止）
-- カード名、占術名、並び、システム説明は一切出さない
-- 抽象論で逃げず、現実の行動に落とし込む
-- RECURRING は、鑑定履歴・相談テーマ・カードの反復から「繰り返し出ているテーマ」を1〜3文でまとめる。履歴が少ない場合は、今回の相談で繰り返し向き合いそうな判断テーマを書く
-- KEYWORDS には、動物タイプ診断のタグや決める目印になる言葉を優先して入れる（カード名は禁止）
-- 出力は必ず指定タグのみで返し、タグ外には何も書かない
-
-出力形式:
-[[TITLE]]...[[/TITLE]]
-[[SUBTITLE]]...[[/SUBTITLE]]
-[[HEADLINE]]最初の1文で答えを断言。2〜3文で根拠を添える[[/HEADLINE]]
-[[CORE]]動物タイプ診断のsummary/stressを大事な点として使う。その人らしい行動パターンと今の悩みの根を結びつける[[/CORE]]
-[[TIMING]]判断の分かれ目を言い切る。月名は根拠がある場合だけ。基本は「今日から7日以内」「次に会う時」「30日以内」などの短期目安[[/TIMING]]
-[[ACTION7]]1行ずつ3項目以上。各行動は動詞で完結[[/ACTION7]]
-[[ACTION30]]1行ずつ3項目以上。各行動は動詞で完結[[/ACTION30]]
-[[WARNING]]1行ずつ2〜4項目。言い切りで書く[[/WARNING]]
-[[LUCK]]1行ずつ2〜4項目。実用的な「流れに乗るサイン」として書く[[/LUCK]]
-[[RECURRING]]繰り返し出ているテーマを1〜3文で書く[[/RECURRING]]
-[[KEYWORDS]]/ 区切りで4〜6個[[/KEYWORDS]]
-[[CLOSING]]この鑑定書全体を読んだ相談者へのメッセージ。HEADLINEの繰り返しにせず、「この先の自分をどう扱うか」に触れる[[/CLOSING]]`;
-
-  const prompt=`${source.contextText}
-
-これらすべてを踏まえ、相談者が「これは保存して何度も見返したい」と思うプロ品質の鑑定書を作成してください。
-タイトルは安っぽくせず、相談テーマに応じた格式ある表現にしてください。
-読み手は占いの仕組みを知らない一般ユーザーなので、専門用語なしで自然に読めることを最優先してください。`;
-
   try{
-    const draft=await callAI(prompt,2800,systemPrompt,{
-      taskKey:'dossier',
-      images:buildCardImageRefs('all','dossier'),
-    });
-    LAST_OUTPUTS.dossier=draft||'';
-    if(draft){
-      try{
-        LAST_OUTPUTS.dossier=await polishPremiumDossierDraft(draft,source.contextText);
-      }catch(e){
-        LAST_OUTPUTS.dossier=draft;
+    LAST_OUTPUTS.dossier=await callAI(
+      buildPremiumDossierCardPrompt(source),
+      1800,
+      buildPremiumDossierCardSystemPrompt(todayText),
+      {
+        taskKey:'dossier',
+        images:buildCardImageRefs('all','dossier'),
       }
-    }
+    )||'';
   }catch(e){
     LAST_OUTPUTS.dossier='';
   }
