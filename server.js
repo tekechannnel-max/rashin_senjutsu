@@ -288,7 +288,9 @@ const RASHIN_BONUS_VALID_DAYS = 7;
 const RASHIN_BONUS_FREE_READING_REQUIRED_STONES = 30;
 const RASHIN_BONUS_DISCOUNTS = [];
 const RASHIN_FREE_PAID_CODE_HASH_FILE = normalizeEnvValue(process.env.RASHIN_FREE_PAID_CODE_HASH_FILE || 'config/rashin-free-paid-code-hashes.json');
+const RASHIN_REUSABLE_PAID_CODE_HASH_FILE = normalizeEnvValue(process.env.RASHIN_REUSABLE_PAID_CODE_HASH_FILE || 'config/rashin-reusable-paid-code-hashes.json');
 const RASHIN_FREE_PAID_CODE_HASHES = loadRashinFreePaidCodeHashes();
+const RASHIN_REUSABLE_PAID_CODE_HASHES = loadRashinReusablePaidCodeHashes();
 
 function normalizeRashinPaidCodeHash(value) {
   const hash = String(value || '').trim().toLowerCase();
@@ -342,6 +344,56 @@ function loadRashinFreePaidCodeHashes() {
   return new Set([
     ...readRashinFreePaidCodeEnvHashes(),
     ...readRashinFreePaidCodeHashFile(),
+  ]);
+}
+
+function readRashinReusablePaidCodeHashFilePath() {
+  const configured = normalizeEnvValue(RASHIN_REUSABLE_PAID_CODE_HASH_FILE);
+  if (!configured || isPlaceholderEnvValue(configured)) return '';
+  return path.isAbsolute(configured) ? configured : path.join(ROOT_DIR, configured);
+}
+
+function readRashinReusablePaidCodeHashFile() {
+  const filePath = readRashinReusablePaidCodeHashFilePath();
+  if (!filePath || !fs.existsSync(filePath)) return [];
+  let parsed;
+  try {
+    parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch (error) {
+    throw new Error(`RASHIN_REUSABLE_PAID_CODE_HASH_FILE could not be parsed: ${error.message}`);
+  }
+  const entries = Array.isArray(parsed) ? parsed : parsed?.hashes;
+  if (!Array.isArray(entries)) {
+    throw new Error('RASHIN_REUSABLE_PAID_CODE_HASH_FILE must contain an array or a hashes array.');
+  }
+  const hashes = [];
+  const invalid = [];
+  entries.forEach((entry, index) => {
+    const hash = normalizeRashinPaidCodeHash(entry);
+    if (hash) hashes.push(hash);
+    else invalid.push(index + 1);
+  });
+  if (invalid.length) {
+    throw new Error(`RASHIN_REUSABLE_PAID_CODE_HASH_FILE has invalid hash entries at positions: ${invalid.slice(0, 10).join(', ')}`);
+  }
+  return hashes;
+}
+
+function readRashinReusablePaidCodeEnvHashes() {
+  return String(process.env.RASHIN_REUSABLE_PAID_CODES || process.env.RASHIN_SPECIAL_PAID_CODES || '')
+    .split(/[\s,]+/)
+    .map(value => value.trim())
+    .filter(value => value && !isPlaceholderEnvValue(value))
+    .map(value => normalizeRashinPaidCode(value))
+    .filter(value => /^[A-Z0-9]{12}$/.test(value))
+    .map(value => getRashinPaidCodeHash(value))
+    .filter(Boolean);
+}
+
+function loadRashinReusablePaidCodeHashes() {
+  return new Set([
+    ...readRashinReusablePaidCodeEnvHashes(),
+    ...readRashinReusablePaidCodeHashFile(),
   ]);
 }
 
@@ -2655,6 +2707,11 @@ function isConfiguredFreeRashinPaidCode(code) {
   return !!codeHash && RASHIN_FREE_PAID_CODE_HASHES.has(codeHash);
 }
 
+function isConfiguredReusableRashinPaidCode(code) {
+  const codeHash = getRashinPaidCodeHash(code);
+  return !!codeHash && RASHIN_REUSABLE_PAID_CODE_HASHES.has(codeHash);
+}
+
 function createFreeRashinPaidCodeRecord({ code, userRecord, sourceReadingId }) {
   const normalizedCode = normalizeRashinPaidCode(code);
   const codeHash = getRashinPaidCodeHash(normalizedCode);
@@ -2690,6 +2747,18 @@ function createFreeRashinPaidCodeRecord({ code, userRecord, sourceReadingId }) {
     redeemedSourceReadingId: '',
     createdAt: now,
     updatedAt: now,
+  };
+}
+
+function createReusableRashinPaidCodeRecord({ code, userRecord, sourceReadingId }) {
+  const record = createFreeRashinPaidCodeRecord({ code, userRecord, sourceReadingId });
+  return {
+    ...record,
+    reusable: true,
+    paymentProvider: 'manual_reusable_code',
+    deliveryChannel: 'manual_reusable_code',
+    deliveryStatus: 'reusable_code_redeemed_by_input',
+    discountType: 'manual_reusable_code',
   };
 }
 
@@ -5183,6 +5252,12 @@ async function handleRashinPaidCodeRedeem(req, res) {
   try {
     const codeHash = getRashinPaidCodeHash(code);
     const result = await withRashinPaidCodeMutation(codeHash, async () => {
+      if (isConfiguredReusableRashinPaidCode(code)) {
+        const codeRecord = createReusableRashinPaidCodeRecord({ code, userRecord, sourceReadingId });
+        const owner = { ownerType: 'user', userId: userRecord.userId, vaultId: '' };
+        const ticket = await createPaidTicketFromRashinPaidCode({ codeRecord, owner, sourceReadingId });
+        return { ticket, reusable: true };
+      }
       let codeRecord = await readRashinPaidCodeRecordByHash(codeHash);
       if (!codeRecord) {
         if (!isConfiguredFreeRashinPaidCode(code)) {

@@ -7856,6 +7856,58 @@ function getOracleCompassFallback(){
   return `判断軸は、${ctx.positiveLabel}と${ctx.negativeLabel}を${ctx.criteriaText}で分けることです。${ctx.positiveLabel}が確認できるなら今の選択を整え、確認できないなら次の選択肢を準備してください。${timingLine}${secondary?` ${secondary}`:''}`;
 }
 
+function hasOracleThemeTerms(text='',focus={}){
+  const source=String(text||'');
+  const ctx=buildDecisionContext(focus);
+  if(ctx.primaryTheme==='love'){
+    return /相手|関係|本音|安心|不安|信頼|会話|反応|向き合|好き/.test(source);
+  }
+  if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
+    return /仕事|職場|環境|条件|評価|収入|成長|役割|比較|準備|選択肢/.test(source);
+  }
+  if(ctx.primaryTheme==='relationship'){
+    return /関係|距離|境界|相手|自然体|消耗|安心|関わ/.test(source);
+  }
+  return true;
+}
+
+function getOracleMessageFallbackForFocus(focus={}){
+  const ctx=buildDecisionContext(focus);
+  if(ctx.primaryTheme==='love'){
+    return 'ここまでのあなたは、関係を壊さないように本音を抑えてきたはずです。今週は、相手の気持ちを決め打ちするより、不安を一つ言葉にしたときの反応を見てください。';
+  }
+  if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
+    return `ここまでのあなたは、今の環境で踏ん張りながら条件を見極めようとしてきたはずです。今週は、${ctx.positiveLabel}と${ctx.negativeLabel}を選べる材料を一つ確認してください。`;
+  }
+  if(ctx.primaryTheme==='relationship'){
+    return 'ここまでのあなたは、関係を壊さないように距離感を探ってきたはずです。今週は、無理なく関われる境界線を一つだけ言葉にしてください。';
+  }
+  return 'ここまでのあなたは、自分なりに状況を保ちながら答えを探してきたはずです。今週は、感情と現実の条件を分けて、一つだけ確認を増やしてください。';
+}
+
+function adaptOracleThemeText(text='',focus={}){
+  const ctx=buildDecisionContext(focus);
+  let output=normalizeJapaneseNearDuplicateText(String(text||'').trim());
+  if(ctx.primaryTheme==='love'){
+    output=output
+      .replace(/ここまでのあなたは、自分なりのやり方で何とか持ちこたえてきたはずです。?/g,'ここまでのあなたは、関係を壊さないように本音を抑えてきたはずです。')
+      .replace(/一人で抱え込むより/g,'相手の反応を一人で想像し続けるより')
+      .replace(/選択肢を増やしてから動く/g,'相手の反応を確かめてから進む')
+      .replace(/感情・現実の条件・確認すべきこと/g,'自分の本音・相手の反応・安心して進める条件');
+  }else if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
+    output=output
+      .replace(/ここまでのあなたは、自分なりのやり方で何とか持ちこたえてきたはずです。?/g,'ここまでのあなたは、今の環境で踏ん張りながら条件を見極めようとしてきたはずです。')
+      .replace(/選択肢を増やしてから動く/g,'比較材料を増やしてから動く')
+      .replace(/感情・現実の条件・確認すべきこと/g,`${ctx.criteriaText}・今の環境で確認すること・次の選択肢`);
+  }else if(ctx.primaryTheme==='relationship'){
+    output=output
+      .replace(/ここまでのあなたは、自分なりのやり方で何とか持ちこたえてきたはずです。?/g,'ここまでのあなたは、関係を壊さないように距離感を探ってきたはずです。')
+      .replace(/選択肢を増やしてから動く/g,'関わる距離を決めてから動く');
+  }
+  if(!hasOracleThemeTerms(output,focus)) output=getOracleMessageFallbackForFocus(focus);
+  return ensureJapaneseSentence(output);
+}
+
 function normalizeJapaneseNearDuplicateText(text=''){
   return String(text||'')
     .replace(/ただ今は、\s*今は/g,'ただ今は、')
@@ -7886,7 +7938,7 @@ function normalizeOracleReadingText(text='',context={}){
   const nextActions=getOracleNextActions(source);
   let compassBody=removeListLines(compass.body);
   if(!compassBody) compassBody=getOracleCompassFallback();
-  const messageBody=limitJapaneseBodyBySentences(message.body||'今は、目の前の状況を落ち着いて見直すことが大切です。',220,3);
+  const messageBody=adaptOracleThemeText(limitJapaneseBodyBySentences(message.body||getOracleMessageFallbackForFocus(focus),220,3),focus);
   compassBody=limitJapaneseBodyBySentences(compassBody,220,3);
   const nextBody=nextActions.map(item=>`・${item}`).join('\n');
   return[
@@ -8069,6 +8121,9 @@ function buildReadingOutputFormatGuide(kind='len',is9=false,focusOverride=null){
       '条件カードの再掲にしないでください。ルノルマンは現実・障害・見落とし・相手や環境の反応を読むパートです。',
       '本文には「下の段」「現状の列」「右側の流れ」「中心のすぐ近く」「中心十字」「配置」「対称ペア」「ナイト」などの内部説明を書かないでください。根拠は別レイヤーへ回してください。',
       'ただしカード由来の読解は消さず、カードから見た現実、注意点、動かし方として自然な日本語へ翻訳してください。',
+      'カード名は本文では最大2〜3枚まで。カード意味のキーワード列挙ではなく、今回の相談への翻訳を先に書いてください。',
+      '「『船』は遠距離恋愛・旅先での縁を示します」のような辞書説明は禁止です。「距離感をまだ手元で確かめきれていない」のように現実語へ変換してください。',
+      '「合図」は多用しないでください。必要なら「流れ」「兆し」「確認ポイント」「判断材料」「注意点」に言い換えてください。',
       '',
       '【出力形式・厳守事項】',
       '見出しは必ず次の順で固定してください。',
@@ -8438,8 +8493,31 @@ function buildFoundationReadMoreHTML(detailHTML){
     </details>`;
 }
 
+function buildReactionEvidenceSummary(evidence=[]){
+  const items=(Array.isArray(evidence)?evidence:String(evidence||'').split(/[\/／,、]/))
+    .map(item=>String(item||'').trim())
+    .filter(Boolean)
+    .slice(0,4);
+  if(!items.length) return '';
+  const joined=items.join('、');
+  if(/雰囲気|楽しい|量より質/.test(joined)){
+    return '雰囲気の良さを重視しつつ、関係は量より質で深めたい傾向があります。';
+  }
+  if(/仕事|評価|収入|成長|役割|環境/.test(joined)){
+    return '働く環境や役割の手応えを見ながら、自分が納得して続けられる条件を確かめたい傾向があります。';
+  }
+  if(/恋愛|相手|安心|信頼|本音|会話/.test(joined)){
+    return '相手との安心感や本音を出せるかを見ながら、関係を進めるか確かめたい傾向があります。';
+  }
+  const core=items.length===1?items[0]:items.slice(0,-1).join('、');
+  const last=items[items.length-1];
+  return items.length===1
+    ?`${core}という回答から、今回の判断ではその感覚を無視しないことが大切です。`
+    :`${core}を重視しつつ、${last}を判断の手がかりにしたい傾向があります。`;
+}
+
 function buildAnimalFoundationDetail(animal){
-  const evidenceText=REACTION_PROFILE?.evidence?.length?REACTION_PROFILE.evidence.join(' / '):'';
+  const evidenceText=buildReactionEvidenceSummary(REACTION_PROFILE?.evidence||[]);
   return buildFoundationDetailHTML([
     {label:'動物タイプ診断',title:`${animal.name}タイプの見方`,body:animal.oneLine},
     {label:'強み',title:'力が出やすい動き',body:animal.strength},
@@ -10701,9 +10779,11 @@ function detectDossierCardQualityIssues(data={}){
     {label:card.HOLD_LABEL||'保留条件',items:card.HOLD_CONDITIONS||[]},
   ];
   if(text.length>1000) issues.push('羅針カードが1000字を超えている');
+  if(text.length>800) issues.push('羅針カードが800字を超えている');
   if(/[^\n。]{10,},[^\n。]{10,}/.test(text)) issues.push('羅針カードにカンマ区切り配列のような表示がある');
   if(/Q[:：]|A[:：]|【相談者の補足|相談者の補足整理|追加質問への回答/.test(text)) issues.push('羅針カード本体に追加質問rawが混入している');
   if(/No\.\d+|カード番号|配置名|中心十字|下の段|上の段|現状の列|未来の列|右側の流れ|左側の流れ/.test(text)) issues.push('羅針カード本体に内部根拠やカード番号が混入している');
+  if(/保存カードやPDFには含めません|根拠を見る|土台から見えたこと|ルノルマンから見えたこと|オラクルから見えたこと|追加質問から見えたこと/.test(text)) issues.push('羅針カード本体に根拠詳細が混ざっている');
   conditionGroups.forEach(group=>{
     if((group.items||[]).length<2) issues.push(`${group.label}が2項目未満`);
     if((group.items||[]).length>2) issues.push(`${group.label}が2項目を超えている`);
@@ -12453,7 +12533,7 @@ function renderReactionProfile(){
     renderFoundationMiniSummary();
     return;
   }
-  const evidenceText=REACTION_PROFILE.evidence?.length?REACTION_PROFILE.evidence.join(' / '):'';
+  const evidenceText=buildReactionEvidenceSummary(REACTION_PROFILE.evidence||[]);
   const note=`<div class="dm-note">${REACTION_PROFILE.summary}<br>反応が出やすい場面：${REACTION_PROFILE.stress}<br>力が出やすい動き：${REACTION_PROFILE.power}<br>${REACTION_PROFILE.handling}${evidenceText?`<br>回答の手がかり：${evidenceText}`:''}</div>`;
   const insightHTML=`
     <div class="insight-grid">
@@ -12826,9 +12906,44 @@ function translateLenormandInternalSentence(sentence='',focus={},context={}){
     .replace(/下の段には、?/g,'表に出ていないところには、')
     .replace(/上の段には、?/g,'意識している部分には、')
     .replace(/中心のすぐ近くに/g,'判断に近いところに')
-    .replace(/負担の強いカードが寄っている/g,'負担の強い合図が重なっている')
+    .replace(/負担の強いカードが寄っている/g,'負担として見ておきたい点が重なっている')
     .replace(/カードは好転の余地を示しています。?/g,'小さな好転の余地も残っています。')
     .replace(/中心十字|対称ペア|ナイト|テーマカード周辺|配置|行・列|角の枠|角読み|隣接/g,'カードの組み合わせ');
+}
+
+function translateLenormandDictionaryText(text='',focus={},context={}){
+  const ctx=buildDecisionContext(focus,context);
+  return String(text||'').replace(/「([^」]{1,16})」は([^。\n]{4,90}?)(を示します|を示しています|を意味します|を示すカードです)。?/g,(_match,card,meaning)=>{
+    const cleanMeaning=String(meaning||'').replace(/[、,，]\s*/g,'・').replace(/\s+/g,'').trim();
+    if(ctx.primaryTheme==='love'){
+      if(/遠距離|距離|遠い|旅先|自立|孤独/.test(cleanMeaning)){
+        return `距離そのものというより、相手との関係をまだ手元で確かめきれていない状態です。「${card}」は、距離感や進展の遅さをどう扱うかを見るカードとして読めます。`;
+      }
+      return `「${card}」は、相手との関係で${ctx.criteriaText}を行動から確かめる材料として読めます。`;
+    }
+    if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
+      return `「${card}」は、今の環境で${ctx.criteriaText}が残るかを確認する材料として読めます。`;
+    }
+    if(ctx.primaryTheme==='relationship'){
+      return `「${card}」は、関わった後の安心感や消耗度を確かめる材料として読めます。`;
+    }
+    return `「${card}」は、今回の相談で見落としやすい現実を確かめる材料として読めます。`;
+  });
+}
+
+function softenLenormandSignalWording(text=''){
+  return String(text||'')
+    .replace(/関係性を示す合図/g,'関係性の流れ')
+    .replace(/安定を示す合図/g,'安定へ向かう流れ')
+    .replace(/選択の合図/g,'選ぶ前に確認するポイント')
+    .replace(/支えや好転を示す合図/g,'支えや好転につながる兆し')
+    .replace(/負担の合図/g,'負担として見ておきたい点')
+    .replace(/区切りを示す合図/g,'区切りにつながる流れ')
+    .replace(/価値や見返りの合図/g,'価値や見返りの判断材料')
+    .replace(/再起動の合図/g,'再び動かすきっかけ')
+    .replace(/違和感を尊重する日/g,'違和感を見直す日')
+    .replace(/「([^」]+)」の合図は/g,'「$1」は')
+    .replace(/合図/g,'兆し');
 }
 
 function removeLenormandInternalExplanations(text='',focus={},context={}){
@@ -12939,6 +13054,11 @@ function normalizeLenormandReadingText(text='',context={}){
   source=removeLenormandInternalExplanations(source,focus,context);
   if(beforeInternal!==source){
     recordPaidDebugQuality('len_normalize',['ルノルマン本文からカード配置の内部説明を本文用の現実語へ補正しました']);
+  }
+  const beforeExpression=source;
+  source=softenLenormandSignalWording(translateLenormandDictionaryText(source,focus,context));
+  if(beforeExpression!==source){
+    recordPaidDebugQuality('len_normalize',['ルノルマン本文の辞書説明と「合図」の連発を相談文向けに補正しました']);
   }
   source=normalizeLenormandSectionHeadings(source);
   const structured=formatLenormandFourSections(source);
@@ -14377,7 +14497,7 @@ async function runLenReading(){
 
   const systemPrompt=`あなたは、「答えを出す」ことを使命とする一流の鑑定者です。
 役割は状況を説明することではなく、「相談者が今日から動ける目印」を与えることです。
-カードは内部で使い切り、メイン本文にはカード名もシステム説明も詰め込まない。根拠は別レイヤーに残す。
+カードは内部で使い切り、メイン本文のカード名は最大2〜3枚に絞る。システム説明や配置説明は根拠レイヤーに残す。
 
 ${buildDecisionSupportPromptGuide(cat,theme,focus)}
 
@@ -14387,10 +14507,12 @@ ${buildDecisionContextPromptBlock(focus,{cat,theme})}
 - dual concern型の汎用表現は、優先順位がない場合だけ主構造にしてください。`:''}
 
 【絶対禁止 ─ これをやると鑑定書として失敗とみなす】
-- カード名、カード枚数、並び、過去/現在/未来、顕在/潜在、占術名、システム説明
+- カード枚数、並び、過去/現在/未来、顕在/潜在、占術名、システム説明
 - 「〜のカードが出ているので」「配置では〜」のような書き方
 - 「〜かもしれません」「〜の可能性があります」「〜ではないでしょうか」だけで結論を終える弱い言い回し
 - キーワードの列挙や辞書の焼き直し
+- 「『船』は遠距離恋愛・旅先での縁を示します」のようなカード辞書説明。必ず今回の相談への翻訳を先に書くこと
+- 「合図」の連発。使う場合も2回以下にし、「流れ」「兆し」「確認ポイント」「判断材料」に言い換えること
 - 「自分を信じて」「焦らずに」など精神論だけで終わること
 - 抽象的な「良い変化」「好転の流れ」だけで行動が示されない文章
 
@@ -15976,7 +16098,17 @@ function buildRichLenFallback(name,cat){
     if(!id) return '';
     const namePart=cardName(id);
     const themePart=cardTheme(id);
-    return namePart&&themePart?`「${namePart}」は${themePart}を示します。`:'';
+    if(!namePart||!themePart) return '';
+    if(ctx.primaryTheme==='love'){
+      return `「${namePart}」は、相手との関係で${ctx.criteriaText}を行動から確かめる材料として読めます。`;
+    }
+    if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
+      return `「${namePart}」は、今の環境で${ctx.criteriaText}が残るかを確認する材料として読めます。`;
+    }
+    if(ctx.primaryTheme==='relationship'){
+      return `「${namePart}」は、関わった後の安心感や消耗度を確かめる材料として読めます。`;
+    }
+    return `「${namePart}」は、今回の相談で見落としやすい現実を確かめる材料として読めます。`;
   };
   const supportNames=ids.filter(id=>LEN_FALLBACK_GROUPS.support.includes(id)).map(cardName).filter(Boolean).slice(0,2);
   const burdenNames=ids.filter(id=>LEN_FALLBACK_GROUPS.burden.includes(id)).map(cardName).filter(Boolean).slice(0,2);
@@ -16000,21 +16132,21 @@ function buildRichLenFallback(name,cat){
     flowLines.push('今の流れには、まだ言葉にされていない本音や、確認しないまま残っている曖昧さがあります。ここを飛ばすと、楽なほうを選んだつもりでも不安が残りやすいです。');
   }
   if(hasRelationship){
-    flowLines.push('関係性を示す合図も出ているため、相手や環境の反応を見ずに一人で答えを決めると、読み違いが起きやすくなります。');
+    flowLines.push('関係性の流れも出ているため、相手や環境の反応を見ずに一人で答えを決めると、読み違いが起きやすくなります。');
   }
   if(hasStability){
-    flowLines.push('安定を示す合図がある一方で、安定そのものが変化を遅らせる理由にもなっています。安心できる形なのか、ただ動かない形なのかを分けて見てください。');
+    flowLines.push('安定へ向かう流れがある一方で、安定そのものが変化を遅らせる理由にもなっています。安心できる形なのか、ただ動かない形なのかを分けて見てください。');
   }
   if(hasChoice||currentChoice){
-    flowLines.push('選択の合図も出ています。選べないのではなく、選ぶ前に確認すべき反応や条件が残っている状態です。');
+    flowLines.push('選ぶ前に確認するポイントも出ています。選べないのではなく、選ぶ前に確認すべき反応や条件が残っている状態です。');
   }
   if(futureSupport||hasSupport){
-    flowLines.push('一方で、支えや好転を示す合図もあります。確認する順番を間違えなければ、今の流れをただ悪いものとして切る必要はありません。');
+    flowLines.push('一方で、支えや好転につながる兆しもあります。確認する順番を間違えなければ、今の流れをただ悪いものとして切る必要はありません。');
   }
 
   const warningLines=[];
   if(hasBurden||hiddenBurden){
-    warningLines.push(`${burdenNames.length?`「${burdenNames.join('」「')}」のような`:''}負担の合図があるため、平気なふりを続けるほど判断が重くなります。迷いを気合いで押し切るより、何が負担になっているかを先に切り分けてください。`);
+    warningLines.push(`${burdenNames.length?`「${burdenNames.join('」「')}」のような`:''}負担として見ておきたい点があるため、平気なふりを続けるほど判断が重くなります。迷いを気合いで押し切るより、何が負担になっているかを先に切り分けてください。`);
   }else{
     warningLines.push('気をつけることは、気持ちが整うまで待ち続けてしまうことです。現実の反応を見ないまま考え続けると、判断材料が増えず、同じ迷いに戻りやすくなります。');
   }
@@ -16022,10 +16154,10 @@ function buildRichLenFallback(name,cat){
     warningLines.push('消耗や損失を示す組み合わせもあるため、相手や環境に合わせすぎる選び方は避けてください。守るべきものを決めるほど、余計な負担を減らせます。');
   }
   if(futureEnding||hasEnding){
-    warningLines.push('区切りを示す合図もあるため、先送りを続けると自分で選ぶ前に状況側の変化に押されやすくなります。');
+    warningLines.push('区切りにつながる流れもあるため、先送りを続けると自分で選ぶ前に状況側の変化に押されやすくなります。');
   }
   if(hasValue){
-    warningLines.push('価値や見返りの合図も絡んでいます。好き嫌いだけで判断せず、続けることで何が残り、何を失うのかを見てください。');
+    warningLines.push('価値や見返りの判断材料も絡んでいます。好き嫌いだけで判断せず、続けることで何が残り、何を失うのかを見てください。');
   }
   if(hiddenRelationship){
     warningLines.push('表に出している理由とは別に、情やつながりへの未練も残りやすい流れです。その前提を認めたほうが、かえって判断は整います。');
@@ -16033,7 +16165,7 @@ function buildRichLenFallback(name,cat){
 
   const attractionLines=[];
   if(supportNames.length){
-    attractionLines.push(`「${supportNames.join('」「')}」の合図は、助けや見通しを受け取れる余地を示します。`);
+    attractionLines.push(`「${supportNames.join('」「')}」は、助けや見通しを受け取れる余地として読めます。`);
   }else{
     attractionLines.push('今使える力は、迷いを一気に片づける強さではなく、現実を一つずつ確かめる落ち着きです。');
   }
