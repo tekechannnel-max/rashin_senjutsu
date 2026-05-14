@@ -10873,8 +10873,24 @@ function renderPremiumDossier(loading=false){
   proofEl.style.display='none';
   proofEl.innerHTML='';
   renderedEl.style.display='block';
-  renderedEl.innerHTML=renderDossierCards(safeData);
+  const renderedHtml=renderDossierCards(safeData);
+  renderedEl.innerHTML=renderedHtml;
   const qualityIssues=detectDossierCardQualityIssues(safeData);
+  recordPaidDebugParsed('dossier',parsed);
+  if(isPaidDebugEnabled()&&PAID_DEBUG_LOG){
+    PAID_DEBUG_LOG.normalization.dossier={
+      before:parsed,
+      after:safeData,
+      changed:JSON.stringify(parsed)!==JSON.stringify(safeData),
+    };
+    PAID_DEBUG_LOG.dossier={
+      parsed,
+      normalized:safeData,
+      renderedText:renderedEl.innerText||renderedEl.textContent||'',
+      renderedHtml,
+      qualityIssues,
+    };
+  }
   if(qualityIssues.length) recordPaidDebugQuality('dossier_card',qualityIssues);
   printBtn.style.display='inline-flex';
   copyBtn.style.display='inline-flex';
@@ -12815,6 +12831,8 @@ function startPaidDebugLog(context={}){
     parsed:{},
     normalization:{},
     rendered:{},
+    renderedHtml:{},
+    dossier:{},
     sectionCounts:{},
     qualityIssues:[],
     qualitySnapshots:[],
@@ -12858,12 +12876,20 @@ function recordPaidDebugQuality(stage,issues=[]){
 function capturePaidDebugRendered(){
   if(!isPaidDebugEnabled()||!PAID_DEBUG_LOG) return;
   const textOf=id=>document.getElementById(id)?.innerText||document.getElementById(id)?.textContent||'';
+  const htmlOf=id=>document.getElementById(id)?.innerHTML||'';
   PAID_DEBUG_LOG.rendered={
     len:textOf('r-len-block'),
     orc:textOf('r-orc-block'),
     integration:textOf('r-integration'),
     foundation:textOf('foundation-mini-grid'),
     dossier:textOf('dossier-rendered'),
+  };
+  PAID_DEBUG_LOG.renderedHtml={
+    len:htmlOf('r-len-block'),
+    orc:htmlOf('r-orc-block'),
+    integration:htmlOf('r-integration'),
+    foundation:htmlOf('foundation-mini-grid'),
+    dossier:htmlOf('dossier-rendered'),
   };
   PAID_DEBUG_LOG.sectionCounts.rendered=getPaidDebugTextStats(PAID_DEBUG_LOG.rendered);
   setPaidDebugButtonVisible(true);
@@ -14223,6 +14249,7 @@ async function runPaidCombinedReading(){
   const cat=document.getElementById('f-cat')?.value||'総合';
   const theme=document.getElementById('f-theme')?.value||'';
   let focus=analyzeConsultationFocus(cat,theme);
+  const baseFocus={...focus};
   const lenSpreadContext=buildLenSpreadPromptContext(cat);
   const lenFull=SEL_LEN.length===9
     ?`${lenSpreadContext.cardDetails}
@@ -14255,6 +14282,7 @@ ${lenSpreadContext.chainDetails}`;
   const reactionText=buildReactionPromptSnippet();
   const clarifyText=buildClarifyPromptText('compact');
   focus=refineFocusWithClarify(focus,clarifyText,{name,cat,theme});
+  const refinedFocus={...focus};
   const birthDetail=birthPlain?[birthPlain.overview,birthPlain.timing,birthPlain.advice].filter(Boolean).join(' '):'なし';
   const nameDetail=namePlain?[namePlain.overview,namePlain.timing,namePlain.advice].filter(Boolean).join(' '):'なし';
   const lifeDetail=buildLifePatternPlainText();
@@ -14407,7 +14435,9 @@ ${orcFull}
 
   const paidDebugContext={
     paidUserData,
-    focus,
+    focus:refinedFocus,
+    baseFocus,
+    refinedFocus,
     answerNeed:focus.answerNeed,
     clarifyText,
     birthDetail,
@@ -15137,19 +15167,29 @@ EVIDENCE_SUMMARYだけは、根拠を見る人向けに短く残してくださ�
 async function runPremiumDossier(){
   const source=buildPremiumDossierSourceContext();
   const todayText=new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'});
+  const systemPrompt=buildPremiumDossierCardSystemPrompt(todayText);
+  const userPrompt=buildPremiumDossierCardPrompt(source);
+  updatePaidDebugLog({
+    dossierPrompt:{
+      systemPrompt,
+      userPrompt,
+    },
+  });
 
   try{
     LAST_OUTPUTS.dossier=await callAI(
-      buildPremiumDossierCardPrompt(source),
+      userPrompt,
       1800,
-      buildPremiumDossierCardSystemPrompt(todayText),
+      systemPrompt,
       {
         taskKey:'dossier',
         images:buildCardImageRefs('all','dossier'),
       }
     )||'';
+    recordPaidDebugRaw('dossier',LAST_OUTPUTS.dossier,parseTaggedDossier(LAST_OUTPUTS.dossier));
   }catch(e){
     LAST_OUTPUTS.dossier='';
+    recordPaidDebugQuality('dossier_generation_failed',[e?.message||'dossier generation failed']);
   }
   renderPremiumDossier(false);
 }
