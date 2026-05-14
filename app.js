@@ -9759,10 +9759,46 @@ function parseTaggedDossier(raw){
   return data;
 }
 
-function sectionLines(text){
-  return String(text||'')
-    .split('\n')
-    .map(line=>line.replace(/^[\-\u2022・\d\.\)\s]+/,'').trim())
+function toDossierValueArray(value){
+  if(Array.isArray(value)) return value.flatMap(item=>toDossierValueArray(item));
+  if(value==null) return [];
+  const text=String(value).trim();
+  if(!text) return [];
+  if(/^\[[\s\S]*\]$/.test(text)){
+    try{
+      const parsed=JSON.parse(text);
+      if(Array.isArray(parsed)) return toDossierValueArray(parsed);
+    }catch(_error){}
+  }
+  return [text];
+}
+
+function cleanDossierItemText(text='',labels=[]){
+  let clean=String(text||'')
+    .replace(/\[\[\/?[A-Z0-9_]+\]\]/g,' ')
+    .replace(/[「」『』"'`]/g,'')
+    .replace(/^[\-\u2022・\d\.\)\s]+/,'')
+    .replace(/\s+/g,' ')
+    .trim();
+  const labelList=[
+    ...labels,
+    '進む条件','残る条件','止まる条件','動く条件','保留条件',
+    '続ける条件','切り替える条件','関わる条件','距離を置く条件',
+    '今週の一手','7日以内の一手','今回の答え','一言結論',
+  ].filter(Boolean);
+  if(labelList.length){
+    clean=clean.replace(new RegExp(`^(?:${labelList.map(escapeRegExp).join('|')})\\s*[：:・-]?\\s*`),'').trim();
+  }
+  return clean.replace(/[。.!?！？]+$/,'').trim();
+}
+
+function sectionLines(text,options={}){
+  return toDossierValueArray(text)
+    .flatMap(value=>String(value||'').split(/\r?\n+/))
+    .flatMap(line=>String(line||'').split(/[,，;；]+/))
+    .map(line=>options.preserveLabels
+      ?String(line||'').replace(/\[\[\/?[A-Z0-9_]+\]\]/g,' ').replace(/^[\-\u2022・\d\.\)\s]+/,'').replace(/\s+/g,' ').trim()
+      :cleanDossierItemText(line))
     .filter(Boolean);
 }
 
@@ -9775,14 +9811,111 @@ function limitTextByChars(text='',max=120,minKeep=0){
   return sliced.trim();
 }
 
-function limitDossierLines(text='',count=3,maxEach=32){
-  const lines=sectionLines(text);
-  return lines.slice(0,count).map(line=>limitTextByChars(line,maxEach,12)).filter(Boolean);
+function splitJapaneseSentences(text=''){
+  return String(text||'')
+    .replace(/\s+/g,' ')
+    .split(/(?<=[。！？!?])/)
+    .map(item=>item.trim())
+    .filter(Boolean);
 }
 
-function normalizeDossierKeywords(text=''){
-  const raw=String(text||'').split(/[\/\n,、・]/).map(item=>item.trim()).filter(Boolean);
+function trimDossierTextSafely(text='',max=56,minKeep=12){
+  const clean=cleanDossierItemText(text);
+  if(!clean) return '';
+  if(clean.length<=max) return clean;
+  const sentence=splitJapaneseSentences(clean).find(item=>item.length>=minKeep&&item.length<=max);
+  if(sentence) return cleanDossierItemText(sentence);
+  const sliced=clean.slice(0,max);
+  const boundary=Math.max(sliced.lastIndexOf('。'),sliced.lastIndexOf('、'),sliced.lastIndexOf(' '));
+  if(boundary>=minKeep) return cleanDossierItemText(sliced.slice(0,boundary+1));
+  return '';
+}
+
+function isDossierIncompleteText(text='',options={}){
+  const clean=String(text||'').trim();
+  if(!clean) return true;
+  if(/[、,，・/／:：]$/.test(clean)) return true;
+  if(/(曖昧さや一方的な我|理由と不安な点を[0-9０-９]+つ|点を[0-9０-９]+つ|[をがにや])$/.test(clean)) return true;
+  if(/Q[:：]|A[:：]|【相談者の補足|相談者の補足整理|追加質問への回答/.test(clean)) return true;
+  if(/No\.\d+|カード番号|配置名|中心十字|下の段|上の段|現状の列|未来の列|右側の流れ|左側の流れ|隣接|対称ペア/.test(clean)) return true;
+  if(options.action&&!/(書き出す|確認する|伝える|見る|決める|分ける|メモする|相談する|整える|集める|言葉にする|試す|置く|選ぶ)/.test(clean)) return true;
+  return false;
+}
+
+function limitDossierLines(text='',count=3,maxEach=32){
+  const lines=sectionLines(text);
+  return lines
+    .map(line=>trimDossierTextSafely(line,maxEach,12))
+    .filter(line=>line&&!isDossierIncompleteText(line))
+    .slice(0,count);
+}
+
+function normalizeDossierKeywords(text='',fallbackText=''){
+  const raw=[...toDossierValueArray(text),...toDossierValueArray(fallbackText)]
+    .flatMap(value=>String(value||'').split(/[\/\n,、・]/))
+    .map(item=>cleanDossierItemText(item))
+    .filter(item=>item&&!isDossierIncompleteText(item)&&item.length<=18);
   return Array.from(new Set(raw)).slice(0,6);
+}
+
+function normalizeDossierItemList(items=[],fallbackItems=[],options={}){
+  const {
+    min=2,
+    max=2,
+    maxChars=56,
+    labels=[],
+    heading='',
+    action=false,
+  }=options;
+  const seen=new Set();
+  const seenCategories=new Set();
+  const result=[];
+  const push=item=>{
+    const clean=trimDossierTextSafely(cleanDossierItemText(item,labels),maxChars,12);
+    if(!clean||isDossierIncompleteText(clean,{action})) return false;
+    const key=normalizeIntegrationItemKey(clean);
+    const category=heading?getIntegrationItemCategory(clean,heading):'';
+    if(!key||seen.has(key)) return false;
+    if(category&&seenCategories.has(category)) return false;
+    seen.add(key);
+    if(category) seenCategories.add(category);
+    result.push(clean);
+    return true;
+  };
+  [...toDossierValueArray(items),...toDossierValueArray(fallbackItems)].flatMap(sectionLines).forEach(push);
+  for(const item of toDossierValueArray(fallbackItems)){
+    if(result.length>=min) break;
+    push(item);
+  }
+  return result.slice(0,max);
+}
+
+function normalizeDossierSentence(text='',fallback='',options={}){
+  const max=options.max||90;
+  const candidates=[...sectionLines(text),...sectionLines(fallback)];
+  for(const candidate of candidates){
+    const clean=trimDossierTextSafely(candidate,max,18);
+    if(clean&&!isDossierIncompleteText(clean,{action:options.action})){
+      return ensureJapaneseSentence(clean);
+    }
+  }
+  const safeFallback=trimDossierTextSafely(fallback,max,18);
+  return ensureJapaneseSentence(safeFallback||'今週は、答えを急がず確認できる材料を一つ集める');
+}
+
+function normalizeDossierParagraph(text='',fallback='',max=180){
+  const source=String(text||'').replace(/\[\[\/?[A-Z0-9_]+\]\]/g,' ').replace(/\s+/g,' ').trim();
+  const fallbackSource=String(fallback||'').replace(/\s+/g,' ').trim();
+  const sentences=[...splitJapaneseSentences(source),...splitJapaneseSentences(fallbackSource)];
+  let out='';
+  for(const sentence of sentences){
+    const clean=ensureJapaneseSentence(cleanDossierItemText(sentence));
+    if(!clean||isDossierIncompleteText(clean)) continue;
+    if((out+clean).length>max) break;
+    out+=clean;
+    if(splitJapaneseSentences(out).length>=3) break;
+  }
+  return out||ensureJapaneseSentence(trimDossierTextSafely(fallbackSource,max,40));
 }
 
 function compactFinalSummaryText(text='',max=350){
@@ -9803,7 +9936,7 @@ function compactFinalSummaryText(text='',max=350){
 
 function splitDossierDecisionAxis(data={}){
   const source={...(data||{})};
-  const rawLines=sectionLines(source.DECISION_AXIS||source.TIMING||'');
+  const rawLines=sectionLines(source.DECISION_AXIS||source.TIMING||'',{preserveLabels:true});
   const remain=[];
   const move=[];
   rawLines.forEach(line=>{
@@ -9822,22 +9955,13 @@ function splitDossierDecisionAxis(data={}){
   if(!remain.length) remain.push(...limitDossierLines(source.GO_SIGN||source.LUCK,2,48));
   if(!move.length) move.push(...limitDossierLines(source.STOP_SIGN||source.WARNING,2,48));
   return{
-    remain:remain.slice(0,3).map(item=>limitTextByChars(item,56,18)),
-    move:move.slice(0,3).map(item=>limitTextByChars(item,56,18)),
+    remain:remain.map(item=>trimDossierTextSafely(item,56,18)).filter(Boolean),
+    move:move.map(item=>trimDossierTextSafely(item,56,18)).filter(Boolean),
   };
 }
 
 function completeDossierAxisItems(items=[],fallbackItems=[],min=2,max=3){
-  const seen=new Set();
-  const result=[];
-  [...items,...fallbackItems].forEach(item=>{
-    const clean=limitTextByChars(item,56,18);
-    const key=normalizeIntegrationItemKey(clean);
-    if(!clean||!key||seen.has(key)) return;
-    seen.add(key);
-    result.push(clean);
-  });
-  return result.slice(0,Math.max(min,Math.min(max,result.length)));
+  return normalizeDossierItemList(items,fallbackItems,{min,max,maxChars:56});
 }
 
 function normalizeDossierCardData(data={}){
@@ -9861,20 +9985,46 @@ function normalizeDossierCardData(data={}){
   }
   const decisionAxis=splitDossierDecisionAxis(source);
   const fallbackAxis=splitDossierDecisionAxis(themedFallback);
-  const remainConditions=completeDossierAxisItems(decisionAxis.remain,fallbackAxis.remain,2,3);
-  const moveConditions=completeDossierAxisItems(decisionAxis.move,fallbackAxis.move,2,3);
-  const holdConditions=completeDossierAxisItems(
-    limitDossierLines(source.HOLD_CONDITIONS||source.HOLD_SIGN||'',2,48),
+  const remainFallback=fallbackAxis.remain.length?fallbackAxis.remain:getIntegrationSupplementItems(ctx.positiveLabel,focus).slice(0,2);
+  const moveFallback=fallbackAxis.move.length?fallbackAxis.move:getIntegrationSupplementItems(ctx.negativeLabel,focus).slice(0,2);
+  const remainConditions=normalizeDossierItemList(decisionAxis.remain,remainFallback,{
+    min:2,
+    max:2,
+    maxChars:58,
+    heading:ctx.positiveLabel,
+    labels:[ctx.positiveLabel],
+  });
+  const moveConditions=normalizeDossierItemList(decisionAxis.move,moveFallback,{
+    min:2,
+    max:2,
+    maxChars:58,
+    heading:ctx.negativeLabel,
+    labels:[ctx.negativeLabel],
+  });
+  const holdConditions=normalizeDossierItemList(
+    source.HOLD_CONDITIONS||source.HOLD_SIGN||'',
     getIntegrationSupplementItems(ctx.holdLabel,focus).slice(0,2),
-    1,
-    2
+    {
+      min:2,
+      max:2,
+      maxChars:58,
+      heading:ctx.holdLabel,
+      labels:[ctx.holdLabel],
+    }
   );
-  const action7=limitDossierLines(source.ACTION7,3,24);
-  const keywords=normalizeDossierKeywords(source.KEYWORDS);
+  const actionFallback=buildThemeSpecificActionPlan(focus)[0]||getIntegrationSupplementItems('7日以内の一手',focus)[0]||fallback.ACTION7;
+  const action7=[normalizeDossierSentence(source.ACTION7,actionFallback,{max:76,action:true})].filter(Boolean);
+  const keywords=normalizeDossierKeywords(source.KEYWORDS,fallback.KEYWORDS);
+  const fallbackKeywords=normalizeDossierKeywords(buildDossierKeywords(focus),fallback.KEYWORDS);
+  while(keywords.length<4&&fallbackKeywords.length){
+    const next=fallbackKeywords.shift();
+    if(next&&!keywords.includes(next)) keywords.push(next);
+  }
+  const closingFallback=getIntegrationSupplementItems('背中を押す一文',focus)[0]||fallback.CLOSING;
   return{
     TITLE:limitTextByChars(source.TITLE||fallback.TITLE||'保存用羅針カード',28,12),
     ONE_LINE:limitTextByChars(source.ONE_LINE||source.HEADLINE||fallback.ONE_LINE,42,18),
-    VERDICT:limitTextByChars(source.VERDICT||source.HEADLINE||fallback.VERDICT,180,90),
+    VERDICT:normalizeDossierParagraph(source.VERDICT||source.HEADLINE,fallback.VERDICT,180),
     POSITIVE_LABEL:ctx.positiveLabel,
     NEGATIVE_LABEL:ctx.negativeLabel,
     HOLD_LABEL:ctx.holdLabel,
@@ -9882,10 +10032,10 @@ function normalizeDossierCardData(data={}){
     MOVE_CONDITIONS:moveConditions,
     HOLD_CONDITIONS:holdConditions,
     DECISION_AXIS:[...remainConditions,...moveConditions],
-    ACTION7:action7.length?action7:limitDossierLines(fallback.ACTION7,3,24),
-    KEYWORDS:keywords.length?keywords:normalizeDossierKeywords(fallback.KEYWORDS),
-    CLOSING:limitTextByChars(source.CLOSING||fallback.CLOSING,60,24),
-    EVIDENCE_SUMMARY:limitTextByChars(source.EVIDENCE_SUMMARY||fallback.EVIDENCE_SUMMARY,360,120),
+    ACTION7:action7.length?action7:[normalizeDossierSentence(fallback.ACTION7,actionFallback,{max:76,action:true})],
+    KEYWORDS:keywords.length?keywords.slice(0,6):normalizeDossierKeywords(fallback.KEYWORDS).slice(0,6),
+    CLOSING:normalizeDossierSentence(source.CLOSING,closingFallback,{max:68}),
+    EVIDENCE_SUMMARY:normalizeDossierParagraph(source.EVIDENCE_SUMMARY,fallback.EVIDENCE_SUMMARY,260),
   };
 }
 
@@ -9903,7 +10053,7 @@ function buildWorkLifeDossierData(focus={}){
       ...negative.map(item=>`${ctx.negativeLabel}：${item.replace(/。$/,'')}`)
     ].join('\n'),
     HOLD_CONDITIONS:getIntegrationSupplementItems(ctx.holdLabel,focus).slice(0,2).join('\n'),
-    ACTION7:buildThemeSpecificActionPlan(focus).slice(0,3).join('\n'),
+    ACTION7:buildThemeSpecificActionPlan(focus).slice(0,1).join('\n'),
     KEYWORDS:buildDossierKeywords(focus),
     CLOSING:`今週は、${ctx.positiveLabel}と${ctx.negativeLabel}を選べる材料を集める週です。`,
     EVIDENCE_SUMMARY:`追加質問と相談文から、主テーマは${ctx.primaryLabel}として整理しています。保存カードでは、${ctx.criteriaText}を判断軸に短く残します。`,
@@ -9946,7 +10096,7 @@ function buildFallbackDossier(){
     ONE_LINE:themedData.ONE_LINE||headline,
     VERDICT:themedData.VERDICT||verdict,
     DECISION_AXIS:themedData.DECISION_AXIS,
-    ACTION7:action7.join('\n'),
+    ACTION7:action7.slice(0,1).join('\n'),
     ACTION30:action30.join('\n'),
     STOP_SIGN:buildDossierWarnings(focus).join('\n'),
     GO_SIGN:buildDossierLuck(focus).join('\n'),
@@ -9957,13 +10107,13 @@ function buildFallbackDossier(){
     HEADLINE:headline,
     CORE:core,
     TIMING:timing,
-    ACTION7:action7.join('\n'),
+    ACTION7:action7.slice(0,1).join('\n'),
     ACTION30:action30.join('\n'),
     WARNING:buildDossierWarnings(focus).join('\n'),
     LUCK:buildDossierLuck(focus).join('\n'),
     RECURRING:buildDossierRecurringThemeText(focus),
     KEYWORDS:buildDossierKeywords(focus),
-    CLOSING:themedData.CLOSING||`${input.fullname||'あなた'}さんに必要なのは、完璧な正解を探すことではなく、納得して決めるための目印を先に持つことです。焦って白黒をつけるより、今週の確認を積み重ねたほうが答えははっきりします。`,
+    CLOSING:themedData.CLOSING||`${input.fullname||'あなた'}さんに必要なのは、納得して決めるための目印を先に持つことです。`,
   };
 }
 
@@ -10329,35 +10479,65 @@ function getDossierDiagnosticSections(){
   ];
 }
 
+function summarizeDossierSourceText(text='',maxSentences=3,maxChars=190){
+  const stripped=String(text||'')
+    .replace(/\[\[\/?[A-Z0-9_]+\]\]/g,' ')
+    .replace(/^■\s*/gm,'')
+    .replace(/No\.\d+\s*[^\n。]*/g,'')
+    .replace(/(下の段|上の段|現状の列|未来の列|右側の流れ|左側の流れ|中心十字|対称ペア|隣接|カード番号|配置名)/g,'')
+    .replace(/\s+/g,' ')
+    .trim();
+  const sentences=splitJapaneseSentences(stripped);
+  const selected=[];
+  for(const sentence of sentences){
+    const clean=ensureJapaneseSentence(cleanDossierItemText(sentence));
+    if(!clean||isDossierIncompleteText(clean)) continue;
+    selected.push(clean);
+    if(selected.length>=maxSentences) break;
+  }
+  return limitTextByChars(selected.join(''),maxChars,90);
+}
+
+function buildDossierClarifyEvidenceSummary(){
+  const entries=getClarifyEntries();
+  if(!entries.length) return '';
+  return entries.slice(0,5).map(entry=>{
+    const label=getClarifyDisplayLabel(entry);
+    const answer=limitTextByChars(cleanDossierItemText(entry.a),70,24);
+    return answer?`${label}：${answer}`:'';
+  }).filter(Boolean).join('\n');
+}
+
 function getDossierIncludedSections(){
-  const clarifyPlain=buildClarifyPromptText('plain');
-  const lenEvidence=buildCardEvidencePlainText('len');
-  const orcEvidence=buildCardEvidencePlainText('orc');
-  const lenMemo=[getSectionBody(LAST_OUTPUTS.len,0),lenEvidence].filter(Boolean).join('\n\n');
-  const orcMemo=[getSectionBody(LAST_OUTPUTS.orc,2)||getSectionBody(LAST_OUTPUTS.orc,0),orcEvidence].filter(Boolean).join('\n\n');
-  const integrationMemo=getSectionBody(LAST_OUTPUTS.integration,0)||getSectionBody(LAST_OUTPUTS.integration,1)||'統合判断はまだ生成されていません。';
+  const foundationText=[
+    makeFoundationSummary('animal',REACTION_PROFILE?.summary||'',{}),
+    makeFoundationSummary('nameBirth',[buildNamePlainInsight(NAMEJUDGE)?.overview,buildBirthPlainInsight(MEIMEI)?.overview].filter(Boolean).join(' '),{}),
+    makeFoundationSummary('consultation',getCurrentInputSnapshot().theme||'',{})
+  ].filter(Boolean).join('\n');
+  const lenMemo=summarizeDossierSourceText(LAST_OUTPUTS.len,3,210);
+  const orcMemo=summarizeDossierSourceText(LAST_OUTPUTS.orc,3,210);
+  const clarifySummary=buildDossierClarifyEvidenceSummary();
   return[
-    ...getDossierDiagnosticSections(),
-    clarifyPlain?{
+    foundationText?{
+      eyebrow:'根拠',
+      title:'土台から見えたこと',
+      body:foundationText
+    }:null,
+    lenMemo?{
+      eyebrow:'根拠',
+      title:'ルノルマンから見えたこと',
+      body:lenMemo
+    }:null,
+    orcMemo?{
+      eyebrow:'根拠',
+      title:'オラクルから見えたこと',
+      body:orcMemo
+    }:null,
+    clarifySummary?{
       eyebrow:'追加質問',
       title:'追加質問から見えたこと',
-      body:clarifyPlain
+      body:clarifySummary
     }:null,
-    {
-      eyebrow:'根拠',
-      title:'ルノルマンカードから見た現実と注意点',
-      body:lenMemo||'ルノルマンカードの根拠はまだ生成されていません。'
-    },
-    {
-      eyebrow:'根拠',
-      title:'オラクルカードから見た次の行動',
-      body:orcMemo||'オラクルカードの根拠はまだ生成されていません。'
-    },
-    {
-      eyebrow:'保存用',
-      title:'統合判断の短いメモ',
-      body:integrationMemo
-    }
   ].filter(Boolean).filter(section=>String(section.body||'').trim());
 }
 
@@ -10401,39 +10581,66 @@ function renderDossierIncludedSections(){
 function buildDossierPlainText(data){
   const safeData=normalizeDossierCardData(data);
   const blocks=[
+    'RASHIN SAVE CARD',
     safeData.TITLE,
-    `一言結論：${safeData.ONE_LINE}`,
-    `${safeData.POSITIVE_LABEL||'残る条件'}\n${safeData.REMAIN_CONDITIONS.map((item,index)=>`${index+1}. ${item}`).join('\n')}`,
-    `${safeData.NEGATIVE_LABEL||'動く条件'}\n${safeData.MOVE_CONDITIONS.map((item,index)=>`${index+1}. ${item}`).join('\n')}`,
-    `${safeData.HOLD_LABEL||'保留条件'}\n${(safeData.HOLD_CONDITIONS||[]).map((item,index)=>`${index+1}. ${item}`).join('\n')}`,
-    `今週の一手\n${safeData.ACTION7.map((item,index)=>`${index+1}. ${item}`).join('\n')}`,
-    `保存用キーワード：${safeData.KEYWORDS.join(' / ')}`,
+    `一言結論：\n${safeData.ONE_LINE}`,
+    `今回の答え：\n${safeData.VERDICT}`,
+    `${safeData.POSITIVE_LABEL||'残る条件'}：\n${safeData.REMAIN_CONDITIONS.map(item=>`・${item}`).join('\n')}`,
+    `${safeData.NEGATIVE_LABEL||'動く条件'}：\n${safeData.MOVE_CONDITIONS.map(item=>`・${item}`).join('\n')}`,
+    `${safeData.HOLD_LABEL||'保留条件'}：\n${(safeData.HOLD_CONDITIONS||[]).map(item=>`・${item}`).join('\n')}`,
+    `今週の一手：\n${safeData.ACTION7.map(item=>`・${item}`).join('\n')}`,
+    `保存キーワード：\n${safeData.KEYWORDS.join(' / ')}`,
+    `背中を押す一文：`,
     safeData.CLOSING,
   ];
-  return limitTextByChars(blocks.map(block=>String(block||'').trim()).filter(Boolean).join('\n\n'),1000,620);
+  const text=blocks.map(block=>String(block||'').trim()).filter(Boolean).join('\n\n');
+  if(text.length<=1000) return text;
+  const compact={
+    ...safeData,
+    VERDICT:normalizeDossierParagraph(safeData.VERDICT,safeData.ONE_LINE,140),
+    REMAIN_CONDITIONS:safeData.REMAIN_CONDITIONS.map(item=>trimDossierTextSafely(item,46,12)).filter(Boolean),
+    MOVE_CONDITIONS:safeData.MOVE_CONDITIONS.map(item=>trimDossierTextSafely(item,46,12)).filter(Boolean),
+    HOLD_CONDITIONS:(safeData.HOLD_CONDITIONS||[]).map(item=>trimDossierTextSafely(item,46,12)).filter(Boolean),
+    ACTION7:safeData.ACTION7.map(item=>normalizeDossierSentence(item,item,{max:62,action:true})).filter(Boolean),
+    CLOSING:normalizeDossierSentence(safeData.CLOSING,safeData.CLOSING,{max:54}),
+  };
+  return [
+    'RASHIN SAVE CARD',
+    compact.TITLE,
+    `一言結論：\n${compact.ONE_LINE}`,
+    `今回の答え：\n${compact.VERDICT}`,
+    `${compact.POSITIVE_LABEL||'残る条件'}：\n${compact.REMAIN_CONDITIONS.map(item=>`・${item}`).join('\n')}`,
+    `${compact.NEGATIVE_LABEL||'動く条件'}：\n${compact.MOVE_CONDITIONS.map(item=>`・${item}`).join('\n')}`,
+    `${compact.HOLD_LABEL||'保留条件'}：\n${compact.HOLD_CONDITIONS.map(item=>`・${item}`).join('\n')}`,
+    `今週の一手：\n${compact.ACTION7.map(item=>`・${item}`).join('\n')}`,
+    `保存キーワード：\n${compact.KEYWORDS.join(' / ')}`,
+    '背中を押す一文：',
+    compact.CLOSING,
+  ].map(block=>String(block||'').trim()).filter(Boolean).join('\n\n');
 }
 
 function renderDossierEvidenceDetails(card){
   const sections=getDossierIncludedSections();
-  const detailSections=sections.slice(0,6);
   return`
     <details class="dossier-evidence-details">
       <summary data-closed-label="根拠を見る" data-open-label="根拠を閉じる">根拠を見る</summary>
       <div class="dossier-evidence-body">
         <div class="dossier-evidence-lead">${escapeHtml(card.EVIDENCE_SUMMARY||'この保存カードは、土台・カード・追加質問を現実の判断軸へ翻訳してまとめています。')}</div>
-        <div class="dossier-evidence-note">以下は詳しく確認したい人向けの補助情報です。保存カードやPDFには含めません。</div>
-        ${detailSections.map(section=>`
+        ${sections.map(section=>`
           <div class="dossier-evidence-section">
             <div class="dossier-evidence-section-title">${escapeHtml(section.title||'根拠')}</div>
-            <div class="dossier-evidence-section-copy">${escapeHtml(limitTextByChars(section.body||'',520,160)).replace(/\n/g,'<br>')}</div>
+            <div class="dossier-evidence-section-copy">${escapeHtml(limitTextByChars(section.body||'',240,90)).replace(/\n/g,'<br>')}</div>
           </div>
         `).join('')}
       </div>
     </details>`;
 }
 
-function renderDossierCards(data){
-  const card=normalizeDossierCardData(data);
+function renderDossierConditionList(items=[]){
+  return `<ul class="dossier-save-list">${items.map(item=>`<li class="dossier-save-item">${escapeHtml(item)}</li>`).join('')}</ul>`;
+}
+
+function renderDossierSaveCard(card){
   return`
     <article class="dossier-save-card">
       <div class="dossier-save-top">
@@ -10441,27 +10648,72 @@ function renderDossierCards(data){
         <div class="dossier-save-title">${escapeHtml(card.TITLE)}</div>
         <div class="dossier-save-one">${escapeHtml(card.ONE_LINE)}</div>
       </div>
-      <div class="dossier-save-verdict">${escapeHtml(card.VERDICT)}</div>
+      <div class="dossier-save-section">
+        <div class="dossier-save-heading">今回の答え</div>
+        <div class="dossier-save-verdict">${escapeHtml(card.VERDICT)}</div>
+      </div>
       <div class="dossier-save-section">
         <div class="dossier-save-heading">${escapeHtml(card.POSITIVE_LABEL||'残る条件')}</div>
-        <div class="dossier-save-axis">${card.REMAIN_CONDITIONS.map(item=>`<div>${escapeHtml(item)}</div>`).join('')}</div>
+        ${renderDossierConditionList(card.REMAIN_CONDITIONS)}
       </div>
       <div class="dossier-save-section">
         <div class="dossier-save-heading">${escapeHtml(card.NEGATIVE_LABEL||'動く条件')}</div>
-        <div class="dossier-save-axis">${card.MOVE_CONDITIONS.map(item=>`<div>${escapeHtml(item)}</div>`).join('')}</div>
+        ${renderDossierConditionList(card.MOVE_CONDITIONS)}
       </div>
       <div class="dossier-save-section">
         <div class="dossier-save-heading">${escapeHtml(card.HOLD_LABEL||'保留条件')}</div>
-        <div class="dossier-save-axis">${(card.HOLD_CONDITIONS||[]).map(item=>`<div>${escapeHtml(item)}</div>`).join('')}</div>
+        ${renderDossierConditionList(card.HOLD_CONDITIONS||[])}
       </div>
       <div class="dossier-save-section">
         <div class="dossier-save-heading">今週の一手</div>
-        <ul class="dossier-save-list">${card.ACTION7.map(item=>`<li class="dossier-save-item">${escapeHtml(item)}</li>`).join('')}</ul>
+        ${renderDossierConditionList(card.ACTION7)}
       </div>
-      <div class="dossier-chip-row dossier-save-keywords">${card.KEYWORDS.map(item=>`<div class="dossier-chip">${escapeHtml(item)}</div>`).join('')}</div>
-      <div class="dossier-save-closing">${escapeHtml(card.CLOSING)}</div>
-    </article>
-    ${renderDossierEvidenceDetails(card)}`;
+      <div class="dossier-save-section">
+        <div class="dossier-save-heading">保存キーワード</div>
+        <div class="dossier-chip-row dossier-save-keywords">${card.KEYWORDS.map(item=>`<div class="dossier-chip">${escapeHtml(item)}</div>`).join('')}</div>
+      </div>
+      <div class="dossier-save-section">
+        <div class="dossier-save-heading">背中を押す一文</div>
+        <div class="dossier-save-closing">${escapeHtml(card.CLOSING)}</div>
+      </div>
+    </article>`;
+}
+
+function renderDossierCards(data,options={}){
+  const card=normalizeDossierCardData(data);
+  const includeEvidence=options.includeEvidence!==false;
+  return `${renderDossierSaveCard(card)}${includeEvidence?renderDossierEvidenceDetails(card):''}`;
+}
+
+function detectDossierCardQualityIssues(data={}){
+  const card=normalizeDossierCardData(data);
+  const issues=[];
+  const text=buildDossierPlainText(card);
+  const conditionGroups=[
+    {label:card.POSITIVE_LABEL||'進む/残る条件',items:card.REMAIN_CONDITIONS||[]},
+    {label:card.NEGATIVE_LABEL||'止まる/動く条件',items:card.MOVE_CONDITIONS||[]},
+    {label:card.HOLD_LABEL||'保留条件',items:card.HOLD_CONDITIONS||[]},
+  ];
+  if(text.length>1000) issues.push('保存カードが1000字を超えている');
+  if(/[^\n。]{10,},[^\n。]{10,}/.test(text)) issues.push('保存カードにカンマ区切り配列のような表示がある');
+  if(/Q[:：]|A[:：]|【相談者の補足|相談者の補足整理|追加質問への回答/.test(text)) issues.push('保存カード本体に追加質問rawが混入している');
+  if(/No\.\d+|カード番号|配置名|中心十字|下の段|上の段|現状の列|未来の列|右側の流れ|左側の流れ/.test(text)) issues.push('保存カード本体に内部根拠やカード番号が混入している');
+  conditionGroups.forEach(group=>{
+    if((group.items||[]).length<2) issues.push(`${group.label}が2項目未満`);
+    if((group.items||[]).length>2) issues.push(`${group.label}が2項目を超えている`);
+    const seen=new Set();
+    (group.items||[]).forEach(item=>{
+      if(isDossierIncompleteText(item)) issues.push(`${group.label}に文途中切りがある`);
+      const key=normalizeIntegrationItemKey(item);
+      if(key&&seen.has(key)) issues.push(`${group.label}に重複項目がある`);
+      if(key) seen.add(key);
+    });
+  });
+  if((card.ACTION7||[]).length!==1) issues.push('今週の一手が1項目ではない');
+  if((card.ACTION7||[]).some(item=>isDossierIncompleteText(item,{action:true}))) issues.push('今週の一手が未完文または行動文ではない');
+  if(!card.CLOSING||isDossierIncompleteText(card.CLOSING)) issues.push('背中を押す一文がない、または未完文');
+  if((card.KEYWORDS||[]).length<4||(card.KEYWORDS||[]).length>6) issues.push('保存キーワードが4〜6個ではない');
+  return Array.from(new Set(issues));
 }
 
 function renderPremiumDossier(loading=false){
@@ -10499,9 +10751,11 @@ function renderPremiumDossier(loading=false){
   proofEl.innerHTML='';
   renderedEl.style.display='block';
   renderedEl.innerHTML=renderDossierCards(safeData);
+  const qualityIssues=detectDossierCardQualityIssues(safeData);
+  if(qualityIssues.length) recordPaidDebugQuality('dossier_card',qualityIssues);
   printBtn.style.display='inline-flex';
   copyBtn.style.display='inline-flex';
-  if(isDossierViewerOpen()) renderDossierViewerContent();
+  if(isDossierViewerOpen()) renderDossierViewerContent(document.getElementById('dossier-viewer')?.dataset.mode||'card');
 }
 
 function shouldShowDossierActions(){
@@ -10525,14 +10779,14 @@ function isDossierViewerOpen(){
   return !!(viewer&&!viewer.hidden);
 }
 
-function renderDossierViewerContent(){
-  const source=document.querySelector('#rs-dossier .dossier-shell');
+function renderDossierViewerContent(mode='card'){
   const target=document.getElementById('dossier-viewer-content');
-  if(!source||!target) return false;
-  const clone=source.cloneNode(true);
-  clone.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));
-  target.innerHTML='';
-  target.appendChild(clone);
+  if(!target) return false;
+  const parsed=LAST_OUTPUTS.dossier?parseTaggedDossier(LAST_OUTPUTS.dossier):buildFallbackDossier();
+  const card=normalizeDossierCardData(parsed);
+  target.innerHTML=mode==='evidence'
+    ?renderDossierEvidenceDetails(card)
+    :renderDossierSaveCard(card);
   return true;
 }
 
@@ -10560,12 +10814,13 @@ async function openDossierViewer(mode='card'){
     return;
   }
   renderPremiumDossier(false);
-  if(!renderDossierViewerContent()){
+  if(!renderDossierViewerContent(mode)){
     showToast('保存用鑑定カードを開けませんでした');
     return;
   }
   const viewer=document.getElementById('dossier-viewer');
   if(!viewer) return;
+  viewer.dataset.mode=mode;
   setDossierViewerMode(mode);
   viewer.hidden=false;
   viewer.setAttribute('aria-hidden','false');
@@ -12480,6 +12735,7 @@ function capturePaidDebugRendered(){
     orc:textOf('r-orc-block'),
     integration:textOf('r-integration'),
     foundation:textOf('foundation-mini-grid'),
+    dossier:textOf('dossier-rendered'),
   };
   PAID_DEBUG_LOG.sectionCounts.rendered=getPaidDebugTextStats(PAID_DEBUG_LOG.rendered);
   setPaidDebugButtonVisible(true);
@@ -14593,6 +14849,8 @@ function buildPremiumDossierCardSystemPrompt(todayText){
 - 「本音」「本質」は、相談文・追加質問・占術根拠から読める場合だけ使う
 - 人を傷つける強すぎる未翻訳表現は使わない
 - 出力は指定タグだけ。Markdown、説明文、タグ外テキストは禁止
+- 配列、JSON、カンマ区切りの列挙を出さない。条件は必ず1行1項目で書く
+- 文途中で切らない。読点、カンマ、中点、未完の名詞で終わらせない
 
 文字量:
 - 保存カード全体は400〜800字以内
@@ -14600,18 +14858,19 @@ function buildPremiumDossierCardSystemPrompt(todayText){
 - TITLEは最大28字
 - ONE_LINEは最大42字
 - VERDICTは2〜3文、最大180字
-- DECISION_AXISは「${ctx.positiveLabel}：...」「${ctx.negativeLabel}：...」の形で各2〜3項目
-- 可能ならHOLD_CONDITIONSに${ctx.holdLabel}を1〜2項目入れる
-- ACTION7は3項目、各24字以内
+- DECISION_AXISは「${ctx.positiveLabel}：...」「${ctx.negativeLabel}：...」の形で各2項目まで
+- HOLD_CONDITIONSに${ctx.holdLabel}を2項目まで入れる
+- ACTION7は1文だけ。今週やる具体行動を書く
+- KEYWORDSは4〜6個
 - CLOSINGは最大60字
 
 出力タグ:
 [[TITLE]]保存カードのタイトル[[/TITLE]]
 [[ONE_LINE]]一言結論[[/ONE_LINE]]
 [[VERDICT]]今回の答え。2〜3文[[/VERDICT]]
-[[DECISION_AXIS]]${ctx.positiveLabel}と${ctx.negativeLabel}だけ。各2〜3行[[/DECISION_AXIS]]
-[[HOLD_CONDITIONS]]${ctx.holdLabel}を1〜2行。なければ空でもよい[[/HOLD_CONDITIONS]]
-[[ACTION7]]7日以内にやることを3行[[/ACTION7]]
+[[DECISION_AXIS]]${ctx.positiveLabel}と${ctx.negativeLabel}だけ。各2行まで。1行1項目[[/DECISION_AXIS]]
+[[HOLD_CONDITIONS]]${ctx.holdLabel}を2行まで。1行1項目[[/HOLD_CONDITIONS]]
+[[ACTION7]]7日以内にやることを1文[[/ACTION7]]
 [[KEYWORDS]]4〜6個を / 区切り[[/KEYWORDS]]
 [[CLOSING]]背中を押す一文[[/CLOSING]]
 [[EVIDENCE_SUMMARY]]根拠を見る用の短い要約。通常表示には出さない[[/EVIDENCE_SUMMARY]]`;
@@ -14623,6 +14882,8 @@ function buildPremiumDossierCardPrompt(source){
 上記を内部資料として使い、「長い鑑定書」ではなく短い保存用鑑定カードを作成してください。
 本編で読んだ内容の再掲ではなく、あとで見返すための判断軸と行動だけに再編集してください。
 追加質問のraw回答、カード番号、配置名、履歴データは保存カード本体に出さないでください。
+進む/残る条件、止まる/動く条件、保留条件は最大2項目ずつ、今週の一手は1文だけにしてください。
+配列やカンマ区切りを本文に出さず、文途中で終わらせないでください。
 EVIDENCE_SUMMARYだけは、根拠を見る人向けに短く残してください。`;
 }
 
