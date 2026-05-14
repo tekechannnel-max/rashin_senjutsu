@@ -7858,12 +7858,14 @@ function normalizeOracleReadingText(text='',context={}){
   const findSection=label=>sections.find(section=>section.title.includes(label));
   const message=findSection('光のメッセージ')||sections[0]||{title:'光のメッセージ',body:source.trim()};
   const compass=findSection('内なる羅針盤')||sections[1]||{title:'内なる羅針盤',body:''};
-  const nextActions=getOracleNextActions(text);
+  const nextActions=getOracleNextActions(source);
   let compassBody=removeListLines(compass.body);
   if(!compassBody) compassBody=getOracleCompassFallback();
+  const messageBody=limitJapaneseBodyBySentences(message.body||'今は、目の前の状況を落ち着いて見直すことが大切です。',220,3);
+  compassBody=limitJapaneseBodyBySentences(compassBody,220,3);
   const nextBody=nextActions.map(item=>`・${item}`).join('\n');
   return[
-    `■ 背景と光のメッセージ\n${normalizeJapaneseNearDuplicateText(message.body||'今は、目の前の状況を落ち着いて見直すことが大切です。')}`,
+    `■ 背景と光のメッセージ\n${normalizeJapaneseNearDuplicateText(messageBody)}`,
     `■ 内なる羅針盤\n${normalizeJapaneseNearDuplicateText(compassBody)}`,
     `■ 次の一手\n${nextBody||uniqueAdviceItems(buildThemeSpecificActionPlan(focus)).slice(0,3).map(item=>`・${item}`).join('\n')}`,
   ].join('\n\n');
@@ -8038,6 +8040,8 @@ function buildReadingOutputFormatGuide(kind='len',is9=false,focusOverride=null){
       '1ブロックは160〜220字を目安にし、3文を超える場合は小見出しで分けてください。',
       '1文は45〜60字を目安に短くし、結論は必ず先頭の1文で言い切ってください。',
       '次にやることは必ず箇条書きにし、同じ意味の文を繰り返さないでください。',
+      '本文には「下の段」「現状の列」「右側の流れ」「中心のすぐ近く」「中心十字」「配置」などの内部説明を書かないでください。根拠は別レイヤーへ回してください。',
+      '合計は700〜1000字を目安にし、現実で何が詰まっているか、何を確認しないと誤るか、どの条件を見れば動けるかに絞ってください。',
       '',
       '【出力形式・厳守事項】',
       '見出しは必ず次の順で固定してください。',
@@ -8261,8 +8265,14 @@ function hasDanglingJapaneseFragment(text=''){
   return !clean||/[、・／/:：]$/.test(clean)||/(のように|ように|として|ながら|から|ため|ほど|に|を|が|は|で|と|て)$/.test(clean);
 }
 
+function normalizeJapanesePunctuationSpacing(text=''){
+  return String(text||'')
+    .replace(/(です|ます|でした|ません|ましょう)\s+([一-龥ぁ-んァ-ン])/g,'$1。$2')
+    .replace(/([。！？!?])\s+/g,'$1');
+}
+
 function makeSentenceUnitSummary(text='',fallback='',maxChars=130,maxSentences=2){
-  const raw=String(text||'');
+  const raw=normalizeJapanesePunctuationSpacing(text);
   const hadEllipsis=/(?:…|\.{3})/.test(raw);
   const clean=raw
     .replace(/\r\n?/g,'\n')
@@ -8289,7 +8299,7 @@ function makeSentenceUnitSummary(text='',fallback='',maxChars=130,maxSentences=2
 
 function sanitizeFoundationDetailBody(body='',fallback=''){
   const safeFallback=fallback||'今回の判断では、気持ちだけでなく現実に確認できる条件を見ていくことが大切です。';
-  return makeSentenceUnitSummary(body,safeFallback,150,2);
+  return makeSentenceUnitSummary(normalizeJapanesePunctuationSpacing(body),safeFallback,150,2);
 }
 
 function getAnimalTypeSummaryParts(){
@@ -8465,7 +8475,11 @@ function renderFoundationMiniSummary(){
       detail:buildConsultationFoundationDetail(consultation,animal,nameBirth),
     });
   }
-  const foundationIssues=detectTruncatedSummaryIssues(cards.map(card=>`${card.title}\n${card.body}\n${card.detail}`).join('\n'));
+  const foundationText=cards.map(card=>`${card.title}\n${card.body}\n${card.detail}`).join('\n');
+  const foundationIssues=[
+    ...detectTruncatedSummaryIssues(foundationText),
+    ...detectJapanesePunctuationSpacingIssues(foundationText,'foundation'),
+  ];
   if(foundationIssues.length) recordPaidDebugQuality('foundation_summary',foundationIssues.map(issue=>`foundation: ${issue}`));
   grid.innerHTML=cards.map(card=>`
     <div class="foundation-mini-card">
@@ -9402,7 +9416,10 @@ function setResultShareButtonsVisible(visible){
 
 function syncResultModeClass(){
   const resultScreen=document.getElementById('s-result');
-  if(resultScreen) resultScreen.classList.toggle('simple-result-mode',isSimpleReadingPlan());
+  if(resultScreen){
+    resultScreen.classList.toggle('simple-result-mode',isSimpleReadingPlan());
+    resultScreen.classList.toggle('paid-result-mode',PLAN==='paid');
+  }
 }
 
 function getResultProgressSummary(){
@@ -9700,7 +9717,7 @@ function upgradeCurrentReadingToPaidUnlocked(){
 function parseTaggedDossier(raw){
   const text=String(raw||'');
   const tags=[
-    'TITLE','ONE_LINE','VERDICT','DECISION_AXIS','ACTION7','ACTION30','GO_SIGN','STOP_SIGN','KEYWORDS','CLOSING','EVIDENCE_SUMMARY',
+    'TITLE','ONE_LINE','VERDICT','DECISION_AXIS','HOLD_CONDITIONS','HOLD_SIGN','ACTION7','ACTION30','GO_SIGN','STOP_SIGN','KEYWORDS','CLOSING','EVIDENCE_SUMMARY',
     'SUBTITLE','HEADLINE','CORE','TIMING','WARNING','LUCK','RECURRING'
   ];
   const data={};
@@ -9822,6 +9839,12 @@ function normalizeDossierCardData(data={}){
   const fallbackAxis=splitDossierDecisionAxis(themedFallback);
   const remainConditions=completeDossierAxisItems(decisionAxis.remain,fallbackAxis.remain,2,3);
   const moveConditions=completeDossierAxisItems(decisionAxis.move,fallbackAxis.move,2,3);
+  const holdConditions=completeDossierAxisItems(
+    limitDossierLines(source.HOLD_CONDITIONS||source.HOLD_SIGN||'',2,48),
+    getIntegrationSupplementItems(ctx.holdLabel,focus).slice(0,2),
+    1,
+    2
+  );
   const action7=limitDossierLines(source.ACTION7,3,24);
   const keywords=normalizeDossierKeywords(source.KEYWORDS);
   return{
@@ -9833,6 +9856,7 @@ function normalizeDossierCardData(data={}){
     HOLD_LABEL:ctx.holdLabel,
     REMAIN_CONDITIONS:remainConditions,
     MOVE_CONDITIONS:moveConditions,
+    HOLD_CONDITIONS:holdConditions,
     DECISION_AXIS:[...remainConditions,...moveConditions],
     ACTION7:action7.length?action7:limitDossierLines(fallback.ACTION7,3,24),
     KEYWORDS:keywords.length?keywords:normalizeDossierKeywords(fallback.KEYWORDS),
@@ -9854,6 +9878,7 @@ function buildWorkLifeDossierData(focus={}){
       ...positive.map(item=>`${ctx.positiveLabel}：${item.replace(/。$/,'')}`),
       ...negative.map(item=>`${ctx.negativeLabel}：${item.replace(/。$/,'')}`)
     ].join('\n'),
+    HOLD_CONDITIONS:getIntegrationSupplementItems(ctx.holdLabel,focus).slice(0,2).join('\n'),
     ACTION7:buildThemeSpecificActionPlan(focus).slice(0,3).join('\n'),
     KEYWORDS:buildDossierKeywords(focus),
     CLOSING:`今週は、${ctx.positiveLabel}と${ctx.negativeLabel}を選べる材料を集める週です。`,
@@ -10356,6 +10381,7 @@ function buildDossierPlainText(data){
     `一言結論：${safeData.ONE_LINE}`,
     `${safeData.POSITIVE_LABEL||'残る条件'}\n${safeData.REMAIN_CONDITIONS.map((item,index)=>`${index+1}. ${item}`).join('\n')}`,
     `${safeData.NEGATIVE_LABEL||'動く条件'}\n${safeData.MOVE_CONDITIONS.map((item,index)=>`${index+1}. ${item}`).join('\n')}`,
+    `${safeData.HOLD_LABEL||'保留条件'}\n${(safeData.HOLD_CONDITIONS||[]).map((item,index)=>`${index+1}. ${item}`).join('\n')}`,
     `今週の一手\n${safeData.ACTION7.map((item,index)=>`${index+1}. ${item}`).join('\n')}`,
     `保存用キーワード：${safeData.KEYWORDS.join(' / ')}`,
     safeData.CLOSING,
@@ -10399,6 +10425,10 @@ function renderDossierCards(data){
       <div class="dossier-save-section">
         <div class="dossier-save-heading">${escapeHtml(card.NEGATIVE_LABEL||'動く条件')}</div>
         <div class="dossier-save-axis">${card.MOVE_CONDITIONS.map(item=>`<div>${escapeHtml(item)}</div>`).join('')}</div>
+      </div>
+      <div class="dossier-save-section">
+        <div class="dossier-save-heading">${escapeHtml(card.HOLD_LABEL||'保留条件')}</div>
+        <div class="dossier-save-axis">${(card.HOLD_CONDITIONS||[]).map(item=>`<div>${escapeHtml(item)}</div>`).join('')}</div>
       </div>
       <div class="dossier-save-section">
         <div class="dossier-save-heading">今週の一手</div>
@@ -12108,6 +12138,12 @@ function updateAnimalReveal(){
   const nameEl=document.getElementById('rs-animal-reveal-name');
   const copyEl=document.getElementById('rs-animal-reveal-copy');
   if(!el||!nameEl) return;
+  if(PLAN==='paid'){
+    nameEl.textContent='';
+    if(copyEl) copyEl.textContent='';
+    el.style.display='none';
+    return;
+  }
   if(REACTION_PROFILE?.animal){
     const animal=getAnimalTypeSummaryParts();
     nameEl.textContent=animal.name;
@@ -12449,7 +12485,7 @@ function downloadPaidDebugJson(){
 }
 
 function normalizePaidReadingText(text=''){
-  return String(text||'')
+  return normalizeJapanesePunctuationSpacing(String(text||''))
     .replace(/\r\n?/g,'\n')
     .replace(/\n{3,}/g,'\n\n')
     .replace(/(【(?:進めてよい目印|止まる目印|確認する質問|今日|今日から3日以内|次に会う時|7日以内|1週間以内)】)/g,'\n\n$1\n')
@@ -12461,6 +12497,92 @@ function normalizePaidReadingText(text=''){
     .map(completeDanglingReadingLine)
     .join('\n')
     .trim();
+}
+
+const LENORMAND_INTERNAL_TERM_RE=/下の段|現状の列|右側の流れ|中心のすぐ近く|中心十字|上段|中段|下段|行・列|対称ペア|ナイト|テーマカード周辺|カードは好転|負担の強いカード|カードが寄|配置|列では|段には/;
+
+function splitJapaneseSentences(text=''){
+  return String(text||'')
+    .replace(/\r\n?/g,'\n')
+    .split(/(?<=[。！？!?])|\n+/)
+    .map(item=>item.trim())
+    .filter(Boolean);
+}
+
+function translateLenormandInternalSentence(sentence='',focus={},context={}){
+  const source=String(sentence||'').trim();
+  if(!LENORMAND_INTERNAL_TERM_RE.test(source)) return source;
+  const ctx=buildDecisionContext(focus,context);
+  if(/先送り|区切り|自分で選ぶ前|流れ/.test(source)){
+    return '確認を先送りすると、自分で選ぶ前に環境側の変化に押されやすくなります。';
+  }
+  if(/負担|重|中心|近く/.test(source)){
+    return 'この迷いはすでに生活や判断の中心に入り込んでおり、放置するほど重くなりやすい状態です。';
+  }
+  if(/好転|余地|引き寄せ|引力/.test(source)){
+    return `${ctx.positiveLabel}と${ctx.negativeLabel}を言葉にできるほど、続ける道も動く道も自分で選び直しやすくなります。`;
+  }
+  return '';
+}
+
+function removeLenormandInternalExplanations(text='',focus={},context={}){
+  const seen=new Set();
+  return String(text||'')
+    .split('\n')
+    .map(line=>{
+      const trimmed=line.trim();
+      if(!trimmed||isPaidTextHeading(trimmed)) return line;
+      const converted=splitJapaneseSentences(trimmed)
+        .map(sentence=>translateLenormandInternalSentence(sentence,focus,context))
+        .filter(Boolean)
+        .filter(sentence=>{
+          const key=normalizeIntegrationItemKey(sentence);
+          if(!key||seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .join('');
+      return converted||'';
+    })
+    .join('\n')
+    .replace(/\n{3,}/g,'\n\n')
+    .trim();
+}
+
+function limitJapaneseBodyBySentences(body='',maxChars=280,maxSentences=4){
+  const clean=String(body||'')
+    .replace(/\r\n?/g,'\n')
+    .replace(/\s+/g,' ')
+    .trim();
+  if(!clean) return '';
+  const sentences=splitJapaneseSentences(clean);
+  const picked=[];
+  for(const sentence of sentences){
+    const next=[...picked,sentence].join('');
+    if(next.length>maxChars&&picked.length) break;
+    picked.push(sentence);
+    if(picked.length>=maxSentences) break;
+  }
+  const output=(picked.join('')||clean.slice(0,maxChars)).trim();
+  return ensureJapaneseSentence(output);
+}
+
+function compressLenormandReadingText(text=''){
+  const sections=splitSections(text);
+  if(!sections.length) return limitJapaneseBodyBySentences(text,900,12);
+  const limitForTitle=title=>{
+    if(/迷いの構造/.test(title)) return{chars:180,sentences:3};
+    if(/今の流れ/.test(title)) return{chars:320,sentences:5};
+    if(/気をつけること/.test(title)) return{chars:320,sentences:5};
+    if(/あなたの引力/.test(title)) return{chars:200,sentences:3};
+    return{chars:260,sentences:4};
+  };
+  return sections.map(section=>{
+    const parsed=parseStructuredSection(section);
+    if(!parsed.title) return limitJapaneseBodyBySentences(parsed.body||section,260,4);
+    const limit=limitForTitle(parsed.title);
+    return `■ ${parsed.title}\n${limitJapaneseBodyBySentences(parsed.body,limit.chars,limit.sentences)}`;
+  }).join('\n\n');
 }
 
 function normalizeLenormandReadingText(text='',context={}){
@@ -12481,6 +12603,12 @@ function normalizeLenormandReadingText(text='',context={}){
       recordPaidDebugQuality('len_normalize',['明示された優先テーマに合わせて、ルノルマン本文の旧dual concern表現を補正しました']);
     }
   }
+  const beforeInternal=source;
+  source=removeLenormandInternalExplanations(source,focus,context);
+  if(beforeInternal!==source){
+    recordPaidDebugQuality('len_normalize',['ルノルマン本文からカード配置の内部説明を本文用の現実語へ補正しました']);
+  }
+  source=compressLenormandReadingText(source);
   return source;
 }
 
@@ -12525,7 +12653,13 @@ function dedupeJapaneseSentences(text=''){
 
 function buildPrimaryTopVerdictText(name='あなた',focus={},theme='',context={}){
   const ctx=buildDecisionContext(focus,{...context,theme});
-  const lines=[buildCoreInsightText(focus,{...context,theme})];
+  const coreOpening=buildCoreInsightText(focus,{...context,theme})
+    .split('\n')
+    .map(line=>line.trim())
+    .filter(Boolean)
+    .slice(0,2)
+    .join('\n');
+  const lines=[coreOpening];
   if(ctx.primaryTheme==='dual_concern'&&!focus.explicitUserPriority){
     lines.push(`今回の答えは、恋愛と仕事などを同じ重さで同時に決めることではなく、先に確認するテーマを分けることです。`);
     lines.push(`片方は${ctx.positiveLabel}、もう片方は${ctx.negativeLabel}として扱い、30日以内にどちらを先に動かすか決めてください。`);
@@ -13033,9 +13167,12 @@ function detectTopJudgmentDuplication(text='',focus={}){
 
 function detectLenormandRoleIssues(text='',focus={}){
   const ctx=buildDecisionContext(focus);
-  if(!isWorkLifeDirectionFocus(focus)&&!focus.explicitUserPriority) return [];
   const source=String(text||'');
   const issues=[];
+  if(LENORMAND_INTERNAL_TERM_RE.test(source)){
+    issues.push('LEN本文にカード配置の内部説明が残っています');
+  }
+  if(!isWorkLifeDirectionFocus(focus)&&!focus.explicitUserPriority) return issues;
   if(/恋愛と仕事の問題を同じ重さで同時に解決|恋愛と仕事を同じ重さ|恋愛と仕事を同じ焦り|恋愛と仕事の両方で「失いたくない気持ち」/.test(source)){
     issues.push('LENが旧dual concern型の主構造に戻っています');
   }
@@ -13085,6 +13222,16 @@ function detectTruncatedSummaryIssues(text=''){
     const trimmed=line.trim();
     if(/[^\s。！？.!?」』）)](?:…|\.{3})$/.test(trimmed)){
       issues.push(`${index+1}行目が文途中の省略表示で終わっています`);
+    }
+  });
+  return issues;
+}
+
+function detectJapanesePunctuationSpacingIssues(text='',key='text'){
+  const issues=[];
+  String(text||'').split('\n').forEach((line,index)=>{
+    if(/(です|ます|でした|ません|ましょう)\s+[一-龥ぁ-んァ-ン]/.test(line)){
+      issues.push(`${key}の${index+1}行目に句点抜けがあります`);
     }
   });
   return issues;
@@ -13163,6 +13310,7 @@ function validatePaidReadingQuality(parsed={},context={}){
     issues.push(...detectPaidTextQualityIssues(key,parsed[key]||''));
     issues.push(...detectWeakEscapeIssues(parsed[key]||'').map(issue=>`${key}: ${issue}`));
     issues.push(...detectTruncatedSummaryIssues(parsed[key]||'').map(issue=>`${key}: ${issue}`));
+    issues.push(...detectJapanesePunctuationSpacingIssues(parsed[key]||'',key));
   });
   issues.push(...validateIntegrationSatisfaction(parsed.integration||'',context));
   issues.push(...detectLenormandRoleIssues(parsed.len||'',context.focus||getFocusForContext(context.cat||'',context.theme||'',context)));
@@ -14348,7 +14496,7 @@ function buildPremiumDossierCardSystemPrompt(todayText){
 今日の日付は${todayText}です。根拠のない月名、季節、年末年始、来年などの時期表現は使わないでください。
 
 守ること:
-- メインは一言結論、${ctx.positiveLabel}、${ctx.negativeLabel}、今週の一手、保存キーワード、背中を押す一文だけに絞る
+- メインは一言結論、${ctx.positiveLabel}、${ctx.negativeLabel}、${ctx.holdLabel}、今週の一手、保存キーワード、背中を押す一文だけに絞る
 - 保存カードは占い結果の全文ではなく、あとで読み返す判断軸にする
 - 本編のトップ結論、最終判断カード、保存カードで同じ判断軸を一貫させる
 - 追加質問の回答をそのまま再掲しない。内部で要約して使う
@@ -14366,6 +14514,7 @@ function buildPremiumDossierCardSystemPrompt(todayText){
 - ONE_LINEは最大42字
 - VERDICTは2〜3文、最大180字
 - DECISION_AXISは「${ctx.positiveLabel}：...」「${ctx.negativeLabel}：...」の形で各2〜3項目
+- 可能ならHOLD_CONDITIONSに${ctx.holdLabel}を1〜2項目入れる
 - ACTION7は3項目、各24字以内
 - CLOSINGは最大60字
 
@@ -14374,6 +14523,7 @@ function buildPremiumDossierCardSystemPrompt(todayText){
 [[ONE_LINE]]一言結論[[/ONE_LINE]]
 [[VERDICT]]今回の答え。2〜3文[[/VERDICT]]
 [[DECISION_AXIS]]${ctx.positiveLabel}と${ctx.negativeLabel}だけ。各2〜3行[[/DECISION_AXIS]]
+[[HOLD_CONDITIONS]]${ctx.holdLabel}を1〜2行。なければ空でもよい[[/HOLD_CONDITIONS]]
 [[ACTION7]]7日以内にやることを3行[[/ACTION7]]
 [[KEYWORDS]]4〜6個を / 区切り[[/KEYWORDS]]
 [[CLOSING]]背中を押す一文[[/CLOSING]]
@@ -15688,7 +15838,6 @@ function buildRichOrcFallback(name,cat,is3){
   if(futureNeed){
     lines.push(`そのうえで、${futureNeed}`);
   }
-  lines.push('迷いが強い日は、頭の中で結論を出そうとしないでください。まず「感情」「現実の条件」「相手や職場に確認すべきこと」の3つに分けるだけで、混乱はかなりほどけます。');
   if(!futureNeed){
     lines.push('大きく変えようとするより、無理なく続けられる小さな動きから未来を寄せていくほうが、いまは現実に合っています。');
   }
