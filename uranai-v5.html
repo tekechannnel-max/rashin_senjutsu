@@ -2941,18 +2941,13 @@ body.coming-soon-locked{
   inset:0;
   z-index:0;
   pointer-events:none;
-  background-image:url('images/ui/result-bg-2.png?v=20260515-result-readable');
+  background-image:url('占い素材/鑑定結果画面の全画面背景2.png?v=20260515-bg2-readable');
   background-position:center top;
-  background-size:100% auto;
+  background-size:contain;
   background-repeat:no-repeat;
-  filter:saturate(.68) brightness(.68);
+  background-attachment:fixed;
+  filter:saturate(.75) brightness(.72);
   opacity:.92;
-}
-
-@media (min-width:1672px){
-  #s-result::before{
-    background-size:1672px auto;
-  }
 }
 
 #s-result::after{

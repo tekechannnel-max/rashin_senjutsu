@@ -2295,13 +2295,14 @@ function getAllowedStaticPath(urlPath) {
   if (pathname === '/solar-term-boundaries.json') {
     return path.join(ROOT_DIR, 'solar-term-boundaries.json');
   }
-  if (!pathname.startsWith('/images/') && !pathname.startsWith('/\u97f3\u7d20\u6750/')) return null;
+  if (!pathname.startsWith('/images/') && !pathname.startsWith('/\u97f3\u7d20\u6750/') && !pathname.startsWith('/\u5360\u3044\u7d20\u6750/')) return null;
 
   const relativePath = pathname.replace(/^\/+/, '');
   const resolvedPath = path.resolve(ROOT_DIR, relativePath);
   const allowedRoots = [
     path.resolve(ROOT_DIR, 'images'),
     path.resolve(ROOT_DIR, '\u97f3\u7d20\u6750'),
+    path.resolve(ROOT_DIR, '\u5360\u3044\u7d20\u6750'),
   ];
   if (!allowedRoots.some(rootPath => resolvedPath === rootPath || resolvedPath.startsWith(rootPath + path.sep))) return null;
   return resolvedPath;
@@ -2309,7 +2310,7 @@ function getAllowedStaticPath(urlPath) {
 
 function pathnameIsImage(urlPath) {
   const pathname = decodeURIComponent((urlPath || '').split('?')[0]);
-  return pathname.startsWith('/images/');
+  return pathname.startsWith('/images/') || pathname.startsWith('/\u5360\u3044\u7d20\u6750/');
 }
 
 function pathnameIsAudio(urlPath) {
