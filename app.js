@@ -1535,6 +1535,7 @@ const PAGE_PARAMS=new URLSearchParams(location.search);
 const LOCAL_RUNTIME_HOSTS=['127.0.0.1','localhost','::1'];
 const IS_LOCAL_RUNTIME=location.protocol==='file:'||LOCAL_RUNTIME_HOSTS.includes(location.hostname);
 const DEV_MODE=PAGE_PARAMS.has('dev')&&IS_LOCAL_RUNTIME;
+const PAID_DEBUG_MODE=DEV_MODE||PAGE_PARAMS.get('debug')==='1';
 const MEMBER_PREVIEW_PARAM=PAGE_PARAMS.has('member');
 const LOCAL_TEST_RUNTIME=IS_LOCAL_RUNTIME;
 const DAILY_ORACLE_TEST_MODE=PAGE_PARAMS.has('oracle_test')||PAGE_PARAMS.has('daily_oracle_test');
@@ -2027,6 +2028,7 @@ let ACTIVE_FOLLOWUP_KEY='';
 let FOLLOWUP_LOADING=false;
 let DOSSIER_LOADING=false;
 let LAST_OUTPUTS={about:'',foundationDeep:'',len:'',orc:'',integration:'',dossier:'',followups:{}};
+let PAID_DEBUG_LOG=null;
 let TOP_PAGE_VIEW_TRACKED=false;
 let LAST_DEEPEN_CTA_POSITION='unknown';
 const TRACKED_READING_COMPLETE_KEYS=new Set();
@@ -6562,7 +6564,9 @@ function repairStaticCopy(){
   setText('#r-aiload .ai-load-title','結論を整えています');
   setText('#r-aiload .ai-load-detail','ここまでの読みを一本にまとめ、今どう動くかまで落とし込んでいます。');
   setText('#dossier-open-btn','鑑定カードを保存');
-  setText('#dossier-save-btn','PDF保存');
+  setText('#dossier-save-btn','PDFで残す');
+  setText('#dossier-copy-inline-btn','要約をコピー');
+  setText('#dossier-evidence-btn','根拠を見る');
   const shareBtn=document.getElementById('share-x-btn');
   if(shareBtn){
     const svg=shareBtn.querySelector('svg');
@@ -6575,7 +6579,8 @@ function repairStaticCopy(){
   }
   setText('#dossier-title','保存用鑑定カードを整えています');
   setText('#dossier-subtitle','今回の答えを、SNSで保存しやすい短い羅針カードへ整えています。');
-  setText('#dossier-print-btn','PDF保存');
+  setText('#dossier-print-btn','PDFで残す');
+  setText('#dossier-copy-btn','要約をコピー');
   setText('#dossier-loading span','保存用鑑定カードを整えています…');
 }
 
@@ -6713,9 +6718,11 @@ function isMemberActive(){
 
 function resetLatestOutputs(){
   LAST_OUTPUTS={about:'',foundationDeep:'',len:'',orc:'',integration:'',dossier:'',followups:{}};
+  PAID_DEBUG_LOG=null;
   ACTIVE_FOLLOWUP_KEY='';
   FOLLOWUP_LOADING=false;
   DOSSIER_LOADING=false;
+  setPaidDebugButtonVisible(false);
 }
 
 function createReadingId(){
@@ -9790,7 +9797,8 @@ function renderDossierCards(data){
       </div>
       <div class="dossier-chip-row dossier-save-keywords">${card.KEYWORDS.map(item=>`<div class="dossier-chip">${escapeHtml(item)}</div>`).join('')}</div>
       <div class="dossier-save-closing">${escapeHtml(card.CLOSING)}</div>
-    </article>`;
+    </article>
+    ${renderDossierEvidenceDetails(card)}`;
 }
 
 function renderPremiumDossier(loading=false){
@@ -9801,7 +9809,8 @@ function renderPremiumDossier(loading=false){
   const proofEl=document.getElementById('dossier-proof');
   const renderedEl=document.getElementById('dossier-rendered');
   const printBtn=document.getElementById('dossier-print-btn');
-  if(!section||!titleEl||!subtitleEl||!loadingEl||!proofEl||!renderedEl||!printBtn) return;
+  const copyBtn=document.getElementById('dossier-copy-btn');
+  if(!section||!titleEl||!subtitleEl||!loadingEl||!proofEl||!renderedEl||!printBtn||!copyBtn) return;
 
   const shouldPrepare=PLAN==='paid'||!!LAST_OUTPUTS.dossier;
   section.style.display='none';
@@ -9814,6 +9823,7 @@ function renderPremiumDossier(loading=false){
     proofEl.style.display='none';
     renderedEl.style.display='none';
     printBtn.style.display='none';
+    copyBtn.style.display='none';
     return;
   }
 
@@ -9827,6 +9837,7 @@ function renderPremiumDossier(loading=false){
   renderedEl.style.display='block';
   renderedEl.innerHTML=renderDossierCards(safeData);
   printBtn.style.display='inline-flex';
+  copyBtn.style.display='inline-flex';
   if(isDossierViewerOpen()) renderDossierViewerContent();
 }
 
@@ -9836,7 +9847,7 @@ function shouldShowDossierActions(){
 
 function setDossierActionButtonsVisible(visible){
   const display=visible?'inline-flex':'none';
-  ['dossier-open-btn','dossier-save-btn'].forEach(id=>{
+  ['dossier-open-btn','dossier-save-btn','dossier-copy-inline-btn','dossier-evidence-btn'].forEach(id=>{
     const btn=document.getElementById(id);
     if(btn) btn.style.display=display;
   });
@@ -9928,6 +9939,23 @@ async function ensureDossierReady(){
   }finally{
     DOSSIER_LOADING=false;
   }
+}
+
+async function copyDossier(){
+  const ready=await ensureDossierReady();
+  if(!ready){
+    showToast('保存用鑑定カードの準備に失敗しました');
+    return;
+  }
+  const parsed=LAST_OUTPUTS.dossier?parseTaggedDossier(LAST_OUTPUTS.dossier):buildFallbackDossier();
+  const raw=buildDossierPlainText(parsed);
+  if(!navigator.clipboard?.writeText){
+    showToast('この環境ではコピー機能を使えません');
+    return;
+  }
+  navigator.clipboard.writeText(raw.replace(/\[\[\/?[A-Z0-9_]+\]\]/g,'').trim())
+    .then(()=>showToast('要約をコピーしました'))
+    .catch(()=>showToast('コピーに失敗しました'));
 }
 
 async function printDossier(){
@@ -11750,14 +11778,117 @@ function parseCombinedPaidReading(raw=''){
   return sections;
 }
 
+function isPaidDebugEnabled(){
+  return !!PAID_DEBUG_MODE;
+}
+
+function getPaidDebugTextStats(sections={}){
+  return Object.fromEntries(['len','orc','integration'].map(key=>[
+    key,
+    {
+      chars:String(sections[key]||'').length,
+      meaningfulChars:countMeaningfulChars(sections[key]||''),
+      lines:String(sections[key]||'').split(/\n/).filter(line=>line.trim()).length,
+    },
+  ]));
+}
+
+function startPaidDebugLog(context={}){
+  if(!isPaidDebugEnabled()) return;
+  PAID_DEBUG_LOG={
+    version:1,
+    createdAt:new Date().toISOString(),
+    localOnly:true,
+    serverStored:false,
+    trigger:DEV_MODE?'DEV_MODE':'debug=1',
+    context,
+    rawOutputs:{},
+    parsed:{},
+    normalization:{},
+    rendered:{},
+    sectionCounts:{},
+    qualityIssues:[],
+    qualitySnapshots:[],
+  };
+  setPaidDebugButtonVisible(false);
+}
+
+function updatePaidDebugLog(patch={}){
+  if(!isPaidDebugEnabled()||!PAID_DEBUG_LOG) return;
+  Object.assign(PAID_DEBUG_LOG,patch);
+}
+
+function recordPaidDebugRaw(stage,raw='',parsed=null){
+  if(!isPaidDebugEnabled()||!PAID_DEBUG_LOG) return;
+  PAID_DEBUG_LOG.rawOutputs[stage]=String(raw||'');
+  if(parsed) recordPaidDebugParsed(stage,parsed);
+}
+
+function recordPaidDebugParsed(stage,parsed={}){
+  if(!isPaidDebugEnabled()||!PAID_DEBUG_LOG) return;
+  PAID_DEBUG_LOG.parsed[stage]={...parsed};
+  PAID_DEBUG_LOG.sectionCounts[`parsed.${stage}`]=getPaidDebugTextStats(parsed);
+}
+
+function recordPaidDebugNormalization(section,before='',after=''){
+  if(!isPaidDebugEnabled()||!PAID_DEBUG_LOG) return;
+  PAID_DEBUG_LOG.normalization[section]={
+    before:String(before||''),
+    after:String(after||''),
+    changed:String(before||'')!==String(after||''),
+  };
+}
+
+function recordPaidDebugQuality(stage,issues=[]){
+  if(!isPaidDebugEnabled()||!PAID_DEBUG_LOG) return;
+  const safeIssues=(issues||[]).map(String).filter(Boolean);
+  PAID_DEBUG_LOG.qualitySnapshots.push({stage,issues:safeIssues,at:new Date().toISOString()});
+  PAID_DEBUG_LOG.qualityIssues=[...new Set([...(PAID_DEBUG_LOG.qualityIssues||[]),...safeIssues])];
+}
+
+function capturePaidDebugRendered(){
+  if(!isPaidDebugEnabled()||!PAID_DEBUG_LOG) return;
+  const textOf=id=>document.getElementById(id)?.innerText||document.getElementById(id)?.textContent||'';
+  PAID_DEBUG_LOG.rendered={
+    len:textOf('r-len-block'),
+    orc:textOf('r-orc-block'),
+    integration:textOf('r-integration'),
+  };
+  PAID_DEBUG_LOG.sectionCounts.rendered=getPaidDebugTextStats(PAID_DEBUG_LOG.rendered);
+  setPaidDebugButtonVisible(true);
+}
+
+function setPaidDebugButtonVisible(visible){
+  const btn=document.getElementById('paid-debug-download-btn');
+  if(btn) btn.style.display=visible&&isPaidDebugEnabled()&&PAID_DEBUG_LOG?'inline-flex':'none';
+}
+
+function downloadPaidDebugJson(){
+  if(!isPaidDebugEnabled()||!PAID_DEBUG_LOG){
+    showToast('debug JSONはありません');
+    return;
+  }
+  capturePaidDebugRendered();
+  const blob=new Blob([JSON.stringify(PAID_DEBUG_LOG,null,2)],{type:'application/json;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const stamp=new Date().toISOString().replace(/[:.]/g,'-');
+  a.href=url;
+  a.download=`paid-reading-debug-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
 function normalizePaidReadingText(text=''){
   return String(text||'')
     .replace(/\r\n?/g,'\n')
     .replace(/\n{3,}/g,'\n\n')
     .replace(/(【(?:進めてよい目印|止まる目印|確認する質問|今日|今日から3日以内|次に会う時|7日以内|1週間以内)】)/g,'\n\n$1\n')
     .replace(/】\s*・/g,'】\n・')
-    .replace(/([。！？])\s*(・)/g,'$1\n$2')
-    .replace(/(・[^・\n]+?)\s*(?=・)/g,'$1\n')
+    .replace(/([。！？])\s*(?=・\s*\S)/g,'$1\n')
+    .replace(/[ \t]+・(?=\S)/g,'\n・')
     .replace(/\n{3,}/g,'\n\n')
     .split('\n')
     .map(completeDanglingReadingLine)
@@ -11777,11 +11908,11 @@ function completeDanglingReadingLine(line=''){
   if(/仕事の判断軸は/.test(body)&&/経験|収入|成長|働きやすさ/.test(body)){
     return `${indent}${marker}仕事の判断軸は、今の職場で経験・収入・働きやすさ・成長のどれが増えるかを見ることです。`;
   }
-  if(/^(経験|収入|成長|働きやすさ|経験・収入|収入・成長|経験・収入・成長)/.test(body)&&body.length<=32){
+  if(/^(経験|収入|成長|働きやすさ|経験・収入|収入・成長|経験・収入・成長)/.test(body)&&body.length<=32&&!hasActionVerb(body)){
     return `${indent}${marker}経験・収入・働きやすさ・成長のどれが残るかを確認する。`;
   }
   if(/[。！？.!?」』）)]$/.test(body)) return `${indent}${marker}${body}`;
-  if(/[・、,，]/.test(body)&&body.length<=36){
+  if(/[・、,，]/.test(body)&&body.length<=36&&!hasActionVerb(body)){
     return `${indent}${marker}${body}のどれが判断に残るかを確認する。`;
   }
   return `${indent}${marker}${body}。`;
@@ -11799,33 +11930,170 @@ function buildWorkFinalJudgmentText(name='あなた',cat='総合',theme=''){
 今すぐ辞める流れではありません。ただし、条件をつけず今の職場に残る流れでもありません。仕事を先に見る理由は、生活と将来の見通しが他の判断にも影響しているためです。
 
 ■ 残る条件
-半年後に、経験・収入・働きやすさ・成長のどれかが増えるなら、今の仕事を続ける価値があります。
+・半年後に、経験・収入・働きやすさ・成長のどれかが増える。
+・続けることで、次の選択肢に使える実績が残る。
 
 ■ 動く条件
-どれも増えないなら、${target}別の道の準備を始めてください。${loveLine}
+・どれも増えないなら、${target}別の道の準備を始める。
+・不満が小さくても、半年後の見返りが説明できない。${loveLine}
 
-■ 今週やること
-この半年で増えたものを、経験・収入・働きやすさ・成長の4つに分けて書き出してください。`;
+■ 今週の一手
+・この半年で増えたものを、経験・収入・働きやすさ・成長の4つに分けて書き出す。
+
+■ 背中を押す一文
+残るか動くかは気合いではなく、半年後に何が増えるかで決めてください。`;
+}
+
+function buildDefaultFinalJudgmentText(name='あなた',cat='総合',theme=''){
+  return `■ 今回の最終判断
+今は、すぐに白黒を急ぐより、続ける条件と変える条件を分ける段階です。
+
+■ 残る条件
+・続けた先に安心、信頼、具体的な前進のどれかが残る。
+・相手や環境が、言葉だけでなく行動で変化を見せる。
+
+■ 動く条件
+・同じ不安が繰り返され、確認しても状況が動かない。
+・あなたばかりが合わせて、次の一手が見えない。
+
+■ 今週の一手
+・続けたい理由と変えたい理由を、別々に3つずつ書き出す。
+
+■ 背中を押す一文
+迷いを消すのではなく、判断に使える条件へ変えることから始めてください。`;
+}
+
+function getFinalJudgmentFallback(name='あなた',cat='総合',theme=''){
+  const focus=analyzeConsultationFocus(cat,theme);
+  return focus.hasWork?buildWorkFinalJudgmentText(name,cat,theme):buildDefaultFinalJudgmentText(name,cat,theme);
+}
+
+function extractHeadingBody(text='',heading=''){
+  const pattern=new RegExp(`^■\\s*${heading}\\s*\\n([\\s\\S]*?)(?=\\n■\\s|$)`,'m');
+  const match=String(text||'').match(pattern);
+  return match?match[1].trim():'';
+}
+
+function replaceHeadingBody(text='',heading='',body=''){
+  const source=String(text||'').trim();
+  const pattern=new RegExp(`(^■\\s*${heading}\\s*\\n)([\\s\\S]*?)(?=\\n■\\s|$)`,'m');
+  if(pattern.test(source)) return source.replace(pattern,`$1${body.trim()}\n`);
+  return `${source}\n\n■ ${heading}\n${body.trim()}`.trim();
+}
+
+function ensureIntegrationSlots(text='',name='あなた',cat='総合',theme=''){
+  let output=String(text||'').trim();
+  const fallback=getFinalJudgmentFallback(name,cat,theme);
+  const required=['今回の最終判断','残る条件','動く条件','今週の一手','背中を押す一文'];
+  required.forEach(heading=>{
+    if(!new RegExp(`^■\\s*${heading}`,'m').test(output)){
+      output=replaceHeadingBody(output,heading,extractHeadingBody(fallback,heading));
+    }
+  });
+  const focus=analyzeConsultationFocus(cat,theme);
+  if(focus.hasWork){
+    const workAxis=/経験|収入|働きやすさ|成長/.test(output);
+    if(!workAxis){
+      output=replaceHeadingBody(output,'残る条件',extractHeadingBody(fallback,'残る条件'));
+      output=replaceHeadingBody(output,'動く条件',extractHeadingBody(fallback,'動く条件'));
+      output=replaceHeadingBody(output,'今週の一手',extractHeadingBody(fallback,'今週の一手'));
+    }
+  }
+  return output.trim();
 }
 
 function ensureFinalJudgmentText(text='',name='あなた',cat='総合',theme=''){
-  const focus=analyzeConsultationFocus(cat,theme);
   const normalized=normalizePaidReadingText(text);
-  if(focus.hasWork){
-    const hasConditions=/残る条件/.test(normalized)&&/動く条件/.test(normalized);
-    const hasWorkAxis=/経験.*収入|収入.*経験|働きやすさ|成長/.test(normalized);
-    if(!hasConditions||!hasWorkAxis){
-      return buildWorkFinalJudgmentText(name,cat,theme);
-    }
-  }
-  return compactFinalSummaryText(normalized,400);
+  const base=normalized||getFinalJudgmentFallback(name,cat,theme);
+  return ensureIntegrationSlots(base,name,cat,theme);
 }
 
 function countMeaningfulChars(text=''){
   return String(text||'').replace(/\s/g,'').length;
 }
 
-function validatePaidReadingQuality(parsed={}){
+function countTextOccurrences(text='',pattern){
+  const matches=String(text||'').match(pattern);
+  return matches?matches.length:0;
+}
+
+function hasUnclosedJapaneseQuote(text=''){
+  const source=String(text||'');
+  return countTextOccurrences(source,/「/g)>countTextOccurrences(source,/」/g)
+    ||countTextOccurrences(source,/『/g)>countTextOccurrences(source,/』/g);
+}
+
+function isPaidTextHeading(line=''){
+  return /^■\s*\S+/.test(String(line||'').trim())||/^【[^】]+】$/.test(String(line||'').trim());
+}
+
+function hasActionVerb(text=''){
+  return /(する|します|してください|確認|書き|分け|見る|決め|始め|止め|残る|動く|増える|減る|選ぶ|伝える|整える|続ける|離れる|準備|比べる|置く|待つ|話す|聞く|出す|作る|進める)/.test(String(text||''));
+}
+
+function detectPaidTextQualityIssues(key='',text=''){
+  const issues=[];
+  const source=String(text||'').trim();
+  if(!source) return [`${key}が空です`];
+  if(hasUnclosedJapaneseQuote(source)) issues.push(`${key}に閉じていない引用符があります`);
+  const lines=source.split('\n');
+  lines.forEach((line,index)=>{
+    const trimmed=line.trim();
+    if(!trimmed) return;
+    if(/[、・/／：:]$/.test(trimmed)) issues.push(`${key}の${index+1}行目が途中で切れています`);
+    if(/^[-・]\s*/.test(trimmed)){
+      const body=trimmed.replace(/^[-・]\s*/,'').trim();
+      if(body.length<=24&&!/[。！？.!?]$/.test(body)&&!hasActionVerb(body)){
+        issues.push(`${key}の${index+1}行目が名詞だけで終わっています`);
+      }
+    }
+    if(/経験・収入$|経験・収入・?$|経験・収入・働きやすさ・?$/.test(trimmed)){
+      issues.push(`${key}の${index+1}行目が中点連結の途中で切れています`);
+    }
+    if(/^■\s*/.test(trimmed)){
+      const next=lines.slice(index+1).find(item=>item.trim());
+      if(!next||/^■\s*/.test(next.trim())) issues.push(`${key}の見出し「${trimmed}」の直後に本文がありません`);
+    }
+  });
+  const lastBody=[...lines].reverse().map(line=>line.trim()).find(line=>line&&!isPaidTextHeading(line));
+  if(lastBody&&!/[。！？.!?」』）)]$/.test(lastBody)){
+    issues.push(`${key}の最後の文が句点で終わっていません`);
+  }
+  return [...new Set(issues)];
+}
+
+function detectRepeatedAdviceIssues(text=''){
+  const sentences=String(text||'')
+    .split(/(?<=[。！？])/)
+    .map(item=>item.replace(/\s/g,'').trim())
+    .filter(item=>item.length>=12);
+  const counts=new Map();
+  sentences.forEach(sentence=>counts.set(sentence,(counts.get(sentence)||0)+1));
+  return [...counts.entries()].filter(([,count])=>count>=3).map(([sentence])=>`同じ助言が3回以上繰り返されています: ${limitTextByChars(sentence,40,20)}`);
+}
+
+function validateIntegrationSatisfaction(text='',context={}){
+  const issues=[];
+  const source=String(text||'');
+  if(!/今回の最終判断|結論|答え/.test(source)) issues.push('integrationが相談者の質問に直接答えていません');
+  if(!/残る条件/.test(source)) issues.push('integrationに残る条件がありません');
+  if(!/動く条件/.test(source)) issues.push('integrationに動く条件がありません');
+  if(!/今週|7日以内|1週間以内|今日から7日/.test(source)) issues.push('integrationに判断期限がありません');
+  if(!/背中を押す一文/.test(source)) issues.push('integrationに背中を押す一文がありません');
+  if(/整理してください。?$/.test(source.trim())&&!/残る条件|動く条件|今週の一手/.test(source)){
+    issues.push('integrationが整理してくださいだけで終わっています');
+  }
+  if(!/条件|目印|一手|行動|確認|書き出|分ける|始める|止める/.test(source)){
+    issues.push('integrationが入力内容の再掲に寄っています');
+  }
+  const focus=context.focus||analyzeConsultationFocus(context.cat||'',context.theme||'');
+  if(focus.hasWork&&!/経験|収入|働きやすさ|成長/.test(source)){
+    issues.push('integrationに仕事の残る/動く判断軸が足りません');
+  }
+  return issues;
+}
+
+function validatePaidReadingQuality(parsed={},context={}){
   const issues=[];
   const limits={len:800,orc:450,integration:220};
   Object.entries(limits).forEach(([key,min])=>{
@@ -11842,7 +12110,12 @@ function validatePaidReadingQuality(parsed={}){
   if(!/(7日以内|1週間以内|今週)/.test(parsed.integration||'')){
     issues.push('7日以内にできる行動が弱い');
   }
-  return issues;
+  ['len','orc','integration'].forEach(key=>{
+    issues.push(...detectPaidTextQualityIssues(key,parsed[key]||''));
+  });
+  issues.push(...validateIntegrationSatisfaction(parsed.integration||'',context));
+  issues.push(...detectRepeatedAdviceIssues(joined));
+  return [...new Set(issues)];
 }
 
 function parseJsonObjectLoose(text=''){
@@ -11856,7 +12129,7 @@ function parseJsonObjectLoose(text=''){
 }
 
 async function evaluatePaidReadingQuality(parsed={},context={}){
-  const localIssues=validatePaidReadingQuality(parsed);
+  const localIssues=validatePaidReadingQuality(parsed,context);
   const prompt=`深掘り鑑定の品質を点検し、JSONだけを返してください。
 
 【相談者入力データ】
@@ -11877,6 +12150,15 @@ ${sanitizePromptInput(parsed.integration,3000)}
 - 結論があるか
 - 判断ポイントがあるか
 - 次の一手があるか
+- この鑑定を読んだ有料ユーザーが、次に何をすればいいか分かるか
+- 残る条件と動く条件が両方あるか
+- 相談者の入力文の言い換えだけで終わっていないか
+- 最後の一文が背中を押しているか
+- 相談者の質問に直接答えているか
+- 判断期限があるか
+- 文が途中で切れていないか
+- 同じ助言を3回以上繰り返していないか
+- 「整理してください」だけで終わっていないか
 - ルノルマン9枚の読みがあるか
 - オラクル3枚の助言があるか
 - 追加質問への反映があるか
@@ -11947,6 +12229,97 @@ ${sanitizePromptInput(parsed.integration,3000)}
   };
 }
 
+async function strengthenPaidIntegration(parsed={},context={}){
+  const baseIntegration=ensureFinalJudgmentText(
+    parsed.integration||'',
+    context.name||'あなた',
+    context.cat||'総合',
+    context.theme||''
+  );
+  const localIssues=[
+    ...detectPaidTextQualityIssues('integration',baseIntegration),
+    ...validateIntegrationSatisfaction(baseIntegration,context),
+  ];
+  const shouldCallAI=!!(parsed.len||parsed.orc)&&(!baseIntegration||localIssues.length||context.forceStrengthen!==false);
+  if(!shouldCallAI){
+    return {...parsed,integration:baseIntegration};
+  }
+  const systemPrompt=`あなたは有料鑑定の最終判断だけを磨く編集者です。
+LENとORCは書き直さず、INTEGRATIONだけを強化してください。
+占術用語を増やさず、相談者の現実の判断条件に翻訳してください。
+「魂」「波動」「宇宙」は禁止です。「本音」「本質」は根拠がある場合だけ使えます。
+
+必ずこの構成で返してください。
+■ 今回の最終判断
+相談者の質問に直接答える。1〜3文。
+
+■ 残る条件
+今の場所・関係・選択を続けてよい条件を2〜4項目。
+
+■ 動く条件
+変える・離れる・準備を始める条件を2〜4項目。
+
+■ 今週の一手
+7日以内にできる行動を1〜3項目。
+
+■ 背中を押す一文
+精神論ではなく、現実の行動につながる一文。
+
+仕事相談では、経験・収入・働きやすさ・自分の成長のどれが増えるかを必ず判断軸に入れてください。
+相談文に2026年後半がある場合は、2026年後半に向けて準備を始める条件を明示してください。
+「整理してください」だけで終わらせないでください。`;
+  const prompt=`【相談者入力データ】
+${context.paidUserData||''}
+
+【相談者が欲しい答え】
+${context.focus?.answerNeed||context.answerNeed||''}
+
+【追加質問への回答】
+${context.clarifyText||''}
+
+【生まれから見える傾向】
+${context.birthDetail||''}
+
+【名前から伝わる印象】
+${context.nameDetail||''}
+
+【動物タイプ診断から見える傾向】
+${context.reactionText||''}
+
+【LEN】
+${sanitizePromptInput(parsed.len||'',5000)}
+
+【ORC】
+${sanitizePromptInput(parsed.orc||'',3200)}
+
+【現在のINTEGRATION】
+${sanitizePromptInput(parsed.integration||'',1600)}
+
+上記を踏まえ、INTEGRATIONだけを指定構成で作り直してください。`;
+  try{
+    const raw=await callAI(prompt,1800,systemPrompt,{
+      taskKey:'structure',
+      images:[],
+    });
+    recordPaidDebugRaw('integration_strengthen',raw,null);
+    const parsedPatch=parseCombinedPaidReading(raw);
+    const candidate=normalizePaidReadingText(parsedPatch.integration||raw||'');
+    const strengthened=ensureFinalJudgmentText(candidate,context.name||'あなた',context.cat||'総合',context.theme||'');
+    const issues=[
+      ...detectPaidTextQualityIssues('integration',strengthened),
+      ...validateIntegrationSatisfaction(strengthened,context),
+    ];
+    recordPaidDebugQuality('integration_strengthen',issues);
+    if(issues.length){
+      return {...parsed,integration:baseIntegration};
+    }
+    return {...parsed,integration:strengthened};
+  }catch(e){
+    recordPaidDebugQuality('integration_strengthen_failed',[e?.message||'integration strengthen failed']);
+    return {...parsed,integration:baseIntegration};
+  }
+}
+
 function renderPaidCombinedOutputs(parsed,name,cat,theme,options={}){
   const allowFallback=options.allowFallback!==false;
   if(!allowFallback&&(!parsed.len||!parsed.orc||!parsed.integration)){
@@ -11959,16 +12332,25 @@ function renderPaidCombinedOutputs(parsed,name,cat,theme,options={}){
     setIntegrationError('最終結論を整えています','入力内容をもとに補助結果を表示します。');
     return;
   }else{
-    LAST_OUTPUTS.len=normalizePaidReadingText(parsed.len||buildRichLenFallback(name,cat));
-    LAST_OUTPUTS.orc=normalizeOracleReadingText(normalizePaidReadingText(parsed.orc||buildRichOrcFallback(name,cat,true)));
-    const integrationText=normalizePaidReadingText(parsed.integration||buildIntegratedFallback(name,cat,theme));
+    const lenSource=parsed.len||buildRichLenFallback(name,cat);
+    const orcSource=parsed.orc||buildRichOrcFallback(name,cat,true);
+    const integrationSource=parsed.integration||buildIntegratedFallback(name,cat,theme);
+    LAST_OUTPUTS.len=normalizePaidReadingText(lenSource);
+    LAST_OUTPUTS.orc=normalizeOracleReadingText(normalizePaidReadingText(orcSource));
+    const integrationText=normalizePaidReadingText(integrationSource);
     LAST_OUTPUTS.integration=ensureFinalJudgmentText(integrationText,name,cat,theme);
+    recordPaidDebugNormalization('len',lenSource,LAST_OUTPUTS.len);
+    recordPaidDebugNormalization('orc',orcSource,LAST_OUTPUTS.orc);
+    recordPaidDebugNormalization('integration',integrationSource,LAST_OUTPUTS.integration);
+    updatePaidDebugLog({normalized:{...LAST_OUTPUTS}});
+    if(PAID_DEBUG_LOG) PAID_DEBUG_LOG.sectionCounts.normalized=getPaidDebugTextStats(LAST_OUTPUTS);
   }
   renderFormattedResultText('r-len-block',LAST_OUTPUTS.len,'len');
   renderFormattedResultText('r-orc-block',LAST_OUTPUTS.orc,'orc');
   document.getElementById('r-aiload').style.display='none';
   document.getElementById('r-integration').style.display='block';
   renderFormattedResultText('r-integration',LAST_OUTPUTS.integration,'integration');
+  capturePaidDebugRendered();
 }
 
 async function completeResultGenerationUI(){
@@ -11995,6 +12377,7 @@ function completeFailedResultGenerationUI(){
   if(progressCard) progressCard.style.display='none';
   setResultShareButtonsVisible(false);
   setDossierActionButtonsVisible(false);
+  setPaidDebugButtonVisible(false);
   const progress=document.getElementById('progress');
   if(progress) progress.style.width='100%';
 }
@@ -12165,6 +12548,26 @@ ${orcFull}
 ルノルマンを主軸に読み、オラクルは補助線として使ってください。
 メイン本文ではカード名や占術名を最小限にし、相談者の現実の言葉に翻訳してください。根拠は別レイヤーに残します。`;
 
+  const paidDebugContext={
+    paidUserData,
+    focus,
+    answerNeed:focus.answerNeed,
+    clarifyText,
+    birthDetail,
+    nameDetail,
+    lifeDetail,
+    reactionText,
+    historyText,
+    lenFull,
+    orcFull,
+    systemPrompt,
+    userPrompt:prompt,
+    name,
+    cat,
+    theme,
+  };
+  startPaidDebugLog(paidDebugContext);
+
   let parsed={len:'',orc:'',integration:''};
   let paidGenerationFailed=false;
   try{
@@ -12173,6 +12576,7 @@ ${orcFull}
       images:buildCardImageRefs('all','paid'),
     });
     parsed=parseCombinedPaidReading(res);
+    recordPaidDebugRaw('initial',res,parsed);
     if(!parsed.len||!parsed.orc||!parsed.integration){
       await logPaidParseFailure('initial',res,parsed);
       const parseRetrySystemPrompt=`${systemPrompt}
@@ -12193,17 +12597,24 @@ ${orcFull}
         images:buildCardImageRefs('all','paid'),
       });
       parsed=parseCombinedPaidReading(parseRetryRes);
+      recordPaidDebugRaw('format_retry',parseRetryRes,parsed);
       if(!parsed.len||!parsed.orc||!parsed.integration){
         await logPaidParseFailure('format_retry',parseRetryRes,parsed);
         throw makeAppError('PAID_PARSE_ERROR','深掘り鑑定の形式を確認できませんでした。');
       }
     }
-    let qualityResult=await evaluatePaidReadingQuality(parsed,{userDataText:paidUserData});
+    parsed=await strengthenPaidIntegration(parsed,paidDebugContext);
+    recordPaidDebugParsed('after_integration_strengthen',parsed);
+    let qualityResult=await evaluatePaidReadingQuality(parsed,{...paidDebugContext,userDataText:paidUserData});
+    recordPaidDebugQuality('initial_quality',qualityResult.issues);
     if(qualityResult.issues.length){
       await sendClientLog({level:'warn',type:'paid_quality_completion',message:'Paid reading quality completion started',meta:{issues:qualityResult.issues,sections:qualityResult.sections}});
       try{
-        parsed=await supplementPaidReadingSections(parsed,qualityResult,{userDataText:paidUserData});
-        const postSupplementIssues=validatePaidReadingQuality(parsed);
+        parsed=await supplementPaidReadingSections(parsed,qualityResult,{...paidDebugContext,userDataText:paidUserData});
+        parsed=await strengthenPaidIntegration(parsed,paidDebugContext);
+        recordPaidDebugParsed('after_quality_supplement',parsed);
+        const postSupplementIssues=validatePaidReadingQuality(parsed,{...paidDebugContext,userDataText:paidUserData});
+        recordPaidDebugQuality('post_supplement_quality',postSupplementIssues);
         qualityResult={ok:postSupplementIssues.length===0,issues:postSupplementIssues,sections:postSupplementIssues.map(issue=>issue.split('が')[0]).filter(section=>['len','orc','integration'].includes(section)),requiresFullRegeneration:qualityResult.requiresFullRegeneration};
       }catch(e){
         qualityResult={...qualityResult,requiresFullRegeneration:true};
@@ -12230,15 +12641,18 @@ ${qualityResult.issues.map(issue=>`- ${issue}`).join('\n')}
         images:buildCardImageRefs('all','paid'),
       });
       const retryParsed=parseCombinedPaidReading(retryRes);
+      recordPaidDebugRaw('quality_retry',retryRes,retryParsed);
       if(!retryParsed.len||!retryParsed.orc||!retryParsed.integration){
         await logPaidParseFailure('quality_retry',retryRes,retryParsed);
         throw makeAppError('PAID_PARSE_ERROR','深掘り鑑定の形式を確認できませんでした。');
       }
-      const retryQualityIssues=validatePaidReadingQuality(retryParsed);
+      const strengthenedRetryParsed=await strengthenPaidIntegration(retryParsed,paidDebugContext);
+      const retryQualityIssues=validatePaidReadingQuality(strengthenedRetryParsed,{...paidDebugContext,userDataText:paidUserData});
+      recordPaidDebugQuality('retry_quality',retryQualityIssues);
       if(retryQualityIssues.length){
         throw makeAppError('PAID_QUALITY_ERROR',`深掘り鑑定の品質を確認できませんでした。${retryQualityIssues.join(' / ')}`);
       }
-      parsed=retryParsed;
+      parsed=strengthenedRetryParsed;
     }
   }catch(e){
     await sendClientLog({
@@ -12260,6 +12674,7 @@ ${qualityResult.issues.map(issue=>`- ${issue}`).join('\n')}
       orc:buildRichOrcFallback(name,cat,true),
       integration:buildIntegratedFallback(name,cat,theme),
     };
+    recordPaidDebugParsed('fallback',parsed);
   }
 
   renderPaidCombinedOutputs(parsed,name,cat,theme,{allowFallback:true});
@@ -14293,6 +14708,9 @@ if(typeof window!=='undefined'){
   window.closeFlowAnalysisModal=closeFlowAnalysisModal;
   window.openDossierViewer=openDossierViewer;
   window.closeDossierViewer=closeDossierViewer;
+  window.copyDossier=copyDossier;
+  window.printDossier=printDossier;
+  window.downloadPaidDebugJson=downloadPaidDebugJson;
   window.openCardLightbox=openCardLightbox;
   window.closeCardLightbox=closeCardLightbox;
   window.openCardLightboxFromThumb=openCardLightboxFromThumb;

@@ -6983,7 +6983,8 @@ body.dossier-viewer-open{
           </div>
           <div class="dossier-actions">
 
-            <button class="dossier-action-btn" id="dossier-print-btn" onclick="printDossier()" style="display:none">PDF保存</button>
+            <button class="dossier-action-btn" id="dossier-print-btn" onclick="printDossier()" style="display:none">PDFで残す</button>
+            <button class="dossier-action-btn" id="dossier-copy-btn" onclick="copyDossier()" style="display:none">要約をコピー</button>
 
           </div>
 
@@ -7009,7 +7010,10 @@ body.dossier-viewer-open{
       <button class="nav-btn nav-btn-primary" onclick="gotoTop()">もう一度占う</button>
       <button class="nav-btn" onclick="goToHistory()">過去の占いへ</button>
       <button class="share-x-btn dossier-open-btn" id="dossier-open-btn" onclick="openDossierViewer()" style="display:none">鑑定カードを保存</button>
-      <button class="share-x-btn" id="dossier-save-btn" onclick="printDossier()" style="display:none">PDF保存</button>
+      <button class="share-x-btn" id="dossier-copy-inline-btn" onclick="copyDossier()" style="display:none">要約をコピー</button>
+      <button class="share-x-btn" id="dossier-save-btn" onclick="printDossier()" style="display:none">PDFで残す</button>
+      <button class="share-x-btn" id="dossier-evidence-btn" onclick="openDossierViewer('evidence')" style="display:none">根拠を見る</button>
+      <button class="share-x-btn" id="paid-debug-download-btn" onclick="downloadPaidDebugJson()" style="display:none">debug JSON</button>
       <button class="share-x-btn" id="share-x-btn" onclick="shareToX()" style="display:none">
         <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
         Xでシェア
@@ -7036,7 +7040,8 @@ body.dossier-viewer-open{
         <div class="dossier-viewer-title" id="dossier-viewer-title">保存用鑑定カード</div>
       </div>
       <div class="dossier-viewer-actions">
-        <button class="dossier-viewer-btn" type="button" onclick="printDossier()">PDF保存</button>
+        <button class="dossier-viewer-btn" type="button" onclick="printDossier()">PDFで残す</button>
+        <button class="dossier-viewer-btn" type="button" onclick="copyDossier()">要約をコピー</button>
         <button class="dossier-viewer-btn" id="dossier-viewer-close-btn" type="button" onclick="closeDossierViewer()">閉じる</button>
       </div>
     </div>
