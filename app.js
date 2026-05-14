@@ -11083,9 +11083,14 @@ function installLiveCardMotionStyles(){
     .shuffle-area.live-shuffling .shuffle-card::after{
       opacity:.14 !important;
     }
-    .result-card-placeholder.len-placeholder,
-    .result-card-placeholder.orc-placeholder{
+    .result-card-placeholder.len-placeholder{
       background-size:100% 100%, 100% 100% !important;
+      background-repeat:no-repeat !important;
+      background-position:center !important;
+      background-color:#080512 !important;
+    }
+    .result-card-placeholder.orc-placeholder{
+      background-size:cover, contain !important;
       background-repeat:no-repeat !important;
       background-position:center !important;
       background-color:#080512 !important;
