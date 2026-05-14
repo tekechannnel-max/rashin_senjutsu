@@ -6516,7 +6516,7 @@ function repairStaticCopy(){
   setText('#rs-animal-reveal .rs-animal-reveal-eyebrow','あなたの反応タイプは');
   setText('#rs-foundation-mini .rs-eyebrow','土台の要約');
   setHtml('#rs-foundation-mini .rs-title','<span class="rs-icon">✧</span>この答えを支える、あなたの土台');
-  setText('#rs-basis .result-detail-title','あなたの土台を詳しく見る');
+  setText('#rs-basis .result-detail-title','');
   setText('#rs-basis .result-detail-copy','姓名判断・四柱推命・動物タイプ診断');
   const basisSummaryCard=document.querySelector('#rs-basis .basis-summary-card');
   if(basisSummaryCard){
@@ -7842,13 +7842,66 @@ function getConsultationBasisSummary(){
     :'「好きかどうか」だけで決めるより、連絡の安定感、会う目的、相手の意思表示を見ることが大切です。';
 }
 
+function buildFoundationDetailHTML(items=[]){
+  const valid=(items||[]).filter(item=>item&&String(item.body||'').trim());
+  if(!valid.length) return '';
+  return `<div class="foundation-detail-stack">${valid.map(item=>`
+    <div class="foundation-detail-item">
+      ${item.label?`<div class="foundation-detail-label">${escapeHtml(item.label)}</div>`:''}
+      ${item.title?`<div class="foundation-detail-title">${escapeHtml(item.title)}</div>`:''}
+      <div class="foundation-detail-copy">${escapeHtml(String(item.body||'')).replace(/\n/g,'<br>')}</div>
+    </div>`).join('')}</div>`;
+}
+
+function buildFoundationReadMoreHTML(detailHTML){
+  if(!detailHTML) return '';
+  return `
+    <details class="basis-readmore foundation-mini-readmore">
+      <summary data-closed-label="詳しく見る" data-open-label="閉じる">詳しく見る</summary>
+      <div class="basis-readmore-body">${detailHTML}</div>
+    </details>`;
+}
+
+function buildAnimalFoundationDetail(animal){
+  const evidenceText=REACTION_PROFILE?.evidence?.length?REACTION_PROFILE.evidence.join(' / '):'';
+  return buildFoundationDetailHTML([
+    {label:'反応タイプ',title:`${animal.name}タイプの見方`,body:animal.oneLine},
+    {label:'強み',title:'力が出やすい動き',body:animal.strength},
+    {label:'注意点',title:'消耗しやすい場面',body:animal.caution},
+    {label:'今回の相談',title:'判断に使うポイント',body:animal.inConsultation},
+    evidenceText?{label:'回答の手がかり',title:'動物タイプ判定で見たこと',body:evidenceText}:null,
+  ]);
+}
+
+function buildNameBirthFoundationDetail(){
+  const namePlain=buildNamePlainInsight(NAMEJUDGE);
+  const birthPlain=buildBirthPlainInsight(MEIMEI);
+  return buildFoundationDetailHTML([
+    {label:'姓名判断',title:'名前から見える出方',body:namePlain?.overview||'名前から見える対人傾向は、今回は十分に読み取れていません。'},
+    {label:'姓名判断',title:'人との距離感・整え方',body:namePlain?.advice||'無理に合わせるより、確認すべきことを言葉にしてから動くほうが安定します。'},
+    {label:'四柱推命',title:'生まれから見える流れ',body:birthPlain?.overview||'生まれから見える流れは、今回は十分に読み取れていません。'},
+    {label:'四柱推命',title:'今の時期に意識すること',body:birthPlain?.timing||birthPlain?.advice||'大きく決める前に、状況を整理する時間を取ると判断しやすくなります。'},
+  ]);
+}
+
+function buildConsultationFoundationDetail(consultation,animal,nameBirth){
+  return buildFoundationDetailHTML([
+    {label:'相談テーマ',title:'今回の見方',body:consultation},
+    {label:'動物タイプ',title:'反応から見る判断軸',body:animal.inConsultation},
+    {label:'名前と生まれ',title:'土台から見る注意点',body:`${nameBirth.summary} ${nameBirth.caution}`},
+    {label:'判断条件',title:'急いで決めないために',body:'気持ちだけで決めず、相手や環境が安定して続く条件を確認してから動くと、読みが現実に使いやすくなります。'},
+  ]);
+}
+
 function renderFoundationMiniSummary(){
   const section=document.getElementById('rs-foundation-mini');
   const grid=document.getElementById('foundation-mini-grid');
   if(!section||!grid) return;
-  attachBasisDetailsToFoundation();
   const basis=document.getElementById('rs-basis');
-  if(basis) basis.style.display='';
+  if(basis){
+    basis.style.display='none';
+    basis.hidden=true;
+  }
   const animal=getAnimalTypeSummaryParts();
   const nameBirth=getNameBirthSummaryParts();
   const consultation=truncateText(getConsultationBasisSummary(),90);
@@ -7856,10 +7909,12 @@ function renderFoundationMiniSummary(){
     {
       title:`動物タイプ：${animal.name}`,
       body:`${truncateText(animal.strength,70)}<br>${truncateText(animal.inConsultation,82)}`,
+      detail:buildAnimalFoundationDetail(animal),
     },
     {
       title:'名前と生まれが示す傾向',
       body:`${nameBirth.summary}<br>${nameBirth.caution}`,
+      detail:buildNameBirthFoundationDetail(),
     }
   ];
   if(!isSimpleReadingPlan()){
@@ -7867,12 +7922,14 @@ function renderFoundationMiniSummary(){
     {
       title:'今回の相談での見方',
       body:consultation,
+      detail:buildConsultationFoundationDetail(consultation,animal,nameBirth),
     });
   }
   grid.innerHTML=cards.map(card=>`
     <div class="foundation-mini-card">
       <div class="foundation-mini-title">${escapeHtml(card.title)}</div>
       <div class="foundation-mini-copy">${card.body.split('<br>').map(line=>escapeHtml(line)).join('<br>')}</div>
+      ${buildFoundationReadMoreHTML(card.detail)}
     </div>
   `).join('');
   section.style.display='';
@@ -7890,20 +7947,14 @@ function renderFoundationMiniSummary(){
   if(consultationCopy) consultationCopy.textContent=consultation;
   const consultationPanel=document.getElementById('basis-consultation-panel');
   if(consultationPanel) consultationPanel.style.display=isSimpleReadingPlan()?'none':'';
-  if(!isSimpleReadingPlan()) ensureBasisConsultationDetail(consultation,animal,nameBirth);
   installDetailsToggleLabels(section);
 }
 
 function attachBasisDetailsToFoundation(){
-  const foundation=document.getElementById('rs-foundation-mini');
   const basis=document.getElementById('rs-basis');
-  const grid=document.getElementById('foundation-mini-grid');
-  if(!foundation||!basis||basis.parentElement===foundation) return;
-  basis.classList.add('foundation-embedded-basis');
-  if(grid&&grid.parentElement===foundation){
-    grid.insertAdjacentElement('afterend',basis);
-  }else{
-    foundation.appendChild(basis);
+  if(basis){
+    basis.style.display='none';
+    basis.hidden=true;
   }
 }
 
@@ -8756,10 +8807,15 @@ function setIntegrationLoading(title,detail=''){
 }
 
 function setResultContentVisibility(visible){
-  ['rs-foundation-mini','rs-basis','rs-len','rs-orc','rs-integration','result-actions'].forEach(id=>{
+  ['rs-foundation-mini','rs-len','rs-orc','rs-integration','result-actions'].forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.style.display=visible?'':'none';
   });
+  const basisEl=document.getElementById('rs-basis');
+  if(basisEl){
+    basisEl.style.display='none';
+    basisEl.hidden=true;
+  }
   const animalEl=document.getElementById('rs-animal-reveal');
   if(!visible&&animalEl) animalEl.style.display='none';
   if(visible){
@@ -8915,7 +8971,10 @@ function renderStoredResult(){
       if(el) el.style.display='';
     });
     const basisEl=document.getElementById('rs-basis');
-    if(basisEl) basisEl.style.display='';
+    if(basisEl){
+      basisEl.style.display='none';
+      basisEl.hidden=true;
+    }
     document.getElementById('r-len-block').style.display='';
     document.getElementById('r-orc-block').style.display='';
     renderFormattedResultText('r-len-block',LAST_OUTPUTS.len||'','len');
@@ -10787,7 +10846,10 @@ function renderResult(){
       if(el) el.style.display='none';
     });
     const basisEl=document.getElementById('rs-basis');
-    if(basisEl) basisEl.style.display='';
+    if(basisEl){
+      basisEl.style.display='none';
+      basisEl.hidden=true;
+    }
     renderMeimei();
     renderNameJudge();
     renderReactionProfile();
@@ -10833,7 +10895,10 @@ function renderResult(){
       if(el) el.style.display='';
     });
     const basisEl=document.getElementById('rs-basis');
-    if(basisEl) basisEl.style.display='';
+    if(basisEl){
+      basisEl.style.display='none';
+      basisEl.hidden=true;
+    }
     document.getElementById('r-len-block').style.display='';
     document.getElementById('r-orc-block').style.display='';
     renderMeimei();
