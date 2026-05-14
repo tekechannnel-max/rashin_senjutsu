@@ -2480,7 +2480,7 @@ function getCurrentInputAnalytics(){
   const fullname=getFullname();
   const theme=document.getElementById('f-theme')?.value?.trim()||'';
   return{
-    category:document.getElementById('f-cat')?.value||'総合',
+    category:normalizeConsultationCategoryTag(document.getElementById('f-cat')?.value||'総合'),
     theme_length:theme.length,
     has_birthdate:hasFullBirthDate(year,month,day),
     has_name:!!fullname,
@@ -2548,13 +2548,13 @@ function trackFreeStartClick(button){
 function trackEntryCardClick(entryType,category,label){
   trackEvent('entry_card_click',{
     entry_type:entryType||'unknown',
-    category:category||'総合',
+    category:normalizeConsultationCategoryTag(category||'総合'),
     label:label||'',
   });
 }
 
 function hasFreeFormPrefill(){
-  const category=document.getElementById('f-cat')?.value||'総合';
+  const category=normalizeConsultationCategoryTag(document.getElementById('f-cat')?.value||'総合');
   const themeLength=(document.getElementById('f-theme')?.value?.trim()||'').length;
   return category!=='総合'||themeLength>0;
 }
@@ -2588,10 +2588,67 @@ function installFormStartTracking(){
   formRoot.addEventListener('change',handler);
 }
 
+const CONSULTATION_CATEGORY_TAGS=Object.freeze([
+  {value:'恋愛',label:'恋愛',hint:'恋愛・結婚・復縁・距離を置くか'},
+  {value:'仕事・進路',label:'仕事',hint:'仕事・転職・進路・働き方'},
+  {value:'人間関係',label:'人間関係',hint:'友人・職場・距離感・境界線'},
+  {value:'総合',label:'総合',hint:'複数テーマや全体運'},
+  {value:'趣味・創作',label:'趣味',hint:'創作・学び・推し活・続け方'},
+  {value:'お金',label:'お金',hint:'収入・支出・家計・副業'},
+  {value:'家族',label:'家族',hint:'親子・夫婦・実家・家庭'},
+  {value:'自分自身',label:'自分自身',hint:'自己理解・適性・生き方'},
+]);
+let CONSULTATION_TAG_CONFIRMED=false;
+
+function normalizeConsultationCategoryTag(category=''){
+  const raw=String(category||'').trim();
+  if(!raw) return '総合';
+  if(CONSULTATION_CATEGORY_TAGS.some(tag=>tag.value===raw)) return raw;
+  if(/恋愛|結婚|復縁|片思|片想|パートナー|彼氏|彼女|相手/.test(raw)) return '恋愛';
+  if(/仕事|転職|職場|キャリア|進路|働|退職|就職|副業|独立/.test(raw)) return '仕事・進路';
+  if(/人間関係|友人|知人|同僚|対人|距離|境界|仲直り/.test(raw)) return '人間関係';
+  if(/趣味|創作|推し|学び|習い|作品|活動/.test(raw)) return '趣味・創作';
+  if(/金運|お金|収入|支出|家計|貯金|借金|投資|財|金銭/.test(raw)) return 'お金';
+  if(/家族|親|子ども|子供|実家|夫婦|兄弟|姉妹|親戚/.test(raw)) return '家族';
+  if(/自己|自分|適性|価値観|健康|生活|生き方|総合/.test(raw)) return raw.includes('総合')?'総合':'自分自身';
+  return '総合';
+}
+
+function getConsultationPrimaryThemeFromCategory(category=''){
+  const normalized=normalizeConsultationCategoryTag(category);
+  if(normalized==='恋愛') return 'love';
+  if(normalized==='仕事・進路') return 'career';
+  if(normalized==='人間関係') return 'relationship';
+  if(normalized==='趣味・創作') return 'creative';
+  if(normalized==='お金') return 'money';
+  if(normalized==='家族') return 'family';
+  if(normalized==='自分自身') return 'self_understanding';
+  return 'general';
+}
+
+function ensureConsultationCategoryOptions(){
+  const catEl=document.getElementById('f-cat');
+  if(!catEl) return;
+  const current=normalizeConsultationCategoryTag(catEl.value||'総合');
+  const existing=[...catEl.options].map(option=>option.value);
+  const shouldRebuild=CONSULTATION_CATEGORY_TAGS.some(tag=>!existing.includes(tag.value))||existing.some(value=>!CONSULTATION_CATEGORY_TAGS.some(tag=>tag.value===value));
+  if(shouldRebuild){
+    catEl.innerHTML='';
+    CONSULTATION_CATEGORY_TAGS.forEach(tag=>{
+      const option=document.createElement('option');
+      option.value=tag.value;
+      option.textContent=tag.value==='仕事・進路'?'仕事・進路':tag.value;
+      catEl.appendChild(option);
+    });
+  }
+  catEl.value=CONSULTATION_CATEGORY_TAGS.some(tag=>tag.value===current)?current:'総合';
+}
+
 function setConsultationCategory(category){
   const catEl=document.getElementById('f-cat');
   if(!catEl) return;
-  const desired=category||'総合';
+  ensureConsultationCategoryOptions();
+  const desired=normalizeConsultationCategoryTag(category||'総合');
   const exact=[...catEl.options].find(option=>option.value===desired);
   if(exact){
     catEl.value=exact.value;
@@ -2599,6 +2656,52 @@ function setConsultationCategory(category){
   }
   const partial=[...catEl.options].find(option=>option.textContent.includes(desired));
   catEl.value=partial?.value||catEl.options[0]?.value||'';
+}
+
+function renderConsultationTagButtons(){
+  const host=document.getElementById('consultation-tag-grid');
+  if(!host) return;
+  host.innerHTML='';
+  CONSULTATION_CATEGORY_TAGS.forEach(tag=>{
+    const button=document.createElement('button');
+    button.type='button';
+    button.className='consultation-tag-btn';
+    button.setAttribute('data-consultation-tag',tag.value);
+    button.innerHTML=`<span>${tag.label}</span><small>${tag.hint}</small>`;
+    button.addEventListener('click',()=>confirmConsultationTag(tag.value));
+    host.appendChild(button);
+  });
+}
+
+function openConsultationTagModal(currentCategory=''){
+  ensureConsultationCategoryOptions();
+  renderConsultationTagButtons();
+  const modal=document.getElementById('consultation-tag-modal');
+  if(!modal) return false;
+  const current=normalizeConsultationCategoryTag(currentCategory||document.getElementById('f-cat')?.value||'総合');
+  modal.querySelectorAll('[data-consultation-tag]').forEach(button=>{
+    button.classList.toggle('is-selected',button.getAttribute('data-consultation-tag')===current);
+  });
+  modal.hidden=false;
+  modal.setAttribute('aria-hidden','false');
+  document.body.classList.add('consultation-tag-open');
+  requestAnimationFrame(()=>modal.querySelector('.consultation-tag-btn.is-selected,.consultation-tag-btn')?.focus?.());
+  return true;
+}
+
+function closeConsultationTagModal(){
+  const modal=document.getElementById('consultation-tag-modal');
+  if(!modal) return;
+  modal.hidden=true;
+  modal.setAttribute('aria-hidden','true');
+  document.body.classList.remove('consultation-tag-open');
+}
+
+function confirmConsultationTag(category){
+  setConsultationCategory(category);
+  CONSULTATION_TAG_CONFIRMED=true;
+  closeConsultationTagModal();
+  goToLen();
 }
 
 function applyEntryCardPrefill(card){
@@ -2633,18 +2736,19 @@ function trackDeepenCtaClick(button){
 }
 
 function normalizeConsultationThemeGroup(value=''){
-  const text=String(value||'').toLowerCase();
+  const text=`${normalizeConsultationCategoryTag(value)} ${String(value||'')}`.toLowerCase();
   if(/金運|お金|収入|支出|貯金|副業|投資|財|金銭|資産/.test(text)) return'money';
   if(/恋愛|復縁|片思|結婚|婚活|夫婦|交際|相手|連絡|好き/.test(text)) return'love';
-  if(/仕事|転職|職場|キャリア|退職|就職|働|上司|同僚|ビジネス/.test(text)) return'work';
+  if(/仕事|進路|転職|職場|キャリア|退職|就職|働|上司|同僚|ビジネス/.test(text)) return'work';
   if(/人間関係|友人|家族|親子|対人|距離|境界|関係|仲直り/.test(text)) return'relationship';
+  if(/趣味|創作|推し|学び|習い|作品|活動/.test(text)) return'creative';
   return'general';
 }
 
 function getConsultationCtaContext(){
   const history=getReadingHistory();
   const latest=history[0]||null;
-  const category=document.getElementById('f-cat')?.value||latest?.input?.cat||'総合';
+  const category=normalizeConsultationCategoryTag(document.getElementById('f-cat')?.value||latest?.input?.cat||'総合');
   const currentTheme=document.getElementById('f-theme')?.value||'';
   const historyTheme=latest?.input?.theme||'';
   const group=normalizeConsultationThemeGroup(`${category} ${currentTheme} ${historyTheme}`);
@@ -4240,7 +4344,8 @@ function resetInputFields(){
   const dayEl=document.getElementById('f-day');
   if(dayEl) dayEl.value='unknown';
   if(hourEl) hourEl.value='unknown';
-  if(catEl) catEl.value='総合';
+  if(catEl) setConsultationCategory('総合');
+  CONSULTATION_TAG_CONFIRMED=false;
   resetReactionFlow();
 }
 
@@ -4268,7 +4373,7 @@ function loadSaved(){
     syncDayOptions(saved.day??null);
     document.getElementById('f-day').value=saved.day==null?'unknown':String(saved.day);
     if(saved.hour!==undefined&&saved.hour!==null) document.getElementById('f-hour').value=String(saved.hour);
-    if(saved.cat) document.getElementById('f-cat').value=saved.cat;
+    if(saved.cat) setConsultationCategory(saved.cat);
     if(saved.theme!==undefined){
       document.getElementById('f-theme').value=saved.theme;
       updateThemeCounter();
@@ -6477,12 +6582,16 @@ function repairStaticCopy(){
   setField('f-cat',{label:'相談テーマ'});
   const catSelect=document.getElementById('f-cat');
   if(catSelect){
+    ensureConsultationCategoryOptions();
     const optionMap={
-      '総合':'総合（全体的な流れ）',
-      '恋愛':'恋愛・結婚',
-      '仕事':'仕事・転職・お金',
+      '総合':'総合',
+      '恋愛':'恋愛',
+      '仕事・進路':'仕事',
       '人間関係':'人間関係',
-      '健康':'健康・生活習慣',
+      '趣味・創作':'趣味',
+      'お金':'お金',
+      '家族':'家族',
+      '自分自身':'自分自身',
     };
     [...catSelect.options].forEach(option=>{
       const label=optionMap[option.value];
@@ -7032,23 +7141,35 @@ function getCurrentInputSnapshot(){
     month:parseInt(document.getElementById('f-month')?.value,10)||null,
     day:getSelectedBirthDay(),
     hour:getSelectedBirthHour(),
-    cat:document.getElementById('f-cat')?.value||'総合',
+    cat:normalizeConsultationCategoryTag(document.getElementById('f-cat')?.value||'総合'),
     theme:document.getElementById('f-theme')?.value?.trim()||'',
     reactionAnswers:getReactionAnswersSnapshot(),
   };
 }
 
 function analyzeConsultationFocus(cat='',theme=''){
-  const raw=`${cat||''} ${theme||''}`;
-  const hasLove=/恋愛|結婚|彼氏|彼女|交際|相手|別れ|別れる|復縁|パートナー|夫|妻/.test(raw)||cat==='恋愛';
-  const workDecisionSignal=/転職|退職|辞め|職場|会社|上司|キャリア|収入|お金|金銭|働き方|今の仕事|仕事を続け|仕事を変え|副業|独立/.test(raw)||cat==='仕事'||cat==='金運';
+  const normalizedCat=normalizeConsultationCategoryTag(cat||'総合');
+  const categoryPrimary=getConsultationPrimaryThemeFromCategory(normalizedCat);
+  const raw=`${normalizedCat||''} ${theme||''}`;
+  const hasLove=categoryPrimary==='love'||/恋愛|結婚|彼氏|彼女|交際|相手|別れ|別れる|復縁|パートナー|夫|妻/.test(raw);
+  const workDecisionSignal=categoryPrimary==='career'||/仕事|転職|退職|辞め|職場|会社|上司|キャリア|働き方|今の仕事|仕事を続け|仕事を変え|副業|独立/.test(raw);
   const hasWork=workDecisionSignal;
-  const loveDecisionSignal=/恋愛|結婚|彼氏|彼女|交際|相手|別れ|別れる|復縁|パートナー|夫|妻|曖昧|あいまい|将来の話|待つべき|聞くべき/.test(raw)||cat==='恋愛';
+  const loveDecisionSignal=categoryPrimary==='love'||/恋愛|結婚|彼氏|彼女|交際|相手|別れ|別れる|復縁|パートナー|夫|妻|曖昧|あいまい|将来の話|待つべき|聞くべき/.test(raw);
   const needsRelationshipDecision=/続けるべき|別れるべき|別れ|距離を置|交際/.test(raw);
-  const needsCareerDecision=/続けるべき|転職|辞める|退職|働き方/.test(raw)||cat==='仕事';
+  const needsCareerDecision=/続けるべき|転職|辞める|退職|働き方/.test(raw)||categoryPrimary==='career';
   const needsDecision=/判断|決め|迷|選べ/.test(raw)||needsRelationshipDecision||needsCareerDecision;
-  const isDualConcern=hasLove&&hasWork&&workDecisionSignal&&loveDecisionSignal&&cat!=='恋愛';
-  const shortLabel=isDualConcern?'恋愛と仕事':hasLove?'恋愛':hasWork?'仕事':(cat||'今の悩み');
+  const isDualConcern=categoryPrimary==='general'&&hasLove&&hasWork&&workDecisionSignal&&loveDecisionSignal;
+  const categoryShort={
+    love:'恋愛',
+    career:'仕事・進路',
+    relationship:'人間関係',
+    money:'お金',
+    family:'家族',
+    creative:'趣味・創作',
+    self_understanding:'自分自身',
+    general:'今の悩み',
+  };
+  const shortLabel=isDualConcern?'恋愛と仕事':(categoryPrimary!=='general'?categoryShort[categoryPrimary]:hasLove?'恋愛':hasWork?'仕事':(normalizedCat||'今の悩み'));
   const loveSubtype=/復縁|元彼|元カレ|元カノ|元恋人|よりを戻/.test(raw)
     ?'reunion'
     :/片思い|片想い|脈あり|脈|告白/.test(raw)||(/好きな人/.test(raw)&&!/何度か|食事|デート|連絡も続|会っ/.test(raw))
@@ -7106,6 +7227,8 @@ function analyzeConsultationFocus(cat='',theme=''){
               :workSubtype==='money'?'お金の流れを整えるための鑑定書'
                 :'働き方を見直すための鑑定書')
         :'いまの進路を整えるための鑑定書';
+  const categoryPrimaryTheme=categoryPrimary==='career'?'career':categoryPrimary;
+  const primaryTheme=isDualConcern?'dual_love_work':categoryPrimaryTheme!=='general'?categoryPrimaryTheme:hasWork?'work':hasLove?'love':'general';
   return{
     raw,
     hasLove,
@@ -7119,7 +7242,7 @@ function analyzeConsultationFocus(cat='',theme=''){
     shortLabel,
     answerNeed,
     dossierTitle,
-    primaryTheme:isDualConcern?'dual_love_work':hasWork?'work':hasLove?'love':'general',
+    primaryTheme,
     secondaryTheme:isDualConcern?'love':null,
     explicitUserPriority:'',
     decisionFrame:answerNeed,
@@ -7195,7 +7318,7 @@ function normalizePrimaryThemeValue(focus={}){
   if(raw==='dual_love_work') return 'dual_concern';
   if(raw==='work') return focus?.workSubtype==='career_change'?'career':'career';
   if(raw==='work_life_direction') return 'work_life_direction';
-  if(['career','love','relationship','money','family','self_understanding','dual_concern','general'].includes(raw)) return raw;
+  if(['career','love','relationship','money','family','creative','self_understanding','dual_concern','general'].includes(raw)) return raw;
   if(focus?.isDualConcern) return 'dual_concern';
   if(focus?.hasWork&&focus?.hasLove) return 'dual_concern';
   if(focus?.hasWork) return 'career';
@@ -7249,7 +7372,7 @@ function extractDecisionCriteriaList(source='',focus={}){
   const candidates=[
     '収入','成長','安心感','相手の反応','評価','自由度','距離感','家族の理解',
     '自分らしさ','続ける意味','消耗度','信頼','役割','将来性','納得感',
-    '働きやすさ','経験','実績','準備材料','比較材料','生活','時間','健康',
+    '働きやすさ','経験','実績','準備材料','比較材料','生活','時間','健康','楽しさ','上達実感','表現しやすさ',
   ];
   const explicit=candidates.filter(item=>text.includes(item));
   if(explicit.length) return uniqueNonEmpty(explicit).slice(0,5);
@@ -7259,6 +7382,7 @@ function extractDecisionCriteriaList(source='',focus={}){
   if(primary==='relationship') return ['距離感','消耗度','自然体でいられるか'];
   if(primary==='money') return ['収支','上限','見直し基準'];
   if(primary==='family') return ['家族の理解','安心感','役割'];
+  if(primary==='creative') return ['楽しさ','上達実感','表現しやすさ'];
   if(primary==='self_understanding') return ['自分らしさ','納得感','力の出し方'];
   if(primary==='dual_concern') return ['優先順位','安心感','続ける意味'];
   return ['納得感','確認できる事実','続ける意味'];
@@ -7288,7 +7412,7 @@ function getDecisionConditionLabels(focusOrTheme={}){
   if(primary==='relationship') return{positive:'関わる条件',negative:'距離を置く条件',hold:'保留条件'};
   if(primary==='money') return{positive:'進める条件',negative:'止まる条件',hold:'保留条件'};
   if(primary==='family') return{positive:'関わる条件',negative:'距離を置く条件',hold:'保留条件'};
-  if(primary==='self_understanding'||primary==='general'||primary==='dual_concern') return{positive:'続ける条件',negative:'切り替える条件',hold:'保留条件'};
+  if(primary==='self_understanding'||primary==='creative'||primary==='general'||primary==='dual_concern') return{positive:'続ける条件',negative:'切り替える条件',hold:'保留条件'};
   return{positive:'残る条件',negative:'動く条件',hold:'保留条件'};
 }
 
@@ -7300,6 +7424,7 @@ function getDecisionThemeLabel(primaryTheme='general'){
     relationship:'人間関係',
     money:'お金',
     family:'家族',
+    creative:'趣味・創作',
     self_understanding:'自己理解',
     dual_concern:'複合相談',
     general:'今回の相談',
@@ -7413,62 +7538,121 @@ function buildPrimaryStructureSentence(focus={},context={}){
 
 function refineFocusWithClarify(focus={},clarifyText='',paidUserData={}){
   const base={...(focus||{})};
+  const paidObject=paidUserData&&typeof paidUserData==='object'&&!Array.isArray(paidUserData)?paidUserData:{};
+  const selectedCategory=normalizeConsultationCategoryTag(paidObject.cat||'');
+  const categoryPrimary=getConsultationPrimaryThemeFromCategory(selectedCategory);
   const source=[base.raw,clarifyText,stringifyFocusSupplement(paidUserData)].join(' ');
   const workSignal=/仕事|職場|転職|働|キャリア|進路|収入|評価|役割|求人|スキル|副業|独立|今後の生き方|続ける|辞める|残る条件|別の道|準備/.test(source);
   const loveSignal=/恋愛|好き|相手|彼氏|彼女|復縁|結婚|パートナー|片思い|不安を伝え|連絡|会う/.test(source);
   const relationshipSignal=/人間関係|友人|知人|同僚|距離感|境界線|関わり方|合わせすぎ|自己否定/.test(source);
   const moneySignal=/金運|お金|貯金|出費|家計|契約|借金|投資|支払い|収支/.test(source);
   const familySignal=/家族|親|子ども|子供|実家|夫婦|兄弟|姉妹|親戚/.test(source);
+  const creativeSignal=/趣味|創作|推し|学び|習い|作品|活動|表現/.test(source);
   const selfSignal=/自己理解|自分らしさ|価値観|力の出し方|適性|本音|生き方/.test(source);
   const lifeDirectionSignal=/今後の生き方|別の道|続けるべき|続けるか|辞めるか|残る条件|準備|将来|進路/.test(source);
-  const workFirstSignal=/まず[^。]*仕事|仕事[^。]*先に|今回は[^。]*仕事|仕事と今後の生き方を先に|先に[^。]*(仕事|職場|働き方|進路|生き方)/.test(source);
-  const loveFirstSignal=/まず[^。]*恋愛|恋愛[^。]*先に|今回は[^。]*恋愛|先に[^。]*(恋愛|相手|彼氏|彼女|パートナー)/.test(source);
+  const lovePriorityPatterns=[
+    /今回\s*先に\s*見たいのは\s*恋愛/,
+    /主テーマは\s*恋愛/,
+    /恋愛を進めていいか、?\s*距離を置くべきか/,
+    /この恋愛を進めていいか、?\s*距離を置くべきか/,
+    /まず[^。！？\n]*恋愛/,
+    /今回は[^。！？\n]{0,24}恋愛[^。！？\n]{0,24}(先に|優先|主軸|主テーマ)/,
+    /恋愛を[^。！？\n]{0,20}(先に|優先|主軸|主テーマ)/,
+    /恋愛から[^。！？\n]{0,20}(見る|決める|確認する)/,
+    /(仕事|進路|職場|生活|お金)[^。！？\n]*(不安|気になる|ある)[^。！？\n]*(が|けど|けれど|ただ)[^。！？\n]*(今回|先に|まず)[^。！？\n]*恋愛/,
+  ];
+  const workPriorityPatterns=[
+    /今回\s*先に\s*見たいのは\s*(仕事|進路|働き方|今後の生き方)/,
+    /主テーマは\s*(仕事|進路|働き方|今後の生き方)/,
+    /まず[^。！？\n]*(仕事|職場|働き方|進路|生き方)/,
+    /今回は[^。！？\n]{0,28}(仕事|職場|働き方|進路|生き方)[^。！？\n]{0,28}(先に|優先|主軸|主テーマ)/,
+    /(仕事|職場|働き方|進路|生き方)を[^。！？\n]{0,24}(先に|優先|主軸|主テーマ)/,
+    /(仕事|職場|働き方|進路|生き方)から[^。！？\n]{0,24}(見る|決める|確認する)/,
+    /(恋愛|相手|関係)[^。！？\n]*(不安|気になる|ある)[^。！？\n]*(が|けど|けれど|ただ)[^。！？\n]*(今回|先に|まず)[^。！？\n]*(仕事|職場|進路|生き方)/,
+  ];
+  const loveFirstMatches=lovePriorityPatterns.filter(pattern=>pattern.test(source)).map(pattern=>pattern.source);
+  const workFirstMatches=workPriorityPatterns.filter(pattern=>pattern.test(source)).map(pattern=>pattern.source);
   const primaryBefore=normalizePrimaryThemeValue(base);
-  if(workFirstSignal||(workSignal&&lifeDirectionSignal&&!loveFirstSignal)){
+  const trace={
+    basePrimaryTheme:primaryBefore,
+    selectedCategory,
+    categoryPrimary,
+    priorityExpressions:{love:loveFirstMatches,work:workFirstMatches},
+    signals:{workSignal,loveSignal,relationshipSignal,moneySignal,familySignal,creativeSignal,selfSignal,lifeDirectionSignal},
+    secondaryThemeReason:'',
+    primaryThemeReason:'',
+    changed:false,
+  };
+  const applyPrimary=(theme,reason)=>{
+    base.primaryTheme=theme;
+    base.isDualConcern=false;
+    trace.primaryThemeReason=reason;
+    trace.changed=primaryBefore!==normalizePrimaryThemeValue(base);
+  };
+
+  if(loveFirstMatches.length||(categoryPrimary==='love'&&!workFirstMatches.length)){
+    base.hasLove=true;
+    base.needsRelationshipDecision=true;
+    base.needsDecision=true;
+    applyPrimary('love',loveFirstMatches.length?'追加質問で恋愛優先が明示されたため':'タグ選択で恋愛が指定されたため');
+    base.secondaryTheme=workSignal?'career':base.secondaryTheme||null;
+    base.explicitUserPriority=loveFirstMatches.length?'恋愛を先に見る':base.explicitUserPriority||'恋愛を主軸に見る';
+    base.shortLabel='恋愛';
+    trace.secondaryThemeReason=base.secondaryTheme?'仕事・進路は背景要因として扱うため':'副テーマなし';
+  }else if(workFirstMatches.length||(categoryPrimary==='career'&&!loveFirstMatches.length)){
     base.hasWork=true;
     base.needsCareerDecision=true;
     base.needsDecision=true;
     base.workSubtype=base.workSubtype&&base.workSubtype!=='general'?base.workSubtype:'career_change';
-    base.primaryTheme=lifeDirectionSignal?'work_life_direction':'career';
+    applyPrimary(lifeDirectionSignal?'work_life_direction':'career',workFirstMatches.length?'追加質問で仕事・進路優先が明示されたため':'タグ選択で仕事・進路が指定されたため');
     base.secondaryTheme=loveSignal?'love':base.secondaryTheme||null;
-    base.explicitUserPriority=workFirstSignal?'仕事・進路を先に見る':base.explicitUserPriority||'仕事・進路を主軸に見る';
+    base.explicitUserPriority=workFirstMatches.length?'仕事・進路を先に見る':base.explicitUserPriority||'仕事・進路を主軸に見る';
     base.shortLabel=base.secondaryTheme==='love'?'仕事と今後の生き方':'仕事';
-    base.isDualConcern=false;
-  }else if(loveFirstSignal){
-    base.hasLove=true;
-    base.needsRelationshipDecision=true;
-    base.needsDecision=true;
-    base.primaryTheme='love';
-    base.secondaryTheme=workSignal?'career':base.secondaryTheme||null;
-    base.explicitUserPriority='恋愛を先に見る';
-    base.shortLabel='恋愛';
-    base.isDualConcern=false;
+    trace.secondaryThemeReason=base.secondaryTheme?'恋愛は背景要因として扱うため':'副テーマなし';
+  }else if(categoryPrimary==='relationship'){
+    applyPrimary('relationship','タグ選択で人間関係が指定されたため');
+    base.shortLabel='人間関係';
+  }else if(categoryPrimary==='money'){
+    applyPrimary('money','タグ選択でお金が指定されたため');
+    base.shortLabel='お金';
+  }else if(categoryPrimary==='family'){
+    applyPrimary('family','タグ選択で家族が指定されたため');
+    base.shortLabel='家族';
+  }else if(categoryPrimary==='creative'){
+    applyPrimary('creative','タグ選択で趣味・創作が指定されたため');
+    base.shortLabel='趣味・創作';
+  }else if(categoryPrimary==='self_understanding'){
+    applyPrimary('self_understanding','タグ選択で自分自身が指定されたため');
+    base.shortLabel='自分自身';
   }else if(workSignal&&loveSignal&&!base.explicitUserPriority){
     base.hasWork=true;
     base.hasLove=true;
-    base.primaryTheme='dual_concern';
+    applyPrimary('dual_concern','優先順位の明示がない複合相談として扱うため');
     base.secondaryTheme=null;
     base.isDualConcern=true;
     base.shortLabel='恋愛と仕事';
   }else if(workSignal&&primaryBefore==='general'){
     base.hasWork=true;
-    base.primaryTheme='career';
+    applyPrimary(lifeDirectionSignal?'work_life_direction':'career','本文から仕事・進路テーマが強く出ているため');
     base.shortLabel=base.shortLabel||'仕事';
   }else if(loveSignal&&primaryBefore==='general'){
     base.hasLove=true;
-    base.primaryTheme='love';
+    applyPrimary('love','本文から恋愛テーマが強く出ているため');
     base.shortLabel=base.shortLabel||'恋愛';
   }else if(relationshipSignal&&primaryBefore==='general'){
-    base.primaryTheme='relationship';
+    applyPrimary('relationship','本文から人間関係テーマが強く出ているため');
     base.shortLabel=base.shortLabel||'人間関係';
   }else if(moneySignal&&primaryBefore==='general'){
-    base.primaryTheme='money';
+    applyPrimary('money','本文からお金テーマが強く出ているため');
     base.shortLabel=base.shortLabel||'お金';
   }else if(familySignal&&primaryBefore==='general'){
-    base.primaryTheme='family';
+    applyPrimary('family','本文から家族テーマが強く出ているため');
     base.shortLabel=base.shortLabel||'家族';
+  }else if(creativeSignal&&primaryBefore==='general'){
+    applyPrimary('creative','本文から趣味・創作テーマが強く出ているため');
+    base.shortLabel=base.shortLabel||'趣味・創作';
   }else if(selfSignal&&primaryBefore==='general'){
-    base.primaryTheme='self_understanding';
+    applyPrimary('self_understanding','本文から自己理解テーマが強く出ているため');
     base.shortLabel=base.shortLabel||'自己理解';
   }
   const timing=extractUserProvidedTiming(source);
@@ -7489,6 +7673,14 @@ function refineFocusWithClarify(focus={},clarifyText='',paidUserData={}){
     ?`${base.explicitUserPriority}うえで、${ctx.positiveLabel}と${ctx.negativeLabel}の分かれ目を知りたい`
     :base.answerNeed||`${ctx.positiveLabel}と${ctx.negativeLabel}の分かれ目を知りたい`;
   base.dossierTitle=`${ctx.positiveLabel}と${ctx.negativeLabel}を見極める羅針カード`;
+  base.focusCorrectionTrace={
+    ...trace,
+    finalPrimaryTheme:ctx.primaryTheme,
+    finalSecondaryTheme:base.secondaryTheme||'',
+    finalExplicitUserPriority:base.explicitUserPriority||'',
+    changed:primaryBefore!==ctx.primaryTheme,
+    changedReason:trace.primaryThemeReason||'明示優先またはタグ指定がなく、既存判定を維持',
+  };
   return base;
 }
 
@@ -7519,11 +7711,12 @@ function buildCurrentDilemmaTranslation(focus){
 
 function buildDecisionSupportPromptGuide(cat='',theme='',focusOverride=null){
   const focus=focusOverride||analyzeConsultationFocus(cat,theme);
+  const ctx=buildDecisionContext(focus,{cat,theme});
   const lines=[
     `【相談者が欲しい答え】`,
     `相談者が本当に欲しいのは「${focus.answerNeed}」という実感です。`,
     `悩みの翻訳として、必ずどこかに「${buildCurrentDilemmaTranslation(focus)}」という意味の一文を自然に入れること。`,
-    `出力の冒頭1〜2文で、この問いに対して「進む・止まる・保留」のいずれかが伝わる形で言い切ること。`,
+    `出力の冒頭1〜2文で、この問いに対して「${ctx.positiveLabel}・${ctx.negativeLabel}・${ctx.holdLabel}」のいずれかが伝わる形で言い切ること。`,
     '',
     `【決めるための目印を具体化するルール】`,
     '- 無根拠な未来・他人の心・専門判断は断定しない。ただし判断条件は「条件Aなら進む、条件Bなら止まる、条件Cなら保留」と言い切る',
@@ -7547,7 +7740,6 @@ function buildDecisionSupportPromptGuide(cat='',theme='',focusOverride=null){
     '- 行動提案は「いつ・何を・どこまで確認するか」が分かる小さな実行単位にする',
   ];
   if(isWorkLifeDirectionFocus(focus)){
-    const ctx=buildDecisionContext(focus,{cat,theme});
     lines.push(`- 追加質問で${ctx.primaryLabel}が優先されている場合、主結論はdual concern型の汎用結論ではなく「${buildDecisionFrameFromContext(ctx)}」にする`);
     lines.push(`- 判断条件は固定例文ではなく、相談者入力から抽出した「${ctx.criteriaText}」を使う。不足時だけテーマ別の汎用条件で補う`);
     lines.push(`- ${ctx.secondaryTheme?`${getDecisionThemeLabel(ctx.secondaryTheme)}は副テーマまたは背景として扱い、主テーマの判断を上書きしない`:'副テーマがない場合は仕事・進路の判断軸に集中する'}`);
@@ -7557,7 +7749,7 @@ function buildDecisionSupportPromptGuide(cat='',theme='',focusOverride=null){
   }
   if(focus.needsDecision){
     lines.push('- 「何を確認してから決めるか」を具体的な確認事項として2〜3個書く');
-    lines.push('- 判断の分かれ目（進むべき条件 vs 止まるべき条件）を明記する');
+    lines.push(`- 判断の分かれ目（${ctx.positiveLabel} vs ${ctx.negativeLabel}）を明記する`);
   }
   return lines.join('\n');
 }
@@ -7628,6 +7820,11 @@ function buildThemeSpecificActionPlan(focus){
     '相手との境界線を1つ決め、今週はその線を守る。',
     '会った後や連絡後の疲労感と安心感をメモする。'
   ];
+  if(ctx.primaryTheme==='creative') return[
+    '続けると楽しい場面と負担が増える場面を分けて書く。',
+    '今週できる小さな制作・練習・発信を1つだけ決める。',
+    '上達実感や表現しやすさが増えたかをメモする。'
+  ];
   return[
     'いちばん気になっている問題を1つに絞り、「このまま続けた場合」と「切り替えた場合」を書き分ける。',
     '気持ちの整理と条件整理を分けて考え、同じ日に両方決めようとしない。',
@@ -7662,6 +7859,11 @@ function buildThirtyDayActionPlan(focus){
     '関わる条件と距離を置く条件を、実際の疲労感で見直す。',
     '境界線を守ったときに相手との関係が崩れるか、むしろ整うかを見る。',
     '一か月後に、近づく距離と離す距離を決める。'
+  ];
+  if(ctx.primaryTheme==='creative') return[
+    '続ける条件と切り替える条件を、楽しさ・上達実感・表現しやすさで見直す。',
+    '道具、時間、発表場所など、続けやすくする材料を1つ増やす。',
+    '一か月後に、残す活動と減らす活動を決める。'
   ];
   return[
     '迷いを生む論点を一つに絞り、毎週同じ基準で見直す。',
@@ -9385,7 +9587,7 @@ function hydrateInputsFromRecord(record){
   document.getElementById('f-day').value=input.day==null?'unknown':String(input.day);
   if(input.hour===undefined||input.hour===null) document.getElementById('f-hour').value='unknown';
   else document.getElementById('f-hour').value=String(input.hour);
-  if(input.cat) document.getElementById('f-cat').value=input.cat;
+  if(input.cat) setConsultationCategory(input.cat);
   const themeEl=document.getElementById('f-theme');
   if(themeEl) themeEl.value=input.theme||'';
   updateThemeCounter();
@@ -9907,7 +10109,7 @@ function cleanDossierItemText(text='',labels=[]){
     '今週の一手','7日以内の一手','今回の答え','一言結論',
   ].filter(Boolean);
   if(labelList.length){
-    clean=clean.replace(new RegExp(`^(?:${labelList.map(escapeRegExp).join('|')})\\s*[：:・-]?\\s*`),'').trim();
+    clean=clean.replace(new RegExp(`^(?:${labelList.map(escapeRegExp).join('|')})\\s*(?:[：:・-]\\s*|\\s+)`),'').trim();
   }
   return clean.replace(/[。.!?！？]+$/,'').trim();
 }
@@ -10084,10 +10286,26 @@ function completeDossierAxisItems(items=[],fallbackItems=[],min=2,max=3){
   return normalizeDossierItemList(items,fallbackItems,{min,max,maxChars:56});
 }
 
+function resolveDossierFocusFromData(data={}){
+  if(!data||typeof data!=='object'||Array.isArray(data)) return null;
+  if(data.__FOCUS&&typeof data.__FOCUS==='object'&&!Array.isArray(data.__FOCUS)) return data.__FOCUS;
+  const primaryRaw=data.PRIMARY_THEME||data.primaryTheme||'';
+  if(!primaryRaw) return null;
+  const primaryTheme=normalizePrimaryThemeValue({primaryTheme:primaryRaw});
+  return{
+    primaryTheme,
+    secondaryTheme:data.SECONDARY_THEME||data.secondaryTheme||'',
+    explicitUserPriority:data.EXPLICIT_USER_PRIORITY||data.explicitUserPriority||'',
+    decisionCriteriaList:Array.isArray(data.DECISION_CRITERIA_LIST)?data.DECISION_CRITERIA_LIST:[],
+    decisionCriteria:data.DECISION_CRITERIA||data.decisionCriteria||'',
+    shortLabel:getDecisionThemeLabel(primaryTheme),
+  };
+}
+
 function normalizeDossierCardData(data={}){
   const fallback=buildFallbackDossier();
   const source={...fallback,...(data||{})};
-  const focus=getCurrentRefinedFocus();
+  const focus=resolveDossierFocusFromData(data)||getCurrentRefinedFocus();
   const ctx=buildDecisionContext(focus);
   const themedFallback=buildWorkLifeDossierData(focus);
   if(focus.explicitUserPriority&&/恋愛と仕事を同時に片づけようとしない|同時に片づけない/.test(`${source.ONE_LINE||''} ${source.VERDICT||''}`)){
@@ -10159,15 +10377,79 @@ function normalizeDossierCardData(data={}){
   };
 }
 
+function isNormalizedDossierCardData(data={}){
+  return !!(data&&
+    Array.isArray(data.REMAIN_CONDITIONS)&&
+    Array.isArray(data.MOVE_CONDITIONS)&&
+    Array.isArray(data.HOLD_CONDITIONS)&&
+    Array.isArray(data.ACTION7)&&
+    Array.isArray(data.KEYWORDS)&&
+    data.POSITIVE_LABEL&&
+    data.NEGATIVE_LABEL&&
+    data.HOLD_LABEL
+  );
+}
+
+function resolveDossierCardData(data={}){
+  return isNormalizedDossierCardData(data)?data:normalizeDossierCardData(data);
+}
+
+function buildDossierTitleForDecisionContext(ctx){
+  if(ctx.primaryTheme==='love') return '進むか止まるかを見極める恋愛の羅針カード';
+  if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return '残るか動くかを見極める仕事の羅針カード';
+  if(ctx.primaryTheme==='relationship') return '関わるか距離を置くかを見極める羅針カード';
+  if(ctx.primaryTheme==='creative') return '続けるか切り替えるかを見極める趣味の羅針カード';
+  if(ctx.primaryTheme==='money') return '進めるか止まるかを見極めるお金の羅針カード';
+  if(ctx.primaryTheme==='family') return '関わるか距離を置くかを見極める家族の羅針カード';
+  return `${ctx.positiveLabel}と${ctx.negativeLabel}を見極める羅針カード`;
+}
+
+function buildDossierOneLineForDecisionContext(ctx){
+  if(ctx.primaryTheme==='love') return '気持ちの強さだけで進めず、相手の行動で安心を確認する。';
+  if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return '今の環境に残る意味と、動き出す必要を分けて見る。';
+  if(ctx.primaryTheme==='relationship') return '近づくほど自然体でいられるか、距離が必要かを見極める。';
+  if(ctx.primaryTheme==='creative') return '好きだけで抱え込まず、続ける条件と減らす条件を分ける。';
+  return `${ctx.primaryLabel}は、${ctx.positiveLabel}と${ctx.negativeLabel}を分けて見る。`;
+}
+
+function buildDossierVerdictForDecisionContext(ctx){
+  const criteriaChoice=formatDecisionCriteriaChoice(ctx.decisionCriteriaList,ctx.criteriaText||'確認できること');
+  if(ctx.primaryTheme==='love'){
+    return `今回の答えは、気持ちの強さだけで進めず、${criteriaChoice}を相手の行動で確認することです。${ctx.positiveLabel}が見えるなら関係を進める判断です。見えないなら、${ctx.reviewTiming}までに${ctx.negativeLabel}を見てください。`;
+  }
+  if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
+    return `今回の答えは、今の環境に無条件で残ることではなく、${criteriaChoice}を確認して選ぶことです。${ctx.positiveLabel}が見えるなら整えて続ける判断です。見えないなら、${ctx.reviewTiming}までに次の選択肢の材料を集めてください。`;
+  }
+  if(ctx.primaryTheme==='relationship'){
+    return `今回の答えは、相手に合わせ続けることではなく、${criteriaChoice}が保てる距離を確認することです。${ctx.positiveLabel}が見えるなら関わり方を整え、見えないなら距離を置く判断です。`;
+  }
+  if(ctx.primaryTheme==='creative'){
+    return `今回の答えは、好きだから全部抱えることではなく、${criteriaChoice}が残る形へ整えることです。${ctx.positiveLabel}が見えるなら続け、負担だけが増えるなら切り替える判断です。`;
+  }
+  return `今回の答えは、${criteriaChoice}を確認してから選ぶことです。${ctx.positiveLabel}が見えるなら進み、見えないなら${ctx.reviewTiming}までに${ctx.negativeLabel}を見てください。`;
+}
+
+function buildDossierClosingForDecisionContext(ctx){
+  if(ctx.primaryTheme==='love') return '今週は、答えを急ぐより、相手が向き合える人かを確かめる週です。';
+  if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return `今週は、${ctx.positiveLabel}と${ctx.negativeLabel}を選べる材料を集める週です。`;
+  if(ctx.primaryTheme==='relationship') return '今週は、相手を変えるより、自分が自然体でいられる距離を確かめる週です。';
+  if(ctx.primaryTheme==='creative') return '今週は、好きな気持ちを守るために、続けやすい形を一つ整える週です。';
+  return `今週は、${ctx.positiveLabel}と${ctx.negativeLabel}を選べる材料を集める週です。`;
+}
+
 function buildWorkLifeDossierData(focus={}){
   const ctx=buildDecisionContext(focus);
   const positive=getIntegrationSupplementItems(ctx.positiveLabel,focus).slice(0,2);
   const negative=getIntegrationSupplementItems(ctx.negativeLabel,focus).slice(0,2);
-  const timingPhrase=ctx.userProvidedTiming?`${ctx.userProvidedTiming}を目安に`:'30日以内に';
   return{
-    TITLE:`${ctx.positiveLabel}と${ctx.negativeLabel}を見極める羅針カード`,
-    ONE_LINE:`${ctx.primaryLabel}は、${ctx.positiveLabel}と${ctx.negativeLabel}を分けて見る。`,
-    VERDICT:`今の答えは、${ctx.criteriaText}を確認してから選ぶことです。${ctx.positiveLabel}があるなら今の選択を整える。確認できないなら、${timingPhrase}次の選択肢の材料を集める判断です。`,
+    PRIMARY_THEME:ctx.primaryTheme,
+    SECONDARY_THEME:ctx.secondaryTheme,
+    EXPLICIT_USER_PRIORITY:ctx.explicitUserPriority,
+    DECISION_CRITERIA_LIST:ctx.decisionCriteriaList,
+    DECISION_CRITERIA:ctx.criteriaText,
+    TITLE:buildDossierTitleForDecisionContext(ctx),
+    ONE_LINE:buildDossierOneLineForDecisionContext(ctx),
+    VERDICT:buildDossierVerdictForDecisionContext(ctx),
     DECISION_AXIS:[
       ...positive.map(item=>`${ctx.positiveLabel}：${item.replace(/。$/,'')}`),
       ...negative.map(item=>`${ctx.negativeLabel}：${item.replace(/。$/,'')}`)
@@ -10175,7 +10457,7 @@ function buildWorkLifeDossierData(focus={}){
     HOLD_CONDITIONS:getIntegrationSupplementItems(ctx.holdLabel,focus).slice(0,2).join('\n'),
     ACTION7:buildThemeSpecificActionPlan(focus).slice(0,1).join('\n'),
     KEYWORDS:buildDossierKeywords(focus),
-    CLOSING:`今週は、${ctx.positiveLabel}と${ctx.negativeLabel}を選べる材料を集める週です。`,
+    CLOSING:buildDossierClosingForDecisionContext(ctx),
     EVIDENCE_SUMMARY:`追加質問と相談文から、主テーマは${ctx.primaryLabel}として整理しています。羅針カードでは、${ctx.criteriaText}を判断軸に短く残します。`,
   };
 }
@@ -10381,7 +10663,10 @@ function getLenPairSpecialRule(idA,idB){
 }
 
 function getLenCategoryKey(cat='総合'){
-  return cat==='恋愛'?'love':cat==='仕事'||cat==='金運'?'work':'rel';
+  const normalized=normalizeConsultationCategoryTag(cat);
+  if(normalized==='恋愛') return'love';
+  if(normalized==='仕事・進路'||normalized==='お金') return'work';
+  return'rel';
 }
 
 function getLenSpreadLabels(){
@@ -10412,7 +10697,7 @@ function buildLenSpreadPromptContext(cat='総合'){
     const data=LENORMAND[id]||{};
     const label=getLenSpreadLabel(index,SEL_LEN.length);
     const themeText=data[catKey]||data.love||data.rel||'';
-    const moneyText=cat==='金運'?(data.work||data.kw||''):'';
+    const moneyText=normalizeConsultationCategoryTag(cat)==='お金'?(data.work||data.kw||''):'';
     return{
       id,
       index,
@@ -10472,8 +10757,9 @@ function buildLenSpreadPromptContext(cat='総合'){
   const distanceDetails=cards.length===9
     ?`- 近距離｜${[1,3,5,7].map(index=>describeCard(cards[index])).join(' / ')}｜⑤に直結する直接影響\n- 遠距離｜${[0,2,6,8].map(index=>describeCard(cards[index])).join(' / ')}｜背景条件・外枠・遅れて効く要因`
     :'';
-  const themeKeyMap={恋愛:24,結婚:25,仕事:35,金運:34,健康:5,転職:17,秘密:26,問題解決:33,人間関係:20};
-  const themeKeyId=themeKeyMap[cat]||(cat==='仕事'?35:cat==='金運'?34:null);
+  const normalizedCat=normalizeConsultationCategoryTag(cat);
+  const themeKeyMap={恋愛:24,'仕事・進路':35,お金:34,人間関係:20,家族:4,'自分自身':5,'趣味・創作':31};
+  const themeKeyId=themeKeyMap[normalizedCat]||null;
   const themeKeyIndex=themeKeyId?cards.findIndex(card=>card.id===themeKeyId):-1;
   const topicFocusDetails=(cards.length===9&&themeKeyIndex>=0)
     ?(()=>{
@@ -10699,7 +10985,7 @@ function renderDossierIncludedSections(){
 }
 
 function buildDossierPlainText(data){
-  const safeData=normalizeDossierCardData(data);
+  const safeData=resolveDossierCardData(data);
   const blocks=[
     'RASHIN CARD',
     safeData.TITLE,
@@ -10757,7 +11043,7 @@ function renderDossierEvidenceDetails(card){
 }
 
 function renderDossierConditionList(items=[]){
-  return `<ul class="dossier-save-list">${items.map(item=>`<li class="dossier-save-item">${escapeHtml(item)}</li>`).join('')}</ul>`;
+  return `<ul class="dossier-save-list">${items.map(item=>`<li class="dossier-save-item">${escapeHtml(item)}</li>`).join('\n')}</ul>`;
 }
 
 function renderDossierSaveCard(card){
@@ -10790,7 +11076,7 @@ function renderDossierSaveCard(card){
       </div>
       <div class="dossier-save-section">
         <div class="dossier-save-heading">保存キーワード</div>
-        <div class="dossier-chip-row dossier-save-keywords">${card.KEYWORDS.map(item=>`<div class="dossier-chip">${escapeHtml(item)}</div>`).join('')}</div>
+        <div class="dossier-chip-row dossier-save-keywords">${card.KEYWORDS.map(item=>`<div class="dossier-chip">${escapeHtml(item)}</div>`).join('\n')}</div>
       </div>
       <div class="dossier-save-section">
         <div class="dossier-save-heading">背中を押す一文</div>
@@ -10800,15 +11086,18 @@ function renderDossierSaveCard(card){
 }
 
 function renderDossierCards(data,options={}){
-  const card=normalizeDossierCardData(data);
+  const card=resolveDossierCardData(data);
   const includeEvidence=options.includeEvidence!==false;
   return `${renderDossierSaveCard(card)}${includeEvidence?renderDossierEvidenceDetails(card):''}`;
 }
 
-function detectDossierCardQualityIssues(data={}){
-  const card=normalizeDossierCardData(data);
+function detectDossierCardQualityIssues(data={},options={}){
+  const card=resolveDossierCardData(data);
   const issues=[];
+  const focus=options.focus||getCurrentRefinedFocus();
+  const primary=normalizePrimaryThemeValue(focus);
   const text=buildDossierPlainText(card);
+  const displayText=[text,options.renderedText||''].join('\n');
   const conditionGroups=[
     {label:card.POSITIVE_LABEL||'進む/残る条件',items:card.REMAIN_CONDITIONS||[]},
     {label:card.NEGATIVE_LABEL||'止まる/動く条件',items:card.MOVE_CONDITIONS||[]},
@@ -10821,6 +11110,10 @@ function detectDossierCardQualityIssues(data={}){
   if(/Q[:：]|A[:：]|【相談者の補足|相談者の補足整理|追加質問への回答/.test(text)) issues.push('羅針カード本体に追加質問rawが混入している');
   if(/No\.\d+|カード番号|配置名|中心十字|下の段|上の段|現状の列|未来の列|右側の流れ|左側の流れ/.test(text)) issues.push('羅針カード本体に内部根拠やカード番号が混入している');
   if(/保存カードやPDFには含めません|根拠を見る|土台から見えたこと|ルノルマンから見えたこと|オラクルから見えたこと|追加質問から見えたこと/.test(text)) issues.push('羅針カード本体に根拠詳細が混ざっている');
+  if(primary==='love'&&/残る条件|動く条件/.test(text)) issues.push('恋愛テーマの羅針カードに仕事系ラベルが混入している');
+  if((primary==='work_life_direction'||primary==='career')&&/進む条件|止まる条件/.test(text)) issues.push('仕事テーマの羅針カードに恋愛系ラベルが混入している');
+  if(primary==='relationship'&&/残る条件|動く条件|進む条件|止まる条件/.test(text)) issues.push('人間関係テーマの羅針カードラベルが不一致です');
+  if(/です。があるなら|ことです。があるなら|確認してから選ぶことです。が/.test(displayText)) issues.push('羅針カードに接続崩れがあります');
   conditionGroups.forEach(group=>{
     if((group.items||[]).length<2) issues.push(`${group.label}が2項目未満`);
     if((group.items||[]).length>2) issues.push(`${group.label}が2項目を超えている`);
@@ -10831,9 +11124,20 @@ function detectDossierCardQualityIssues(data={}){
       if(key&&seen.has(key)) issues.push(`${group.label}に重複項目がある`);
       if(key) seen.add(key);
     });
+    if(options.renderedText){
+      for(let i=0;i<(group.items||[]).length-1;i++){
+        const joined=`${group.items[i]}${group.items[i+1]}`;
+        if(joined&&options.renderedText.includes(joined)){
+          issues.push(`${group.label}の箇条書きが表示上で連結しています`);
+        }
+      }
+    }
   });
   if((card.ACTION7||[]).length!==1) issues.push('今週の一手が1項目ではない');
   if((card.ACTION7||[]).some(item=>isDossierIncompleteText(item,{action:true}))) issues.push('今週の一手が未完文または行動文ではない');
+  if(options.renderedText&&/<li/i.test(options.renderedHtml||'')&&!/\n|・/.test(options.renderedText)){
+    issues.push('羅針カードの箇条書きが表示テキストで連結して見える可能性があります');
+  }
   if(!card.CLOSING||isDossierIncompleteText(card.CLOSING)) issues.push('背中を押す一文がない、または未完文');
   if((card.KEYWORDS||[]).length<4||(card.KEYWORDS||[]).length>6) issues.push('保存キーワードが4〜6個ではない');
   return Array.from(new Set(issues));
@@ -10855,6 +11159,7 @@ function renderPremiumDossier(loading=false){
   if(!shouldPrepare) return;
 
   if(loading){
+    section.style.display='block';
     titleEl.textContent='羅針カードを整えています';
     subtitleEl.textContent='本編とは別に、スクショやPDFで残しやすい短いカードへ整えています。';
     loadingEl.style.display='block';
@@ -10866,6 +11171,9 @@ function renderPremiumDossier(loading=false){
   }
 
   const parsed=LAST_OUTPUTS.dossier?parseTaggedDossier(LAST_OUTPUTS.dossier):buildFallbackDossier();
+  if(isPaidDebugEnabled()&&PAID_DEBUG_LOG&&PAID_DEBUG_LOG.rawOutputs&&!Object.prototype.hasOwnProperty.call(PAID_DEBUG_LOG.rawOutputs,'dossier')){
+    recordPaidDebugRaw('dossier',LAST_OUTPUTS.dossier||'[local fallback dossier]',parsed);
+  }
   const safeData=normalizeDossierCardData(parsed);
   titleEl.textContent=safeData.TITLE||'羅針カード';
   subtitleEl.textContent='SNSでスクショ保存しやすい短い羅針カードです。';
@@ -10875,7 +11183,8 @@ function renderPremiumDossier(loading=false){
   renderedEl.style.display='block';
   const renderedHtml=renderDossierCards(safeData);
   renderedEl.innerHTML=renderedHtml;
-  const qualityIssues=detectDossierCardQualityIssues(safeData);
+  const renderedText=renderedEl.innerText||renderedEl.textContent||'';
+  const qualityIssues=detectDossierCardQualityIssues(safeData,{renderedText,renderedHtml,focus:getCurrentRefinedFocus()});
   recordPaidDebugParsed('dossier',parsed);
   if(isPaidDebugEnabled()&&PAID_DEBUG_LOG){
     PAID_DEBUG_LOG.normalization.dossier={
@@ -10886,12 +11195,13 @@ function renderPremiumDossier(loading=false){
     PAID_DEBUG_LOG.dossier={
       parsed,
       normalized:safeData,
-      renderedText:renderedEl.innerText||renderedEl.textContent||'',
+      renderedText,
       renderedHtml,
       qualityIssues,
     };
   }
   if(qualityIssues.length) recordPaidDebugQuality('dossier_card',qualityIssues);
+  section.style.display='block';
   printBtn.style.display='inline-flex';
   copyBtn.style.display='inline-flex';
   if(isDossierViewerOpen()) renderDossierViewerContent(document.getElementById('dossier-viewer')?.dataset.mode||'card');
@@ -11392,6 +11702,7 @@ function startFlowUnlocked(plan){
     return;
   }
   PLAN=plan===SIMPLE_READING_PLAN?SIMPLE_READING_PLAN:(plan==='paid'?'paid':'free');
+  CONSULTATION_TAG_CONFIRMED=false;
   SEL_LEN=[];
   SEL_ORC=[];
   FIXED_GENDER_CARD=null;
@@ -11425,12 +11736,14 @@ function syncInputModeUI(){
 }
 
 function backToInputFromFlow(){
+  CONSULTATION_TAG_CONFIRMED=false;
   CLARIFY_ANSWERS={};
   CLARIFY_ACTIVE_QUESTIONS=[];
   showScreen('s-input',20);
 }
 
 function rerollLenReading(){
+  CONSULTATION_TAG_CONFIRMED=false;
   SEL_LEN=[];
   SEL_ORC=[];
   orcSelCards=[];
@@ -11509,7 +11822,7 @@ function goToLen(){
   const month=parseInt(document.getElementById('f-month').value);
   const day=getSelectedBirthDay();
   const hour=getSelectedBirthHour();
-  const cat=document.getElementById('f-cat')?.value||'総合';
+  const cat=normalizeConsultationCategoryTag(document.getElementById('f-cat')?.value||'総合');
   const theme=document.getElementById('f-theme')?.value?.trim()||'';
   if(!ensureRequiredGender()) return;
   const fullname=requireFullnameForNameJudge();
@@ -11519,6 +11832,11 @@ function goToLen(){
     syncDayOptions(day);
     return;
   }
+  if(!CONSULTATION_TAG_CONFIRMED){
+    if(openConsultationTagModal(cat)) return;
+  }
+  CONSULTATION_TAG_CONFIRMED=false;
+  setConsultationCategory(cat);
 
   // 現時点のファネル計測は無料フォームのみ。有料再鑑定フォームは必要になった時点で別途追加する。
   if(PLAN==='free'){
@@ -11548,7 +11866,7 @@ function goToSimpleReading(){
   const month=parseInt(document.getElementById('f-month').value);
   const day=getSelectedBirthDay();
   const hour=getSelectedBirthHour();
-  const cat=document.getElementById('f-cat')?.value||'総合';
+  const cat=normalizeConsultationCategoryTag(document.getElementById('f-cat')?.value||'総合');
   const theme='';
   if(!ensureRequiredGender()) return;
   const rawFullname=getFullname();
@@ -12125,7 +12443,7 @@ function buildClarifyCardContext(){
   const hasPositiveCard=len.some(c=>positiveIds.includes(c.id));
   return{
     input,
-    category:input.cat||'総合',
+    category:normalizeConsultationCategoryTag(input.cat||'総合'),
     theme:(input.theme||'').trim(),
     themeShort:((input.theme||'').trim().length<18),
     len,
@@ -12175,14 +12493,14 @@ function buildCoreClarifyQuestion(ctx){
         '相手の気持ちを決め打ちするより、あなたが確認したい核心を先に絞ります。',
         ['この関係を進めてよいか','いったん距離を置くべきか','相手に何を確認すべきか','自分がこれ以上我慢すべきではない点']
       );
-    case '仕事':
+    case '仕事・進路':
       return makeClarifyQuestion(
         'core','白黒つけたい核心',anchor,
         '今回の鑑定で、いちばん白黒をつけたい仕事の判断は何ですか？',
         '続ける意味、変える意味、準備を始める時期のどこを見るかで結論が変わります。',
         ['今の仕事を続ける意味があるか','別ルートの準備を始めるべきか','収入・評価・成長など何を優先すべきか','今の環境で残る条件があるか']
       );
-    case '金運':
+    case 'お金':
       return makeClarifyQuestion(
         'core','白黒つけたい核心',anchor,
         '今回の鑑定で、いちばん白黒をつけたいお金の判断は何ですか？',
@@ -12227,14 +12545,14 @@ function buildCognitiveMismatchQuestion(ctx){
         '怖さ、迷い、準備不足、相手への遠慮のどれが強いかで、次の一手を変えます。',
         ['怖さ：本音を伝えて関係が崩れるのが怖い','迷い：相手の反応を見ても判断しきれない','準備不足：まだ確認していないことが多い','遠慮：自分だけが我慢している気がする']
       );
-    case '仕事':
+    case '仕事・進路':
       return makeClarifyQuestion(
         'mismatch','動けない理由',anchor,
         '頭では分かっているのに、仕事でなかなか動けないことがあるなら、それは何ですか？',
         '怖さ、迷い、準備不足、周囲への遠慮のどれが強いかで、残る条件と動く条件が変わります。',
         ['怖さ：辞めた後や変えた後の後悔が怖い','迷い：続けるメリットと辞めたい気持ちが同じくらいある','準備不足：求人・スキル・収入面の材料が足りない','遠慮：職場や周囲の期待を気にして判断できない']
       );
-    case '金運':
+    case 'お金':
       return makeClarifyQuestion(
         'mismatch','動けない理由',anchor,
         '頭では分かっているのに、お金のことでなかなか動けないことがあるなら、それは何ですか？',
@@ -12273,14 +12591,14 @@ function buildChangeReadinessQuestion(ctx){
         '数字と理由があると、今週確認することと、まだ保留にすることを分けやすくなります。',
         ['3/10：まだ相手の反応を見る段階','5/10：短くなら本音を伝えられそう','7/10：確認したいことは決まっている','9/10：返事次第で次の判断ができる']
       );
-    case '仕事':
+    case '仕事・進路':
       return makeClarifyQuestion(
         'readiness','行動準備度',anchor,
         '今の仕事について、行動を起こす準備度は10段階でどのくらいですか？その数字にした理由も一言で教えてください。',
         '数字と理由があると、今週の一手と、見直し時期までの準備を分けやすくなります。',
         ['3/10：まだ比較材料が足りない','5/10：収入・経験・働きやすさを整理すれば動けそう','7/10：求人確認やスキル整理なら始められる','9/10：条件が合えばすぐ動ける']
       );
-    case '金運':
+    case 'お金':
       return makeClarifyQuestion(
         'readiness','行動準備度',anchor,
         'お金の状況について、行動を起こす準備度は10段階でどのくらいですか？その数字にした理由も一言で教えてください。',
@@ -12319,14 +12637,14 @@ function buildIdealOutcomeQuestion(ctx){
         '恋愛の結論は、相手の心を断定するより、確認できる行動基準にすると使いやすくなります。',
         ['進めていい相手の反応','距離を置くべきサイン','本音を伝えるタイミング','自分が我慢しすぎない基準']
       );
-    case '仕事':
+    case '仕事・進路':
       return makeClarifyQuestion(
         'ideal','持ち帰る判断軸',anchor,
         '鑑定の最後に、どんな判断軸が見えたら「次に動ける」と感じますか？',
         '仕事の結論は、残る意味と動く条件を分けるほど行動に落としやすくなります。',
         ['今の仕事に残る条件','別ルートの準備を始める条件','収入・評価・成長などの優先順位','7日以内に確認する一つのこと']
       );
-    case '金運':
+    case 'お金':
       return makeClarifyQuestion(
         'ideal','持ち帰る判断軸',anchor,
         '鑑定の最後に、どんな判断軸が見えたら「次に動ける」と感じますか？',
@@ -12363,7 +12681,7 @@ function buildBranchClarifyQuestion(ctx){
       ['進む条件：不安を伝えたとき向き合う／止まる条件：曖昧な返答が続く','進む条件：会う頻度や連絡が安定する／止まる条件：自分だけが我慢する','進む条件：本音を出しても関係が崩れない／止まる条件：確認するほど不安が増える','進む条件：相手の行動が言葉と一致する／止まる条件：都合だけで動かされる']
     );
   }
-  if(ctx.category==='仕事'){
+  if(ctx.category==='仕事・進路'){
     return makeClarifyQuestion(
       'branch','進む条件と止まる条件',anchor,
       '今回の判断で、「進んでいい条件」と「止まるべき条件」をそれぞれ一つずつ挙げるなら何ですか？',
@@ -12371,7 +12689,7 @@ function buildBranchClarifyQuestion(ctx){
       ['進む条件：続ける意味や評価が増える／止まる条件：役割だけ増えて見返りが変わらない','進む条件：実績や学びとして残せる／止まる条件：一定期間後に何も残らない','進む条件：今の環境で条件を確認できる／止まる条件：本音を出すほど居づらい','進む条件：比較材料が揃う／止まる条件：不安な日に一気に決めようとしている']
     );
   }
-  if(ctx.category==='金運'){
+  if(ctx.category==='お金'){
     return makeClarifyQuestion(
       'branch','進む条件と止まる条件',anchor,
       '今回の判断で、「進んでいい条件」と「止まるべき条件」をそれぞれ一つずつ挙げるなら何ですか？',
@@ -12827,6 +13145,7 @@ function startPaidDebugLog(context={}){
     serverStored:false,
     trigger:DEV_MODE?'DEV_MODE':'debug=1',
     context,
+    focusCorrectionTrace:context.focusCorrectionTrace||context.refinedFocus?.focusCorrectionTrace||null,
     rawOutputs:{},
     parsed:{},
     normalization:{},
@@ -12990,52 +13309,96 @@ function translateLenormandDictionaryText(text='',focus={},context={}){
 function buildLenormandCardReadingSentence(cardName='',meaning='',ctx=buildDecisionContext(getCurrentRefinedFocus())){
   const card=String(cardName||'').trim();
   const cleanMeaning=String(meaning||'').trim();
+  const quoted=card?`「${card}」`:'このカード';
   const primary=ctx.primaryTheme;
   const asLove=primary==='love';
   const asWork=primary==='work_life_direction'||primary==='career';
-  if(/十字架/.test(card)||/重責|試練|背負|苦痛|課題|負担/.test(cleanMeaning)){
+  if(/十字架/.test(card)){
     return asLove
       ?'「十字架」は、関係の中で避けてきた重さや負担を示します。平気なふりを続けるほど判断が重くなるため、不安を一つ言葉にできるかが大事です。'
       :asWork
         ?'「十字架」は、背負ってきた責任や避けてきた課題を示します。今の負担が意味のある責任なのか、ただ我慢が増えているだけなのかを分けて見てください。'
         :'「十字架」は、避けてきた重さや背負っている課題を示します。何を引き受け、何を手放すかを分けるほど判断は軽くなります。';
   }
-  if(/錨/.test(card)||/安定|固定|長期|停滞|執着/.test(cleanMeaning)){
+  if(/錨/.test(card)){
     return asLove
       ?'「錨」は、安定した関係にも、動かない関係にもなり得るカードです。安心できる安定なのか、曖昧なまま固定されているだけなのかを見分けてください。'
       :asWork
         ?'「錨」は、継続や安定を示す一方で、動けなさも表します。今の場所が土台になるのか、停滞として固定されているのかを確認する必要があります。'
         :'「錨」は、安定と固定の両方を示します。守るべき土台なのか、動きを止めている重さなのかを見分けるカードです。';
   }
-  if(/雲/.test(card)||/混乱|不確実|不安|曖昧|不透明/.test(cleanMeaning)){
+  if(/船/.test(card)){
+    return asLove
+      ?'「船」は、相手との距離感や進展の遅さをどう扱うかを示します。関係を手元の反応で確かめるほど、不安だけで先読みしにくくなります。'
+      :asWork
+        ?'「船」は、今いる場所の外に選択肢が広がる流れを示します。すぐ離れるより、外の候補を見て比較材料を増やす段階です。'
+        :'「船」は、少し離れた場所にある選択肢や変化の流れを示します。距離を置いて見るほど、次の判断が整います。';
+  }
+  if(/塔/.test(card)){
+    return asLove
+      ?'「塔」は、感情の距離や一人で抱え込みやすい状態を示します。自立した関係なのか、孤独な我慢になっているのかを見分けてください。'
+      :asWork
+        ?'「塔」は、組織や立場との距離を示します。制度や役割に守られているのか、孤立して動きにくいのかを確認する必要があります。'
+        :'「塔」は、距離を置いて状況を見る力と、孤立しやすさの両方を示します。ひとりで抱え込まない形を作ることが鍵です。';
+  }
+  if(/雲/.test(card)){
     return asLove
       ?'「雲」は、相手の気持ちを決め打ちできない曖昧さを示します。言葉よりも、確認したときの反応を見る必要があります。'
       :'「雲」は、まだ見えていない不安や情報不足を示します。急いで結論を出すより、曖昧な点を一つ確認する段階です。';
   }
-  if(/山/.test(card)||/障害|困難|遅延|壁|課題/.test(cleanMeaning)){
+  if(/山/.test(card)){
     return asLove
       ?'「山」は、気持ちだけでは越えにくい壁を示します。関係を進めるなら、相手がその壁に一緒に向き合うかを見てください。'
       :'「山」は、時間のかかる障害や遅れを示します。無理に押し切るより、何が壁になっているかを具体的に分ける必要があります。';
   }
-  if(/鍵/.test(card)||/解決|成功の鍵|大事な点|突破口|扉/.test(cleanMeaning)){
+  if(/鍵/.test(card)){
     return asLove
       ?'「鍵」は、確認すれば開く突破口を示します。相手の気持ちを推測し続けるより、確認したいことを一つに絞るほど答えが見えます。'
       :'「鍵」は、突破口や大事な確認点を示します。すべてを決める前に、今開けるべき一つの扉を見つけてください。';
   }
-  if(/星/.test(card)||/希望|夢|展望|指針|将来像|理想/.test(cleanMeaning)){
+  if(/星/.test(card)){
     return asLove
       ?'「星」は、関係の理想や将来像を照らします。ただし理想だけで進めず、現実の反応と合わせて見てください。'
       :'「星」は、見通しや目標を照らします。理想を描くだけでなく、そこへ近づくための現実の一手に落としてください。';
   }
-  if(/騎士/.test(card)||/吉報|知らせ|連絡|訪問|動き/.test(cleanMeaning)){
+  if(/騎士/.test(card)){
     return asLove
       ?'「騎士」は、連絡や小さな動きを示します。大きな約束より、連絡や会話の反応に安定があるかを見てください。'
       :'「騎士」は、知らせや新しい動きを示します。今は待つだけでなく、確認や相談を一つ外へ出すと流れが動きます。';
   }
-  if(/家/.test(card)||/家族|基盤|安心|プライベート|土台/.test(cleanMeaning)){
+  if(/家/.test(card)){
     return asLove
       ?'「家」は、安心できる土台を示します。関係が落ち着ける場所になるのか、内側に閉じて不安を抱える形になるのかを見てください。'
       :'「家」は、土台や安心できる環境を示します。守る場所として機能しているのか、外へ出にくくしているのかを分けて読んでください。';
+  }
+  if(/重責|試練|背負|苦痛|課題|負担/.test(cleanMeaning)){
+    return asLove
+      ?`${quoted}は、関係の中で避けてきた重さや負担を映しています。平気なふりを続けるほど判断が重くなるため、不安を一つ言葉にできるかが大事です。`
+      :asWork
+        ?`${quoted}は、背負ってきた責任や避けてきた課題を映しています。今の負担が意味のある責任なのか、ただ我慢が増えているだけなのかを分けて見てください。`
+        :`${quoted}は、避けてきた重さや背負っている課題を映しています。何を引き受け、何を手放すかを分けるほど判断は軽くなります。`;
+  }
+  if(/安定|固定|長期|停滞|執着/.test(cleanMeaning)){
+    return asLove
+      ?`${quoted}は、安定にも停滞にも傾く流れを映しています。安心につながる安定なのか、曖昧なまま固定されているだけなのかを見分けてください。`
+      :asWork
+        ?`${quoted}は、継続の土台と動けなさの両方を映しています。今の場所が力を育てる土台なのか、停滞として固定されているのかを確認する必要があります。`
+        :`${quoted}は、安定と固定の両方を映しています。守るべき土台なのか、動きを止めている重さなのかを見分けるカードです。`;
+  }
+  if(/混乱|不確実|不安|曖昧|不透明/.test(cleanMeaning)){
+    return asLove
+      ?`${quoted}は、気持ちを決め打ちできない曖昧さを映しています。言葉よりも、確認したときの反応を見る必要があります。`
+      :`${quoted}は、まだ見えていない不安や情報不足を映しています。急いで結論を出すより、曖昧な点を一つ確認する段階です。`;
+  }
+  if(/障害|困難|遅延|壁/.test(cleanMeaning)){
+    return asLove
+      ?`${quoted}は、気持ちだけでは越えにくい壁を映しています。関係を進めるなら、相手がその壁に一緒に向き合うかを見てください。`
+      :`${quoted}は、時間のかかる障害や遅れを映しています。無理に押し切るより、何が壁になっているかを具体的に分ける必要があります。`;
+  }
+  if(/解決|成功の鍵|大事な点|突破口|扉/.test(cleanMeaning)){
+    return asLove
+      ?`${quoted}は、確認すれば開く突破口を映しています。推測し続けるより、確認したいことを一つに絞るほど答えが見えます。`
+      :`${quoted}は、突破口や大事な確認点を映しています。すべてを決める前に、今開けるべき一つの扉を見つけてください。`;
   }
   if(asLove){
     return `「${card}」は、相手の言葉だけでなく、確認したときの反応を見るカードとして読めます。`;
@@ -13047,6 +13410,21 @@ function buildLenormandCardReadingSentence(cardName='',meaning='',ctx=buildDecis
     return `「${card}」は、関わった後に自分が自然体でいられるかを確かめるカードとして読めます。`;
   }
   return `「${card}」は、今回の相談で見落としやすい現実を確かめるカードとして読めます。`;
+}
+
+function getDrawnLenormandCardNames(){
+  return new Set((SEL_LEN||[]).map(id=>LENORMAND[id]?.name).filter(Boolean));
+}
+
+function detectUndrawnLenormandCardNameIssues(text=''){
+  const source=String(text||'');
+  const drawn=getDrawnLenormandCardNames();
+  if(!drawn.size) return [];
+  const allNames=Object.values(LENORMAND||{}).map(card=>card?.name).filter(Boolean);
+  const used=[...new Set(allNames.filter(name=>source.includes(`「${name}」`)))];
+  return used
+    .filter(name=>!drawn.has(name))
+    .map(name=>`LEN本文に実際に引いていないカード「${name}」が出ています`);
 }
 
 function normalizeLenormandCardCriteriaBlendText(text='',focus={},context={}){
@@ -13187,8 +13565,9 @@ function normalizeLenormandReadingText(text='',context={}){
   }
   source=normalizeLenormandSectionHeadings(source);
   const structured=formatLenormandFourSections(source);
-  if(!structured||hasBrokenLenormandText(structured,context.integration||'')){
-    recordPaidDebugQuality('len_normalize',['ルノルマン本文の構造欠落または途中終了を検出したため、カード由来fallbackへ切り替えました']);
+  const undrawnIssues=detectUndrawnLenormandCardNameIssues(structured||source);
+  if(!structured||hasBrokenLenormandText(structured,context.integration||'')||undrawnIssues.length){
+    recordPaidDebugQuality('len_normalize',[...undrawnIssues,'ルノルマン本文の構造欠落、途中終了、または未出カード混入を検出したため、カード由来fallbackへ切り替えました'].filter(Boolean));
     const fallbackName=context.name||(typeof getFullname==='function'?getFullname():'')||'あなた';
     const fallbackText=buildRichLenFallback(fallbackName,context.cat||'総合');
     return formatLenormandFourSections(fallbackText)||fallbackText;
@@ -13770,6 +14149,7 @@ function detectLenormandRoleIssues(text='',focus={},integration=''){
   if(/「(?:十字架|錨|雲|山|鍵|星|騎士|家)」は、?[^。]*(?:安心感|相手の反応|信頼|収入|成長|評価|役割)[^。]*(?:行動から確かめる材料|残るかを確認する材料)/.test(source)){
     issues.push('LENのカード説明にdecisionCriteriaが雑に流し込まれています');
   }
+  issues.push(...detectUndrawnLenormandCardNameIssues(source));
   issues.push(...detectBrokenDecisionCriteriaPhraseIssues(source,'LEN本文'));
   if(!isWorkLifeDirectionFocus(focus)&&!focus.explicitUserPriority) return issues;
   if(/恋愛と仕事の問題を同じ重さで同時に解決|恋愛と仕事を同じ重さ|恋愛と仕事を同じ焦り|恋愛と仕事の両方で「失いたくない気持ち」/.test(source)){
@@ -13848,6 +14228,24 @@ function detectBrokenDecisionCriteriaPhraseIssues(text='',key='text'){
   return issues;
 }
 
+function detectFocusRegressionIssues(baseFocus={},refinedFocus={},context={}){
+  const issues=[];
+  const basePrimary=normalizePrimaryThemeValue(baseFocus);
+  const refinedPrimary=normalizePrimaryThemeValue(refinedFocus);
+  const trace=refinedFocus?.focusCorrectionTrace||context.focusCorrectionTrace||{};
+  const selectedCategory=normalizeConsultationCategoryTag(context.cat||trace.selectedCategory||'総合');
+  const source=[context.clarifyText,context.theme,stringifyFocusSupplement(context.paidUserData)].join(' ');
+  const lovePriority=/今回\s*先に\s*見たいのは\s*恋愛|主テーマは\s*恋愛|恋愛を進めていいか、?\s*距離を置くべきか|この恋愛を進めていいか/.test(source)||selectedCategory==='恋愛';
+  const workPriority=/今回\s*先に\s*見たいのは\s*(仕事|進路|働き方|今後の生き方)|主テーマは\s*(仕事|進路|働き方|今後の生き方)/.test(source)||selectedCategory==='仕事・進路';
+  if(lovePriority&&refinedPrimary!=='love') issues.push('focus補正で恋愛優先がprimaryThemeに反映されていません');
+  if(workPriority&&!(refinedPrimary==='work_life_direction'||refinedPrimary==='career')) issues.push('focus補正で仕事・進路優先がprimaryThemeに反映されていません');
+  if(basePrimary==='love'&&(refinedPrimary==='career'||refinedPrimary==='work_life_direction')&&!workPriority){
+    issues.push('refinedFocusがbaseFocusより悪化し、恋愛主軸から仕事主軸へ戻っています');
+  }
+  if(trace?.priorityExpressions?.love?.length&&refinedPrimary!=='love') issues.push('focusCorrectionTrace上の恋愛優先表現が無視されています');
+  return issues;
+}
+
 function validateIntegrationSatisfaction(text='',context={}){
   const issues=[];
   const source=String(text||'');
@@ -13912,6 +14310,7 @@ function validatePaidReadingQuality(parsed={},context={}){
   if(/魂|波動|宇宙/.test(joined)){
     issues.push('断定的・抽象的に見える語が残っている');
   }
+  issues.push(...detectFocusRegressionIssues(context.baseFocus||{},context.focus||context.refinedFocus||{},context));
   issues.push(...detectBrokenDecisionCriteriaPhraseIssues(joined,'有料鑑定本文'));
   if(!/(7日以内|1週間以内|今週)/.test(parsed.integration||'')){
     issues.push('7日以内にできる行動が弱い');
@@ -14246,7 +14645,7 @@ async function runPaidCombinedReading(){
   setIntegrationLoading('結論を整えています','ここまでの読みを一本にまとめ、今どう動くかまで落とし込んでいます。');
 
   const name=getFullname()||'あなた';
-  const cat=document.getElementById('f-cat')?.value||'総合';
+  const cat=normalizeConsultationCategoryTag(document.getElementById('f-cat')?.value||'総合');
   const theme=document.getElementById('f-theme')?.value||'';
   let focus=analyzeConsultationFocus(cat,theme);
   const baseFocus={...focus};
@@ -14364,7 +14763,7 @@ ${SEL_LEN.length===9?`- LENの「今の流れ」または「迷いの構造」�
 - 時期を書く場合は「今日から7日以内」「今週」「次に会う時」のように、相談文から自然に言える範囲だけにする
 - LENは900〜1200字、ORCは500〜700字で書く。INTEGRATIONは250〜400字の「最終判断カード」だけにする。INTEGRATIONを長文鑑定書にしない
 - 相手の気持ちは「行動から見ると〜」の形で読む。心の中を断定しない
-- 判断ポイントは「進めてよい目印」「止まる目印」「確認する質問」を分けて書く
+- 判断ポイントは「${decisionLabels.positiveLabel}」「${decisionLabels.negativeLabel}」「確認する質問」を分けて書く
 - 次にやることは、今日・次に会う時・7日以内の3段階で書く
 - 「判断ポイント」と「次にやること」は、小見出しごとに改行し、各項目を「・」で1行ずつ書く
 - 「整理してください」だけで終わらせない。「${decisionLabels.positiveLabel}」と「${decisionLabels.negativeLabel}」を必ず分ける
@@ -14438,6 +14837,7 @@ ${orcFull}
     focus:refinedFocus,
     baseFocus,
     refinedFocus,
+    focusCorrectionTrace:refinedFocus.focusCorrectionTrace||null,
     answerNeed:focus.answerNeed,
     clarifyText,
     birthDetail,
@@ -14454,6 +14854,7 @@ ${orcFull}
     theme,
   };
   startPaidDebugLog(paidDebugContext);
+  recordPaidDebugQuality('focus_correction',detectFocusRegressionIssues(baseFocus,refinedFocus,paidDebugContext));
 
   let parsed={len:'',orc:'',integration:''};
   let paidGenerationFailed=false;
@@ -14603,7 +15004,7 @@ async function runLenReading(){
   setResultStageStatus('len','working');
   setReadingBlockLoading('r-len-block','いま起きていることを整理しています','迷いを増やさないように、今見るべきことだけを言葉にしています。');
   const name=getFullname()||'あなた';
-  const cat=document.getElementById('f-cat')?.value||'総合';
+  const cat=normalizeConsultationCategoryTag(document.getElementById('f-cat')?.value||'総合');
   const theme=document.getElementById('f-theme')?.value||'';
   const clarifyText=buildClarifyPromptText('detail');
   const focus=refineFocusWithClarify(analyzeConsultationFocus(cat,theme),clarifyText,{cat,theme});
@@ -14622,8 +15023,9 @@ async function runLenReading(){
     :'';
 
   // テーマ別キーカード確認（9枚引き時）
-  const themeKey={恋愛:24,結婚:25,仕事:35,金運:34,健康:5,転職:17,秘密:26,問題解決:33,人間関係:20};
-  const keyCard=themeKey[cat]||(cat==='仕事'?35:cat==='金運'?34:null);
+  const normalizedCat=normalizeConsultationCategoryTag(cat);
+  const themeKey={恋愛:24,'仕事・進路':35,お金:34,人間関係:20,家族:4,'自分自身':5,'趣味・創作':31};
+  const keyCard=themeKey[normalizedCat]||null;
   const keyCardInSpread=keyCard&&SEL_LEN.includes(keyCard)?`\n※テーマ別キーカード「${LENORMAND[keyCard]?.name}」(No.${keyCard})が出ています。このカードを中心に読んでください。`:'';
 
   // 曖昧カード検出（対話型絞り込み候補）
@@ -14758,7 +15160,7 @@ async function runOrcReading(){
   setResultStageStatus('orc','working');
   setReadingBlockLoading('r-orc-block','気持ちの流れを整理しています','これまでの流れと、今から整えることをつなげてまとめています。');
   const name=getFullname()||'あなた';
-  const cat=document.getElementById('f-cat')?.value||'総合';
+  const cat=normalizeConsultationCategoryTag(document.getElementById('f-cat')?.value||'総合');
   const theme=document.getElementById('f-theme')?.value||'';
   const clarifyText=buildClarifyPromptText('compact');
   const focus=refineFocusWithClarify(analyzeConsultationFocus(cat,theme),clarifyText,{cat,theme});
@@ -14872,7 +15274,7 @@ async function runIntegration(){
   setResultStageStatus('integration','working');
   setIntegrationLoading('結論を整えています','ここまでの読みを一本にまとめ、今どう動くかまで落とし込んでいます。');
   const name=getFullname()||'あなた';
-  const cat=document.getElementById('f-cat')?.value||'総合';
+  const cat=normalizeConsultationCategoryTag(document.getElementById('f-cat')?.value||'総合');
   const theme=document.getElementById('f-theme')?.value||'';
   const clarifyFull=buildClarifyPromptText('compact');
   const focus=refineFocusWithClarify(analyzeConsultationFocus(cat,theme),clarifyFull,{name,cat,theme});
@@ -16072,7 +16474,7 @@ function buildAiPayload(userPrompt,maxTokens,sys,options={}){
     task_key:taskKey,
     plan:PLAN,
     reading_id:CURRENT_READING_ID||'',
-    category:document.getElementById('f-cat')?.value||'総合',
+    category:normalizeConsultationCategoryTag(document.getElementById('f-cat')?.value||'総合'),
     paid_ticket_id:PLAN==='paid'?(ACTIVE_PAID_READING_TICKET?.id||''):'',
     paid_reading_id:PLAN==='paid'?CURRENT_READING_ID:'',
     source_reading_id:PLAN==='paid'?(ACTIVE_PAID_SOURCE_READING_ID||''):'',

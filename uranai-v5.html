@@ -1965,6 +1965,7 @@ body.coming-soon-locked{
 
 
 .field-group{margin-bottom:28px;}
+.consultation-category-field{display:none;}
 
 .field-label{
 
@@ -2338,7 +2339,7 @@ body.coming-soon-locked{
     linear-gradient(180deg,rgba(4,3,10,.04),rgba(4,3,10,.2)),
     url('images/ui/oracle-card-back.jpg');
   background-size:cover,contain;
-  background-repeat:no-repeat;
+  background-repeat:no-repeat,no-repeat;
   background-position:center;
 }
 
@@ -2941,13 +2942,15 @@ body.coming-soon-locked{
   inset:0;
   z-index:0;
   pointer-events:none;
-  background-image:url('占い素材/鑑定結果画面の全画面背景2.png?v=20260515-bg2-readable');
-  background-position:center top;
-  background-size:contain;
-  background-repeat:no-repeat;
+  background-image:
+    url('占い素材/鑑定結果画面の全画面背景2.png?v=20260515-bg2-readable'),
+    url('占い素材/鑑定結果画面の全画面背景2.png?v=20260515-bg2-fill');
+  background-position:center top,center top;
+  background-size:contain,cover;
+  background-repeat:no-repeat,no-repeat;
   background-attachment:fixed;
-  filter:saturate(.75) brightness(.72);
-  opacity:.92;
+  filter:saturate(.72) brightness(.68);
+  opacity:.9;
 }
 
 #s-result::after{
@@ -5959,6 +5962,86 @@ body.dossier-viewer-open{
 
 .modal-cancel:hover{border-color:rgba(201,149,42,.4);color:var(--cream);}
 
+.consultation-tag-modal{
+  position:fixed;
+  inset:0;
+  z-index:1300;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  background:rgba(2,3,10,.72);
+  backdrop-filter:blur(8px);
+}
+.consultation-tag-modal[hidden]{display:none;}
+.consultation-tag-box{
+  width:min(760px,100%);
+  border:1px solid rgba(201,149,42,.42);
+  background:rgba(8,9,20,.96);
+  box-shadow:0 22px 70px rgba(0,0,0,.55);
+  padding:30px;
+}
+.consultation-tag-title{
+  font-family:'Shippori Mincho',serif;
+  color:var(--gold-l);
+  font-size:24px;
+  letter-spacing:.12em;
+  margin-bottom:8px;
+}
+.consultation-tag-desc{
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.8;
+  margin-bottom:20px;
+}
+.consultation-tag-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+.consultation-tag-btn{
+  border:1px solid rgba(201,149,42,.28);
+  background:rgba(5,8,18,.92);
+  color:var(--cream);
+  min-height:92px;
+  padding:14px;
+  text-align:left;
+  cursor:pointer;
+  transition:border-color .2s,background .2s,transform .2s;
+}
+.consultation-tag-btn:hover,.consultation-tag-btn:focus,.consultation-tag-btn.is-selected{
+  border-color:rgba(234,190,92,.72);
+  background:rgba(24,21,28,.96);
+  transform:translateY(-1px);
+  outline:none;
+}
+.consultation-tag-btn span{
+  display:block;
+  color:var(--gold-l);
+  font-family:'Shippori Mincho',serif;
+  font-size:18px;
+  margin-bottom:8px;
+}
+.consultation-tag-btn small{
+  display:block;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.55;
+}
+.consultation-tag-actions{
+  display:flex;
+  justify-content:flex-end;
+  margin-top:20px;
+}
+body.consultation-tag-open{overflow:hidden;}
+
+@media(max-width:720px){
+  .consultation-tag-modal{padding:14px;align-items:flex-end;}
+  .consultation-tag-box{padding:22px 18px;max-height:calc(100vh - 28px);overflow:auto;}
+  .consultation-tag-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .consultation-tag-btn{min-height:86px;}
+}
+
 .booth-modal-box{max-width:560px;padding:30px 28px;}
 .booth-payment-detail{min-width:0;display:flex;flex-direction:column;gap:10px;margin:18px 0;}
 .booth-amount{font-family:'Shippori Mincho',serif;font-size:20px;color:var(--gold-l);letter-spacing:.08em;}
@@ -6695,17 +6778,20 @@ body.dossier-viewer-open{
 
 
 
-    <div class="field-group">
+    <div class="field-group consultation-category-field" aria-hidden="true">
 
       <label class="field-label">相談テーマ</label>
 
       <select class="field-input field-select" id="f-cat">
 
-        <option value="総合">総合（全体的な流れ）</option>
-        <option value="恋愛">恋愛・結婚</option>
-        <option value="仕事">仕事・転職・お金</option>
+        <option value="総合">総合</option>
+        <option value="恋愛">恋愛</option>
+        <option value="仕事・進路">仕事</option>
         <option value="人間関係">人間関係</option>
-        <option value="健康">健康・生活習慣</option>
+        <option value="趣味・創作">趣味</option>
+        <option value="お金">お金</option>
+        <option value="家族">家族</option>
+        <option value="自分自身">自分自身</option>
 
       </select>
 
@@ -6751,6 +6837,19 @@ body.dossier-viewer-open{
 
   </div>
 
+</div>
+
+
+
+<div class="consultation-tag-modal" id="consultation-tag-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="consultation-tag-title" hidden onclick="if(event.target===this)closeConsultationTagModal()">
+  <div class="consultation-tag-box">
+    <div class="consultation-tag-title" id="consultation-tag-title">占い対象は？</div>
+    <div class="consultation-tag-desc">この選択で、鑑定の主テーマと条件ラベルを決めます。複数ある場合でも、今回いちばん見たい対象を選んでください。</div>
+    <div class="consultation-tag-grid" id="consultation-tag-grid"></div>
+    <div class="consultation-tag-actions">
+      <button class="modal-cancel" type="button" onclick="closeConsultationTagModal()">戻る</button>
+    </div>
+  </div>
 </div>
 
 
