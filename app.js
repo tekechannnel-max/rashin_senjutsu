@@ -6513,7 +6513,7 @@ function repairStaticCopy(){
   setText('#s-result .result-progress-eyebrow','鑑定の進み');
   setText('#result-progress-title','結果をまとめています');
   setText('#result-progress-copy','今の状態と次にすることを順番にまとめています。まとまったところから下に出していきます。');
-  setText('#rs-animal-reveal .rs-animal-reveal-eyebrow','あなたの反応タイプは');
+  setText('#rs-animal-reveal .rs-animal-reveal-eyebrow','動物タイプ診断の結果は');
   setText('#rs-foundation-mini .rs-eyebrow','土台の要約');
   setHtml('#rs-foundation-mini .rs-title','<span class="rs-icon">✧</span>この答えを支える、あなたの土台');
   setText('#rs-basis .result-detail-title','');
@@ -6563,8 +6563,6 @@ function repairStaticCopy(){
   setText('#r-aiload .ai-load-detail','ここまでの読みを一本にまとめ、今どう動くかまで落とし込んでいます。');
   setText('#dossier-open-btn','鑑定カードを保存');
   setText('#dossier-save-btn','PDF保存');
-  setText('#dossier-copy-inline-btn','要約をコピー');
-  setText('#dossier-evidence-btn','根拠を見る');
   const shareBtn=document.getElementById('share-x-btn');
   if(shareBtn){
     const svg=shareBtn.querySelector('svg');
@@ -6578,7 +6576,6 @@ function repairStaticCopy(){
   setText('#dossier-title','保存用鑑定カードを整えています');
   setText('#dossier-subtitle','今回の答えを、SNSで保存しやすい短い羅針カードへ整えています。');
   setText('#dossier-print-btn','PDF保存');
-  setText('#dossier-copy-btn','要約をコピー');
   setText('#dossier-loading span','保存用鑑定カードを整えています…');
 }
 
@@ -7866,7 +7863,7 @@ function buildFoundationReadMoreHTML(detailHTML){
 function buildAnimalFoundationDetail(animal){
   const evidenceText=REACTION_PROFILE?.evidence?.length?REACTION_PROFILE.evidence.join(' / '):'';
   return buildFoundationDetailHTML([
-    {label:'反応タイプ',title:`${animal.name}タイプの見方`,body:animal.oneLine},
+    {label:'動物タイプ診断',title:`${animal.name}タイプの見方`,body:animal.oneLine},
     {label:'強み',title:'力が出やすい動き',body:animal.strength},
     {label:'注意点',title:'消耗しやすい場面',body:animal.caution},
     {label:'今回の相談',title:'判断に使うポイント',body:animal.inConsultation},
@@ -7888,7 +7885,7 @@ function buildNameBirthFoundationDetail(){
 function buildConsultationFoundationDetail(consultation,animal,nameBirth){
   return buildFoundationDetailHTML([
     {label:'相談テーマ',title:'今回の見方',body:consultation},
-    {label:'動物タイプ',title:'反応から見る判断軸',body:animal.inConsultation},
+    {label:'動物タイプ診断',title:'反応から見る判断軸',body:animal.inConsultation},
     {label:'名前と生まれ',title:'土台から見る注意点',body:`${nameBirth.summary} ${nameBirth.caution}`},
     {label:'判断条件',title:'急いで決めないために',body:'気持ちだけで決めず、相手や環境が安定して続く条件を確認してから動くと、読みが現実に使いやすくなります。'},
   ]);
@@ -9793,8 +9790,7 @@ function renderDossierCards(data){
       </div>
       <div class="dossier-chip-row dossier-save-keywords">${card.KEYWORDS.map(item=>`<div class="dossier-chip">${escapeHtml(item)}</div>`).join('')}</div>
       <div class="dossier-save-closing">${escapeHtml(card.CLOSING)}</div>
-    </article>
-    ${renderDossierEvidenceDetails(card)}`;
+    </article>`;
 }
 
 function renderPremiumDossier(loading=false){
@@ -9805,8 +9801,7 @@ function renderPremiumDossier(loading=false){
   const proofEl=document.getElementById('dossier-proof');
   const renderedEl=document.getElementById('dossier-rendered');
   const printBtn=document.getElementById('dossier-print-btn');
-  const copyBtn=document.getElementById('dossier-copy-btn');
-  if(!section||!titleEl||!subtitleEl||!loadingEl||!proofEl||!renderedEl||!printBtn||!copyBtn) return;
+  if(!section||!titleEl||!subtitleEl||!loadingEl||!proofEl||!renderedEl||!printBtn) return;
 
   const shouldPrepare=PLAN==='paid'||!!LAST_OUTPUTS.dossier;
   section.style.display='none';
@@ -9819,7 +9814,6 @@ function renderPremiumDossier(loading=false){
     proofEl.style.display='none';
     renderedEl.style.display='none';
     printBtn.style.display='none';
-    copyBtn.style.display='none';
     return;
   }
 
@@ -9833,7 +9827,6 @@ function renderPremiumDossier(loading=false){
   renderedEl.style.display='block';
   renderedEl.innerHTML=renderDossierCards(safeData);
   printBtn.style.display='inline-flex';
-  copyBtn.style.display='inline-flex';
   if(isDossierViewerOpen()) renderDossierViewerContent();
 }
 
@@ -9843,7 +9836,7 @@ function shouldShowDossierActions(){
 
 function setDossierActionButtonsVisible(visible){
   const display=visible?'inline-flex':'none';
-  ['dossier-open-btn','dossier-save-btn','dossier-copy-inline-btn','dossier-evidence-btn'].forEach(id=>{
+  ['dossier-open-btn','dossier-save-btn'].forEach(id=>{
     const btn=document.getElementById(id);
     if(btn) btn.style.display=display;
   });
@@ -9935,23 +9928,6 @@ async function ensureDossierReady(){
   }finally{
     DOSSIER_LOADING=false;
   }
-}
-
-async function copyDossier(){
-  const ready=await ensureDossierReady();
-  if(!ready){
-    showToast('保存用鑑定カードの準備に失敗しました');
-    return;
-  }
-  const parsed=LAST_OUTPUTS.dossier?parseTaggedDossier(LAST_OUTPUTS.dossier):buildFallbackDossier();
-  const raw=buildDossierPlainText(parsed);
-  if(!navigator.clipboard?.writeText){
-    showToast('この環境ではコピー機能を使えません');
-    return;
-  }
-  navigator.clipboard.writeText(raw.replace(/\[\[\/?[A-Z0-9_]+\]\]/g,'').trim())
-    .then(()=>showToast('要約をコピーしました'))
-    .catch(()=>showToast('コピーに失敗しました'));
 }
 
 async function printDossier(){
@@ -11783,7 +11759,66 @@ function normalizePaidReadingText(text=''){
     .replace(/([。！？])\s*(・)/g,'$1\n$2')
     .replace(/(・[^・\n]+?)\s*(?=・)/g,'$1\n')
     .replace(/\n{3,}/g,'\n\n')
+    .split('\n')
+    .map(completeDanglingReadingLine)
+    .join('\n')
     .trim();
+}
+
+function completeDanglingReadingLine(line=''){
+  const raw=String(line||'');
+  const trimmed=raw.trim();
+  if(!trimmed||/^■/.test(trimmed)||/^【[^】]+】$/.test(trimmed)||/^={3,}/.test(trimmed)) return raw;
+  const indent=(raw.match(/^\s*/)||[''])[0];
+  const markerMatch=trimmed.match(/^([・\-]\s*)([\s\S]*)$/);
+  const marker=markerMatch?markerMatch[1]:'';
+  let body=(markerMatch?markerMatch[2]:trimmed).trim().replace(/\s*\/\s*/g,'・');
+  if(!body) return raw;
+  if(/仕事の判断軸は/.test(body)&&/経験|収入|成長|働きやすさ/.test(body)){
+    return `${indent}${marker}仕事の判断軸は、今の職場で経験・収入・働きやすさ・成長のどれが増えるかを見ることです。`;
+  }
+  if(/^(経験|収入|成長|働きやすさ|経験・収入|収入・成長|経験・収入・成長)/.test(body)&&body.length<=32){
+    return `${indent}${marker}経験・収入・働きやすさ・成長のどれが残るかを確認する。`;
+  }
+  if(/[。！？.!?」』）)]$/.test(body)) return `${indent}${marker}${body}`;
+  if(/[・、,，]/.test(body)&&body.length<=36){
+    return `${indent}${marker}${body}のどれが判断に残るかを確認する。`;
+  }
+  return `${indent}${marker}${body}。`;
+}
+
+function buildWorkFinalJudgmentText(name='あなた',cat='総合',theme=''){
+  const focus=analyzeConsultationFocus(cat,theme);
+  const target=/2026\s*年\s*後半|2026年後半/.test(String(theme||''))
+    ?'2026年後半に向けて'
+    :'次の半年に向けて';
+  const loveLine=focus.hasLove
+    ?'\n\n■ 恋愛の扱い\n恋愛は、仕事の方向性が見えてから動くほうが安定します。今の不安には、相手だけでなく将来の見通しが定まらないことも混ざっています。'
+    :'';
+  return `■ 今回の最終判断
+今すぐ辞める流れではありません。ただし、条件をつけず今の職場に残る流れでもありません。仕事を先に見る理由は、生活と将来の見通しが他の判断にも影響しているためです。
+
+■ 残る条件
+半年後に、経験・収入・働きやすさ・成長のどれかが増えるなら、今の仕事を続ける価値があります。
+
+■ 動く条件
+どれも増えないなら、${target}別の道の準備を始めてください。${loveLine}
+
+■ 今週やること
+この半年で増えたものを、経験・収入・働きやすさ・成長の4つに分けて書き出してください。`;
+}
+
+function ensureFinalJudgmentText(text='',name='あなた',cat='総合',theme=''){
+  const focus=analyzeConsultationFocus(cat,theme);
+  const normalized=normalizePaidReadingText(text);
+  if(focus.hasWork){
+    const hasConditions=/残る条件/.test(normalized)&&/動く条件/.test(normalized);
+    const hasWorkAxis=/経験.*収入|収入.*経験|働きやすさ|成長/.test(normalized);
+    if(!hasConditions||!hasWorkAxis){
+      return buildWorkFinalJudgmentText(name,cat,theme);
+    }
+  }
+  return compactFinalSummaryText(normalized,400);
 }
 
 function countMeaningfulChars(text=''){
@@ -11927,7 +11962,7 @@ function renderPaidCombinedOutputs(parsed,name,cat,theme,options={}){
     LAST_OUTPUTS.len=normalizePaidReadingText(parsed.len||buildRichLenFallback(name,cat));
     LAST_OUTPUTS.orc=normalizeOracleReadingText(normalizePaidReadingText(parsed.orc||buildRichOrcFallback(name,cat,true)));
     const integrationText=normalizePaidReadingText(parsed.integration||buildIntegratedFallback(name,cat,theme));
-    LAST_OUTPUTS.integration=compactFinalSummaryText(integrationText,350);
+    LAST_OUTPUTS.integration=ensureFinalJudgmentText(integrationText,name,cat,theme);
   }
   renderFormattedResultText('r-len-block',LAST_OUTPUTS.len,'len');
   renderFormattedResultText('r-orc-block',LAST_OUTPUTS.orc,'orc');
@@ -12064,13 +12099,17 @@ ${SEL_LEN.length===9?`- LENの「今の流れ」または「迷いの構造」�
 - 行動は7日以内にできる内容だけにする
 - 恋愛相談に「仕事が忙しい」と出ても、仕事鑑定に広げない。仕事は恋愛判断を遅らせる背景としてだけ扱う
 - 時期を書く場合は「今日から7日以内」「今週」「次に会う時」のように、相談文から自然に言える範囲だけにする
-- LENは900〜1200字、ORCは500〜700字で書く。INTEGRATIONは250〜350字の「最後のまとめ」だけにする。INTEGRATIONを長文鑑定書にしない
+- LENは900〜1200字、ORCは500〜700字で書く。INTEGRATIONは250〜400字の「最終判断カード」だけにする。INTEGRATIONを長文鑑定書にしない
 - 相手の気持ちは「行動から見ると〜」の形で読む。心の中を断定しない
 - 判断ポイントは「進めてよい目印」「止まる目印」「確認する質問」を分けて書く
 - 次にやることは、今日・次に会う時・7日以内の3段階で書く
 - 「判断ポイント」と「次にやること」は、小見出しごとに改行し、各項目を「・」で1行ずつ書く
+- 仕事相談では「整理してください」だけで終わらせない。「残る条件」と「動く条件」を必ず分ける
+- 仕事相談で相談者が2026年後半を出している場合は、2026年後半に向けて準備する条件を明示する
+- ルノルマンは長い1ブロックにしない。「今の流れ」「仕事の見立て」「恋愛の見立て」「注意点」「次の行動」に分け、1セクションを短くする
 - ORCの「内なる羅針盤」は判断軸だけを書く。箇条書きは禁止。「次の一手」と同じ文や同じ助言を繰り返さない
 - ORCの「次の一手」は3項目に絞り、整理する・確認する・止める/始めるなど役割の違う行動にする
+- ORCは全ての文を完結させる。「仕事の判断軸は『今の職場で、経験・収入」のような途中切れや、「経験 / 収入 / 成長」だけの断片は禁止
 - 隣接2枚は、前のカードを主題、後のカードを修飾・答えとして読む
 - ${SEL_LEN.length===9?'3枚連鎖は途中で切らず、一本の流れとして読む':'2枚を別々に解説せず、「主題がどう色づき、どう動くか」という一つの答えにする'}
 - ${SEL_LEN.length===9?'9枚では⑤の中心十字、角、対称ペア、距離差、ナイト先、テーマカード周辺を補助根拠に使う':'2枚では、1枚目で相談の核を取り、2枚目で原因・状態・対処の方向を絞る'}
@@ -12080,8 +12119,10 @@ ${SEL_LEN.length===9?`- LENの「今の流れ」または「迷いの構造」�
 
 ===LEN===
 ■ 今の流れ
-■ 気をつけること
-■ あなたの引力
+■ 仕事の見立て
+■ 恋愛の見立て
+■ 注意点
+■ 次の行動
 
 ===ORC===
 ■ 光のメッセージ
@@ -12089,9 +12130,10 @@ ${SEL_LEN.length===9?`- LENの「今の流れ」または「迷いの構造」�
 ■ 次の一手
 
 ===INTEGRATION===
-■ 結論
-■ 判断ポイント
-■ 次にやること`;
+■ 今回の最終判断
+■ 残る条件
+■ 動く条件
+■ 今週やること`;
 
   const prompt=`【相談者入力データ】
 ${paidUserData}
@@ -12172,7 +12214,7 @@ ${orcFull}
       const retrySystemPrompt=`${systemPrompt}
 
 【品質チェックで落ちた場合の書き直し】
-- 次の出力は必ず指定文字量を満たす。LENとORCは短くしすぎず、INTEGRATIONは250〜350字に収める
+- 次の出力は必ず指定文字量を満たす。LENとORCは短くしすぎず、INTEGRATIONは250〜400字に収める
 - 相談文から言えない季節、月、時期を作らない
 - 「魂」「波動」「宇宙」は使わない。「本音」「本質」は根拠付きなら使ってよい
 - 判断ポイントは3つの小見出しを改行し、各項目を「・」で1行ずつ書く
