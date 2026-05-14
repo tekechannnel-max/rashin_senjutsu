@@ -286,9 +286,7 @@ const DEEP_READING_NORMAL_AMOUNT = Math.max(1, parseInt(process.env.DEEP_READING
 const RASHIN_BONUS_REWARD_AMOUNT = 1;
 const RASHIN_BONUS_VALID_DAYS = 7;
 const RASHIN_BONUS_FREE_READING_REQUIRED_STONES = 30;
-const RASHIN_BONUS_DISCOUNTS = [
-  { requiredStones: 10, discountAmount: 200 },
-];
+const RASHIN_BONUS_DISCOUNTS = [];
 const RASHIN_FREE_PAID_CODE_HASH_FILE = normalizeEnvValue(process.env.RASHIN_FREE_PAID_CODE_HASH_FILE || 'config/rashin-free-paid-code-hashes.json');
 const RASHIN_FREE_PAID_CODE_HASHES = loadRashinFreePaidCodeHashes();
 
@@ -1352,7 +1350,6 @@ function readFirstAmount(fallback, ...values) {
 function buildRashinBonusView(userRecord, today = getJstDateStamp()) {
   const rashinStones = normalizeRashinStones(userRecord?.rashin_stones);
   const canClaim = String(userRecord?.last_rashin_bonus_claimed_date || '') !== today;
-  const available = getRashinDiscountForStones(rashinStones);
   const payload = {
     today,
     canClaim,
@@ -1364,14 +1361,6 @@ function buildRashinBonusView(userRecord, today = getJstDateStamp()) {
     freeReadingBenefit: getRashinFreeReadingBenefit(rashinStones),
   };
   if (!canClaim) payload.reason = 'already_claimed';
-  if (available) {
-    payload.availableDiscount = {
-      requiredStones: available.requiredStones,
-      discountAmount: available.discountAmount,
-    };
-  } else {
-    payload.nextDiscount = getNextRashinDiscount(rashinStones);
-  }
   return payload;
 }
 
@@ -2866,13 +2855,14 @@ async function getRashinDiscountEligibility(userRecord, sourceReadingId) {
   const sourceId = normalizeVaultRecordId(sourceReadingId);
   const normalAmount = DEEP_READING_NORMAL_AMOUNT;
   const rashinStones = normalizeRashinStones(userRecord?.rashin_stones);
+  const freeReadingBenefit = getRashinFreeReadingBenefit(rashinStones);
   const base = {
     eligible: false,
     normalAmount,
     finalAmount: normalAmount,
     rashinStones,
     freeReadingBenefit: {
-      ...getRashinFreeReadingBenefit(rashinStones),
+      ...freeReadingBenefit,
       available: false,
     },
   };
@@ -2895,12 +2885,26 @@ async function getRashinDiscountEligibility(userRecord, sourceReadingId) {
     return { ...base, reason: 'already_purchased', expiresAt };
   }
 
+  if (freeReadingBenefit.available) {
+    return {
+      eligible: false,
+      reason: 'free_reading_available',
+      normalAmount,
+      discountAmount: normalAmount,
+      finalAmount: 0,
+      stonesRequired: RASHIN_BONUS_FREE_READING_REQUIRED_STONES,
+      rashinStones,
+      freeReadingBenefit,
+      expiresAt,
+    };
+  }
+
   const discount = getRashinDiscountForStones(userRecord.rashin_stones);
   if (!discount) {
     return {
       ...base,
       reason: 'insufficient_stones',
-      nextDiscount: getNextRashinDiscount(userRecord.rashin_stones),
+      freeReadingBenefit,
       expiresAt,
     };
   }
@@ -3244,7 +3248,7 @@ async function createPaidTicketFromRashinPaidCode({ codeRecord, owner, sourceRea
   return writeResult.ticket;
 }
 
-async function createPaidTicketFromRashinFragments({ userRecord, sourceReadingId, paidReadingId = '' }) {
+async function createPaidTicketFromRashinFragments({ userRecord, sourceReadingId, paidReadingId = '', allowDirectPaid = false }) {
   const sourceId = normalizeVaultRecordId(sourceReadingId);
   const paidId = normalizeVaultRecordId(paidReadingId);
   if (!userRecord?.userId || !sourceId || !paidId) {
@@ -3266,30 +3270,32 @@ async function createPaidTicketFromRashinFragments({ userRecord, sourceReadingId
       if (!reusableTicket.lockedReadingId) await writePaidReadingTicket(locked);
       return { ticket: locked, consumed: false, userRecord: latestUser };
     }
-
-    const freeRecords = await getUserFreeReadingRecords(safeUserId);
-    const requested = freeRecords.find(record => record.id === sourceId) || null;
-    const latest = freeRecords[0] || null;
-    if (!requested || !latest) {
-      const error = new Error('ORACLE_RESULT_NOT_AVAILABLE');
-      error.statusCode = 403;
-      throw error;
-    }
-    if (latest.id !== sourceId) {
-      const error = new Error('LATEST_RESULT_REQUIRED');
-      error.statusCode = 409;
-      throw error;
-    }
-    const expiresAt = getRashinDiscountExpiry(requested);
-    if (!expiresAt || new Date(expiresAt).getTime() < Date.now()) {
-      const error = new Error('ORACLE_RESULT_EXPIRED');
-      error.statusCode = 410;
-      throw error;
-    }
     if (await hasDeepReadingPurchaseForSource(owner, sourceId)) {
       const error = new Error('DEEP_READING_ALREADY_PURCHASED');
       error.statusCode = 409;
       throw error;
+    }
+
+    if (!allowDirectPaid) {
+      const freeRecords = await getUserFreeReadingRecords(safeUserId);
+      const requested = freeRecords.find(record => record.id === sourceId) || null;
+      const latest = freeRecords[0] || null;
+      if (!requested || !latest) {
+        const error = new Error('ORACLE_RESULT_NOT_AVAILABLE');
+        error.statusCode = 403;
+        throw error;
+      }
+      if (latest.id !== sourceId) {
+        const error = new Error('LATEST_RESULT_REQUIRED');
+        error.statusCode = 409;
+        throw error;
+      }
+      const expiresAt = getRashinDiscountExpiry(requested);
+      if (!expiresAt || new Date(expiresAt).getTime() < Date.now()) {
+        const error = new Error('ORACLE_RESULT_EXPIRED');
+        error.statusCode = 410;
+        throw error;
+      }
     }
     const currentStones = normalizeRashinStones(latestUser?.rashin_stones);
     if (currentStones < RASHIN_BONUS_FREE_READING_REQUIRED_STONES) {
@@ -5003,8 +5009,9 @@ async function handleRashinBonusRedeemPaidTicket(req, res) {
   }
   const sourceReadingId = normalizeVaultRecordId(body?.sourceReadingId || body?.source_reading_id || body?.oracleResultId || body?.oracle_result_id || '');
   const paidReadingId = normalizeVaultRecordId(body?.paidReadingId || body?.paid_reading_id || '');
+  const allowDirectPaid = body?.allowDirectPaid === true || body?.allow_direct_paid === true;
   try {
-    const result = await createPaidTicketFromRashinFragments({ userRecord, sourceReadingId, paidReadingId });
+    const result = await createPaidTicketFromRashinFragments({ userRecord, sourceReadingId, paidReadingId, allowDirectPaid });
     sendJson(res, 200, {
       ok: true,
       consumed: !!result.consumed,

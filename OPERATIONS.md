@@ -26,7 +26,7 @@ The following production paths are part of the app's state and must persist acro
 - `data/purchase-orders`
 - `data/paid-reading-tickets`
 - `data/rashin-paid-codes`
-- `data/rashin-discount-checkout-locks`
+- `data/rashin-discount-checkout-locks` (legacy; not used while fragment discounts are disabled)
 - `data/indexes`
 
 ## Transaction TODOs
@@ -34,7 +34,7 @@ The following production paths are part of the app's state and must persist acro
 Before horizontal scaling, move these operations to a database with transactions or conditional writes:
 
 - Google user record updates for `rashin_stones` (displayed as 鄒・・縺ｮ縺九￠繧・ and `last_rashin_bonus_claimed_date`
-- Rashin bonus discount checkout lock acquisition
+- Rashin fragment paid-ticket exchange
 - Purchase order creation and status changes
 - Rashin paid code issue and redemption
 - Paid reading ticket creation by Rashin code hash
@@ -132,11 +132,12 @@ Use a Google login account dedicated to test payments.
    - Confirm a paid reading ticket is created under `data/paid-reading-tickets`.
    - Confirm the paid ticket has `finalAmount: 780` and `discountAmount: 0`.
 
-2. 200 yen OFF fragment order:
-   - Prepare the test user with `rashin_stones: 10`.
-   - Start a paid purchase from the latest free reading result.
-   - Confirm the final amount is `580 JPY`.
-   - Confirm `rashin_stones` decreases by 10 only after successful payment confirmation.
+2. 30-fragment free paid reading:
+   - Prepare the test user with `rashin_stones: 30`.
+   - Start a paid reading from the latest free reading result, or start paid reading directly while signed in.
+   - Confirm a paid reading ticket is created under `data/paid-reading-tickets`.
+   - Confirm the paid ticket has `finalAmount: 0`, `discountAmount: 780`, `discountStonesUsed: 30`, and `paymentProvider: rashin_fragments`.
+   - Confirm `rashin_stones` decreases by 30 when the fragment ticket is created.
 
 3. Manual free code:
    - Use a code from the prepared hash pool or add a temporary override to `RASHIN_FREE_PAID_CODES`.
@@ -160,7 +161,7 @@ Use a Google login account dedicated to test payments.
 Expected successful payment path:
 
 - A paid ticket is created once after payment confirmation or free code redemption.
-- For discounted purchases, `rashinBonusConsumedAt` is set once after payment confirmation.
+- For 30-fragment exchanges, a paid ticket is created immediately and no external payment is opened.
 
 Expected manual free code path:
 
@@ -184,7 +185,7 @@ Failure logs that require investigation before launch:
 - Purchase order: `data/purchase-orders/<purchaseOrderId>.json`
 - Paid ticket: `data/paid-reading-tickets/<ticketId>.json`
 - Rashin code hash record: `data/rashin-paid-codes/<codeHash>.json`
-- Discount checkout lock: `data/rashin-discount-checkout-locks/<hash>.json`
+- Legacy discount checkout lock: `data/rashin-discount-checkout-locks/<hash>.json`
 
 ### Go/no-go criteria
 
@@ -196,4 +197,5 @@ Do not enable paid sales unless all are true:
 - Manual free codes create exactly one free paid ticket.
 - Duplicate code redemption does not create another ticket.
 - Unpaid orders do not consume stones.
+- 30-fragment exchanges consume exactly 30 stones and create exactly one free paid ticket.
 - Render is running as a single instance, or state has been moved to transactional storage.
