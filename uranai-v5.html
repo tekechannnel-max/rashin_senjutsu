@@ -4456,17 +4456,40 @@ body.coming-soon-locked{
 
 .dossier-save-card{
   position:relative;z-index:1;
+  isolation:isolate;
   width:min(760px,100%);
   margin:0 auto;
   padding:clamp(20px,4vw,32px);
   border:1px solid rgba(228,184,74,.34);
-  background:
-    linear-gradient(145deg,rgba(5,8,18,.98),rgba(12,9,22,.97) 54%,rgba(5,12,18,.98));
+  background:linear-gradient(145deg,rgba(5,8,18,.98),rgba(12,9,22,.97) 54%,rgba(5,12,18,.98));
   backdrop-filter:blur(6px);
   -webkit-backdrop-filter:blur(6px);
   box-shadow:0 28px 82px rgba(0,0,0,.58),inset 0 0 0 1px rgba(255,255,255,.035);
   color:rgba(246,240,220,.9);
   overflow:hidden;
+}
+.dossier-save-card::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  z-index:-2;
+  background:url('占い素材/羅針カード背景.png?v=20260514-rashin-card-bg') center/cover no-repeat;
+  filter:saturate(.82) brightness(.72);
+  transform:scale(1.01);
+}
+.dossier-save-card::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  background:
+    radial-gradient(circle at 50% 10%,rgba(228,184,74,.18),transparent 34%),
+    linear-gradient(180deg,rgba(4,6,16,.72),rgba(4,6,16,.9) 58%,rgba(4,6,16,.95));
+  pointer-events:none;
+}
+.dossier-save-card > *{
+  position:relative;
+  z-index:1;
 }
 
 .dossier-save-top{
