@@ -8035,31 +8035,36 @@ function buildReadingOutputFormatGuide(kind='len',is9=false,focusOverride=null){
   const ctx=buildDecisionContext(focus);
   const priorityFocus=!!focus.explicitUserPriority||isWorkLifeDirectionFocus(focus);
   if(kind==='len'){
+    const requireFour=PLAN==='paid'||is9;
     const baseLines=[
       '【文章量のルール】',
-      '1ブロックは160〜220字を目安にし、3文を超える場合は小見出しで分けてください。',
+      '合計は700〜1100字を目安にし、短くしすぎないでください。',
+      '1ブロックは120〜350字を目安にし、役割の違う内容を混ぜないでください。',
       '1文は45〜60字を目安に短くし、結論は必ず先頭の1文で言い切ってください。',
-      '次にやることは必ず箇条書きにし、同じ意味の文を繰り返さないでください。',
-      '本文には「下の段」「現状の列」「右側の流れ」「中心のすぐ近く」「中心十字」「配置」などの内部説明を書かないでください。根拠は別レイヤーへ回してください。',
-      '合計は700〜1000字を目安にし、現実で何が詰まっているか、何を確認しないと誤るか、どの条件を見れば動けるかに絞ってください。',
+      '条件カードの再掲にしないでください。ルノルマンは現実・障害・見落とし・相手や環境の反応を読むパートです。',
+      '本文には「下の段」「現状の列」「右側の流れ」「中心のすぐ近く」「中心十字」「配置」「対称ペア」「ナイト」などの内部説明を書かないでください。根拠は別レイヤーへ回してください。',
+      'ただしカード由来の読解は消さず、カードから見た現実、注意点、動かし方として自然な日本語へ翻訳してください。',
       '',
       '【出力形式・厳守事項】',
       '見出しは必ず次の順で固定してください。',
       '',
+      ...(requireFour?[
+        '■ 迷いの構造',
+        '▶ 相談者がなぜ迷っているかを、カードから見た現実構造として120〜220字で書く。',
+        '▶ INTEGRATIONの結論を繰り返さず、表の悩みと本当の詰まりを分ける。',
+        '',
+      ]:[]),
       '■ 今の流れ',
-      '▶ 最初の1文で「今の状況はどういう状態か」を断言する（例：「今は○○な流れにいます」「現状、○○が起きやすい状態です」）。',
-      '▶ 2文目で「その背景にある理由」または「転換点」を添える。',
-      '▶ 3文目以降は必要なら続けてよいが、脱線・前置き・比喩は禁止。',
+      '▶ 今、関係・仕事・状況で何が起きているかを220〜350字で書く。',
+      '▶ 小さな好転、曖昧さ、壁、確認不足など、カード由来の現実読みを残す。',
       '',
       '■ 気をつけること',
-      '▶ 最初の1文で「具体的なリスクまたは落とし穴」を断言する（例：「このまま○○すると〜になりやすい」）。',
-      '▶ ネガティブカードが出ているなら警告として前面に出す。「〜かもしれない」で逃げない。',
-      '▶ 改善・好転の兆しが見えるなら「一方で〜という流れもある」とセットで必ず伝える。',
+      '▶ 見落とし、障害、判断を誤りやすい点を180〜300字で書く。',
+      '▶ ネガティブカードが出ているなら警告として前面に出し、改善の兆しがあるならセットで伝える。',
       '',
       '■ あなたの引力',
-      '▶ カードの中にある「引き寄せの要素」だけを取り出す。ポジティブなカード・シンボル・配置が示す好機・追い風・タイミングを具体的に書く。',
-      '▶ カード全体がネガティブに見えるときも、必ず何らかの好転要素・潜在的な力を見つけて書く。「良い情報がない」とは書かない。',
-      '▶ 「〜が引き寄せられやすい」「〜というタイミングが近い」「〜が味方になる」の形で書く。精神論・励ましは禁止。',
+      '▶ 相談者が今使える力、引き寄せやすい流れ、現実を動かす力を120〜220字で書く。',
+      '▶ メイン本文にカード名を出す場合は最大2〜3枚まで。残りは根拠側へ回す。',
       ...(priorityFocus?[
         '',
         '【明示された優先テーマの読み方】',
@@ -12499,7 +12504,17 @@ function normalizePaidReadingText(text=''){
     .trim();
 }
 
-const LENORMAND_INTERNAL_TERM_RE=/下の段|現状の列|右側の流れ|中心のすぐ近く|中心十字|上段|中段|下段|行・列|対称ペア|ナイト|テーマカード周辺|カードは好転|負担の強いカード|カードが寄|配置|列では|段には/;
+const LENORMAND_INTERNAL_TERM_RE=/下の段|上の段|現状の列|未来の列|右側の流れ|左側の流れ|中心のすぐ近く|中心十字|対称ペア|ナイト|テーマカード周辺|カードは好転|負担の強いカード|カードが寄|配置|列では|段には|角の枠|角読み|隣接/;
+const LENORMAND_SECTION_TITLES=['迷いの構造','今の流れ','気をつけること','あなたの引力'];
+
+function normalizeLenormandSectionHeadings(text=''){
+  return String(text||'')
+    .replace(/\r\n?/g,'\n')
+    .replace(/\s*■\s*(迷いの構造|今の流れ|気をつけること|あなたの引力)[。．.:：]?\s*/g,'\n\n■ $1\n')
+    .replace(/^\n+/,'')
+    .replace(/\n{3,}/g,'\n\n')
+    .trim();
+}
 
 function splitJapaneseSentences(text=''){
   return String(text||'')
@@ -12522,7 +12537,17 @@ function translateLenormandInternalSentence(sentence='',focus={},context={}){
   if(/好転|余地|引き寄せ|引力/.test(source)){
     return `${ctx.positiveLabel}と${ctx.negativeLabel}を言葉にできるほど、続ける道も動く道も自分で選び直しやすくなります。`;
   }
-  return '';
+  return source
+    .replace(/現状の列では、?/g,'いま見えている流れでは、')
+    .replace(/未来の列では、?/g,'このまま進む先では、')
+    .replace(/右側の流れには、?/g,'このまま進む先には、')
+    .replace(/左側の流れには、?/g,'背景には、')
+    .replace(/下の段には、?/g,'表に出ていないところには、')
+    .replace(/上の段には、?/g,'意識している部分には、')
+    .replace(/中心のすぐ近くに/g,'判断に近いところに')
+    .replace(/負担の強いカードが寄っている/g,'負担の強い合図が重なっている')
+    .replace(/カードは好転の余地を示しています。?/g,'小さな好転の余地も残っています。')
+    .replace(/中心十字|対称ペア|ナイト|テーマカード周辺|配置|行・列|角の枠|角読み|隣接/g,'カードの組み合わせ');
 }
 
 function removeLenormandInternalExplanations(text='',focus={},context={}){
@@ -12567,27 +12592,53 @@ function limitJapaneseBodyBySentences(body='',maxChars=280,maxSentences=4){
   return ensureJapaneseSentence(output);
 }
 
-function compressLenormandReadingText(text=''){
-  const sections=splitSections(text);
-  if(!sections.length) return limitJapaneseBodyBySentences(text,900,12);
-  const limitForTitle=title=>{
-    if(/迷いの構造/.test(title)) return{chars:180,sentences:3};
-    if(/今の流れ/.test(title)) return{chars:320,sentences:5};
-    if(/気をつけること/.test(title)) return{chars:320,sentences:5};
-    if(/あなたの引力/.test(title)) return{chars:200,sentences:3};
-    return{chars:260,sentences:4};
-  };
-  return sections.map(section=>{
+function parseLenormandSectionMap(text=''){
+  const map={};
+  splitSections(normalizeLenormandSectionHeadings(text)).forEach(section=>{
     const parsed=parseStructuredSection(section);
-    if(!parsed.title) return limitJapaneseBodyBySentences(parsed.body||section,260,4);
-    const limit=limitForTitle(parsed.title);
-    return `■ ${parsed.title}\n${limitJapaneseBodyBySentences(parsed.body,limit.chars,limit.sentences)}`;
+    const title=LENORMAND_SECTION_TITLES.find(item=>parsed.title.includes(item));
+    if(!title) return;
+    const body=normalizeLenormandSectionHeadings(parsed.body)
+      .replace(/^■\s*(迷いの構造|今の流れ|気をつけること|あなたの引力)\s*/,'')
+      .trim();
+    if(body) map[title]=body;
+  });
+  return map;
+}
+
+function formatLenormandFourSections(text=''){
+  const map=parseLenormandSectionMap(text);
+  const limits={
+    迷いの構造:{chars:220,sentences:4},
+    今の流れ:{chars:360,sentences:6},
+    気をつけること:{chars:320,sentences:5},
+    あなたの引力:{chars:230,sentences:4},
+  };
+  if(LENORMAND_SECTION_TITLES.some(title=>countMeaningfulChars(map[title]||'')<45)) return '';
+  return LENORMAND_SECTION_TITLES.map(title=>{
+    const limit=limits[title]||{chars:260,sentences:4};
+    return `■ ${title}\n${limitJapaneseBodyBySentences(map[title],limit.chars,limit.sentences)}`;
   }).join('\n\n');
+}
+
+function hasBrokenLenormandText(text='',integration=''){
+  const source=String(text||'');
+  if(/。\s*■\s*(今の流れ|気をつけること|あなたの引力)[。．.]?/.test(source)) return true;
+  if(/■\s*(迷いの構造|今の流れ|気をつけること|あなたの引力)[。．.]\s*$/.test(source)) return true;
+  if(countMeaningfulChars(source)<300) return true;
+  const map=parseLenormandSectionMap(source);
+  if(LENORMAND_SECTION_TITLES.some(title=>countMeaningfulChars(map[title]||'')<45)) return true;
+  if(integration){
+    const lenKey=normalizeIntegrationItemKey(source).slice(0,160);
+    const integrationKey=normalizeIntegrationItemKey(integration).slice(0,160);
+    if(lenKey&&integrationKey&&lenKey===integrationKey) return true;
+  }
+  return false;
 }
 
 function normalizeLenormandReadingText(text='',context={}){
   const focus=context.focus||getCurrentRefinedFocus(context.cat||'',context.theme||'');
-  let source=normalizePaidReadingText(text);
+  let source=normalizeLenormandSectionHeadings(normalizePaidReadingText(text));
   if(focus.explicitUserPriority||isWorkLifeDirectionFocus(focus)){
     const before=source;
     const replacement=buildPrimaryStructureSentence(focus,context);
@@ -12608,8 +12659,15 @@ function normalizeLenormandReadingText(text='',context={}){
   if(beforeInternal!==source){
     recordPaidDebugQuality('len_normalize',['ルノルマン本文からカード配置の内部説明を本文用の現実語へ補正しました']);
   }
-  source=compressLenormandReadingText(source);
-  return source;
+  source=normalizeLenormandSectionHeadings(source);
+  const structured=formatLenormandFourSections(source);
+  if(!structured||hasBrokenLenormandText(structured,context.integration||'')){
+    recordPaidDebugQuality('len_normalize',['ルノルマン本文の構造欠落または途中終了を検出したため、カード由来fallbackへ切り替えました']);
+    const fallbackName=context.name||(typeof getFullname==='function'?getFullname():'')||'あなた';
+    const fallbackText=buildRichLenFallback(fallbackName,context.cat||'総合');
+    return formatLenormandFourSections(fallbackText)||fallbackText;
+  }
+  return structured;
 }
 
 function completeDanglingReadingLine(line=''){
@@ -13165,12 +13223,22 @@ function detectTopJudgmentDuplication(text='',focus={}){
   });
 }
 
-function detectLenormandRoleIssues(text='',focus={}){
+function detectLenormandRoleIssues(text='',focus={},integration=''){
   const ctx=buildDecisionContext(focus);
   const source=String(text||'');
   const issues=[];
   if(LENORMAND_INTERNAL_TERM_RE.test(source)){
     issues.push('LEN本文にカード配置の内部説明が残っています');
+  }
+  if(hasBrokenLenormandText(source,integration)){
+    issues.push('LEN本文に見出し漏れ、途中終了、またはセクション欠落があります');
+  }
+  LENORMAND_SECTION_TITLES.forEach(title=>{
+    const body=parseLenormandSectionMap(source)[title]||'';
+    if(countMeaningfulChars(body)<45) issues.push(`LENの${title}が不足しています`);
+  });
+  if(/残る条件|動く条件|保留条件|7日以内の一手|30日以内に見ること|進む条件と止まる条件を先に確認|条件カード/.test(source)){
+    issues.push('LENが統合判断や条件カードの再掲に寄っています');
   }
   if(!isWorkLifeDirectionFocus(focus)&&!focus.explicitUserPriority) return issues;
   if(/恋愛と仕事の問題を同じ重さで同時に解決|恋愛と仕事を同じ重さ|恋愛と仕事を同じ焦り|恋愛と仕事の両方で「失いたくない気持ち」/.test(source)){
@@ -13313,7 +13381,7 @@ function validatePaidReadingQuality(parsed={},context={}){
     issues.push(...detectJapanesePunctuationSpacingIssues(parsed[key]||'',key));
   });
   issues.push(...validateIntegrationSatisfaction(parsed.integration||'',context));
-  issues.push(...detectLenormandRoleIssues(parsed.len||'',context.focus||getFocusForContext(context.cat||'',context.theme||'',context)));
+  issues.push(...detectLenormandRoleIssues(parsed.len||'',context.focus||getFocusForContext(context.cat||'',context.theme||'',context),parsed.integration||''));
   issues.push(...detectOracleLabelIssues(parsed.orc||''));
   issues.push(...detectOracleFallbackJapaneseIssues(parsed.orc||''));
   issues.push(...detectIrresponsibleAssertionIssues(joined));
@@ -14082,21 +14150,21 @@ OK「この関係は相手が決断を避けているのではなく、あなた
 ${is9?`- 「■ 迷いの構造」の冒頭1文は、左列（①②③）のカードが示す背景・原因に根ざした後退予言にする。「今の状況は以前から繰り返されてきた選択かパターンが関係している」という形で1文断言する。左列カードの意味から外れた推測は書かない`:''}
 
 【出力形式】
-見出し以外の前置きは不要。次の${is9?'4':'3'}見出しだけで書くこと。
+見出し以外の前置きは不要。次の${PLAN==='paid'||is9?'4':'3'}見出しだけで書くこと。
+
+${PLAN==='paid'||is9?`■ 迷いの構造
+相談者がなぜ迷っているかを、カードから見た現実構造として書く。INTEGRATIONの条件カードを再掲せず、表の悩みと本当の詰まりを分ける。`:''}
 
 ■ 今の流れ
-ここに至る背景と、いま起きていることを整理する。冒頭1〜2文で結論と一番大事な点を言い切る。その後は必要なら背景や分かれ道を掘ってよい。
+いま関係・仕事・状況で何が起きているかを書く。小さな好転、曖昧さ、壁、確認不足など、カード由来の現実読みを残す。
 
 ■ 気をつけること
-ここがこの鑑定で一番大事な注意点です。現実に起きている・または近く起きやすいリスク（ネガティブカードの示す警告）を正直に言い切る。「かもしれない」で逃げず「〜になりやすい」と伝える。改善の兆しや好転の余地が見えるカードがあれば、必ず「一方で〜という兆しもある」とセットで伝える。
+ここがこの鑑定で一番大事な注意点です。見落とし、障害、判断を誤りやすい点を正直に言い切る。「かもしれない」で逃げず「〜になりやすい」と伝える。改善の兆しや好転の余地が見えるカードがあれば、必ず「一方で〜という兆しもある」とセットで伝える。
 ${focus.isDualConcern&&!isWorkLifeDirectionFocus(focus)?`恋愛と仕事が両方あるので、必要なら「恋愛では」「仕事では」と分けて整理する。`:''}
 
 ■ あなたの引力
-カードの中にある「引き寄せの要素」だけを取り出す。ポジティブなカード・シンボル・配置が示す好機・追い風・タイミングを具体的に書く。カード全体がネガティブに見えるときも、必ず好転要素か潜在的な力を見つけて書く。「良い情報がない」とは書かない。「〜が引き寄せられやすい」「〜というタイミングが近い」などの形で書く。
-
-${is9?`■ 迷いの構造
-なぜいまも迷っているのかの構造的な原因を1文で断言する。9枚の行・列・中心と周辺のズレを根拠として使い、表面の問題ではなく深層のパターンを書く。「このパターンに気づくと動きやすくなる」という視点で書く。精神論なしで構造と事実だけを使う。`:''}
-合計${is9?'1200字前後':isFreePair?'520字前後':'260字前後'}。冒頭だけは短く締め、その後は脱線しない範囲で必要なら深く書いてよい。1文は短く、難しい言葉は禁止。`;
+カードの中にある「引き寄せの要素」だけを取り出す。ポジティブなカード・シンボルが示す好機・追い風・タイミングを具体的に書く。カード全体がネガティブに見えるときも、必ず好転要素か潜在的な力を見つけて書く。「良い情報がない」とは書かない。
+合計${PLAN==='paid'||is9?'700〜1100字':isFreePair?'520字前後':'260字前後'}。本文では「下の段」「現状の列」「右側の流れ」「中心十字」「配置」「ナイト」などの内部説明語を使わず、カードから読んだ現実解釈として書く。`;
   // 絞り込み回答があれば注入
   const fixedCardText=buildFixedGenderCardPromptText();
   const userDataText=[
@@ -15588,18 +15656,15 @@ function buildRichLenFallback(name,cat){
   const input=getCurrentInputSnapshot();
   const focus=getCurrentRefinedFocus(cat,input.theme||'');
   const ctx=buildDecisionContext(focus,{cat,theme:input.theme||''});
-  const target=ctx.userProvidedTiming||'30日以内';
-  const ids=[...SEL_LEN];
+  const ids=[...SEL_LEN].filter(Boolean);
   const is9=(SEL_LEN.length===9);
   const isFreePair=(SEL_LEN.length===FREE_LEN_COUNT);
-  const coreId=is9?SEL_LEN[4]:(isFreePair?SEL_LEN[0]:SEL_LEN[0]);
+  const coreId=is9?SEL_LEN[4]:(SEL_LEN[0]||ids[0]);
   const currentId=is9?SEL_LEN[1]:(isFreePair?SEL_LEN[1]:coreId);
   const futureId=is9?(SEL_LEN[5]||SEL_LEN[2]):(isFreePair?SEL_LEN[1]:coreId);
-  const backgroundIds=is9?[SEL_LEN[0],SEL_LEN[3],SEL_LEN[6]].filter(Boolean):(isFreePair?[SEL_LEN[0]].filter(Boolean):ids);
-  const currentIds=is9?[SEL_LEN[1],SEL_LEN[4],SEL_LEN[7]].filter(Boolean):(isFreePair?[SEL_LEN[1]].filter(Boolean):ids);
-  const futureIds=is9?[SEL_LEN[2],SEL_LEN[5],SEL_LEN[8]].filter(Boolean):(isFreePair?[SEL_LEN[1]].filter(Boolean):ids);
-  const visibleIds=is9?[SEL_LEN[0],SEL_LEN[1],SEL_LEN[2]].filter(Boolean):ids;
   const hiddenIds=is9?[SEL_LEN[6],SEL_LEN[7],SEL_LEN[8]].filter(Boolean):[];
+  const currentIds=is9?[SEL_LEN[1],SEL_LEN[4],SEL_LEN[7]].filter(Boolean):ids;
+  const futureIds=is9?[SEL_LEN[2],SEL_LEN[5],SEL_LEN[8]].filter(Boolean):ids;
   const hasHidden=hasLenGroup(ids,'hidden');
   const hasEnding=hasLenGroup(ids,'ending');
   const hasStability=hasLenGroup(ids,'stability');
@@ -15609,121 +15674,97 @@ function buildRichLenFallback(name,cat){
   const hasSupport=hasLenGroup(ids,'support');
   const hasChoice=hasLenGroup(ids,'choice');
   const hasPredatorPair=hasLenAdjacentCardPair(7,23,SEL_LEN.length)||hasLenAdjacentCardPair(14,23,SEL_LEN.length);
-  const backgroundBurden=hasLenGroup(backgroundIds,'burden');
-  const backgroundStability=hasLenGroup(backgroundIds,'stability');
-  const currentChoice=hasLenGroup(currentIds,'choice');
   const currentHidden=hasLenGroup(currentIds,'hidden');
+  const currentChoice=hasLenGroup(currentIds,'choice');
   const futureEnding=hasLenGroup(futureIds,'ending');
   const futureSupport=hasLenGroup(futureIds,'support');
-  const directPressure=is9&&hasLenGroup([SEL_LEN[1],SEL_LEN[3],SEL_LEN[5],SEL_LEN[7]].filter(Boolean),'burden');
-  const visibleChoice=hasLenGroup(visibleIds,'choice');
   const hiddenBurden=hasLenGroup(hiddenIds,'burden');
   const hiddenRelationship=hasLenGroup(hiddenIds,'relationship');
-  const actionPlan=buildThemeSpecificActionPlan(focus);
-  const lines=[];
-  if(is9){
-    lines.push('■ 迷いの構造','');
-    if(focus.explicitUserPriority||isWorkLifeDirectionFocus(focus)){
-      lines.push(`${name}さんが迷い続けているのは、${buildPrimaryStructureSentence(focus,{cat,theme:input.theme||''})}${ctx.positiveLabel}と${ctx.negativeLabel}を先に確認すると、次の道を選び直せます。`);
-    }else if(focus.hasLove&&focus.hasWork){
-      lines.push(`${name}さんが迷い続けているのは、恋愛と仕事の問題を同じ重さで同時に解決しようとしているためです。どちらかを先に「今は保留」と決めるだけで、もう一方の判断が動きやすくなります。`);
-    }else if(hasBurden&&currentChoice){
-      lines.push(`長期間の負担が判断基準をすり減らしています。「続けるか変えるか」の問いに答えが出ないのは、どちらが正しいかではなく、今のままでは消耗が先に限界に達するというパターンが繰り返されているためです。`);
-    }else if(hasHidden){
-      lines.push(`まだ言葉にできていない本音が判断を止めています。「どう動くか」より先に「何を本当は嫌だと思っているか」を一度だけ書き出してみてください。それだけで動ける方向が見えます。`);
-    }else{
-      lines.push(`${name}さんの迷いの中心は、選択肢の良し悪しではなく「どちらを選んでも後悔するかもしれない」という構造にあります。後悔ゼロを目指すのをやめ、「この条件が満たされれば進む」と先に決めることが突破口になります。`);
-    }
-    lines.push('');
-  }
-  lines.push('■ 今の流れ','');
-  lines.push(getLenCoreFocusText(coreId));
-  if(focus.explicitUserPriority||isWorkLifeDirectionFocus(focus)){
-    lines.push(`${name}さんはいま、${ctx.primaryLabel}の判断条件をまだ一つに絞り切れていない状態です。`);
-    lines.push(`まず必要なのは、すぐ結論を出すことではなく、${ctx.criteriaText}のどれを確認できるかを見ることです。`);
-  }else if(focus.isDualConcern){
-    lines.push(`${name}さんはいま、恋愛と仕事の両方で「失いたくない気持ち」が強く、判断を先送りしやすい状態です。`);
-    lines.push('まず必要なのは、恋愛と仕事を同じ重さで抱え込まないことです。どちらも一気に結論を出すのではなく、続ける条件と切り替える条件を別々に言葉にした方が答えが見えます。');
-  }else if(focus.hasLove){
-    lines.push(`${name}さんに今必要なのは、情があるかどうかだけで判断せず、この関係が安心を増やすのか不安を増やすのかを見極めることです。`);
-  }else if(focus.hasWork){
-    lines.push(`${name}さんに今必要なのは、今の場所に残ること自体ではなく、このまま続けた先に納得できる成長があるかを見直すことです。`);
+  const cardName=id=>LENORMAND[id]?.name||'';
+  const cardTheme=id=>{
+    const card=LENORMAND[id]||{};
+    const catKey=getLenCategoryKey(cat);
+    return card[catKey]||card.rel||card.love||card.work||card.kw||card.name||'';
+  };
+  const cardSignal=id=>{
+    if(!id) return '';
+    const namePart=cardName(id);
+    const themePart=cardTheme(id);
+    return namePart&&themePart?`「${namePart}」は${themePart}を示します。`:'';
+  };
+  const supportNames=ids.filter(id=>LEN_FALLBACK_GROUPS.support.includes(id)).map(cardName).filter(Boolean).slice(0,2);
+  const burdenNames=ids.filter(id=>LEN_FALLBACK_GROUPS.burden.includes(id)).map(cardName).filter(Boolean).slice(0,2);
+  const structureLines=[];
+  if(ctx.primaryTheme==='love'){
+    structureLines.push(`${name}さんが迷っているのは、相手を好きかどうかではなく、${ctx.criteriaText}を相手の言葉と行動で確認できていないからです。`);
+  }else if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
+    structureLines.push(`${name}さんが迷っているのは、今の環境の良し悪しだけではなく、続けた先に${ctx.criteriaText}が残るかをまだ見極めきれていないからです。`);
+  }else if(ctx.primaryTheme==='relationship'){
+    structureLines.push(`${name}さんが迷っているのは、関わりたい気持ちと、関わるほど消耗する感覚のどちらも無視できないからです。`);
+  }else if(ctx.primaryTheme==='dual_concern'&&!focus.explicitUserPriority){
+    structureLines.push(`${name}さんの迷いは、複数のテーマを同じ重さで抱えていることから来ています。どちらも大事だからこそ、先に見る現実と後で扱う感情を分ける必要があります。`);
   }else{
-    lines.push(`${name}さんに今必要なのは、気持ちを整えることより先に、何が判断を止めているのかを一段ずつ分けることです。`);
+    structureLines.push(`${name}さんの迷いは、選択肢そのものより、何を見れば納得して選べるかがまだ定まっていないところから来ています。`);
   }
-  if((is9||isFreePair)&&backgroundBurden){
-    lines.push('背景には、長く抱えてきた負担や止まりやすさが残っています。いまの迷いは突然始まったものではなく、前から続いている引っかかりが現在列まで持ち込まれています。');
-  }else if((is9||isFreePair)&&backgroundStability){
-    lines.push('背景には、安定を守るために踏ん張ってきた流れがあります。その積み重ねがあるぶん、今は変える判断に慎重になりやすい時期です。');
+  structureLines.push(cardSignal(coreId)||getLenCoreFocusText(coreId));
+
+  const flowLines=[];
+  flowLines.push(cardSignal(currentId)||getLenCoreFocusText(currentId));
+  if(hasHidden||currentHidden){
+    flowLines.push('今の流れには、まだ言葉にされていない本音や、確認しないまま残っている曖昧さがあります。ここを飛ばすと、楽なほうを選んだつもりでも不安が残りやすいです。');
   }
-  if(hasHidden||[6,26,32].includes(currentId)||currentHidden){
-    lines.push('いまは、まだ言えていない本音や見落としている条件が残っています。そこを曖昧なままにした現状維持はおすすめできません。');
+  if(hasRelationship){
+    flowLines.push('関係性を示す合図も出ているため、相手や環境の反応を見ずに一人で答えを決めると、読み違いが起きやすくなります。');
   }
-  if((is9||isFreePair)&&currentChoice){
-    lines.push('現状の列では、整理したいことや選びたいことがはっきりしています。ただ、選択肢が見えていることと、納得して選べることは別なので、今は比べる軸を先に整える必要があります。');
+  if(hasStability){
+    flowLines.push('安定を示す合図がある一方で、安定そのものが変化を遅らせる理由にもなっています。安心できる形なのか、ただ動かない形なのかを分けて見てください。');
   }
-  if(directPressure){
-    lines.push('中心のすぐ近くに負担の強いカードが寄っているので、問題は遠くではなく、すでに生活や判断の真ん中まで入り込んでいます。');
-  }
-  if(futureEnding||[8,10,17,36].includes(futureId)){
-    lines.push('右側の流れには、今のまま先送りすると自分で選ぶ前に区切りが入りやすい気配があります。');
+  if(hasChoice||currentChoice){
+    flowLines.push('選択の合図も出ています。選べないのではなく、選ぶ前に確認すべき反応や条件が残っている状態です。');
   }
   if(futureSupport||hasSupport){
-    lines.push('ただし、確認ポイントを先に言葉にできれば、続ける道も切り替える道も自分で選び直せます。');
+    flowLines.push('一方で、支えや好転を示す合図もあります。確認する順番を間違えなければ、今の流れをただ悪いものとして切る必要はありません。');
   }
 
-  lines.push('','■ 気をつけること','');
-  if(hasStability){
-    lines.push('これまでは、安定や安心を守るためによく踏ん張ってきたはずです。だからこそ、いまは「変えること」そのものが怖くなりやすく、多少の違和感があっても持ちこたえる方向へ気持ちが寄りやすくなっています。');
+  const warningLines=[];
+  if(hasBurden||hiddenBurden){
+    warningLines.push(`${burdenNames.length?`「${burdenNames.join('」「')}」のような`:''}負担の合図があるため、平気なふりを続けるほど判断が重くなります。迷いを気合いで押し切るより、何が負担になっているかを先に切り分けてください。`);
   }else{
-    lines.push('いま動きにくいのは、気持ちが弱いからではありません。決めるための情報が頭の中で混ざっていて、何から考えればいいか分からなくなっているからです。');
-  }
-  if(is9&&visibleChoice&&hiddenBurden){
-    lines.push('表では「整理すれば決められる」と思っていても、深いところでは負担や怖さがまだ強く残っています。このズレを無視すると、頭では決めたつもりでも行動が止まりやすくなります。');
-  }else if(is9&&hiddenRelationship){
-    lines.push('表に出している理由とは別に、下の段には情やつながりへの未練が残りやすい流れがあります。条件だけで割り切れない前提を認めたほうが、かえって判断は整います。');
-  }else if(isFreePair&&backgroundIds.length&&futureIds.length){
-    lines.push('今回の2枚では、最初のカードが悩みの核を示し、次のカードがその核をどう扱うかを絞っています。気分で決めるより、今週の確認ポイントを先に決めたほうが答えはぶれません。');
-  }
-  if(hasValue){
-    lines.push('今回の悩みは、好き嫌いだけではなく、負担・見返り・生活との釣り合いが強く絡んでいます。だから「我慢できるか」ではなく、「続ける意味があるか」で見直す必要があります。');
-  }
-  if(hasBurden){
-    lines.push('疲れや遠慮も積み重なっていて、考えるほど重くなりやすい流れです。勢いで決めるより、負担を数えることが大事です。');
+    warningLines.push('気をつけることは、気持ちが整うまで待ち続けてしまうことです。現実の反応を見ないまま考え続けると、判断材料が増えず、同じ迷いに戻りやすくなります。');
   }
   if(hasPredatorPair){
-    lines.push('今回の並びには、消耗や損失がそのまま減るだけで終わらず、やり方次第で逆手に取れる組み合わせもあります。しんどさを隠すより、何を食い止められるかに発想を切り替えたほうが強いです。');
+    warningLines.push('消耗や損失を示す組み合わせもあるため、相手や環境に合わせすぎる選び方は避けてください。守るべきものを決めるほど、余計な負担を減らせます。');
   }
-  if(hasChoice){
-    lines.push('選択肢は本当は一つではありません。ただ、比較の軸が曖昧なままだと、どれを選んでも不安が残ります。');
-  }
-
-  if(focus.explicitUserPriority||isWorkLifeDirectionFocus(focus)){
-    lines.push(`気をつけることは、${ctx.positiveLabel}を確認しないまま先送りすることです。確認しない現状維持は、気づいたときに自分で選ぶ材料を減らしやすくなります。`);
-  }else if(focus.isDualConcern){
-    lines.push('恋愛と仕事を同じ焦りで処理しないことも大切です。恋愛では安心できるか、仕事では続けた先に意味が残るかと、分けて見たほうが答えがぶれません。');
-  }
-
-  lines.push('','■ あなたの引力','');
-  if(hasSupport){
-    lines.push('支えになるカードが出ています。今の状況には、見えていない助けやタイミングが近づいている要素があります。');
+  if(futureEnding||hasEnding){
+    warningLines.push('区切りを示す合図もあるため、先送りを続けると自分で選ぶ前に状況側の変化に押されやすくなります。');
   }
   if(hasValue){
-    lines.push('今は価値あるものを手放さずに持ちこたえることが、引き寄せの力になっています。');
+    warningLines.push('価値や見返りの合図も絡んでいます。好き嫌いだけで判断せず、続けることで何が残り、何を失うのかを見てください。');
   }
-  if(focus.explicitUserPriority||isWorkLifeDirectionFocus(focus)){
-    lines.push(`条件を言葉にできる力が、今の引力です。${ctx.positiveLabel}が見えるなら今の選択を整え、見えないなら${target}を目安に準備へ移れます。`);
-  }else if(focus.isDualConcern){
-    lines.push('両方を抱えながらもここまで動き続けてきた力そのものが、次の流れを手繰り寄せる引力になっています。');
-  }else if(focus.hasLove){
-    lines.push('気持ちが残っていること自体が、関係を動かす引力です。');
-  }else if(focus.hasWork){
-    lines.push('続けた積み重ねが、これから現れる好機の土台になっています。');
+  if(hiddenRelationship){
+    warningLines.push('表に出している理由とは別に、情やつながりへの未練も残りやすい流れです。その前提を認めたほうが、かえって判断は整います。');
+  }
+
+  const attractionLines=[];
+  if(supportNames.length){
+    attractionLines.push(`「${supportNames.join('」「')}」の合図は、助けや見通しを受け取れる余地を示します。`);
   }else{
-    lines.push('今の自分の状態を正直に見ようとしている姿勢が、次の流れを引き寄せます。');
+    attractionLines.push('今使える力は、迷いを一気に片づける強さではなく、現実を一つずつ確かめる落ち着きです。');
   }
-  lines.push('カードは好転の余地を示しています。今は焦らず、自分に合ったタイミングを引き寄せるだけの余力を整えることが大切です。');
-  return lines.join('\n');
+  if(ctx.primaryTheme==='love'){
+    attractionLines.push('遠回しに試すより、確認したいことを一つに絞って言葉にすると、進める関係か止まる関係かが見えやすくなります。');
+  }else if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
+    attractionLines.push(`${ctx.criteriaText}を言葉にできるほど、今の場所を使う道と次へ移る道を自分で選び直しやすくなります。`);
+  }else{
+    attractionLines.push('自分の中だけで答えを閉じず、反応や事実を一つ確認すると、次に進める流れを引き寄せやすくなります。');
+  }
+
+  return[
+    `■ 迷いの構造\n${structureLines.join('')}`,
+    `■ 今の流れ\n${flowLines.join('')}`,
+    `■ 気をつけること\n${warningLines.join('')}`,
+    `■ あなたの引力\n${attractionLines.join('')}`,
+  ].join('\n\n');
 }
 
 function buildOracleLifePathUserText(card={},focus={}){
