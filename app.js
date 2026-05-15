@@ -11361,6 +11361,13 @@ function installLiveCardMotionStyles(){
       backface-visibility:hidden !important;
       will-change:transform,opacity !important;
     }
+    #orc-deck.live-shuffling .shuffle-card{
+      width:117.2px !important;
+      height:210px !important;
+      margin-left:-58.6px !important;
+      margin-top:-105px !important;
+      background-size:cover,cover !important;
+    }
     .shuffle-area.live-shuffling .shuffle-card-inner{
       opacity:.2 !important;
     }
@@ -11374,7 +11381,7 @@ function installLiveCardMotionStyles(){
       background-color:#080512 !important;
     }
     .result-card-placeholder.orc-placeholder{
-      background-size:cover, contain !important;
+      background-size:cover, cover !important;
       background-repeat:no-repeat !important;
       background-position:center !important;
       background-color:#080512 !important;
@@ -11414,6 +11421,12 @@ function installLiveCardMotionStyles(){
         height:183px !important;
         margin-left:-61px !important;
         margin-top:-91px !important;
+      }
+      #orc-deck.live-shuffling .shuffle-card{
+        width:102.2px !important;
+        height:183px !important;
+        margin-left:-51.1px !important;
+        margin-top:-91.5px !important;
       }
     }
   `;

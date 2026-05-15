@@ -2287,10 +2287,14 @@ body{
 }
 
 #orc-deck .shuffle-card{
+  width:117.2px;
+  height:210px;
+  margin-left:-58.6px;
+  margin-top:-105px;
   background-image:
     linear-gradient(180deg,rgba(4,3,10,.04),rgba(4,3,10,.2)),
     url('images/ui/oracle-card-back.jpg');
-  background-size:cover,contain;
+  background-size:cover,cover;
   background-repeat:no-repeat,no-repeat;
   background-position:center;
 }
@@ -2574,7 +2578,7 @@ body{
 .result-card-placeholder.len-placeholder{background-image:linear-gradient(180deg,rgba(4,3,10,.1),rgba(4,3,10,.42)),url('images/ui/lenormand-card-back.jpg?v=20260428-len-frame');}
 .result-card-placeholder.orc-placeholder{
   background-image:linear-gradient(180deg,rgba(4,3,10,.1),rgba(4,3,10,.42)),url('images/ui/oracle-card-back.jpg');
-  background-size:cover,contain;
+  background-size:cover,cover;
   background-repeat:no-repeat;
   background-position:center;
   background-color:#080512;
@@ -6076,9 +6080,17 @@ body.consultation-tag-open{overflow:hidden;}
   display:none;
 }
 .orc-sel-card{
+  width:45.8px;
+  height:82px;
+  aspect-ratio:432/774;
   background:
     linear-gradient(180deg,rgba(4,3,10,.04),rgba(4,3,10,.18)),
-    url('images/ui/oracle-card-back.jpg') center/contain no-repeat;
+    url('images/ui/oracle-card-back.jpg') center/cover no-repeat;
+}
+.orc-sel-card.chosen{
+  background:
+    linear-gradient(180deg,rgba(201,149,42,.08),rgba(4,3,10,.18)),
+    url('images/ui/oracle-card-back.jpg') center/cover no-repeat;
 }
 .orc-sel-card::before{
   content:'';position:absolute;inset:7px;border-radius:4px;
