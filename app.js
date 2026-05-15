@@ -12130,12 +12130,21 @@ function renderClarifyScreen(){
     block.className='clarify-q';
     block.dataset.qid=qDef.id;
     const taId=`ct-${qDef.id}`;
-    const tmplBtns=(qDef.templates||[]).map(t=>
-      `<button class="tmpl-btn" data-target="${taId}" data-tmpl="${t.replace(/"/g,'&quot;')}" onclick="setTemplate(this)">${t}</button>`
-    ).join('');
+    const badgeHtml=qDef.badge
+      ?`<div class="clarify-q-badge">確認すること <span>${escapeHtml(qDef.badge)}</span></div>`
+      :'';
+    const hintHtml=qDef.hint
+      ?`<div class="clarify-q-hint">${escapeHtml(qDef.hint)}</div>`
+      :'';
+    const tmplBtns=(qDef.templates||[]).map(t=>{
+      const safe=escapeHtml(t);
+      return `<button class="tmpl-btn" data-target="${taId}" data-tmpl="${safe}" onclick="setTemplate(this)">${safe}</button>`;
+    }).join('');
     block.innerHTML=`
       <div class="clarify-q-num">質問 ${String(i+1).padStart(2,'0')}</div>
+      ${badgeHtml}
       <div class="clarify-q-text">${escapeHtml(qDef.q)}</div>
+      ${hintHtml}
       <div class="tmpl-answers">${tmplBtns}</div>
       <textarea class="clarify-textarea" id="${taId}" maxlength="3000" placeholder="選択肢を選ぶか、自由に書いてください。"></textarea>`;
     container.appendChild(block);
@@ -12163,6 +12172,7 @@ function collectClarifyAnswers(){
       id:def.id,
       badge:def.badge,
       anchor:def.anchor||'',
+      hint:def.hint||'',
       q:def.q,
       a:ta.value.trim(),
     };
@@ -12203,6 +12213,7 @@ function getClarifyEntries(){
     id:entry.id||`clarify-${index}`,
     badge:entry.badge||'補足確認',
     anchor:entry.anchor||'',
+    hint:entry.hint||'',
     q:entry.q||'',
     a:entry.a||'',
   })).filter(entry=>entry.a);
@@ -12220,6 +12231,13 @@ function getClarifyDisplayLabel(entry={}){
     readiness:'行動準備度',
     locus:'影響の整理',
     ideal:'持ち帰りたい判断軸',
+    theme_priority:'主テーマの確認',
+    ambiguity:'未確認の本音',
+    blocker:'現実の壁',
+    people:'人物の焦点',
+    positive:'進む手がかり',
+    oracle_action:'今週の一手',
+    decision_branch:'判断条件',
   };
   return map[entry.id]||entry.badge||'補足確認';
 }
@@ -12227,7 +12245,10 @@ function getClarifyDisplayLabel(entry={}){
 function buildClarifyPromptText(mode='detail'){
   const entries=getClarifyEntries();
   if(!entries.length) return mode==='plain'?'なし':'';
-  const summary=`【相談者の補足整理（心理的背景含む）】\n${entries.map(entry=>`- ${getClarifyDisplayLabel(entry)}：${entry.a}`).join('\n')}`;
+  const summary=`【相談者の補足整理（心理的背景含む）】\n${entries.map(entry=>{
+    const qLabel=entry.q?`（質問：${truncateText(entry.q,90)}）`:'';
+    return `- ${getClarifyDisplayLabel(entry)}${qLabel}：${entry.a}`;
+  }).join('\n')}`;
   if(mode==='detail'){
     const detail=entries.map(entry=>`▼${getClarifyDisplayLabel(entry)}\nQ：${entry.q}${entry.hint?`\n推定：${entry.hint}`:''}${entry.anchor?`\n根拠メモ：${entry.anchor}`:''}\nA：${entry.a}`).join('\n');
     return `\n${summary}\n【相談者の補足回答（推定背景と実回答）】\n${detail}\n\n※上記補足は、相談者の回答をそのまま再掲するためではなく、今回の最終判断、進む/残る条件、止まる/動く条件、保留条件、7日以内の一手、30日以内に見ること、背中を押す一文の精度を上げるために使ってください。`;
@@ -12322,9 +12343,21 @@ const LEN_CLARIFY_POS_LABELS=LEN_POSITION_LABELS;
 const ORC_CLARIFY_POS_LABELS=ORC_POSITION_LABELS;
 const CLARIFY_CARD_GROUPS={
   blocker:[6,7,8,10,11,14,17,18,21,23,36],
-  ambiguity:[6,7,18,24,25,26,32],
+  ambiguity:[6,7,14,18,24,25,26,32],
   external:[15,16,20,24,25,26,27,28,29,34,35],
-  people:[15,28,29,30],
+  people:[7,14,15,18,28,29,30],
+  positive:[1,2,9,16,17,31,33],
+  warning:[6,8,10,11,14,19,21,23,30,36],
+};
+
+const CLARIFY_THEME_SIGNAL_PATTERNS={
+  love:/恋愛|結婚|彼氏|彼女|交際|相手|別れ|別れる|復縁|元彼|元カレ|元カノ|パートナー|片思い|片想い|連絡|返信|会う|気持ち/,
+  work:/仕事|転職|退職|辞め|職場|会社|上司|同僚|キャリア|働き方|進路|収入|評価|役割|求人|スキル|副業|独立|残る条件|続ける/,
+  relationship:/人間関係|友人|知人|同僚|距離感|境界線|関わり方|合わせすぎ|仲直り/,
+  money:/金運|お金|貯金|出費|家計|契約|借金|投資|支払い|収支|収入/,
+  family:/家族|親|子ども|子供|実家|夫婦|兄弟|姉妹|親戚/,
+  creative:/趣味|創作|推し|学び|習い|作品|活動|表現/,
+  self:/自己理解|自分らしさ|価値観|力の出し方|適性|本音|生き方/,
 };
 
 function getLenClarifyPosLabel(index,total=SEL_LEN.length){
@@ -12335,8 +12368,17 @@ function getOrcClarifyPosLabel(index,total=SEL_ORC.length){
   return getOrcSpreadLabel(index,total);
 }
 
-function buildClarifyCardContext(){
+function detectClarifyThemeSignals(source=''){
+  const text=String(source||'');
+  return Object.fromEntries(Object.entries(CLARIFY_THEME_SIGNAL_PATTERNS).map(([key,pattern])=>[key,pattern.test(text)]));
+}
+
+function buildClarifyContext(){
   const input=getCurrentInputSnapshot();
+  const category=normalizeConsultationCategoryTag(input.cat||'総合');
+  const theme=(input.theme||'').trim();
+  const baseFocus=analyzeConsultationFocus(category,theme);
+  const refinedFocus=refineFocusWithClarify(baseFocus,'',input);
   const len=SEL_LEN.map((id,index)=>({
     source:'len',
     id,
@@ -12352,37 +12394,48 @@ function buildClarifyCardContext(){
     posLabel:getOrcClarifyPosLabel(index,SEL_ORC.length),
   }));
   const findByIds=(cards,ids)=>cards.find(card=>ids.includes(card.id))||null;
-  // カード分類
-  const blockerIds=[6,7,8,10,11,14,17,18,21,23,36];
-  const ambiguityIds=[6,7,18,24,25,26,32];
-  const externalIds=[15,16,20,24,25,26,27,28,29,34,35];
-  const peopleIds=[15,28,29,30];
-  const positiveIds=[1,2,16,17,31,33]; // 好転サイン
-  const warningIds=[6,8,10,11,14,19,21,23,30,36]; // 警戒カード
-  const blockerCard=findByIds(len,blockerIds);
-  const ambiguityCard=findByIds(len,ambiguityIds);
-  const externalCard=findByIds(len,externalIds);
-  const peopleCard=findByIds(len,peopleIds);
-  const hasWarningCard=len.some(c=>warningIds.includes(c.id));
-  const hasPositiveCard=len.some(c=>positiveIds.includes(c.id));
+  const cardByGroup=group=>findByIds(len,CLARIFY_CARD_GROUPS[group]||[]);
+  const positiveCard=(
+    (CLARIFY_CARD_GROUPS.positive.includes((len.length===FREE_LEN_COUNT?(len[1]||null):(len.find(card=>card.index===5)||len.find(card=>card.index===2)||len[len.length-1]||null))?.id)
+      ?(len.length===FREE_LEN_COUNT?(len[1]||null):(len.find(card=>card.index===5)||len.find(card=>card.index===2)||len[len.length-1]||null))
+      :null)
+    ||cardByGroup('positive')
+  );
+  const themeSignals=detectClarifyThemeSignals(theme);
+  const themeSignalCount=Object.values(themeSignals).filter(Boolean).length;
+  const coreCard=len.length===FREE_LEN_COUNT?(len[0]||null):(len.find(card=>card.index===4)||len.find(card=>card.index===1)||len[0]||null);
+  const futureCard=len.length===FREE_LEN_COUNT?(len[1]||null):(len.find(card=>card.index===5)||len.find(card=>card.index===2)||len[len.length-1]||null);
   return{
     input,
-    category:normalizeConsultationCategoryTag(input.cat||'総合'),
-    theme:(input.theme||'').trim(),
-    themeShort:((input.theme||'').trim().length<18),
+    category,
+    theme,
+    themeShort:theme.length<28,
+    selectedTopicTag:category,
+    baseFocus,
+    refinedFocus,
+    primaryTheme:normalizePrimaryThemeValue(refinedFocus),
+    themeSignals,
+    themeSignalCount,
+    hasMultipleThemes:category==='総合'&&themeSignalCount>=2,
     len,
     orc,
-    coreCard:len.length===FREE_LEN_COUNT?(len[0]||null):(len.find(card=>card.index===4)||len.find(card=>card.index===1)||len[0]||null),
-    futureCard:len.length===FREE_LEN_COUNT?(len[1]||null):(len.find(card=>card.index===5)||len.find(card=>card.index===2)||len[len.length-1]||null),
-    blockerCard,
-    ambiguityCard,
-    externalCard,
-    peopleCard,
-    hasWarningCard,
-    hasPositiveCard,
+    coreCard,
+    futureCard,
+    blockerCard:cardByGroup('blocker'),
+    ambiguityCard:cardByGroup('ambiguity'),
+    externalCard:cardByGroup('external'),
+    peopleCard:cardByGroup('people'),
+    positiveCard,
+    hasWarningCard:len.some(c=>CLARIFY_CARD_GROUPS.warning.includes(c.id)),
+    hasPositiveCard:!!positiveCard,
     currentOrc:orc[1]||orc[0]||null,
     futureOrc:orc[2]||orc[orc.length-1]||null,
+    reactionProfile:REACTION_PROFILE||null,
   };
+}
+
+function buildClarifyCardContext(){
+  return buildClarifyContext();
 }
 
 function buildClarifyAnchor(card,prefix='参考カード'){
@@ -12390,254 +12443,407 @@ function buildClarifyAnchor(card,prefix='参考カード'){
   return `${prefix}：${card.posLabel} No.${card.id} ${card.name}`;
 }
 
-function makeClarifyQuestion(id,badge,anchor,q,hint,templates){
-  return{id,badge,anchor,q,hint:hint||'',templates};
+function makeClarifyQuestion(id,badge,anchor,q,hint,templates,extra={}){
+  return{id,badge,anchor,q,hint:hint||'',templates:templates||[],...extra};
 }
 
-// ─── 追加質問1: 核心確認 ────────────────────────────
-// 「今、何をはっきりさせたいか」を明確にする
-// → 認知行動療法の「問題の定義」ステップに相当
-function buildCoreClarifyQuestion(ctx){
-  const card=ctx.coreCard||ctx.currentOrc;
-  const anchor=buildClarifyAnchor(card,'大事な点に近いカード');
-  const focus=analyzeConsultationFocus(ctx.category,ctx.theme);
-  if(focus.isDualConcern){
-    return makeClarifyQuestion(
-      'core','白黒つけたい核心',anchor,
-      '今回の鑑定で、恋愛と仕事のうち、先に白黒をつけたいことは何ですか？',
-      '同時に全部を決めるより、先に見るテーマを決めるほど最終判断が強くなります。',
-      ['仕事や進路を先に見たい','恋愛を先に見たい','仕事と恋愛のどちらを先に整理すべきか','両方を同時に決めようとして苦しくなっている']
-    );
-  }
-  switch(ctx.category){
-    case '恋愛':
-      return makeClarifyQuestion(
-        'core','白黒つけたい核心',anchor,
-        '今回の鑑定で、いちばん白黒をつけたい恋愛の判断は何ですか？',
-        '相手の気持ちを決め打ちするより、あなたが確認したい核心を先に絞ります。',
-        ['この関係を進めてよいか','いったん距離を置くべきか','相手に何を確認すべきか','自分がこれ以上我慢すべきではない点']
-      );
-    case '仕事・進路':
-      return makeClarifyQuestion(
-        'core','白黒つけたい核心',anchor,
-        '今回の鑑定で、いちばん白黒をつけたい仕事の判断は何ですか？',
-        '続ける意味、変える意味、準備を始める時期のどこを見るかで結論が変わります。',
-        ['今の仕事を続ける意味があるか','別ルートの準備を始めるべきか','収入・評価・成長など何を優先すべきか','今の環境で残る条件があるか']
-      );
-    case 'お金':
-      return makeClarifyQuestion(
-        'core','白黒つけたい核心',anchor,
-        '今回の鑑定で、いちばん白黒をつけたいお金の判断は何ですか？',
-        '増やす、守る、見直す、待つのどれを優先するかを決めます。',
-        ['収入を増やす動きを始めてよいか','出費や契約を見直すべきか','今は守りを優先すべきか','長期的に整える順番を知りたい']
-      );
-    case '人間関係':
-      return makeClarifyQuestion(
-        'core','白黒つけたい核心',anchor,
-        '今回の鑑定で、いちばん白黒をつけたい人間関係の判断は何ですか？',
-        '相手を変える話ではなく、あなたが取る距離と対応を決めるために使います。',
-        ['この関係を続けるか距離を置くか','相手に何を伝えるべきか','自分が合わせすぎている点','修復するか手放すか']
-      );
-    default:
-      return makeClarifyQuestion(
-        'core','白黒つけたい核心',anchor,
-        '今回の鑑定で、いちばん白黒をつけたいことは何ですか？',
-        '最初に焦点を決めるほど、最後の答えが「一般論」ではなくなります。',
-        ['進むべきか止まるべきか','何を優先すべきか','相手や環境をどう見るべきか','自分の判断をどこで固めるべきか']
-      );
-  }
+function getClarifyPrimaryLabel(ctx){
+  return getDecisionThemeLabel(ctx.primaryTheme||normalizePrimaryThemeValue(ctx.refinedFocus||ctx.baseFocus||{}));
 }
-// ─── 追加質問2: 動けない理由 ─────────────────────────
-// 「頭では分かっているのに動けない」という内的矛盾を特定する
-function buildCognitiveMismatchQuestion(ctx){
-  const card=ctx.blockerCard||ctx.ambiguityCard||ctx.currentOrc;
-  const anchor=buildClarifyAnchor(card,'引っかかりに近いカード');
-  const focus=analyzeConsultationFocus(ctx.category,ctx.theme);
-  if(focus.isDualConcern){
-    return makeClarifyQuestion(
-      'mismatch','動けない理由',anchor,
-      '頭では分かっているのに、恋愛や仕事でなかなか動けないことがあるなら、それは何ですか？',
-      '怖さ、迷い、準備不足、周囲への遠慮のどれが強いかを見ると、保留条件がはっきりします。',
-      ['怖さ：変えた後に後悔しそうで動けない','迷い：恋愛と仕事の不安が混ざっている','準備不足：情報や比較材料が足りない','周囲への遠慮：人に合わせすぎて本音を後回しにしている']
-    );
-  }
-  switch(ctx.category){
-    case '恋愛':
-      return makeClarifyQuestion(
-        'mismatch','動けない理由',anchor,
-        '頭では分かっているのに、恋愛でなかなか動けないことがあるなら、それは何ですか？',
-        '怖さ、迷い、準備不足、相手への遠慮のどれが強いかで、次の一手を変えます。',
-        ['怖さ：本音を伝えて関係が崩れるのが怖い','迷い：相手の反応を見ても判断しきれない','準備不足：まだ確認していないことが多い','遠慮：自分だけが我慢している気がする']
-      );
-    case '仕事・進路':
-      return makeClarifyQuestion(
-        'mismatch','動けない理由',anchor,
-        '頭では分かっているのに、仕事でなかなか動けないことがあるなら、それは何ですか？',
-        '怖さ、迷い、準備不足、周囲への遠慮のどれが強いかで、残る条件と動く条件が変わります。',
-        ['怖さ：辞めた後や変えた後の後悔が怖い','迷い：続けるメリットと辞めたい気持ちが同じくらいある','準備不足：求人・スキル・収入面の材料が足りない','遠慮：職場や周囲の期待を気にして判断できない']
-      );
-    case 'お金':
-      return makeClarifyQuestion(
-        'mismatch','動けない理由',anchor,
-        '頭では分かっているのに、お金のことでなかなか動けないことがあるなら、それは何ですか？',
-        '怖さ、迷い、準備不足、周囲への遠慮のどれが強いかで、守る条件と動く条件を分けます。',
-        ['怖さ：損や失敗が怖くて動けない','迷い：増やすべきか守るべきか決めきれない','準備不足：収支や比較材料を見られていない','遠慮：家族や周囲の都合を優先している']
-      );
-    default:
-      return makeClarifyQuestion(
-        'mismatch','動けない理由',anchor,
-        '頭では分かっているのに、なかなか動けないことがあるなら、それは何ですか？',
-        '怖さ、迷い、準備不足、周囲への遠慮のどれが強いかを見るための質問です。',
-        ['怖さ：動いた後に後悔しそう','迷い：どちらを選ぶべきか決めきれない','準備不足：情報や材料が足りない','遠慮：周囲への影響を気にして動けない']
-      );
-  }
+
+function getClarifyThemeKeyword(ctx){
+  const theme=ctx.theme||'';
+  const primary=ctx.primaryTheme;
+  const loveWords=['復縁','元彼','元カレ','元カノ','連絡','返信','相手の気持ち','片思い','結婚','別れ','距離'];
+  const workWords=['今の仕事','仕事継続','転職','退職','辞める','職場','上司','評価','収入','成長','副業','独立'];
+  const relationWords=['人間関係','距離感','友人','同僚','境界線','仲直り'];
+  const moneyWords=['収入','支出','家計','契約','貯金','投資','お金'];
+  const commonWords=['本音','将来','不安','迷い','判断','今後'];
+  const groups={
+    love:loveWords,
+    career:workWords,
+    work_life_direction:workWords,
+    relationship:relationWords,
+    money:moneyWords,
+  };
+  const candidates=[...(groups[primary]||[]),...commonWords];
+  return candidates.find(word=>theme.includes(word))||ctx.refinedFocus?.shortLabel||ctx.baseFocus?.shortLabel||getClarifyPrimaryLabel(ctx)||'今回の相談';
 }
-// ─── 追加質問4: 行動準備度 ──────────────────────────
-// 「今すぐ動きたいのか、もう少し様子を見たいのか」を把握する
-// → 動機付け面接の「変化のステージ」に相当（前熟考→熟考→準備→行動）
-function buildChangeReadinessQuestion(ctx){
-  const card=ctx.futureCard||ctx.futureOrc;
-  const anchor=buildClarifyAnchor(card,'今後の流れに近いカード');
-  const focus=analyzeConsultationFocus(ctx.category,ctx.theme);
-  if(focus.isDualConcern){
-    return makeClarifyQuestion(
-      'readiness','行動準備度',anchor,
-      '今のテーマについて、行動を起こす準備度は10段階でどのくらいですか？その数字にした理由も一言で教えてください。',
-      '数字と理由があると、今週動くべきことと、30日以内に整えることを分けやすくなります。',
-      ['3/10：まだ恋愛と仕事の優先順位が決まっていない','5/10：比べる材料を集めれば動けそう','7/10：仕事からなら具体的に動ける','9/10：条件が見えたらすぐ動ける']
-    );
-  }
-  switch(ctx.category){
-    case '恋愛':
-      return makeClarifyQuestion(
-        'readiness','行動準備度',anchor,
-        '今の恋愛について、本音を伝える準備度は10段階でどのくらいですか？その数字にした理由も一言で教えてください。',
-        '数字と理由があると、今週確認することと、まだ保留にすることを分けやすくなります。',
-        ['3/10：まだ相手の反応を見る段階','5/10：短くなら本音を伝えられそう','7/10：確認したいことは決まっている','9/10：返事次第で次の判断ができる']
-      );
-    case '仕事・進路':
-      return makeClarifyQuestion(
-        'readiness','行動準備度',anchor,
-        '今の仕事について、行動を起こす準備度は10段階でどのくらいですか？その数字にした理由も一言で教えてください。',
-        '数字と理由があると、今週の一手と、見直し時期までの準備を分けやすくなります。',
-        ['3/10：まだ比較材料が足りない','5/10：収入・経験・働きやすさを整理すれば動けそう','7/10：求人確認やスキル整理なら始められる','9/10：条件が合えばすぐ動ける']
-      );
-    case 'お金':
-      return makeClarifyQuestion(
-        'readiness','行動準備度',anchor,
-        'お金の状況について、行動を起こす準備度は10段階でどのくらいですか？その数字にした理由も一言で教えてください。',
-        '数字と理由があると、守る行動と増やす行動の順番がはっきりします。',
-        ['3/10：不安が強くてまだ動けない','5/10：収支の見直しからならできる','7/10：比較や相談を始められる','9/10：上限を決めれば動ける']
-      );
-    default:
-      return makeClarifyQuestion(
-        'readiness','行動準備度',anchor,
-        '今のテーマについて、行動を起こす準備度は10段階でどのくらいですか？その数字にした理由も一言で教えてください。',
-        '数字と理由があると、今週動くことと、保留にすることを分けやすくなります。',
-        ['3/10：まだ材料が足りない','5/10：一つ確認できれば動けそう','7/10：小さくなら始められる','9/10：条件が見えたらすぐ動ける']
-      );
-  }
+
+function isClarifyLove(ctx){
+  return ctx.primaryTheme==='love'||ctx.category==='恋愛'||ctx.baseFocus?.hasLove;
 }
-// ─── 追加質問5: 持ち帰る判断軸 ───────────────────────
-// 「どうなったら解決したと感じるか」を明確にする
-// → 解決志向療法（SFT）の「奇跡の質問」に相当
-function buildIdealOutcomeQuestion(ctx){
-  const card=ctx.futureCard||ctx.futureOrc;
-  const anchor=buildClarifyAnchor(card,'着地点に近いカード');
-  const focus=analyzeConsultationFocus(ctx.category,ctx.theme);
-  if(focus.isDualConcern){
-    return makeClarifyQuestion(
-      'ideal','持ち帰る判断軸',anchor,
-      '鑑定の最後に、どんな判断軸が見えたら「次に動ける」と感じますか？',
-      '持ち帰りたい判断軸を先に聞くことで、最後の結論を保存しやすい形に寄せます。',
-      ['恋愛と仕事のどちらを先に見るか','仕事に残る条件と動く条件','恋愛で確認する反応と距離を置くサイン','7日以内に一つだけ進める行動']
-    );
-  }
-  switch(ctx.category){
-    case '恋愛':
-      return makeClarifyQuestion(
-        'ideal','持ち帰る判断軸',anchor,
-        '鑑定の最後に、どんな判断軸が見えたら「次に動ける」と感じますか？',
-        '恋愛の結論は、相手の心を断定するより、確認できる行動基準にすると使いやすくなります。',
-        ['進めていい相手の反応','距離を置くべきサイン','本音を伝えるタイミング','自分が我慢しすぎない基準']
-      );
-    case '仕事・進路':
-      return makeClarifyQuestion(
-        'ideal','持ち帰る判断軸',anchor,
-        '鑑定の最後に、どんな判断軸が見えたら「次に動ける」と感じますか？',
-        '仕事の結論は、残る意味と動く条件を分けるほど行動に落としやすくなります。',
-        ['今の仕事に残る条件','別ルートの準備を始める条件','収入・評価・成長などの優先順位','7日以内に確認する一つのこと']
-      );
-    case 'お金':
-      return makeClarifyQuestion(
-        'ideal','持ち帰る判断軸',anchor,
-        '鑑定の最後に、どんな判断軸が見えたら「次に動ける」と感じますか？',
-        'お金の結論は、増やす条件、守る条件、保留する条件を分けると実行しやすくなります。',
-        ['今動いてよい条件','守りを優先する条件','30日以内に見る数字','不安を減らす最初の一手']
-      );
-    default:
-      return makeClarifyQuestion(
-        'ideal','持ち帰る判断軸',anchor,
-        '鑑定の最後に、どんな判断軸が見えたら「次に動ける」と感じますか？',
-        '最後に持ち帰る判断軸を聞くことで、結論を具体的な行動に落とします。',
-        ['進む条件と止まる条件','今週やる一つの行動','30日以内に見直す基準','自分の本音を確認する問い']
-      );
-  }
+
+function isClarifyWork(ctx){
+  return ctx.primaryTheme==='career'||ctx.primaryTheme==='work_life_direction'||ctx.category==='仕事・進路'||ctx.baseFocus?.hasWork;
 }
-// ─── 追加質問3: 進む条件と止まる条件 ──────────────────
-function buildBranchClarifyQuestion(ctx){
-  const card=ctx.ambiguityCard||ctx.blockerCard||ctx.peopleCard||ctx.externalCard;
-  const anchor=buildClarifyAnchor(card,'判断を分けるカード');
-  const focus=analyzeConsultationFocus(ctx.category,ctx.theme);
-  if(focus.isDualConcern){
-    return makeClarifyQuestion(
-      'branch','進む条件と止まる条件',anchor,
-      '今回の判断で、「進んでいい条件」と「止まるべき条件」をそれぞれ一つずつ挙げるなら何ですか？',
-      '複合相談では、仕事と恋愛を同じ基準で決めないことが大切です。',
-      ['仕事：続ける意味が残るなら進む／何も増えないなら準備へ','恋愛：不安を伝えて向き合うなら進む／曖昧な返答が続くなら止まる','優先テーマが見えるならもう一方も動く／両方同時に決めるなら保留','比較材料が集まるなら進む／不安な日だけで決めるなら止まる']
-    );
-  }
-  if(ctx.category==='恋愛'||ctx.category==='人間関係'){
-    return makeClarifyQuestion(
-      'branch','進む条件と止まる条件',anchor,
-      '今回の判断で、「進んでいい条件」と「止まるべき条件」をそれぞれ一つずつ挙げるなら何ですか？',
-      '相手の気持ちは決め打ちせず、確認できる反応で分けます。',
-      ['進む条件：不安を伝えたとき向き合う／止まる条件：曖昧な返答が続く','進む条件：会う頻度や連絡が安定する／止まる条件：自分だけが我慢する','進む条件：本音を出しても関係が崩れない／止まる条件：確認するほど不安が増える','進む条件：相手の行動が言葉と一致する／止まる条件：都合だけで動かされる']
-    );
-  }
-  if(ctx.category==='仕事・進路'){
-    return makeClarifyQuestion(
-      'branch','進む条件と止まる条件',anchor,
-      '今回の判断で、「進んでいい条件」と「止まるべき条件」をそれぞれ一つずつ挙げるなら何ですか？',
-      '仕事では、感情だけでなく続ける意味・評価・消耗度など何が残るかを見ます。',
-      ['進む条件：続ける意味や評価が増える／止まる条件：役割だけ増えて見返りが変わらない','進む条件：実績や学びとして残せる／止まる条件：一定期間後に何も残らない','進む条件：今の環境で条件を確認できる／止まる条件：本音を出すほど居づらい','進む条件：比較材料が揃う／止まる条件：不安な日に一気に決めようとしている']
-    );
-  }
-  if(ctx.category==='お金'){
-    return makeClarifyQuestion(
-      'branch','進む条件と止まる条件',anchor,
-      '今回の判断で、「進んでいい条件」と「止まるべき条件」をそれぞれ一つずつ挙げるなら何ですか？',
-      'お金の判断では、期待だけで進めず、上限と見直し基準を先に分けます。',
-      ['進む条件：失っても困らない上限がある／止まる条件：焦りだけで動いている','進む条件：収支と回収目安が見えている／止まる条件：比較材料が足りない','進む条件：小さく試せる／止まる条件：生活に必要な分まで使う','進む条件：30日後に見直せる数字がある／止まる条件：不安を埋めるために動く']
-    );
-  }
-  return makeClarifyQuestion(
-    'branch','進む条件と止まる条件',anchor,
-    '今回の判断で、「進んでいい条件」と「止まるべき条件」をそれぞれ一つずつ挙げるなら何ですか？',
-    '可能性の話で終わらせず、条件Aなら進む、条件Bなら止まる、条件Cなら保留に変換します。',
-    ['進む条件：確認したいことが満たされる／止まる条件：不安だけで動く','進む条件：相手や環境の反応が安定する／止まる条件：曖昧なまま進める','進む条件：準備材料が揃う／止まる条件：比較材料が足りない','進む条件：今週一つ行動できる／止まる条件：全部を一気に決めようとしている']
+
+function isClarifyReunion(ctx){
+  return ctx.baseFocus?.loveSubtype==='reunion'||/復縁|元彼|元カレ|元カノ|よりを戻/.test(`${ctx.category} ${ctx.theme}`);
+}
+
+function makeClarifyCandidate(id,badge,anchor,q,hint,templates,score,meaningKey,extra={}){
+  return makeClarifyQuestion(id,badge,anchor,q,hint,templates,{score,meaningKey,...extra});
+}
+
+function buildClarifyThemePriorityQuestion(ctx){
+  if(!ctx.hasMultipleThemes||ctx.refinedFocus?.explicitUserPriority) return null;
+  const labels=[];
+  if(ctx.themeSignals.love) labels.push('恋愛');
+  if(ctx.themeSignals.work) labels.push('仕事・進路');
+  if(ctx.themeSignals.relationship) labels.push('人間関係');
+  if(ctx.themeSignals.money) labels.push('お金');
+  if(ctx.themeSignals.family) labels.push('家族');
+  if(ctx.themeSignals.creative) labels.push('趣味・創作');
+  if(ctx.themeSignals.self) labels.push('自己理解');
+  const first=labels[0]||'ひとつ目のテーマ';
+  const second=labels[1]||'もう一方のテーマ';
+  return makeClarifyCandidate(
+    'theme_priority','主テーマの確認',buildClarifyAnchor(ctx.coreCard||ctx.currentOrc,'焦点を絞るカード'),
+    `相談文には${first}と${second}が両方あります。今回先に読みたいのは、${first}の判断ですか。それとも${second}の判断ですか？`,
+    '複数テーマが混ざっているため、先に読む主訴を決めると最終判断がぶれにくくなります。',
+    [`${first}を先に見たい`,`${second}を先に見たい`,`${first}は背景で、${second}が主テーマ`,`${second}は背景で、${first}が主テーマ`],
+    98,'theme_priority',{answeredByPattern:/今回は[^。！？\n]*(先に|優先|主軸|主テーマ)|主テーマは|先に見たいのは/}
   );
 }
 
-function buildClarifyQuestions(){
-  const ctx=buildClarifyCardContext();
+function buildClarifyAmbiguityQuestion(ctx){
+  const card=ctx.ambiguityCard;
+  if(!card) return null;
+  const subject=getClarifyThemeKeyword(ctx);
+  const anchor=buildClarifyAnchor(card,'曖昧さを示すカード');
+  const isLove=isClarifyLove(ctx);
+  const isWork=isClarifyWork(ctx);
+  let q='';
+  let templates=[];
+  if(card.id===6){
+    q=isWork
+      ?`「${subject}」でいま一番はっきりしていないのは、評価・収入・続けた先の成長・辞めた後の道のどれに近いですか？`
+      :`「${subject}」でいま一番はっきりしていないのは、相手の気持ち・関係の形・自分の本音のどれに近いですか？`;
+    templates=isWork
+      ?['評価がどう変わるかが見えない','収入や条件が不透明','続けた先の成長が見えない','辞めた後の道がまだ見えない']
+      :['相手の気持ちが読めない','関係の形が曖昧','自分の本音が揺れている','確認すると関係が崩れそうで怖い'];
+  }else if(card.id===26){
+    q=isWork
+      ?`「${subject}」について、まだ職場や比較先に確認できていないことがあるなら、それは何ですか？`
+      :`「${subject}」について、まだ相手に確認できていないことがあるなら、それは何ですか？`;
+    templates=isWork
+      ?['評価や待遇の見込み','異動や転職先の条件','続けた場合に残る経験','自分が何を優先してよいか']
+      :['相手の気持ち','今後会う意思','過去の原因への受け止め方','連絡や返信の温度感'];
+  }else if(card.id===14||card.id===7){
+    q=isLove
+      ?'相手の言葉や態度で、どこか信用しきれないと感じる部分があるなら、それは何ですか？'
+      :'関わっている人や状況について、信用しきれないと感じる部分があるなら、それは何ですか？';
+    templates=['言葉と行動が一致しない','大事なことを隠されている気がする','周囲の動きが読めない','自分の疑いか現実か分からない'];
+  }else if(card.id===32){
+    q=isLove
+      ?'気持ちが揺れる場面は、相手の反応・周囲の目・自分の期待のどれがきっかけになりやすいですか？'
+      :'気持ちが揺れる場面は、評価・周囲の目・自分の期待のどれがきっかけになりやすいですか？';
+    templates=isLove
+      ?['相手の反応で揺れる','周囲の目が気になる','期待しすぎて苦しくなる','自分の直感を信じきれない']
+      :['評価が気になる','周囲の目が気になる','期待と現実の差で揺れる','自分の判断を信じきれない'];
+  }else{
+    q=`「${subject}」について、まだ言葉にできていない不安や未確認の点があるなら、それは何ですか？`;
+    templates=['相手や環境の本音が分からない','まだ確認していないことがある','自分の気持ちがまとまっていない','どこまで信じてよいか迷う'];
+  }
+  return makeClarifyCandidate(
+    'ambiguity','未確認の本音',anchor,q,
+    '曖昧さを示すカードが出ているため、ここを言葉にすると最終判断が強くなります。',
+    templates,91,'ambiguity',{card,answeredByPattern:/確認済み|すでに[^。！？\n]*(聞いた|確認した|話した)|もう[^。！？\n]*(聞いた|確認した|伝えた)/}
+  );
+}
+
+function buildClarifyBlockerQuestion(ctx){
+  const card=ctx.blockerCard;
+  if(!card) return null;
+  const anchor=buildClarifyAnchor(card,'障害を示すカード');
+  const isLove=isClarifyLove(ctx);
+  const isWork=isClarifyWork(ctx);
+  let q='';
+  let templates=[];
+  if(card.id===21){
+    q=isWork
+      ?'今の仕事で一番越えにくい壁は、収入・評価・体力・人間関係・次の準備のどれに近いですか？'
+      :'この関係で一番越えにくい壁は、距離・タイミング・相手の態度・自分の怖さのどれに近いですか？';
+    templates=isWork
+      ?['収入条件が壁','評価や役割が壁','体力や消耗が壁','次の準備不足が壁']
+      :['距離が壁','タイミングが壁','相手の態度が壁','自分の怖さが壁'];
+  }else if(card.id===36){
+    q=isWork
+      ?'今の仕事を続ける中で、もう背負いたくない負担は何ですか？'
+      :'この関係で、もう背負いたくない負担は何ですか？';
+    templates=['自分だけが我慢すること','責任だけ増えること','相手や職場に合わせ続けること','先が見えないまま耐えること'];
+  }else if(card.id===23){
+    q=isWork
+      ?'仕事を続けることで、少しずつ削られているものは何ですか？'
+      :'この関係を続けることで、少しずつ削られているものは何ですか？';
+    templates=['安心感','時間や体力','自信','他の可能性を見る余裕'];
+  }else if(card.id===11){
+    q=isWork
+      ?'同じストレスや話し合いを繰り返している場面があるなら、どの場面ですか？'
+      :'同じ話し合いや不安を繰り返していると感じる場面があるなら、どの場面ですか？';
+    templates=['同じ不安を何度も感じる','話しても同じ所に戻る','相手や職場の反応が変わらない','自分の我慢だけが増えている'];
+  }else if(card.id===8||card.id===10){
+    q=isWork
+      ?'切り替える決断をするとしたら、何を失うことが一番怖いですか？'
+      :'この関係で区切りを考えるとしたら、何を失うことが一番怖いですか？';
+    templates=['相手や職場とのつながり','今までの努力','安心できる居場所','次の選択肢への自信'];
+  }else{
+    q=isWork
+      ?'今の仕事で、判断を止めている一番大きな現実的な引っかかりは何ですか？'
+      :'この相談で、判断を止めている一番大きな現実的な引っかかりは何ですか？';
+    templates=['相手や職場の反応','情報不足','周囲への影響','自分の怖さや疲れ'];
+  }
+  return makeClarifyCandidate(
+    'blocker','現実の壁',anchor,q,
+    '障害を示すカードが出ているため、壁の正体を具体化すると条件分岐に使えます。',
+    templates,89,'blocker',{card,answeredByPattern:/壁は[^。！？\n]+|負担は[^。！？\n]+|削られているのは[^。！？\n]+/}
+  );
+}
+
+function buildClarifyPeopleQuestion(ctx){
+  const card=ctx.peopleCard;
+  if(!card) return null;
+  const anchor=buildClarifyAnchor(card,'人物性を示すカード');
+  const isLove=isClarifyLove(ctx);
+  const isWork=isClarifyWork(ctx);
+  let q='';
+  let templates=[];
+  if((card.id===28||card.id===29)&&isLove){
+    q='今回見たい相手について、連絡の有無・会う姿勢・気持ちの読みにくさのうち、どこを一番確認したいですか？';
+    templates=['連絡や返信の温度感','会おうとする姿勢','気持ちが読めない理由','過去の原因への向き合い方'];
+  }else if(card.id===15&&isWork){
+    q='いま一番影響が大きいのは、上司や権限者の判断・収入面・自分への圧のどれに近いですか？';
+    templates=['上司や権限者の判断','収入や待遇','自分への圧や責任','守ってくれる人の有無'];
+  }else if(card.id===18){
+    q=isLove
+      ?'この関係で、信頼できる支えになっているのは相手本人・友人・自分の中の約束のどれに近いですか？'
+      :'この状況で、信頼できる支えになっているのは同僚・友人・家族・自分の中の約束のどれに近いですか？';
+    templates=['相手本人','友人や同僚','家族や周囲','自分の中の約束'];
+  }else if(card.id===7||card.id===14){
+    q=isLove
+      ?'この関係で、いま一番影響が大きいのは、相手の態度・あなたの我慢・周囲の状況のどれに近いですか？'
+      :'この状況で、いま一番影響が大きいのは、相手の態度・自分の我慢・周囲の状況のどれに近いですか？';
+    templates=['相手の態度','自分の我慢','周囲の状況','第三者や職場の事情'];
+  }else{
+    q=isWork
+      ?'この仕事の判断で、誰の態度や距離感を一番見ておきたいですか？'
+      :'この相談で、誰の態度や距離感を一番見ておきたいですか？';
+    templates=['相手本人','上司や同僚','家族や周囲','自分自身の反応'];
+  }
+  return makeClarifyCandidate(
+    'people','人物の焦点',anchor,q,
+    '人物性のあるカードが出ているため、誰の態度を見るかを絞ります。',
+    templates,86,'people',{card}
+  );
+}
+
+function buildClarifyPositiveQuestion(ctx){
+  const card=ctx.positiveCard;
+  if(!card) return null;
+  const subject=getClarifyThemeKeyword(ctx);
+  const anchor=buildClarifyAnchor(card,'好転の手がかりカード');
+  const isLove=isClarifyLove(ctx);
+  const isWork=isClarifyWork(ctx);
+  let q='';
+  let templates=[];
+  if(card.id===33){
+    q=isWork
+      ?'今の仕事で、これが確認できたら残るか動くかを判断できると思える条件は何ですか？'
+      :`「${subject}」で、これが確認できたら前に進めると思える相手の反応や一言は何ですか？`;
+    templates=isWork
+      ?['収入や評価の見通し','成長につながる役割','働きやすさの改善','次の準備が具体化すること']
+      :['相手から連絡が来る','会う意思が見える','過去の原因を話せる','言葉と行動が一致する'];
+  }else if(card.id===16){
+    q=isWork
+      ?'この先の働き方で、どんな未来像が見えたら残る価値があると思えますか？'
+      :'この相手と、どんな未来像が見えたら進みたいと思えますか？';
+    templates=isWork
+      ?['成長できる未来','収入が安定する未来','評価される未来','自分らしく働ける未来']
+      :['安心して会える未来','将来の話ができる未来','対等に気持ちを出せる未来','不安が減る未来'];
+  }else if(card.id===9){
+    q=isLove
+      ?'嬉しい言葉や楽しい時間があるなら、それは安心につながっていますか。それとも一時的な喜びに近いですか？'
+      :'最近の嬉しい評価や良い反応は、続ける安心につながっていますか。それとも一時的な喜びに近いですか？';
+    templates=['安心につながっている','一時的な喜びに近い','嬉しいが判断材料には弱い','まだ見極めたい'];
+  }else if(card.id===1){
+    q=isLove
+      ?'相手からの連絡や行動で、最近変化したことはありますか。あるなら何が変わりましたか？'
+      :'仕事や周囲からの連絡・提案で、最近変化したことはありますか。あるなら何が変わりましたか？';
+    templates=['連絡頻度が変わった','会話の温度が変わった','新しい提案が来た','まだ変化はない'];
+  }else{
+    q=isWork
+      ?'今の状況で、小さくても好転のサインだと思える変化は何ですか？'
+      :'今の関係で、小さくても好転のサインだと思える変化は何ですか？';
+    templates=['連絡や会話が増えた','状況説明が増えた','自分の不安が少し減った','現実的な条件が見えてきた'];
+  }
+  return makeClarifyCandidate(
+    'positive','進む手がかり',anchor,q,
+    '好転を示すカードが出ているため、何を確認できれば進めるかを具体化します。',
+    templates,83,'positive',{card}
+  );
+}
+
+function getClarifyOracleDirection(card){
+  if(!card) return 'choose';
+  if([5,14,23,30].includes(card.id)) return 'change';
+  if([1,8,10,22,26,27].includes(card.id)) return 'move';
+  if([2,6,12,15,24,28,32,33].includes(card.id)) return 'support';
+  if([4,7,9,16,18,25,31].includes(card.id)) return 'reflect';
+  return 'choose';
+}
+
+function getClarifyReactionHint(ctx){
+  const tag=ctx.reactionProfile?.tags?.[0]||ctx.reactionProfile?.animal||'';
+  return tag
+    ?`動物タイプ診断で出た「${tag}」の反応も踏まえ、今週の一手に落とします。`
+    :'オラクルの行動方向を、今週できる小さな一手に落とします。';
+}
+
+function buildClarifyOracleActionQuestion(ctx){
+  const card=ctx.futureOrc||ctx.currentOrc;
+  if(!card) return null;
+  const direction=getClarifyOracleDirection(card);
+  const isLove=isClarifyLove(ctx);
+  const isWork=isClarifyWork(ctx);
+  let q='';
+  let templates=[];
+  if(direction==='move'){
+    q=isWork
+      ?'仕事の条件を確かめるなら、今週できる一番小さな行動は何ですか？'
+      :'本音を伝えるなら、今週できる一番小さな行動は何ですか？';
+    templates=isWork
+      ?['条件を一つ書き出す','求人や比較材料を一つ見る','上司や同僚に一つ確認する','休む日を決めて判断を急がない']
+      :['短く連絡する','会えるか確認する','聞きたいことを一つに絞る','今は送らず下書きだけ作る'];
+  }else if(direction==='support'){
+    q=isWork
+      ?'職場や周囲に合わせすぎていると感じる場面があるなら、どの場面ですか？'
+      :'相手に合わせすぎていると感じる場面があるなら、どの場面ですか？';
+    templates=['返事や予定を相手に合わせる','自分の希望を後回しにする','役割や責任を引き受けすぎる','合わせすぎている感覚はない'];
+  }else if(direction==='change'){
+    q=isWork
+      ?'今の働き方を少し変えるなら、まず何を変えたいですか？'
+      :'今の関係を少し変えるなら、まず何を変えたいですか？';
+    templates=isWork
+      ?['働く時間や負荷','役割や担当','収入や評価の見直し','次の準備の始め方']
+      :['連絡の頻度','会い方や距離感','本音の伝え方','待ち方や期待の置き方'];
+  }else if(direction==='reflect'){
+    q=isWork
+      ?'結論を急がず確認するなら、今週ひとつだけ集めたい仕事の情報は何ですか？'
+      :'結論を急がず確認するなら、今週ひとつだけ確かめたい相手や自分の反応は何ですか？';
+    templates=isWork
+      ?['収入や条件','評価や役割','次の選択肢','自分の体力や気持ち']
+      :['相手の返信や態度','会った後の自分の安心感','過去の原因への向き合い方','自分がまだ望んでいること'];
+  }else{
+    q='今週の一手を一つだけ選ぶなら、確認する・伝える・待つ・距離を置くのどれに近いですか？';
+    templates=['確認する','伝える','待つ','距離を置く'];
+  }
+  return makeClarifyCandidate(
+    'oracle_action','今週の一手',buildClarifyAnchor(card,'行動方向を示すオラクル'),
+    q,getClarifyReactionHint(ctx),templates,78,'oracle_action',{card}
+  );
+}
+
+function buildClarifyDecisionBranchQuestion(ctx){
+  const subject=getClarifyThemeKeyword(ctx);
+  const isLove=isClarifyLove(ctx);
+  const isWork=isClarifyWork(ctx);
+  let q='';
+  let templates=[];
+  if(isLove&&isClarifyReunion(ctx)){
+    q=`「${subject}」について、もう一度進む条件と区切りをつける条件を分けるなら、相手のどんな反応が決め手ですか？`;
+    templates=['連絡が続くなら進む／曖昧なままなら区切る','過去の原因を話せるなら進む／避けるなら区切る','会う意思が見えるなら進む／都合だけなら区切る','自分が安心できるなら進む／消耗するなら区切る'];
+  }else if(isLove){
+    q='この関係を進める条件と距離を置く条件を分けるなら、相手のどんな反応が決め手ですか？';
+    templates=['不安に向き合うなら進む／曖昧にされるなら距離を置く','会う姿勢があるなら進む／言葉だけなら距離を置く','自分の本音を出せるなら進む／我慢だけなら距離を置く','連絡が安定するなら進む／振り回されるなら距離を置く'];
+  }else if(isWork){
+    q=`「${subject}」で、今の場所に残る条件と別の動きへ進む条件を分けるなら、収入・評価・成長・消耗度のうち何が決め手ですか？`;
+    templates=['収入が決め手','評価や役割が決め手','成長できるかが決め手','消耗度が決め手'];
+  }else{
+    q='今回の判断で、進む・止まる・保留を分けるなら、何が確認できた時に次へ進めますか？';
+    templates=['相手や環境の反応','自分の本音','現実的な条件','今週できる小さな行動'];
+  }
+  return makeClarifyCandidate(
+    'decision_branch','判断条件',buildClarifyAnchor(ctx.futureCard||ctx.positiveCard||ctx.blockerCard,'判断を分けるカード'),
+    q,'最後の結論を、進む・止まる・保留の条件へ変換するための質問です。',
+    templates,75,'decision_branch',{answeredByPattern:/進む条件[^。！？\n]*(止まる条件|区切る条件|距離を置く条件)|残る条件[^。！？\n]*(動く条件|辞める条件|別の動き)/}
+  );
+}
+
+function buildClarifyQuestionCandidates(ctx){
   return [
-    buildCoreClarifyQuestion(ctx),
-    buildCognitiveMismatchQuestion(ctx),
-    buildBranchClarifyQuestion(ctx),
-    buildChangeReadinessQuestion(ctx),
-    buildIdealOutcomeQuestion(ctx),
+    buildClarifyThemePriorityQuestion(ctx),
+    buildClarifyAmbiguityQuestion(ctx),
+    buildClarifyBlockerQuestion(ctx),
+    buildClarifyPeopleQuestion(ctx),
+    buildClarifyPositiveQuestion(ctx),
+    buildClarifyOracleActionQuestion(ctx),
+    buildClarifyDecisionBranchQuestion(ctx),
   ].filter(Boolean);
+}
+
+function getClarifyQuestionLimit(ctx){
+  const strongCardCount=[ctx.peopleCard,ctx.blockerCard,ctx.ambiguityCard].filter(Boolean).length;
+  if(ctx.hasMultipleThemes||strongCardCount>=3||ctx.themeShort) return 5;
+  if((ctx.theme||'').length>=120&&!ctx.hasWarningCard) return 3;
+  return 4;
+}
+
+function isClarifyCandidateAnswered(candidate,ctx){
+  const source=`${ctx.category} ${ctx.theme}`;
+  if(candidate.answeredByPattern&&candidate.answeredByPattern.test(source)) return true;
+  if(candidate.id==='theme_priority'&&!ctx.hasMultipleThemes) return true;
+  return false;
+}
+
+function scoreClarifyCandidate(candidate,ctx){
+  let score=candidate.score||0;
+  const card=candidate.card||null;
+  if(card&&ctx.coreCard&&card.id===ctx.coreCard.id) score+=6;
+  if(card&&ctx.futureCard&&card.id===ctx.futureCard.id) score+=5;
+  if(candidate.id==='ambiguity'&&ctx.ambiguityCard) score+=8;
+  if(candidate.id==='blocker'&&ctx.blockerCard) score+=8;
+  if(candidate.id==='people'&&ctx.peopleCard) score+=6;
+  if(candidate.id==='positive'&&ctx.positiveCard) score+=5;
+  if(candidate.id==='decision_branch'&&(ctx.baseFocus?.needsDecision||ctx.refinedFocus?.needsDecision)) score+=5;
+  if(candidate.id==='oracle_action'&&ctx.reactionProfile) score+=2;
+  return score;
+}
+
+function publicClarifyQuestion(candidate){
+  const {score,meaningKey,answeredByPattern,card,_score,...publicQuestion}=candidate;
+  return publicQuestion;
+}
+
+function rankClarifyQuestions(candidates,ctx){
+  const limit=getClarifyQuestionLimit(ctx);
+  const selected=[];
+  const usedMeanings=new Set();
+  const ranked=candidates
+    .filter(candidate=>!isClarifyCandidateAnswered(candidate,ctx))
+    .map(candidate=>({...candidate,_score:scoreClarifyCandidate(candidate,ctx)}))
+    .sort((a,b)=>b._score-a._score);
+  for(const candidate of ranked){
+    const key=candidate.meaningKey||candidate.id;
+    if(usedMeanings.has(key)) continue;
+    usedMeanings.add(key);
+    selected.push(candidate);
+    if(selected.length>=limit) break;
+  }
+  if(selected.length<3){
+    for(const candidate of ranked){
+      if(selected.some(item=>item.id===candidate.id)) continue;
+      selected.push(candidate);
+      if(selected.length>=Math.min(3,limit)) break;
+    }
+  }
+  return selected.slice(0,limit).map(publicClarifyQuestion);
+}
+
+function buildClarifyQuestions(){
+  const ctx=buildClarifyContext();
+  const candidates=buildClarifyQuestionCandidates(ctx);
+  return rankClarifyQuestions(candidates,ctx);
 }
 
 
