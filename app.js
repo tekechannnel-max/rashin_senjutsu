@@ -18287,6 +18287,14 @@ function drawCanvasBulletLines(ctx,lines=[],x,y,maxWidth,lineHeight,options={}){
   return currentY;
 }
 
+function drawDossierShareSectionHeading(ctx,text,x,y,options={}){
+  ctx.save();
+  ctx.fillStyle=options.color||'rgba(176,226,218,.92)';
+  ctx.font=options.font||'700 16px "Shippori Mincho", serif';
+  ctx.fillText(text,x,y);
+  ctx.restore();
+}
+
 function drawCanvasPanel(ctx,x,y,w,h,options={}){
   ctx.save();
   ctx.fillStyle=options.fill||'rgba(5,9,22,.62)';
@@ -18333,8 +18341,6 @@ async function createDossierShareImageBlob(cardData){
   const h=canvas.height;
   if(bg){
     ctx.drawImage(bg,0,0,w,h);
-    ctx.fillStyle='rgba(3,8,28,.18)';
-    ctx.fillRect(0,0,w,h);
   }else{
     const gradient=ctx.createLinearGradient(0,0,w,h);
     gradient.addColorStop(0,'#080b1d');
@@ -18343,63 +18349,73 @@ async function createDossierShareImageBlob(cardData){
     ctx.fillStyle=gradient;
     ctx.fillRect(0,0,w,h);
   }
-  const safeX=Math.round(w*.055);
-  const safeY=Math.round(h*.065);
-  const safeW=Math.round(w*.54);
-  const safeH=Math.round(h*.87);
-  const pad=Math.round(w*.022);
-  const panelGradient=ctx.createLinearGradient(safeX,0,safeX+safeW,0);
-  panelGradient.addColorStop(0,'rgba(2,8,28,.74)');
-  panelGradient.addColorStop(.72,'rgba(2,8,28,.52)');
-  panelGradient.addColorStop(1,'rgba(2,8,28,.20)');
-  drawCanvasPanel(ctx,safeX,safeY,safeW,safeH,{fill:panelGradient,stroke:'rgba(228,184,74,.22)',lineWidth:1});
+  const leftOverlay=ctx.createLinearGradient(0,0,w,0);
+  leftOverlay.addColorStop(0,'rgba(2,8,28,.82)');
+  leftOverlay.addColorStop(.43,'rgba(2,8,28,.60)');
+  leftOverlay.addColorStop(.54,'rgba(2,8,28,.20)');
+  leftOverlay.addColorStop(.64,'rgba(2,8,28,.04)');
+  leftOverlay.addColorStop(.76,'rgba(2,8,28,0)');
+  ctx.fillStyle=leftOverlay;
+  ctx.fillRect(0,0,w,h);
+  const bottomOverlay=ctx.createLinearGradient(0,0,0,h);
+  bottomOverlay.addColorStop(0,'rgba(2,8,28,.08)');
+  bottomOverlay.addColorStop(.52,'rgba(2,8,28,.28)');
+  bottomOverlay.addColorStop(1,'rgba(2,8,28,.72)');
+  ctx.fillStyle=bottomOverlay;
+  ctx.fillRect(0,0,w,h);
 
   ctx.strokeStyle='rgba(228,184,74,.58)';
-  ctx.lineWidth=Math.max(2,Math.round(w*.0024));
-  ctx.strokeRect(Math.round(w*.022),Math.round(h*.038),w-Math.round(w*.044),h-Math.round(h*.076));
+  ctx.lineWidth=Math.max(1,Math.round(w*.0012));
+  ctx.strokeRect(.5,.5,w-1,h-1);
 
-  const textX=safeX+pad;
-  const maxTextW=safeW-(pad*2);
+  const cardLeft=Math.round(w*.045);
+  const cardTextW=Math.round(w*.438);
+  const topY=Math.round(h*.06);
+  const detailH=Math.round(h*.245);
+  const detailY=h-Math.round(h*.053)-detailH;
+  const padX=Math.round(w*.019);
+  const textX=cardLeft+padX;
+  const maxTextW=cardTextW-(padX*2);
   const shareTitle=limitTextByChars(card.TITLE||'羅針カード',30,10);
   const shareOneLine=normalizeDossierSentence(card.ONE_LINE||'',card.TITLE||'',{max:38});
   const shareVerdict=normalizeDossierSentence(card.VERDICT||'',card.ONE_LINE||'',{max:112});
-  let y=safeY+pad+6;
+  let y=topY+Math.round(h*.04);
   ctx.fillStyle='rgba(176,226,218,.92)';
-  ctx.font=`700 ${Math.round(w*.016)}px "Shippori Mincho", serif`;
+  ctx.font=`700 ${Math.round(w*.0074)}px "Shippori Mincho", serif`;
   ctx.fillText('RASHIN CARD',textX,y);
   y+=Math.round(h*.055);
   ctx.fillStyle='#f2d57b';
   ctx.font=`700 ${Math.round(w*.027)}px "Shippori Mincho", serif`;
-  y=drawWrappedCanvasText(ctx,shareTitle,textX,y,maxTextW,Math.round(h*.049),{maxLines:2,ellipsis:true})+Math.round(h*.012);
+  y=drawWrappedCanvasText(ctx,shareTitle,textX,y,maxTextW,Math.round(h*.049),{maxLines:2,ellipsis:true})+Math.round(h*.010);
   ctx.fillStyle='rgba(255,247,216,.94)';
-  ctx.font=`500 ${Math.round(w*.016)}px "Shippori Mincho", serif`;
+  ctx.font=`700 ${Math.round(w*.0115)}px "Shippori Mincho", serif`;
   y=drawWrappedCanvasText(ctx,shareOneLine,textX,y,maxTextW,Math.round(h*.031),{maxLines:1,ellipsis:true})+Math.round(h*.016);
 
-  const answerH=Math.round(h*.215);
+  const answerH=Math.round(h*.145);
   drawCanvasPanel(ctx,textX,y,maxTextW,answerH,{fill:'rgba(9,10,22,.64)',stroke:'rgba(228,184,74,.30)'});
   ctx.fillStyle='rgba(242,213,123,.97)';
-  ctx.font=`700 ${Math.round(w*.016)}px "Shippori Mincho", serif`;
-  ctx.fillText('今回の答え',textX+Math.round(w*.015),y+Math.round(h*.043));
+  ctx.font=`700 ${Math.round(w*.0105)}px "Shippori Mincho", serif`;
+  ctx.fillText('今回の答え',textX+Math.round(w*.014),y+Math.round(h*.034));
   ctx.fillStyle='rgba(246,240,220,.94)';
-  ctx.font=`700 ${Math.round(w*.0135)}px "Shippori Mincho", serif`;
-  drawWrappedCanvasText(ctx,shareVerdict,textX+Math.round(w*.015),y+Math.round(h*.082),maxTextW-Math.round(w*.03),Math.round(h*.028),{maxLines:4,ellipsis:false});
-  y+=answerH+Math.round(h*.015);
+  ctx.font=`700 ${Math.round(w*.0086)}px "Shippori Mincho", serif`;
+  drawWrappedCanvasText(ctx,shareVerdict,textX+Math.round(w*.014),y+Math.round(h*.064),maxTextW-Math.round(w*.028),Math.round(h*.026),{maxLines:4,ellipsis:true});
+  y+=answerH+Math.round(h*.018);
 
   const guidance=buildDossierSignalSummaries(card);
   const lenGuidanceLines=getDossierGuidanceLines(guidance.lenormand).slice(0,5);
   const oracleGuidanceLines=getDossierGuidanceLines(guidance.oracle).slice(0,2);
-  const actionH=Math.max(Math.round(h*.19),Math.min(Math.round(h*.24),safeY+safeH-y-Math.round(h*.012)));
+  const actionH=Math.min(Math.round(h*.17),detailY-y-Math.round(h*.035));
   drawCanvasPanel(ctx,textX,y,maxTextW,actionH,{fill:'rgba(4,9,24,.58)',stroke:'rgba(228,184,74,.22)'});
   ctx.fillStyle='rgba(176,226,218,.95)';
-  ctx.font=`700 ${Math.round(w*.013)}px "Shippori Mincho", serif`;
+  ctx.font=`700 ${Math.round(w*.0077)}px "Shippori Mincho", serif`;
   const guidanceLabelX=textX+Math.round(w*.015);
-  const guidanceBodyX=textX+Math.round(w*.16);
-  const guidanceBodyW=maxTextW-Math.round(w*.185);
+  const guidanceBodyX=textX+Math.round(w*.135);
+  const guidanceBodyW=maxTextW-Math.round(w*.155);
   const lenStartY=y+Math.round(h*.038);
   ctx.fillText(DOSSIER_LENORMAND_GUIDANCE_HEADING,guidanceLabelX,lenStartY);
   ctx.fillStyle='rgba(246,240,220,.92)';
-  ctx.font=`500 ${Math.round(w*.0101)}px "Shippori Mincho", serif`;
-  drawCanvasBulletLines(ctx,lenGuidanceLines,guidanceBodyX,lenStartY,guidanceBodyW,Math.round(h*.022),{maxLines:5,bulletSize:Math.max(3,Math.round(w*.0024))});
+  ctx.font=`700 ${Math.round(w*.0062)}px "Shippori Mincho", serif`;
+  drawCanvasBulletLines(ctx,lenGuidanceLines,guidanceBodyX,lenStartY,guidanceBodyW,Math.round(h*.0205),{maxLines:5,bulletSize:Math.max(3,Math.round(w*.0022))});
   ctx.strokeStyle='rgba(228,184,74,.14)';
   ctx.lineWidth=1;
   const dividerY=y+Math.round(actionH*.68);
@@ -18408,12 +18424,43 @@ async function createDossierShareImageBlob(cardData){
   ctx.lineTo(textX+maxTextW-Math.round(w*.015),dividerY);
   ctx.stroke();
   ctx.fillStyle='rgba(176,226,218,.9)';
-  ctx.font=`700 ${Math.round(w*.013)}px "Shippori Mincho", serif`;
+  ctx.font=`700 ${Math.round(w*.0077)}px "Shippori Mincho", serif`;
   const oracleStartY=y+Math.round(actionH*.80);
   ctx.fillText(DOSSIER_ORACLE_GUIDANCE_HEADING,guidanceLabelX,oracleStartY);
   ctx.fillStyle='rgba(255,232,171,.96)';
-  ctx.font=`700 ${Math.round(w*.0104)}px "Shippori Mincho", serif`;
-  drawCanvasBulletLines(ctx,oracleGuidanceLines,guidanceBodyX,oracleStartY,guidanceBodyW,Math.round(h*.023),{maxLines:2,bulletSize:Math.max(3,Math.round(w*.0024))});
+  ctx.font=`700 ${Math.round(w*.0064)}px "Shippori Mincho", serif`;
+  drawCanvasBulletLines(ctx,oracleGuidanceLines,guidanceBodyX,oracleStartY,guidanceBodyW,Math.round(h*.0205),{maxLines:2,bulletSize:Math.max(3,Math.round(w*.0022))});
+
+  const foundationSections=getDossierSaveCardFoundationSections();
+  const detailsX=cardLeft;
+  const detailsW=cardTextW;
+  drawCanvasPanel(ctx,detailsX,detailY,detailsW,detailH,{fill:'rgba(3,8,24,.48)',stroke:'rgba(228,184,74,.22)',lineWidth:1});
+  const detailsPadX=Math.round(w*.014);
+  const detailsPadY=Math.round(h*.026);
+  const gap=Math.round(w*.007);
+  const innerX=detailsX+detailsPadX;
+  const innerY=detailY+detailsPadY;
+  const innerW=detailsW-(detailsPadX*2);
+  const itemW=Math.floor((innerW-(gap*2))/3);
+  const itemH=detailH-(detailsPadY*2);
+  foundationSections.slice(0,3).forEach((section,index)=>{
+    const itemX=innerX+(itemW+gap)*index;
+    drawCanvasPanel(ctx,itemX,innerY,itemW,itemH,{fill:'rgba(3,8,24,.50)',stroke:'rgba(228,184,74,.20)',lineWidth:1});
+    drawDossierShareSectionHeading(ctx,section.label,itemX+Math.round(w*.008),innerY+Math.round(h*.034),{
+      font:`700 ${Math.round(w*.0076)}px "Shippori Mincho", serif`,
+    });
+    ctx.fillStyle='rgba(246,240,220,.9)';
+    ctx.font=`600 ${Math.round(w*.0057)}px "Shippori Mincho", serif`;
+    drawCanvasBulletLines(
+      ctx,
+      (section.items||[]).slice(0,2),
+      itemX+Math.round(w*.008),
+      innerY+Math.round(h*.065),
+      itemW-Math.round(w*.016),
+      Math.round(h*.026),
+      {maxLines:2,bulletSize:Math.max(3,Math.round(w*.0022))}
+    );
+  });
 
   const blob=await canvasToPngBlob(canvas);
   return blob&&blob.size?blob:null;
