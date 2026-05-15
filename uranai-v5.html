@@ -34,11 +34,6 @@ if(window.GA_TRACKING_ID){
   window.gtag('config',window.GA_TRACKING_ID,{send_page_view:false});
 }
 </script>
-<script>
-window.RASHIN_COMING_SOON_RELEASE_AT=Date.UTC(2026,4,15,15,0,0);
-window.RASHIN_COMING_SOON_ENABLED=window.RASHIN_COMING_SOON_ENABLED===true||new URLSearchParams(location.search).has('comingSoonPreview');
-document.documentElement.classList.add(window.RASHIN_COMING_SOON_ENABLED&&Date.now()<window.RASHIN_COMING_SOON_RELEASE_AT?'coming-soon-prerelease':'coming-soon-released');
-</script>
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700&family=Cinzel+Decorative:wght@400;700&family=Noto+Sans+JP:wght@300;400&display=swap" rel="stylesheet">
 
 <style>
@@ -95,49 +90,6 @@ body{
 
   overflow-x:hidden;
 
-}
-
-body.coming-soon-locked{
-  overflow:hidden;
-}
-
-.coming-soon-lock{
-  position:fixed;inset:0;z-index:10050;display:grid;place-items:center;
-  padding:24px;background:
-    radial-gradient(circle at 50% 30%,rgba(228,184,74,.18),transparent 34%),
-    linear-gradient(180deg,rgba(4,3,10,.94),rgba(12,8,24,.98));
-  pointer-events:auto;
-}
-
-.coming-soon-lock[hidden],
-.coming-soon-released .coming-soon-lock{
-  display:none!important;
-}
-
-.coming-soon-lock-card{
-  width:min(520px,calc(100vw - 40px));border:1px solid rgba(228,184,74,.34);
-  border-radius:8px;padding:34px 28px 32px;text-align:center;background:rgba(8,6,18,.88);
-  box-shadow:0 28px 80px rgba(0,0,0,.54),inset 0 0 42px rgba(228,184,74,.08);
-}
-
-.coming-soon-kicker{
-  font-family:'Cinzel Decorative',serif;font-size:13px;letter-spacing:.32em;color:var(--gold-l);
-  margin-bottom:16px;
-}
-
-.coming-soon-title{
-  font-family:'Shippori Mincho',serif;font-size:clamp(24px,6vw,34px);line-height:1.35;
-  color:var(--cream);margin-bottom:12px;
-}
-
-.coming-soon-copy{
-  font-size:14px;line-height:1.9;color:rgba(240,234,216,.82);letter-spacing:.06em;overflow-wrap:anywhere;
-}
-
-@media(max-width:520px){
-  .coming-soon-lock{padding:18px;}
-  .coming-soon-lock-card{width:100%;padding:30px 22px;}
-  .coming-soon-copy{font-size:13px;letter-spacing:.02em;}
 }
 
 .screen{display:none;min-height:100vh;position:relative;}
@@ -6267,14 +6219,6 @@ body.consultation-tag-open{overflow:hidden;}
 <div class="progress-bar" id="progress" style="width:0%"></div>
 
 <div class="toast" id="toast"></div>
-
-<div class="coming-soon-lock" id="coming-soon-lock" role="dialog" aria-modal="true" aria-labelledby="coming-soon-title" data-release-at="2026-05-15T15:00:00.000Z">
-  <div class="coming-soon-lock-card">
-    <div class="coming-soon-kicker">COMING SOON</div>
-    <div class="coming-soon-title" id="coming-soon-title">羅針占術は準備中です</div>
-    <div class="coming-soon-copy">2026年5月16日 0:00（日本時間）<br>に自動で開きます。</div>
-  </div>
-</div>
 
 <!-- 管理者用バッジ（dev 時のみ表示）-->
 

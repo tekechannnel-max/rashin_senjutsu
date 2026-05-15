@@ -1572,91 +1572,6 @@ const PAID_MODEL_AB_TEST={
   openaiWeight:50,
 };
 const PAID_MODEL_AB_TEST_TASKS=new Set(['paid','dossier','followup']);
-const COMING_SOON_RELEASE_AT=Number(window.RASHIN_COMING_SOON_RELEASE_AT)||Date.UTC(2026,4,15,15,0,0);
-const COMING_SOON_ENABLED=window.RASHIN_COMING_SOON_ENABLED===true;
-const COMING_SOON_LOCK_EVENTS=['click','submit','input','beforeinput','change','keydown','pointerdown','touchstart'];
-let COMING_SOON_UNLOCK_TIMER=null;
-
-function isComingSoonLocked(now=Date.now()){
-  return COMING_SOON_ENABLED&&Number.isFinite(COMING_SOON_RELEASE_AT)&&now<COMING_SOON_RELEASE_AT;
-}
-
-function getComingSoonOverlay(){
-  return document.getElementById('coming-soon-lock');
-}
-
-function setComingSoonDocumentState(locked){
-  document.documentElement.classList.toggle('coming-soon-prerelease',locked);
-  document.documentElement.classList.toggle('coming-soon-released',!locked);
-  document.body?.classList.toggle('coming-soon-locked',locked);
-}
-
-function setComingSoonPageInert(locked){
-  if(!document.body) return;
-  [...document.body.children].forEach(el=>{
-    if(el.id==='coming-soon-lock'||el.tagName==='SCRIPT') return;
-    if(locked){
-      if(!el.hasAttribute('data-coming-soon-prev-inert')){
-        el.setAttribute('data-coming-soon-prev-inert',el.hasAttribute('inert')?'1':'0');
-      }
-      if(!el.hasAttribute('data-coming-soon-prev-aria-hidden')){
-        el.setAttribute('data-coming-soon-prev-aria-hidden',el.getAttribute('aria-hidden')??'');
-      }
-      el.setAttribute('inert','');
-      el.setAttribute('aria-hidden','true');
-      return;
-    }
-    const prevInert=el.getAttribute('data-coming-soon-prev-inert');
-    if(prevInert!==null){
-      if(prevInert==='1') el.setAttribute('inert','');
-      else el.removeAttribute('inert');
-      el.removeAttribute('data-coming-soon-prev-inert');
-    }
-    const prevAria=el.getAttribute('data-coming-soon-prev-aria-hidden');
-    if(prevAria!==null){
-      if(prevAria==='') el.removeAttribute('aria-hidden');
-      else el.setAttribute('aria-hidden',prevAria);
-      el.removeAttribute('data-coming-soon-prev-aria-hidden');
-    }
-  });
-}
-
-function updateComingSoonLock(){
-  const locked=isComingSoonLocked();
-  setComingSoonDocumentState(locked);
-  const overlay=getComingSoonOverlay();
-  if(overlay){
-    overlay.hidden=!locked;
-    overlay.setAttribute('aria-hidden',locked?'false':'true');
-    if(locked) overlay.removeAttribute('inert');
-    else overlay.setAttribute('inert','');
-  }
-  setComingSoonPageInert(locked);
-  if(COMING_SOON_UNLOCK_TIMER) window.clearTimeout(COMING_SOON_UNLOCK_TIMER);
-  COMING_SOON_UNLOCK_TIMER=null;
-  if(locked){
-    const delay=Math.max(0,COMING_SOON_RELEASE_AT-Date.now());
-    COMING_SOON_UNLOCK_TIMER=window.setTimeout(updateComingSoonLock,Math.min(delay,60000));
-  }
-  return locked;
-}
-
-function preventComingSoonInteraction(event){
-  if(!isComingSoonLocked()) return;
-  const overlay=getComingSoonOverlay();
-  if(overlay&&overlay.contains(event.target)) return;
-  event.preventDefault();
-  event.stopPropagation();
-  if(typeof event.stopImmediatePropagation==='function') event.stopImmediatePropagation();
-  updateComingSoonLock();
-}
-
-function installComingSoonLock(){
-  updateComingSoonLock();
-  COMING_SOON_LOCK_EVENTS.forEach(type=>{
-    document.addEventListener(type,preventComingSoonInteraction,true);
-  });
-}
 // ▼ 開発確認用の直接接続設定。公開運用ではサーバー側の安全な設定を使うこと。
 const OPERATOR_API_KEY='';
 const API_PROXY_ENDPOINT='/api/ai/generate';
@@ -3748,7 +3663,6 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(event.key==='Escape'&&document.getElementById('daily-oracle-stage')) closeDailyOracleStage();
     if(event.key==='Escape'&&isDossierViewerOpen()) closeDossierViewer();
   });
-  safeRun('installComingSoonLock',()=>installComingSoonLock());
   safeRun('installGlobalClientLogging',()=>installGlobalClientLogging());
   safeRun('installLiveCardMotionStyles',()=>installLiveCardMotionStyles());
   safeRun('installRashinBonusStyles',()=>installRashinBonusStyles());
@@ -3772,7 +3686,6 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 document.addEventListener('click',event=>{
-  if(isComingSoonLocked()) return;
   const target=event.target&&typeof event.target.closest==='function'
     ? event.target
     : event.target?.parentElement||null;
@@ -11669,11 +11582,6 @@ function armResultCardMotion(card,index,options={}){
 // NAVIGATION
 // ══════════════════════════════════════════════════
 function showScreen(id,progress){
-  if(id!=='s-top'&&isComingSoonLocked()){
-    id='s-top';
-    progress=0;
-    updateComingSoonLock();
-  }
   stopMotionAudioForScreen(id);
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -11689,14 +11597,12 @@ function showScreen(id,progress){
 }
 
 async function startFlow(plan){
-  if(updateComingSoonLock()) return;
   const normalized=plan===SIMPLE_READING_PLAN?SIMPLE_READING_PLAN:(plan==='paid'?'paid':'free');
   if(normalized==='paid'&&!(await ensurePaidAccess('start-paid'))) return;
   startFlowUnlocked(normalized);
 }
 
 function startFlowUnlocked(plan){
-  if(updateComingSoonLock()) return;
   if(plan==='paid'&&!isMemberActive()&&!ACTIVE_PAID_READING_TICKET?.id){
     openPaidEntryGuide();
     return;
