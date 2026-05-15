@@ -4514,8 +4514,8 @@ body{
   position:absolute;
   inset:0;
   z-index:0;
-  background:url('占い素材/羅針カード背景.png?v=20260515-rashin-card-bg-full-card') top center/100% auto no-repeat;
-  filter:saturate(.96) brightness(.88);
+  background:url('占い素材/羅針カード背景.png?v=20260515-rashin-card-bg-full-card-all') top right/auto 100% no-repeat;
+  filter:saturate(.98) brightness(.9);
   pointer-events:none;
 }
 .dossier-save-card::after{
@@ -4524,8 +4524,8 @@ body{
   inset:0;
   z-index:0;
   background:
-    linear-gradient(90deg,rgba(2,8,28,.78) 0%,rgba(2,8,28,.58) 46%,rgba(2,8,28,.18) 66%,rgba(2,8,28,.04) 100%),
-    linear-gradient(180deg,rgba(2,8,28,.06) 0%,rgba(2,8,28,.22) 48%,rgba(2,8,28,.92) 100%);
+    linear-gradient(90deg,rgba(2,8,28,.82) 0%,rgba(2,8,28,.58) 46%,rgba(2,8,28,.22) 68%,rgba(2,8,28,.08) 100%),
+    linear-gradient(180deg,rgba(2,8,28,.08) 0%,rgba(2,8,28,.28) 52%,rgba(2,8,28,.72) 100%);
   pointer-events:none;
 }
 .dossier-save-visual{
@@ -4561,7 +4561,10 @@ body{
   display:grid;
   gap:14px;
   padding:18px clamp(18px,3vw,28px) 24px;
-  background:linear-gradient(180deg,rgba(4,8,20,.82),rgba(4,8,20,.9));
+  background:
+    linear-gradient(180deg,rgba(3,8,24,.24),rgba(3,8,24,.42)),
+    radial-gradient(circle at 78% 22%,rgba(176,226,218,.07),transparent 36%);
+  border-top:1px solid rgba(228,184,74,.22);
 }
 .dossier-save-detail-grid{
   display:grid;
@@ -4570,8 +4573,9 @@ body{
 }
 .dossier-save-detail-grid .dossier-save-section{
   padding:14px 14px 13px;
-  border:1px solid rgba(228,184,74,.14);
-  background:rgba(255,255,255,.025);
+  border:1px solid rgba(228,184,74,.2);
+  background:rgba(3,8,24,.5);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.02);
 }
 
 .dossier-save-top{
