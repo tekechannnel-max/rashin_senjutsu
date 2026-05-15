@@ -10910,6 +10910,8 @@ function normalizeDossierKeywords(text='',fallbackText=''){
   return Array.from(new Set(raw)).slice(0,6);
 }
 
+const RASHIN_READING_CARD_TITLE='羅針リーディングカード';
+
 function normalizeDossierItemList(items=[],fallbackItems=[],options={}){
   const {
     min=2,
@@ -11196,7 +11198,7 @@ function normalizeDossierCardData(data={}){
   }
   const closingFallback=buildDossierClosingForDecisionContext(ctx)||getIntegrationSupplementItems(INTEGRATION_ACTION_GUIDE_HEADING,focus)[0]||fallback.CLOSING;
   return{
-    TITLE:limitTextByChars(source.TITLE||fallback.TITLE||'羅針カード',28,12),
+    TITLE:RASHIN_READING_CARD_TITLE,
     ONE_LINE:limitTextByChars(source.ONE_LINE||source.HEADLINE||fallback.ONE_LINE,42,18),
     VERDICT:normalizeDossierParagraph(source.VERDICT||source.HEADLINE,fallback.VERDICT,180),
     POSITIVE_LABEL:ctx.positiveLabel,
@@ -11227,18 +11229,14 @@ function isNormalizedDossierCardData(data={}){
 }
 
 function resolveDossierCardData(data={}){
-  return redactDossierCardData(isNormalizedDossierCardData(data)?data:normalizeDossierCardData(data));
+  return redactDossierCardData({
+    ...(isNormalizedDossierCardData(data)?data:normalizeDossierCardData(data)),
+    TITLE:RASHIN_READING_CARD_TITLE,
+  });
 }
 
 function buildDossierTitleForDecisionContext(ctx){
-  if(isReconciliationContext(ctx)) return ctx.loveSubtypeProfile?.supplements?.dossierTitle||'信頼を作り直す復縁の羅針カード';
-  if(ctx.primaryTheme==='love') return '安心の形を取り戻す恋愛の羅針カード';
-  if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return '努力の返り方を見る仕事の羅針カード';
-  if(ctx.primaryTheme==='relationship') return '自然体の距離を見る羅針カード';
-  if(ctx.primaryTheme==='creative') return '熱量を守る趣味の羅針カード';
-  if(ctx.primaryTheme==='money') return '安心が残るお金の羅針カード';
-  if(ctx.primaryTheme==='family') return '境界線を取り戻す家族の羅針カード';
-  return '迷いの正体を映す羅針カード';
+  return RASHIN_READING_CARD_TITLE;
 }
 
 function buildDossierOneLineForDecisionContext(ctx){
