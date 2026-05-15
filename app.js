@@ -7963,6 +7963,104 @@ function hasLenGroup(ids,groupKey){
   return ids.some(id=>group.includes(id));
 }
 
+function getCurrentLenReadingIds(context={}){
+  const fromContext=Array.isArray(context.lenCardIds)?context.lenCardIds:[];
+  const ids=fromContext.length?fromContext:SEL_LEN;
+  return [...ids].map(id=>Number(id)).filter(Boolean);
+}
+
+function buildCardReadingFlags(focus={},context={}){
+  const ids=getCurrentLenReadingIds(context);
+  const is9=ids.length===9;
+  const coreId=is9?ids[4]:(ids[0]||null);
+  const futureIds=is9?[ids[2],ids[5],ids[8]].filter(Boolean):ids.slice(-1);
+  const hiddenIds=is9?[ids[6],ids[7],ids[8]].filter(Boolean):[];
+  return{
+    ids,
+    coreId,
+    coreName:coreId?LENORMAND[coreId]?.name||'':'',
+    coreText:coreId?getLenCoreFocusText(coreId):'',
+    futureNames:futureIds.map(id=>LENORMAND[id]?.name).filter(Boolean),
+    hasHidden:hasLenGroup(ids,'hidden')||hasLenGroup(hiddenIds,'hidden'),
+    hasEnding:hasLenGroup(ids,'ending')||hasLenGroup(futureIds,'ending'),
+    hasStability:hasLenGroup(ids,'stability'),
+    hasValue:hasLenGroup(ids,'value'),
+    hasRelationship:hasLenGroup(ids,'relationship'),
+    hasBurden:hasLenGroup(ids,'burden')||hasLenGroup(hiddenIds,'burden'),
+    hasSupport:hasLenGroup(ids,'support')||hasLenGroup(futureIds,'support'),
+    hasChoice:hasLenGroup(ids,'choice'),
+  };
+}
+
+function simplifyLenCoreTextForVerdict(text=''){
+  return String(text||'')
+    .replace(/^いま一番大事なのは、?/,'')
+    .replace(/です。?$/,'')
+    .trim();
+}
+
+function buildCardGroundedVerdictSentence(ctx={},flags={}){
+  if(!flags.ids?.length) return '';
+  const core=simplifyLenCoreTextForVerdict(flags.coreText);
+  if(flags.hasBurden&&flags.hasSupport){
+    return '今出ている流れは、負担が判断の中心に入りながらも、支えや突破口も同時に残っています。';
+  }
+  if(flags.hasHidden){
+    return isReconciliationContext(ctx)
+      ?'見えていない本音や過去の原因が、復縁の答えを曇らせています。'
+      :'見えていない事情や言葉になっていない本音が、答えの輪郭をぼかしています。';
+  }
+  if(flags.hasBurden){
+    return '負担や消耗が近くにあり、平気なふりで進めるほど判断は重くなります。';
+  }
+  if(flags.hasEnding){
+    return '区切りや変化の気配があり、先送りするほど状況側に押されやすくなります。';
+  }
+  if(flags.hasStability){
+    return '安定に見えるものが、守る土台なのか停滞なのかを見分ける場面です。';
+  }
+  if(flags.hasSupport){
+    return '支えや突破口の気配もあり、流れは完全に閉じていません。';
+  }
+  return core?`今回強く出ているのは、${core}${/[こと点段階状態]$/.test(core)?'です':'ことです'}。`:'';
+}
+
+function buildCardGroundedFlowText(ctx={},flags={}){
+  if(!flags.ids?.length) return '';
+  const sentences=[];
+  if(flags.hasHidden){
+    sentences.push(isReconciliationContext(ctx)
+      ?'今は、まだ触れられていない本音や過去の原因が、関係の温度を曖昧にしている流れです。'
+      :'今は、見えていない事情や言葉になっていない本音が、判断の輪郭をぼかしている流れです。');
+  }else if(flags.hasBurden){
+    sentences.push(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'
+      ?'今は、努力の先に残るものよりも、負担や消耗の重さが前に出やすい流れです。'
+      :'今は、気持ちだけで押し切るほど負担が濃くなりやすい流れです。');
+  }else if(flags.hasChoice){
+    sentences.push('今は、選べないのではなく、選ぶ前に分けるべきものが見え始めている流れです。');
+  }else{
+    sentences.push('');
+  }
+  if(flags.hasStability){
+    sentences.push(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'
+      ?'安定に見える今の場所も、力を育てる土台なのか、動きを止める固定なのかで意味が変わります。'
+      :'安定に見える関係や環境も、安心の土台なのか、曖昧なまま固定されているだけなのかで意味が変わります。');
+  }
+  if(flags.hasValue){
+    sentences.push(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'
+      ?'評価や見返りの現実も絡むため、気持ちの我慢だけで続けるほど消耗へ傾きます。'
+      :'価値や見返りの現実も絡むため、情だけで抱えるほど違和感が残ります。');
+  }
+  if(flags.hasEnding){
+    sentences.push('区切りや変化の気配もあるため、先送りを続けるほど自分で選ぶ余地が狭くなります。');
+  }
+  if(flags.hasSupport){
+    sentences.push('一方で、支えや突破口も残っているため、見る順番を間違えなければ流れは整え直せます。');
+  }
+  const clean=sentences.filter(Boolean);
+  return clean.length?limitJapaneseBodyBySentences(clean.join(''),330,3):'';
+}
+
 function getLenCoreFocusText(id){
   switch(id){
     case 34:return 'いま一番大事なのは、気持ちの強さよりも「釣り合い」と「自立」をどう扱うかです。';
@@ -14693,10 +14791,12 @@ function buildPrimaryTopVerdictText(name='あなた',focus={},theme='',context={
   const ctx=buildDecisionContext(focus,{...context,theme});
   const axisFull=getDecisionAxisFullPhrase(ctx);
   const axisShort=getDecisionAxisShortPhrase(ctx);
+  const cardVerdict=buildCardGroundedVerdictSentence(ctx,buildCardReadingFlags(focus,context));
   const lines=[];
   if(ctx.primaryTheme==='dual_concern'&&!focus.explicitUserPriority){
     lines.push(`今回の答えは、恋愛と仕事などを同じ重さで同時に抱え込まないことです。`);
     lines.push(`迷いの正体は、どちらも大事にしたい気持ちが重なり、自分がいちばん削られている場所が見えにくくなっていることです。`);
+    if(cardVerdict) lines.push(cardVerdict);
   }else if(ctx.primaryTheme==='love'){
     if(isReconciliationContext(ctx)){
       const subtypeLines=ctx.loveSubtypeProfile?.topVerdict||[];
@@ -14705,18 +14805,22 @@ function buildPrimaryTopVerdictText(name='あなた',focus={},theme='',context={
         '相手が過去の別れの原因を避けず、今後どう向き合うかを行動で見せるほど、信頼を作り直す余地があります。',
         '曖昧な連絡だけが続くなら、懐かしさよりも同じ傷を繰り返さないことが羅針になります。'
       ]));
+      if(cardVerdict) lines.splice(1,0,cardVerdict);
     }else{
       lines.push(`今回の答えは、気持ちの強さだけで関係を決めないことです。`);
+      if(cardVerdict) lines.push(cardVerdict);
       lines.push(`${axisFull}が言葉のあとに行動として残るなら、安心して向き合える流れです。`);
       lines.push(`そこが曖昧なままなら、信じたい気持ちほど自分を疲れさせます。`);
     }
   }else if(ctx.primaryTheme==='relationship'){
     lines.push(`今回の答えは、関係を守るために自分を削り続けないことです。`);
+    if(cardVerdict) lines.push(cardVerdict);
     lines.push(`${axisFull}が保てる距離なら、関わり方はまだ整います。`);
     lines.push(`近づくほど自然体が失われるなら、その違和感が今の羅針です。`);
   }else{
     lines.push(`今回の答えは、無条件で今の場所に残ることではありません。`);
     lines.unshift(`今の迷いは、続けるか変えるかの二択ではありません。`);
+    if(cardVerdict) lines.push(cardVerdict);
     lines.push(`${axisFull}が返ってくるなら、努力はまだ未来につながります。`);
     lines.push(`見返りのない負担だけが増えるなら、それは成長ではなく消耗です。`);
   }
@@ -14728,8 +14832,8 @@ function buildPrimaryTopVerdictText(name='あなた',focus={},theme='',context={
   }),360,5);
 }
 
-function buildWorkLifeTopVerdictText(name='あなた',focus={},theme=''){
-  return buildPrimaryTopVerdictText(name,focus,theme);
+function buildWorkLifeTopVerdictText(name='あなた',focus={},theme='',context={}){
+  return buildPrimaryTopVerdictText(name,focus,theme,context);
 }
 
 const INTEGRATION_FINAL_HEADING='今回の答え';
@@ -14982,7 +15086,7 @@ ${topVerdict}
 迷いの正体は、${axisShort}を大事にしたい気持ちと、現実の違和感を無視できない感覚が同時にあることです。
 
 ■ ${INTEGRATION_FLOW_HEADING}
-${buildIntegrationFlowNarrative(focus,cat,theme)}
+${buildIntegrationFlowNarrative(focus,cat,theme,context)}
 
 ■ ${INTEGRATION_ACTION_GUIDE_HEADING}
 ${ensureJapaneseSentence(push)}
@@ -15001,7 +15105,7 @@ ${buildPrimaryTopVerdictText(name,focus,theme)}
 迷いの正体は、気持ちだけで決めたい自分と、現実の違和感を無視できない自分が同時にいることです。
 
 ■ ${INTEGRATION_FLOW_HEADING}
-${buildIntegrationFlowNarrative(focus,cat,theme)}
+${buildIntegrationFlowNarrative(focus,cat,theme,{})}
 
 ■ ${INTEGRATION_ACTION_GUIDE_HEADING}
 ${ensureJapaneseSentence(getIntegrationSupplementItems(INTEGRATION_ACTION_GUIDE_HEADING,focus,cat,theme)[0]||'迷いを消すより、違和感の出どころを言葉にするほど判断軸が戻ります。')}
@@ -15257,8 +15361,10 @@ function ensureIntegrationPushLine(output='',focus={},cat='総合',theme=''){
   return replaceHeadingBody(output,INTEGRATION_ACTION_GUIDE_HEADING,ensureJapaneseSentence(sentence));
 }
 
-function buildIntegrationFlowNarrative(focus={},cat='総合',theme=''){
-  const ctx=buildDecisionContext(focus,{cat,theme});
+function buildIntegrationFlowNarrative(focus={},cat='総合',theme='',context={}){
+  const ctx=buildDecisionContext(focus,{cat,theme,...context});
+  const cardFlow=buildCardGroundedFlowText(ctx,buildCardReadingFlags(focus,context));
+  if(cardFlow) return cardFlow;
   if(isReconciliationContext(ctx)){
     return '今は、懐かしさで戻る流れと、信頼を作り直す流れを分ける場面です。過去の原因に触れても向き合う姿勢が続くなら、関係はもう一度整います。連絡の温度だけで進むほど、同じ傷が戻りやすくなります。';
   }
@@ -15280,7 +15386,7 @@ function buildIntegrationFlowNarrative(focus={},cat='総合',theme=''){
   return '今は、急いで答えを決めるより、違和感の出どころが少しずつ見えてくる流れです。納得できる根拠が増えるほど、選ぶ力は戻ります。負担だけが増える方向へ進むほど、自分を雑に扱わない視点が必要になります。';
 }
 
-function normalizeIntegrationFlowBody(body='',focus={},cat='総合',theme=''){
+function normalizeIntegrationFlowBody(body='',focus={},cat='総合',theme='',context={}){
   const source=sanitizeRashinVisibleText(body);
   const items=splitIntegrationItems(source);
   const lineCount=String(source||'').split('\n').map(line=>line.trim()).filter(Boolean).length;
@@ -15290,17 +15396,17 @@ function normalizeIntegrationFlowBody(body='',focus={},cat='総合',theme=''){
     ||items.length>=5
     ||/(^|。)\s*[^。]{2,24}。(?:\s*[^。]{2,24}。){3,}/.test(source);
   if(!source||looksLikeList||sentenceCount>=5){
-    return buildIntegrationFlowNarrative(focus,cat,theme);
+    return buildIntegrationFlowNarrative(focus,cat,theme,context);
   }
   return limitJapaneseBodyBySentences(source,280,3);
 }
 
-function ensureIntegrationFlowNarrative(output='',focus={},cat='総合',theme=''){
-  return replaceHeadingBody(output,INTEGRATION_FLOW_HEADING,normalizeIntegrationFlowBody(extractHeadingBody(output,INTEGRATION_FLOW_HEADING),focus,cat,theme));
+function ensureIntegrationFlowNarrative(output='',focus={},cat='総合',theme='',context={}){
+  return replaceHeadingBody(output,INTEGRATION_FLOW_HEADING,normalizeIntegrationFlowBody(extractHeadingBody(output,INTEGRATION_FLOW_HEADING),focus,cat,theme,context));
 }
 
-function ensureTopVerdictInIntegration(output='',name='あなた',focus={},theme=''){
-  return replaceHeadingBody(output,INTEGRATION_FINAL_HEADING,buildPrimaryTopVerdictText(name,focus,theme));
+function ensureTopVerdictInIntegration(output='',name='あなた',focus={},theme='',context={}){
+  return replaceHeadingBody(output,INTEGRATION_FINAL_HEADING,buildPrimaryTopVerdictText(name,focus,theme,context));
 }
 
 function ensureIntegrationSlots(text='',name='あなた',cat='総合',theme='',context={}){
@@ -15320,7 +15426,7 @@ function ensureIntegrationSlots(text='',name='あなた',cat='総合',theme='',c
       output=replaceHeadingBody(output,heading,extractHeadingBody(fallback,heading));
     }
   });
-  output=ensureTopVerdictInIntegration(output,name,focus,theme);
+  output=ensureTopVerdictInIntegration(output,name,focus,theme,context);
   output=ensureIntegrationPushLine(output,focus,cat,theme);
   if(!extractHeadingBody(output,INTEGRATION_CORE_HEADING)){
     output=replaceHeadingBody(output,INTEGRATION_CORE_HEADING,extractHeadingBody(fallback,INTEGRATION_CORE_HEADING));
@@ -15328,7 +15434,7 @@ function ensureIntegrationSlots(text='',name='あなた',cat='総合',theme='',c
   if(!extractHeadingBody(output,INTEGRATION_FLOW_HEADING)){
     output=replaceHeadingBody(output,INTEGRATION_FLOW_HEADING,extractHeadingBody(fallback,INTEGRATION_FLOW_HEADING));
   }
-  output=ensureIntegrationFlowNarrative(output,focus,cat,theme);
+  output=ensureIntegrationFlowNarrative(output,focus,cat,theme,context);
   if(!extractHeadingBody(output,INTEGRATION_CLOSING_HEADING)){
     output=replaceHeadingBody(output,INTEGRATION_CLOSING_HEADING,extractHeadingBody(fallback,INTEGRATION_CLOSING_HEADING));
   }
