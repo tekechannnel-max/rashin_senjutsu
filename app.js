@@ -2504,16 +2504,17 @@ function installFormStartTracking(){
 }
 
 const CONSULTATION_CATEGORY_TAGS=Object.freeze([
-  {value:'恋愛',label:'恋愛',hint:'恋愛・結婚・復縁・距離を置くか'},
+  {value:'恋愛',label:'恋愛',hint:'恋愛・結婚・復縁・距離感'},
   {value:'仕事・進路',label:'仕事',hint:'仕事・転職・進路・働き方'},
   {value:'人間関係',label:'人間関係',hint:'友人・職場・距離感・境界線'},
-  {value:'総合',label:'総合',hint:'複数テーマや全体運'},
   {value:'趣味・創作',label:'趣味',hint:'創作・学び・推し活・続け方'},
   {value:'お金',label:'お金',hint:'収入・支出・家計・副業'},
   {value:'家族',label:'家族',hint:'親子・夫婦・実家・家庭'},
-  {value:'自分自身',label:'自分自身',hint:'自己理解・適性・生き方'},
+  {value:'自己理解',label:'自己理解',hint:'本音・適性・生き方'},
+  {value:'総合',label:'総合',hint:'複数テーマ・全体の流れ'},
 ]);
 let CONSULTATION_TAG_CONFIRMED=false;
+let CONSULTATION_TAG_PENDING_ACTION=null;
 
 function normalizeConsultationCategoryTag(category=''){
   const raw=String(category||'').trim();
@@ -2525,7 +2526,7 @@ function normalizeConsultationCategoryTag(category=''){
   if(/趣味|創作|推し|学び|習い|作品|活動/.test(raw)) return '趣味・創作';
   if(/金運|お金|収入|支出|家計|貯金|借金|投資|財|金銭/.test(raw)) return 'お金';
   if(/家族|親|子ども|子供|実家|夫婦|兄弟|姉妹|親戚/.test(raw)) return '家族';
-  if(/自己|自分|適性|価値観|健康|生活|生き方|総合/.test(raw)) return raw.includes('総合')?'総合':'自分自身';
+  if(/自己|自分|適性|価値観|健康|生活|生き方|総合/.test(raw)) return raw.includes('総合')?'総合':'自己理解';
   return '総合';
 }
 
@@ -2537,7 +2538,7 @@ function getConsultationPrimaryThemeFromCategory(category=''){
   if(normalized==='趣味・創作') return 'creative';
   if(normalized==='お金') return 'money';
   if(normalized==='家族') return 'family';
-  if(normalized==='自分自身') return 'self_understanding';
+  if(normalized==='自己理解') return 'self_understanding';
   return 'general';
 }
 
@@ -2604,18 +2605,25 @@ function openConsultationTagModal(currentCategory=''){
   return true;
 }
 
-function closeConsultationTagModal(){
+function closeConsultationTagModal(clearPending=true){
   const modal=document.getElementById('consultation-tag-modal');
   if(!modal) return;
   modal.hidden=true;
   modal.setAttribute('aria-hidden','true');
   document.body.classList.remove('consultation-tag-open');
+  if(clearPending) CONSULTATION_TAG_PENDING_ACTION=null;
 }
 
-function confirmConsultationTag(category){
+async function confirmConsultationTag(category){
+  const pending=CONSULTATION_TAG_PENDING_ACTION;
+  CONSULTATION_TAG_PENDING_ACTION=null;
   setConsultationCategory(category);
   CONSULTATION_TAG_CONFIRMED=true;
-  closeConsultationTagModal();
+  closeConsultationTagModal(false);
+  if(pending?.type==='startFlow'){
+    await continueStartFlowAfterTag(pending.plan,true);
+    return;
+  }
   goToLen();
 }
 
@@ -6504,7 +6512,7 @@ function repairStaticCopy(){
       '趣味・創作':'趣味',
       'お金':'お金',
       '家族':'家族',
-      '自分自身':'自分自身',
+      '自己理解':'自己理解',
     };
     [...catSelect.options].forEach(option=>{
       const label=optionMap[option.value];
@@ -7079,7 +7087,7 @@ function analyzeConsultationFocus(cat='',theme=''){
     money:'お金',
     family:'家族',
     creative:'趣味・創作',
-    self_understanding:'自分自身',
+    self_understanding:'自己理解',
     general:'今の悩み',
   };
   const shortLabel=isDualConcern?'恋愛と仕事':(categoryPrimary!=='general'?categoryShort[categoryPrimary]:hasLove?'恋愛':hasWork?'仕事':(normalizedCat||'今の悩み'));
@@ -7535,8 +7543,8 @@ function refineFocusWithClarify(focus={},clarifyText='',paidUserData={}){
     applyPrimary('creative','タグ選択で趣味・創作が指定されたため');
     base.shortLabel='趣味・創作';
   }else if(categoryPrimary==='self_understanding'){
-    applyPrimary('self_understanding','タグ選択で自分自身が指定されたため');
-    base.shortLabel='自分自身';
+    applyPrimary('self_understanding','タグ選択で自己理解が指定されたため');
+    base.shortLabel='自己理解';
   }else if(workSignal&&loveSignal&&!base.explicitUserPriority){
     base.hasWork=true;
     base.hasLove=true;
@@ -10671,7 +10679,7 @@ function buildLenSpreadPromptContext(cat='総合'){
     ?`- 近距離｜${[1,3,5,7].map(index=>describeCard(cards[index])).join(' / ')}｜⑤に直結する直接影響\n- 遠距離｜${[0,2,6,8].map(index=>describeCard(cards[index])).join(' / ')}｜背景条件・外枠・遅れて効く要因`
     :'';
   const normalizedCat=normalizeConsultationCategoryTag(cat);
-  const themeKeyMap={恋愛:24,'仕事・進路':35,お金:34,人間関係:20,家族:4,'自分自身':5,'趣味・創作':31};
+  const themeKeyMap={恋愛:24,'仕事・進路':35,お金:34,人間関係:20,家族:4,'自己理解':5,'趣味・創作':31};
   const themeKeyId=themeKeyMap[normalizedCat]||null;
   const themeKeyIndex=themeKeyId?cards.findIndex(card=>card.id===themeKeyId):-1;
   const topicFocusDetails=(cards.length===9&&themeKeyIndex>=0)
@@ -11598,17 +11606,27 @@ function showScreen(id,progress){
 
 async function startFlow(plan){
   const normalized=plan===SIMPLE_READING_PLAN?SIMPLE_READING_PLAN:(plan==='paid'?'paid':'free');
-  if(normalized==='paid'&&!(await ensurePaidAccess('start-paid'))) return;
-  startFlowUnlocked(normalized);
+  if(normalized!==SIMPLE_READING_PLAN){
+    CONSULTATION_TAG_PENDING_ACTION={type:'startFlow',plan:normalized};
+    if(openConsultationTagModal(document.getElementById('f-cat')?.value||'総合')) return;
+    CONSULTATION_TAG_PENDING_ACTION=null;
+  }
+  await continueStartFlowAfterTag(normalized,false);
 }
 
-function startFlowUnlocked(plan){
+async function continueStartFlowAfterTag(plan,preserveTagConfirmation=false){
+  const normalized=plan===SIMPLE_READING_PLAN?SIMPLE_READING_PLAN:(plan==='paid'?'paid':'free');
+  if(normalized==='paid'&&!(await ensurePaidAccess('start-paid'))) return;
+  startFlowUnlocked(normalized,{preserveTagConfirmation});
+}
+
+function startFlowUnlocked(plan,options={}){
   if(plan==='paid'&&!isMemberActive()&&!ACTIVE_PAID_READING_TICKET?.id){
     openPaidEntryGuide();
     return;
   }
   PLAN=plan===SIMPLE_READING_PLAN?SIMPLE_READING_PLAN:(plan==='paid'?'paid':'free');
-  CONSULTATION_TAG_CONFIRMED=false;
+  CONSULTATION_TAG_CONFIRMED=!!options.preserveTagConfirmation;
   SEL_LEN=[];
   SEL_ORC=[];
   FIXED_GENDER_CARD=null;
@@ -14930,7 +14948,7 @@ async function runLenReading(){
 
   // テーマ別キーカード確認（9枚引き時）
   const normalizedCat=normalizeConsultationCategoryTag(cat);
-  const themeKey={恋愛:24,'仕事・進路':35,お金:34,人間関係:20,家族:4,'自分自身':5,'趣味・創作':31};
+  const themeKey={恋愛:24,'仕事・進路':35,お金:34,人間関係:20,家族:4,'自己理解':5,'趣味・創作':31};
   const keyCard=themeKey[normalizedCat]||null;
   const keyCardInSpread=keyCard&&SEL_LEN.includes(keyCard)?`\n※テーマ別キーカード「${LENORMAND[keyCard]?.name}」(No.${keyCard})が出ています。このカードを中心に読んでください。`:'';
 
