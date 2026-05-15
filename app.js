@@ -7091,17 +7091,7 @@ function analyzeConsultationFocus(cat='',theme=''){
     general:'今の悩み',
   };
   const shortLabel=isDualConcern?'恋愛と仕事':(categoryPrimary!=='general'?categoryShort[categoryPrimary]:hasLove?'恋愛':hasWork?'仕事':(normalizedCat||'今の悩み'));
-  const loveSubtype=/復縁|元彼|元カレ|元カノ|元恋人|よりを戻/.test(raw)
-    ?'reunion'
-    :/片思い|片想い|脈あり|脈|告白/.test(raw)||(/好きな人/.test(raw)&&!/何度か|食事|デート|連絡も続|会っ/.test(raw))
-      ?'crush'
-      :/結婚|婚約|将来の話|同棲|プロポーズ/.test(raw)
-        ?'commitment'
-        :/別れ|別れる|離婚|距離を置|終わり/.test(raw)
-          ?'separation'
-          :/相手.*気持ち|気持ち|本音|連絡|返信/.test(raw)
-            ?'feelings'
-            :'general';
+  const loveSubtype=detectLoveSubtypeFromText(raw).key||'general';
   const workSubtype=/転職|退職|辞め|求人|面接|採用/.test(raw)
     ?'career_change'
     :/上司|同僚|職場|人間関係|パワハラ|評価/.test(raw)
@@ -7112,11 +7102,11 @@ function analyzeConsultationFocus(cat='',theme=''){
           ?'money'
           :'general';
   const loveAnswerNeed={
-    reunion:'復縁へ進めてよいか、連絡する目印と止まる目印をはっきり知りたい',
-    crush:'相手との距離を詰めてよいか、告白や連絡の目印を知りたい',
-    commitment:'この関係を将来につなげてよいか、相手の行動から見る判断材料がほしい',
+    reconciliation:'元恋人ともう一度進めるか、ここで区切りをつけるかを判断したい',
+    unrequited_love:'相手との距離を詰めてよいか、告白や連絡の目印を知りたい',
+    marriage:'この関係を将来につなげてよいか、相手の行動から見る判断材料がほしい',
     separation:'関係を続けるか終わらせるか、後悔しないための分かれ目を知りたい',
-    feelings:'相手の行動から読める温度感と、自分が次に確認すべきことを知りたい',
+    ambiguous_relation:'相手の行動から読める温度感と、自分が次に確認すべきことを知りたい',
     general:'関係を続けるか距離を取るか、決めるための目印がほしい',
   };
   const workAnswerNeed={
@@ -7136,9 +7126,9 @@ function analyzeConsultationFocus(cat='',theme=''){
   const dossierTitle=isDualConcern
     ?'恋愛と仕事の分かれ目に立つときの鑑定書'
     :hasLove
-      ?(loveSubtype==='reunion'?'復縁の分かれ目を見極める鑑定書'
-        :loveSubtype==='crush'?'想いを進めるタイミングを見極める鑑定書'
-          :loveSubtype==='commitment'?'将来につながる関係か見極める鑑定書'
+      ?(loveSubtype==='reconciliation'?'復縁の分かれ目を見極める鑑定書'
+        :loveSubtype==='unrequited_love'?'想いを進めるタイミングを見極める鑑定書'
+          :loveSubtype==='marriage'?'将来につながる関係か見極める鑑定書'
             :loveSubtype==='separation'?'関係の終わりと続き方を見極める鑑定書'
               :'関係を見極めるための鑑定書')
       :hasWork
@@ -7189,6 +7179,98 @@ function stringifyFocusSupplement(input=''){
   return String(input||'');
 }
 
+function getCardReadingKnowledge(){
+  return (typeof globalThis!=='undefined'&&globalThis.RASHIN_CARD_READING_KNOWLEDGE)||{};
+}
+
+function getLoveSubtypeProfiles(){
+  return getCardReadingKnowledge().loveSubtypes||{};
+}
+
+function normalizeLoveSubtypeValue(value=''){
+  const raw=String(value||'').trim();
+  const map={
+    reunion:'reconciliation',
+    '復縁':'reconciliation',
+    reconciliation:'reconciliation',
+    crush:'unrequited_love',
+    '片思い':'unrequited_love',
+    '片想い':'unrequited_love',
+    commitment:'marriage',
+    marriage:'marriage',
+    feelings:'ambiguous_relation',
+    ambiguous:'ambiguous_relation',
+    ambiguous_relation:'ambiguous_relation',
+    separation:'separation',
+    distance:'distance',
+    current_relationship:'current_relationship',
+    new_love:'new_love',
+    general:'general',
+  };
+  return map[raw]||raw||'general';
+}
+
+function getLoveSubtypeProfile(value=''){
+  const key=normalizeLoveSubtypeValue(value);
+  return getLoveSubtypeProfiles()[key]||null;
+}
+
+function detectLoveSubtypeFromText(source=''){
+  const text=String(source||'');
+  const profiles=getLoveSubtypeProfiles();
+  let best={key:'general',score:0,keywords:[]};
+  Object.entries(profiles).forEach(([key,profile])=>{
+    const hits=(profile.keywords||[]).filter(word=>word&&text.includes(word));
+    const score=hits.length;
+    if(score>best.score) best={key,score,keywords:hits};
+  });
+  if(best.score>0) return best;
+  if(/復縁|元彼|元カレ|元カノ|元恋人|一度別れた|別れた相手|過去の別れ|もう一度|よりを戻|最近また連絡|同じことを繰り返|寂しさでつなが|区切りをつけ|信頼を作|本気で向き合/.test(text)){
+    return {key:'reconciliation',score:1,keywords:[]};
+  }
+  if(/片思い|片想い|脈あり|脈|告白/.test(text)||(/好きな人/.test(text)&&!/何度か|食事|デート|連絡も続|会っ/.test(text))){
+    return {key:'unrequited_love',score:1,keywords:[]};
+  }
+  if(/結婚|婚約|将来の話|同棲|プロポーズ/.test(text)) return {key:'marriage',score:1,keywords:[]};
+  if(/別れ|別れる|離婚|距離を置|終わり/.test(text)) return {key:'separation',score:1,keywords:[]};
+  if(/相手.*気持ち|気持ち|本音|連絡|返信|曖昧|あいまい/.test(text)) return {key:'ambiguous_relation',score:1,keywords:[]};
+  return best;
+}
+
+function buildLoveSubtypeTrace(source='',baseSubtype=''){
+  const detected=detectLoveSubtypeFromText(source);
+  const normalizedBase=normalizeLoveSubtypeValue(baseSubtype||'general');
+  const finalSubtype=detected.key&&detected.key!=='general'?detected.key:normalizedBase;
+  return{
+    baseLoveSubtype:normalizedBase,
+    detectedLoveSubtype:detected.key,
+    matchedKeywords:detected.keywords||[],
+    finalLoveSubtype:finalSubtype||'general',
+    changed:!!finalSubtype&&finalSubtype!==normalizedBase,
+  };
+}
+
+function isReconciliationContext(ctxOrFocus={}){
+  return normalizeLoveSubtypeValue(ctxOrFocus?.loveSubtype||ctxOrFocus?.loveSubtypeKey||'')==='reconciliation';
+}
+
+function getLoveSubtypeSupplement(ctxOrFocus={},key=''){
+  const profile=getLoveSubtypeProfile(ctxOrFocus?.loveSubtype||ctxOrFocus?.loveSubtypeKey||'');
+  const items=profile?.supplements?.[key];
+  return Array.isArray(items)?items:[];
+}
+
+function mergeSubtypeCriteria(criteria=[],focus={},source=''){
+  const primary=normalizePrimaryThemeValue(focus);
+  const subtype=normalizeLoveSubtypeValue(focus?.loveSubtype||'general');
+  if(primary!=='love'||subtype==='general') return uniqueNonEmpty(criteria).slice(0,5);
+  const fallback=getLoveSubtypeProfile(subtype)?.decisionCriteriaFallback||[];
+  const explicit=uniqueNonEmpty(criteria);
+  const sourceText=String(source||'');
+  const directlyMentioned=fallback.filter(item=>sourceText.includes(item));
+  return uniqueNonEmpty([...explicit,...directlyMentioned,...fallback]).slice(0,5);
+}
+
 const PAID_READING_TEST_FIXTURES=Object.freeze({
   saekiShinoWorkLife:{
     primaryTheme:'work_life_direction',
@@ -7197,6 +7279,14 @@ const PAID_READING_TEST_FIXTURES=Object.freeze({
     decisionCriteria:['経験','収入','働きやすさ','成長'],
     actionReadiness:6,
     note:'佐伯詩乃ケースは検証用fixture。本番生成では直接参照しない。',
+  },
+  morikawaHinaReconciliation:{
+    primaryTheme:'love',
+    loveSubtype:'reconciliation',
+    secondaryTheme:'self_understanding',
+    decisionCriteria:['過去の原因','信頼再構築','相手の本気度','曖昧な連絡','同じ傷を繰り返さないこと'],
+    actionReadiness:4,
+    note:'森川陽菜ケースは復縁検証用fixture。本番生成では直接参照しない。',
   },
   workPriorityLoveSecondary:{
     primaryTheme:'work_life_direction',
@@ -7294,12 +7384,13 @@ function extractDecisionCriteriaList(source='',focus={}){
     '収入','成長','安心感','相手の反応','評価','自由度','距離感','家族の理解',
     '自分らしさ','続ける意味','消耗度','信頼','役割','将来性','納得感',
     '働きやすさ','経験','実績','準備材料','比較材料','生活','時間','健康','楽しさ','上達実感','表現しやすさ',
+    '過去の原因','信頼再構築','本気度','曖昧な連絡','同じ傷','寂しさ','未練','区切り',
   ];
   const explicit=candidates.filter(item=>text.includes(item));
-  if(explicit.length) return uniqueNonEmpty(explicit).slice(0,5);
   const primary=normalizePrimaryThemeValue(focus);
+  if(explicit.length) return mergeSubtypeCriteria(explicit,focus,text);
   if(primary==='work_life_direction'||primary==='career') return ['続ける意味','評価','消耗度'];
-  if(primary==='love') return ['安心感','相手の反応','信頼'];
+  if(primary==='love') return mergeSubtypeCriteria(['安心感','相手の反応','信頼'],focus,text);
   if(primary==='relationship') return ['距離感','消耗度','自然体でいられるか'];
   if(primary==='money') return ['収支','上限','見直し基準'];
   if(primary==='family') return ['家族の理解','安心感','役割'];
@@ -7355,6 +7446,7 @@ function getDecisionThemeLabel(primaryTheme='general'){
 function buildDecisionContext(focus={},context={}){
   const source=collectDecisionSource(focus,context);
   const primaryTheme=normalizePrimaryThemeValue(focus);
+  const loveSubtype=primaryTheme==='love'?normalizeLoveSubtypeValue(focus.loveSubtype||detectLoveSubtypeFromText(source).key):'general';
   const labels=getDecisionConditionLabels(primaryTheme);
   const criteriaList=Array.isArray(focus.decisionCriteriaList)&&focus.decisionCriteriaList.length
     ?focus.decisionCriteriaList
@@ -7365,6 +7457,8 @@ function buildDecisionContext(focus={},context={}){
   return{
     source,
     primaryTheme,
+    loveSubtype,
+    loveSubtypeProfile:getLoveSubtypeProfile(loveSubtype),
     secondaryTheme:focus.secondaryTheme||'',
     explicitUserPriority:focus.explicitUserPriority||'',
     actionReadiness:focus.actionReadiness??extractActionReadiness(source),
@@ -7382,6 +7476,9 @@ function buildDecisionContext(focus={},context={}){
 
 function buildDecisionFrameFromContext(ctx){
   if(ctx.primaryTheme==='love'){
+    if(isReconciliationContext(ctx)){
+      return getLoveSubtypeProfile(ctx.loveSubtype)?.decisionFrame||'まだ好きかだけで決めず、信頼を作り直せる条件と区切る条件を分けて見る';
+    }
     return `${ctx.positiveLabel}と${ctx.negativeLabel}を、${ctx.criteriaText}で分けて見る`;
   }
   if(ctx.primaryTheme==='relationship'){
@@ -7404,6 +7501,13 @@ function buildCoreInsightText(focus={},context={}){
     return `${surface}だけで迷っているのではありません。\n本当に止まっているのは、${ctx.criteriaText}をどこで確認できるかがまだ見えていないからです。\n今回の鑑定では、${ctx.positiveLabel}と${ctx.negativeLabel}を判断軸にしてください。`;
   }
   if(ctx.primaryTheme==='love'){
+    if(isReconciliationContext(ctx)){
+      return (getLoveSubtypeProfile(ctx.loveSubtype)?.coreInsight||[
+        'まだ好きかどうかだけで迷っているのではありません。',
+        '本当に見るべきなのは、元恋人ともう一度信頼を作れるか、過去の原因に向き合えるかです。',
+        '今回の鑑定では、復縁へ進む条件と区切る条件を判断軸にしてください。'
+      ]).join('\n');
+    }
     return `気持ちの強さだけで迷っているのではありません。\n本当に止まっているのは、${ctx.criteriaText}を相手の行動で確認できるかがまだ見えていないからです。\n今回の鑑定では、${ctx.positiveLabel}と${ctx.negativeLabel}を判断軸にしてください。`;
   }
   if(ctx.primaryTheme==='relationship'){
@@ -7426,6 +7530,7 @@ function buildDecisionContextPromptBlock(focus={},context={}){
   const lines=[
     '【今回の判断コンテキスト】',
     `- 主テーマ: ${ctx.primaryLabel}`,
+    ...(ctx.primaryTheme==='love'?[`- 恋愛サブテーマ: ${ctx.loveSubtypeProfile?.label||ctx.loveSubtype||'一般恋愛'}`]:[]),
     `- 明示された優先順位: ${ctx.explicitUserPriority||'なし'}`,
     `- 判断フレーム: ${buildDecisionFrameFromContext(ctx)}`,
     `- 判断条件: ${ctx.criteriaText}`,
@@ -7446,6 +7551,9 @@ function buildPrimaryStructureSentence(focus={},context={}){
     return `${ctx.primaryLabel}の方向性が定まらないため、他の判断にも自信を持って動きにくい状態です。`;
   }
   if(ctx.primaryTheme==='love'){
+    if(isReconciliationContext(ctx)){
+      return getLoveSubtypeProfile(ctx.loveSubtype)?.structureSentence||'元恋人への気持ちを主軸に、過去の原因と信頼を作り直せるかを確認する状態です。';
+    }
     return `恋愛を主軸に、${ctx.criteriaText}を相手の行動で確認する状態です。`;
   }
   if(ctx.primaryTheme==='relationship'){
@@ -7463,6 +7571,7 @@ function refineFocusWithClarify(focus={},clarifyText='',paidUserData={}){
   const selectedCategory=normalizeConsultationCategoryTag(paidObject.cat||'');
   const categoryPrimary=getConsultationPrimaryThemeFromCategory(selectedCategory);
   const source=[base.raw,clarifyText,stringifyFocusSupplement(paidUserData)].join(' ');
+  const loveSubtypeTrace=buildLoveSubtypeTrace(source,base.loveSubtype);
   const workSignal=/仕事|職場|転職|働|キャリア|進路|収入|評価|役割|求人|スキル|副業|独立|今後の生き方|続ける|辞める|残る条件|別の道|準備/.test(source);
   const loveSignal=/恋愛|好き|相手|彼氏|彼女|復縁|結婚|パートナー|片思い|不安を伝え|連絡|会う/.test(source);
   const relationshipSignal=/人間関係|友人|知人|同僚|距離感|境界線|関わり方|合わせすぎ|自己否定/.test(source);
@@ -7500,6 +7609,7 @@ function refineFocusWithClarify(focus={},clarifyText='',paidUserData={}){
     categoryPrimary,
     priorityExpressions:{love:loveFirstMatches,work:workFirstMatches},
     signals:{workSignal,loveSignal,relationshipSignal,moneySignal,familySignal,creativeSignal,selfSignal,lifeDirectionSignal},
+    loveSubtype:loveSubtypeTrace,
     secondaryThemeReason:'',
     primaryThemeReason:'',
     changed:false,
@@ -7513,10 +7623,11 @@ function refineFocusWithClarify(focus={},clarifyText='',paidUserData={}){
 
   if(loveFirstMatches.length||(categoryPrimary==='love'&&!workFirstMatches.length)){
     base.hasLove=true;
+    base.loveSubtype=loveSubtypeTrace.finalLoveSubtype;
     base.needsRelationshipDecision=true;
     base.needsDecision=true;
     applyPrimary('love',loveFirstMatches.length?'追加質問で恋愛優先が明示されたため':'タグ選択で恋愛が指定されたため');
-    base.secondaryTheme=workSignal?'career':base.secondaryTheme||null;
+    base.secondaryTheme=selfSignal?'self_understanding':(workSignal?'work_life_direction':base.secondaryTheme||null);
     base.explicitUserPriority=loveFirstMatches.length?'恋愛を先に見る':base.explicitUserPriority||'恋愛を主軸に見る';
     base.shortLabel='恋愛';
     trace.secondaryThemeReason=base.secondaryTheme?'仕事・進路は背景要因として扱うため':'副テーマなし';
@@ -7558,6 +7669,7 @@ function refineFocusWithClarify(focus={},clarifyText='',paidUserData={}){
     base.shortLabel=base.shortLabel||'仕事';
   }else if(loveSignal&&primaryBefore==='general'){
     base.hasLove=true;
+    base.loveSubtype=loveSubtypeTrace.finalLoveSubtype;
     applyPrimary('love','本文から恋愛テーマが強く出ているため');
     base.shortLabel=base.shortLabel||'恋愛';
   }else if(relationshipSignal&&primaryBefore==='general'){
@@ -7576,6 +7688,10 @@ function refineFocusWithClarify(focus={},clarifyText='',paidUserData={}){
     applyPrimary('self_understanding','本文から自己理解テーマが強く出ているため');
     base.shortLabel=base.shortLabel||'自己理解';
   }
+  if(normalizePrimaryThemeValue(base)==='love'){
+    base.hasLove=true;
+    base.loveSubtype=loveSubtypeTrace.finalLoveSubtype||normalizeLoveSubtypeValue(base.loveSubtype||'general');
+  }
   const timing=extractUserProvidedTiming(source);
   if(timing){
     base.userProvidedTiming=timing;
@@ -7590,13 +7706,15 @@ function refineFocusWithClarify(focus={},clarifyText='',paidUserData={}){
   base.decisionCriteria=`${formatDecisionCriteria(base.decisionCriteriaList)}を判断軸にする`;
   const ctx=buildDecisionContext(base,{clarifyText,paidUserData});
   base.decisionFrame=buildDecisionFrameFromContext(ctx);
-  base.answerNeed=base.explicitUserPriority
+  const subtypeProfile=ctx.loveSubtypeProfile;
+  base.answerNeed=subtypeProfile?.answerNeed||(base.explicitUserPriority
     ?`${base.explicitUserPriority}うえで、${ctx.positiveLabel}と${ctx.negativeLabel}の分かれ目を知りたい`
-    :base.answerNeed||`${ctx.positiveLabel}と${ctx.negativeLabel}の分かれ目を知りたい`;
-  base.dossierTitle=`${ctx.positiveLabel}と${ctx.negativeLabel}を見極める羅針カード`;
+    :base.answerNeed||`${ctx.positiveLabel}と${ctx.negativeLabel}の分かれ目を知りたい`);
+  base.dossierTitle=subtypeProfile?.supplements?.dossierTitle||`${ctx.positiveLabel}と${ctx.negativeLabel}を見極める羅針カード`;
   base.focusCorrectionTrace={
     ...trace,
     finalPrimaryTheme:ctx.primaryTheme,
+    finalLoveSubtype:ctx.loveSubtype,
     finalSecondaryTheme:base.secondaryTheme||'',
     finalExplicitUserPriority:base.explicitUserPriority||'',
     changed:primaryBefore!==ctx.primaryTheme,
@@ -7639,6 +7757,13 @@ function buildDecisionSupportPromptGuide(cat='',theme='',focusOverride=null){
     `悩みの翻訳として、必ずどこかに「${buildCurrentDilemmaTranslation(focus)}」という意味の一文を自然に入れること。`,
     `出力の冒頭1〜2文で、この問いに対して「${ctx.positiveLabel}・${ctx.negativeLabel}・${ctx.holdLabel}」のいずれかが伝わる形で言い切ること。`,
     '',
+    ...(isReconciliationContext(ctx)?[
+      '【復縁相談として読むルール】',
+      '- 主題は一般恋愛ではなく、元恋人ともう一度進めるか、区切りをつけるかです',
+      '- 「まだ好きかどうか」だけで結論を出さず、過去の別れの原因、相手の本気度、信頼再構築、曖昧な連絡、同じ傷を繰り返さないことを判断軸にする',
+      '- 「復縁できます」と断定しない。ただし、条件Aなら進む、条件Bなら区切る、条件Cなら保留と書く',
+      '',
+    ]:[]),
     `【決めるための目印を具体化するルール】`,
     '- 無根拠な未来・他人の心・専門判断は断定しない。ただし判断条件は「条件Aなら進む、条件Bなら止まる、条件Cなら保留」と言い切る',
     '- 「〜かもしれません」「〜の可能性があります」だけで終わらせない。使う場合は必ず判断条件と行動へ接続する',
@@ -7730,6 +7855,15 @@ function buildThemeSpecificActionPlan(focus){
     ];
   }
   if(ctx.primaryTheme==='love'){
+    if(isReconciliationContext(ctx)){
+      return getLoveSubtypeSupplement(ctx,'action7').length
+        ?getLoveSubtypeSupplement(ctx,'action7')
+        :[
+          '復縁したい理由と、繰り返したくない不安を3つずつ書き出す。',
+          '相手に確認したいことを1つに絞る。',
+          '過去の原因について話せるか、軽い言葉で確認する。'
+        ];
+    }
     return[
       '感情が静かな時間に、続けたい理由と不安な点を3つずつ書き出す。',
       '相手に確認したいことを1つに絞り、遠回しにせず言葉にする。',
@@ -7770,6 +7904,15 @@ function buildThirtyDayActionPlan(focus){
     ];
   }
   if(ctx.primaryTheme==='love'){
+    if(isReconciliationContext(ctx)){
+      return getLoveSubtypeSupplement(ctx,'action30').length
+        ?getLoveSubtypeSupplement(ctx,'action30')
+        :[
+          '相手が過去の原因から逃げずに話せたかを見る。',
+          '連絡や態度が一時的ではなく安定したかを見る。',
+          '自分の安心感が増えたか、期待だけが増えたかを確認する。'
+        ];
+    }
     return[
       '関係を続ける条件を3つに絞り、毎回その基準で会話後の気持ちを見直す。',
       '曖昧なまま流しているテーマを一つずつ言葉にする。',
@@ -7810,6 +7953,13 @@ function buildDossierWarnings(focus){
     ];
   }
   if(ctx.primaryTheme==='love'){
+    if(isReconciliationContext(ctx)){
+      return[
+        '懐かしさだけで復縁を進めない',
+        '過去の原因を確認しないまま曖昧な連絡を続けない',
+        '自分だけが期待して苦しくなる状態を放置しない'
+      ];
+    }
     return[
       '寂しさを関係の価値と取り違えない',
       '話し合いを避けたまま希望だけで残らない',
@@ -7845,6 +7995,13 @@ function buildDossierLuck(focus){
     ];
   }
   if(ctx.primaryTheme==='love'){
+    if(isReconciliationContext(ctx)){
+      return[
+        '過去の原因を避けずに話せたとき',
+        '曖昧な連絡ではなく具体的な向き合い方が見えたとき',
+        '自分だけが期待して苦しくなる流れが止まったとき'
+      ];
+    }
     return[
       '会話後に安心感が増えたとき',
       '我慢ではなく本音を出せたとき',
@@ -7865,6 +8022,9 @@ function buildDossierLuck(focus){
 
 function buildDossierKeywords(focus){
   const ctx=buildDecisionContext(focus);
+  if(isReconciliationContext(ctx)){
+    return (ctx.loveSubtypeProfile?.supplements?.dossierKeywords||['復縁','過去の原因','信頼再構築','曖昧な連絡','区切り','本気度確認']).join(' / ');
+  }
   const base=[ctx.positiveLabel,ctx.negativeLabel,...ctx.decisionCriteriaList,'今週の確認'];
   if(ctx.userProvidedTiming) base.push(ctx.userProvidedTiming);
   if(ctx.secondaryTheme) base.push(getDecisionThemeLabel(ctx.secondaryTheme));
@@ -7987,6 +8147,9 @@ function getOracleCompassFallback(focusOverride=null){
     return '今週の羅針盤は、複数の悩みを同じ不安で処理しないことです。まず一つだけ確認するテーマを選び、残りはメモに分けて置いてください。';
   }
   if(ctx.primaryTheme==='love'){
+    if(isReconciliationContext(ctx)){
+      return '今週の羅針盤は、まだ好きかどうかを測ることではなく、過去の原因を一つ確認することです。懐かしさで戻る前に、信頼を作り直せる会話ができるかを見てください。';
+    }
     return '今週の羅針盤は、相手の気持ちを決め打ちしないことです。確認したいことを一つに絞り、遠回しに試さず言葉にしてください。';
   }
   if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
@@ -8017,6 +8180,9 @@ function hasOracleThemeTerms(text='',focus={}){
   const source=String(text||'');
   const ctx=buildDecisionContext(focus);
   if(ctx.primaryTheme==='love'){
+    if(isReconciliationContext(ctx)){
+      return /復縁|元恋人|過去|別れ|信頼|曖昧|連絡|寂しさ|懐かしさ|本気|区切/.test(source);
+    }
     return /相手|関係|本音|安心|不安|信頼|会話|反応|向き合|好き/.test(source);
   }
   if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
@@ -8031,6 +8197,9 @@ function hasOracleThemeTerms(text='',focus={}){
 function getOracleMessageFallbackForFocus(focus={}){
   const ctx=buildDecisionContext(focus);
   if(ctx.primaryTheme==='love'){
+    if(isReconciliationContext(ctx)){
+      return 'ここまでのあなたは、元恋人とのつながりを切りきれないまま、もう一度信頼を作れるのかを見極めようとしてきたはずです。今週は、懐かしさではなく、過去の原因に向き合える反応があるかを確認してください。';
+    }
     return 'ここまでのあなたは、関係を壊さないように本音を抑えてきたはずです。今週は、相手の気持ちを決め打ちするより、不安を一つ言葉にしたときの反応を見てください。';
   }
   if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
@@ -8046,11 +8215,19 @@ function adaptOracleThemeText(text='',focus={}){
   const ctx=buildDecisionContext(focus);
   let output=normalizeJapaneseNearDuplicateText(String(text||'').trim());
   if(ctx.primaryTheme==='love'){
+    if(isReconciliationContext(ctx)){
+      output=output
+        .replace(/ここまでのあなたは、自分なりのやり方で何とか持ちこたえてきたはずです。?/g,'ここまでのあなたは、元恋人とのつながりを切りきれないまま、もう一度信頼を作れるのかを見極めようとしてきたはずです。')
+        .replace(/一人で抱え込むより/g,'相手の本気度を一人で想像し続けるより')
+        .replace(/選択肢を増やしてから動く/g,'過去の原因を確認してから動く')
+        .replace(/感情・現実の条件・確認すべきこと/g,'未練・過去の原因・信頼を作り直せる条件');
+    }else{
     output=output
       .replace(/ここまでのあなたは、自分なりのやり方で何とか持ちこたえてきたはずです。?/g,'ここまでのあなたは、関係を壊さないように本音を抑えてきたはずです。')
       .replace(/一人で抱え込むより/g,'相手の反応を一人で想像し続けるより')
       .replace(/選択肢を増やしてから動く/g,'相手の反応を確かめてから進む')
       .replace(/感情・現実の条件・確認すべきこと/g,'自分の本音・相手の反応・安心して進める条件');
+    }
   }else if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
     output=output
       .replace(/ここまでのあなたは、自分なりのやり方で何とか持ちこたえてきたはずです。?/g,'ここまでのあなたは、今の環境で踏ん張りながら条件を見極めようとしてきたはずです。')
@@ -8281,6 +8458,11 @@ function buildReadingOutputFormatGuide(kind='len',is9=false,focusOverride=null){
       'カード名は本文では最大2〜3枚まで。カード意味のキーワード列挙ではなく、今回の相談への翻訳を先に書いてください。',
       '「『船』は遠距離恋愛・旅先での縁を示します」のような辞書説明は禁止です。「距離感をまだ手元で確かめきれていない」のように現実語へ変換してください。',
       `カード本来の意味と相談者の判断条件「${ctx.criteriaText}」を混同しないでください。カードは現実・障害・流れを読み、判断条件は最後に確認ポイントとして接続してください。`,
+      ...(isReconciliationContext(ctx)?[
+        '恋愛サブテーマは復縁です。一般恋愛ではなく、元恋人ともう一度信頼を作れるか、過去の別れの原因に向き合えるか、寂しさや懐かしさだけでつながっていないかを読むこと。',
+        '復縁ケースでは「復縁できます」と断定しない。ただし、進む条件と区切る条件は言い切ること。',
+        '本文にカード名を出す場合も、実際に引いたカードだけを使う。未出カード名を例として出さないこと。',
+      ]:[]),
       '例：「十字架」は負担や避けてきた課題、「錨」は安定と固定の両面として読む。全カードを同じ判断条件文へ変換しないでください。',
       '「合図」は多用しないでください。必要なら「流れ」「兆し」「確認ポイント」「判断材料」「注意点」に言い換えてください。',
       '',
@@ -10149,16 +10331,24 @@ function normalizeDossierSentence(text='',fallback='',options={}){
 function normalizeDossierParagraph(text='',fallback='',max=180){
   const source=String(text||'').replace(/\[\[\/?[A-Z0-9_]+\]\]/g,' ').replace(/\s+/g,' ').trim();
   const fallbackSource=String(fallback||'').replace(/\s+/g,' ').trim();
-  const sentences=[...splitJapaneseSentences(source),...splitJapaneseSentences(fallbackSource)];
-  let out='';
-  for(const sentence of sentences){
-    const clean=ensureJapaneseSentence(cleanDossierItemText(sentence));
-    if(!clean||isDossierIncompleteText(clean)) continue;
-    if((out+clean).length>max) break;
-    out+=clean;
-    if(splitJapaneseSentences(out).length>=3) break;
-  }
-  return out||ensureJapaneseSentence(trimDossierTextSafely(fallbackSource,max,40));
+  const build=sentences=>{
+    let out='';
+    const seen=new Set();
+    for(const sentence of sentences){
+      const clean=ensureJapaneseSentence(cleanDossierItemText(sentence));
+      if(!clean||isDossierIncompleteText(clean)) continue;
+      const key=normalizeIntegrationItemKey(clean);
+      if(key&&seen.has(key)) continue;
+      if((out+clean).length>max) break;
+      if(key) seen.add(key);
+      out+=clean;
+      if(splitJapaneseSentences(out).length>=3) break;
+    }
+    return out;
+  };
+  return build(splitJapaneseSentences(source))||
+    build(splitJapaneseSentences(fallbackSource))||
+    ensureJapaneseSentence(trimDossierTextSafely(fallbackSource,max,40));
 }
 
 function compactFinalSummaryText(text='',max=350){
@@ -10215,6 +10405,7 @@ function resolveDossierFocusFromData(data={}){
   const primaryTheme=normalizePrimaryThemeValue({primaryTheme:primaryRaw});
   return{
     primaryTheme,
+    loveSubtype:normalizeLoveSubtypeValue(data.LOVE_SUBTYPE||data.loveSubtype||'general'),
     secondaryTheme:data.SECONDARY_THEME||data.secondaryTheme||'',
     explicitUserPriority:data.EXPLICIT_USER_PRIORITY||data.explicitUserPriority||'',
     decisionCriteriaList:Array.isArray(data.DECISION_CRITERIA_LIST)?data.DECISION_CRITERIA_LIST:[],
@@ -10229,6 +10420,12 @@ function normalizeDossierCardData(data={}){
   const focus=resolveDossierFocusFromData(data)||getCurrentRefinedFocus();
   const ctx=buildDecisionContext(focus);
   const themedFallback=buildWorkLifeDossierData(focus);
+  if(isReconciliationContext(ctx)&&!/復縁|元恋人|過去の|信頼|区切り|曖昧な連絡/.test(`${source.TITLE||''} ${source.ONE_LINE||''} ${source.VERDICT||''} ${source.DECISION_AXIS||''} ${source.KEYWORDS||''}`)){
+    Object.assign(source,themedFallback,{EVIDENCE_SUMMARY:source.EVIDENCE_SUMMARY||themedFallback.EVIDENCE_SUMMARY});
+  }
+  if(isReconciliationContext(ctx)&&!/復縁|元恋人|過去の|過去の原因|信頼|区切り|曖昧な連絡|同じ傷/.test(`${source.VERDICT||''}`)){
+    source.VERDICT=themedFallback.VERDICT;
+  }
   if(focus.explicitUserPriority&&/恋愛と仕事を同時に片づけようとしない|同時に片づけない/.test(`${source.ONE_LINE||''} ${source.VERDICT||''}`)){
     source.ONE_LINE=themedFallback.ONE_LINE;
     source.VERDICT=themedFallback.VERDICT;
@@ -10316,6 +10513,7 @@ function resolveDossierCardData(data={}){
 }
 
 function buildDossierTitleForDecisionContext(ctx){
+  if(isReconciliationContext(ctx)) return ctx.loveSubtypeProfile?.supplements?.dossierTitle||'進むか区切るかを見極める復縁の羅針カード';
   if(ctx.primaryTheme==='love') return '進むか止まるかを見極める恋愛の羅針カード';
   if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return '残るか動くかを見極める仕事の羅針カード';
   if(ctx.primaryTheme==='relationship') return '関わるか距離を置くかを見極める羅針カード';
@@ -10326,6 +10524,7 @@ function buildDossierTitleForDecisionContext(ctx){
 }
 
 function buildDossierOneLineForDecisionContext(ctx){
+  if(isReconciliationContext(ctx)) return ctx.loveSubtypeProfile?.supplements?.dossierOneLine||'まだ好きかだけで進めず、信頼を作り直せるかを見る。';
   if(ctx.primaryTheme==='love') return '気持ちの強さだけで進めず、相手の行動で安心を確認する。';
   if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return '今の環境に残る意味と、動き出す必要を分けて見る。';
   if(ctx.primaryTheme==='relationship') return '近づくほど自然体でいられるか、距離が必要かを見極める。';
@@ -10336,6 +10535,13 @@ function buildDossierOneLineForDecisionContext(ctx){
 function buildDossierVerdictForDecisionContext(ctx){
   const criteriaChoice=formatDecisionCriteriaChoice(ctx.decisionCriteriaList,ctx.criteriaText||'確認できること');
   if(ctx.primaryTheme==='love'){
+    if(isReconciliationContext(ctx)){
+      const verdict=(ctx.loveSubtypeProfile?.supplements?.dossierVerdict||[
+        'この恋愛は、まだ好きかどうかだけで進める段階ではありません。',
+        'もう一度信頼を作れるか、過去の原因に向き合えるかを見てください。'
+      ]).join('');
+      return verdict;
+    }
     return `今回の答えは、気持ちの強さだけで進めず、${criteriaChoice}を相手の行動で確認することです。${ctx.positiveLabel}が見えるなら関係を進める判断です。見えないなら、${ctx.reviewTiming}までに${ctx.negativeLabel}を見てください。`;
   }
   if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
@@ -10351,6 +10557,7 @@ function buildDossierVerdictForDecisionContext(ctx){
 }
 
 function buildDossierClosingForDecisionContext(ctx){
+  if(isReconciliationContext(ctx)) return getLoveSubtypeSupplement(ctx,'push')[0]||'今週は、懐かしさではなく、信頼を作り直せる相手かを確かめる週です。';
   if(ctx.primaryTheme==='love') return '今週は、答えを急ぐより、相手が向き合える人かを確かめる週です。';
   if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return `今週は、${ctx.positiveLabel}と${ctx.negativeLabel}を選べる材料を集める週です。`;
   if(ctx.primaryTheme==='relationship') return '今週は、相手を変えるより、自分が自然体でいられる距離を確かめる週です。';
@@ -10364,6 +10571,7 @@ function buildWorkLifeDossierData(focus={}){
   const negative=getIntegrationSupplementItems(ctx.negativeLabel,focus).slice(0,2);
   return{
     PRIMARY_THEME:ctx.primaryTheme,
+    LOVE_SUBTYPE:ctx.loveSubtype,
     SECONDARY_THEME:ctx.secondaryTheme,
     EXPLICIT_USER_PRIORITY:ctx.explicitUserPriority,
     DECISION_CRITERIA_LIST:ctx.decisionCriteriaList,
@@ -10392,6 +10600,9 @@ function buildDossierRecurringThemeText(focus=analyzeConsultationFocus()){
     if(stats.topLen) parts.push(`繰り返し出ているカードは「${stats.topLen}」です。`);
     if(stats.paidCount) parts.push(`深掘り鑑定は${stats.paidCount}件あり、前回からの変化も読みやすくなっています。`);
     if(parts.length) return parts.join(' ');
+  }
+  if(normalizePrimaryThemeValue(focus)==='love'&&normalizeLoveSubtypeValue(focus?.loveSubtype)==='reconciliation'){
+    return '繰り返し出ているテーマは、まだ好きかどうかではなく、過去の原因に向き合い、信頼を作り直せるかを見極めることです。';
   }
   if(focus?.hasLove){
     return '繰り返し出ているテーマは、気持ちの強さよりも、相手の行動の安定感と向き合い方を見極めることです。';
@@ -12492,7 +12703,8 @@ function isClarifyWork(ctx){
 }
 
 function isClarifyReunion(ctx){
-  return ctx.baseFocus?.loveSubtype==='reunion'||/復縁|元彼|元カレ|元カノ|よりを戻/.test(`${ctx.category} ${ctx.theme}`);
+  const subtype=normalizeLoveSubtypeValue(ctx.refinedFocus?.loveSubtype||ctx.baseFocus?.loveSubtype||'');
+  return subtype==='reconciliation'||/復縁|元彼|元カレ|元カノ|元恋人|一度別れた|よりを戻|もう一度|過去の別れ/.test(`${ctx.category} ${ctx.theme}`);
 }
 
 function makeClarifyCandidate(id,badge,anchor,q,hint,templates,score,meaningKey,extra={}){
@@ -12757,6 +12969,28 @@ function buildClarifyOracleActionQuestion(ctx){
   );
 }
 
+function buildClarifyReconciliationQuestion(ctx){
+  if(!isClarifyLove(ctx)||!isClarifyReunion(ctx)) return null;
+  const source=`${ctx.category} ${ctx.theme}`;
+  const subject=getClarifyThemeKeyword(ctx);
+  let q='元恋人ともう一度進めるかを判断するために、過去の別れの原因で「もう繰り返したくないこと」は何ですか？';
+  if(/過去の別れ|別れた原因|原因/.test(source)&&!/本気|向き合/.test(source)){
+    q='相手が本気で向き合っていると判断できる行動は何ですか？';
+  }else if(/本気|向き合/.test(source)&&!/区切|止まる/.test(source)){
+    q='これが続くなら区切るべきだと思う相手の態度は何ですか？';
+  }else if(/区切|止まる/.test(source)){
+    q='今週、相手に確認できそうな一番小さな一言は何ですか？';
+  }
+  const profile=getLoveSubtypeProfile('reconciliation');
+  return makeClarifyCandidate(
+    'reconciliation_context','復縁の核心',buildClarifyAnchor(ctx.coreCard||ctx.blockerCard||ctx.ambiguityCard,'復縁の分かれ目'),
+    `「${subject}」について、${q}`,
+    '復縁相談では、好きかどうかだけでなく、過去の原因と信頼を作り直せるかを確認すると最終判断が強くなります。',
+    profile?.clarify?.templates||['過去の原因を避けずに話せるなら進む','曖昧な連絡だけなら区切る','寂しさだけか本音かを分けたい'],
+    96,'reconciliation_context',{answeredByPattern:/過去の別れ|過去の原因|同じことを繰り返|本気で向き合|曖昧な連絡|寂しさでつなが|信頼を作/}
+  );
+}
+
 function buildClarifyDecisionBranchQuestion(ctx){
   const subject=getClarifyThemeKeyword(ctx);
   const isLove=isClarifyLove(ctx);
@@ -12786,6 +13020,7 @@ function buildClarifyDecisionBranchQuestion(ctx){
 function buildClarifyQuestionCandidates(ctx){
   return [
     buildClarifyThemePriorityQuestion(ctx),
+    buildClarifyReconciliationQuestion(ctx),
     buildClarifyAmbiguityQuestion(ctx),
     buildClarifyBlockerQuestion(ctx),
     buildClarifyPeopleQuestion(ctx),
@@ -13449,6 +13684,14 @@ function translateLenormandDictionaryText(text='',focus={},context={}){
   });
 }
 
+function buildSubtypeLenormandCardReadingSentence(cardName='',ctx={}){
+  if(!isReconciliationContext(ctx)) return '';
+  const card=String(cardName||'').trim();
+  const reading=ctx.loveSubtypeProfile?.lenormand?.[card]||getLoveSubtypeProfile(ctx.loveSubtype)?.lenormand?.[card]||'';
+  if(!reading) return '';
+  return reading.startsWith(`「${card}」`)?reading:`「${card}」は、${reading}`;
+}
+
 function buildLenormandCardReadingSentence(cardName='',meaning='',ctx=buildDecisionContext(getCurrentRefinedFocus())){
   const card=String(cardName||'').trim();
   const cleanMeaning=String(meaning||'').trim();
@@ -13456,6 +13699,8 @@ function buildLenormandCardReadingSentence(cardName='',meaning='',ctx=buildDecis
   const primary=ctx.primaryTheme;
   const asLove=primary==='love';
   const asWork=primary==='work_life_direction'||primary==='career';
+  const subtypeReading=buildSubtypeLenormandCardReadingSentence(card,ctx);
+  if(subtypeReading) return subtypeReading;
   if(/十字架/.test(card)){
     return asLove
       ?'「十字架」は、関係の中で避けてきた重さや負担を示します。平気なふりを続けるほど判断が重くなるため、不安を一つ言葉にできるかが大事です。'
@@ -13770,9 +14015,18 @@ function buildPrimaryTopVerdictText(name='あなた',focus={},theme='',context={
     lines.push(`今回の答えは、恋愛と仕事などを同じ重さで同時に決めることではなく、先に確認するテーマを分けることです。`);
     lines.push(`片方は${ctx.positiveLabel}、もう片方は${ctx.negativeLabel}として扱い、30日以内にどちらを先に動かすか決めてください。`);
   }else if(ctx.primaryTheme==='love'){
-    lines.push(`今回の答えは、${ctx.positiveLabel}と${ctx.negativeLabel}を分けて確認することです。`);
-    lines.push(`${ctx.criteriaText}が相手の行動で確認できるなら、関係を進める判断です。`);
-    lines.push(`確認できないなら、${ctx.reviewTiming}を目安に立ち止まる条件を見てください。`);
+    if(isReconciliationContext(ctx)){
+      const subtypeLines=ctx.loveSubtypeProfile?.topVerdict||[];
+      lines.push(...(subtypeLines.length?subtypeLines:[
+        '今回の答えは、まだ好きかどうかだけで進めず、もう一度信頼を作れる条件を確認することです。',
+        '相手が過去の別れの原因を避けず、今後どう向き合うかを具体的に話せるなら、関係を進める判断です。',
+        '曖昧な連絡だけが続き、肝心な話をごまかされるなら、区切る条件を見てください。'
+      ]));
+    }else{
+      lines.push(`今回の答えは、${ctx.positiveLabel}と${ctx.negativeLabel}を分けて確認することです。`);
+      lines.push(`${ctx.criteriaText}が相手の行動で確認できるなら、関係を進める判断です。`);
+      lines.push(`確認できないなら、${ctx.reviewTiming}を目安に立ち止まる条件を見てください。`);
+    }
   }else if(ctx.primaryTheme==='relationship'){
     lines.push(`今回の答えは、${ctx.positiveLabel}と${ctx.negativeLabel}を分けて確認することです。`);
     lines.push(`${ctx.criteriaText}が保てるなら、関わり方を整える判断です。`);
@@ -13984,6 +14238,9 @@ function getIntegrationSupplementItems(heading='',focus={},cat='総合',theme=''
   const criteria=ctx.criteriaText;
   const criteriaChoice=formatDecisionCriteriaChoice(ctx.decisionCriteriaList);
   const timing=ctx.userProvidedTiming?`${ctx.userProvidedTiming}を目安に`:'30日以内に';
+  const subtypePositive=getLoveSubtypeSupplement(ctx,'positive');
+  const subtypeNegative=getLoveSubtypeSupplement(ctx,'negative');
+  const subtypeHold=getLoveSubtypeSupplement(ctx,'hold');
   const byTheme={
     work_life_direction:{
       positive:[`今の環境で${criteriaChoice}が確認できる。`,'続けることで、次の選択肢に使える材料が残る。','条件や評価が変わる余地を確認できる。'],
@@ -14026,7 +14283,13 @@ function getIntegrationSupplementItems(heading='',focus={},cat='総合',theme=''
       hold:['本音、条件、現実の情報が混ざっている。','まだ確認していないことが多い。','不安が強い日に決めようとしている。'],
     },
   };
-  const themeItems=byTheme[ctx.primaryTheme]||byTheme.general;
+  const themeItems=isReconciliationContext(ctx)
+    ?{
+      positive:subtypePositive.length?subtypePositive:byTheme.love.positive,
+      negative:subtypeNegative.length?subtypeNegative:byTheme.love.negative,
+      hold:subtypeHold.length?subtypeHold:byTheme.love.hold,
+    }
+    :(byTheme[ctx.primaryTheme]||byTheme.general);
   const positiveMap={[ctx.positiveLabel]:themeItems.positive};
   const negativeMap={[ctx.negativeLabel]:themeItems.negative};
   const shared={
@@ -14034,7 +14297,7 @@ function getIntegrationSupplementItems(heading='',focus={},cat='総合',theme=''
     '7日以内の一手':buildThemeSpecificActionPlan(focus),
     '30日以内に見ること':buildThirtyDayActionPlan(focus),
     '背中を押す一文':[
-      `今週は、答えを急ぐより、${ctx.positiveLabel}と${ctx.negativeLabel}を選べる材料を集める週です。`
+      getLoveSubtypeSupplement(ctx,'push')[0]||`今週は、答えを急ぐより、${ctx.positiveLabel}と${ctx.negativeLabel}を選べる材料を集める週です。`
     ],
   };
   return positiveMap[heading]||negativeMap[heading]||shared[heading]||[];
@@ -14292,6 +14555,9 @@ function detectLenormandRoleIssues(text='',focus={},integration=''){
   if(/「(?:十字架|錨|雲|山|鍵|星|騎士|家)」は、?[^。]*(?:安心感|相手の反応|信頼|収入|成長|評価|役割)[^。]*(?:行動から確かめる材料|残るかを確認する材料)/.test(source)){
     issues.push('LENのカード説明にdecisionCriteriaが雑に流し込まれています');
   }
+  if(isReconciliationContext(ctx)&&!/復縁|元恋人|過去の|別れの原因|信頼を作|曖昧な連絡|寂しさ|懐かしさ|同じ傷/.test(source)){
+    issues.push('LENに復縁固有の現実読みが足りません');
+  }
   issues.push(...detectUndrawnLenormandCardNameIssues(source));
   issues.push(...detectBrokenDecisionCriteriaPhraseIssues(source,'LEN本文'));
   if(!isWorkLifeDirectionFocus(focus)&&!focus.explicitUserPriority) return issues;
@@ -14380,8 +14646,12 @@ function detectFocusRegressionIssues(baseFocus={},refinedFocus={},context={}){
   const source=[context.clarifyText,context.theme,stringifyFocusSupplement(context.paidUserData)].join(' ');
   const lovePriority=/今回\s*先に\s*見たいのは\s*恋愛|主テーマは\s*恋愛|恋愛を進めていいか、?\s*距離を置くべきか|この恋愛を進めていいか/.test(source)||selectedCategory==='恋愛';
   const workPriority=/今回\s*先に\s*見たいのは\s*(仕事|進路|働き方|今後の生き方)|主テーマは\s*(仕事|進路|働き方|今後の生き方)/.test(source)||selectedCategory==='仕事・進路';
+  const reconciliationSignal=/復縁|元彼|元カレ|元カノ|元恋人|一度別れた|過去の別れ|もう一度|同じことを繰り返|寂しさでつなが|区切りをつけ|信頼を作/.test(source);
   if(lovePriority&&refinedPrimary!=='love') issues.push('focus補正で恋愛優先がprimaryThemeに反映されていません');
   if(workPriority&&!(refinedPrimary==='work_life_direction'||refinedPrimary==='career')) issues.push('focus補正で仕事・進路優先がprimaryThemeに反映されていません');
+  if(reconciliationSignal&&refinedPrimary==='love'&&normalizeLoveSubtypeValue(refinedFocus?.loveSubtype)!=='reconciliation'){
+    issues.push('focus補正で復縁文脈がloveSubtype=reconciliationに反映されていません');
+  }
   if(basePrimary==='love'&&(refinedPrimary==='career'||refinedPrimary==='work_life_direction')&&!workPriority){
     issues.push('refinedFocusがbaseFocusより悪化し、恋愛主軸から仕事主軸へ戻っています');
   }
@@ -14411,6 +14681,9 @@ function validateIntegrationSatisfaction(text='',context={}){
   const axisTerms=ctx.decisionCriteriaList.filter(item=>String(item||'').length>=2);
   if((focus.explicitUserPriority||ctx.primaryTheme!=='general')&&!axisTerms.some(term=>source.includes(term))){
     issues.push('integrationに相談者テーマの判断軸が足りません');
+  }
+  if(isReconciliationContext(ctx)&&!/復縁|元恋人|過去の|別れの原因|信頼を作|信頼再構築|区切り|曖昧な連絡/.test(source)){
+    issues.push('integrationに復縁固有の判断軸が足りません');
   }
   Object.entries(getIntegrationHeadingRequirements(focus)).forEach(([heading,requirement])=>{
     const count=countIntegrationItemsForHeading(source,heading);
@@ -15563,6 +15836,7 @@ function buildPremiumDossierSourceContext(){
   const nameText=namePlain?[namePlain.overview,namePlain.timing,namePlain.advice].filter(Boolean).join(' '):'なし';
   const lifeText=buildLifePatternPlainText();
   const foundationDeepText=LAST_OUTPUTS.foundationDeep||buildFoundationDeepFallback();
+  const dossierDecisionContext=buildDecisionContext(focus,{clarifyText,paidUserData:input});
   const history=getReadingHistory();
   const stats=history.length?computeReadingStats(history):null;
   const historyText=stats
@@ -15577,6 +15851,7 @@ ${formatUserDataBlock('相談テーマ分類',input.cat||'総合',80)}
 ${formatUserDataBlock('相談本文',input.theme||'全般',1200)}
 ${formatUserDataBlock('追加質問への回答',clarifyText,1600)}
 【相談者が欲しい答え】${focus.answerNeed}
+【判断コンテキスト】主テーマ=${dossierDecisionContext.primaryLabel} / 恋愛サブテーマ=${dossierDecisionContext.loveSubtypeProfile?.label||dossierDecisionContext.loveSubtype}
 【生まれから見える傾向】${birthText}
 【名前から伝わる印象】${nameText}
 【誕生日から見える行動の癖】${lifeText}
@@ -15661,6 +15936,7 @@ function buildPremiumDossierCardSystemPrompt(todayText){
 
 守ること:
 - メインは一言結論、${ctx.positiveLabel}、${ctx.negativeLabel}、${ctx.holdLabel}、今週の一手、保存キーワード、背中を押す一文だけに絞る
+- ${isReconciliationContext(ctx)?'恋愛サブテーマは復縁。羅針カードでは「まだ好きか」ではなく「もう一度信頼を作れるか」「過去の原因に向き合えるか」「曖昧な連絡だけで続いていないか」を残す':'相談テーマに合わせたラベルと判断軸を使う'}
 - 羅針カードは占い結果の全文ではなく、あとで読み返す判断軸にする
 - 本編のトップ結論、最終判断カード、羅針カードで同じ判断軸を一貫させる
 - 追加質問の回答をそのまま再掲しない。内部で要約して使う
@@ -16808,7 +17084,9 @@ function buildRichLenFallback(name,cat){
   const supportNames=ids.filter(id=>LEN_FALLBACK_GROUPS.support.includes(id)).map(cardName).filter(Boolean).slice(0,2);
   const burdenNames=ids.filter(id=>LEN_FALLBACK_GROUPS.burden.includes(id)).map(cardName).filter(Boolean).slice(0,2);
   const structureLines=[];
-  if(ctx.primaryTheme==='love'){
+  if(ctx.primaryTheme==='love'&&isReconciliationContext(ctx)){
+    structureLines.push(`${name}さんが迷っているのは、まだ好きかどうかだけではなく、元恋人ともう一度信頼を作れるか、過去の原因に向き合えるかがまだ見えていないからです。`);
+  }else if(ctx.primaryTheme==='love'){
     structureLines.push(`${name}さんが迷っているのは、相手を好きかどうかではなく、${ctx.criteriaText}を相手の言葉と行動で確認できていないからです。`);
   }else if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
     structureLines.push(`${name}さんが迷っているのは、今の環境の良し悪しだけではなく、続けた先に${ctx.criteriaText}が残るかをまだ見極めきれていないからです。`);
@@ -16824,13 +17102,17 @@ function buildRichLenFallback(name,cat){
   const flowLines=[];
   flowLines.push(cardSignal(currentId)||getLenCoreFocusText(currentId));
   if(hasHidden||currentHidden){
-    flowLines.push('今の流れには、まだ言葉にされていない本音や、確認しないまま残っている曖昧さがあります。ここを飛ばすと、楽なほうを選んだつもりでも不安が残りやすいです。');
+    flowLines.push(isReconciliationContext(ctx)
+      ?'今の流れには、まだ聞けていない本音や、過去の別れの原因に触れないまま残っている曖昧さがあります。ここを飛ばすと、懐かしさで戻ったつもりでも同じ不安が残りやすいです。'
+      :'今の流れには、まだ言葉にされていない本音や、確認しないまま残っている曖昧さがあります。ここを飛ばすと、楽なほうを選んだつもりでも不安が残りやすいです。');
   }
   if(hasRelationship){
     flowLines.push('関係性の流れも出ているため、相手や環境の反応を見ずに一人で答えを決めると、読み違いが起きやすくなります。');
   }
   if(hasStability){
-    flowLines.push('安定へ向かう流れがある一方で、安定そのものが変化を遅らせる理由にもなっています。安心できる形なのか、ただ動かない形なのかを分けて見てください。');
+    flowLines.push(isReconciliationContext(ctx)
+      ?'安定へ向かう流れがある一方で、復縁ではその安定が安心なのか、曖昧な連絡が固定されているだけなのかを分けて見る必要があります。'
+      :'安定へ向かう流れがある一方で、安定そのものが変化を遅らせる理由にもなっています。安心できる形なのか、ただ動かない形なのかを分けて見てください。');
   }
   if(hasChoice||currentChoice){
     flowLines.push('選ぶ前に確認するポイントも出ています。選べないのではなく、選ぶ前に確認すべき反応や条件が残っている状態です。');
@@ -16841,7 +17123,9 @@ function buildRichLenFallback(name,cat){
 
   const warningLines=[];
   if(hasBurden||hiddenBurden){
-    warningLines.push(`${burdenNames.length?`「${burdenNames.join('」「')}」のような`:''}負担として見ておきたい点があるため、平気なふりを続けるほど判断が重くなります。迷いを気合いで押し切るより、何が負担になっているかを先に切り分けてください。`);
+    warningLines.push(isReconciliationContext(ctx)
+      ?`${burdenNames.length?`「${burdenNames.join('」「')}」のような`:''}過去の痛みや背負ってきた重さがあるため、平気なふりを続けるほど復縁の判断は重くなります。同じ傷つき方を繰り返さないために、過去の原因を言葉にしてください。`
+      :`${burdenNames.length?`「${burdenNames.join('」「')}」のような`:''}負担として見ておきたい点があるため、平気なふりを続けるほど判断が重くなります。迷いを気合いで押し切るより、何が負担になっているかを先に切り分けてください。`);
   }else{
     warningLines.push('気をつけることは、気持ちが整うまで待ち続けてしまうことです。現実の反応を見ないまま考え続けると、判断材料が増えず、同じ迷いに戻りやすくなります。');
   }
@@ -16852,7 +17136,9 @@ function buildRichLenFallback(name,cat){
     warningLines.push('区切りにつながる流れもあるため、先送りを続けると自分で選ぶ前に状況側の変化に押されやすくなります。');
   }
   if(hasValue){
-    warningLines.push('価値や見返りの判断材料も絡んでいます。好き嫌いだけで判断せず、続けることで何が残り、何を失うのかを見てください。');
+    warningLines.push(isReconciliationContext(ctx)
+      ?'価値や見返りの判断材料も絡んでいます。好きかどうかだけで判断せず、もう一度信頼を作れる関係なのか、期待だけが増えていないかを見てください。'
+      :'価値や見返りの判断材料も絡んでいます。好き嫌いだけで判断せず、続けることで何が残り、何を失うのかを見てください。');
   }
   if(hiddenRelationship){
     warningLines.push('表に出している理由とは別に、情やつながりへの未練も残りやすい流れです。その前提を認めたほうが、かえって判断は整います。');
@@ -16864,7 +17150,9 @@ function buildRichLenFallback(name,cat){
   }else{
     attractionLines.push('今使える力は、迷いを一気に片づける強さではなく、現実を一つずつ確かめる落ち着きです。');
   }
-  if(ctx.primaryTheme==='love'){
+  if(ctx.primaryTheme==='love'&&isReconciliationContext(ctx)){
+    attractionLines.push('遠回しに試すより、過去の原因と今後の向き合い方を一つだけ確認すると、進める復縁か区切る関係かが見えやすくなります。');
+  }else if(ctx.primaryTheme==='love'){
     attractionLines.push('遠回しに試すより、確認したいことを一つに絞って言葉にすると、進める関係か止まる関係かが見えやすくなります。');
   }else if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
     attractionLines.push(`${ctx.criteriaText}を言葉にできるほど、今の場所を使う道と次へ移る道を自分で選び直しやすくなります。`);
