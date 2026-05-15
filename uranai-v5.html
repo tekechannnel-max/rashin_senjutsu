@@ -2944,13 +2944,31 @@ body{
 #rs-dossier{order:9;}
 #result-actions{order:10;}
 #s-result.paid-result-mode #rs-animal-reveal{display:none!important;}
-#s-result.paid-result-mode #rs-integration{order:2;}
-#s-result.paid-result-mode #rs-len{order:3;}
-#s-result.paid-result-mode #rs-orc{order:4;}
+#s-result.paid-result-mode #rs-len{order:2;}
+#s-result.paid-result-mode #rs-orc{order:3;}
+#s-result.paid-result-mode #rs-integration{order:4;}
 #s-result.paid-result-mode #rs-foundation-mini{order:5;}
 #s-result.paid-result-mode #rs-dossier{order:6;}
 #s-result.paid-result-mode #result-upgrade-panel{order:8;}
 #s-result.paid-result-mode #result-actions{order:9;}
+
+#s-result.paid-result-mode #rs-len,
+#s-result.paid-result-mode #rs-orc{
+  padding:26px clamp(18px,3vw,30px) 30px;
+  border:1px solid rgba(228,184,74,.24);
+  background:linear-gradient(180deg,rgba(4,7,18,.74),rgba(4,7,18,.5));
+  box-shadow:0 22px 58px rgba(0,0,0,.34),inset 0 0 0 1px rgba(255,255,255,.025);
+}
+#s-result.paid-result-mode #rs-len .rs-title,
+#s-result.paid-result-mode #rs-orc .rs-title{
+  font-size:clamp(24px,3vw,30px);
+  margin-bottom:18px;
+}
+#s-result.paid-result-mode #rs-len .rs-copy,
+#s-result.paid-result-mode #rs-orc .rs-copy{
+  font-size:15px;
+  color:rgba(240,234,216,.74);
+}
 
 
 
@@ -4552,10 +4570,30 @@ body{
   grid-template-columns:repeat(2,minmax(0,1fr));
   gap:12px;
 }
+.dossier-save-card-focus{
+  margin-top:18px;
+  padding:18px 18px 20px;
+  border:1px solid rgba(176,226,218,.26);
+  background:linear-gradient(180deg,rgba(8,20,38,.58),rgba(6,10,24,.5));
+}
+.dossier-save-card-focus .dossier-save-heading{
+  color:rgba(242,213,123,.96);
+  font-size:15px;
+  margin-bottom:13px;
+}
+.dossier-save-card-focus .dossier-save-reading-grid{
+  grid-template-columns:1fr;
+  gap:14px;
+}
 .dossier-save-reading{
   border:1px solid rgba(176,226,218,.18);
   background:rgba(4,9,22,.5);
   padding:13px 14px;
+}
+.dossier-save-card-focus .dossier-save-reading{
+  border-color:rgba(176,226,218,.24);
+  background:rgba(5,12,28,.62);
+  padding:16px 18px;
 }
 .dossier-save-reading-title{
   font-size:11px;
@@ -4563,10 +4601,19 @@ body{
   color:rgba(176,226,218,.86);
   margin-bottom:7px;
 }
+.dossier-save-card-focus .dossier-save-reading-title{
+  font-size:13px;
+  color:rgba(176,226,218,.96);
+}
 .dossier-save-reading-copy{
   font-size:13px;
   line-height:1.75;
   color:rgba(246,240,220,.82);
+}
+.dossier-save-card-focus .dossier-save-reading-copy{
+  font-size:15px;
+  line-height:1.9;
+  color:rgba(248,242,222,.92);
 }
 
 .dossier-save-section,
@@ -6640,7 +6687,7 @@ body.consultation-tag-open{overflow:hidden;}
         <span class="top-faq-q-text">数秘オラクルカードって何ですか？</span>
         <span class="top-faq-arrow">›</span>
       </button>
-      <div class="top-faq-a">誕生日などの数字の意味と、直感で選ぶカードを合わせて読むアドバイスカードです。<br>あなたの強み、背中を押す言葉、次の一手を示します。</div>
+      <div class="top-faq-a">誕生日などの数字の意味と、直感で選ぶカードを合わせて読むアドバイスカードです。<br>あなたの強み、今の行動方針、次の一手を示します。</div>
     </div>
     <div class="top-faq-item">
       <button class="top-faq-q" onclick="toggleFaq(this)">

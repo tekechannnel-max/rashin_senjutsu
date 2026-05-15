@@ -6439,7 +6439,7 @@ function repairStaticCopy(){
   const faqItems=document.querySelectorAll('.top-faq-item');
   const faqCopy=[
     ['ルノルマンカードって何ですか？','36枚の絵柄カードで、いま起きている状況や相手との関係、注意点を具体的に読み解くカードです。<br>羅針占術では、現実と見落としやすいサインを読むために使います。'],
-    ['数秘オラクルカードって何ですか？','誕生日などの数字の意味と、直感で選ぶカードを合わせて読むアドバイスカードです。<br>あなたの強み、背中を押す言葉、次の一手を示します。'],
+    ['数秘オラクルカードって何ですか？','誕生日などの数字の意味と、直感で選ぶカードを合わせて読むアドバイスカードです。<br>あなたの強み、今の行動方針、次の一手を示します。'],
     ['AIがどうやって占うのですか？','相談内容・名前・生年月日・カード結果をもとに、設計された占術ロジックに沿って鑑定文を生成します。<br>同じカードでも、相談内容やこれまでの流れによって読み方が変わります。'],
     ['無料鑑定では何ができますか？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。<br>自分自身の本質、本音、いまの現実、次に進むためのアドバイスを確認できます。'],
     ['無料鑑定と深掘り鑑定の違いは？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。無料鑑定とミニ鑑定はあわせて1日5回までです。<br>深掘り鑑定では、同じ相談内容を前提に続きの追加カードを引くことも、直接有料鑑定から始めることもできます。ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>料金はプレリリース価格780円、正式リリース後は1000円予定です。有料課金ごとに無料鑑定枠が1回分回復します。'],
@@ -7544,6 +7544,7 @@ function buildCoreInsightText(focus={},context={}){
 
 function buildSecondaryThemeSentence(ctx){
   if(!ctx.secondaryTheme) return '';
+  if(ctx.explicitUserPriority) return '';
   const secondaryLabel=getDecisionThemeLabel(ctx.secondaryTheme);
   return `${secondaryLabel}は、主テーマの見通しを立てたあとに扱うと、判断がぶれにくくなります。`;
 }
@@ -7653,7 +7654,7 @@ function refineFocusWithClarify(focus={},clarifyText='',paidUserData={}){
     base.secondaryTheme=selfSignal?'self_understanding':(workSignal?'work_life_direction':base.secondaryTheme||null);
     base.explicitUserPriority=loveFirstMatches.length?'恋愛を先に見る':base.explicitUserPriority||'恋愛を主軸に見る';
     base.shortLabel='恋愛';
-    trace.secondaryThemeReason=base.secondaryTheme?'仕事・進路は背景要因として扱うため':'副テーマなし';
+    trace.secondaryThemeReason=base.secondaryTheme?`${getDecisionThemeLabel(base.secondaryTheme)}は背景要因として扱うため`:'副テーマなし';
   }else if(workFirstMatches.length||(categoryPrimary==='career'&&!loveFirstMatches.length)){
     base.hasWork=true;
     base.needsCareerDecision=true;
@@ -8612,8 +8613,8 @@ function buildReadingOutputFormatGuide(kind='len',is9=false,focusOverride=null){
       '■ 30日以内に見ること',
       '▶ 30日後に何を見ればよいかを1〜3項目で書く。',
       '',
-      '■ 背中を押す一文',
-      '▶ 精神論ではなく、現実の行動につながる一文で締める。',
+      `■ ${INTEGRATION_ACTION_GUIDE_HEADING}`,
+      '▶ 精神論ではなく、現実の行動につながる指針で締める。',
       '',
       '【条件分岐の書き方】',
       '▶ 条件は「○○が確認できたら進む」「○○が起きたら止まる」「○○が足りないなら保留」の形で具体的に書く。',
@@ -9466,7 +9467,7 @@ function renderPatternSummary(){
     ['積み上がり',`鑑定 ${stats.total}件 / 深掘り ${stats.paidCount}件`],
     ['いま多い相談テーマ',stats.topCat||'まだ少ない'],
     ['繰り返し出ているカード',stats.topLen||'まだ少ない'],
-    ['背中を押すカード',stats.topOrc||'まだ少ない'],
+    ['行動指針カード',stats.topOrc||'まだ少ない'],
     ['続けて向き合った日数',stats.streak?`${stats.streak}日`:'1日'],
   ];
   const patternLead=`記録は${stats.total}回、深掘りは${stats.paidCount}回。よく出るテーマやカードを重ねて見るほど、一度の占いでは見えない迷いの流れが見えやすくなります。`;
@@ -9518,7 +9519,7 @@ function buildFlowAnalysisFallback(history){
   const latestTheme=latest.input?.theme||latest.input?.cat||'いまの相談';
   const oldestTheme=oldest.input?.theme||oldest.input?.cat||'最初の相談';
   const latestLen=(latest.selLen||[]).slice(0,3).map(id=>LENORMAND[id]?.name).filter(Boolean).join('・')||'カードの流れ';
-  const latestOrc=(latest.selOrc||[]).slice(0,3).map(id=>ORACLE[id]?.name).filter(Boolean).join('・')||'背中を押す合図';
+  const latestOrc=(latest.selOrc||[]).slice(0,3).map(id=>ORACLE[id]?.name).filter(Boolean).join('・')||'行動指針の合図';
   const topLen=stats.topLen||'まだ強く繰り返すカードは出ていません';
   const topOrc=stats.topOrc||'まだ強く繰り返すカードは出ていません';
   const topCat=stats.topCat||'相談テーマはまだ分散しています';
@@ -9526,7 +9527,7 @@ function buildFlowAnalysisFallback(history){
     ?`最初の「${oldestTheme}」から、いまも同じ主題を深く見直している流れです。答えを急ぐより、同じ悩みの中で何を変えるかを絞る段階に入っています。`
     :`最初は「${oldestTheme}」が中心でしたが、直近では「${latestTheme}」へ意識が移っています。悩みの表面よりも、次にどう動くかを見たい気持ちが強くなっています。`;
   return[
-    `これまでの記録は${stats.total}回分あります。多く出ている相談テーマは「${topCat}」。繰り返し出るルノルマンの合図は「${topLen}」、背中を押すオラクルの合図は「${topOrc}」です。`,
+    `これまでの記録は${stats.total}回分あります。多く出ている相談テーマは「${topCat}」。繰り返し出るルノルマンの合図は「${topLen}」、行動指針になるオラクルの合図は「${topOrc}」です。`,
     movement,
     `直近の鑑定では、ルノルマンに「${latestLen}」、オラクルに「${latestOrc}」が出ています。これは、気持ちだけで判断するより、いま見えている事実と次の小さな行動を分けて考えると流れが整いやすいサインです。`,
     '今後は、同じテーマで迷いが戻ったときほど「何を決めるか」より先に「何を確認すれば安心して進めるか」を見てください。記録を重ねるほど、繰り返すカードと相談テーマから、あなたが同じ場所で立ち止まりやすい理由がはっきりしていきます。'
@@ -10522,7 +10523,7 @@ function normalizeDossierCardData(data={}){
     const next=fallbackKeywords.shift();
     if(next&&!keywords.includes(next)) keywords.push(next);
   }
-  const closingFallback=buildDossierClosingForDecisionContext(ctx)||getIntegrationSupplementItems('背中を押す一文',focus)[0]||fallback.CLOSING;
+  const closingFallback=buildDossierClosingForDecisionContext(ctx)||getIntegrationSupplementItems(INTEGRATION_ACTION_GUIDE_HEADING,focus)[0]||fallback.CLOSING;
   return{
     TITLE:limitTextByChars(source.TITLE||fallback.TITLE||'羅針カード',28,12),
     ONE_LINE:limitTextByChars(source.ONE_LINE||source.HEADLINE||fallback.ONE_LINE,42,18),
@@ -11176,7 +11177,7 @@ function buildDossierPlainText(data){
     `${safeData.HOLD_LABEL||'保留条件'}：\n${(safeData.HOLD_CONDITIONS||[]).map(item=>`・${item}`).join('\n')}`,
     `今週の一手：\n${safeData.ACTION7.map(item=>`・${item}`).join('\n')}`,
     `保存キーワード：\n${safeData.KEYWORDS.join(' / ')}`,
-    `背中を押す一文：`,
+    `${INTEGRATION_ACTION_GUIDE_HEADING}：`,
     safeData.CLOSING,
   ];
   const text=blocks.map(block=>String(block||'').trim()).filter(Boolean).join('\n\n');
@@ -11201,7 +11202,7 @@ function buildDossierPlainText(data){
     `${compact.HOLD_LABEL||'保留条件'}：\n${compact.HOLD_CONDITIONS.map(item=>`・${item}`).join('\n')}`,
     `今週の一手：\n${compact.ACTION7.map(item=>`・${item}`).join('\n')}`,
     `保存キーワード：\n${compact.KEYWORDS.join(' / ')}`,
-    '背中を押す一文：',
+    `${INTEGRATION_ACTION_GUIDE_HEADING}：`,
     compact.CLOSING,
   ].map(block=>String(block||'').trim()).filter(Boolean).join('\n\n');
 }
@@ -11257,8 +11258,8 @@ function renderDossierReadingDigest(){
   const items=getDossierReadingDigests();
   if(!items.length) return '';
   return`
-      <div class="dossier-save-section">
-        <div class="dossier-save-heading">カードから見えたこと</div>
+      <div class="dossier-save-section dossier-save-card-focus">
+        <div class="dossier-save-heading">ルノルマン・オラクルから見えたこと</div>
         <div class="dossier-save-reading-grid">
           ${items.map(item=>`
             <div class="dossier-save-reading">
@@ -11278,11 +11279,11 @@ function renderDossierSaveCard(card){
         <div class="dossier-save-title">${escapeHtml(card.TITLE)}</div>
         <div class="dossier-save-one">${escapeHtml(card.ONE_LINE)}</div>
       </div>
+      ${renderDossierReadingDigest()}
       <div class="dossier-save-section">
         <div class="dossier-save-heading">今回の答え</div>
         <div class="dossier-save-verdict">${escapeHtml(card.VERDICT)}</div>
       </div>
-      ${renderDossierReadingDigest()}
       <div class="dossier-save-section">
         <div class="dossier-save-heading">${escapeHtml(card.POSITIVE_LABEL||'残る条件')}</div>
         ${renderDossierConditionList(card.REMAIN_CONDITIONS)}
@@ -11304,7 +11305,7 @@ function renderDossierSaveCard(card){
         <div class="dossier-chip-row dossier-save-keywords">${card.KEYWORDS.map(item=>`<div class="dossier-chip">${escapeHtml(item)}</div>`).join('\n')}</div>
       </div>
       <div class="dossier-save-section">
-        <div class="dossier-save-heading">背中を押す一文</div>
+        <div class="dossier-save-heading">${escapeHtml(INTEGRATION_ACTION_GUIDE_HEADING)}</div>
         <div class="dossier-save-closing">${escapeHtml(card.CLOSING)}</div>
       </div>
     </article>`;
@@ -11363,7 +11364,7 @@ function detectDossierCardQualityIssues(data={},options={}){
   if(options.renderedText&&/<li/i.test(options.renderedHtml||'')&&!/\n|・/.test(options.renderedText)){
     issues.push('羅針カードの箇条書きが表示テキストで連結して見える可能性があります');
   }
-  if(!card.CLOSING||isDossierIncompleteText(card.CLOSING)) issues.push('背中を押す一文がない、または未完文');
+  if(!card.CLOSING||isDossierIncompleteText(card.CLOSING)) issues.push(`${INTEGRATION_ACTION_GUIDE_HEADING}がない、または未完文`);
   if((card.KEYWORDS||[]).length<4||(card.KEYWORDS||[]).length>6) issues.push('保存キーワードが4〜6個ではない');
   return Array.from(new Set(issues));
 }
@@ -12594,7 +12595,7 @@ function buildClarifyPromptText(mode='detail'){
   }).join('\n')}`;
   if(mode==='detail'){
     const detail=entries.map(entry=>`▼${getClarifyDisplayLabel(entry)}\nQ：${entry.q}${entry.hint?`\n推定：${entry.hint}`:''}${entry.anchor?`\n根拠メモ：${entry.anchor}`:''}\nA：${entry.a}`).join('\n');
-    return `\n${summary}\n【相談者の補足回答（推定背景と実回答）】\n${detail}\n\n※上記補足は、相談者の回答をそのまま再掲するためではなく、今回の最終判断、進む/残る条件、止まる/動く条件、保留条件、7日以内の一手、30日以内に見ること、背中を押す一文の精度を上げるために使ってください。`;
+    return `\n${summary}\n【相談者の補足回答（推定背景と実回答）】\n${detail}\n\n※上記補足は、相談者の回答をそのまま再掲するためではなく、今回の最終判断、進む/残る条件、止まる/動く条件、保留条件、7日以内の一手、30日以内に見ること、${INTEGRATION_ACTION_GUIDE_HEADING}の精度を上げるために使ってください。`;
   }
   if(mode==='compact'){
     return `\n${summary}`;
@@ -13211,6 +13212,150 @@ function buildClarifyQuestions(){
   const ctx=buildClarifyContext();
   const candidates=buildClarifyQuestionCandidates(ctx);
   return rankClarifyQuestions(candidates,ctx);
+}
+
+function describePremiumBriefCard(card){
+  if(!card) return '';
+  return `${card.posLabel||'カード'} No.${card.id}「${card.name||''}」`;
+}
+
+function getPremiumBriefLenSignal(card,ctx={}){
+  if(!card) return '';
+  const isLove=isClarifyLove(ctx);
+  const isWork=isClarifyWork(ctx);
+  const isReunion=isClarifyReunion(ctx);
+  if(card.id===6) return isWork?'評価・収入・続けた先がまだ曇っている':'相手の気持ち、関係の形、自分の本音のどれかが曇っている';
+  if(card.id===26) return isWork?'職場や比較先にまだ確認できていない情報がある':'相手にまだ確認できていない本音や事実がある';
+  if(card.id===21) return isWork?'収入・評価・体力・次の準備のいずれかが壁になっている':'距離・タイミング・相手の態度・自分の怖さのいずれかが壁になっている';
+  if(card.id===36) return 'もう背負いたくない負担が判断を重くしている';
+  if(card.id===23) return '続けるほど少しずつ削られるものがある';
+  if(card.id===11) return '同じ話し合い、不安、ストレスが繰り返されやすい';
+  if(card.id===8) return '今の形を終わらせる、または切り替える段階が近い';
+  if(card.id===10) return '切り替えの決断を急ぎすぎると痛みが出やすい';
+  if(card.id===33) return 'これが確認できたら進めるという鍵を探す';
+  if(card.id===16) return '進みたい未来像が見えるかを確認する';
+  if(card.id===9) return '嬉しさが安心なのか一時的な喜びなのかを分ける';
+  if(card.id===1) return '連絡、提案、行動の変化を具体的に見る';
+  if(card.id===28||card.id===29) return isReunion?'元恋人の態度、連絡、過去への向き合い方を行動で見る':'相手本人の態度と距離感を行動で見る';
+  if(card.id===15) return isWork?'上司、権限者、収入面、自分への圧を確認する':'強い立場の人、守る力、圧のかかり方を確認する';
+  if(card.id===18) return '信頼できる支えが誰か、または何かを確認する';
+  if(card.id===7||card.id===14) return '信用しきれない言葉、態度、第三者要因を現実に落とす';
+  if(isLove) return '相手の心を断定せず、連絡・会う姿勢・向き合い方で読む';
+  if(isWork) return '気持ちだけでなく、収入・評価・成長・消耗度で読む';
+  return '相談者の現実の判断材料へ翻訳する';
+}
+
+function getPremiumBriefOracleSignal(card){
+  const direction=getClarifyOracleDirection(card);
+  if(direction==='move') return '小さく動く。今週できる確認、連絡、比較、下書きへ落とす';
+  if(direction==='support') return '合わせすぎを整える。相手や環境に寄せすぎている場面を見る';
+  if(direction==='change') return '関係や働き方を少し変える。負荷、距離、頻度、役割を調整する';
+  if(direction==='reflect') return '急がず確認する。今週ひとつだけ集める情報や反応を決める';
+  return '選ぶ。確認する、伝える、待つ、距離を置くのどれかへ絞る';
+}
+
+function collectConsultationMirrorTerms(context={},max=8){
+  const source=[
+    context.theme,
+    context.clarifyText,
+    context.paidUserData&&typeof context.paidUserData==='object'?stringifyFocusSupplement(context.paidUserData):context.paidUserData,
+    context.userDataText,
+    stringifyFocusSupplement(context.input||{}),
+  ].join(' ');
+  const priorityTerms=[
+    '復縁','元恋人','元彼','元カレ','元カノ','連絡','返信','会う','過去の原因','別れの原因','信頼','曖昧','区切り','距離',
+    '恋愛','相手の気持ち','本音','不安','怖い','寂しさ','片思い','結婚',
+    '仕事','職場','転職','退職','辞める','続ける','残る','収入','評価','成長','消耗','上司','同僚','役割','副業','独立','進路',
+    '家族','お金','人間関係','自己理解','生き方','将来','準備',
+  ];
+  const hits=priorityTerms.filter(term=>source.includes(term));
+  const fallback=(source.match(/[一-龥ぁ-んァ-ンー]{2,12}/g)||[])
+    .filter(term=>!/相談者|相談本文|追加質問|回答|今回|鑑定|カード|ルノルマン|オラクル|ください|あります|します|です|ます/.test(term))
+    .filter(term=>term.length>=2);
+  return Array.from(new Set([...hits,...fallback])).slice(0,max);
+}
+
+function buildPremiumClarifyAnswerBrief(max=5){
+  const entries=getClarifyEntries();
+  if(!entries.length) return '- 追加質問回答なし。相談本文とカード根拠だけで判断する';
+  return entries.slice(0,max).map(entry=>{
+    const label=getClarifyDisplayLabel(entry);
+    const answer=truncateText(String(entry.a||'').replace(/\s+/g,' ').trim(),90);
+    return `- ${label}: ${answer}`;
+  }).join('\n');
+}
+
+function buildPremiumCardEvidenceBrief(ctx={}){
+  const items=[
+    ['主軸',ctx.coreCard],
+    ['近い未来',ctx.futureCard],
+    ['障害',ctx.blockerCard],
+    ['未確認',ctx.ambiguityCard],
+    ['人物',ctx.peopleCard],
+    ['好転',ctx.positiveCard],
+  ];
+  const seen=new Set();
+  const lenLines=items.map(([label,card])=>{
+    if(!card) return '';
+    const key=`len-${label}-${card.id}`;
+    if(seen.has(key)) return '';
+    seen.add(key);
+    return `- ${label}: ${describePremiumBriefCard(card)} / ${getPremiumBriefLenSignal(card,ctx)}`;
+  }).filter(Boolean);
+  const orcLines=[ctx.currentOrc?`- 現在オラクル: ${describePremiumBriefCard(ctx.currentOrc)} / ${getPremiumBriefOracleSignal(ctx.currentOrc)}`:'',
+    ctx.futureOrc?`- 未来オラクル: ${describePremiumBriefCard(ctx.futureOrc)} / ${getPremiumBriefOracleSignal(ctx.futureOrc)}`:''
+  ].filter(Boolean);
+  return [...lenLines,...orcLines].join('\n')||'- 特定カードの偏りなし。相談テーマと中心カードを優先する';
+}
+
+function buildPremiumReadingFocusBrief(context={}){
+  const ctx=context.clarifyCtx||buildClarifyContext();
+  const focus=context.focus||ctx.refinedFocus||ctx.baseFocus||{};
+  const decision=buildDecisionContext(focus,{
+    cat:context.cat||ctx.category,
+    theme:context.theme||ctx.theme,
+    clarifyText:context.clarifyText||buildClarifyPromptText('compact'),
+    paidUserData:context.paidUserData||ctx.input,
+  });
+  const mirrorTerms=collectConsultationMirrorTerms({
+    ...context,
+    theme:context.theme||ctx.theme,
+    input:ctx.input,
+  },8);
+  const reaction=ctx.reactionProfile?.summary||ctx.reactionProfile?.label||ctx.reactionProfile?.animal||'なし';
+  return `【鑑定ブリーフ：本文生成ではこの順に優先】
+- 主テーマ: ${decision.primaryLabel}${decision.loveSubtypeProfile?.label?` / ${decision.loveSubtypeProfile.label}`:''}
+- 相談者が欲しい答え: ${focus.answerNeed||`${decision.positiveLabel}と${decision.negativeLabel}の分かれ目`}
+- 最初の2文で答えること: ${decision.positiveLabel}・${decision.negativeLabel}・${decision.holdLabel}のどれで見るかを先に言う
+- 本文へ自然に混ぜる相談者語: ${mirrorTerms.length?mirrorTerms.join(' / '):'相談本文の具体語を1〜2語拾う'}
+- 動物タイプ診断の使い方: ${reaction}。性格診断として広げず、今週の小さな行動抵抗を下げる材料にする
+【カード根拠の優先順位】
+${buildPremiumCardEvidenceBrief(ctx)}
+【追加質問回答の使い方】
+${buildPremiumClarifyAnswerBrief()}
+【データ圧縮ルール】
+- 全カードを本文に使い切ろうとしない。主軸、障害、未確認、人物、未来、好転、オラクル行動だけを優先する
+- カード名や配置説明は本文に出しすぎず、相談者の現実の言葉へ翻訳する
+- 追加質問回答は引用せず、${decision.positiveLabel}、${decision.negativeLabel}、${decision.holdLabel}、7日以内の一手、30日以内に見ることへ変換する
+【断定レベル】
+- 他人の心、未来、医療・法律・投資判断は断定しない
+- ただし判断条件は「これが確認できたら進む / これが続くなら止まる / ここが不明なら保留」と言い切る`;
+}
+
+function detectPersonalizationCoverageIssues(parsed={},context={}){
+  const issues=[];
+  const joined=[parsed.len,parsed.orc,parsed.integration].join('\n');
+  const terms=collectConsultationMirrorTerms(context,6).filter(term=>term.length>=2);
+  if(terms.length>=2&&!terms.some(term=>joined.includes(term))){
+    issues.push('相談者本文の具体語が鑑定本文に反映されていません');
+  }
+  if(/相談者の補足整理|追加質問/.test(String(context.clarifyText||context.userDataText||context.paidUserData||''))){
+    const integration=String(parsed.integration||'');
+    if(!/(確認|条件|反応|一手|保留|進む|止まる|区切|残る|動く)/.test(integration)){
+      issues.push('追加質問回答が最終判断の条件分岐に変換されていません');
+    }
+  }
+  return issues;
 }
 
 
@@ -14170,6 +14315,9 @@ function buildWorkLifeTopVerdictText(name='あなた',focus={},theme=''){
   return buildPrimaryTopVerdictText(name,focus,theme);
 }
 
+const INTEGRATION_ACTION_GUIDE_HEADING='今の行動方針';
+const LEGACY_INTEGRATION_ACTION_GUIDE_HEADINGS=['背中を'+'押す一文','背中'+'押し文','目下の'+'行動指針'];
+
 function buildWorkFinalJudgmentText(name='あなた',cat='総合',theme='',context={}){
   const focus=getFocusForContext(cat,theme,context);
   const ctx=buildDecisionContext(focus,{...context,cat,theme});
@@ -14179,7 +14327,7 @@ function buildWorkFinalJudgmentText(name='あなた',cat='総合',theme='',conte
   const holdItems=getIntegrationSupplementItems(ctx.holdLabel,focus,cat,theme).slice(0,3);
   const action7=getIntegrationSupplementItems('7日以内の一手',focus,cat,theme).slice(0,3);
   const action30=getIntegrationSupplementItems('30日以内に見ること',focus,cat,theme).slice(0,3);
-  const push=getIntegrationSupplementItems('背中を押す一文',focus,cat,theme)[0]||'今週は、答えを急ぐより判断材料を集める一歩から始めてください。';
+  const push=getIntegrationSupplementItems(INTEGRATION_ACTION_GUIDE_HEADING,focus,cat,theme)[0]||'今週は、答えを急ぐより判断材料を集める一歩から始めてください。';
   return `■ 今回の最終判断
 ${topVerdict}
 
@@ -14198,7 +14346,7 @@ ${action7.map(item=>`・${ensureJapaneseSentence(item)}`).join('\n')}
 ■ 30日以内に見ること
 ${action30.map(item=>`・${ensureJapaneseSentence(item)}`).join('\n')}
 
-■ 背中を押す一文
+■ ${INTEGRATION_ACTION_GUIDE_HEADING}
 ${ensureJapaneseSentence(push)}`;
 }
 
@@ -14226,8 +14374,8 @@ ${getIntegrationSupplementItems('7日以内の一手',focus,cat,theme).slice(0,3
 ■ 30日以内に見ること
 ${getIntegrationSupplementItems('30日以内に見ること',focus,cat,theme).slice(0,3).map(item=>`・${ensureJapaneseSentence(item)}`).join('\n')}
 
-■ 背中を押す一文
-${ensureJapaneseSentence(getIntegrationSupplementItems('背中を押す一文',focus,cat,theme)[0]||'迷いを消すのではなく、判断に使える条件へ変えることから始めてください。')}`;
+■ ${INTEGRATION_ACTION_GUIDE_HEADING}
+${ensureJapaneseSentence(getIntegrationSupplementItems(INTEGRATION_ACTION_GUIDE_HEADING,focus,cat,theme)[0]||'迷いを消すのではなく、判断に使える条件へ変えることから始めてください。')}`;
 }
 
 function getFinalJudgmentFallback(name='あなた',cat='総合',theme='',context={}){
@@ -14283,7 +14431,7 @@ function getIntegrationHeadingRequirements(focus={}){
 
 function getRequiredIntegrationHeadings(focus={}){
   const ctx=buildDecisionContext(focus);
-  return['今回の最終判断',ctx.positiveLabel,ctx.negativeLabel,ctx.holdLabel,'7日以内の一手','30日以内に見ること','背中を押す一文'];
+  return['今回の最終判断',ctx.positiveLabel,ctx.negativeLabel,ctx.holdLabel,'7日以内の一手','30日以内に見ること',INTEGRATION_ACTION_GUIDE_HEADING];
 }
 
 function escapeRegExp(text=''){
@@ -14297,6 +14445,13 @@ function hasIntegrationHeading(text='',heading=''){
 function renameIntegrationHeading(text='',from='',to=''){
   if(!from||!to||from===to||hasIntegrationHeading(text,to)||!hasIntegrationHeading(text,from)) return text;
   return String(text||'').replace(new RegExp(`^■\\s*${escapeRegExp(from)}\\s*$`,'m'),`■ ${to}`);
+}
+
+function normalizeIntegrationActionGuideHeading(text=''){
+  return LEGACY_INTEGRATION_ACTION_GUIDE_HEADINGS.reduce(
+    (output,legacy)=>renameIntegrationHeading(output,legacy,INTEGRATION_ACTION_GUIDE_HEADING),
+    String(text||'')
+  );
 }
 
 function stripIntegrationListMarker(line=''){
@@ -14421,7 +14576,10 @@ function getIntegrationSupplementItems(heading='',focus={},cat='総合',theme=''
     [ctx.holdLabel]:themeItems.hold,
     '7日以内の一手':buildThemeSpecificActionPlan(focus),
     '30日以内に見ること':buildThirtyDayActionPlan(focus),
-    '背中を押す一文':[buildDossierClosingForDecisionContext(ctx)],
+    [INTEGRATION_ACTION_GUIDE_HEADING]:[buildDossierClosingForDecisionContext(ctx)],
+    [LEGACY_INTEGRATION_ACTION_GUIDE_HEADINGS[0]]:[buildDossierClosingForDecisionContext(ctx)],
+    [LEGACY_INTEGRATION_ACTION_GUIDE_HEADINGS[1]]:[buildDossierClosingForDecisionContext(ctx)],
+    [LEGACY_INTEGRATION_ACTION_GUIDE_HEADINGS[2]]:[buildDossierClosingForDecisionContext(ctx)],
   };
   return positiveMap[heading]||negativeMap[heading]||shared[heading]||[];
 }
@@ -14460,13 +14618,14 @@ function ensureIntegrationHeadingItems(output='',heading='',focus={},cat='総合
 }
 
 function ensureIntegrationPushLine(output='',focus={},cat='総合',theme=''){
-  const body=extractHeadingBody(output,'背中を押す一文');
+  output=normalizeIntegrationActionGuideHeading(output);
+  const body=extractHeadingBody(output,INTEGRATION_ACTION_GUIDE_HEADING);
   const existing=String(body||'').split(/(?<=。)/).map(item=>stripIntegrationListMarker(item).trim()).find(Boolean);
-  const supplement=getIntegrationSupplementItems('背中を押す一文',focus,cat,theme)[0];
+  const supplement=getIntegrationSupplementItems(INTEGRATION_ACTION_GUIDE_HEADING,focus,cat,theme)[0];
   const sentence=supplement
     ||existing
     ||'今週は、答えを急ぐより判断材料を集める一歩から始めてください。';
-  return replaceHeadingBody(output,'背中を押す一文',ensureJapaneseSentence(sentence));
+  return replaceHeadingBody(output,INTEGRATION_ACTION_GUIDE_HEADING,ensureJapaneseSentence(sentence));
 }
 
 function ensureTopVerdictInIntegration(output='',name='あなた',focus={},theme=''){
@@ -14484,6 +14643,7 @@ function ensureIntegrationSlots(text='',name='あなた',cat='総合',theme='',c
   if(/^■\s*今回の最終判断/m.test(output)){
     output=removeLegacyIntegrationSections(output);
   }
+  output=normalizeIntegrationActionGuideHeading(output);
   const ctx=buildDecisionContext(focus,{...context,cat,theme});
   output=renameIntegrationHeading(output,'残る条件',ctx.positiveLabel);
   output=renameIntegrationHeading(output,'動く条件',ctx.negativeLabel);
@@ -14786,7 +14946,7 @@ function detectFocusRegressionIssues(baseFocus={},refinedFocus={},context={}){
 
 function validateIntegrationSatisfaction(text='',context={}){
   const issues=[];
-  const source=String(text||'');
+  const source=normalizeIntegrationActionGuideHeading(text);
   const focus=context.focus||getFocusForContext(context.cat||'',context.theme||'',context);
   const ctx=buildDecisionContext(focus,context);
   if(!/今回の最終判断|結論|答え/.test(source)) issues.push('integrationが相談者の質問に直接答えていません');
@@ -14795,7 +14955,7 @@ function validateIntegrationSatisfaction(text='',context={}){
   if(!hasIntegrationHeading(source,ctx.holdLabel)) issues.push(`integrationに${ctx.holdLabel}がありません`);
   if(!/7日以内の一手|今週|7日以内|1週間以内|今日から7日/.test(source)) issues.push('integrationに7日以内の行動がありません');
   if(!/30日以内に見ること|30日以内|30日後/.test(source)) issues.push('integrationに30日以内に見ることがありません');
-  if(!/背中を押す一文/.test(source)) issues.push('integrationに背中を押す一文がありません');
+  if(!hasIntegrationHeading(source,INTEGRATION_ACTION_GUIDE_HEADING)) issues.push(`integrationに${INTEGRATION_ACTION_GUIDE_HEADING}がありません`);
   if(/整理してください。?$/.test(source.trim())&&!new RegExp(`${escapeRegExp(ctx.positiveLabel)}|${escapeRegExp(ctx.negativeLabel)}|保留条件|7日以内の一手`).test(source)){
     issues.push('integrationが整理してくださいだけで終わっています');
   }
@@ -14816,8 +14976,8 @@ function validateIntegrationSatisfaction(text='',context={}){
     if(count>requirement.max) issues.push(`integrationの${heading}が${requirement.max}項目を超えています`);
   });
   issues.push(...detectIntegrationHeadingDuplicateIssues(source,focus));
-  const pushLine=extractHeadingBody(source,'背中を押す一文');
-  if(!pushLine) issues.push('integrationに背中を押す一文の本文がありません');
+  const pushLine=extractHeadingBody(source,INTEGRATION_ACTION_GUIDE_HEADING);
+  if(!pushLine) issues.push(`integrationに${INTEGRATION_ACTION_GUIDE_HEADING}の本文がありません`);
   if(focus.explicitUserPriority||isWorkLifeDirectionFocus(focus)){
     issues.push(...detectTopJudgmentDuplication(source,focus));
     const opening=getOpeningSentences(extractHeadingBody(source,'今回の最終判断')||source,3);
@@ -14871,6 +15031,7 @@ function validatePaidReadingQuality(parsed={},context={}){
   issues.push(...detectOracleFallbackJapaneseIssues(parsed.orc||''));
   issues.push(...detectIrresponsibleAssertionIssues(joined));
   issues.push(...detectRepeatedAdviceIssues(joined));
+  issues.push(...detectPersonalizationCoverageIssues(parsed,context));
   return [...new Set(issues)];
 }
 
@@ -14892,6 +15053,8 @@ async function evaluatePaidReadingQuality(parsed={},context={}){
 
 【相談者入力データ】
 ${context.userDataText||''}
+
+${context.premiumFocusBrief||buildPremiumReadingFocusBrief(context)}
 
 【鑑定本文】
 <section name="len">
@@ -14927,6 +15090,7 @@ ${sanitizePromptInput(parsed.integration,3000)}
 - 判断期限があるか
 - 相談者入力にない職種、年月、条件を作っていないか
 - 相談者が出した判断条件「${ctx.criteriaText}」が反映されているか。不足時だけテーマ別の汎用条件で補っているか
+- 鑑定ブリーフの主テーマ、カード根拠、追加質問回答が本文の判断条件へ変換されているか
 - 文が途中で切れていないか
 - ORC本文内に「ルノルマンカード」が混入していないか
 - ORACLE fallbackの主語重複やキーワード列挙直結がないか
@@ -14935,7 +15099,7 @@ ${sanitizePromptInput(parsed.integration,3000)}
 - 土台詳細表示にも文途中省略が混じっていないか
 - 同じ助言を3回以上繰り返していないか
 - ルノルマン・オラクル・統合判断が同じ役割の助言を繰り返していないか
-- 羅針カードが長文鑑定書ではなく、一言結論・${ctx.positiveLabel}・${ctx.negativeLabel}・今週の一手・保存キーワード・背中押し文の短い判断カードになっているか
+- 羅針カードが長文鑑定書ではなく、一言結論・${ctx.positiveLabel}・${ctx.negativeLabel}・今週の一手・保存キーワード・${INTEGRATION_ACTION_GUIDE_HEADING}の短い判断カードになっているか
 - 「整理してください」だけで終わっていないか
 - ルノルマン9枚の読みがあるか
 - オラクル3枚の助言があるか
@@ -14982,6 +15146,8 @@ async function supplementPaidReadingSections(parsed={},quality={},context={}){
 【相談者入力データ】
 ${context.userDataText||''}
 
+${context.premiumFocusBrief||buildPremiumReadingFocusBrief(context)}
+
 【不足理由】
 ${(quality.issues||[]).map(issue=>`- ${sanitizePromptInput(issue,160)}`).join('\n')}
 
@@ -14996,7 +15162,7 @@ ${sanitizePromptInput(parsed.orc,3000)}
 ${sanitizePromptInput(parsed.integration,3000)}
 
 補完対象: ${sections.join(', ')}
-返却は ===INTEGRATION=== だけにしてください。必ず「今回の最終判断 / ${ctx.positiveLabel} / ${ctx.negativeLabel} / ${ctx.holdLabel} / 7日以内の一手 / 30日以内に見ること / 背中を押す一文」を含めてください。
+返却は ===INTEGRATION=== だけにしてください。必ず「今回の最終判断 / ${ctx.positiveLabel} / ${ctx.negativeLabel} / ${ctx.holdLabel} / 7日以内の一手 / 30日以内に見ること / ${INTEGRATION_ACTION_GUIDE_HEADING}」を含めてください。
 ${ctx.positiveLabel}・${ctx.negativeLabel}・${ctx.holdLabel}は各2〜4項目、7日以内・30日以内は各1〜3項目にしてください。
 ${buildDecisionContextPromptBlock(focus,context)}`;
   const raw=await callAI(prompt,2600,'あなたは有料鑑定の最終判断カード補完担当です。無責任な断定は避け、判断条件は明確に言い切ってください。LENとORCは書き直さず、最後の判断カードで満足度を補ってください。',{
@@ -15056,15 +15222,19 @@ LENとORCは書き直さず、INTEGRATIONだけを強化してください。
 ■ 30日以内に見ること
 30日後に何を見ればよいかを1〜3項目。
 
-■ 背中を押す一文
-精神論ではなく、現実の行動につながる一文。
+■ ${INTEGRATION_ACTION_GUIDE_HEADING}
+精神論ではなく、現実の行動につながる指針。
 
 ${buildDecisionContextPromptBlock(focus,context)}
+
+${context.premiumFocusBrief||buildPremiumReadingFocusBrief(context)}
 判断条件は「${ctx.criteriaText}」を使ってください。相談者入力にない職種、年月、条件を作らないでください。
 ${ctx.explicitUserPriority?'明示された優先テーマがあるため、「恋愛と仕事を同時に片づけない」は主結論にしないでください。':'優先順位が明示されていない複合相談の場合だけ、dual concern型の読みを使ってよいです。'}
 「整理してください」だけで終わらせないでください。`;
   const prompt=`【相談者入力データ】
 ${context.paidUserData||''}
+
+${context.premiumFocusBrief||buildPremiumReadingFocusBrief(context)}
 
 【相談者が欲しい答え】
 ${context.focus?.answerNeed||context.answerNeed||''}
@@ -15231,7 +15401,7 @@ ${lenSpreadContext.chainDetails}`;
   const history=getReadingHistory();
   const historyStats=history.length?computeReadingStats(history):null;
   const historyText=historyStats
-    ?`鑑定 ${historyStats.total}件 / 深掘り ${historyStats.paidCount}件 / 相談テーマ ${historyStats.topCat||'まだ少ない'} / 繰り返し出ているカード ${historyStats.topLen||'まだ少ない'} / 背中を押すカード ${historyStats.topOrc||'まだ少ない'}`
+      ?`鑑定 ${historyStats.total}件 / 深掘り ${historyStats.paidCount}件 / 相談テーマ ${historyStats.topCat||'まだ少ない'} / 繰り返し出ているカード ${historyStats.topLen||'まだ少ない'} / 行動指針カード ${historyStats.topOrc||'まだ少ない'}`
     :'まだ履歴が少ない';
   const paidUserData=[
     formatUserDataBlock('相談者名',name,120),
@@ -15242,6 +15412,7 @@ ${lenSpreadContext.chainDetails}`;
   ].join('\n');
   const decisionPromptBlock=buildDecisionContextPromptBlock(focus,{cat,theme,clarifyText,paidUserData});
   const decisionLabels=buildDecisionContext(focus,{cat,theme,clarifyText,paidUserData});
+  const premiumFocusBrief=buildPremiumReadingFocusBrief({name,cat,theme,focus,clarifyText,paidUserData});
 
   const systemPrompt=`あなたは、占いに詳しくない人でも「話が早い」「ちゃんと分かる」と感じる一流の鑑定者です。
 役割は、ルノルマンを主軸に、オラクルを補助線として使い、相談者が判断できる文章を書くことです。
@@ -15251,11 +15422,13 @@ ${buildDecisionSupportPromptGuide(cat,theme,focus)}
 
 ${decisionPromptBlock}
 
+${premiumFocusBrief}
+
 【役割分担】
 - トップ結論: 迷いの核心、今回の答え、主テーマを先に見る理由
 - LEN: 現実で何が起きているか、判断を誤りやすい場所、主テーマが副テーマへ影響する構造
 - ORC: 今週どう動くか、内面の整え方、選択肢を増やす行動
-- INTEGRATION: ${decisionLabels.positiveLabel}、${decisionLabels.negativeLabel}、${decisionLabels.holdLabel}、7日以内、30日以内、背中押し
+- INTEGRATION: ${decisionLabels.positiveLabel}、${decisionLabels.negativeLabel}、${decisionLabels.holdLabel}、7日以内、30日以内、今の行動方針
 - 羅針カード: 判断軸だけを短く残す
 ${decisionLabels.explicitUserPriority?'- 明示された優先テーマがある場合、「恋愛と仕事を同じ重さで同時に解決しようとしている」は主構造にしない。':'- 優先順位が明示されていない複合相談では、dual concern型の読みを使ってよい。'}
 
@@ -15272,7 +15445,7 @@ ${decisionLabels.explicitUserPriority?'- 明示された優先テーマがある
 - 最後の結論は、ルノルマンの流れを上書きしない
 - 無料鑑定で扱う姓名判断・四柱推命・動物タイプ診断の内容も土台として含める
 - 追加質問がある場合は悩みの前提を具体化し、鑑定履歴がある場合は前回からの変化や繰り返すテーマに触れる
-- 追加質問の回答は、今回の最終判断、${decisionLabels.positiveLabel}、${decisionLabels.negativeLabel}、${decisionLabels.holdLabel}、7日以内の一手、30日以内に見ること、背中を押す一文を作る材料として使う
+- 追加質問の回答は、今回の最終判断、${decisionLabels.positiveLabel}、${decisionLabels.negativeLabel}、${decisionLabels.holdLabel}、7日以内の一手、30日以内に見ること、${INTEGRATION_ACTION_GUIDE_HEADING}を作る材料として使う
 - 追加質問の回答をraw textのように再掲しない。相談者の具体語を、判断条件と行動に翻訳する
 - 保存したくなる作戦書として、判断軸・7日以内の行動・30日以内に整えることにつながる読みを出す
 
@@ -15308,7 +15481,7 @@ ${SEL_LEN.length===9?`- LENの「今の流れ」または「迷いの構造」�
 - 次にやることは、今日・次に会う時・7日以内の3段階で書く
 - 「判断ポイント」と「次にやること」は、小見出しごとに改行し、各項目を「・」で1行ずつ書く
 - 「整理してください」だけで終わらせない。「${decisionLabels.positiveLabel}」と「${decisionLabels.negativeLabel}」を必ず分ける
-- 「${decisionLabels.holdLabel}」「7日以内の一手」「30日以内に見ること」「背中を押す一文」も必ず入れる
+- 「${decisionLabels.holdLabel}」「7日以内の一手」「30日以内に見ること」「${INTEGRATION_ACTION_GUIDE_HEADING}」も必ず入れる
 - 相談者が時期を出している場合だけ、その時期を準備や見直しの目安として扱う
 - ルノルマンは長い1ブロックにしない。「今の流れ」「仕事の見立て」「恋愛の見立て」「注意点」「次の行動」に分け、1セクションを短くする
 - ORCの「内なる羅針盤」は判断軸だけを書く。箇条書きは禁止。「次の一手」と同じ文や同じ助言を繰り返さない
@@ -15341,10 +15514,12 @@ ${SEL_LEN.length===9?`- LENの「今の流れ」または「迷いの構造」�
 ■ ${decisionLabels.holdLabel}
 ■ 7日以内の一手
 ■ 30日以内に見ること
-■ 背中を押す一文`;
+■ ${INTEGRATION_ACTION_GUIDE_HEADING}`;
 
   const prompt=`【相談者入力データ】
 ${paidUserData}
+
+${premiumFocusBrief}
 
 【相談者が欲しい答え】${focus.answerNeed}
 
@@ -15388,6 +15563,7 @@ ${orcFull}
     historyText,
     lenFull,
     orcFull,
+    premiumFocusBrief,
     systemPrompt,
     userPrompt:prompt,
     name,
@@ -15458,7 +15634,7 @@ ${orcFull}
 - 相談文から言えない季節、月、時期を作らない
 - 「魂」「波動」「宇宙」は使わない。「本音」「本質」は根拠付きなら使ってよい
 - 無根拠な未来・他人の心・専門判断は断定しない。ただし判断条件は言い切る
-- INTEGRATIONには「今回の最終判断 / ${decisionLabels.positiveLabel} / ${decisionLabels.negativeLabel} / ${decisionLabels.holdLabel} / 7日以内の一手 / 30日以内に見ること / 背中を押す一文」を必ず入れる
+- INTEGRATIONには「今回の最終判断 / ${decisionLabels.positiveLabel} / ${decisionLabels.negativeLabel} / ${decisionLabels.holdLabel} / 7日以内の一手 / 30日以内に見ること / ${INTEGRATION_ACTION_GUIDE_HEADING}」を必ず入れる
 - ${decisionLabels.positiveLabel}・${decisionLabels.negativeLabel}・${decisionLabels.holdLabel}は各2〜4項目、7日以内・30日以内は各1〜3項目にする
 - 主結論は、明示された優先テーマ「${decisionLabels.primaryLabel}」に直接答える
 - 条件は「条件Aなら進む、条件Bなら止まる、条件Cなら保留」の形にする`;
@@ -15549,6 +15725,7 @@ async function runLenReading(){
   const theme=document.getElementById('f-theme')?.value||'';
   const clarifyText=buildClarifyPromptText('detail');
   const focus=refineFocusWithClarify(analyzeConsultationFocus(cat,theme),clarifyText,{cat,theme});
+  const premiumFocusBrief=buildPremiumReadingFocusBrief({name,cat,theme,focus,clarifyText,paidUserData:{cat,theme}});
   const is9=(SEL_LEN.length===9);
   const isFreePair=(SEL_LEN.length===FREE_LEN_COUNT);
   const lenSpreadContext=buildLenSpreadPromptContext(cat);
@@ -15591,6 +15768,8 @@ async function runLenReading(){
 カードは内部で使い切り、メイン本文のカード名は最大2〜3枚に絞る。システム説明や配置説明は根拠レイヤーに残す。
 
 ${buildDecisionSupportPromptGuide(cat,theme,focus)}
+
+${premiumFocusBrief}
 
 ${focus.explicitUserPriority||isWorkLifeDirectionFocus(focus)?`【今回のルノルマン主軸】
 ${buildDecisionContextPromptBlock(focus,{cat,theme})}
@@ -15670,6 +15849,8 @@ ${focus.isDualConcern&&!isWorkLifeDirectionFocus(focus)?`恋愛と仕事が両�
   const userPrompt=`【相談者入力データ】
 ${userDataText}
 
+${premiumFocusBrief}
+
 【相談者が欲しい答え】${focus.answerNeed}
 ${fixedCardText?`${fixedCardText}\n`:''}
 【引いた${SEL_LEN.length}枚のカード（全データ）】
@@ -15705,6 +15886,7 @@ async function runOrcReading(){
   const theme=document.getElementById('f-theme')?.value||'';
   const clarifyText=buildClarifyPromptText('compact');
   const focus=refineFocusWithClarify(analyzeConsultationFocus(cat,theme),clarifyText,{cat,theme});
+  const premiumFocusBrief=buildPremiumReadingFocusBrief({name,cat,theme,focus,clarifyText,paidUserData:{cat,theme}});
   const is3=(SEL_ORC.length===3);
   const orcLabels=getOrcSpreadLabels();
   const orcInfo=SEL_ORC.map((id,i)=>{const o=ORACLE[id];const kw=o.keywords?o.keywords.join('・'):'';return`${orcLabels[i]||''}：No.${id}「${o.name}」${o.master?' ★マスターナンバー':''}\n大事な意味：${o.essence||''} ／ キーワード素材：${kw}\nメッセージ素材（本文へ丸写し禁止）：${o.msg}`;}).join('\n');
@@ -15729,6 +15911,8 @@ ${reactionText}`;
 オラクルカードはアドバイスの媒体です。各カードのメッセージを相談者への行動提案に変換することが最重要の仕事です。
 
 ${buildDecisionSupportPromptGuide(cat,theme,focus)}
+
+${premiumFocusBrief}
 
 【絶対禁止】
 - カード名、枚数、並び、過去/現在/未来、占術名、システム説明
@@ -15775,6 +15959,9 @@ ${formatUserDataBlock('相談者名',name,120)}
 ${formatUserDataBlock('相談テーマ分類',cat,80)}
 ${formatUserDataBlock('相談本文',theme||'全般',1200)}
 ${formatUserDataBlock('追加質問への回答',clarifyText,1600)}
+
+${premiumFocusBrief}
+
 【相談者が欲しい答え】${focus.answerNeed}
 
 ${LP?`【ライフパスナンバー：${LP}${lpCard?.master?' (マスターナンバー)':''}】
@@ -15819,6 +16006,7 @@ async function runIntegration(){
   const theme=document.getElementById('f-theme')?.value||'';
   const clarifyFull=buildClarifyPromptText('compact');
   const focus=refineFocusWithClarify(analyzeConsultationFocus(cat,theme),clarifyFull,{name,cat,theme});
+  const premiumFocusBrief=buildPremiumReadingFocusBrief({name,cat,theme,focus,clarifyText:clarifyFull,paidUserData:{name,cat,theme}});
   const is9=(SEL_LEN.length===9);
   const lenSpreadContext=buildLenSpreadPromptContext(cat);
   const lpCard=LP?ORACLE[LP]:null;
@@ -15861,6 +16049,8 @@ ${lenSpreadContext.diagonalDetails}`
 
 ${buildDecisionSupportPromptGuide(cat,theme,focus)}
 
+${premiumFocusBrief}
+
 【絶対禁止】
 - カード名、占術名、システム説明
 - 個別解釈の繰り返し（前のセクションの焼き直し）
@@ -15891,6 +16081,8 @@ ${formatUserDataBlock('相談者名',name,120)}
 ${formatUserDataBlock('相談テーマ分類',cat,80)}
 ${formatUserDataBlock('相談本文',theme||'全般',1200)}
 ${formatUserDataBlock('追加質問への回答',clarifyFull,1600)}
+
+${premiumFocusBrief}
 
 【基礎情報まとめ】
 【生まれから見える傾向】
@@ -15962,10 +16154,11 @@ function buildPremiumDossierSourceContext(){
   const lifeText=buildLifePatternPlainText();
   const foundationDeepText=LAST_OUTPUTS.foundationDeep||buildFoundationDeepFallback();
   const dossierDecisionContext=buildDecisionContext(focus,{clarifyText,paidUserData:input});
+  const premiumFocusBrief=buildPremiumReadingFocusBrief({focus,cat:input.cat,theme:input.theme,clarifyText,paidUserData:input});
   const history=getReadingHistory();
   const stats=history.length?computeReadingStats(history):null;
   const historyText=stats
-    ?`鑑定 ${stats.total}件 / 深掘り ${stats.paidCount}件 / 相談テーマ ${stats.topCat||'まだ少ない'} / 繰り返し出ているカード ${stats.topLen||'まだ少ない'} / 背中を押すカード ${stats.topOrc||'まだ少ない'}`
+    ?`鑑定 ${stats.total}件 / 深掘り ${stats.paidCount}件 / 相談テーマ ${stats.topCat||'まだ少ない'} / 繰り返し出ているカード ${stats.topLen||'まだ少ない'} / 行動指針カード ${stats.topOrc||'まだ少ない'}`
     :'まだ履歴が少ない';
   return{
     input,
@@ -15975,6 +16168,7 @@ ${formatUserDataBlock('相談者名',input.fullname||'あなた',120)}
 ${formatUserDataBlock('相談テーマ分類',input.cat||'総合',80)}
 ${formatUserDataBlock('相談本文',input.theme||'全般',1200)}
 ${formatUserDataBlock('追加質問への回答',clarifyText,1600)}
+${premiumFocusBrief}
 【相談者が欲しい答え】${focus.answerNeed}
 【判断コンテキスト】主テーマ=${dossierDecisionContext.primaryLabel} / 恋愛サブテーマ=${dossierDecisionContext.loveSubtypeProfile?.label||dossierDecisionContext.loveSubtype}
 【生まれから見える傾向】${birthText}
@@ -16060,7 +16254,7 @@ function buildPremiumDossierCardSystemPrompt(todayText){
 今日の日付は${todayText}です。根拠のない月名、季節、年末年始、来年などの時期表現は使わないでください。
 
 守ること:
-- メインは一言結論、${ctx.positiveLabel}、${ctx.negativeLabel}、${ctx.holdLabel}、今週の一手、保存キーワード、背中を押す一文だけに絞る
+- メインは一言結論、${ctx.positiveLabel}、${ctx.negativeLabel}、${ctx.holdLabel}、今週の一手、保存キーワード、${INTEGRATION_ACTION_GUIDE_HEADING}だけに絞る
 - ${isReconciliationContext(ctx)?'恋愛サブテーマは復縁。羅針カードでは「まだ好きか」ではなく「もう一度信頼を作れるか」「過去の原因に向き合えるか」「曖昧な連絡だけで続いていないか」を残す':'相談テーマに合わせたラベルと判断軸を使う'}
 - 羅針カードは占い結果の全文ではなく、あとで読み返す判断軸にする
 - 本編のトップ結論、最終判断カード、羅針カードで同じ判断軸を一貫させる
@@ -16095,7 +16289,7 @@ function buildPremiumDossierCardSystemPrompt(todayText){
 [[HOLD_CONDITIONS]]${ctx.holdLabel}を2行まで。1行1項目[[/HOLD_CONDITIONS]]
 [[ACTION7]]7日以内にやることを1文[[/ACTION7]]
 [[KEYWORDS]]4〜6個を / 区切り[[/KEYWORDS]]
-[[CLOSING]]背中を押す一文[[/CLOSING]]
+[[CLOSING]]${INTEGRATION_ACTION_GUIDE_HEADING}[[/CLOSING]]
 [[EVIDENCE_SUMMARY]]根拠を見る用の短い要約。通常表示には出さない[[/EVIDENCE_SUMMARY]]`;
 }
 
@@ -16368,6 +16562,8 @@ function buildShareCardUrl(card){
     type:card.type==='len'?'len':'oracle',
     id:String(card.id),
   });
+  if(card.name) params.set('title',card.name);
+  if(card.message) params.set('message',truncateText(card.message,120));
   return new URL(`/share/card?${params.toString()}`,location.href).toString();
 }
 
@@ -16399,11 +16595,262 @@ function buildShareText(options={}){
   return lines.join('\n');
 }
 
+function drawWrappedCanvasText(ctx,text,x,y,maxWidth,lineHeight,options={}){
+  const maxLines=Number.isFinite(options.maxLines)?options.maxLines:99;
+  const paragraphs=String(text||'').replace(/\r\n?/g,'\n').split('\n');
+  const lines=[];
+  for(const paragraph of paragraphs){
+    const chars=Array.from(paragraph.trim());
+    if(!chars.length){
+      if(lines.length<maxLines) lines.push('');
+      continue;
+    }
+    let line='';
+    for(const char of chars){
+      const test=line+char;
+      if(ctx.measureText(test).width>maxWidth&&line){
+        lines.push(line);
+        line=char;
+        if(lines.length>=maxLines) break;
+      }else{
+        line=test;
+      }
+    }
+    if(lines.length>=maxLines) break;
+    if(line) lines.push(line);
+    if(lines.length>=maxLines) break;
+  }
+  if(lines.length>maxLines) lines.length=maxLines;
+  if(options.ellipsis&&lines.length===maxLines){
+    let last=lines[lines.length-1]||'';
+    while(last&&ctx.measureText(`${last}…`).width>maxWidth) last=last.slice(0,-1);
+    lines[lines.length-1]=`${last}…`;
+  }
+  lines.forEach((line,index)=>ctx.fillText(line,x,y+(index*lineHeight)));
+  return y+(lines.filter(line=>line).length||lines.length)*lineHeight;
+}
+
+function drawCanvasPanel(ctx,x,y,w,h,options={}){
+  ctx.save();
+  ctx.fillStyle=options.fill||'rgba(5,9,22,.62)';
+  ctx.strokeStyle=options.stroke||'rgba(228,184,74,.28)';
+  ctx.lineWidth=options.lineWidth||2;
+  ctx.fillRect(x,y,w,h);
+  ctx.strokeRect(x,y,w,h);
+  ctx.restore();
+}
+
+async function loadImageForCanvas(src=''){
+  try{
+    const res=await fetch(src,{cache:'force-cache'});
+    if(!res.ok) return null;
+    const blob=await res.blob();
+    if(typeof createImageBitmap==='function') return await createImageBitmap(blob);
+    return await new Promise(resolve=>{
+      const img=new Image();
+      img.onload=()=>resolve(img);
+      img.onerror=()=>resolve(null);
+      img.src=URL.createObjectURL(blob);
+    });
+  }catch(_error){
+    return null;
+  }
+}
+
+function canvasToPngBlob(canvas){
+  return new Promise(resolve=>canvas.toBlob(blob=>resolve(blob),'image/png',.96));
+}
+
+async function createDossierShareImageBlob(cardData){
+  const card=resolveDossierCardData(cardData);
+  const canvas=document.createElement('canvas');
+  canvas.width=1080;
+  canvas.height=1350;
+  const ctx=canvas.getContext('2d');
+  if(!ctx) return null;
+  if(document.fonts?.ready){
+    try{ await document.fonts.ready; }catch(_error){}
+  }
+  const bg=await loadImageForCanvas('占い素材/羅針カード背景.png?v=20260515-rashin-card-share');
+  const w=canvas.width;
+  const h=canvas.height;
+  if(bg){
+    const scale=Math.max(w/bg.width,h/bg.height);
+    const bw=bg.width*scale;
+    const bh=bg.height*scale;
+    ctx.drawImage(bg,(w-bw)/2,(h-bh)/2,bw,bh);
+    ctx.fillStyle='rgba(4,6,16,.80)';
+    ctx.fillRect(0,0,w,h);
+  }else{
+    const gradient=ctx.createLinearGradient(0,0,w,h);
+    gradient.addColorStop(0,'#080b1d');
+    gradient.addColorStop(.56,'#150d1f');
+    gradient.addColorStop(1,'#06111b');
+    ctx.fillStyle=gradient;
+    ctx.fillRect(0,0,w,h);
+  }
+  ctx.strokeStyle='rgba(228,184,74,.62)';
+  ctx.lineWidth=4;
+  ctx.strokeRect(44,44,w-88,h-88);
+  ctx.strokeStyle='rgba(176,226,218,.22)';
+  ctx.lineWidth=2;
+  ctx.strokeRect(66,66,w-132,h-132);
+
+  let y=112;
+  ctx.fillStyle='rgba(176,226,218,.92)';
+  ctx.font='700 24px "Shippori Mincho", serif';
+  ctx.fillText('RASHIN CARD',82,y);
+  y+=60;
+  ctx.fillStyle='#f2d57b';
+  ctx.font='700 48px "Shippori Mincho", serif';
+  y=drawWrappedCanvasText(ctx,card.TITLE||'羅針カード',82,y,916,58,{maxLines:2,ellipsis:true})+18;
+  ctx.fillStyle='rgba(255,247,216,.94)';
+  ctx.font='500 28px "Shippori Mincho", serif';
+  y=drawWrappedCanvasText(ctx,card.ONE_LINE||'',82,y,916,42,{maxLines:2,ellipsis:true})+34;
+
+  const digests=getDossierReadingDigests().slice(0,2);
+  if(digests.length){
+    drawCanvasPanel(ctx,76,y,928,260,{fill:'rgba(6,14,30,.72)',stroke:'rgba(176,226,218,.34)'});
+    ctx.fillStyle='rgba(176,226,218,.95)';
+    ctx.font='700 26px "Shippori Mincho", serif';
+    ctx.fillText('ルノルマン・オラクルから見えたこと',110,y+46);
+    const panelW=digests.length>1?424:860;
+    digests.forEach((item,index)=>{
+      const px=110+(index*(panelW+28));
+      drawCanvasPanel(ctx,px,y+74,panelW,152,{fill:'rgba(255,255,255,.035)',stroke:'rgba(176,226,218,.16)',lineWidth:1});
+      ctx.fillStyle='rgba(242,213,123,.95)';
+      ctx.font='700 22px "Shippori Mincho", serif';
+      ctx.fillText(item.title,px+22,y+112);
+      ctx.fillStyle='rgba(246,240,220,.9)';
+      ctx.font='500 23px "Shippori Mincho", serif';
+      drawWrappedCanvasText(ctx,item.copy,px+22,y+150,panelW-44,34,{maxLines:3,ellipsis:true});
+    });
+    y+=292;
+  }
+
+  drawCanvasPanel(ctx,76,y,928,180,{fill:'rgba(8,8,20,.66)',stroke:'rgba(228,184,74,.3)'});
+  ctx.fillStyle='rgba(242,213,123,.95)';
+  ctx.font='700 25px "Shippori Mincho", serif';
+  ctx.fillText('今回の答え',110,y+44);
+  ctx.fillStyle='rgba(246,240,220,.9)';
+  ctx.font='500 25px "Shippori Mincho", serif';
+  drawWrappedCanvasText(ctx,card.VERDICT||card.ONE_LINE||'',110,y+84,860,38,{maxLines:3,ellipsis:true});
+  y+=212;
+
+  const axis=[
+    {label:card.POSITIVE_LABEL||'残る条件',items:card.REMAIN_CONDITIONS||[]},
+    {label:card.NEGATIVE_LABEL||'動く条件',items:card.MOVE_CONDITIONS||[]},
+    {label:card.HOLD_LABEL||'保留条件',items:card.HOLD_CONDITIONS||[]},
+  ];
+  const colW=290;
+  axis.forEach((group,index)=>{
+    const x=76+index*(colW+29);
+    drawCanvasPanel(ctx,x,y,colW,214,{fill:'rgba(4,7,18,.68)',stroke:'rgba(228,184,74,.22)',lineWidth:1});
+    ctx.fillStyle='rgba(242,213,123,.95)';
+    ctx.font='700 22px "Shippori Mincho", serif';
+    ctx.fillText(group.label,x+20,y+40);
+    ctx.fillStyle='rgba(246,240,220,.88)';
+    ctx.font='500 21px "Shippori Mincho", serif';
+    let itemY=y+82;
+    (group.items||[]).slice(0,2).forEach(item=>{
+      ctx.fillStyle='rgba(228,184,74,.9)';
+      ctx.fillRect(x+20,itemY-13,7,7);
+      ctx.fillStyle='rgba(246,240,220,.88)';
+      itemY=drawWrappedCanvasText(ctx,item,x+40,itemY,colW-64,30,{maxLines:2,ellipsis:true})+12;
+    });
+  });
+  y+=246;
+
+  drawCanvasPanel(ctx,76,y,928,116,{fill:'rgba(176,226,218,.07)',stroke:'rgba(176,226,218,.24)'});
+  ctx.fillStyle='rgba(176,226,218,.95)';
+  ctx.font='700 23px "Shippori Mincho", serif';
+  ctx.fillText('今週の一手',110,y+42);
+  ctx.fillStyle='rgba(246,240,220,.92)';
+  ctx.font='500 24px "Shippori Mincho", serif';
+  drawWrappedCanvasText(ctx,(card.ACTION7||[])[0]||'',260,y+42,700,34,{maxLines:2,ellipsis:true});
+  y+=148;
+
+  ctx.fillStyle='rgba(176,226,218,.9)';
+  ctx.font='700 22px "Shippori Mincho", serif';
+  ctx.fillText(INTEGRATION_ACTION_GUIDE_HEADING,82,y);
+  y+=42;
+  ctx.fillStyle='rgba(255,232,171,.96)';
+  ctx.font='700 31px "Shippori Mincho", serif';
+  drawWrappedCanvasText(ctx,card.CLOSING||'',82,y,916,46,{maxLines:2,ellipsis:true});
+
+  const blob=await canvasToPngBlob(canvas);
+  return blob&&blob.size?blob:null;
+}
+
+async function buildDossierShareImageFile(){
+  if(!shouldShowDossierActions()) return null;
+  const ready=await ensureDossierReady();
+  if(!ready) return null;
+  renderPremiumDossier(false);
+  const parsed=LAST_OUTPUTS.dossier?parseTaggedDossier(LAST_OUTPUTS.dossier):buildFallbackDossier();
+  const blob=await createDossierShareImageBlob(normalizeDossierCardData(parsed));
+  if(!blob) return null;
+  try{
+    return new File([blob],'rashin-card.png',{type:'image/png'});
+  }catch(_error){
+    blob.name='rashin-card.png';
+    return blob;
+  }
+}
+
+function downloadBlob(blob,filename='rashin-card.png'){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1200);
+}
+
+async function copyOrDownloadDossierShareImage(file){
+  let copied=false;
+  try{
+    if(navigator.clipboard&&window.ClipboardItem){
+      await navigator.clipboard.write([new ClipboardItem({'image/png':file})]);
+      copied=true;
+    }
+  }catch(_error){
+    copied=false;
+  }
+  if(copied){
+    showToast('羅針カード画像をコピーしました。投稿画面で貼り付けできます');
+  }else{
+    downloadBlob(file,file.name||'rashin-card.png');
+    showToast('羅針カード画像を保存しました。投稿画面に添付してください');
+  }
+}
+
+async function shareDossierImageIfAvailable(channel,text){
+  const file=await buildDossierShareImageFile();
+  if(!file) return false;
+  const payload={title:'羅針カード',text,files:[file]};
+  try{
+    if(navigator.share&&navigator.canShare?.(payload)){
+      await navigator.share(payload);
+      trackEvent('share_image_native',{channel,source:'dossier'});
+      return true;
+    }
+  }catch(error){
+    if(error?.name==='AbortError') return true;
+  }
+  await copyOrDownloadDossierShareImage(file);
+  trackEvent('share_image_fallback',{channel,source:'dossier'});
+  return false;
+}
+
 async function shareToX(){
   const primaryCard=getPrimaryShareCard();
   const shareUrl=primaryCard?buildShareCardUrl(primaryCard):location.origin+location.pathname;
   const text=buildShareText({shareUrl});
   trackEvent('share_click',{channel:'x',source:'result'});
+  if(await shareDossierImageIfAvailable('x',text)) return;
   window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(text),'_blank','noopener,noreferrer');
 }
 
@@ -16412,6 +16859,7 @@ async function shareToLine(){
   const shareUrl=primaryCard?buildShareCardUrl(primaryCard):location.origin+location.pathname;
   const text=buildShareText({shareUrl});
   trackEvent('share_click',{channel:'line',source:'result'});
+  if(await shareDossierImageIfAvailable('line',text)) return;
   window.open('https://line.me/R/msg/text/?'+encodeURIComponent(text),'_blank','noopener,noreferrer');
 }
 
