@@ -7504,6 +7504,22 @@ function formatDecisionCriteriaChoice(criteria=[],fallback='現実に見えて�
   return list[0]||fallback;
 }
 
+function getDecisionAxisShortPhrase(ctx={}){
+  if(isReconciliationContext(ctx)) return '信頼を作り直せる手応え';
+  if(ctx.primaryTheme==='love') return '安心の根拠';
+  if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return '努力の見返り';
+  if(ctx.primaryTheme==='relationship'||ctx.primaryTheme==='family') return '自分を削らない距離';
+  if(ctx.primaryTheme==='money') return '安心して使える余白';
+  if(ctx.primaryTheme==='creative') return '熱量が戻る形';
+  if(ctx.primaryTheme==='self_understanding') return '自分らしく力を出せる感覚';
+  if(ctx.primaryTheme==='dual_concern') return 'いちばん先に戻すべき焦点';
+  return '納得できる根拠';
+}
+
+function getDecisionAxisFullPhrase(ctx={}){
+  return formatDecisionCriteriaChoice(ctx.decisionCriteriaList,ctx.criteriaText||getDecisionAxisShortPhrase(ctx));
+}
+
 function normalizeBrokenDecisionCriteriaPhrases(text=''){
   return String(text||'').replace(/([一-龥ぁ-んァ-ンA-Za-z0-9０-９]{2,18})のどれか/g,(match,word,offset,full)=>{
     const prev=full[offset-1]||'';
@@ -8902,14 +8918,14 @@ function getConsultationBasisSummary(){
     return '今回の迷いは、職場が悪いかどうかではなく、この場所で自分の力が育つかどうかを見極める流れです。';
   }
   if(/恋|愛|相手|復縁|出会|片思い|結婚|関係/.test(`${input.cat||''}${input.theme||''}`)){
-    return `${themeText}では、「好きかどうか」だけで決めるより、連絡の安定感、会う目的、相手の意思表示を見ることが大切です。`;
+    return `${themeText}では、「好きかどうか」だけで決めるより、連絡の安定感、会う目的、相手の意思表示が判断の軸になります。`;
   }
   if(/仕事|転職|職場|働|進路/.test(`${input.cat||''}${input.theme||''}`)){
-    return `${themeText}では、気持ちの勢いだけで決めるより、条件、役割、続けたときの消耗度を見て判断することが大切です。`;
+    return `${themeText}では、気持ちの勢いだけで決めるより、役割、続けたときの消耗度、返ってくるものが判断の軸になります。`;
   }
   return focus?.answerNeed
-    ?`${themeText}では、気持ちだけで決めず、どこに安心の根拠があるかを見ることが大切です。`
-    :'「好きかどうか」だけで決めるより、連絡の安定感、会う目的、相手の意思表示を見ることが大切です。';
+    ?`${themeText}では、気持ちだけで決めず、どこに安心の根拠があるかが判断の軸になります。`
+    :'「好きかどうか」だけで決めるより、連絡の安定感、会う目的、相手の意思表示が判断の軸になります。';
 }
 
 function makeFoundationSummary(type='',fullText='',context={}){
@@ -8919,7 +8935,7 @@ function makeFoundationSummary(type='',fullText='',context={}){
       return '適応力と表現力があり、良い手本を取り入れて自分の形に変える力があります。今回の判断では、自分の本音を仕事の根拠として言葉にできるかが鍵です。';
     }
     if(focus.hasLove){
-      return '相手に合わせる力がある一方で、自分の消耗を後回しにしやすい傾向があります。今回の判断では、安心して話せる関係かを見ることが大切です。';
+      return '相手に合わせる力がある一方で、自分の消耗を後回しにしやすい傾向があります。今回の判断では、安心して話せる関係かが軸になります。';
     }
     if(focus.hasWork){
       return '状況を読みながら力を出せる一方で、負荷を抱えすぎると消耗しやすい傾向があります。今回の判断では、役割と見返りの釣り合いが鍵です。';
@@ -10758,7 +10774,8 @@ function buildDossierOneLineForDecisionContext(ctx){
 }
 
 function buildDossierVerdictForDecisionContext(ctx){
-  const criteriaChoice=formatDecisionCriteriaChoice(ctx.decisionCriteriaList,ctx.criteriaText||'安心できる根拠');
+  const criteriaChoice=getDecisionAxisFullPhrase(ctx);
+  const axisShort=getDecisionAxisShortPhrase(ctx);
   if(ctx.primaryTheme==='love'){
     if(isReconciliationContext(ctx)){
       const verdict=(ctx.loveSubtypeProfile?.supplements?.dossierVerdict||[
@@ -10770,7 +10787,7 @@ function buildDossierVerdictForDecisionContext(ctx){
     return `今回の答えは、気持ちの強さだけで進めることではありません。${criteriaChoice}が言葉のあとに行動として残るほど、安心して向き合える流れです。そこが曖昧なままなら、信じたい気持ちほど自分を疲れさせます。`;
   }
   if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
-    return `今回の答えは、今の環境に無条件で残ることではありません。${criteriaChoice}が返ってくる場所なら、努力はまだ未来につながります。負担だけが増える場所では、成長ではなく消耗が残ります。`;
+    return `今回の答えは、今の環境に無条件で残ることではありません。${criteriaChoice}が返ってくる場所なら、努力はまだ未来につながります。けれど、${axisShort}がない負担だけなら、それは成長ではなく消耗です。`;
   }
   if(ctx.primaryTheme==='relationship'){
     return `今回の答えは、相手に合わせ続けることではありません。${criteriaChoice}が保てる距離なら、関係はまだ整います。近づくほど自分を削るなら、その距離感が違和感の正体です。`;
@@ -10783,9 +10800,9 @@ function buildDossierVerdictForDecisionContext(ctx){
 
 function buildDossierClosingForDecisionContext(ctx){
   if(isReconciliationContext(ctx)) return getLoveSubtypeSupplement(ctx,'push')[0]||'懐かしさより、信頼を作り直せる温度を大事にしていい。';
-  if(ctx.primaryTheme==='love') return '安心できる関係は、言葉のあとに行動が続きます。';
+  if(ctx.primaryTheme==='love') return '我慢だけが増える関係を、愛情と呼ばなくていい。';
   if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return '我慢だけが増える場所を、居場所と呼ばなくていい。';
-  if(ctx.primaryTheme==='relationship') return '関係を守ることと、自分を削ることは違います。';
+  if(ctx.primaryTheme==='relationship') return '関係を守ることと、自分を削ることは同じではありません。';
   if(ctx.primaryTheme==='creative') return '好きな気持ちが戻る形こそ、今のあなたの羅針です。';
   return '違和感を消すより、違和感が教えている軸を取り戻していい。';
 }
@@ -14359,7 +14376,7 @@ function buildSubtypeLenormandCardReadingSentence(cardName='',ctx={}){
   const card=String(cardName||'').trim();
   const reading=ctx.loveSubtypeProfile?.lenormand?.[card]||getLoveSubtypeProfile(ctx.loveSubtype)?.lenormand?.[card]||'';
   if(!reading) return '';
-  return reading.startsWith(`「${card}」`)?reading:`「${card}」は、${reading}`;
+  return reading.startsWith(`「${card}」`)?reading:`「${card}」が出る時は、${reading}`;
 }
 
 function buildLenormandCardReadingSentence(cardName='',meaning='',ctx=buildDecisionContext(getCurrentRefinedFocus())){
@@ -14373,61 +14390,61 @@ function buildLenormandCardReadingSentence(cardName='',meaning='',ctx=buildDecis
   if(subtypeReading) return subtypeReading;
   if(/十字架/.test(card)){
     return asLove
-      ?'「十字架」は、関係の中で避けてきた重さや負担を示します。平気なふりを続けるほど判断が重くなるため、不安がどこから来ているかが大事です。'
+      ?'「十字架」が出る時は、関係の中で避けてきた重さが判断に入り込んでいます。平気なふりを続けるほど、不安の出どころが見えにくくなります。'
       :asWork
-        ?'「十字架」は、背負ってきた責任や避けてきた課題を示します。今の負担が意味のある責任なのか、ただ我慢が増えているだけなのかが焦点です。'
-        :'「十字架」は、避けてきた重さや背負っている課題を示します。何を引き受け、何を手放すかを分けるほど判断は軽くなります。';
+        ?'「十字架」が重なる時は、背負ってきた責任が判断を重くしています。今の負担が意味のある責任なのか、ただ我慢が増えているだけなのかが焦点です。'
+        :'「十字架」が出る時は、避けてきた重さや背負っている課題が前に出ています。何を引き受け、何を手放すかが分かれるほど判断は軽くなります。';
   }
   if(/錨/.test(card)){
     return asLove
-      ?'「錨」は、安定した関係にも、動かない関係にもなり得るカードです。安心できる安定なのか、曖昧なまま固定されているだけなのかを見分けてください。'
+      ?'「錨」が出る時は、安定した関係と動かない関係の差が焦点になります。安心できる安定なのか、曖昧なまま固定されているだけなのかが分かれ目です。'
       :asWork
-        ?'「錨」は、継続や安定を示す一方で、動けなさも表します。今の場所が土台になるのか、停滞として固定されているのかが分かれ目です。'
-        :'「錨」は、安定と固定の両方を示します。守るべき土台なのか、動きを止めている重さなのかを見分けるカードです。';
+        ?'「錨」が出る時は、継続の土台と動けなさが同じ場所にあります。今の場所が力を育てる土台なのか、停滞として固定されているのかが分かれ目です。'
+        :'「錨」が出る時は、守るべき土台と動きを止めている重さが近くにあります。安定に見えるものの中身が焦点です。';
   }
   if(/船/.test(card)){
     return asLove
-      ?'「船」は、相手との距離感や進展の遅さをどう扱うかを示します。手元の反応に目が向くほど、不安だけで先読みしにくくなります。'
+      ?'「船」が出る時は、相手との距離感や進展の遅さが判断に入り込んでいます。手元の反応が見えるほど、不安だけで先読みしにくくなります。'
       :asWork
-        ?'「船」は、今いる場所の外に選択肢が広がる流れを示します。すぐ離れるより、外の候補にも目が向き、今の場所の意味が見え直す段階です。'
-        :'「船」は、少し離れた場所にある選択肢や変化の流れを示します。距離を置いて見るほど、次の判断が整います。';
+        ?'「船」が出る時は、今いる場所だけで決めるより、外の選択肢が視界に入り始めています。すぐ離れるより、今の場所の意味も見え直す段階です。'
+        :'「船」が出る時は、少し離れた場所にある選択肢や変化が視界に入ります。距離を置いて見るほど、次の判断が整います。';
   }
   if(/塔/.test(card)){
     return asLove
-      ?'「塔」は、感情の距離や一人で抱え込みやすい状態を示します。自立した関係なのか、孤独な我慢になっているのかを見分けてください。'
+      ?'「塔」が出る時は、感情の距離や一人で抱え込みやすい状態が強まっています。自立した関係なのか、孤独な我慢になっているのかが焦点です。'
       :asWork
-        ?'「塔」は、組織や立場との距離を示します。制度や役割に守られているのか、孤立して動きにくいのかが分かれ目です。'
-        :'「塔」は、距離を置いて状況を見る力と、孤立しやすさの両方を示します。ひとりで抱え込まない形を作ることが鍵です。';
+        ?'「塔」が出る時は、組織や立場との距離が判断に影響しています。制度や役割に守られているのか、孤立して動きにくいのかが分かれ目です。'
+        :'「塔」が出る時は、距離を置いて状況を見る力と孤立しやすさが同時に出ます。ひとりで抱え込まない形が鍵です。';
   }
   if(/雲/.test(card)){
     return asLove
-      ?'「雲」は、相手の気持ちを決め打ちできない曖昧さを示します。言葉よりも、向き合った場面の反応に本当の温度が出ます。'
-      :'「雲」は、まだ見えていない不安や情報不足を示します。急いで結論を出すより、曖昧な点の輪郭が出る段階です。';
+      ?'「雲」が出る時は、相手の気持ちを決め打ちできない曖昧さが濃くなっています。言葉よりも、向き合った場面の反応に温度が出ます。'
+      :'「雲」が出る時は、まだ見えていない不安や情報の薄さが判断を揺らします。急いで結論を出すより、曖昧な点の輪郭が出る段階です。';
   }
   if(/山/.test(card)){
     return asLove
-      ?'「山」は、気持ちだけでは越えにくい壁を示します。関係を進めるなら、相手がその壁に一緒に向き合うかが分かれ目です。'
-      :'「山」は、時間のかかる障害や遅れを示します。無理に押し切るより、何が壁になっているかを具体的に分ける必要があります。';
+      ?'「山」が出る時は、気持ちだけでは越えにくい壁が前にあります。関係を進めるなら、相手がその壁に一緒に向き合うかが分かれ目です。'
+      :'「山」が出る時は、時間のかかる障害や遅れが判断を重くしています。無理に押し切るより、何が壁になっているかが焦点です。';
   }
   if(/鍵/.test(card)){
     return asLove
-      ?'「鍵」は、突破口が近いことを示します。相手の気持ちを推測し続けるより、安心に変わる一つの反応が答えを濃くします。'
-      :'「鍵」は、突破口や大事な焦点を示します。すべてを決める前に、今開けるべき一つの扉が見えてきます。';
+      ?'「鍵」が出る時は、突破口が相手の言葉より行動の中に出やすくなります。安心に変わる一つの反応が、答えを濃くします。'
+      :'「鍵」が出る時は、すべてを決める前に開けるべき一つの扉が見えてきます。大事な焦点は、思ったより絞られています。';
   }
   if(/星/.test(card)){
     return asLove
-      ?'「星」は、関係の理想や将来像を照らします。ただし理想だけで進めず、現実の反応と合わせて読むカードです。'
-      :'「星」は、見通しや目標を照らします。理想を描くだけでなく、そこへ近づく現実の道筋が必要です。';
+      ?'「星」が出る時は、関係の理想や将来像が強く見えています。ただし理想だけで進まず、現実の反応と重ねて見る場面です。'
+      :'「星」が出る時は、見通しや目標が遠くに光っています。理想を描くだけでなく、そこへ近づく現実の道筋が必要です。';
   }
   if(/騎士/.test(card)){
     return asLove
-      ?'「騎士」は、連絡や小さな動きを示します。大きな約束より、連絡や会話の反応に安定があるかが焦点です。'
-      :'「騎士」は、知らせや新しい動きを示します。待つだけの状態から、外とのやり取りに流れが移りやすい時です。';
+      ?'「騎士」が出る時は、連絡や小さな動きに関係の温度が出ます。大きな約束より、会話の反応に安定があるかが焦点です。'
+      :'「騎士」が出る時は、知らせや新しい動きが入りやすくなります。待つだけの状態から、外とのやり取りへ流れが移りやすい時です。';
   }
   if(/家/.test(card)){
     return asLove
-      ?'「家」は、安心できる土台を示します。関係が落ち着ける場所になるのか、内側に閉じて不安を抱える形になるのかが焦点です。'
-      :'「家」は、土台や安心できる環境を示します。守る場所として機能しているのか、外へ出にくくしているのかを分けて読んでください。';
+      ?'「家」が出る時は、関係が落ち着ける場所になるかが焦点です。内側に閉じて不安を抱える形なら、安心の土台とは言いにくくなります。'
+      :'「家」が出る時は、土台や安心できる環境の意味が問われています。守る場所として機能しているのか、外へ出にくくしているのかが分かれ目です。';
   }
   if(/重責|試練|背負|苦痛|課題|負担/.test(cleanMeaning)){
     return asLove
@@ -14438,10 +14455,10 @@ function buildLenormandCardReadingSentence(cardName='',meaning='',ctx=buildDecis
   }
   if(/安定|固定|長期|停滞|執着/.test(cleanMeaning)){
     return asLove
-      ?`${quoted}は、安定にも停滞にも傾く流れを映しています。安心につながる安定なのか、曖昧なまま固定されているだけなのかを見分けてください。`
+      ?`${quoted}が出る時は、安定にも停滞にも傾く流れがあります。安心につながる安定なのか、曖昧なまま固定されているだけなのかが分かれ目です。`
       :asWork
-        ?`${quoted}は、継続の土台と動けなさの両方を映しています。今の場所が力を育てる土台なのか、停滞として固定されているのかが分かれ目です。`
-        :`${quoted}は、安定と固定の両方を映しています。守るべき土台なのか、動きを止めている重さなのかを見分けるカードです。`;
+        ?`${quoted}が出る時は、継続の土台と動けなさの両方が見えています。今の場所が力を育てる土台なのか、停滞として固定されているのかが分かれ目です。`
+        :`${quoted}が出る時は、安定と固定の両方が近くにあります。守るべき土台なのか、動きを止めている重さなのかが焦点です。`;
   }
   if(/混乱|不確実|不安|曖昧|不透明/.test(cleanMeaning)){
     return asLove
@@ -14451,7 +14468,7 @@ function buildLenormandCardReadingSentence(cardName='',meaning='',ctx=buildDecis
   if(/障害|困難|遅延|壁/.test(cleanMeaning)){
     return asLove
       ?`${quoted}は、気持ちだけでは越えにくい壁を映しています。関係を進めるなら、相手がその壁に一緒に向き合うかが分かれ目です。`
-      :`${quoted}は、時間のかかる障害や遅れを映しています。無理に押し切るより、何が壁になっているかを具体的に分ける必要があります。`;
+      :`${quoted}は、時間のかかる障害や遅れを映しています。無理に押し切るより、何が壁になっているかが焦点です。`;
   }
   if(/解決|成功の鍵|大事な点|突破口|扉/.test(cleanMeaning)){
     return asLove
@@ -14459,15 +14476,15 @@ function buildLenormandCardReadingSentence(cardName='',meaning='',ctx=buildDecis
       :`${quoted}は、突破口や大事な焦点を映しています。すべてを決める前に、今開けるべき一つの扉が見えてきます。`;
   }
   if(asLove){
-    return `「${card}」は、相手の言葉だけでなく、向き合った場面の反応まで映すカードとして読めます。`;
+    return `「${card}」が出る時は、相手の言葉だけでなく、向き合った場面の反応まで見る流れになります。`;
   }
   if(asWork){
-    return `「${card}」は、今の環境を続ける意味と、変える必要がある点を分けて見るカードとして読めます。`;
+    return `「${card}」が出る時は、今の環境を続ける意味と、変える必要がある点が分かれやすくなります。`;
   }
   if(primary==='relationship'){
-    return `「${card}」は、関わった後に自分が自然体でいられるかを映すカードとして読めます。`;
+    return `「${card}」が出る時は、関わった後に自分が自然体でいられるかが焦点になります。`;
   }
-  return `「${card}」は、今回の相談で見落としやすい現実を映すカードとして読めます。`;
+  return `「${card}」が出る時は、今回の相談で見落としやすい現実が前に出ています。`;
 }
 
 function getDrawnLenormandCardNames(){
@@ -14674,13 +14691,9 @@ function dedupeJapaneseSentences(text=''){
 
 function buildPrimaryTopVerdictText(name='あなた',focus={},theme='',context={}){
   const ctx=buildDecisionContext(focus,{...context,theme});
-  const coreOpening=buildCoreInsightText(focus,{...context,theme})
-    .split('\n')
-    .map(line=>line.trim())
-    .filter(Boolean)
-    .slice(0,2)
-    .join('\n');
-  const lines=[coreOpening];
+  const axisFull=getDecisionAxisFullPhrase(ctx);
+  const axisShort=getDecisionAxisShortPhrase(ctx);
+  const lines=[];
   if(ctx.primaryTheme==='dual_concern'&&!focus.explicitUserPriority){
     lines.push(`今回の答えは、恋愛と仕事などを同じ重さで同時に抱え込まないことです。`);
     lines.push(`迷いの正体は、どちらも大事にしたい気持ちが重なり、自分がいちばん削られている場所が見えにくくなっていることです。`);
@@ -14694,21 +14707,25 @@ function buildPrimaryTopVerdictText(name='あなた',focus={},theme='',context={
       ]));
     }else{
       lines.push(`今回の答えは、気持ちの強さだけで関係を決めないことです。`);
-      lines.push(`${ctx.criteriaText}が言葉のあとに行動として残るなら、安心して向き合える流れです。`);
+      lines.push(`${axisFull}が言葉のあとに行動として残るなら、安心して向き合える流れです。`);
       lines.push(`そこが曖昧なままなら、信じたい気持ちほど自分を疲れさせます。`);
     }
   }else if(ctx.primaryTheme==='relationship'){
     lines.push(`今回の答えは、関係を守るために自分を削り続けないことです。`);
-    lines.push(`${ctx.criteriaText}が保てる距離なら、関わり方はまだ整います。`);
+    lines.push(`${axisFull}が保てる距離なら、関わり方はまだ整います。`);
     lines.push(`近づくほど自然体が失われるなら、その違和感が今の羅針です。`);
   }else{
     lines.push(`今回の答えは、無条件で今の場所に残ることではありません。`);
-    lines.push(`${ctx.criteriaText}が返ってくるなら、努力はまだ未来につながります。`);
+    lines.unshift(`今の迷いは、続けるか変えるかの二択ではありません。`);
+    lines.push(`${axisFull}が返ってくるなら、努力はまだ未来につながります。`);
     lines.push(`見返りのない負担だけが増えるなら、それは成長ではなく消耗です。`);
   }
   const secondary=buildSecondaryThemeSentence(ctx);
   if(secondary) lines.push(secondary);
-  return dedupeJapaneseSentences(lines.join('\n'));
+  return limitJapaneseBodyBySentences(dedupeJapaneseSentences(lines.join('\n')).replace(new RegExp(escapeRegExp(axisFull),'g'),(match,offset,full)=>{
+    const first=full.indexOf(match);
+    return offset===first?match:axisShort;
+  }),360,5);
 }
 
 function buildWorkLifeTopVerdictText(name='あなた',focus={},theme=''){
@@ -14733,11 +14750,15 @@ function getRashinReadingPolicyPrompt(scope='all'){
 確認してください / 確認する / 確認できる / 確認できない / 確認したとき / まだ確認していない / 本気度確認 / 条件確認 / 判断条件 / 行動方針 / 書き出してください / 書き出す / 材料を集めてください / 材料を集める / 比較してください / 比較する / メモしてください / メモする / 整理してください / 整理する / 情報収集してください / 情報収集する / 条件を洗い出してください / 条件を洗い出す / 7日以内 / 30日以内 / 今週の一手 / 次の一手 / Aなら進む、Bなら止まる、Cなら保留 / 機械的な条件表 / 進む条件 / 止まる条件 / 残る条件 / 動く条件 / 保留条件 / 関わる条件 / 距離を置く条件。
 内部では使ってよいが、表では現実の見立て、違和感の言語化、内面の整え方、羅針の指針へ変換してください。`;
   const quality=`【共通品質】
-カード辞書説明、配置語、相手の心の断定、根拠のない未来断定、作業指示、機械的な条件表を出さない。相談本文の具体語を反映し、迷いの正体を一文で言葉にしてください。同じ意味の文を繰り返さず、相談テーマに合わない語彙を中心にしないでください。`;
+カード辞書説明、配置語、相手の心の断定、根拠のない未来断定、作業指示、機械的な条件表を出さない。相談本文の具体語を反映し、迷いの正体を一文で言葉にしてください。
+「今回の答え」は3〜5文で短く強くまとめ、同じ意味を2回出さないでください。判断軸セットを初回に出した後は、2回目以降を「努力の見返り」「安心の根拠」「続ける意味」などの自然語へ圧縮してください。
+「今見えている流れ」は条件の列挙ではなく、現在の動き、分岐しやすい方向、注意点をひと続きの自然な流れとして書いてください。
+同じ意味の文を繰り返さず、相談テーマに合わない語彙を中心にしないでください。`;
   const scopes={
     len:`【ルノルマン専用】
 - 役割は現実の見立てです。今の現実、止まっている理由、改善の兆し、気をつけること、今見えている流れを読む。
 - カード名は必要な場合だけ最大2〜3枚。配置語や「このカードは〜を意味します」は出さない。
+- カード名を出す場合も、カード説明で終わらせず、相談者の現実語へ必ず翻訳する。
 - 「今見えている流れ」は良い可能性と悪い可能性の羅列にせず、ひと続きの自然な流れにする。`,
     orc:`【オラクル専用】
 - 役割は助言、内面整理、向き合い方です。行動タスクではなく、光のメッセージと「${ORACLE_COMPASS_HEADING}」に統合する。
@@ -14746,7 +14767,8 @@ function getRashinReadingPolicyPrompt(scope='all'){
     integration:`【統合判断専用】
 - 鑑定結果の最初に出す、相談者が持ち帰る答えです。
 - ${INTEGRATION_FINAL_HEADING}、${INTEGRATION_CORE_HEADING}、${INTEGRATION_FLOW_HEADING}、${INTEGRATION_ACTION_GUIDE_HEADING}、${INTEGRATION_CLOSING_HEADING}を自然な文章で返す。
-- まとめではなく、迷いの正体と自分を雑に扱わない判断軸を先に出す。`,
+- まとめではなく、迷いの正体と自分を雑に扱わない判断軸を先に出す。
+- ${INTEGRATION_FINAL_HEADING}では同じ意味の文を繰り返さず、${INTEGRATION_FLOW_HEADING}は箇条書き風の条件リストにしない。`,
     paid:`【有料鑑定全体】
 - ルノルマンは現実の見立て、オラクルは内面整理、統合判断は持ち帰る答えとして役割を分ける。
 - 量を増やすより解像度を上げる。作業指示ではなく、迷いの正体・現実の流れ・羅針の指針を返す。
@@ -14754,7 +14776,8 @@ function getRashinReadingPolicyPrompt(scope='all'){
     dossier:`【羅針カード専用】
 - SNS保存・見返し用の短い判断カードです。長文鑑定書の縮小版にしない。
 - 本名、生年月日、カード番号、配置名、追加質問の生回答、作業指示、長い条件分岐を出さない。
-- 見た瞬間に判断軸が残る短い文章にする。`,
+- 重複、判断軸の連呼、条件表を削り、見た瞬間に判断軸が残る短い文章にする。
+- テーマに合わせて締めを変え、全テーマに同じ言い回しを使い回さない。`,
     'dossier-polish':`【羅針カード仕上げ専用】
 - タグ構造を維持し、冗長さ・重複・矛盾を削る。
 - HEADLINEに今回の答えと迷いの正体を自然な文章で明確に残す。
@@ -14773,82 +14796,132 @@ function getRashinReadingPolicyPrompt(scope='all'){
   return [base,body,forbidden,quality].filter(Boolean).join('\n\n');
 }
 
+function inferRashinThemeFromText(text=''){
+  const source=String(text||'');
+  if(/復縁|元恋人|元彼|元カレ|元カノ|過去の別れ|もう一度|信頼を作り直/.test(source)) return 'reconciliation';
+  if(/恋愛|相手|関係|連絡|好き|曖昧|距離感|復縁/.test(source)) return 'love';
+  if(/仕事|職場|転職|退職|働|収入|評価|役割|成長|キャリア|会社/.test(source)) return 'work';
+  if(/人間関係|友人|同僚|家族|親|境界線|距離/.test(source)) return 'relationship';
+  if(/お金|収支|支出|収入|貯金|投資|借金/.test(source)) return 'money';
+  if(/創作|趣味|作品|表現|熱量|発信/.test(source)) return 'creative';
+  return 'general';
+}
+
+function buildRashinNaturalTaskRewrite(sentence=''){
+  const source=String(sentence||'').trim();
+  if(!source) return '';
+  const isQuestion=/[？?]$/.test(source);
+  const theme=inferRashinThemeFromText(source);
+  const hasConfirm=/確認|確かめ|本気度/.test(source);
+  const hasWork=/書き出|比較|材料を集め|メモ|整理|情報収集|洗い出/.test(source);
+  const hasDeadline=/7日以内|30日以内|今週の一手|次の一手|今日から/.test(source);
+  const hasCondition=/進む条件|止まる条件|残る条件|動く条件|保留条件|関わる条件|距離を置く条件|条件A|条件B|条件C|Aなら|Bなら|Cなら|判断条件|行動方針/.test(source);
+  if(isQuestion){
+    if(hasConfirm){
+      if(theme==='love'||theme==='reconciliation') return 'どの反応が安心につながり、どの反応が違和感として残っていますか？';
+      if(theme==='work') return 'どの手応えがあれば、今の場所に続ける意味が戻りますか？';
+      return 'どこにまだ違和感が残っていますか？';
+    }
+    if(hasWork) return '言葉にしきれていない違和感は、いちばんどこに残っていますか？';
+    if(hasCondition) return '安心が増える方向と、消耗が増える方向はどこで分かれていますか？';
+    return 'いま一番引っかかっている違和感は何ですか？';
+  }
+  if(/本気度確認/.test(source)) return '信頼の温度は、言葉よりも行動の続き方に表れます。';
+  if(hasConfirm){
+    if(theme==='love'||theme==='reconciliation') return '安心は、言葉のあとに行動が続くところに表れます。';
+    if(theme==='work') return '頑張りが役割や評価として返る場所なら、まだ整う余地があります。';
+    if(theme==='money') return '安心して選べる根拠が見えるほど、判断は落ち着きます。';
+    return '安心の根拠が見えるほど、判断の輪郭は濃くなります。';
+  }
+  if(hasWork){
+    if(theme==='work') return '今の場所と外の選択肢の違いが見えるほど、選ぶ力は戻ります。';
+    if(theme==='love'||theme==='reconciliation') return '言葉になっていない違和感ほど、関係の分かれ目を濃くします。';
+    return '言葉になっていない違和感ほど、次の判断軸になります。';
+  }
+  if(hasDeadline) return '今は急がず、自分を雑に扱わない視点へ戻ることが大切です。';
+  if(hasCondition) return '進める兆しと立ち止まるサインは、安心が増えるか消耗が増えるかに表れます。';
+  if(/してください|しましょう|ましょう/.test(source)){
+    if(/伝え|言葉|本音/.test(source)) return '本音は、無理に押し出すより届く形に整うほど扱いやすくなります。';
+    if(/進|動|行動/.test(source)) return '動く力は、安心の根拠が増えるほど自然に戻ります。';
+    if(/選|決め/.test(source)) return '選ぶ力は、焦りが薄れて自分を雑に扱わない視点へ戻るほど強くなります。';
+    return '今は、急がず自分を雑に扱わない視点へ戻ることが大切です。';
+  }
+  return '';
+}
+
+function rewriteRashinTaskSentences(text=''){
+  return String(text||'').replace(/[^。！？!?。\n]*(?:確認してください|ご確認ください|確認して下さい|確認する|確認できる|確認できない|確認したとき|確認した時|まだ確認していない|本気度確認|条件確認|判断条件|行動方針|書き出してください|書き出す|材料を集めてください|材料を集める|比較してください|比較する|メモしてください|メモする|整理してください|整理する|情報収集してください|情報収集する|条件を洗い出してください|条件を洗い出す|7日以内|30日以内|今週の一手|次の一手|進む条件|止まる条件|残る条件|動く条件|保留条件|関わる条件|距離を置く条件|してください|しましょう|ましょう)[^。！？!?\n]*(?:[。！？!?]|$)/g,match=>{
+    const rewrite=buildRashinNaturalTaskRewrite(match);
+    return rewrite||match;
+  });
+}
+
+function compressRepeatedDecisionAxisSets(text=''){
+  const seen=new Map();
+  const shortCycle=['努力の見返り','返ってくるもの','続ける意味','今の場所に残る価値','自信として残るもの'];
+  return String(text||'').replace(/(?:[一-龥ぁ-んァ-ンA-Za-z0-9０-９]{2,12}[・／\/、,，]){3,}[一-龥ぁ-んァ-ンA-Za-z0-9０-９]{2,12}/g,match=>{
+    const terms=match.split(/[・／\/、,，]+/).map(item=>item.trim()).filter(Boolean);
+    if(terms.length<4) return match;
+    const key=[...new Set(terms)].join('・');
+    const count=seen.get(key)||0;
+    seen.set(key,count+1);
+    if(count===0) return match;
+    if(/収入|成長|評価|役割|職場|仕事|経験/.test(key)) return shortCycle[(count-1)%shortCycle.length];
+    if(/安心|信頼|相手|連絡|距離感|反応/.test(key)) return ['安心の根拠','信頼の温度','関係の温度'][(count-1)%3];
+    if(/境界線|自然体|我慢|距離/.test(key)) return '自分を削らない距離';
+    if(/収支|上限|支出|貯金/.test(key)) return '安心して使える余白';
+    if(/楽しさ|上達|表現|熱量/.test(key)) return '熱量が戻る形';
+    return '大事な判断軸';
+  });
+}
+
+function normalizeRashinSentenceKey(sentence=''){
+  return normalizeRepeatedAdviceSentence(sentence)
+    .replace(/今回の答え|迷いの正体|本当に止まっている|大事なのは|羅針は/g,'')
+    .replace(/収入成長評価信頼役割|収入成長評価役割|評価信頼役割|努力の見返り|返ってくるもの|続ける意味/g,'work_axis')
+    .replace(/安心感相手の反応信頼|安心の根拠|信頼の温度|関係の温度/g,'love_axis')
+    .slice(0,34);
+}
+
+function dedupeRashinMeaningSentences(text=''){
+  const seen=new Set();
+  return String(text||'').split('\n').map(line=>{
+    if(/^■\s*/.test(line.trim())) return line;
+    return line.split(/(?<=[。！？!?])/).map(sentence=>{
+      const trimmed=sentence.trim();
+      if(!trimmed) return '';
+      const key=normalizeRashinSentenceKey(trimmed);
+      if(key.length>=16&&seen.has(key)) return '';
+      if(key.length>=16) seen.add(key);
+      return trimmed;
+    }).filter(Boolean).join('');
+  }).filter(line=>line.trim()).join('\n');
+}
+
+function polishRashinVisibleText(text=''){
+  return String(text||'')
+    .replace(/目を向ける流れです/g,'安心の根拠が見えてきます')
+    .replace(/する流れです/g,'そういう流れです')
+    .replace(/言葉になる流れです/g,'言葉になっていきます')
+    .replace(/見ることが大切です/g,'そこが大切です')
+    .replace(/安心の根拠コード/g,'合言葉コード')
+    .replace(/安心の根拠してください/g,'安心の根拠が見えてきます')
+    .replace(/\n{3,}/g,'\n\n');
+}
+
 function sanitizeRashinVisibleText(text=''){
   let output=String(text||'');
-  const replacements=[
-    [/ご確認ください/g,'目を向ける流れです'],
-    [/確認してください/g,'目を向ける流れです'],
-    [/確認して下さい/g,'目を向ける流れです'],
-    [/確認すべきこと/g,'安心に変わる根拠'],
-    [/確認すべき点/g,'安心に変わる焦点'],
-    [/確認すべき条件/g,'安心に変わる根拠'],
-    [/確認が足りない/g,'安心の根拠が薄い'],
-    [/確認を先送りすると/g,'見ないふりが続くと'],
-    [/まだ確認していないことが多い/g,'安心の根拠がまだ薄い'],
-    [/まだ確認していない/g,'まだ安心の根拠が薄い'],
-    [/確認できていないこと/g,'安心に変わっていない点'],
-    [/確認できていない/g,'安心の根拠が薄い'],
-    [/確認したとき/g,'向き合った場面'],
-    [/確認した時/g,'向き合った場面'],
-    [/確認してから/g,'輪郭が見えてから'],
-    [/確認できる条件/g,'現実に見えている根拠'],
-    [/確認できる事実/g,'現実に見えている根拠'],
-    [/確認できる/g,'現実に見えている'],
-    [/確認できない/g,'安心の根拠が薄い'],
+  const labelReplacements=[
     [/本気度確認/g,'信頼の温度'],
     [/条件確認/g,'安心の根拠'],
-    [/確認材料/g,'見えている根拠'],
-    [/確認ポイント/g,'見えている焦点'],
-    [/確認不足/g,'安心の根拠が薄い'],
-    [/確認済み/g,'すでに見えている'],
-    [/確認が必要です/g,'安心の根拠が必要です'],
-    [/確認が必要/g,'安心の根拠が必要'],
-    [/確認を/g,'安心の根拠を'],
-    [/確認に/g,'安心の根拠に'],
-    [/確認へ/g,'安心の根拠へ'],
-    [/確認と/g,'安心の根拠と'],
-    [/確認も/g,'安心の根拠も'],
-    [/何を確認/g,'どこに目を向けるか'],
-    [/確認する/g,'輪郭が見えてくる'],
-    [/確認/g,'安心の根拠'],
-    [/確かめてください/g,'目を向ける流れです'],
-    [/確かめる/g,'見えてくる'],
-    [/確かめて/g,'見えて'],
-    [/書き出してください/g,'言葉にしてみる余地があります'],
-    [/書き出す/g,'言葉になる'],
-    [/材料を集めてください/g,'判断の輪郭が濃くなる流れです'],
-    [/材料を集める/g,'判断の根拠が戻る'],
-    [/比較してください/g,'違いが見えてきます'],
-    [/比較する/g,'違いが見えてくる'],
-    [/メモしてください/g,'心に残ります'],
-    [/メモする/g,'心に留まる'],
-    [/整理してください/g,'輪郭が整っていきます'],
-    [/整理する/g,'輪郭が整う'],
-    [/情報収集してください/g,'見える情報を増やす余地があります'],
-    [/情報収集する/g,'見える情報が増えていく'],
-    [/条件を洗い出してください/g,'大事な点が見えてきます'],
-    [/条件を洗い出す/g,'大事な点が見えてくる'],
-    [/見てください/g,'見ることが大切です'],
-    [/決めてください/g,'決まっていきます'],
-    [/準備してください/g,'整う余地があります'],
-    [/選んでください/g,'選ぶ流れです'],
-    [/伝えてください/g,'伝わる形が大事です'],
-    [/行動してください/g,'現実が動く流れです'],
-    [/書いてください/g,'言葉になる流れです'],
-    [/進みましょう/g,'進める流れです'],
-    [/整えましょう/g,'整う流れです'],
-    [/見ましょう/g,'目を向ける流れです'],
-    [/書きましょう/g,'言葉になる流れです'],
-    [/しましょう/g,'する流れです'],
-    [/してください/g,'する流れです'],
+    [/判断条件/g,'判断軸'],
+    [/行動方針/g,'今の向き合い方'],
     [/7日以内の一手/g,INTEGRATION_ACTION_GUIDE_HEADING],
     [/30日以内に見ること/g,INTEGRATION_FLOW_HEADING],
     [/今週の一手/g,INTEGRATION_ACTION_GUIDE_HEADING],
     [/次の一手/g,INTEGRATION_ACTION_GUIDE_HEADING],
     [/今回の最終判断/g,INTEGRATION_FINAL_HEADING],
     [/内なる羅針盤/g,ORACLE_COMPASS_HEADING],
-    [/行動方針/g,'今の向き合い方'],
-    [/判断条件/g,'判断軸'],
     [/進む条件/g,'進める兆し'],
     [/進める条件/g,'進める兆し'],
     [/止まる条件/g,'立ち止まるサイン'],
@@ -14859,8 +14932,8 @@ function sanitizeRashinVisibleText(text=''){
     [/切り替える条件/g,'切り替えのサイン'],
     [/関わる条件/g,'関わる意味'],
     [/距離を置く条件/g,'距離が必要なサイン'],
-    [/Aなら進む、Bなら止まる、Cなら保留/g,'進む理由、立ち止まるサイン、まだ見えていない点'],
-    [/条件Aなら進む、条件Bなら止まる、条件Cなら保留/g,'進む理由、立ち止まるサイン、まだ見えていない点'],
+    [/Aなら進む、Bなら止まる、Cなら保留/g,'安心が増える方向と、消耗が増える方向'],
+    [/条件Aなら進む、条件Bなら止まる、条件Cなら保留/g,'安心が増える方向と、消耗が増える方向'],
     [/今日から7日以内/g,'今の流れの中で'],
     [/7日以内/g,'今の流れの中で'],
     [/30日以内/g,'少し先までに'],
@@ -14870,9 +14943,13 @@ function sanitizeRashinVisibleText(text=''){
     [/1ヶ月後/g,'少し先で'],
     [/一ヶ月後/g,'少し先で'],
   ];
-  replacements.forEach(([pattern,replacement])=>{
+  labelReplacements.forEach(([pattern,replacement])=>{
     output=output.replace(pattern,replacement);
   });
+  output=rewriteRashinTaskSentences(output);
+  output=compressRepeatedDecisionAxisSets(output);
+  output=dedupeRashinMeaningSentences(output);
+  output=polishRashinVisibleText(output);
   return output.replace(/\n{3,}/g,'\n\n').trim();
 }
 
@@ -14884,6 +14961,8 @@ function detectRashinVisibleTextPolicyIssues(text='',label='text'){
     {name:'命令調の作業指示',pattern:/してください|しましょう|ましょう/},
     {name:'期限つき作業指示',pattern:/7日以内|30日以内|今週の一手|次の一手/},
     {name:'機械的な条件表',pattern:/進む条件|止まる条件|残る条件|動く条件|保留条件|関わる条件|距離を置く条件|条件A|条件B|条件C|Aなら進む|Bなら止まる|Cなら保留|判断条件|行動方針/},
+    {name:'不自然な禁止語置換',pattern:/する流れです|目を向ける流れです|言葉になる流れです|見ることが大切です|安心の根拠コード|安心の根拠してください/},
+    {name:'カード辞書説明',pattern:/「[^」]{1,12}」は、?[^。\n]*(?:示します|示しています|意味します|表します|カードです|カードとして読めます|カードとして読みます)/},
   ];
   return rules
     .filter(rule=>rule.pattern.test(source))
@@ -14894,32 +14973,27 @@ function buildWorkFinalJudgmentText(name='あなた',cat='総合',theme='',conte
   const focus=getFocusForContext(cat,theme,context);
   const ctx=buildDecisionContext(focus,{...context,cat,theme});
   const topVerdict=buildPrimaryTopVerdictText(name,focus,theme,context);
-  const positiveItems=getIntegrationSupplementItems(ctx.positiveLabel,focus,cat,theme).slice(0,3);
-  const negativeItems=getIntegrationSupplementItems(ctx.negativeLabel,focus,cat,theme).slice(0,3);
-  const holdItems=getIntegrationSupplementItems(ctx.holdLabel,focus,cat,theme).slice(0,3);
+  const axisShort=getDecisionAxisShortPhrase(ctx);
   const push=getIntegrationSupplementItems(INTEGRATION_ACTION_GUIDE_HEADING,focus,cat,theme)[0]||buildDossierClosingForDecisionContext(ctx);
   return sanitizeRashinVisibleText(`■ ${INTEGRATION_FINAL_HEADING}
 ${topVerdict}
 
 ■ ${INTEGRATION_CORE_HEADING}
-迷いの正体は、${ctx.criteriaText}のどれを大事にすれば自分を雑に扱わずに済むかが、まだ一つに定まっていないことです。
+迷いの正体は、${axisShort}を大事にしたい気持ちと、現実の違和感を無視できない感覚が同時にあることです。
 
 ■ ${INTEGRATION_FLOW_HEADING}
-${positiveItems.map(ensureJapaneseSentence).join('')}${negativeItems.map(ensureJapaneseSentence).join('')}${holdItems.slice(0,1).map(ensureJapaneseSentence).join('')}
+${buildIntegrationFlowNarrative(focus,cat,theme)}
 
 ■ ${INTEGRATION_ACTION_GUIDE_HEADING}
 ${ensureJapaneseSentence(push)}
 
 ■ ${INTEGRATION_CLOSING_HEADING}
-我慢だけが増える場所を、居場所と呼ばなくていい。`);
+${buildDossierClosingForDecisionContext(ctx)}`);
 }
 
 function buildDefaultFinalJudgmentText(name='あなた',cat='総合',theme=''){
   const focus=getFocusForContext(cat,theme,{});
   const ctx=buildDecisionContext(focus,{cat,theme});
-  const positiveItems=getIntegrationSupplementItems(ctx.positiveLabel,focus,cat,theme).slice(0,2);
-  const negativeItems=getIntegrationSupplementItems(ctx.negativeLabel,focus,cat,theme).slice(0,2);
-  const holdItems=getIntegrationSupplementItems(ctx.holdLabel,focus,cat,theme).slice(0,3);
   return sanitizeRashinVisibleText(`■ ${INTEGRATION_FINAL_HEADING}
 ${buildPrimaryTopVerdictText(name,focus,theme)}
 
@@ -14927,7 +15001,7 @@ ${buildPrimaryTopVerdictText(name,focus,theme)}
 迷いの正体は、気持ちだけで決めたい自分と、現実の違和感を無視できない自分が同時にいることです。
 
 ■ ${INTEGRATION_FLOW_HEADING}
-${positiveItems.map(ensureJapaneseSentence).join('')}${negativeItems.map(ensureJapaneseSentence).join('')}${holdItems.slice(0,1).map(ensureJapaneseSentence).join('')}
+${buildIntegrationFlowNarrative(focus,cat,theme)}
 
 ■ ${INTEGRATION_ACTION_GUIDE_HEADING}
 ${ensureJapaneseSentence(getIntegrationSupplementItems(INTEGRATION_ACTION_GUIDE_HEADING,focus,cat,theme)[0]||'迷いを消すより、違和感の出どころを言葉にするほど判断軸が戻ります。')}
@@ -15183,6 +15257,48 @@ function ensureIntegrationPushLine(output='',focus={},cat='総合',theme=''){
   return replaceHeadingBody(output,INTEGRATION_ACTION_GUIDE_HEADING,ensureJapaneseSentence(sentence));
 }
 
+function buildIntegrationFlowNarrative(focus={},cat='総合',theme=''){
+  const ctx=buildDecisionContext(focus,{cat,theme});
+  if(isReconciliationContext(ctx)){
+    return '今は、懐かしさで戻る流れと、信頼を作り直す流れを分ける場面です。過去の原因に触れても向き合う姿勢が続くなら、関係はもう一度整います。連絡の温度だけで進むほど、同じ傷が戻りやすくなります。';
+  }
+  if(ctx.primaryTheme==='love'){
+    return '今は、気持ちの強さよりも言葉のあとに行動が続くかで流れが分かれています。優しさが安定した反応として残るなら、関係は少しずつ整います。曖昧さや待つ側の負担だけが続くなら、信じたい気持ちほど消耗へ傾きます。';
+  }
+  if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
+    return '今は、今の場所に残る意味を探しながらも、外の選択肢へ意識が向き始めている流れです。評価や役割が返ってくるなら、今の環境を使う意味はまだ残ります。けれど、負担だけが増えて本音を出しにくくなるなら、気持ちは自然と次の場所へ傾きやすくなります。';
+  }
+  if(ctx.primaryTheme==='relationship'||ctx.primaryTheme==='family'){
+    return '今は、関係を守りたい気持ちと、自分を削りたくない感覚がぶつかりやすい流れです。距離を整えても自然体が戻るなら、関わり方はまだ育てられます。近づくほど我慢が増えるなら、その違和感は境界線を取り戻すサインです。';
+  }
+  if(ctx.primaryTheme==='money'){
+    return '今は、不安を早く消すために動くより、安心して選べる余白を取り戻す流れです。収支や上限が見えるほど判断は落ち着きます。焦りを埋める支出が増えるなら、守るべき生活の土台へ意識を戻す場面です。';
+  }
+  if(ctx.primaryTheme==='creative'){
+    return '今は、好きな気持ちを続けたい一方で、義務感や疲れが熱量を覆いやすい流れです。小さくても上達や楽しさが残るなら、表現はまだ育ちます。苦しさだけが増えるなら、やり方を変えるほど本来の熱が戻りやすくなります。';
+  }
+  return '今は、急いで答えを決めるより、違和感の出どころが少しずつ見えてくる流れです。納得できる根拠が増えるほど、選ぶ力は戻ります。負担だけが増える方向へ進むほど、自分を雑に扱わない視点が必要になります。';
+}
+
+function normalizeIntegrationFlowBody(body='',focus={},cat='総合',theme=''){
+  const source=sanitizeRashinVisibleText(body);
+  const items=splitIntegrationItems(source);
+  const lineCount=String(source||'').split('\n').map(line=>line.trim()).filter(Boolean).length;
+  const sentenceCount=splitJapaneseSentences(source).length;
+  const looksLikeList=/^\s*(?:[-・]|\d+[\.\)])\s*/m.test(source)
+    ||lineCount>=3
+    ||items.length>=5
+    ||/(^|。)\s*[^。]{2,24}。(?:\s*[^。]{2,24}。){3,}/.test(source);
+  if(!source||looksLikeList||sentenceCount>=5){
+    return buildIntegrationFlowNarrative(focus,cat,theme);
+  }
+  return limitJapaneseBodyBySentences(source,280,3);
+}
+
+function ensureIntegrationFlowNarrative(output='',focus={},cat='総合',theme=''){
+  return replaceHeadingBody(output,INTEGRATION_FLOW_HEADING,normalizeIntegrationFlowBody(extractHeadingBody(output,INTEGRATION_FLOW_HEADING),focus,cat,theme));
+}
+
 function ensureTopVerdictInIntegration(output='',name='あなた',focus={},theme=''){
   return replaceHeadingBody(output,INTEGRATION_FINAL_HEADING,buildPrimaryTopVerdictText(name,focus,theme));
 }
@@ -15212,6 +15328,7 @@ function ensureIntegrationSlots(text='',name='あなた',cat='総合',theme='',c
   if(!extractHeadingBody(output,INTEGRATION_FLOW_HEADING)){
     output=replaceHeadingBody(output,INTEGRATION_FLOW_HEADING,extractHeadingBody(fallback,INTEGRATION_FLOW_HEADING));
   }
+  output=ensureIntegrationFlowNarrative(output,focus,cat,theme);
   if(!extractHeadingBody(output,INTEGRATION_CLOSING_HEADING)){
     output=replaceHeadingBody(output,INTEGRATION_CLOSING_HEADING,extractHeadingBody(fallback,INTEGRATION_CLOSING_HEADING));
   }
@@ -15310,6 +15427,15 @@ function detectRepeatedAdviceIssues(text=''){
     const count=sentences.filter(sentence=>pattern.re.test(sentence)).length;
     if(count>=3) issues.push(`${pattern.label}が3回以上繰り返されています`);
   });
+  const axisSets=String(text||'').match(/(?:[一-龥ぁ-んァ-ンA-Za-z0-9０-９]{2,12}[・／\/、,，]){3,}[一-龥ぁ-んァ-ンA-Za-z0-9０-９]{2,12}/g)||[];
+  const axisCounts=new Map();
+  axisSets.forEach(set=>{
+    const key=set.split(/[・／\/、,，]+/).map(item=>item.trim()).filter(Boolean).join('・');
+    if(key) axisCounts.set(key,(axisCounts.get(key)||0)+1);
+  });
+  [...axisCounts.entries()].forEach(([key,count])=>{
+    if(count>=2) issues.push(`判断軸セットが連呼されています: ${limitTextByChars(key,32,16)}`);
+  });
   return [...new Set(issues)];
 }
 
@@ -15373,7 +15499,7 @@ function detectIntegrationHeadingDuplicateIssues(text='',focus=getCurrentRefined
 }
 
 function detectTopJudgmentDuplication(text='',focus={}){
-  const body=extractHeadingBody(text,'今回の最終判断')||String(text||'');
+  const body=extractHeadingBody(text,INTEGRATION_FINAL_HEADING)||extractHeadingBody(text,'今回の最終判断')||String(text||'');
   const ctx=buildDecisionContext(focus);
   const checks=[
     {label:'主テーマの迷いの核心',patterns:[new RegExp(escapeRegExp(ctx.primaryLabel),'g'),/本当に止まっている/g]},
@@ -15385,6 +15511,17 @@ function detectTopJudgmentDuplication(text='',focus={}){
     const duplicated=check.patterns.some(pattern=>(body.match(pattern)||[]).length>=3);
     return duplicated?[`今回の最終判断で「${check.label}」が重複しています`]:[];
   });
+}
+
+function detectIntegrationFlowListIssues(text=''){
+  const body=extractHeadingBody(text,INTEGRATION_FLOW_HEADING);
+  if(!body) return [];
+  const items=splitIntegrationItems(body);
+  const lineCount=body.split('\n').map(line=>line.trim()).filter(Boolean).length;
+  if(/^\s*(?:[-・]|\d+[\.\)])\s*/m.test(body)||lineCount>=3||items.length>=5){
+    return [`integrationの${INTEGRATION_FLOW_HEADING}が条件リストに寄っています`];
+  }
+  return [];
 }
 
 function detectLenormandRoleIssues(text='',focus={},integration=''){
@@ -15581,6 +15718,7 @@ function validateIntegrationSatisfaction(text='',context={}){
     issues.push('integrationに復縁固有の判断軸が足りません');
   }
   issues.push(...detectIntegrationHeadingDuplicateIssues(source,focus));
+  issues.push(...detectIntegrationFlowListIssues(source));
   const pushLine=extractHeadingBody(source,INTEGRATION_ACTION_GUIDE_HEADING);
   if(!pushLine) issues.push(`integrationに${INTEGRATION_ACTION_GUIDE_HEADING}の本文がありません`);
   if(focus.explicitUserPriority||isWorkLifeDirectionFocus(focus)){
