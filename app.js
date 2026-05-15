@@ -8152,7 +8152,9 @@ function getLenRealityPhrase(card={},ctx={},role=''){
   if(!card) return '';
   const w=getLenReadingThemeWords(ctx);
   switch(Number(card.id)){
-    case 1:return `${w.field}に連絡や動きが入り始める気配`;
+    case 1:
+      if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return '動きや知らせが入り始める気配';
+      return `${w.field}に連絡や動きが入り始める気配`;
     case 2:return '小さな追い風や偶然の助け';
     case 3:return `${w.field}を今の場所だけで決めず、外の選択肢も視界に入る流れ`;
     case 4:return `${w.safety}を守りたい気持ち`;
@@ -8162,7 +8164,10 @@ function getLenRealityPhrase(card={},ctx={},role=''){
       if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return '努力の見返りが曇り、残る意味を見失いやすい状態';
       return `${w.base}が曇り、状況を必要以上に複雑に見やすい状態`;
     case 7:return '信用しきれない違和感や、言葉の裏を読ませる複雑さ';
-    case 8:return `${w.field}の今の形が、そのままでは続きにくい気配`;
+    case 8:
+      if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return 'この環境をそのまま続ける難しさ';
+      if(isReconciliationContext(ctx)) return '過去の関係を同じ形で続ける難しさ';
+      return `${w.field}の今の形を続けにくい気配`;
     case 9:return '嬉しい言葉や好意が、安心へつながるかを見る流れ';
     case 10:return '先延ばしにしてきたものを切り替える圧';
     case 11:return '同じ不安や話し合いを繰り返しやすい熱';
@@ -8186,7 +8191,9 @@ function getLenRealityPhrase(card={},ctx={},role=''){
     case 30:return '長く続いた関係や落ち着きが、安心か停滞かを分ける場面';
     case 31:return '前に進む力や明るさが戻る兆し';
     case 32:return '気分、自尊心、評判への揺れが判断に混ざる状態';
-    case 33:return `${w.base}が戻る突破口`;
+    case 33:
+      if(isReconciliationContext(ctx)) return '過去の原因に向き合う突破口';
+      return `${w.base}が戻る突破口`;
     case 34:return '収入、価値、循環として返ってくるもの';
     case 35:return `${w.field}を長く続ける土台と、動きを止める固定の両方`;
     case 36:return '背負い続けた責任や、避けて通れない重さ';
@@ -8381,6 +8388,17 @@ function buildCardGroundedVerdictSentence(ctx={},flags={}){
   return core?`今回強く出ているのは、${core}${/[こと点段階状態]$/.test(core)?'です':'ことです'}。`:'';
 }
 
+function getLenGroundingGrowthPhrase(ctx={}){
+  if(isReconciliationContext(ctx)) return '過去の原因に向き合う姿勢が見えるほど';
+  if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return '努力の見返りが見えるほど';
+  if(ctx.primaryTheme==='love') return '安心の根拠が増えるほど';
+  if(ctx.primaryTheme==='relationship'||ctx.primaryTheme==='family') return '自分を削らない距離が見えるほど';
+  if(ctx.primaryTheme==='money') return '安心して使える余白が見えるほど';
+  if(ctx.primaryTheme==='creative') return '熱量が戻る形が見えるほど';
+  if(ctx.primaryTheme==='self_understanding') return '自分らしく力を出せる感覚が戻るほど';
+  return '納得できる根拠が見えるほど';
+}
+
 function buildCardGroundedFlowText(ctx={},flags={}){
   if(!flags.ids?.length) return '';
   const reading=coerceCardReadingContext(ctx,flags);
@@ -8409,7 +8427,7 @@ function buildCardGroundedFlowText(ctx={},flags={}){
   }else if(blocker&&positive){
     sentences.push(`大事なのは楽観ではなく、${w.base}が現実として戻る方向へ流れを寄せることです。`);
   }else if(ambiguity){
-    sentences.push(`${w.base}が増えるほど、迷いは自然に薄くなります。`);
+    sentences.push(`${getLenGroundingGrowthPhrase(ctx)}、迷いは自然に薄くなります。`);
   }
   const clean=sentences.filter(Boolean);
   return clean.length?limitJapaneseBodyBySentences(clean.join(''),330,3):'';
@@ -16351,7 +16369,13 @@ function validateIntegrationSatisfaction(text='',context={}){
   if(!/迷い|違和感|現実|流れ|羅針|指針|安心|信頼|消耗|判断軸/.test(source)){
     issues.push('integrationが入力内容の再掲に寄っています');
   }
-  const axisTerms=ctx.decisionCriteriaList.filter(item=>String(item||'').length>=2);
+  const axisTerms=uniqueNonEmpty([
+    ...ctx.decisionCriteriaList,
+    ctx.criteriaText,
+    getDecisionAxisShortPhrase(ctx),
+    ctx.positiveLabel,
+    ctx.negativeLabel,
+  ]).filter(item=>String(item||'').length>=2);
   if((focus.explicitUserPriority||ctx.primaryTheme!=='general')&&!axisTerms.some(term=>source.includes(term))){
     issues.push('integrationに相談者テーマの判断軸が足りません');
   }
@@ -16369,7 +16393,8 @@ function validateIntegrationSatisfaction(text='',context={}){
     if(!/本当に止まっている|迷っている|判断軸|違和感|迷い/.test(opening)){
       issues.push('冒頭3文で相談者の迷いの核心が言語化されていません');
     }
-    if(!source.includes(ctx.positiveLabel)&&!source.includes(ctx.negativeLabel)&&!source.includes(ctx.criteriaText)){
+    const topAxisTerms=uniqueNonEmpty([ctx.positiveLabel,ctx.negativeLabel,ctx.criteriaText,getDecisionAxisShortPhrase(ctx)]);
+    if(!topAxisTerms.some(term=>term&&source.includes(term))){
       issues.push('トップ結論が追加質問の優先テーマに直接答えていません');
     }
     if(focus.explicitUserPriority&&/恋愛と仕事を同時に片づけようとしないこと/.test(extractHeadingBody(source,INTEGRATION_FINAL_HEADING))){
