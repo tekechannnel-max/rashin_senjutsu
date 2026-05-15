@@ -6704,7 +6704,7 @@ function repairStaticCopy(){
     lineBtn.innerHTML='<span class="share-line-mark" aria-hidden="true">L</span>LINEで送る';
   }
   setText('#dossier-title','羅針カードを整えています');
-  setText('#dossier-subtitle','今回の答えを、SNSで保存しやすい短い羅針カードへ整えています。');
+  setText('#dossier-subtitle','今回の答えを、SNSで共有しやすい短い羅針カードへ整えています。');
   setText('#dossier-print-btn','PDFダウンロード');
   setText('#dossier-copy-btn','要約をコピー');
   setText('#dossier-loading span','羅針カードを整えています…');
@@ -16647,7 +16647,8 @@ function buildShareCardUrl(card){
 }
 
 function buildShareText(options={}){
-  const animal=String(REACTION_PROFILE?.animal||getAnimalTypeName?.()||'').trim();
+  const fallbackAnimal=typeof getAnimalTypeName==='function'?getAnimalTypeName():'';
+  const animal=String(REACTION_PROFILE?.animal||fallbackAnimal||'').trim();
   const primaryCard=getPrimaryShareCard();
   const shareUrl=options.shareUrl||location.origin+location.pathname;
   const cardNames=[
@@ -16863,51 +16864,33 @@ async function buildDossierShareImageFile(){
   }
 }
 
-function downloadBlob(blob,filename='rashin-card.png'){
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download=filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),1200);
-}
-
-async function copyOrDownloadDossierShareImage(file){
-  let copied=false;
-  try{
-    if(navigator.clipboard&&window.ClipboardItem){
-      await navigator.clipboard.write([new ClipboardItem({'image/png':file})]);
-      copied=true;
-    }
-  }catch(_error){
-    copied=false;
-  }
-  if(copied){
-    showToast('羅針カード画像をコピーしました。投稿画面で貼り付けできます');
-  }else{
-    downloadBlob(file,file.name||'rashin-card.png');
-    showToast('羅針カード画像を保存しました。投稿画面に添付してください');
-  }
-}
-
 async function shareDossierImageIfAvailable(channel,text){
+  if(!shouldShowDossierActions()) return false;
   const file=await buildDossierShareImageFile();
-  if(!file) return false;
+  if(!file){
+    showToast('羅針カード画像を作成できませんでした');
+    trackEvent('share_image_unavailable',{channel,source:'dossier'});
+    return true;
+  }
   const payload={title:'羅針カード',text,files:[file]};
+  const nativeShareAvailable=typeof navigator!=='undefined'
+    &&typeof navigator.share==='function'
+    &&(typeof navigator.canShare!=='function'||navigator.canShare(payload));
+  if(!nativeShareAvailable){
+    showToast('このブラウザは画像付き共有に対応していません。スマホの共有対応ブラウザで開いてください');
+    trackEvent('share_image_unsupported',{channel,source:'dossier'});
+    return true;
+  }
   try{
-    if(navigator.share&&navigator.canShare?.(payload)){
-      await navigator.share(payload);
-      trackEvent('share_image_native',{channel,source:'dossier'});
-      return true;
-    }
+    await navigator.share(payload);
+    trackEvent('share_image_native',{channel,source:'dossier'});
+    return true;
   }catch(error){
     if(error?.name==='AbortError') return true;
+    showToast('画像付き共有を開けませんでした。共有対応ブラウザで開いてください');
+    trackEvent('share_image_failed',{channel,source:'dossier',error:error?.name||error?.message||'unknown'});
+    return true;
   }
-  await copyOrDownloadDossierShareImage(file);
-  trackEvent('share_image_fallback',{channel,source:'dossier'});
-  return false;
 }
 
 async function shareToX(){
