@@ -10279,7 +10279,7 @@ function toDossierValueArray(value){
 }
 
 function cleanDossierItemText(text='',labels=[]){
-  let clean=normalizeBrokenDecisionCriteriaPhrases(String(text||''))
+  let clean=normalizeBrokenDecisionCriteriaPhrases(redactDossierPrivateNames(String(text||'')))
     .replace(/\[\[\/?[A-Z0-9_]+\]\]/g,' ')
     .replace(/[「」『』"'`]/g,'')
     .replace(/^[\-\u2022・\d\.\)\s]+/,'')
@@ -10406,6 +10406,90 @@ function normalizeDossierSentence(text='',fallback='',options={}){
   }
   const safeFallback=trimDossierTextSafely(fallback,max,18);
   return ensureJapaneseSentence(safeFallback||'今週は、答えを急がず確認できる材料を一つ集める');
+}
+
+function getDossierPrivateNameTokens(){
+  const values=[];
+  try{ values.push(getCurrentInputSnapshot?.().fullname); }catch(_error){}
+  try{ values.push(typeof getFullname==='function'?getFullname():''); }catch(_error){}
+  try{ values.push(MEMBER_AUTH?.userName,MEMBER_AUTH?.customerName); }catch(_error){}
+  const skip=new Set(['あなた','相談者','本人','確認者','ゲスト','ユーザー','user','guest']);
+  const tokens=[];
+  const add=value=>{
+    const raw=String(value||'').replace(NAME_DROP_SUFFIXES,'').trim();
+    if(!raw) return;
+    const normalized=typeof normalizeFullnameInput==='function'?normalizeFullnameInput(raw):raw.replace(/\s+/g,' ').trim();
+    [raw,normalized,normalized.replace(/\s+/g,'')].forEach(token=>{
+      const clean=String(token||'').replace(NAME_DROP_SUFFIXES,'').trim();
+      if(clean.length>=2&&!skip.has(clean)) tokens.push(clean);
+    });
+    try{
+      const split=splitJapaneseFullname(normalized);
+      [split.sei,split.mei].forEach(part=>{
+        const clean=String(part||'').replace(NAME_DROP_SUFFIXES,'').trim();
+        if(clean.length>=2&&!skip.has(clean)) tokens.push(clean);
+      });
+    }catch(_error){}
+    normalized.split(/\s+/).forEach(part=>{
+      const clean=String(part||'').replace(NAME_DROP_SUFFIXES,'').trim();
+      if(clean.length>=2&&!skip.has(clean)) tokens.push(clean);
+    });
+  };
+  values.forEach(add);
+  return Array.from(new Set(tokens)).sort((a,b)=>b.length-a.length);
+}
+
+function redactDossierPrivateNames(value='',replacement='あなた'){
+  let text=String(value||'');
+  if(!text) return '';
+  getDossierPrivateNameTokens().forEach(token=>{
+    const flexible=escapeRegExp(token).replace(/\s+/g,'\\s*');
+    text=text.replace(new RegExp(`${flexible}\\s*(?:様|さん|ちゃん|君|くん|氏)?`,'g'),replacement);
+  });
+  return text
+    .replace(new RegExp(`${escapeRegExp(replacement)}\\s*(?:様|さん|ちゃん|君|くん|氏)`,'g'),replacement)
+    .replace(/[ \t]{2,}/g,' ')
+    .replace(/[ \t]*\n[ \t]*/g,'\n')
+    .trim();
+}
+
+function containsDossierPrivateName(value=''){
+  const text=String(value||'');
+  if(!text) return false;
+  return getDossierPrivateNameTokens().some(token=>{
+    const flexible=escapeRegExp(token).replace(/\s+/g,'\\s*');
+    return new RegExp(`${flexible}\\s*(?:様|さん|ちゃん|君|くん|氏)?`).test(text);
+  });
+}
+
+function redactDossierCardData(data={}){
+  if(!data||typeof data!=='object'||Array.isArray(data)) return data;
+  const out={...data};
+  [
+    'TITLE','ONE_LINE','VERDICT','POSITIVE_LABEL','NEGATIVE_LABEL','HOLD_LABEL',
+    'CLOSING','EVIDENCE_SUMMARY','SUBTITLE','HEADLINE','CORE','TIMING','RECURRING'
+  ].forEach(key=>{
+    if(Object.prototype.hasOwnProperty.call(out,key)) out[key]=redactDossierPrivateNames(out[key]);
+  });
+  [
+    'REMAIN_CONDITIONS','MOVE_CONDITIONS','HOLD_CONDITIONS','DECISION_AXIS',
+    'ACTION7','ACTION30','WARNING','LUCK','KEYWORDS'
+  ].forEach(key=>{
+    if(Object.prototype.hasOwnProperty.call(out,key)){
+      out[key]=toDossierValueArray(out[key]).map(item=>redactDossierPrivateNames(item)).filter(Boolean);
+    }
+  });
+  if(Array.isArray(out.KEYWORDS)){
+    const generic=new Set(['あなた','相談者','本人']);
+    const fallback=[out.POSITIVE_LABEL,out.NEGATIVE_LABEL,out.HOLD_LABEL,'今週の確認','判断材料','行動方針']
+      .map(item=>redactDossierPrivateNames(item))
+      .filter(Boolean);
+    out.KEYWORDS=Array.from(new Set([
+      ...out.KEYWORDS.filter(item=>!generic.has(String(item||'').trim())),
+      ...fallback,
+    ])).slice(0,6);
+  }
+  return out;
 }
 
 function normalizeDossierParagraph(text='',fallback='',max=180){
@@ -10589,7 +10673,7 @@ function isNormalizedDossierCardData(data={}){
 }
 
 function resolveDossierCardData(data={}){
-  return isNormalizedDossierCardData(data)?data:normalizeDossierCardData(data);
+  return redactDossierCardData(isNormalizedDossierCardData(data)?data:normalizeDossierCardData(data));
 }
 
 function buildDossierTitleForDecisionContext(ctx){
@@ -11053,7 +11137,7 @@ function buildDossierProof(){
           <div class="dossier-proof-eyebrow">見た観点</div>
           <div class="dossier-proof-title">今回の鑑定で見た観点</div>
         </div>
-        <div class="dossier-proof-copy">${escapeHtml(input.fullname||'あなた')}さんの相談内容、生まれや名前から伝わる傾向、動物タイプ診断の傾向を重ね、次に動くための作戦書として読み返しやすい形へまとめ直しています。</div>
+        <div class="dossier-proof-copy">相談内容、生まれや名前から伝わる傾向、動物タイプ診断の傾向を重ね、次に動くための作戦書として読み返しやすい形へまとめ直しています。</div>
       </div>
       <div class="dossier-proof-meta">
         ${basisTags.filter(Boolean).map(tag=>`<div class="dossier-proof-pill">${escapeHtml(tag)}</div>`).join('')}
@@ -11156,7 +11240,13 @@ function getDossierIncludedSections(){
       title:'追加質問から見えたこと',
       body:clarifySummary
     }:null,
-  ].filter(Boolean).filter(section=>String(section.body||'').trim());
+  ].filter(Boolean)
+    .map(section=>({
+      ...section,
+      title:redactDossierPrivateNames(section.title),
+      body:redactDossierPrivateNames(section.body),
+    }))
+    .filter(section=>String(section.body||'').trim());
 }
 
 function renderDossierRichBodyHTML(text=''){
@@ -11214,7 +11304,7 @@ function buildDossierPlainText(data){
     safeData.CLOSING,
   ];
   const text=blocks.map(block=>String(block||'').trim()).filter(Boolean).join('\n\n');
-  if(text.length<=1000) return text;
+  if(text.length<=1000) return redactDossierPrivateNames(text);
   const compact={
     ...safeData,
     VERDICT:normalizeDossierParagraph(safeData.VERDICT,safeData.ONE_LINE,140),
@@ -11224,7 +11314,7 @@ function buildDossierPlainText(data){
     ACTION7:safeData.ACTION7.map(item=>normalizeDossierSentence(item,item,{max:62,action:true})).filter(Boolean),
     CLOSING:normalizeDossierSentence(safeData.CLOSING,safeData.CLOSING,{max:54}),
   };
-  return [
+  return redactDossierPrivateNames([
     'RASHIN CARD',
     compact.TITLE,
     `一言結論：\n${compact.ONE_LINE}`,
@@ -11237,20 +11327,21 @@ function buildDossierPlainText(data){
     `保存キーワード：\n${compact.KEYWORDS.join(' / ')}`,
     `${INTEGRATION_ACTION_GUIDE_HEADING}：`,
     compact.CLOSING,
-  ].map(block=>String(block||'').trim()).filter(Boolean).join('\n\n');
+  ].map(block=>String(block||'').trim()).filter(Boolean).join('\n\n'));
 }
 
 function renderDossierEvidenceDetails(card){
+  card=resolveDossierCardData(card);
   const sections=getDossierIncludedSections();
   return`
     <details class="dossier-evidence-details">
       <summary data-closed-label="根拠を見る" data-open-label="根拠を閉じる">根拠を見る</summary>
       <div class="dossier-evidence-body">
-        <div class="dossier-evidence-lead">${escapeHtml(card.EVIDENCE_SUMMARY||'この羅針カードは、土台・カード・追加質問を現実の判断軸へ翻訳してまとめています。')}</div>
+        <div class="dossier-evidence-lead">${escapeHtml(redactDossierPrivateNames(card.EVIDENCE_SUMMARY||'この羅針カードは、土台・カード・追加質問を現実の判断軸へ翻訳してまとめています。'))}</div>
         ${sections.map(section=>`
           <div class="dossier-evidence-section">
             <div class="dossier-evidence-section-title">${escapeHtml(section.title||'根拠')}</div>
-            <div class="dossier-evidence-section-copy">${escapeHtml(limitTextByChars(section.body||'',240,90)).replace(/\n/g,'<br>')}</div>
+            <div class="dossier-evidence-section-copy">${escapeHtml(limitTextByChars(redactDossierPrivateNames(section.body||''),240,90)).replace(/\n/g,'<br>')}</div>
           </div>
         `).join('')}
       </div>
@@ -11258,12 +11349,12 @@ function renderDossierEvidenceDetails(card){
 }
 
 function renderDossierConditionList(items=[]){
-  return `<ul class="dossier-save-list">${items.map(item=>`<li class="dossier-save-item">${escapeHtml(item)}</li>`).join('\n')}</ul>`;
+  return `<ul class="dossier-save-list">${items.map(item=>`<li class="dossier-save-item">${escapeHtml(redactDossierPrivateNames(item))}</li>`).join('\n')}</ul>`;
 }
 
 function getDossierReadingDigest(kind='len'){
   const raw=kind==='orc'?LAST_OUTPUTS.orc:LAST_OUTPUTS.len;
-  const source=String(raw||'')
+  const source=redactDossierPrivateNames(String(raw||''))
     .replace(/<[^>]+>/g,' ')
     .replace(/\r\n?/g,'\n')
     .trim();
@@ -11284,7 +11375,7 @@ function getDossierReadingDigests(){
   return [
     {title:'ルノルマンから見えたこと',copy:getDossierReadingDigest('len')},
     {title:'オラクルからの一手',copy:getDossierReadingDigest('orc')},
-  ].filter(item=>item.copy);
+  ].map(item=>({...item,copy:redactDossierPrivateNames(item.copy)})).filter(item=>item.copy);
 }
 
 function renderDossierReadingDigest(){
@@ -11305,6 +11396,7 @@ function renderDossierReadingDigest(){
 }
 
 function renderDossierSaveCard(card){
+  card=resolveDossierCardData(card);
   return`
     <article class="dossier-save-card">
       <div class="dossier-save-visual">
@@ -11374,6 +11466,7 @@ function detectDossierCardQualityIssues(data={},options={}){
   ];
   if(text.length>1000) issues.push('羅針カードが1000字を超えている');
   if(text.length>800) issues.push('羅針カードが800字を超えている');
+  if(containsDossierPrivateName(displayText)) issues.push('羅針カードに本名または入力名が含まれている');
   if(/[^\n。]{10,},[^\n。]{10,}/.test(text)) issues.push('羅針カードにカンマ区切り配列のような表示がある');
   issues.push(...detectBrokenDecisionCriteriaPhraseIssues(text,'羅針カード'));
   if(/Q[:：]|A[:：]|【相談者の補足|相談者の補足整理|追加質問への回答/.test(text)) issues.push('羅針カード本体に追加質問rawが混入している');
@@ -11447,7 +11540,7 @@ function renderPremiumDossier(loading=false){
   if(isPaidDebugEnabled()&&PAID_DEBUG_LOG&&PAID_DEBUG_LOG.rawOutputs&&!Object.prototype.hasOwnProperty.call(PAID_DEBUG_LOG.rawOutputs,'dossier')){
     recordPaidDebugRaw('dossier',LAST_OUTPUTS.dossier||'[local fallback dossier]',parsed);
   }
-  const safeData=normalizeDossierCardData(parsed);
+  const safeData=resolveDossierCardData(parsed);
   titleEl.textContent='羅針カードを発行できます';
   subtitleEl.textContent='本編はここで終わりです。保存したいときだけ、短い羅針カードを開いてください。';
   loadingEl.style.display='none';
@@ -11508,7 +11601,7 @@ function renderDossierViewerContent(mode='card'){
   const target=document.getElementById('dossier-viewer-content');
   if(!target) return false;
   const parsed=LAST_OUTPUTS.dossier?parseTaggedDossier(LAST_OUTPUTS.dossier):buildFallbackDossier();
-  const card=normalizeDossierCardData(parsed);
+  const card=resolveDossierCardData(parsed);
   target.innerHTML=mode==='evidence'
     ?renderDossierEvidenceDetails(card)
     :renderDossierSaveCard(card);
@@ -16203,10 +16296,7 @@ function buildPremiumDossierSourceContext(){
   const historyText=stats
     ?`鑑定 ${stats.total}件 / 深掘り ${stats.paidCount}件 / 相談テーマ ${stats.topCat||'まだ少ない'} / 繰り返し出ているカード ${stats.topLen||'まだ少ない'} / 行動指針カード ${stats.topOrc||'まだ少ない'}`
     :'まだ履歴が少ない';
-  return{
-    input,
-    focus,
-    contextText:`【相談者入力データ】
+  const contextText=`【相談者入力データ】
 ${formatUserDataBlock('相談者名',input.fullname||'あなた',120)}
 ${formatUserDataBlock('相談テーマ分類',input.cat||'総合',80)}
 ${formatUserDataBlock('相談本文',input.theme||'全般',1200)}
@@ -16235,7 +16325,11 @@ ${LAST_OUTPUTS.len||'なし'}
 ${LAST_OUTPUTS.orc||'なし'}
 
 【統合メッセージ】
-${LAST_OUTPUTS.integration||'なし'}`,
+${LAST_OUTPUTS.integration||'なし'}`;
+  return{
+    input,
+    focus,
+    contextText:redactDossierPrivateNames(contextText,'相談者'),
   };
 }
 
@@ -16300,10 +16394,12 @@ function buildPremiumDossierCardSystemPrompt(todayText){
 - メインは一言結論、${ctx.positiveLabel}、${ctx.negativeLabel}、${ctx.holdLabel}、今週の一手、保存キーワード、${INTEGRATION_ACTION_GUIDE_HEADING}だけに絞る
 - ${isReconciliationContext(ctx)?'恋愛サブテーマは復縁。羅針カードでは「まだ好きか」ではなく「もう一度信頼を作れるか」「過去の原因に向き合えるか」「曖昧な連絡だけで続いていないか」を残す':'相談テーマに合わせたラベルと判断軸を使う'}
 - 羅針カードは占い結果の全文ではなく、あとで読み返す判断軸にする
+- 羅針カードはSNS投稿・画像共有される前提です。相談者の本名、姓名、入力名、ログイン名、個人を特定できる呼び名は絶対に出さない
+- 名前を呼ぶ必要がある箇所は「あなた」に置き換える。可能なら主語を省き、名前なしで自然に読める文にする
 - 本編のトップ結論、最終判断カード、羅針カードで同じ判断軸を一貫させる
 - 追加質問の回答をそのまま再掲しない。内部で要約して使う
 - カード番号、配置名、履歴の生データ、画数や命式の羅列は通常表示に出さない
-- 根拠はEVIDENCE_SUMMARYに短くまとめる。専門用語だけを並べず、一般ユーザー向けの翻訳文を先に書く
+- 根拠はEVIDENCE_SUMMARYに短くまとめる。専門用語だけを並べず、一般ユーザー向けの翻訳文を先に書く。EVIDENCE_SUMMARYにも本名は出さない
 - 「魂」「波動」「宇宙」は使わない
 - 「本音」「本質」は、相談文・追加質問・占術根拠から読める場合だけ使う
 - 人を傷つける強すぎる未翻訳表現は使わない
@@ -16342,6 +16438,7 @@ function buildPremiumDossierCardPrompt(source){
 上記を内部資料として使い、「長い鑑定書」ではなく短い羅針カードを作成してください。
 本編で読んだ内容の再掲ではなく、あとで見返すための判断軸と行動だけに再編集してください。
 追加質問のraw回答、カード番号、配置名、履歴データは羅針カード本体に出さないでください。
+SNS投稿用のカードなので、相談者の本名、姓名、入力名、ログイン名は本文にも根拠にも出さないでください。
 進む/残る条件、止まる/動く条件、保留条件は最大2項目ずつ、今週の一手は1文だけにしてください。
 配列やカンマ区切りを本文に出さず、文途中で終わらせないでください。
 EVIDENCE_SUMMARYだけは、根拠を見る人向けに短く残してください。`;
@@ -16818,7 +16915,7 @@ async function buildDossierShareImageFile(){
   if(!ready) return null;
   renderPremiumDossier(false);
   const parsed=LAST_OUTPUTS.dossier?parseTaggedDossier(LAST_OUTPUTS.dossier):buildFallbackDossier();
-  const blob=await createDossierShareImageBlob(normalizeDossierCardData(parsed));
+  const blob=await createDossierShareImageBlob(resolveDossierCardData(parsed));
   if(!blob) return null;
   try{
     return new File([blob],'rashin-card.png',{type:'image/png'});
@@ -16857,13 +16954,90 @@ async function shareDossierImageIfAvailable(channel,text){
   }
 }
 
+function getXIntentUrl(text){
+  return 'https://twitter.com/intent/tweet?text='+encodeURIComponent(text);
+}
+
+function openPendingShareWindow(){
+  const shareWindow=window.open('about:blank','_blank');
+  if(shareWindow){
+    try{ shareWindow.opener=null; }catch(_error){}
+  }
+  return shareWindow;
+}
+
+function navigatePendingShareWindow(shareWindow,url){
+  if(shareWindow){
+    try{
+      shareWindow.location.replace(url);
+    }catch(_error){
+      shareWindow.location.href=url;
+    }
+    return true;
+  }
+  const fallbackWindow=window.open(url,'_blank');
+  if(fallbackWindow){
+    try{ fallbackWindow.opener=null; }catch(_error){}
+    return true;
+  }
+  return false;
+}
+
+async function copyImageBlobToClipboard(blob){
+  if(!blob
+    ||typeof navigator==='undefined'
+    ||!navigator.clipboard
+    ||typeof navigator.clipboard.write!=='function'
+    ||typeof ClipboardItem==='undefined'){
+    return{ok:false,reason:'clipboard_unavailable'};
+  }
+  try{
+    await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+    return{ok:true,reason:'copied'};
+  }catch(error){
+    return{ok:false,reason:error?.name||error?.message||'clipboard_failed'};
+  }
+}
+
+async function copyDossierShareImageToClipboard(channel='x'){
+  if(!shouldShowDossierActions()) return{ok:false,reason:'no_dossier'};
+  const file=await buildDossierShareImageFile();
+  if(!file){
+    trackEvent('share_image_unavailable',{channel,source:'dossier'});
+    return{ok:false,reason:'image_unavailable'};
+  }
+  const result=await copyImageBlobToClipboard(file);
+  trackEvent(result.ok?'share_image_clipboard':'share_image_clipboard_failed',{
+    channel,
+    source:'dossier',
+    reason:result.reason,
+  });
+  return result;
+}
+
 async function shareToX(){
   const primaryCard=getPrimaryShareCard();
   const shareUrl=primaryCard?buildShareCardUrl(primaryCard):location.origin+location.pathname;
   const text=buildShareText({shareUrl});
   trackEvent('share_click',{channel:'x',source:'result'});
-  if(await shareDossierImageIfAvailable('x',text)) return;
-  window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(text),'_blank','noopener,noreferrer');
+  const shareWindow=openPendingShareWindow();
+  const clipboardResult=await copyDossierShareImageToClipboard('x');
+  const opened=navigatePendingShareWindow(shareWindow,getXIntentUrl(text));
+  trackEvent('share_x_intent',{
+    source:'result',
+    imageClipboard:clipboardResult.ok,
+    reason:clipboardResult.reason,
+    opened,
+  });
+  if(!opened){
+    showToast('X投稿画面を開けませんでした。ポップアップ設定をご確認ください。');
+  }else if(clipboardResult.ok){
+    showToast('X投稿画面を開きました。羅針カード画像はコピー済みです。投稿欄で貼り付けてください。');
+  }else if(clipboardResult.reason==='image_unavailable'){
+    showToast('X投稿画面を開きました。羅針カード画像を作成できませんでした。');
+  }else{
+    showToast('X投稿画面を開きました。画像の自動添付はブラウザ仕様上できません。');
+  }
 }
 
 async function shareToLine(){
