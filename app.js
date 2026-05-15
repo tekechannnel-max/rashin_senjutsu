@@ -15421,7 +15421,7 @@ function normalizeLenormandReadingText(text='',context={}){
     const fallbackText=buildRichLenFallback(fallbackName,context.cat||'総合');
     return sanitizeRashinVisibleText(formatLenormandFourSections(fallbackText)||fallbackText);
   }
-  return sanitizeRashinVisibleText(structured);
+  return sanitizeRashinVisibleText(ensureLenormandFlowNarrative(structured,focus,context));
 }
 
 function completeDanglingReadingLine(line=''){
@@ -15570,8 +15570,11 @@ function getRashinReadingPolicyPrompt(scope='all'){
 内部では使ってよいが、表では現実の見立て、違和感の言語化、内面の整え方、羅針の指針へ変換してください。`;
   const quality=`【共通品質】
 カード辞書説明、配置語、相手の心の断定、根拠のない未来断定、作業指示、機械的な条件表を出さない。相談本文の具体語を反映し、迷いの正体を一文で言葉にしてください。
-「今回の答え」は3〜5文で短く強くまとめ、同じ意味を2回出さないでください。判断軸セットを初回に出した後は、2回目以降を「努力の見返り」「安心の根拠」「続ける意味」などの自然語へ圧縮してください。
-「今見えている流れ」は条件の列挙ではなく、現在の動き、分岐しやすい方向、注意点をひと続きの自然な流れとして書いてください。
+「今回の答え」は3〜5文で短く強くまとめ、同じ意味を2回出さないでください。結論、迷いの正体、今見えている流れ、羅針の指針、羅針カード本文で同じ内容を言い換えて水増ししないでください。
+同じ判断軸セットや同じ比喩を連呼しないでください。初回だけ明示し、2回目以降は「努力の見返り」「返ってくるもの」「続ける意味」「安心の根拠」「信頼の温度」などの自然語へ圧縮してください。
+「今見えている流れ」は条件の列挙ではなく、現在の動き、強まりやすい方向、注意点をひと続きの自然な流れとして書いてください。「Aがある。Bもある。Cなら良い」のような条件リストにしないでください。
+カード名を出す場合は最大2〜3枚までにし、「このカードは〜を示します」「〜が出る時は」で終わらせず、必ず相談者の現実語に変換してください。
+主語と述語が噛み合わない文、長すぎる接続、不自然な比喩、読み直さないと意味が取れない文を出さないでください。
 同じ意味の文を繰り返さず、相談テーマに合わない語彙を中心にしないでください。`;
   const scopes={
     len:`【ルノルマン専用】
@@ -15603,7 +15606,9 @@ function getRashinReadingPolicyPrompt(scope='all'){
 - HEADLINEに今回の答えと迷いの正体を自然な文章で明確に残す。
 - 本名、カード番号、配置名、作業指示、長い条件分岐を混ぜない。`,
     quality:`【品質監査専用】
-- 禁止語、作業指示、条件表、重複、テーマ語彙の混線、入力にない関係性、カード辞書説明、オラクルの行動タスク化を検査する。
+- 禁止語、作業指示、条件表、重複、語句連呼、テーマ語彙の混線、入力にない関係性、カード辞書説明、オラクルの行動タスク化を検査する。
+- 「今回の答え」「迷いの正体」「今見えている流れ」「羅針の指針」「羅針カード本文」で、同じ意味の文が近接していないかを見る。
+- 同じ判断軸セットや比喩が3回以上出ていないか、「今見えている流れ」が条件リストになっていないか、不自然な日本語になっていないかを見る。
 - 曖昧な関係を復縁として誤読していないか、復縁相談を一般恋愛として薄くしていないかを見る。
 - ルノルマン由来の現実見立て、オラクル由来の向き合い方、羅針の指針に保存したくなる強さがあるかを見る。`,
     all:`【役割】
@@ -15686,6 +15691,88 @@ function replaceRepeatedPhraseAfterFirst(text='',phrase='',alternatives=[]){
   });
 }
 
+const RASHIN_REPEATED_PHRASE_REWRITES=[
+  {
+    label:'仕事の判断軸セット',
+    terms:['収入・成長・評価・信頼・役割','収入・成長・評価・役割','評価・信頼・役割','収入・評価・役割'],
+    alternatives:['努力の見返り','返ってくるもの','続ける意味','評価や役割','今の場所に残る価値'],
+    threshold:2,
+  },
+  {
+    label:'今の場所',
+    terms:['今の場所','今の環境'],
+    alternatives:['この環境','今の働き方','ここに残る意味','今の流れ'],
+    threshold:3,
+  },
+  {
+    label:'安心の根拠',
+    terms:['安心の根拠','安心できる根拠'],
+    alternatives:['信頼の土台','落ち着ける理由','信頼の温度','安心できる足場'],
+    threshold:3,
+  },
+  {
+    label:'努力の見返り',
+    terms:['努力の見返り','努力が返ってくる','返ってくるもの'],
+    alternatives:['続ける意味','評価や役割','自信として残るもの','未来につながる感覚'],
+    threshold:3,
+  },
+  {
+    label:'自分を削らない距離',
+    terms:['自分を削らない距離','自分を削らない','削られている'],
+    alternatives:['無理のない距離','自分を守れる距離','息がしやすい関わり方','雑に扱われない線'],
+    threshold:3,
+  },
+  {
+    label:'関係を守ること',
+    terms:['関係を守ること','関係を守る','関係を続ける'],
+    alternatives:['つながりを保つこと','この関わりを続けること','距離を保つこと','相手との向き合い方'],
+    threshold:3,
+  },
+  {
+    label:'違和感',
+    terms:['違和感'],
+    alternatives:['引っかかり','胸の重さ','納得しきれない点','心が止まる理由'],
+    threshold:4,
+  },
+  {
+    label:'負担',
+    terms:['負担'],
+    alternatives:['重さ','消耗','抱え込み','しんどさ'],
+    threshold:4,
+  },
+];
+
+function compressRepeatedRashinPhrases(text=''){
+  let output=String(text||'');
+  RASHIN_REPEATED_PHRASE_REWRITES.forEach(group=>{
+    const terms=(group.terms||[]).filter(Boolean);
+    if(!terms.length) return;
+    const pattern=new RegExp(terms.map(escapeRegExp).join('|'),'g');
+    let count=0;
+    output=output.replace(pattern,match=>{
+      count+=1;
+      if(count===1) return match;
+      const alternatives=group.alternatives||[];
+      return alternatives.length?alternatives[(count-2)%alternatives.length]:match;
+    });
+  });
+  return output;
+}
+
+function detectRepeatedRashinPhraseIssues(text=''){
+  const source=String(text||'');
+  const issues=[];
+  RASHIN_REPEATED_PHRASE_REWRITES.forEach(group=>{
+    const terms=(group.terms||[]).filter(Boolean);
+    if(!terms.length) return;
+    const count=terms.reduce((sum,term)=>sum+countTextOccurrences(source,new RegExp(escapeRegExp(term),'g')),0);
+    if(count>=(group.threshold||3)){
+      issues.push(`${group.label}が近い範囲で連呼されています`);
+    }
+  });
+  return [...new Set(issues)];
+}
+
 function varyRepeatedWorkPlacePhrases(text=''){
   let output=String(text||'');
   output=replaceRepeatedPhraseAfterFirst(output,'今の場所',['この環境','今の働き方','ここに残る意味','今の流れ']);
@@ -15695,18 +15782,60 @@ function varyRepeatedWorkPlacePhrases(text=''){
 
 function repairAwkwardConnectionPhrases(text=''){
   return String(text||'')
-    .replace(/今の場所の今の形/g,'この環境の今の形')
+    .replace(/今の場所の今の形/g,'この環境のあり方')
+    .replace(/距離が曇る/g,'距離が見えにくくなる')
+    .replace(/突破口が戻る/g,'前に進む手がかりが戻る')
+    .replace(/判断軸が曇る/g,'判断軸が見えにくくなる')
+    .replace(/気配のそばに/g,'気配があり、')
+    .replace(/ただ今は、今は/g,'今は')
+    .replace(/今は、今は/g,'今は')
     .replace(/([^。\n]{12,90})のそばに([^。\n]{8,90})もあり、/g,(match,left,right)=>`${left}が判断を重くしています。一方で${right}も見えています。`)
     .replace(/([^。\n]{12,90})のそばに([^。\n]{8,90})もあります。/g,(match,left,right)=>`${left}が判断を重くしています。一方で${right}も見えています。`);
 }
 
+function buildCardRealityRewrite(card='',body=''){
+  const cleanBody=String(body||'')
+    .replace(/(?:を)?(?:示しています|示します|意味します|表します|カードです|カードとして読めます|カードとして読みます)[。.]?$/,'')
+    .replace(/^、/,'')
+    .trim();
+  const byCard={
+    船:'今は、今の場所だけを見て決めるより、外の選択肢が視界に入り始めています。',
+    山:'平気なふりを続けるほど、判断そのものが重くなりやすい状態です。',
+    十字架:'もう背負い続けなくていい重さがあり、そこが判断を鈍らせています。',
+    鞭:'同じ不安や話し合いが繰り返され、気持ちの消耗が増えやすくなっています。',
+    鎌:'一気に切るより、何が限界に近いのかがはっきり出やすい場面です。',
+    棺:'これまでの形をそのまま続けるほど、気持ちが閉じやすくなっています。',
+    ネズミ:'少しずつ削られているものがあり、そこを軽く扱わないほうがいい流れです。',
+    雲:'安心しきれない理由が残り、見えている事実だけでは心が落ち着きにくい状態です。',
+    本:'言葉にされていない部分が残り、そこが判断を遅らせています。',
+    蛇:'言葉と行動のずれが気になりやすく、信頼の温度を慎重に見たい流れです。',
+    キツネ:'どこか信用しきれない感覚があり、そこを無理に飲み込むほど判断が鈍ります。',
+    鳥:'周囲の声や小さな変化に心が揺れやすく、続ける意味と変える必要が同時に見え始めています。',
+    星:'先の希望は残っていますが、今の現実に足場を戻すほど判断が安定します。',
+    鍵:'前へ進める手がかりは、言葉より現実の反応に出やすくなっています。',
+    太陽:'明るくなる兆しはありますが、安心が続く形まで見ていく場面です。',
+    花束:'嬉しい言葉や楽しい時間はありますが、それが安心として続くかが焦点です。',
+    騎士:'動きは出やすい流れですが、連絡や反応の温度だけで結論を急がない場面です。',
+  };
+  if(byCard[card]) return byCard[card];
+  return cleanBody?ensureJapaneseSentence(cleanBody):'今の現実に出ている違和感として見ます。';
+}
+
+function rewriteCardExplanationSentence(sentence=''){
+  const source=String(sentence||'').trim();
+  if(!source) return '';
+  const match=source.match(/^「([^」]{1,12})」(?:が出る時は|が出ているため|が出ているので|は|のようなカードは)、?(.+)$/);
+  if(match) return buildCardRealityRewrite(match[1],match[2]);
+  const pair=source.match(/^「?([一-龥ぁ-んァ-ン]{1,8})」?・「?([一-龥ぁ-んァ-ン]{1,8})」?のようなカードは、?(.+)$/);
+  if(pair) return ensureJapaneseSentence(String(pair[3]||'').replace(/カードとして.*$/,'').trim());
+  return source;
+}
+
 function rewriteCardExplanationSmell(text=''){
   return String(text||'')
-    .replace(/「([^」]{1,12})」が出る時は、?/g,'')
-    .replace(/「([^」]{1,12})」は、?([^。\n]{4,90})(?:を示します|を示しています|を意味します|を表します)[。]?/g,(match,card,body)=>`${body}が見えています。`)
-    .replace(/「([^」]{1,12})」は、?([^。\n]{4,90})(?:カードとして読めます|カードとして読みます)[。]?/g,(match,card,body)=>`${body}として現実に見ます。`)
-    .replace(/「([^」]{1,12})」のような/g,'現実に出ている')
-    .replace(/([一-龥ぁ-んァ-ン]{1,8})・([一-龥ぁ-んァ-ン]{1,8})のような/g,'重さや壁のような')
+    .split('\n')
+    .map(line=>line.split(/(?<=。)/).map(rewriteCardExplanationSentence).join(''))
+    .join('\n')
     .replace(/このカードは[^。\n]{0,80}(?:を示します|を意味します|を表します)[。]?/g,'今の現実に出ている違和感として見ます。');
 }
 
@@ -15741,7 +15870,7 @@ function compressRepeatedDecisionAxisSets(text=''){
 }
 
 function normalizeRashinSentenceKey(sentence=''){
-  return normalizeRepeatedAdviceSentence(sentence)
+  return normalizeRashinSemanticAdviceSentence(sentence)
     .replace(/今回の答え|迷いの正体|本当に止まっている|大事なのは|羅針は/g,'')
     .replace(/収入成長評価信頼役割|収入成長評価役割|評価信頼役割|努力の見返り|返ってくるもの|続ける意味/g,'work_axis')
     .replace(/安心感相手の反応信頼|安心の根拠|信頼の温度|関係の温度/g,'love_axis')
@@ -15816,6 +15945,7 @@ function sanitizeRashinVisibleText(text=''){
   output=rewriteCardExplanationSmell(output);
   output=varyRepeatedWorkPlacePhrases(output);
   output=compressRepeatedDecisionAxisSets(output);
+  output=compressRepeatedRashinPhrases(output);
   output=dedupeRashinMeaningSentences(output);
   output=polishRashinVisibleText(output);
   return output.replace(/\n{3,}/g,'\n\n').trim();
@@ -15835,6 +15965,69 @@ function detectRashinVisibleTextPolicyIssues(text='',label='text'){
   return rules
     .filter(rule=>rule.pattern.test(source))
     .map(rule=>`${label}に${rule.name}が残っています`);
+}
+
+function detectCardExplanationSmellIssues(text=''){
+  const source=String(text||'');
+  const patterns=[
+    /「[^」]{1,12}」が出る時は/,
+    /「[^」]{1,12}」が出ている(?:ため|ので)/,
+    /「[^」]{1,12}」は、?[^。\n]*(?:示します|示しています|意味します|表します|カードです|カードとして読めます|カードとして読みます)/,
+    /「?[^」\s]{1,8}」?・「?[^」\s]{1,8}」?のようなカードは/,
+    /このカードは[^。\n]*(?:示します|意味します|表します)/,
+  ];
+  return patterns.some(pattern=>pattern.test(source))?['カード説明の文が現実語に変換されていません']:[];
+}
+
+function detectAwkwardRashinJapaneseIssues(text=''){
+  const source=String(text||'');
+  const issues=[];
+  const awkwardPatterns=[
+    {label:'「今の場所」の接続が不自然です',pattern:/今の場所の今の形/},
+    {label:'「そばに〜もあり」の接続が不自然です',pattern:/のそばに[^。\n]{4,80}も(?:あり|あります)/},
+    {label:'比喩が曖昧です',pattern:/距離が曇る|突破口が戻る|気配のそばに|判断軸が曇る/},
+    {label:'近接した同語反復があります',pattern:/ただ今は、今は|今は、今は|まだ、まだ|安心、安心/},
+  ];
+  awkwardPatterns.forEach(item=>{
+    if(item.pattern.test(source)) issues.push(item.label);
+  });
+  splitJapaneseSentences(source).forEach(sentence=>{
+    const clean=sentence.trim();
+    if(clean.length>=130&&/[、，].*[、，].*[、，]/.test(clean)){
+      issues.push(`一文が長く接続が重すぎます: ${limitTextByChars(clean,46,18)}`);
+    }
+    const axisLike=(clean.match(/・/g)||[]).length;
+    if(clean.length>=95&&axisLike>=3){
+      issues.push(`一文に判断軸を詰め込みすぎています: ${limitTextByChars(clean,46,18)}`);
+    }
+  });
+  return [...new Set(issues)];
+}
+
+function looksLikeConditionListNarrative(body=''){
+  const source=String(body||'').trim();
+  if(!source) return false;
+  const lines=source.split('\n').map(line=>line.trim()).filter(Boolean);
+  const items=splitIntegrationItems(source);
+  const shortSentences=splitJapaneseSentences(source).filter(sentence=>sentence.replace(/\s/g,'').length<=34);
+  const conditionWords=countTextOccurrences(source,/なら|場合|余地がある|戻ってこない|増える|残る|見える|薄い/g);
+  return /^\s*(?:[-・]|\d+[\.\)])\s*/m.test(source)
+    ||lines.length>=3
+    ||items.length>=5
+    ||shortSentences.length>=4
+    ||conditionWords>=6;
+}
+
+function detectFlowNarrativeListIssues(text='',label='text',heading=INTEGRATION_FLOW_HEADING){
+  const body=extractHeadingBody(text,heading)||String(text||'');
+  if(!body.trim()) return [];
+  return looksLikeConditionListNarrative(body)?[`${label}の${heading}が条件リストに寄っています`]:[];
+}
+
+function ensureLenormandFlowNarrative(text='',focus={},context={}){
+  const body=parseLenormandSectionMap(text)['今の流れ']||'';
+  if(!body||!looksLikeConditionListNarrative(body)) return text;
+  return replaceHeadingBody(text,'今の流れ',buildIntegrationFlowNarrative(focus,context.cat||'総合',context.theme||'',context));
 }
 
 function buildWorkFinalJudgmentText(name='あなた',cat='総合',theme='',context={}){
@@ -16150,7 +16343,7 @@ function normalizeIntegrationFlowBody(body='',focus={},cat='総合',theme='',con
   const items=splitIntegrationItems(source);
   const lineCount=String(source||'').split('\n').map(line=>line.trim()).filter(Boolean).length;
   const sentenceCount=splitJapaneseSentences(source).length;
-  const looksLikeList=/^\s*(?:[-・]|\d+[\.\)])\s*/m.test(source)
+  const looksLikeList=looksLikeConditionListNarrative(source)
     ||lineCount>=3
     ||items.length>=5
     ||/(^|。)\s*[^。]{2,24}。(?:\s*[^。]{2,24}。){3,}/.test(source);
@@ -16273,6 +16466,9 @@ function detectPaidTextQualityIssues(key='',text=''){
   const source=String(text||'').trim();
   if(!source) return [`${key}が空です`];
   issues.push(...detectRashinVisibleTextPolicyIssues(source,key));
+  issues.push(...detectCardExplanationSmellIssues(source).map(issue=>`${key}: ${issue}`));
+  issues.push(...detectAwkwardRashinJapaneseIssues(source).map(issue=>`${key}: ${issue}`));
+  issues.push(...detectRepeatedRashinPhraseIssues(source).map(issue=>`${key}: ${issue}`));
   if(hasUnclosedJapaneseQuote(source)) issues.push(`${key}に閉じていない引用符があります`);
   const lines=source.split('\n');
   lines.forEach((line,index)=>{
@@ -16297,6 +16493,15 @@ function detectPaidTextQualityIssues(key='',text=''){
   if(lastBody&&!/[。！？.!?」』）)]$/.test(lastBody)){
     issues.push(`${key}の最後の文が句点で終わっていません`);
   }
+  if(key==='len'){
+    const flowBody=parseLenormandSectionMap(source)['今の流れ']||'';
+    if(flowBody&&looksLikeConditionListNarrative(flowBody)){
+      issues.push('lenの今の流れが条件リストに寄っています');
+    }
+  }
+  if(key==='integration'){
+    issues.push(...detectIntegrationFlowListIssues(source));
+  }
   return [...new Set(issues)];
 }
 
@@ -16312,7 +16517,7 @@ function detectRepeatedAdviceIssues(text=''){
     .map(([sentence])=>`同じ文が重複しています: ${limitTextByChars(sentence,40,20)}`);
   const normalizedCounts=new Map();
   sentences.forEach(sentence=>{
-    const key=normalizeRepeatedAdviceSentence(sentence);
+    const key=normalizeRashinSemanticAdviceSentence(sentence);
     if(key.length>=18) normalizedCounts.set(key,(normalizedCounts.get(key)||0)+1);
   });
   [...normalizedCounts.entries()].forEach(([key,count])=>{
@@ -16340,6 +16545,7 @@ function detectRepeatedAdviceIssues(text=''){
   [...axisCounts.entries()].forEach(([key,count])=>{
     if(count>=2) issues.push(`判断軸セットが連呼されています: ${limitTextByChars(key,32,16)}`);
   });
+  issues.push(...detectRepeatedRashinPhraseIssues(text));
   return [...new Set(issues)];
 }
 
@@ -16350,6 +16556,18 @@ function normalizeRepeatedAdviceSentence(sentence=''){
     .replace(/[「」『』（）()\[\]【】、，・\s]/g,'')
     .replace(/です。?$/,'')
     .trim();
+}
+
+function normalizeRashinSemanticAdviceSentence(sentence=''){
+  return normalizeRepeatedAdviceSentence(sentence)
+    .replace(/収入成長評価信頼役割|収入成長評価役割|評価信頼役割|努力の見返り|返ってくるもの|続ける意味|評価や役割|今の場所に残る価値/g,'work_return_axis')
+    .replace(/安心の根拠|安心できる根拠|信頼の土台|信頼の温度|落ち着ける理由|安心できる足場/g,'trust_axis')
+    .replace(/自分を削らない距離|自分を削らない|無理のない距離|自分を守れる距離|雑に扱われない線/g,'self_boundary_axis')
+    .replace(/今の場所|この環境|今の働き方|ここに残る意味|今の流れ/g,'current_place')
+    .replace(/違和感|引っかかり|胸の重さ|納得しきれない点|心が止まる理由/g,'discomfort')
+    .replace(/負担|重さ|消耗|抱え込み|しんどさ/g,'burden')
+    .replace(/無条件で|本当に|まだ|ただ|けれど|一方で/g,'')
+    .slice(0,52);
 }
 
 function detectIrresponsibleAssertionIssues(text=''){
@@ -16420,9 +16638,7 @@ function detectTopJudgmentDuplication(text='',focus={}){
 function detectIntegrationFlowListIssues(text=''){
   const body=extractHeadingBody(text,INTEGRATION_FLOW_HEADING);
   if(!body) return [];
-  const items=splitIntegrationItems(body);
-  const lineCount=body.split('\n').map(line=>line.trim()).filter(Boolean).length;
-  if(/^\s*(?:[-・]|\d+[\.\)])\s*/m.test(body)||lineCount>=3||items.length>=5){
+  if(looksLikeConditionListNarrative(body)){
     return [`integrationの${INTEGRATION_FLOW_HEADING}が条件リストに寄っています`];
   }
   return [];
@@ -16592,6 +16808,22 @@ function detectThemeVocabularyDriftIssues(text='',focus={},label='text',context=
       issues.push(`${label}が人間関係相談に仕事寄り語彙を中心化しています`);
     }
   }
+  if(primary==='family'){
+    const loveCoreCount=countTextOccurrences(source,/選ばれたい|曖昧な距離|相手の気持ち|復縁|好き/g);
+    const workCoreCount=countTextOccurrences(source,/評価|収入|転職|キャリア|職場/g);
+    if(loveCoreCount>=2){
+      issues.push(`${label}が家族相談に恋愛寄り語彙を中心化しています`);
+    }
+    if(workCoreCount>=3){
+      issues.push(`${label}が家族相談に仕事寄り語彙を中心化しています`);
+    }
+  }
+  if(primary==='creative'){
+    const hardWorkCount=countTextOccurrences(source,/収入|転職|職場|役割|評価/g);
+    if(hardWorkCount>=4){
+      issues.push(`${label}が創作相談に仕事寄り語彙を中心化しています`);
+    }
+  }
   if(primary==='money'&&/破綻|終わりです|失敗します|危険です/.test(source)){
     issues.push(`${label}がお金相談で不安を煽りすぎています`);
   }
@@ -16671,6 +16903,9 @@ function validatePaidReadingQuality(parsed={},context={}){
   }
   issues.push(...detectFocusRegressionIssues(context.baseFocus||{},context.focus||context.refinedFocus||{},context));
   issues.push(...detectBrokenDecisionCriteriaPhraseIssues(joined,'有料鑑定本文'));
+  issues.push(...detectCardExplanationSmellIssues(joined).map(issue=>`有料鑑定全体: ${issue}`));
+  issues.push(...detectAwkwardRashinJapaneseIssues(joined).map(issue=>`有料鑑定全体: ${issue}`));
+  issues.push(...detectRepeatedRashinPhraseIssues(joined).map(issue=>`有料鑑定全体: ${issue}`));
   if(/7日以内|30日以内|今週の一手|次の一手|進む条件|止まる条件|残る条件|動く条件|保留条件/.test(parsed.integration||'')){
     issues.push('integrationに旧式の作業指示または条件表が残っています');
   }
@@ -16750,9 +16985,13 @@ ${getRashinReadingPolicyPrompt('quality')}
 - collapsed summaryのような文途中省略が混じっていないか
 - 土台詳細表示にも文途中省略が混じっていないか
 - 同じ文や同じ意味の助言を2回以上繰り返していないか
+- 「収入・成長・評価・信頼・役割」「安心の根拠」「自分を削らない距離」「努力の見返り」「違和感」「負担」など同じ語句や比喩を連呼していないか
+- 「今回の答え」「迷いの正体」「今見えている流れ」「羅針の指針」「羅針カード本文」が同じ結論の言い換えで水増しされていないか
 - ルノルマン・オラクル・統合判断が同じ役割の助言を繰り返していないか
 - 相談テーマに合わない語彙を中心にしていないか。恋愛を復縁と誤読していないか、復縁を一般恋愛として薄くしていないか
 - ルノルマンの「今見えている流れ」が羅列ではなく、一本の自然な流れになっているか
+- 「このカードは〜を示します」「〜が出る時は」のようなカード辞書説明が残っていないか
+- 主語述語の不一致、長すぎる接続、不自然な比喩、読み直さないと意味が取れない文がないか
 - 羅針カードが長文鑑定書ではなく、一言結論・今の現実・姓名判断・四柱推命・動物タイプ診断・${DOSSIER_LENORMAND_GUIDANCE_HEADING}・${DOSSIER_ORACLE_GUIDANCE_HEADING}の短い判断カードになっているか
 - 「整理してください」だけで終わっていないか
 - ルノルマン9枚の読みがあるか
@@ -16856,16 +17095,20 @@ LENとORCは書き直さず、INTEGRATIONだけを強化してください。
 ただし、相談者が戻るべき判断軸は曖昧にしないでください。
 条件分岐は内部で使い、本文では迷いの正体、現実の見立て、羅針の指針へ変換してください。
 「魂」「波動」「宇宙」は禁止です。「本音」「本質」は根拠がある場合だけ使えます。
+同じ意味の文を繰り返さないでください。判断軸セットや同じ比喩は初回だけ明示し、2回目以降は短い自然語へ圧縮してください。
+「今見えている流れ」は条件リストにせず、現在の動き、強まりやすい方向、注意点がつながる一本の文章にしてください。
+カード名を説明する文に戻さず、カード由来の根拠は相談者の現実語として書いてください。
+主語と述語が噛み合わない文、長すぎる接続、不自然な比喩は出さないでください。
 
 必ずこの構成で返してください。
 ■ ${INTEGRATION_FINAL_HEADING}
-相談者の質問に直接答える。1〜3文。
+相談者の質問に直接答える。3〜5文まで。水増しの言い換えを入れない。
 
 ■ ${INTEGRATION_CORE_HEADING}
 どこで迷っているのか、何を我慢しているのかを自然な文章で言語化する。
 
 ■ ${INTEGRATION_FLOW_HEADING}
-現実の流れ、止まっている理由、整う兆しをまとめる。
+現実の流れ、止まっている理由、整う兆しを一本の自然な流れでまとめる。
 
 ■ ${INTEGRATION_ACTION_GUIDE_HEADING}
 自分を雑に扱わないために戻る視点を書く。
@@ -17277,7 +17520,11 @@ ${orcFull}
 - INTEGRATIONには「${INTEGRATION_FINAL_HEADING} / ${INTEGRATION_CORE_HEADING} / ${INTEGRATION_FLOW_HEADING} / ${INTEGRATION_ACTION_GUIDE_HEADING}」を必ず入れる。${INTEGRATION_CLOSING_HEADING}は出さない
 - 条件表、7日以内、30日以内、次の一手、確認する、書き出す、比較する、材料を集めるは禁止
 - 主結論は、明示された優先テーマ「${decisionLabels.primaryLabel}」に直接答える
-- 条件分岐は内部で使い、表には現実の見立て、違和感の言語化、羅針の指針として出す`;
+- 条件分岐は内部で使い、表には現実の見立て、違和感の言語化、羅針の指針として出す
+- 同じ意味の文、同じ判断軸セット、同じ比喩を繰り返さない。2回目以降は短い自然語へ圧縮する
+- ${INTEGRATION_FLOW_HEADING}は条件リストではなく、現在の動き、強まりやすい方向、注意点がつながる一本の流れにする
+- 「カードは〜を示します」「〜が出る時は」で終わらせず、カード由来の根拠を相談者の現実語へ変換する
+- 主語と述語が噛み合わない文、長すぎる接続、不自然な比喩を出さない`;
       const retryPrompt=`${prompt}
 
 【前回出力の不合格理由】
@@ -17906,6 +18153,7 @@ ${getRashinReadingPolicyPrompt('dossier')}
 - 羅針カードはSNS投稿・画像共有される前提です。表示に使ってよい名前は内部資料の「呼び名」だけ。姓名判断用の本名、姓、名、ログイン名は絶対に出さない
 - 呼び名が「あなた」の場合は「あなた」で書く。呼び名が入力されている場合は、その呼び名だけで統一する
 - 本編のトップ結論、最終判断カード、羅針カードで同じ判断軸を一貫させる
+- ただし長文鑑定の縮小コピーにしない。同じ結論、同じ判断軸セット、同じ比喩を羅針カード内で繰り返さない
 - 相談テーマに合わない語彙を中心にしない。恋愛なら安心・信頼・関係の温度、仕事なら評価・役割・負担・消耗、人間関係なら境界線と距離感を中心にする
 - 入力に元恋人・復縁・やり直したい等がない恋愛相談を、復縁として扱わない
 - 追加質問の回答をそのまま再掲しない。内部で要約して使う
@@ -17917,6 +18165,8 @@ ${getRashinReadingPolicyPrompt('dossier')}
 - 出力は指定タグだけ。Markdown、説明文、タグ外テキストは禁止
 - 配列、JSON、カンマ区切りの列挙を出さない。短い見立ては必ず1行1項目で書く
 - 文途中で切らない。読点、カンマ、中点、未完の名詞で終わらせない
+- 「このカードは〜を示します」「〜が出る時は」のようなカード説明ではなく、保存して見返せる現実語にする
+- 主語と述語が噛み合わない文、長すぎる接続、不自然な比喩を出さない
 - 「安心感のどれか」のように単独語へ「のどれか」を付けない。複数条件なら「安心感・相手の反応・信頼のどれか」、単独なら「安心感」と書く
 
 文字量:
@@ -17948,11 +18198,13 @@ function buildPremiumDossierCardPrompt(source){
 
 上記を内部資料として使い、「長い鑑定書」ではなく短い羅針カードを作成してください。
 本編で読んだ内容の再掲ではなく、あとで見返すための判断軸と迷いの正体だけに再編集してください。
+同じ結論や同じ語句を羅針カード内で繰り返さず、長文鑑定のコピー圧縮にしないでください。
 追加質問のraw回答、カード番号、配置名、履歴データは羅針カード本体に出さないでください。
 SNS投稿用のカードなので、表示名は内部資料の「呼び名」だけを使ってください。相談者の本名、姓名、姓、名、ログイン名は本文にも根拠にも出さないでください。
 機械的な条件表、7日以内、30日以内、確認する、書き出す、比較する、材料を集める、今週の一手は出さないでください。
 表示枠の「姓名判断」「四柱推命」「動物タイプ診断」はアプリ側で短い箇条書きに整えます。カード内の下部指針は「${DOSSIER_LENORMAND_GUIDANCE_HEADING}」を上、「${DOSSIER_ORACLE_GUIDANCE_HEADING}」を下にし、ルノルマン3〜5行・数秘オラクル2行、比重はルノルマン8割・数秘オラクル2割の要約として扱います。本名や生年月日は出さないでください。
 配列やカンマ区切りを本文に出さず、文途中で終わらせないでください。
+カード名の意味説明ではなく、相談者の現実に使える言葉へ変換してください。不自然な比喩や長すぎる接続は避けてください。
 EVIDENCE_SUMMARYだけは、根拠を見る人向けに短く残してください。`;
 }
 
