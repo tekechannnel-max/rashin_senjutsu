@@ -11704,7 +11704,7 @@ function installLiveCardMotionStyles(){
       background-color:#080512 !important;
     }
     .result-card-placeholder.orc-placeholder{
-      background-size:cover, contain !important;
+      background-size:cover, cover !important;
       background-repeat:no-repeat !important;
       background-position:center !important;
       background-color:#080512 !important;
@@ -11726,8 +11726,8 @@ function installLiveCardMotionStyles(){
       height:100% !important;
       max-width:none !important;
       margin:0 !important;
-      object-fit:contain !important;
-      background:#060817 !important;
+      object-fit:cover !important;
+      background:transparent !important;
     }
     .result-card:hover .result-card-img,
     .result-card.is-flipped:hover .result-card-img{
@@ -17506,8 +17506,7 @@ function makeResultCard(id,type,w,h,delay=0,options={}){
   const imgSrc=type==='len'?`images/cards/lenormand/${String(id).padStart(2,'0')}.jpg`:`images/cards/oracle/${String(id).padStart(2,'0')}.jpg`;
   const el=document.createElement('div');
   el.className=`result-card card-type-${type} card-draw-in is-face-down`;
-  const cardHeight=type==='orc'?`calc(${w} * 774 / 432)`:h;
-  el.style.cssText=`width:${w};height:${cardHeight};`;
+  el.style.cssText=`width:${w};height:${h};`;
   const safeName=escapeHtml(data.name||'');
   const safeKw=escapeHtml((data.kw||data.msg||'').slice(0,18));
   el.innerHTML=`
