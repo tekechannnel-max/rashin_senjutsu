@@ -2578,7 +2578,7 @@ body{
 .result-card-placeholder.len-placeholder{background-image:linear-gradient(180deg,rgba(4,3,10,.1),rgba(4,3,10,.42)),url('images/ui/lenormand-card-back.jpg?v=20260428-len-frame');}
 .result-card-placeholder.orc-placeholder{
   background-image:linear-gradient(180deg,rgba(4,3,10,.1),rgba(4,3,10,.42)),url('images/ui/oracle-card-back.jpg');
-  background-size:cover,cover;
+  background-size:cover,contain;
   background-repeat:no-repeat;
   background-position:center;
   background-color:#080512;
@@ -4328,6 +4328,68 @@ body{
 
 .dossier-action-btn:hover{border-color:rgba(201,149,42,.4);background:rgba(201,149,42,.06);}
 
+.dossier-shell.dossier-cta-mode{
+  background:linear-gradient(145deg,rgba(7,10,28,.94),rgba(12,8,28,.9) 52%,rgba(5,14,28,.94));
+  border-color:rgba(136,126,255,.34);
+  box-shadow:0 24px 72px rgba(0,0,0,.5),0 0 42px rgba(104,97,255,.14);
+}
+.dossier-shell.dossier-cta-mode .dossier-actions{display:none;}
+.dossier-cta-card{
+  position:relative;
+  z-index:1;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  padding:18px 20px;
+  border:1px solid rgba(139,157,255,.28);
+  background:linear-gradient(135deg,rgba(57,67,142,.22),rgba(111,63,177,.18));
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.035),0 18px 52px rgba(60,70,180,.18);
+}
+.dossier-cta-kicker{
+  font-size:10px;
+  letter-spacing:.2em;
+  color:rgba(184,229,255,.84);
+  margin-bottom:6px;
+}
+.dossier-cta-copy{
+  font-size:13px;
+  line-height:1.8;
+  color:rgba(238,241,255,.8);
+}
+.rashin-card-issue-btn{
+  position:relative;
+  min-height:46px;
+  padding:0 22px;
+  border:1px solid rgba(200,212,255,.62);
+  background:
+    radial-gradient(circle at 30% 20%,rgba(255,255,255,.38),transparent 22%),
+    linear-gradient(135deg,#42d7ff 0%,#7168ff 46%,#ba5cff 100%);
+  color:#fff;
+  font-weight:700;
+  font-size:13px;
+  letter-spacing:.12em;
+  cursor:pointer;
+  box-shadow:0 0 22px rgba(85,172,255,.42),0 0 42px rgba(139,92,246,.34),0 16px 34px rgba(0,0,0,.32);
+  overflow:hidden;
+  transition:transform .18s ease,box-shadow .18s ease,filter .18s ease;
+}
+.rashin-card-issue-btn::after{
+  content:'';
+  position:absolute;
+  inset:-80% -40%;
+  background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.42) 50%,transparent 65%);
+  transform:translateX(-65%) rotate(8deg);
+  transition:transform .55s ease;
+}
+.rashin-card-issue-btn:hover{
+  transform:translateY(-1px);
+  filter:saturate(1.08) brightness(1.08);
+  box-shadow:0 0 28px rgba(85,204,255,.55),0 0 58px rgba(161,97,255,.46),0 18px 38px rgba(0,0,0,.34);
+}
+.rashin-card-issue-btn:hover::after{transform:translateX(68%) rotate(8deg);}
+.rashin-card-issue-btn span{position:relative;z-index:1;}
+
 .dossier-hero{
 
   position:relative;z-index:1;padding:20px 22px;margin-bottom:18px;
@@ -4483,6 +4545,28 @@ body{
   font-size:16px;
   line-height:1.85;
   color:rgba(248,242,222,.9);
+}
+
+.dossier-save-reading-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.dossier-save-reading{
+  border:1px solid rgba(176,226,218,.18);
+  background:rgba(4,9,22,.5);
+  padding:13px 14px;
+}
+.dossier-save-reading-title{
+  font-size:11px;
+  letter-spacing:.1em;
+  color:rgba(176,226,218,.86);
+  margin-bottom:7px;
+}
+.dossier-save-reading-copy{
+  font-size:13px;
+  line-height:1.75;
+  color:rgba(246,240,220,.82);
 }
 
 .dossier-save-section,
@@ -4770,6 +4854,11 @@ body.dossier-viewer-open{
   border-color:rgba(228,184,74,.55);
   color:var(--gold-l);
   background:rgba(201,149,42,.08);
+}
+.dossier-viewer-btn.share{
+  border-color:rgba(139,157,255,.34);
+  background:linear-gradient(135deg,rgba(66,215,255,.12),rgba(186,92,255,.16));
+  color:rgba(238,244,255,.92);
 }
 
 .dossier-viewer-scroll{
@@ -5565,17 +5654,21 @@ body.dossier-viewer-open{
 
 
 .share-x-btn.dossier-open-btn{
-  color:#05040a;
-  border-color:rgba(228,184,74,.72);
-  background:linear-gradient(135deg,var(--gold-d),var(--gold-l),#fff4c6);
+  color:#fff;
+  border-color:rgba(200,212,255,.62);
+  background:
+    radial-gradient(circle at 30% 20%,rgba(255,255,255,.35),transparent 22%),
+    linear-gradient(135deg,#42d7ff 0%,#7168ff 48%,#ba5cff 100%);
   font-weight:700;
-  box-shadow:0 14px 34px rgba(201,149,42,.22),inset 0 1px 0 rgba(255,255,255,.42);
+  box-shadow:0 0 22px rgba(85,172,255,.36),0 0 42px rgba(139,92,246,.28),0 14px 34px rgba(0,0,0,.25);
 }
 
 .share-x-btn.dossier-open-btn:hover{
-  color:#05040a;
-  background:linear-gradient(135deg,#b98720,#f3d46b,#fff8d8);
-  border-color:rgba(255,232,158,.92);
+  color:#fff;
+  background:
+    radial-gradient(circle at 30% 20%,rgba(255,255,255,.42),transparent 22%),
+    linear-gradient(135deg,#5ce1ff 0%,#8278ff 48%,#c66aff 100%);
+  border-color:rgba(228,236,255,.86);
 }
 
 .toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:rgba(12,8,24,.95);border:1px solid rgba(201,149,42,.3);color:var(--cream);padding:10px 24px;border-radius:20px;font-size:12px;letter-spacing:.08em;opacity:0;transition:opacity .28s;pointer-events:none;z-index:9999;white-space:nowrap;}
@@ -5791,6 +5884,9 @@ body.dossier-viewer-open{
   .dossier-proof-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
   .dossier-grid{grid-template-columns:1fr;}
   .dossier-save-columns{grid-template-columns:1fr;gap:14px;}
+  .dossier-save-reading-grid{grid-template-columns:1fr;}
+  .dossier-cta-card{align-items:stretch;flex-direction:column;}
+  .rashin-card-issue-btn{width:100%;}
   .dossier-title{font-size:22px;}
   .dossier-shell{padding:22px 20px 24px;}
   .dossier-viewer{padding:0;}
@@ -6085,12 +6181,12 @@ body.consultation-tag-open{overflow:hidden;}
   aspect-ratio:432/774;
   background:
     linear-gradient(180deg,rgba(4,3,10,.04),rgba(4,3,10,.18)),
-    url('images/ui/oracle-card-back.jpg') center/cover no-repeat;
+    url('images/ui/oracle-card-back.jpg') center/contain no-repeat;
 }
 .orc-sel-card.chosen{
   background:
     linear-gradient(180deg,rgba(201,149,42,.08),rgba(4,3,10,.18)),
-    url('images/ui/oracle-card-back.jpg') center/cover no-repeat;
+    url('images/ui/oracle-card-back.jpg') center/contain no-repeat;
 }
 .orc-sel-card::before{
   content:'';position:absolute;inset:7px;border-radius:4px;
@@ -6854,7 +6950,6 @@ body.consultation-tag-open{overflow:hidden;}
         次へ：オラクルカードへ ✦
       </button>
       <div class="flow-nav-row">
-        <button class="flow-nav-btn" onclick="rerollLenReading()">ルノルマンを引き直す</button>
         <button class="flow-nav-btn" onclick="backToInputFromFlow()">入力を見直す</button>
       </div>
     </div>
@@ -6920,7 +7015,6 @@ body.consultation-tag-open{overflow:hidden;}
         結果を見る ✦
       </button>
       <div class="flow-nav-row">
-        <button class="flow-nav-btn" onclick="rerollOrcReading()">オラクルを引き直す</button>
         <button class="flow-nav-btn" onclick="backToLenStep()">ルノルマンへ戻る</button>
         <button class="flow-nav-btn" onclick="backToInputFromFlow()">入力を見直す</button>
       </div>
@@ -7112,7 +7206,7 @@ body.consultation-tag-open{overflow:hidden;}
           </div>
           <div class="dossier-actions">
 
-            <button class="dossier-action-btn" id="dossier-print-btn" onclick="printDossier()" style="display:none">PDFで残す</button>
+            <button class="dossier-action-btn" id="dossier-print-btn" onclick="printDossier()" style="display:none">PDFダウンロード</button>
             <button class="dossier-action-btn" id="dossier-copy-btn" onclick="copyDossier()" style="display:none">要約をコピー</button>
 
           </div>
@@ -7123,6 +7217,14 @@ body.consultation-tag-open{overflow:hidden;}
 
           <div class="ai-load"><div class="ai-dots"><span></span><span></span><span></span></div><span>羅針カードを整えています…</span></div>
 
+        </div>
+
+        <div class="dossier-cta-card" id="dossier-cta-card" style="display:none">
+          <div>
+            <div class="dossier-cta-kicker">RASHIN CARD</div>
+            <div class="dossier-cta-copy">今回の答え、条件、ルノルマンとオラクルの要点を一枚の羅針カードにまとめます。</div>
+          </div>
+          <button class="rashin-card-issue-btn" type="button" onclick="openDossierViewer()"><span>羅針カードを発行する</span></button>
         </div>
 
         <div id="dossier-proof" style="display:none"></div>
@@ -7138,9 +7240,9 @@ body.consultation-tag-open{overflow:hidden;}
       <button class="nav-btn" onclick="gotoTop()">最初に戻る</button>
       <button class="nav-btn nav-btn-primary" onclick="gotoTop()">もう一度占う</button>
       <button class="nav-btn" onclick="goToHistory()">過去の占いへ</button>
-      <button class="share-x-btn dossier-open-btn" id="dossier-open-btn" onclick="openDossierViewer()" style="display:none">羅針カードを保存</button>
+      <button class="share-x-btn dossier-open-btn" id="dossier-open-btn" onclick="openDossierViewer()" style="display:none">羅針カードを発行</button>
       <button class="share-x-btn" id="dossier-copy-inline-btn" onclick="copyDossier()" style="display:none">要約をコピー</button>
-      <button class="share-x-btn" id="dossier-save-btn" onclick="printDossier()" style="display:none">PDFで残す</button>
+      <button class="share-x-btn" id="dossier-save-btn" onclick="printDossier()" style="display:none">PDFダウンロード</button>
       <button class="share-x-btn" id="dossier-evidence-btn" onclick="openDossierViewer('evidence')" style="display:none">根拠を見る</button>
       <button class="share-x-btn" id="paid-debug-download-btn" onclick="downloadPaidDebugJson()" style="display:none">debug JSON</button>
       <button class="share-x-btn" id="share-x-btn" onclick="shareToX()" style="display:none">
@@ -7169,8 +7271,10 @@ body.consultation-tag-open{overflow:hidden;}
         <div class="dossier-viewer-title" id="dossier-viewer-title">羅針カード</div>
       </div>
       <div class="dossier-viewer-actions">
-        <button class="dossier-viewer-btn" type="button" onclick="printDossier()">PDFで残す</button>
+        <button class="dossier-viewer-btn" type="button" onclick="printDossier()">PDFダウンロード</button>
         <button class="dossier-viewer-btn" type="button" onclick="copyDossier()">要約をコピー</button>
+        <button class="dossier-viewer-btn share" type="button" onclick="shareToX()">Xでシェア</button>
+        <button class="dossier-viewer-btn share" type="button" onclick="shareToLine()">LINEで送る</button>
         <button class="dossier-viewer-btn" id="dossier-viewer-close-btn" type="button" onclick="closeDossierViewer()">閉じる</button>
       </div>
     </div>

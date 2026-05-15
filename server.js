@@ -2292,6 +2292,13 @@ function getAllowedStaticPath(urlPath) {
   if (pathname === '/app.js') {
     return path.join(ROOT_DIR, 'app.js');
   }
+  if (
+    pathname === '/lenormand-reading-knowledge.js' ||
+    pathname === '/oracle-reading-knowledge.js' ||
+    pathname === '/card-reading-knowledge.js'
+  ) {
+    return path.join(ROOT_DIR, pathname.slice(1));
+  }
   if (pathname === '/solar-term-boundaries.json') {
     return path.join(ROOT_DIR, 'solar-term-boundaries.json');
   }

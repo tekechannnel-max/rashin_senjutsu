@@ -6553,7 +6553,7 @@ function repairStaticCopy(){
   setText('#len-stop-btn','シャッフルを止める');
   setText('#len-cards-full .deck-instruction','引いたカード');
   setText('#len-cards-full .nav-btn-primary','次へ：数秘オラクルカード');
-  setButtons('#len-cards-full .flow-nav-btn',['ルノルマンを引き直す','入力へ戻る']);
+  setButtons('#len-cards-full .flow-nav-btn',['入力へ戻る']);
 
   setText('#orc-inst','シャッフルを止めたあと、直感で気になるカードを選んでください');
   setText('#orc-stop-btn','シャッフルを止める');
@@ -6563,7 +6563,7 @@ function repairStaticCopy(){
   setButtons('#orc-select-area .flow-nav-btn',['ルノルマンへ戻る','入力へ戻る']);
   setText('#orc-cards-full .deck-instruction','引いたカード');
   setText('#orc-cards-full .nav-btn-primary','結果を見る ✦');
-  setButtons('#orc-cards-full .flow-nav-btn',['オラクルを引き直す','ルノルマンへ戻る','入力へ戻る']);
+  setButtons('#orc-cards-full .flow-nav-btn',['ルノルマンへ戻る','入力へ戻る']);
 
   setText('#s-clarify .clarify-title','今の状況に、読みをもう少し近づけます');
   setHtml('#s-clarify .clarify-desc','答えられる範囲だけで大丈夫です。<br>近い選択肢を選ぶか、そのまま言葉で書いてください。<br><span style="font-size:11px;color:rgba(201,149,42,.4);">少し補足があるだけで、結果があなたの現実により沿いやすくなります。</span>');
@@ -6621,8 +6621,8 @@ function repairStaticCopy(){
   setText('#rs-integration .rs-copy','迷ったときにここだけ読み返せば、優先順位と次の一歩がわかる形にまとめます。');
   setText('#r-aiload .ai-load-title','結論を整えています');
   setText('#r-aiload .ai-load-detail','ここまでの読みを一本にまとめ、今どう動くかまで落とし込んでいます。');
-  setText('#dossier-open-btn','羅針カードを保存');
-  setText('#dossier-save-btn','PDFで残す');
+  setText('#dossier-open-btn','羅針カードを発行');
+  setText('#dossier-save-btn','PDFダウンロード');
   setText('#dossier-copy-inline-btn','要約をコピー');
   setText('#dossier-evidence-btn','根拠を見る');
   const shareBtn=document.getElementById('share-x-btn');
@@ -6637,7 +6637,7 @@ function repairStaticCopy(){
   }
   setText('#dossier-title','羅針カードを整えています');
   setText('#dossier-subtitle','今回の答えを、SNSで保存しやすい短い羅針カードへ整えています。');
-  setText('#dossier-print-btn','PDFで残す');
+  setText('#dossier-print-btn','PDFダウンロード');
   setText('#dossier-copy-btn','要約をコピー');
   setText('#dossier-loading span','羅針カードを整えています…');
 }
@@ -11164,11 +11164,13 @@ function renderDossierIncludedSections(){
 
 function buildDossierPlainText(data){
   const safeData=resolveDossierCardData(data);
+  const readingDigests=getDossierReadingDigests();
   const blocks=[
     'RASHIN CARD',
     safeData.TITLE,
     `一言結論：\n${safeData.ONE_LINE}`,
     `今回の答え：\n${safeData.VERDICT}`,
+    readingDigests.length?`カードから見えたこと：\n${readingDigests.map(item=>`・${item.title}：${item.copy}`).join('\n')}`:'',
     `${safeData.POSITIVE_LABEL||'残る条件'}：\n${safeData.REMAIN_CONDITIONS.map(item=>`・${item}`).join('\n')}`,
     `${safeData.NEGATIVE_LABEL||'動く条件'}：\n${safeData.MOVE_CONDITIONS.map(item=>`・${item}`).join('\n')}`,
     `${safeData.HOLD_LABEL||'保留条件'}：\n${(safeData.HOLD_CONDITIONS||[]).map(item=>`・${item}`).join('\n')}`,
@@ -11193,6 +11195,7 @@ function buildDossierPlainText(data){
     compact.TITLE,
     `一言結論：\n${compact.ONE_LINE}`,
     `今回の答え：\n${compact.VERDICT}`,
+    readingDigests.length?`カードから見えたこと：\n${readingDigests.map(item=>`・${item.title}：${trimDossierTextSafely(item.copy,56,18)}`).join('\n')}`:'',
     `${compact.POSITIVE_LABEL||'残る条件'}：\n${compact.REMAIN_CONDITIONS.map(item=>`・${item}`).join('\n')}`,
     `${compact.NEGATIVE_LABEL||'動く条件'}：\n${compact.MOVE_CONDITIONS.map(item=>`・${item}`).join('\n')}`,
     `${compact.HOLD_LABEL||'保留条件'}：\n${compact.HOLD_CONDITIONS.map(item=>`・${item}`).join('\n')}`,
@@ -11224,6 +11227,49 @@ function renderDossierConditionList(items=[]){
   return `<ul class="dossier-save-list">${items.map(item=>`<li class="dossier-save-item">${escapeHtml(item)}</li>`).join('\n')}</ul>`;
 }
 
+function getDossierReadingDigest(kind='len'){
+  const raw=kind==='orc'?LAST_OUTPUTS.orc:LAST_OUTPUTS.len;
+  const source=String(raw||'')
+    .replace(/<[^>]+>/g,' ')
+    .replace(/\r\n?/g,'\n')
+    .trim();
+  if(!source) return '';
+  if(kind==='orc'){
+    const action=(getOracleNextActions(source)||[]).map(item=>normalizeDossierSentence(item,item,{max:92,action:true})).find(Boolean);
+    if(action) return action;
+    const sections=splitSections(source).map(parseStructuredSection);
+    const picked=sections.find(section=>/次の一手|内なる羅針盤|メッセージ/.test(section.title));
+    return limitJapaneseBodyBySentences(picked?.body||source,92,2);
+  }
+  const map=parseLenormandSectionMap(source);
+  const body=map['迷いの構造']||map['今の流れ']||map['気をつけること']||source;
+  return limitJapaneseBodyBySentences(body,98,2);
+}
+
+function getDossierReadingDigests(){
+  return [
+    {title:'ルノルマンから見えたこと',copy:getDossierReadingDigest('len')},
+    {title:'オラクルからの一手',copy:getDossierReadingDigest('orc')},
+  ].filter(item=>item.copy);
+}
+
+function renderDossierReadingDigest(){
+  const items=getDossierReadingDigests();
+  if(!items.length) return '';
+  return`
+      <div class="dossier-save-section">
+        <div class="dossier-save-heading">カードから見えたこと</div>
+        <div class="dossier-save-reading-grid">
+          ${items.map(item=>`
+            <div class="dossier-save-reading">
+              <div class="dossier-save-reading-title">${escapeHtml(item.title)}</div>
+              <div class="dossier-save-reading-copy">${escapeHtml(item.copy)}</div>
+            </div>
+          `).join('\n')}
+        </div>
+      </div>`;
+}
+
 function renderDossierSaveCard(card){
   return`
     <article class="dossier-save-card">
@@ -11236,6 +11282,7 @@ function renderDossierSaveCard(card){
         <div class="dossier-save-heading">今回の答え</div>
         <div class="dossier-save-verdict">${escapeHtml(card.VERDICT)}</div>
       </div>
+      ${renderDossierReadingDigest()}
       <div class="dossier-save-section">
         <div class="dossier-save-heading">${escapeHtml(card.POSITIVE_LABEL||'残る条件')}</div>
         ${renderDossierConditionList(card.REMAIN_CONDITIONS)}
@@ -11328,9 +11375,11 @@ function renderPremiumDossier(loading=false){
   const loadingEl=document.getElementById('dossier-loading');
   const proofEl=document.getElementById('dossier-proof');
   const renderedEl=document.getElementById('dossier-rendered');
+  const ctaEl=document.getElementById('dossier-cta-card');
   const printBtn=document.getElementById('dossier-print-btn');
   const copyBtn=document.getElementById('dossier-copy-btn');
   if(!section||!titleEl||!subtitleEl||!loadingEl||!proofEl||!renderedEl||!printBtn||!copyBtn) return;
+  const shell=section.querySelector('.dossier-shell');
 
   const shouldPrepare=PLAN==='paid'||!!LAST_OUTPUTS.dossier;
   section.style.display='none';
@@ -11341,6 +11390,8 @@ function renderPremiumDossier(loading=false){
     titleEl.textContent='羅針カードを整えています';
     subtitleEl.textContent='本編とは別に、スクショやPDFで残しやすい短いカードへ整えています。';
     loadingEl.style.display='block';
+    if(shell) shell.classList.remove('dossier-cta-mode');
+    if(ctaEl) ctaEl.style.display='none';
     proofEl.style.display='none';
     renderedEl.style.display='none';
     printBtn.style.display='none';
@@ -11353,15 +11404,17 @@ function renderPremiumDossier(loading=false){
     recordPaidDebugRaw('dossier',LAST_OUTPUTS.dossier||'[local fallback dossier]',parsed);
   }
   const safeData=normalizeDossierCardData(parsed);
-  titleEl.textContent=safeData.TITLE||'羅針カード';
-  subtitleEl.textContent='SNSでスクショ保存しやすい短い羅針カードです。';
+  titleEl.textContent='羅針カードを発行できます';
+  subtitleEl.textContent='本編はここで終わりです。保存したいときだけ、短い羅針カードを開いてください。';
   loadingEl.style.display='none';
+  if(shell) shell.classList.add('dossier-cta-mode');
+  if(ctaEl) ctaEl.style.display='flex';
   proofEl.style.display='none';
   proofEl.innerHTML='';
-  renderedEl.style.display='block';
-  const renderedHtml=renderDossierCards(safeData);
+  renderedEl.style.display='none';
+  const renderedHtml=renderDossierCards(safeData,{includeEvidence:false});
   renderedEl.innerHTML=renderedHtml;
-  const renderedText=renderedEl.innerText||renderedEl.textContent||'';
+  const renderedText=renderedEl.textContent||'';
   const qualityIssues=detectDossierCardQualityIssues(safeData,{renderedText,renderedHtml,focus:getCurrentRefinedFocus()});
   recordPaidDebugParsed('dossier',parsed);
   if(isPaidDebugEnabled()&&PAID_DEBUG_LOG){
@@ -11380,8 +11433,8 @@ function renderPremiumDossier(loading=false){
   }
   if(qualityIssues.length) recordPaidDebugQuality('dossier_card',qualityIssues);
   section.style.display='block';
-  printBtn.style.display='inline-flex';
-  copyBtn.style.display='inline-flex';
+  printBtn.style.display='none';
+  copyBtn.style.display='none';
   if(isDossierViewerOpen()) renderDossierViewerContent(document.getElementById('dossier-viewer')?.dataset.mode||'card');
 }
 
@@ -11390,10 +11443,11 @@ function shouldShowDossierActions(){
 }
 
 function setDossierActionButtonsVisible(visible){
-  const display=visible?'inline-flex':'none';
-  ['dossier-open-btn','dossier-save-btn','dossier-copy-inline-btn','dossier-evidence-btn'].forEach(id=>{
+  const evidenceBtn=document.getElementById('dossier-evidence-btn');
+  if(evidenceBtn) evidenceBtn.style.display=visible?'inline-flex':'none';
+  ['dossier-open-btn','dossier-save-btn','dossier-copy-inline-btn'].forEach(id=>{
     const btn=document.getElementById(id);
-    if(btn) btn.style.display=display;
+    if(btn) btn.style.display='none';
   });
 }
 
@@ -11511,13 +11565,25 @@ async function printDossier(){
   }
   renderPremiumDossier(false);
   const section=document.getElementById('rs-dossier');
+  const shell=section?.querySelector('.dossier-shell');
+  const ctaEl=document.getElementById('dossier-cta-card');
+  const renderedEl=document.getElementById('dossier-rendered');
   const prevDisplay=section?section.style.display:'';
+  const prevCtaDisplay=ctaEl?ctaEl.style.display:'';
+  const prevRenderedDisplay=renderedEl?renderedEl.style.display:'';
+  const hadCtaMode=!!shell?.classList.contains('dossier-cta-mode');
   if(section) section.style.display='block';
+  if(shell) shell.classList.remove('dossier-cta-mode');
+  if(ctaEl) ctaEl.style.display='none';
+  if(renderedEl) renderedEl.style.display='block';
   document.body.classList.add('print-dossier');
   window.print();
   setTimeout(()=>{
     document.body.classList.remove('print-dossier');
     if(section) section.style.display=prevDisplay||'none';
+    if(shell&&hadCtaMode) shell.classList.add('dossier-cta-mode');
+    if(ctaEl) ctaEl.style.display=prevCtaDisplay||'';
+    if(renderedEl) renderedEl.style.display=prevRenderedDisplay||'none';
   },500);
 }
 
@@ -11638,7 +11704,7 @@ function installLiveCardMotionStyles(){
       background-color:#080512 !important;
     }
     .result-card-placeholder.orc-placeholder{
-      background-size:cover, cover !important;
+      background-size:cover, contain !important;
       background-repeat:no-repeat !important;
       background-position:center !important;
       background-color:#080512 !important;
@@ -11647,14 +11713,21 @@ function installLiveCardMotionStyles(){
     .result-card-back.orc-placeholder{
       box-shadow:inset 0 0 0 1px rgba(201,149,42,.24), inset 0 0 28px rgba(0,0,0,.38);
     }
-    .result-card.card-type-len .result-card-front .result-card-img,
-    .result-card.card-type-orc .result-card-front .result-card-img{
+    .result-card.card-type-len .result-card-front .result-card-img{
       width:100% !important;
       height:100% !important;
       max-width:none !important;
       margin:0 !important;
       object-fit:cover !important;
       background:transparent !important;
+    }
+    .result-card.card-type-orc .result-card-front .result-card-img{
+      width:100% !important;
+      height:100% !important;
+      max-width:none !important;
+      margin:0 !important;
+      object-fit:contain !important;
+      background:#060817 !important;
     }
     .result-card:hover .result-card-img,
     .result-card.is-flipped:hover .result-card-img{
@@ -14390,8 +14463,10 @@ function ensureIntegrationHeadingItems(output='',heading='',focus={},cat='総合
 
 function ensureIntegrationPushLine(output='',focus={},cat='総合',theme=''){
   const body=extractHeadingBody(output,'背中を押す一文');
-  const sentence=String(body||'').split(/(?<=。)/).map(item=>stripIntegrationListMarker(item).trim()).find(Boolean)
-    ||getIntegrationSupplementItems('背中を押す一文',focus,cat,theme)[0]
+  const existing=String(body||'').split(/(?<=。)/).map(item=>stripIntegrationListMarker(item).trim()).find(Boolean);
+  const supplement=getIntegrationSupplementItems('背中を押す一文',focus,cat,theme)[0];
+  const sentence=supplement
+    ||existing
     ||'今週は、答えを急ぐより判断材料を集める一歩から始めてください。';
   return replaceHeadingBody(output,'背中を押す一文',ensureJapaneseSentence(sentence));
 }
@@ -17431,7 +17506,8 @@ function makeResultCard(id,type,w,h,delay=0,options={}){
   const imgSrc=type==='len'?`images/cards/lenormand/${String(id).padStart(2,'0')}.jpg`:`images/cards/oracle/${String(id).padStart(2,'0')}.jpg`;
   const el=document.createElement('div');
   el.className=`result-card card-type-${type} card-draw-in is-face-down`;
-  el.style.cssText=`width:${w};height:${h};`;
+  const cardHeight=type==='orc'?`calc(${w} * 774 / 432)`:h;
+  el.style.cssText=`width:${w};height:${cardHeight};`;
   const safeName=escapeHtml(data.name||'');
   const safeKw=escapeHtml((data.kw||data.msg||'').slice(0,18));
   el.innerHTML=`
