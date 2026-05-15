@@ -5,7 +5,7 @@
   "type": "commonjs",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check card-reading-knowledge.js && node --check app.js && node --check scripts/social/daily-oracle-post.js && node --check scripts/social/run-scheduled-posts.js && node --check scripts/social/threads-client.js && node --check scripts/social/threads-tool.js && node --check scripts/social/audit-social-drafts.js && node --check scripts/social/export-x-drafts.js && node --check scripts/rashin/build-free-paid-code-hash-pool.js",
+    "check": "node --check server.js && node --check lenormand-reading-knowledge.js && node --check oracle-reading-knowledge.js && node --check card-reading-knowledge.js && node --check app.js && node --check scripts/social/daily-oracle-post.js && node --check scripts/social/run-scheduled-posts.js && node --check scripts/social/threads-client.js && node --check scripts/social/threads-tool.js && node --check scripts/social/audit-social-drafts.js && node --check scripts/social/export-x-drafts.js && node --check scripts/rashin/build-free-paid-code-hash-pool.js",
     "rashin:build-code-pool": "node scripts/rashin/build-free-paid-code-hash-pool.js",
     "social:audit": "node scripts/social/audit-social-drafts.js",
     "social:draft": "node scripts/social/daily-oracle-post.js --dry-run",

@@ -7183,8 +7183,31 @@ function getCardReadingKnowledge(){
   return (typeof globalThis!=='undefined'&&globalThis.RASHIN_CARD_READING_KNOWLEDGE)||{};
 }
 
+function getLenormandReadingKnowledge(){
+  return (typeof globalThis!=='undefined'&&globalThis.RASHIN_LENORMAND_READING_KNOWLEDGE)||{};
+}
+
+function getOracleReadingKnowledge(){
+  return (typeof globalThis!=='undefined'&&globalThis.RASHIN_ORACLE_READING_KNOWLEDGE)||{};
+}
+
 function getLoveSubtypeProfiles(){
-  return getCardReadingKnowledge().loveSubtypes||{};
+  const base=getCardReadingKnowledge().loveSubtypes||{};
+  const lenormand=getLenormandReadingKnowledge().loveSubtypes||{};
+  const oracle=getOracleReadingKnowledge().loveSubtypes||{};
+  const keys=new Set([...Object.keys(base),...Object.keys(lenormand),...Object.keys(oracle)]);
+  const merged={};
+  keys.forEach(key=>{
+    const baseProfile=base[key]||{};
+    const lenormandProfile=lenormand[key]||{};
+    const oracleProfile=oracle[key]||{};
+    merged[key]={
+      ...baseProfile,
+      lenormand:lenormandProfile.lenormand||baseProfile.lenormand||{},
+      oracle:oracleProfile.oracle||baseProfile.oracle||{},
+    };
+  });
+  return merged;
 }
 
 function normalizeLoveSubtypeValue(value=''){
@@ -8140,9 +8163,25 @@ function getOracleNextActions(text=''){
   return completeAdviceItems([]);
 }
 
+function getOracleGuideForFocus(focus={}){
+  const ctx=buildDecisionContext(focus);
+  return ctx.loveSubtypeProfile?.oracle||null;
+}
+
+function applyOracleGuideReplacements(text='',guide=null){
+  let output=String(text||'');
+  (guide?.replacements||[]).forEach(pair=>{
+    if(!Array.isArray(pair)||pair.length<2) return;
+    output=output.split(pair[0]).join(pair[1]);
+  });
+  return output;
+}
+
 function getOracleCompassFallback(focusOverride=null){
   const focus=focusOverride||getCurrentRefinedFocus();
   const ctx=buildDecisionContext(focus);
+  const guide=getOracleGuideForFocus(focus);
+  if(guide?.compassFallback) return guide.compassFallback;
   if(ctx.primaryTheme==='dual_concern'&&!focus.explicitUserPriority){
     return '今週の羅針盤は、複数の悩みを同じ不安で処理しないことです。まず一つだけ確認するテーマを選び、残りはメモに分けて置いてください。';
   }
@@ -8179,6 +8218,10 @@ function adaptOracleCompassText(text='',focus={}){
 function hasOracleThemeTerms(text='',focus={}){
   const source=String(text||'');
   const ctx=buildDecisionContext(focus);
+  const guide=getOracleGuideForFocus(focus);
+  if(Array.isArray(guide?.themeTerms)&&guide.themeTerms.length){
+    return guide.themeTerms.some(term=>source.includes(term));
+  }
   if(ctx.primaryTheme==='love'){
     if(isReconciliationContext(ctx)){
       return /復縁|元恋人|過去|別れ|信頼|曖昧|連絡|寂しさ|懐かしさ|本気|区切/.test(source);
@@ -8196,6 +8239,8 @@ function hasOracleThemeTerms(text='',focus={}){
 
 function getOracleMessageFallbackForFocus(focus={}){
   const ctx=buildDecisionContext(focus);
+  const guide=getOracleGuideForFocus(focus);
+  if(guide?.messageFallback) return guide.messageFallback;
   if(ctx.primaryTheme==='love'){
     if(isReconciliationContext(ctx)){
       return 'ここまでのあなたは、元恋人とのつながりを切りきれないまま、もう一度信頼を作れるのかを見極めようとしてきたはずです。今週は、懐かしさではなく、過去の原因に向き合える反応があるかを確認してください。';
@@ -8213,10 +8258,11 @@ function getOracleMessageFallbackForFocus(focus={}){
 
 function adaptOracleThemeText(text='',focus={}){
   const ctx=buildDecisionContext(focus);
+  const guide=getOracleGuideForFocus(focus);
   let output=normalizeJapaneseNearDuplicateText(String(text||'').trim());
   if(ctx.primaryTheme==='love'){
     if(isReconciliationContext(ctx)){
-      output=output
+      output=applyOracleGuideReplacements(output,guide)
         .replace(/ここまでのあなたは、自分なりのやり方で何とか持ちこたえてきたはずです。?/g,'ここまでのあなたは、元恋人とのつながりを切りきれないまま、もう一度信頼を作れるのかを見極めようとしてきたはずです。')
         .replace(/一人で抱え込むより/g,'相手の本気度を一人で想像し続けるより')
         .replace(/選択肢を増やしてから動く/g,'過去の原因を確認してから動く')
@@ -13630,8 +13676,14 @@ function normalizePaidReadingText(text=''){
     .trim();
 }
 
-const LENORMAND_INTERNAL_TERM_RE=/下の段|上の段|現状の列|未来の列|右側の流れ|左側の流れ|中心のすぐ近く|中心十字|対称ペア|ナイト|テーマカード周辺|カードは好転|負担の強いカード|カードが寄|配置|列では|段には|角の枠|角読み|隣接/;
-const LENORMAND_SECTION_TITLES=['迷いの構造','今の流れ','気をつけること','あなたの引力'];
+function buildLenormandInternalTermRegex(){
+  const terms=getLenormandReadingKnowledge().internalTerms||[];
+  if(terms.length) return new RegExp(terms.map(escapeRegExp).join('|'));
+  return /下の段|上の段|現状の列|未来の列|右側の流れ|左側の流れ|中心のすぐ近く|中心十字|対称ペア|ナイト|テーマカード周辺|カードは好転|負担の強いカード|カードが寄|配置|列では|段には|角の枠|角読み|隣接/;
+}
+
+const LENORMAND_INTERNAL_TERM_RE=buildLenormandInternalTermRegex();
+const LENORMAND_SECTION_TITLES=getLenormandReadingKnowledge().sections||['迷いの構造','今の流れ','気をつけること','あなたの引力'];
 
 function normalizeLenormandSectionHeadings(text=''){
   return String(text||'')
