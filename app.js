@@ -12077,7 +12077,19 @@ function buildDossierSignalSummaries(card={}){
     safeCard.CLOSING,
     safeCard.ACTION7,
     ...themeBullets.oracle,
-  ],[topLen,lenormand].filter(Boolean),fallback.oracle,{target:2,min:2,max:2,maxChars:32});
+  ],[topLen,lenormand].filter(Boolean),fallback.oracle,{
+    target:2,
+    min:2,
+    max:3,
+    maxChars:32,
+    reserve:[
+      ...themeBullets.oracle,
+      fallback.oracle,
+      '自分を雑に扱わないことです。',
+      '答えを急ぎすぎないことです。',
+      '安心できる感覚へ戻ることです。',
+    ],
+  });
   return{lenormand,oracle};
 }
 
@@ -12384,6 +12396,7 @@ function buildDossierGuidanceBulletSummary(candidates=[],used=[],fallback='',opt
   const min=options.min||target;
   const max=options.max||target;
   const maxChars=options.maxChars||36;
+  const reserve=toDossierValueArray(options.reserve||[]);
   const seen=new Set();
   const lines=[];
   const push=raw=>{
@@ -12405,9 +12418,15 @@ function buildDossierGuidanceBulletSummary(candidates=[],used=[],fallback='',opt
   };
   candidates.forEach(push);
   if(lines.length<min) push(fallback);
+  if(lines.length<min) reserve.forEach(push);
+  let reserveIndex=0;
   while(lines.length<min){
-    const line=normalizeDossierGuidanceBulletLine(fallback,maxChars);
-    if(!line||lines.includes(line)) break;
+    const raw=reserve[reserveIndex++]||fallback;
+    const line=normalizeDossierGuidanceBulletLine(raw,maxChars);
+    if(!line||lines.includes(line)){
+      if(reserveIndex<=reserve.length) continue;
+      break;
+    }
     lines.push(line);
   }
   return lines.slice(0,max).join('\n');
@@ -12514,6 +12533,8 @@ function detectDossierCardQualityIssues(data={},options={}){
   });
   if(!guidance.lenormand||isDossierIncompleteText(guidance.lenormand)) issues.push(`${DOSSIER_LENORMAND_GUIDANCE_HEADING}がない、または未完文`);
   if(!guidance.oracle||isDossierIncompleteText(guidance.oracle)) issues.push(`${DOSSIER_ORACLE_GUIDANCE_HEADING}がない、または未完文`);
+  const oracleLineCount=getDossierGuidanceLines(guidance.oracle).length;
+  if(oracleLineCount<2||oracleLineCount>3) issues.push(`${DOSSIER_ORACLE_GUIDANCE_HEADING}が2〜3行ではない`);
   if(isDossierSummaryDuplicate(guidance.lenormand,readingDigestCopies)){
     issues.push(`${DOSSIER_LENORMAND_GUIDANCE_HEADING}が今の流れの再掲になっています`);
   }
@@ -18371,7 +18392,7 @@ async function createDossierShareImageBlob(cardData){
   const cardLeft=Math.round(w*.045);
   const cardTextW=Math.round(w*.438);
   const topY=Math.round(h*.06);
-  const detailH=Math.round(h*.245);
+  const detailH=Math.round(h*.22);
   const detailY=h-Math.round(h*.053)-detailH;
   const padX=Math.round(w*.019);
   const textX=cardLeft+padX;
@@ -18403,8 +18424,8 @@ async function createDossierShareImageBlob(cardData){
 
   const guidance=buildDossierSignalSummaries(card);
   const lenGuidanceLines=getDossierGuidanceLines(guidance.lenormand).slice(0,5);
-  const oracleGuidanceLines=getDossierGuidanceLines(guidance.oracle).slice(0,2);
-  const actionH=Math.min(Math.round(h*.17),detailY-y-Math.round(h*.035));
+  const oracleGuidanceLines=getDossierGuidanceLines(guidance.oracle).slice(0,3);
+  const actionH=Math.min(Math.round(h*.20),detailY-y-Math.round(h*.026));
   drawCanvasPanel(ctx,textX,y,maxTextW,actionH,{fill:'rgba(4,9,24,.58)',stroke:'rgba(228,184,74,.22)'});
   ctx.fillStyle='rgba(176,226,218,.95)';
   ctx.font=`700 ${Math.round(w*.0077)}px "Shippori Mincho", serif`;
@@ -18418,18 +18439,18 @@ async function createDossierShareImageBlob(cardData){
   drawCanvasBulletLines(ctx,lenGuidanceLines,guidanceBodyX,lenStartY,guidanceBodyW,Math.round(h*.0205),{maxLines:5,bulletSize:Math.max(3,Math.round(w*.0022))});
   ctx.strokeStyle='rgba(228,184,74,.14)';
   ctx.lineWidth=1;
-  const dividerY=y+Math.round(actionH*.68);
+  const dividerY=y+Math.round(actionH*.60);
   ctx.beginPath();
   ctx.moveTo(guidanceLabelX,dividerY);
   ctx.lineTo(textX+maxTextW-Math.round(w*.015),dividerY);
   ctx.stroke();
   ctx.fillStyle='rgba(176,226,218,.9)';
   ctx.font=`700 ${Math.round(w*.0077)}px "Shippori Mincho", serif`;
-  const oracleStartY=y+Math.round(actionH*.80);
+  const oracleStartY=y+Math.round(actionH*.72);
   ctx.fillText(DOSSIER_ORACLE_GUIDANCE_HEADING,guidanceLabelX,oracleStartY);
   ctx.fillStyle='rgba(255,232,171,.96)';
   ctx.font=`700 ${Math.round(w*.0064)}px "Shippori Mincho", serif`;
-  drawCanvasBulletLines(ctx,oracleGuidanceLines,guidanceBodyX,oracleStartY,guidanceBodyW,Math.round(h*.0205),{maxLines:2,bulletSize:Math.max(3,Math.round(w*.0022))});
+  drawCanvasBulletLines(ctx,oracleGuidanceLines,guidanceBodyX,oracleStartY,guidanceBodyW,Math.round(h*.019),{maxLines:3,bulletSize:Math.max(3,Math.round(w*.0022))});
 
   const foundationSections=getDossierSaveCardFoundationSections();
   const detailsX=cardLeft;

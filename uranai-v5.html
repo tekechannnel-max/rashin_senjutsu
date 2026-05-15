@@ -4501,8 +4501,8 @@ body{
   isolation:isolate;
   --rashin-card-left:4.5%;
   --rashin-card-text-width:43.8%;
-  --rashin-card-top-height:64%;
-  --rashin-card-detail-height:24.5%;
+  --rashin-card-top-height:66%;
+  --rashin-card-detail-height:22%;
   width:min(1280px,100%);
   aspect-ratio:1672 / 941;
   margin:0 auto;
@@ -4643,8 +4643,11 @@ body{
 .dossier-save-visual-action{
   display:grid;
   grid-template-columns:1fr;
-  gap:clamp(5px,.7vw,8px);
-  padding:clamp(9px,1.15vw,14px) clamp(12px,1.4vw,16px);
+  grid-template-rows:minmax(0,1fr) auto;
+  flex:1 1 auto;
+  min-height:0;
+  gap:clamp(3px,.42vw,6px);
+  padding:clamp(7px,.9vw,11px) clamp(10px,1.18vw,14px);
   border:1px solid rgba(228,184,74,.2);
   background:rgba(4,9,24,.54);
   overflow:hidden;
@@ -4654,14 +4657,16 @@ body{
   grid-template-columns:minmax(126px,10.2vw) minmax(0,1fr);
   gap:clamp(7px,.9vw,11px);
   align-items:start;
+  min-height:0;
 }
 .dossier-save-guidance-lenormand{
-  padding-bottom:clamp(5px,.65vw,8px);
+  padding-bottom:clamp(4px,.48vw,6px);
   border-bottom:1px solid rgba(228,184,74,.14);
+  overflow:hidden;
 }
 .dossier-save-guidance-copy{
-  font-size:clamp(8px,.7vw,9.4px);
-  line-height:1.24;
+  font-size:clamp(7.4px,.62vw,8.8px);
+  line-height:1.18;
   color:rgba(246,240,220,.9);
 }
 .dossier-save-guidance-block .dossier-save-heading{
@@ -4671,7 +4676,7 @@ body{
 }
 .dossier-save-guidance-list{
   display:grid;
-  gap:clamp(1px,.18vw,2px);
+  gap:clamp(1px,.12vw,2px);
   margin:0;
   padding:0;
   list-style:none;
@@ -4692,6 +4697,9 @@ body{
 }
 .dossier-save-guidance-oracle .dossier-save-guidance-copy{
   color:rgba(255,232,171,.94);
+}
+.dossier-save-guidance-oracle .dossier-save-guidance-list{
+  min-height:2.36em;
 }
 
 .dossier-save-section,
@@ -6016,9 +6024,9 @@ body.dossier-viewer-open{
   .dossier-save-answer{padding:9px 10px;}
   .dossier-save-answer .dossier-save-heading{font-size:10px;margin-bottom:4px;}
   .dossier-save-answer .dossier-save-verdict{font-size:11px;line-height:1.45;}
-  .dossier-save-visual-action{grid-template-columns:1fr;padding:9px 10px;}
+  .dossier-save-visual-action{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto;padding:7px 9px;gap:3px;}
   .dossier-save-guidance-block{grid-template-columns:112px minmax(0,1fr);gap:6px;}
-  .dossier-save-guidance-copy{font-size:8px;line-height:1.22;}
+  .dossier-save-guidance-copy{font-size:7px;line-height:1.16;}
   .dossier-save-guidance-block .dossier-save-heading{font-size:8px;}
   .dossier-save-guidance-list{gap:1px;}
   .dossier-save-details{padding:9px 10px;}
