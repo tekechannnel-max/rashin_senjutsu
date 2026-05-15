@@ -4651,8 +4651,8 @@ body{
 }
 .dossier-save-guidance-block{
   display:grid;
-  grid-template-columns:minmax(104px,7.6vw) minmax(0,1fr);
-  gap:clamp(8px,1vw,12px);
+  grid-template-columns:minmax(126px,10.2vw) minmax(0,1fr);
+  gap:clamp(7px,.9vw,11px);
   align-items:start;
 }
 .dossier-save-guidance-lenormand{
@@ -4660,9 +4660,35 @@ body{
   border-bottom:1px solid rgba(228,184,74,.14);
 }
 .dossier-save-guidance-copy{
-  font-size:clamp(9px,.84vw,11px);
-  line-height:1.38;
+  font-size:clamp(8px,.7vw,9.4px);
+  line-height:1.24;
   color:rgba(246,240,220,.9);
+}
+.dossier-save-guidance-block .dossier-save-heading{
+  white-space:nowrap;
+  font-size:clamp(9px,.78vw,11px);
+  line-height:1.22;
+}
+.dossier-save-guidance-list{
+  display:grid;
+  gap:clamp(1px,.18vw,2px);
+  margin:0;
+  padding:0;
+  list-style:none;
+}
+.dossier-save-guidance-list li{
+  position:relative;
+  padding-left:clamp(8px,.72vw,10px);
+  overflow-wrap:anywhere;
+}
+.dossier-save-guidance-list li::before{
+  content:'';
+  position:absolute;
+  left:0;
+  top:.58em;
+  width:clamp(3px,.28vw,4px);
+  height:clamp(3px,.28vw,4px);
+  background:rgba(228,184,74,.82);
 }
 .dossier-save-guidance-oracle .dossier-save-guidance-copy{
   color:rgba(255,232,171,.94);
@@ -5991,8 +6017,10 @@ body.dossier-viewer-open{
   .dossier-save-answer .dossier-save-heading{font-size:10px;margin-bottom:4px;}
   .dossier-save-answer .dossier-save-verdict{font-size:11px;line-height:1.45;}
   .dossier-save-visual-action{grid-template-columns:1fr;padding:9px 10px;}
-  .dossier-save-guidance-block{grid-template-columns:92px minmax(0,1fr);gap:7px;}
-  .dossier-save-guidance-copy{font-size:9px;line-height:1.35;}
+  .dossier-save-guidance-block{grid-template-columns:112px minmax(0,1fr);gap:6px;}
+  .dossier-save-guidance-copy{font-size:8px;line-height:1.22;}
+  .dossier-save-guidance-block .dossier-save-heading{font-size:8px;}
+  .dossier-save-guidance-list{gap:1px;}
   .dossier-save-details{padding:9px 10px;}
   .dossier-save-detail-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
   .dossier-save-detail-grid .dossier-save-section{padding:7px;}

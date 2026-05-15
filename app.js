@@ -11198,6 +11198,12 @@ function normalizeDossierCardData(data={}){
   }
   const closingFallback=buildDossierClosingForDecisionContext(ctx)||getIntegrationSupplementItems(INTEGRATION_ACTION_GUIDE_HEADING,focus)[0]||fallback.CLOSING;
   return{
+    PRIMARY_THEME:ctx.primaryTheme,
+    LOVE_SUBTYPE:ctx.loveSubtype,
+    SECONDARY_THEME:ctx.secondaryTheme,
+    EXPLICIT_USER_PRIORITY:ctx.explicitUserPriority,
+    DECISION_CRITERIA_LIST:ctx.decisionCriteriaList,
+    DECISION_CRITERIA:ctx.criteriaText,
     TITLE:RASHIN_READING_CARD_TITLE,
     ONE_LINE:limitTextByChars(source.ONE_LINE||source.HEADLINE||fallback.ONE_LINE,42,18),
     VERDICT:normalizeDossierParagraph(source.VERDICT||source.HEADLINE,fallback.VERDICT,180),
@@ -11969,6 +11975,11 @@ function renderDossierConditionList(items=[]){
   return `<ul class="dossier-save-list">${items.map(item=>`<li class="dossier-save-item">${escapeHtml(sanitizeRashinVisibleText(redactDossierPrivateNames(item)))}</li>`).join('\n')}</ul>`;
 }
 
+function renderDossierGuidanceList(text=''){
+  const lines=getDossierGuidanceLines(text);
+  return `<ul class="dossier-save-guidance-list">${lines.map(line=>`<li>${escapeHtml(sanitizeRashinVisibleText(redactDossierPrivateNames(line)))}</li>`).join('\n')}</ul>`;
+}
+
 function compactDossierSaveCardItem(item=''){
   const clean=cleanDossierItemText(sanitizeRashinVisibleText(redactDossierPrivateNames(String(item||''))));
   const compact=trimDossierTextSafely(clean,24,6)||limitTextByChars(clean,24,6);
@@ -12051,18 +12062,22 @@ function buildDossierSignalSummaries(card={}){
   const topOracle=getDossierReadingDigest('orc');
   const fallback=buildDossierWeightedSignalFallbacks(safeCard,focus);
   const visibleSummaries=[topLen,topOracle].filter(Boolean);
-  const lenormand=pickDossierSignalSummary([
+  const themeBullets=getDossierThemedGuidanceBullets(focus,safeCard);
+  const lenormand=buildDossierGuidanceBulletSummary([
+    topLen,
     fallback.lenormand,
     safeCard.DECISION_AXIS,
-    safeCard.VERDICT,
-    safeCard.ONE_LINE,
-  ],visibleSummaries,fallback.lenormand,{max:70,maxSentences:1});
-  const oracle=compactDossierSignalText(pickDossierSignalSummary([
-    fallback.oracle,
+    safeCard.EVIDENCE_SUMMARY,
+    ...themeBullets.lenormand,
+  ],[topOracle].filter(Boolean),fallback.lenormand,{target:4,min:4,max:4,maxChars:34});
+  const oracle=buildDossierGuidanceBulletSummary([
+    topOracle,
     getOracleSectionBodyForDossier(/羅針盤|向き合|メッセージ|光/),
+    fallback.oracle,
     safeCard.CLOSING,
     safeCard.ACTION7,
-  ],visibleSummaries.concat(lenormand),fallback.oracle,{max:36,maxSentences:1}),28);
+    ...themeBullets.oracle,
+  ],[topLen,lenormand].filter(Boolean),fallback.oracle,{target:2,min:2,max:2,maxChars:32});
   return{lenormand,oracle};
 }
 
@@ -12214,6 +12229,190 @@ function compactDossierSignalText(text='',max=70){
   return compact?ensureJapaneseSentence(compact):'';
 }
 
+function getDossierThemedGuidanceBullets(focus={},card={}){
+  const ctx=buildDecisionContext(focus);
+  if(isReconciliationContext(ctx)){
+    return{
+      lenormand:[
+        '懐かしさより信頼再構築が焦点です。',
+        '過去の原因へ向き合う姿勢が必要です。',
+        '曖昧な連絡だけでは同じ不安が残ります。',
+        '安心が行動で続くなら整う余地があります。',
+      ],
+      oracle:[
+        '待つ側に偏りすぎないことです。',
+        '本音を小さくしないことです。',
+      ],
+    };
+  }
+  if(ctx.primaryTheme==='love'){
+    return{
+      lenormand:[
+        '言葉より行動の安定が焦点です。',
+        '曖昧な距離が不安を強めています。',
+        '安心の根拠が薄い関係は疲れます。',
+        '信頼が続く形なら整う余地があります。',
+      ],
+      oracle:[
+        '相手に合わせすぎないことです。',
+        '信じたい気持ちだけで進まないことです。',
+      ],
+    };
+  }
+  if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
+    return{
+      lenormand:[
+        '努力の見返りが残るかを見る流れです。',
+        'この環境を続ける難しさが出ています。',
+        '外の選択肢も視界に入り始めています。',
+        '消耗だけが増える場所は重くなります。',
+      ],
+      oracle:[
+        '自分を雑に扱わないことです。',
+        '焦りより納得感へ戻ることです。',
+      ],
+    };
+  }
+  if(ctx.primaryTheme==='relationship'||ctx.primaryTheme==='family'){
+    return{
+      lenormand:[
+        '近さと消耗を分けて見る流れです。',
+        '自分だけが我慢する形は重くなります。',
+        '距離が整うほど関係も見えやすくなります。',
+        '守る関係と削る関係の違いが出ています。',
+      ],
+      oracle:[
+        '空気より自分の感覚を優先することです。',
+        '無理な役割を背負いすぎないことです。',
+      ],
+    };
+  }
+  if(ctx.primaryTheme==='money'){
+    return{
+      lenormand:[
+        '不安で動くより安心が残る選択です。',
+        '守るべき余白が見え始めています。',
+        '流れを整えるほど判断が軽くなります。',
+        '無理な支出や負担は重くなります。',
+      ],
+      oracle:[
+        '焦りで選ばないことです。',
+        '安心できる余白を残すことです。',
+      ],
+    };
+  }
+  if(ctx.primaryTheme==='creative'){
+    return{
+      lenormand:[
+        '熱量が戻る形を選ぶ流れです。',
+        '義務感だけで続けるほど重くなります。',
+        '楽しさが戻る場所に力が残ります。',
+        'やり方を変える余地が見えています。',
+      ],
+      oracle:[
+        '好きな気持ちを責めないことです。',
+        '休むことも流れの一部です。',
+      ],
+    };
+  }
+  if(ctx.primaryTheme==='self_understanding'){
+    return{
+      lenormand:[
+        '正解探しより本音の置き場所が焦点です。',
+        '自分を雑に扱わない軸が戻り始めています。',
+        '迷いは感覚を無視するほど濃くなります。',
+        '納得できる選び方へ戻る流れです。',
+      ],
+      oracle:[
+        '正しさより感覚を信じることです。',
+        '急いで結論を出さないことです。',
+      ],
+    };
+  }
+  return{
+    lenormand:[
+      '感情だけでなく現実の反応を見る流れです。',
+      '違和感が残る場所ほど判断が重くなります。',
+      '安心の根拠が見えるほど迷いは薄れます。',
+      '納得できる方向へ戻る余地があります。',
+    ],
+    oracle:[
+      '答えを急ぎすぎないことです。',
+      '自分を雑に扱わないことです。',
+    ],
+  };
+}
+
+function normalizeDossierGuidanceBulletLine(text='',max=36){
+  let clean=cleanDossierItemText(sanitizeRashinVisibleText(redactDossierPrivateNames(String(text||''))))
+    .replace(/^今の焦点は、?/,'')
+    .replace(/^向き合い方は、?/,'')
+    .replace(/^大事なのは、?/,'')
+    .replace(/^今回の答えは、?/,'')
+    .replace(/^羅針の中心は、?/,'')
+    .trim();
+  clean=clean
+    .replace(/努力が(?:続ける意味・評価・消耗度|収入・成長・評価・信頼・役割|努力の見返り)として現実に返る場所かどうかです。?/,'努力の見返りが現実に返るかです。')
+    .replace(/今の環境に(?:続ける意味・評価・消耗度|収入・成長・評価・信頼・役割)のどれかが現実として返っている。?/,'返ってくるものがあるなら残れます。')
+    .replace(/外の選択肢が見えるほど、居場所と消耗の違いもはっきりします。?/,'外の選択肢で居場所と消耗の差が見えます。');
+  if(!clean) return '';
+  if(clean.length<=max) return ensureJapaneseSentence(clean);
+  const clauses=clean.split(/[、。]/).map(item=>item.trim()).filter(Boolean);
+  let line='';
+  for(const clause of clauses){
+    const next=line?`${line}、${clause}`:clause;
+    if(next.length>max) break;
+    line=next;
+  }
+  if(!line||line.length<8){
+    if(clean.length>max) return '';
+    line=clean.slice(0,max).trim();
+  }
+  if(/(なら|ほど|けれど|ただし|または|そして|から|まで|より|よりも|には|では|ところ|もの|を|が|に|へ|と|で)$/.test(line)) return '';
+  return ensureJapaneseSentence(line);
+}
+
+function getDossierGuidanceLines(text=''){
+  return String(text||'')
+    .split(/\r?\n+/)
+    .map(line=>cleanDossierItemText(line))
+    .filter(Boolean);
+}
+
+function buildDossierGuidanceBulletSummary(candidates=[],used=[],fallback='',options={}){
+  const target=options.target||4;
+  const min=options.min||target;
+  const max=options.max||target;
+  const maxChars=options.maxChars||36;
+  const seen=new Set();
+  const lines=[];
+  const push=raw=>{
+    const values=toDossierValueArray(raw).flatMap(value=>[
+      ...String(value||'').split(/\r?\n+/),
+      ...splitJapaneseSentences(value),
+      ...sectionLines(value),
+    ]);
+    values.forEach(value=>{
+      if(lines.length>=max) return;
+      const line=normalizeDossierGuidanceBulletLine(value,maxChars);
+      if(!line||isDossierIncompleteText(line)) return;
+      if(isDossierSummaryDuplicate(line,used.concat(lines))) return;
+      const key=normalizeDossierSummaryDuplicateKey(line);
+      if(!key||seen.has(key)) return;
+      seen.add(key);
+      lines.push(line);
+    });
+  };
+  candidates.forEach(push);
+  if(lines.length<min) push(fallback);
+  while(lines.length<min){
+    const line=normalizeDossierGuidanceBulletLine(fallback,maxChars);
+    if(!line||lines.includes(line)) break;
+    lines.push(line);
+  }
+  return lines.slice(0,max).join('\n');
+}
+
 function getOracleSectionBodyForDossier(pattern){
   const source=sanitizeRashinVisibleText(redactDossierPrivateNames(String(LAST_OUTPUTS.orc||''))).trim();
   if(!source) return '';
@@ -12242,11 +12441,11 @@ function renderDossierSaveCard(card){
           <div class="dossier-save-section dossier-save-visual-action">
             <div class="dossier-save-guidance-block dossier-save-guidance-lenormand">
               <div class="dossier-save-heading">${escapeHtml(DOSSIER_LENORMAND_GUIDANCE_HEADING)}</div>
-              <div class="dossier-save-guidance-copy">${escapeHtml(guidance.lenormand)}</div>
+              <div class="dossier-save-guidance-copy">${renderDossierGuidanceList(guidance.lenormand)}</div>
             </div>
             <div class="dossier-save-guidance-block dossier-save-guidance-oracle">
               <div class="dossier-save-heading">${escapeHtml(DOSSIER_ORACLE_GUIDANCE_HEADING)}</div>
-              <div class="dossier-save-guidance-copy">${escapeHtml(guidance.oracle)}</div>
+              <div class="dossier-save-guidance-copy">${renderDossierGuidanceList(guidance.oracle)}</div>
             </div>
           </div>
         </div>
@@ -17707,9 +17906,9 @@ ${getRashinReadingPolicyPrompt('dossier')}
 - VERDICTは2〜3文、最大180字
 - DECISION_AXISは内部判断用。表示枠には使わず、条件表の見出しや作業指示にしない
 - HOLD_CONDITIONSは内部判断用。表示枠には使わず、見えていない違和感を自然な文章にする
-- 表示枠では、${DOSSIER_LENORMAND_GUIDANCE_HEADING}を上、${DOSSIER_ORACLE_GUIDANCE_HEADING}を下に置く。内容はルノルマン8割、数秘オラクル2割の要約にする
+- 表示枠では、${DOSSIER_LENORMAND_GUIDANCE_HEADING}を上、${DOSSIER_ORACLE_GUIDANCE_HEADING}を下に置く。内容はルノルマン8割、数秘オラクル2割の要約にする。ルノルマンは3〜5行、数秘オラクルは2行を目安にする
 - ACTION7とCLOSINGは内部補助用。表示見出しとして「${INTEGRATION_ACTION_GUIDE_HEADING}」「${INTEGRATION_CLOSING_HEADING}」は出さない
-- キーワード欄は出力しない。表示枠には姓名判断・四柱推命・動物タイプ診断の5行箇条書きを使う
+- キーワード欄は出力しない。表示枠には姓名判断・四柱推命・動物タイプ診断の短い箇条書きを使う
 - CLOSINGは最大60字
 
 出力タグ:
@@ -17731,7 +17930,7 @@ function buildPremiumDossierCardPrompt(source){
 追加質問のraw回答、カード番号、配置名、履歴データは羅針カード本体に出さないでください。
 SNS投稿用のカードなので、表示名は内部資料の「呼び名」だけを使ってください。相談者の本名、姓名、姓、名、ログイン名は本文にも根拠にも出さないでください。
 機械的な条件表、7日以内、30日以内、確認する、書き出す、比較する、材料を集める、今週の一手は出さないでください。
-表示枠の「姓名判断」「四柱推命」「動物タイプ診断」はアプリ側で5行ずつ整えます。カード内の下部指針は「${DOSSIER_LENORMAND_GUIDANCE_HEADING}」を上、「${DOSSIER_ORACLE_GUIDANCE_HEADING}」を下にし、ルノルマン8割・数秘オラクル2割の要約として扱います。本名や生年月日は出さないでください。
+表示枠の「姓名判断」「四柱推命」「動物タイプ診断」はアプリ側で短い箇条書きに整えます。カード内の下部指針は「${DOSSIER_LENORMAND_GUIDANCE_HEADING}」を上、「${DOSSIER_ORACLE_GUIDANCE_HEADING}」を下にし、ルノルマン3〜5行・数秘オラクル2行、比重はルノルマン8割・数秘オラクル2割の要約として扱います。本名や生年月日は出さないでください。
 配列やカンマ区切りを本文に出さず、文途中で終わらせないでください。
 EVIDENCE_SUMMARYだけは、根拠を見る人向けに短く残してください。`;
 }
@@ -18076,6 +18275,18 @@ function drawWrappedCanvasText(ctx,text,x,y,maxWidth,lineHeight,options={}){
   return y+(lines.filter(line=>line).length||lines.length)*lineHeight;
 }
 
+function drawCanvasBulletLines(ctx,lines=[],x,y,maxWidth,lineHeight,options={}){
+  const maxLines=Number.isFinite(options.maxLines)?options.maxLines:lines.length;
+  const bulletSize=options.bulletSize||4;
+  let currentY=y;
+  lines.slice(0,maxLines).forEach(line=>{
+    ctx.fillRect(x,currentY-(lineHeight*.48),bulletSize,bulletSize);
+    drawWrappedCanvasText(ctx,line,x+(bulletSize*2.4),currentY,maxWidth-(bulletSize*2.4),lineHeight,{maxLines:1,ellipsis:false});
+    currentY+=lineHeight;
+  });
+  return currentY;
+}
+
 function drawCanvasPanel(ctx,x,y,w,h,options={}){
   ctx.save();
   ctx.fillStyle=options.fill||'rgba(5,9,22,.62)';
@@ -18164,37 +18375,45 @@ async function createDossierShareImageBlob(cardData){
   ctx.font=`500 ${Math.round(w*.016)}px "Shippori Mincho", serif`;
   y=drawWrappedCanvasText(ctx,shareOneLine,textX,y,maxTextW,Math.round(h*.031),{maxLines:1,ellipsis:true})+Math.round(h*.016);
 
-  const answerH=Math.round(h*.19);
+  const answerH=Math.round(h*.215);
   drawCanvasPanel(ctx,textX,y,maxTextW,answerH,{fill:'rgba(9,10,22,.64)',stroke:'rgba(228,184,74,.30)'});
   ctx.fillStyle='rgba(242,213,123,.97)';
   ctx.font=`700 ${Math.round(w*.016)}px "Shippori Mincho", serif`;
   ctx.fillText('今回の答え',textX+Math.round(w*.015),y+Math.round(h*.043));
   ctx.fillStyle='rgba(246,240,220,.94)';
-  ctx.font=`700 ${Math.round(w*.015)}px "Shippori Mincho", serif`;
-  drawWrappedCanvasText(ctx,shareVerdict,textX+Math.round(w*.015),y+Math.round(h*.082),maxTextW-Math.round(w*.03),Math.round(h*.033),{maxLines:3,ellipsis:true});
+  ctx.font=`700 ${Math.round(w*.0135)}px "Shippori Mincho", serif`;
+  drawWrappedCanvasText(ctx,shareVerdict,textX+Math.round(w*.015),y+Math.round(h*.082),maxTextW-Math.round(w*.03),Math.round(h*.028),{maxLines:4,ellipsis:false});
   y+=answerH+Math.round(h*.015);
 
   const guidance=buildDossierSignalSummaries(card);
-  const actionH=Math.max(Math.round(h*.135),Math.min(Math.round(h*.18),safeY+safeH-y-Math.round(h*.012)));
+  const lenGuidanceLines=getDossierGuidanceLines(guidance.lenormand).slice(0,5);
+  const oracleGuidanceLines=getDossierGuidanceLines(guidance.oracle).slice(0,2);
+  const actionH=Math.max(Math.round(h*.19),Math.min(Math.round(h*.24),safeY+safeH-y-Math.round(h*.012)));
   drawCanvasPanel(ctx,textX,y,maxTextW,actionH,{fill:'rgba(4,9,24,.58)',stroke:'rgba(228,184,74,.22)'});
   ctx.fillStyle='rgba(176,226,218,.95)';
-  ctx.font=`700 ${Math.round(w*.014)}px "Shippori Mincho", serif`;
-  ctx.fillText(DOSSIER_LENORMAND_GUIDANCE_HEADING,textX+Math.round(w*.015),y+Math.round(h*.038));
+  ctx.font=`700 ${Math.round(w*.013)}px "Shippori Mincho", serif`;
+  const guidanceLabelX=textX+Math.round(w*.015);
+  const guidanceBodyX=textX+Math.round(w*.16);
+  const guidanceBodyW=maxTextW-Math.round(w*.185);
+  const lenStartY=y+Math.round(h*.038);
+  ctx.fillText(DOSSIER_LENORMAND_GUIDANCE_HEADING,guidanceLabelX,lenStartY);
   ctx.fillStyle='rgba(246,240,220,.92)';
-  ctx.font=`500 ${Math.round(w*.014)}px "Shippori Mincho", serif`;
-  drawWrappedCanvasText(ctx,guidance.lenormand,textX+Math.round(w*.17),y+Math.round(h*.038),maxTextW-Math.round(w*.19),Math.round(h*.03),{maxLines:2,ellipsis:true});
+  ctx.font=`500 ${Math.round(w*.0101)}px "Shippori Mincho", serif`;
+  drawCanvasBulletLines(ctx,lenGuidanceLines,guidanceBodyX,lenStartY,guidanceBodyW,Math.round(h*.022),{maxLines:5,bulletSize:Math.max(3,Math.round(w*.0024))});
   ctx.strokeStyle='rgba(228,184,74,.14)';
   ctx.lineWidth=1;
+  const dividerY=y+Math.round(actionH*.68);
   ctx.beginPath();
-  ctx.moveTo(textX+Math.round(w*.015),y+Math.round(actionH*.62));
-  ctx.lineTo(textX+maxTextW-Math.round(w*.015),y+Math.round(actionH*.62));
+  ctx.moveTo(guidanceLabelX,dividerY);
+  ctx.lineTo(textX+maxTextW-Math.round(w*.015),dividerY);
   ctx.stroke();
   ctx.fillStyle='rgba(176,226,218,.9)';
-  ctx.font=`700 ${Math.round(w*.014)}px "Shippori Mincho", serif`;
-  ctx.fillText(DOSSIER_ORACLE_GUIDANCE_HEADING,textX+Math.round(w*.015),y+Math.round(actionH*.78));
-  ctx.fillStyle='rgba(255,232,171,.96)';
   ctx.font=`700 ${Math.round(w*.013)}px "Shippori Mincho", serif`;
-  drawWrappedCanvasText(ctx,guidance.oracle,textX+Math.round(w*.17),y+Math.round(actionH*.78),maxTextW-Math.round(w*.19),Math.round(h*.031),{maxLines:1,ellipsis:true});
+  const oracleStartY=y+Math.round(actionH*.80);
+  ctx.fillText(DOSSIER_ORACLE_GUIDANCE_HEADING,guidanceLabelX,oracleStartY);
+  ctx.fillStyle='rgba(255,232,171,.96)';
+  ctx.font=`700 ${Math.round(w*.0104)}px "Shippori Mincho", serif`;
+  drawCanvasBulletLines(ctx,oracleGuidanceLines,guidanceBodyX,oracleStartY,guidanceBodyW,Math.round(h*.023),{maxLines:2,bulletSize:Math.max(3,Math.round(w*.0024))});
 
   const blob=await canvasToPngBlob(canvas);
   return blob&&blob.size?blob:null;
