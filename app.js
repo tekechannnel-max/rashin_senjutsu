@@ -7865,6 +7865,8 @@ function buildDecisionSupportPromptGuide(cat='',theme='',focusOverride=null){
     '- 「気持ちを大切に」「自分を信じて」だけの精神論は禁止。相談者が何を雑に扱っていたのか、どこに意識を戻せばよいかへ変換する',
     '- カードの説明、並び、流派名、位置関係、システム説明は一切出さない',
     '- ルノルマンは単独カードの辞書説明で終わらせず、主題と修飾、隣接する意味を一つの現実的な文に結合して読む',
+    '- ルノルマンの「今見えている流れ」は良い可能性と悪い可能性の羅列にせず、ひと続きの自然な流れとして書く',
+    '- オラクルは作業タスクではなく、相談者が自分をどう扱うと雑に扱わずに済むかへ翻訳する',
     '- 読み手は占いに詳しくない前提で、小学校高学年でも意味が追える普通の日本語だけで納得できるようにする',
     '- 抽象的な「良い変化」ではなく、今の違和感がどこから来ているかを現実の言葉で書く',
     '- 行動指示ではなく、内面の扱い方と羅針の指針として書く',
@@ -7880,6 +7882,40 @@ function buildDecisionSupportPromptGuide(cat='',theme='',focusOverride=null){
     '- 「必ず」「絶対」「運命の人です」「相手はあなたを好きです」のような依存や断定につながる表現は禁止',
     '- 「確認する」「書き出す」「比較する」「材料を集める」へ逃げず、読後に自分の状態が言葉になったと感じられる文章にする',
   ];
+  if(ctx.primaryTheme==='love'){
+    lines.push('');
+    lines.push('【恋愛相談の語彙】');
+    lines.push('- 中心語は安心、信頼、関係の温度、行動の安定、本音を置ける余地、言葉と行動のつながり、待つ側の負担、曖昧な距離に寄せる');
+    lines.push('- 成長、使命、影響力、役割、評価、力を出しやすい条件を中心語にしない');
+    if(!isReconciliationContext(ctx)){
+      lines.push('- 元恋人、復縁、別れた相手、やり直したい等が入力にない場合は復縁として読まない');
+    }
+  }else if(ctx.primaryTheme==='career'||ctx.primaryTheme==='work_life_direction'){
+    lines.push('');
+    lines.push('【仕事・進路相談の語彙】');
+    lines.push('- 中心語は評価、役割、信頼、負担、消耗、成長、居場所、便利使い、努力が返ってくるかに寄せる');
+    lines.push('- 恋愛の「選ばれたい」「曖昧な距離」「関係の温度」を仕事判断の中心語にしない');
+  }else if(ctx.primaryTheme==='relationship'){
+    lines.push('');
+    lines.push('【人間関係相談の語彙】');
+    lines.push('- 中心語は境界線、空気を読む負担、自分だけが我慢する流れ、関係を守ることと自分を削ることの違い、距離感に寄せる');
+  }else if(ctx.primaryTheme==='family'){
+    lines.push('');
+    lines.push('【家族相談の語彙】');
+    lines.push('- 中心語は境界線、責任の偏り、向き合うことと抱え込むことの違い、自分を守る距離、言えなかった本音に寄せる');
+  }else if(ctx.primaryTheme==='money'){
+    lines.push('');
+    lines.push('【お金相談の語彙】');
+    lines.push('- 不安を煽らず、安心が残る選び方、不安からの支出、守るべき余白、焦りで動かない軸、長く続く安定に寄せる');
+  }else if(ctx.primaryTheme==='creative'){
+    lines.push('');
+    lines.push('【趣味・創作相談の語彙】');
+    lines.push('- 中心語は熱量、義務感、楽しさの戻り方、続けたい理由、休むことへの許可、やり方を変える余地に寄せる');
+  }else if(ctx.primaryTheme==='self_understanding'){
+    lines.push('');
+    lines.push('【自己理解相談の語彙】');
+    lines.push('- 中心語は本音、違和感、強み、手放すもの、整える視点、自分を雑に扱わない軸に寄せる');
+  }
   if(isWorkLifeDirectionFocus(focus)){
     lines.push(`- 追加質問で${ctx.primaryLabel}が優先されている場合、主結論はdual concern型の汎用結論ではなく「${buildDecisionFrameFromContext(ctx)}」にする`);
     lines.push(`- 判断軸は固定例文ではなく、相談者入力から抽出した「${ctx.criteriaText}」を使う。不足時だけテーマ別の見立てで補う`);
@@ -11569,6 +11605,8 @@ function detectDossierCardQualityIssues(data={},options={}){
   if(text.length>1000) issues.push('羅針カードが1000字を超えている');
   if(text.length>800) issues.push('羅針カードが800字を超えている');
   issues.push(...detectRashinVisibleTextPolicyIssues(displayText,'羅針カード'));
+  issues.push(...detectThemeVocabularyDriftIssues(text,focus,'羅針カード',options));
+  issues.push(...detectRepeatedAdviceIssues(text).map(issue=>`羅針カード: ${issue}`));
   if(containsDossierPrivateName(displayText)) issues.push('羅針カードに本名または姓名判断用の名前が含まれている');
   if(/[^\n。]{10,},[^\n。]{10,}/.test(text)) issues.push('羅針カードにカンマ区切り配列のような表示がある');
   issues.push(...detectBrokenDecisionCriteriaPhraseIssues(text,'羅針カード'));
@@ -14577,11 +14615,11 @@ function getRashinReadingPolicyPrompt(scope='all'){
 - 羅針カード: SNS保存・見返し用の短い判断カード。長文要約ではなく、判断軸を思い出せる短い言葉にする。
 
 【ユーザー表示で禁止】
-確認してください / 確認する / 確認できる / 確認できない / 確認したとき / まだ確認していない / 本気度確認 / 条件確認 / 判断条件 / 書き出してください / 書き出す / 材料を集めてください / 材料を集める / 比較してください / 比較する / メモしてください / メモする / 整理してください / 整理する / 情報収集してください / 情報収集する / 条件を洗い出してください / 条件を洗い出す / 7日以内 / 30日以内 / 今週の一手 / 次の一手 / 機械的な条件表 / 進む条件 / 止まる条件 / 残る条件 / 動く条件 / 保留条件 / 関わる条件 / 距離を置く条件。
+確認してください / 確認する / 確認できる / 確認できない / 確認したとき / まだ確認していない / 本気度確認 / 条件確認 / 判断条件 / 行動方針 / 書き出してください / 書き出す / 材料を集めてください / 材料を集める / 比較してください / 比較する / メモしてください / メモする / 整理してください / 整理する / 情報収集してください / 情報収集する / 条件を洗い出してください / 条件を洗い出す / 7日以内 / 30日以内 / 今週の一手 / 次の一手 / Aなら進む、Bなら止まる、Cなら保留 / 機械的な条件表 / 進む条件 / 止まる条件 / 残る条件 / 動く条件 / 保留条件 / 関わる条件 / 距離を置く条件。
 内部では判断ロジックとして使ってよいが、表では現実の見立て、違和感の言語化、内面の整え方、羅針の指針へ変換してください。
 
 【品質】
-カード辞書説明、配置語、相手の心の断定、根拠のない未来断定、作業指示、機械的な条件表を出さない。カード素材に「してください」「しましょう」が含まれていても、表では視点・違和感・判断軸の言葉へ翻訳してください。相談本文の具体語を反映し、迷いの正体を一文で言葉にしてください。`;
+カード辞書説明、配置語、相手の心の断定、根拠のない未来断定、作業指示、機械的な条件表を出さない。カード素材に「してください」「しましょう」が含まれていても、表では視点・違和感・判断軸の言葉へ翻訳してください。相談本文の具体語を反映し、迷いの正体を一文で言葉にしてください。同じ意味の文を同一セクション内で繰り返さず、相談テーマに合わない語彙を中心にしないでください。`;
 }
 
 function sanitizeRashinVisibleText(text=''){
@@ -14628,7 +14666,7 @@ function sanitizeRashinVisibleText(text=''){
     [/書き出してください/g,'言葉にしてみる余地があります'],
     [/書き出す/g,'言葉になる'],
     [/材料を集めてください/g,'判断の輪郭が濃くなる流れです'],
-    [/材料を集める/g,'判断の輪郭が濃くなる'],
+    [/材料を集める/g,'判断の根拠が戻る'],
     [/比較してください/g,'違いが見えてきます'],
     [/比較する/g,'違いが見えてくる'],
     [/メモしてください/g,'心に残ります'],
@@ -14658,6 +14696,7 @@ function sanitizeRashinVisibleText(text=''){
     [/次の一手/g,INTEGRATION_ACTION_GUIDE_HEADING],
     [/今回の最終判断/g,INTEGRATION_FINAL_HEADING],
     [/内なる羅針盤/g,ORACLE_COMPASS_HEADING],
+    [/行動方針/g,'今の向き合い方'],
     [/判断条件/g,'判断軸'],
     [/進む条件/g,'進める兆し'],
     [/進める条件/g,'進める兆し'],
@@ -14693,7 +14732,7 @@ function detectRashinVisibleTextPolicyIssues(text='',label='text'){
     {name:'書く・集める・比較する作業語',pattern:/書き出してください|書き出す|材料を集めてください|材料を集める|比較してください|比較する|メモしてください|メモする|整理してください|整理する|情報収集してください|情報収集する|条件を洗い出してください|条件を洗い出す/},
     {name:'命令調の作業指示',pattern:/してください|しましょう|ましょう/},
     {name:'期限つき作業指示',pattern:/7日以内|30日以内|今週の一手|次の一手/},
-    {name:'機械的な条件表',pattern:/進む条件|止まる条件|残る条件|動く条件|保留条件|関わる条件|距離を置く条件|条件A|条件B|条件C|Aなら進む|Bなら止まる|Cなら保留|判断条件/},
+    {name:'機械的な条件表',pattern:/進む条件|止まる条件|残る条件|動く条件|保留条件|関わる条件|距離を置く条件|条件A|条件B|条件C|Aなら進む|Bなら止まる|Cなら保留|判断条件|行動方針/},
   ];
   return rules
     .filter(rule=>rule.pattern.test(source))
@@ -15093,10 +15132,20 @@ function detectRepeatedAdviceIssues(text=''){
   const sentences=String(text||'')
     .split(/(?<=[。！？])/)
     .map(item=>item.replace(/\s/g,'').trim())
-    .filter(item=>item.length>=12);
+    .filter(item=>item.length>=12&&!isPaidTextHeading(item));
   const counts=new Map();
   sentences.forEach(sentence=>counts.set(sentence,(counts.get(sentence)||0)+1));
-  const issues=[...counts.entries()].filter(([,count])=>count>=3).map(([sentence])=>`同じ助言が3回以上繰り返されています: ${limitTextByChars(sentence,40,20)}`);
+  const issues=[...counts.entries()]
+    .filter(([sentence,count])=>count>=2&&sentence.length>=18)
+    .map(([sentence])=>`同じ文が重複しています: ${limitTextByChars(sentence,40,20)}`);
+  const normalizedCounts=new Map();
+  sentences.forEach(sentence=>{
+    const key=normalizeRepeatedAdviceSentence(sentence);
+    if(key.length>=18) normalizedCounts.set(key,(normalizedCounts.get(key)||0)+1);
+  });
+  [...normalizedCounts.entries()].forEach(([key,count])=>{
+    if(count>=2) issues.push(`同じ意味の助言が重複しています: ${limitTextByChars(key,36,18)}`);
+  });
   const meaningPatterns=[
     {label:'恋愛と仕事を同じ重さで抱える話',re:/恋愛.*仕事|仕事.*恋愛|同時に片づけ|同じ不安|同じ重さ/},
     {label:'条件を整理する話',re:/条件を整理|条件整理|整理.*条件|続ける条件と|切り替える条件|分けて書|条件を書/},
@@ -15111,6 +15160,15 @@ function detectRepeatedAdviceIssues(text=''){
     if(count>=3) issues.push(`${pattern.label}が3回以上繰り返されています`);
   });
   return [...new Set(issues)];
+}
+
+function normalizeRepeatedAdviceSentence(sentence=''){
+  return String(sentence||'')
+    .replace(/^■[^。！？]{1,24}/,'')
+    .replace(/^(今回の答えは|この恋愛は|この関係は|この仕事は|迷いの正体は|焦点は|本当に止まっているのは|大事なのは|いま大事なのは|今は)/,'')
+    .replace(/[「」『』（）()\[\]【】、，・\s]/g,'')
+    .replace(/です。?$/,'')
+    .trim();
 }
 
 function detectIrresponsibleAssertionIssues(text=''){
@@ -15194,6 +15252,15 @@ function detectLenormandRoleIssues(text='',focus={},integration=''){
   });
   if(/残る条件|動く条件|保留条件|7日以内の一手|30日以内に見ること|進む条件と止まる条件を先に確認|条件カード/.test(source)){
     issues.push('LENが統合判断や条件カードの再掲に寄っています');
+  }
+  const mentionedCardNames=[...new Set([...source.matchAll(/「([^」]{1,12})」/g)]
+    .map(match=>match[1])
+    .filter(name=>Object.values(LENORMAND||{}).some(card=>card?.name===name)))];
+  if(mentionedCardNames.length>3){
+    issues.push('LEN本文でカード名を出しすぎています');
+  }
+  if(/「[^」]{1,12}」は、?[^。\n]*(?:意味します|示します|カードとして読めます|カードとして読みます|を表します)/.test(source)){
+    issues.push('LEN本文がカード辞書説明に寄っています');
   }
   if(/「(?:十字架|錨|雲|山|鍵|星|騎士|家)」は、?[^。]*(?:安心感|相手の反応|信頼|収入|成長|評価|役割)[^。]*(?:行動から確かめる材料|残るかを確認する材料)/.test(source)){
     issues.push('LENのカード説明にdecisionCriteriaが雑に流し込まれています');
@@ -15302,6 +15369,43 @@ function detectFocusRegressionIssues(baseFocus={},refinedFocus={},context={}){
   return issues;
 }
 
+function detectThemeVocabularyDriftIssues(text='',focus={},label='text',context={}){
+  const source=String(text||'');
+  if(!source.trim()) return [];
+  const ctx=buildDecisionContext(focus,context);
+  const primary=ctx.primaryTheme;
+  const issues=[];
+  if(primary==='love'){
+    const workCoreCount=countTextOccurrences(source,/成長|使命|影響力|力を出しやすい条件|役割|評価/g);
+    const hardWorkCount=countTextOccurrences(source,/力を出しやすい条件|役割|評価/g);
+    if(/力を出しやすい条件/.test(source)||hardWorkCount>=3||workCoreCount>=5){
+      issues.push(`${label}が恋愛相談に仕事寄り語彙を中心化しています`);
+    }
+    if(!isReconciliationContext(ctx)&&/復縁|元恋人|元彼|元カレ|元カノ|別れた相手|やり直したい|やり直す|別れの原因|懐かしさ|同じ傷/.test(source)){
+      issues.push(`${label}が入力にない復縁前提を足しています`);
+    }
+    if(isReconciliationContext(ctx)&&countMeaningfulChars(source)>=120&&!/復縁|元恋人|元彼|元カレ|元カノ|過去|別れ|信頼再構築|信頼を作|同じ傷|懐かしさ|やり直/.test(source)){
+      issues.push(`${label}に復縁固有の判断軸が足りません`);
+    }
+  }
+  if(primary==='career'||primary==='work_life_direction'){
+    const loveCoreCount=countTextOccurrences(source,/選ばれたい|関係の温度|曖昧な距離|待つ側の負担|相手の気持ち|本音を置ける余地/g);
+    if(loveCoreCount>=2){
+      issues.push(`${label}が仕事相談に恋愛寄り語彙を中心化しています`);
+    }
+  }
+  if(primary==='relationship'){
+    const workCoreCount=countTextOccurrences(source,/評価|役割|収入|職場|転職|キャリア/g);
+    if(workCoreCount>=3){
+      issues.push(`${label}が人間関係相談に仕事寄り語彙を中心化しています`);
+    }
+  }
+  if(primary==='money'&&/破綻|終わりです|失敗します|危険です/.test(source)){
+    issues.push(`${label}がお金相談で不安を煽りすぎています`);
+  }
+  return [...new Set(issues)];
+}
+
 function validateIntegrationSatisfaction(text='',context={}){
   const issues=[];
   const source=sanitizeRashinVisibleText(normalizeIntegrationActionGuideHeading(text));
@@ -15368,6 +15472,7 @@ function validatePaidReadingQuality(parsed={},context={}){
   }
   ['len','orc','integration'].forEach(key=>{
     issues.push(...detectPaidTextQualityIssues(key,parsed[key]||''));
+    issues.push(...detectThemeVocabularyDriftIssues(parsed[key]||'',context.focus||getFocusForContext(context.cat||'',context.theme||'',context),key,context));
     issues.push(...detectWeakEscapeIssues(parsed[key]||'').map(issue=>`${key}: ${issue}`));
     issues.push(...detectTruncatedSummaryIssues(parsed[key]||'').map(issue=>`${key}: ${issue}`));
     issues.push(...detectJapanesePunctuationSpacingIssues(parsed[key]||'',key));
@@ -15439,8 +15544,10 @@ ${getRashinReadingPolicyPrompt('quality')}
 - ORACLE本文に「ただ今は、今は」「今は、今は」などの近接重複がないか
 - collapsed summaryのような文途中省略が混じっていないか
 - 土台詳細表示にも文途中省略が混じっていないか
-- 同じ助言を3回以上繰り返していないか
+- 同じ文や同じ意味の助言を2回以上繰り返していないか
 - ルノルマン・オラクル・統合判断が同じ役割の助言を繰り返していないか
+- 相談テーマに合わない語彙を中心にしていないか。恋愛を復縁と誤読していないか、復縁を一般恋愛として薄くしていないか
+- ルノルマンの「今見えている流れ」が羅列ではなく、一本の自然な流れになっているか
 - 羅針カードが長文鑑定書ではなく、一言結論・今の現実・姓名判断・四柱推命・動物タイプ診断・今の流れ・${DOSSIER_LENORMAND_GUIDANCE_HEADING}・${DOSSIER_ORACLE_GUIDANCE_HEADING}の短い判断カードになっているか
 - 「整理してください」だけで終わっていないか
 - ルノルマン9枚の読みがあるか
@@ -16601,6 +16708,8 @@ ${getRashinReadingPolicyPrompt('dossier')}
 - 羅針カードはSNS投稿・画像共有される前提です。表示に使ってよい名前は内部資料の「呼び名」だけ。姓名判断用の本名、姓、名、ログイン名は絶対に出さない
 - 呼び名が「あなた」の場合は「あなた」で書く。呼び名が入力されている場合は、その呼び名だけで統一する
 - 本編のトップ結論、最終判断カード、羅針カードで同じ判断軸を一貫させる
+- 相談テーマに合わない語彙を中心にしない。恋愛なら安心・信頼・関係の温度、仕事なら評価・役割・負担・消耗、人間関係なら境界線と距離感を中心にする
+- 入力に元恋人・復縁・やり直したい等がない恋愛相談を、復縁として扱わない
 - 追加質問の回答をそのまま再掲しない。内部で要約して使う
 - カード番号、配置名、履歴の生データ、画数や命式の羅列は通常表示に出さない
 - 根拠はEVIDENCE_SUMMARYに短くまとめる。専門用語だけを並べず、一般ユーザー向けの翻訳文を先に書く。EVIDENCE_SUMMARYにも本名は出さない
