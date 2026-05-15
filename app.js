@@ -90,10 +90,10 @@ const DAILY_ORACLE_MESSAGES=[
   {id:12,name:"The Harmonizer",title:"間に余白を作る日",message:"今日は、対立をすぐ裁かず、互いの事情が置ける余白を作ると固まった空気が緩みます。",action:"どちらかを責める前に、「相手にも事情があるなら、それは何か」を一度だけ考えましょう。",share:"今日は、間に余白を作る日。"},
   {id:13,name:"The Wise King",title:"古い型を改める日",message:"守ってきたものを否定せず、今の自分に合わなくなったやり方だけを更新しましょう。",action:"続けるもの・変えるもの・やめるものを1つずつ書き分けましょう。",share:"今日は、古い型を更新する日。"},
   {id:14,name:"The Transformer",title:"混ぜ直して整える日",message:"今日は、極端な決断より、少しずつ配合を変えることが変化を長持ちさせます。",action:"やりすぎていることを少し減らし、足りないことを少し足しましょう。",share:"今日は、ちょうどいい配合を探す日。"},
-  {id:15,name:"The Servant",title:"動機を澄ませる日",message:"人の役に立つほど、自分の本心も見えやすい日です。見返りではなく、納得で選びましょう。",action:"頼まれごとを受ける前に、「これは気持ちよくできるか」を確認しましょう。",share:"今日は、動機を澄ませる日。"},
+  {id:15,name:"The Servant",title:"動機を澄ませる日",message:"人の役に立つほど、自分の本心も見えやすい日です。見返りではなく、納得で選びましょう。",action:"頼まれごとを受ける前に、「これは気持ちよくできるか」に一度目を向けましょう。",share:"今日は、動機を澄ませる日。"},
   {id:16,name:"The Perceptive One",title:"違和感を尊重する日",message:"小さなひっかかりは、あなたを責める声ではなく、見直す場所を知らせる合図です。",action:"気になることを放置せず、事実・感情・思い込みに分けて書きましょう。",share:"今日は、違和感を見過ごさない日。"},
   {id:17,name:"The Benefactor",title:"希望を渡す日",message:"大きなことをしなくても、あなたの一言や小さな手助けが、誰かの視界を少し明るくします。",action:"励ましたい人に、助言ではなく「見ているよ」と伝わる言葉を送りましょう。",share:"今日は、小さな希望を渡す日。"},
-  {id:18,name:"The Seeker",title:"霧の中を確かめる日",message:"不安の中で急いで決めるより、事実を一つ確かめることで霧は薄くなります。",action:"不安なことを1つ選び、検索・確認・質問のどれかで事実を増やしましょう。",share:"今日は、霧の中で事実を拾う日。"},
+  {id:18,name:"The Seeker",title:"霧の中を確かめる日",message:"不安の中で急いで決めるより、見えている事実を一つ増やすことで霧は薄くなります。",action:"不安を増やす想像から離れ、今ある事実を一つだけ拾い直しましょう。",share:"今日は、霧の中で事実を拾う日。"},
   {id:19,name:"The Unwavering One",title:"光を曲げない日",message:"周りの反応に合わせすぎると、あなたの基準がぼやけます。今日は納得できる方を選びましょう。",action:"断りたいこと、守りたい条件、譲れない基準を1つ言葉にしましょう。",share:"今日は、自分の光を曲げない日。"},
   {id:20,name:"The Unifier",title:"呼び戻される声を聞く日",message:"今日は、過去の後悔ではなく、そこから学んだことが今の選択を呼び直しています。",action:"昔の失敗から得た教訓を1つ、今日の判断に使いましょう。",share:"今日は、過去の学びを今に戻す日。"},
   {id:21,name:"The Completer",title:"美しく終える日",message:"最後まで完璧にするより、終わらせることで次の流れが入ってきます。",action:"途中のまま気になっていることに、今日の区切りをつけましょう。",share:"今日は、美しく終える日。"},
@@ -7491,14 +7491,14 @@ function extractDecisionCriteriaList(source='',focus={}){
   if(primary==='creative') return ['楽しさ','上達実感','表現しやすさ'];
   if(primary==='self_understanding') return ['自分らしさ','納得感','力の出し方'];
   if(primary==='dual_concern') return ['優先順位','安心感','続ける意味'];
-  return ['納得感','確認できる事実','続ける意味'];
+  return ['納得感','現実に見えている根拠','続ける意味'];
 }
 
 function formatDecisionCriteria(criteria=[]){
   return uniqueNonEmpty(criteria).slice(0,5).join('・');
 }
 
-function formatDecisionCriteriaChoice(criteria=[],fallback='確認できること'){
+function formatDecisionCriteriaChoice(criteria=[],fallback='現実に見えていること'){
   const list=uniqueNonEmpty(Array.isArray(criteria)?criteria:String(criteria||'').split(/[・、,，/／]+/)).slice(0,5);
   if(list.length>=2) return `${list.join('・')}のどれか`;
   return list[0]||fallback;
@@ -7647,17 +7647,17 @@ function buildPrimaryStructureSentence(focus={},context={}){
   }
   if(ctx.primaryTheme==='love'){
     if(isReconciliationContext(ctx)){
-      return getLoveSubtypeProfile(ctx.loveSubtype)?.structureSentence||'元恋人への気持ちを主軸に、過去の原因と信頼を作り直せるかを確認する状態です。';
+      return getLoveSubtypeProfile(ctx.loveSubtype)?.structureSentence||'元恋人への気持ちを主軸に、過去の原因と信頼を作り直せるかが焦点になっている状態です。';
     }
-    return `恋愛を主軸に、${ctx.criteriaText}を相手の行動で確認する状態です。`;
+    return `恋愛を主軸に、${ctx.criteriaText}が相手の行動に表れているかを見る状態です。`;
   }
   if(ctx.primaryTheme==='relationship'){
-    return `関わり方を主軸に、${ctx.criteriaText}が保てる距離を確認する状態です。`;
+    return `関わり方を主軸に、${ctx.criteriaText}が保てる距離を見ている状態です。`;
   }
   if(ctx.primaryTheme==='dual_concern'){
-    return `複数の悩みを同時に抱えているため、先に確認するテーマを分ける必要があります。`;
+    return `複数の悩みを同時に抱えているため、先に見るテーマを分ける必要があります。`;
   }
-  return `今回の相談では、${ctx.criteriaText}を確認しながら次の判断を分ける状態です。`;
+  return `今回の相談では、${ctx.criteriaText}を見ながら次の判断を分ける状態です。`;
 }
 
 function refineFocusWithClarify(focus={},clarifyText='',paidUserData={}){
@@ -7929,7 +7929,7 @@ function getLenCoreFocusText(id){
       if([15,34].includes(id)) return 'いま一番大事なのは、お金・役割・自立の問題を無視しないことです。';
       if([24,25,30].includes(id)) return 'いま一番大事なのは、情とつながり方を見直すことです。';
       if([8,10,17].includes(id)) return 'いま一番大事なのは、変化や区切りを避けて通れないところです。';
-      return 'いま一番大事なのは、気持ちだけで決めず、条件を先に整理することです。';
+      return 'いま一番大事なのは、気持ちだけで決めず、大事な点の輪郭を見ることです。';
   }
 }
 
@@ -8036,7 +8036,7 @@ function buildDossierWarnings(focus){
   if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
     return[
       '比較材料が足りない日に辞めるか残るかを決めない',
-      `${ctx.criteriaText}を確認しないまま現状維持しない`,
+      `${ctx.criteriaText}が戻らないまま現状維持しない`,
       '負担だけが増えている状態を放置しない'
     ];
   }
@@ -8051,7 +8051,7 @@ function buildDossierWarnings(focus){
     if(isReconciliationContext(ctx)){
       return[
         '懐かしさだけで復縁を進めない',
-        '過去の原因を確認しないまま曖昧な連絡を続けない',
+        '過去の原因に向き合わないまま曖昧な連絡を続けない',
         '自分だけが期待して苦しくなる状態を放置しない'
       ];
     }
@@ -8078,7 +8078,7 @@ function buildDossierLuck(focus){
   if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
     return[
       `${formatDecisionCriteriaChoice(ctx.decisionCriteriaList)}が具体的に見えたとき`,
-      '条件や評価が変わる余地を確認できたとき',
+      '条件や評価が変わる余地が見えたとき',
       '比較候補を見て気持ちが軽くなったとき'
     ];
   }
@@ -8110,7 +8110,7 @@ function buildDossierLuck(focus){
   ];
   return[
     '迷いの正体を言葉にできたとき',
-    '確認すべきことが一つに絞れたとき',
+    '大事な焦点が一つに絞れたとき',
     '気分ではなく条件で見直せたとき'
   ];
 }
@@ -8118,9 +8118,9 @@ function buildDossierLuck(focus){
 function buildDossierKeywords(focus){
   const ctx=buildDecisionContext(focus);
   if(isReconciliationContext(ctx)){
-    return (ctx.loveSubtypeProfile?.supplements?.dossierKeywords||['復縁','過去の原因','信頼再構築','曖昧な連絡','区切り','本気度確認']).join(' / ');
+    return (ctx.loveSubtypeProfile?.supplements?.dossierKeywords||['復縁','過去の原因','信頼再構築','曖昧な連絡','区切り','信頼の温度']).join(' / ');
   }
-  const base=[ctx.positiveLabel,ctx.negativeLabel,...ctx.decisionCriteriaList,'今週の確認'];
+  const base=[ctx.positiveLabel,ctx.negativeLabel,...ctx.decisionCriteriaList,'信頼の温度'];
   if(ctx.userProvidedTiming) base.push(ctx.userProvidedTiming);
   if(ctx.secondaryTheme) base.push(getDecisionThemeLabel(ctx.secondaryTheme));
   if(!base.length) base.push(focus.shortLabel,'条件整理','優先順位','決める目印');
@@ -8392,10 +8392,9 @@ function normalizeOracleReadingText(text='',context={}){
   if(!compassBody) compassBody=getOracleCompassFallback();
   const messageBody=adaptOracleThemeText(limitJapaneseBodyBySentences(message.body||getOracleMessageFallbackForFocus(focus),220,3),focus);
   compassBody=limitJapaneseBodyBySentences(adaptOracleCompassText(compassBody,focus),180,2);
-  const nextBody=nextActions.map(item=>`・${item}`).join('\n');
   return[
     `■ 光のメッセージ\n${sanitizeRashinVisibleText(normalizeJapaneseNearDuplicateText(messageBody))}`,
-    `■ ${ORACLE_COMPASS_HEADING}\n${sanitizeRashinVisibleText(normalizeJapaneseNearDuplicateText(compassBody||nextBody||uniqueAdviceItems(buildThemeSpecificActionPlan(focus)).join('')))}`,
+    `■ ${ORACLE_COMPASS_HEADING}\n${sanitizeRashinVisibleText(normalizeJapaneseNearDuplicateText(compassBody||getOracleCompassFallback()))}`,
   ].join('\n\n');
 }
 
@@ -8823,8 +8822,8 @@ function makeSentenceUnitSummary(text='',fallback='',maxChars=130,maxSentences=2
 }
 
 function sanitizeFoundationDetailBody(body='',fallback=''){
-  const safeFallback=fallback||'今回の判断では、気持ちだけでなく現実に確認できる条件を見ていくことが大切です。';
-  return makeSentenceUnitSummary(normalizeJapanesePunctuationSpacing(body),safeFallback,150,2);
+  const safeFallback=fallback||'今回の判断では、気持ちだけでなく現実に見えている根拠を見ていくことが大切です。';
+  return sanitizeRashinVisibleText(makeSentenceUnitSummary(normalizeJapanesePunctuationSpacing(body),safeFallback,150,2));
 }
 
 function getAnimalTypeSummaryParts(){
@@ -8844,7 +8843,7 @@ function getAnimalTypeSummaryParts(){
     oneLine:makeSentenceUnitSummary(REACTION_PROFILE.summary,'本音と行動傾向を補足します。',110,2),
     strength:sanitizeFoundationDetailBody(REACTION_PROFILE.power?`${REACTION_PROFILE.power}が出やすいタイプです。`:REACTION_PROFILE.summary,'状況に合わせながら、自分の形に変えて力を出しやすいタイプです。'),
     caution:sanitizeFoundationDetailBody(REACTION_PROFILE.stress?`${REACTION_PROFILE.stress}が続くと消耗しやすくなります。`:'相手に合わせすぎると、自分の消耗に気づきにくくなります。','相手に合わせすぎると、自分の消耗に気づきにくくなります。'),
-    inConsultation:sanitizeFoundationDetailBody(REACTION_PROFILE.handling||'今回の相談では、気持ちだけでなく相手の意思表示や状況の安定感が判断基準になります。','今回の相談では、気持ちだけでなく現実の条件を分けて見ることが判断基準になります。'),
+    inConsultation:sanitizeFoundationDetailBody(REACTION_PROFILE.handling||'今回の相談では、気持ちだけでなく相手の意思表示や状況の安定感が判断基準になります。','今回の相談では、気持ちだけでなく現実の根拠を分けて見ることが判断基準になります。'),
   };
 }
 
@@ -8855,7 +8854,7 @@ function getNameBirthSummaryParts(){
   const caution=[namePlain?.advice,birthPlain?.advice].filter(Boolean).join(' ');
   return{
     summary:makeSentenceUnitSummary(summary,'名前と生まれからは、対話しながら現実を整える力が出ています。',120,2),
-    caution:makeSentenceUnitSummary(caution,'急な決断より、条件を確認しながら進むほど判断が安定しやすい傾向です。',120,2),
+    caution:sanitizeRashinVisibleText(makeSentenceUnitSummary(caution,'急な決断より、現実に見えている根拠を見ながら進むほど判断が安定しやすい傾向です。',120,2)),
   };
 }
 
@@ -8873,7 +8872,7 @@ function getConsultationBasisSummary(){
     return `${themeText}では、気持ちの勢いだけで決めるより、条件、役割、続けたときの消耗度を見て判断することが大切です。`;
   }
   return focus?.answerNeed
-    ?`${themeText}では、気持ちだけで決めず、何を確認すれば安心して進めるかを整理することが大切です。`
+    ?`${themeText}では、気持ちだけで決めず、どこに安心の根拠があるかを見ることが大切です。`
     :'「好きかどうか」だけで決めるより、連絡の安定感、会う目的、相手の意思表示を見ることが大切です。';
 }
 
@@ -8881,7 +8880,7 @@ function makeFoundationSummary(type='',fullText='',context={}){
   const focus=context.focus||getCurrentRefinedFocus();
   if(type==='animal'){
     if(isWorkLifeDirectionFocus(focus)){
-      return '適応力と表現力があり、良い手本を取り入れて自分の形に変える力があります。今回の判断では、自分の本音を仕事の条件として言葉にできるかが鍵です。';
+      return '適応力と表現力があり、良い手本を取り入れて自分の形に変える力があります。今回の判断では、自分の本音を仕事の根拠として言葉にできるかが鍵です。';
     }
     if(focus.hasLove){
       return '相手に合わせる力がある一方で、自分の消耗を後回しにしやすい傾向があります。今回の判断では、安心して話せる関係かを見ることが大切です。';
@@ -8889,13 +8888,13 @@ function makeFoundationSummary(type='',fullText='',context={}){
     if(focus.hasWork){
       return '状況を読みながら力を出せる一方で、負荷を抱えすぎると消耗しやすい傾向があります。今回の判断では、役割と見返りの釣り合いが鍵です。';
     }
-    return '周りの状況を読みながら、自分なりの形に整える力があります。今回の判断では、気持ちと現実条件を分けて見るほど選びやすくなります。';
+    return '周りの状況を読みながら、自分なりの形に整える力があります。今回の判断では、気持ちと現実の根拠を分けて見るほど選びやすくなります。';
   }
   if(type==='nameBirth'){
     if(isWorkLifeDirectionFocus(focus)){
-      return '名前からは調整力と対話力、生まれからは現実を整える力が出ています。急な決断より、条件を確認しながら進むほど安定しやすい傾向です。';
+      return '名前からは調整力と対話力、生まれからは現実を整える力が出ています。急な決断より、現実に見えている根拠を見ながら進むほど安定しやすい傾向です。';
     }
-    return '名前と生まれからは、対話しながら現実を整える力が出ています。急いで白黒をつけるより、確認できる条件を増やすほど判断が安定します。';
+    return '名前と生まれからは、対話しながら現実を整える力が出ています。急いで白黒をつけるより、安心の根拠が見えるほど判断が安定します。';
   }
   if(type==='consultation'){
     if(isWorkLifeDirectionFocus(focus)){
@@ -8907,10 +8906,10 @@ function makeFoundationSummary(type='',fullText='',context={}){
     if(focus.hasWork){
       return '今回の迷いは、今の環境で自分の力が育つか、別の場所で活かす準備を始めるかを見極める流れです。';
     }
-    return '今回の迷いは、正解を急ぐより、何を確認すれば納得して選べるかを見極める流れです。';
+    return '今回の迷いは、正解を急ぐより、どこに納得の根拠があるかを見極める流れです。';
   }
   const clean=String(fullText||'').trim();
-  return clean&&/[。！？]$/.test(clean)?clean:'今回の判断では、気持ちだけでなく現実に確認できる条件を見ていくことが大切です。';
+  return sanitizeRashinVisibleText(clean&&/[。！？]$/.test(clean)?clean:'今回の判断では、気持ちだけでなく現実に見えている根拠を見ていくことが大切です。');
 }
 
 function buildFoundationDetailHTML(items=[]){
@@ -10315,6 +10314,7 @@ function cleanDossierItemText(text='',labels=[]){
     '続ける条件','切り替える条件','関わる条件','距離を置く条件',
     '今週の一手','7日以内の一手','今回の答え','一言結論',
     '今の現実','整う兆し','気をつけること','今の流れ','羅針の指針','最後の一言',
+    '姓名判断','四柱推命','動物タイプ診断',
   ].filter(Boolean);
   if(labelList.length){
     clean=clean.replace(new RegExp(`^(?:${labelList.map(escapeRegExp).join('|')})\\s*(?:[：:・-]\\s*|\\s+)`),'').trim();
@@ -11315,22 +11315,20 @@ function renderDossierIncludedSections(){
 function buildDossierPlainText(data){
   const safeData=resolveDossierCardData(data);
   const readingDigests=getDossierReadingDigests();
+  const foundationBlocks=getDossierFoundationBulletSections().map(section=>`${section.label}：\n${section.items.map(item=>`・${item}`).join('\n')}`);
   const blocks=[
     'RASHIN CARD',
     safeData.TITLE,
     `一言結論：\n${safeData.ONE_LINE}`,
     `今回の答え：\n${safeData.VERDICT}`,
     readingDigests.length?`カードから見えたこと：\n${readingDigests.map(item=>`・${item.title}：${item.copy}`).join('\n')}`:'',
-    `整う兆し：\n${safeData.REMAIN_CONDITIONS.map(item=>`・${item}`).join('\n')}`,
-    `気をつけること：\n${safeData.MOVE_CONDITIONS.map(item=>`・${item}`).join('\n')}`,
-    `まだ見えていない点：\n${(safeData.HOLD_CONDITIONS||[]).map(item=>`・${item}`).join('\n')}`,
+    ...foundationBlocks,
     `${INTEGRATION_ACTION_GUIDE_HEADING}：\n${safeData.ACTION7.map(item=>`・${item}`).join('\n')}`,
-    `保存キーワード：\n${safeData.KEYWORDS.join(' / ')}`,
     `${INTEGRATION_CLOSING_HEADING}：`,
     safeData.CLOSING,
   ];
   const text=blocks.map(block=>String(block||'').trim()).filter(Boolean).join('\n\n');
-  if(text.length<=1000) return redactDossierPrivateNames(text);
+  if(text.length<=1000) return sanitizeRashinVisibleText(redactDossierPrivateNames(text));
   const compact={
     ...safeData,
     VERDICT:normalizeDossierParagraph(safeData.VERDICT,safeData.ONE_LINE,140),
@@ -11340,20 +11338,17 @@ function buildDossierPlainText(data){
     ACTION7:safeData.ACTION7.map(item=>normalizeDossierSentence(item,item,{max:62})).filter(Boolean),
     CLOSING:normalizeDossierSentence(safeData.CLOSING,safeData.CLOSING,{max:54}),
   };
-  return redactDossierPrivateNames([
+  return sanitizeRashinVisibleText(redactDossierPrivateNames([
     'RASHIN CARD',
     compact.TITLE,
     `一言結論：\n${compact.ONE_LINE}`,
     `今回の答え：\n${compact.VERDICT}`,
     readingDigests.length?`カードから見えたこと：\n${readingDigests.map(item=>`・${item.title}：${trimDossierTextSafely(item.copy,56,18)}`).join('\n')}`:'',
-    `整う兆し：\n${compact.REMAIN_CONDITIONS.map(item=>`・${item}`).join('\n')}`,
-    `気をつけること：\n${compact.MOVE_CONDITIONS.map(item=>`・${item}`).join('\n')}`,
-    `まだ見えていない点：\n${compact.HOLD_CONDITIONS.map(item=>`・${item}`).join('\n')}`,
+    ...foundationBlocks,
     `${INTEGRATION_ACTION_GUIDE_HEADING}：\n${compact.ACTION7.map(item=>`・${item}`).join('\n')}`,
-    `保存キーワード：\n${compact.KEYWORDS.join(' / ')}`,
     `${INTEGRATION_CLOSING_HEADING}：`,
     compact.CLOSING,
-  ].map(block=>String(block||'').trim()).filter(Boolean).join('\n\n'));
+  ].map(block=>String(block||'').trim()).filter(Boolean).join('\n\n')));
 }
 
 function renderDossierEvidenceDetails(card){
@@ -11363,11 +11358,11 @@ function renderDossierEvidenceDetails(card){
     <details class="dossier-evidence-details">
       <summary data-closed-label="根拠を見る" data-open-label="根拠を閉じる">根拠を見る</summary>
       <div class="dossier-evidence-body">
-        <div class="dossier-evidence-lead">${escapeHtml(redactDossierPrivateNames(card.EVIDENCE_SUMMARY||'この羅針カードは、土台・カード・追加質問を現実の判断軸へ翻訳してまとめています。'))}</div>
+        <div class="dossier-evidence-lead">${escapeHtml(sanitizeRashinVisibleText(redactDossierPrivateNames(card.EVIDENCE_SUMMARY||'この羅針カードは、土台・カード・追加質問を現実の判断軸へ翻訳してまとめています。')))}</div>
         ${sections.map(section=>`
           <div class="dossier-evidence-section">
             <div class="dossier-evidence-section-title">${escapeHtml(section.title||'根拠')}</div>
-            <div class="dossier-evidence-section-copy">${escapeHtml(limitTextByChars(redactDossierPrivateNames(section.body||''),240,90)).replace(/\n/g,'<br>')}</div>
+            <div class="dossier-evidence-section-copy">${escapeHtml(limitTextByChars(sanitizeRashinVisibleText(redactDossierPrivateNames(section.body||'')),240,90)).replace(/\n/g,'<br>')}</div>
           </div>
         `).join('')}
       </div>
@@ -11375,12 +11370,85 @@ function renderDossierEvidenceDetails(card){
 }
 
 function renderDossierConditionList(items=[]){
-  return `<ul class="dossier-save-list">${items.map(item=>`<li class="dossier-save-item">${escapeHtml(redactDossierPrivateNames(item))}</li>`).join('\n')}</ul>`;
+  return `<ul class="dossier-save-list">${items.map(item=>`<li class="dossier-save-item">${escapeHtml(sanitizeRashinVisibleText(redactDossierPrivateNames(item)))}</li>`).join('\n')}</ul>`;
+}
+
+function buildDossierFoundationItems(items=[],fallbackItems=[]){
+  const source=[
+    ...(Array.isArray(items)?items:[]),
+    ...(Array.isArray(fallbackItems)?fallbackItems:[]),
+  ];
+  const unique=[];
+  source.forEach(item=>{
+    const trimmed=trimDossierTextSafely(sanitizeRashinVisibleText(redactDossierPrivateNames(cleanDossierItemText(String(item||'')))),34,8);
+    if(!trimmed||/[、,，・/／:：]$/.test(trimmed)) return;
+    const clean=ensureJapaneseSentence(trimmed);
+    if(/確認する|確認して|書き出|比較する|材料を集め|整理する|整理して|7日以内|30日以内/.test(clean)) return;
+    if(!clean||unique.includes(clean)||unique.length>=5) return;
+    unique.push(clean);
+  });
+  return unique.slice(0,5);
+}
+
+function getDossierFoundationBulletSections(){
+  const namePlain=buildNamePlainInsight(NAMEJUDGE);
+  const birthPlain=buildBirthPlainInsight(MEIMEI);
+  const animalParts=getAnimalTypeSummaryParts();
+  return [
+    {
+      label:'姓名判断',
+      items:buildDossierFoundationItems([
+        namePlain?.overview,
+        namePlain?.timing,
+        namePlain?.advice,
+        '対話と調整の力で場を整えやすい流れです。',
+        '表に残す呼び名と本来の土台を分けて読んでいます。',
+      ],[
+        '名前の流れは、調整と継続で力が出ます。',
+        '押し出す場面と受け止める場面の切り替えが鍵です。',
+        '面倒見の良さを抱え込みに変えないことが大切です。',
+        '対話の中で評価を積み上げやすい土台です。',
+        '表に残す呼び名と本来の土台を分けて読んでいます。',
+      ]),
+    },
+    {
+      label:'四柱推命',
+      items:buildDossierFoundationItems([
+        birthPlain?.overview,
+        birthPlain?.timing,
+        birthPlain?.advice,
+        '管理と立て直しが、今の判断を支える流れです。',
+        '現実を整えるほど、判断の輪郭が安定します。',
+      ],[
+        '生まれの流れは、観察と調整で力が出ます。',
+        '急ぐより、現実を整えるほど読みが安定します。',
+        '学びや内省が、次の判断の支えになります。',
+        '管理と立て直しが強みに変わりやすい時期です。',
+        '感情だけでなく、続けられる形が鍵になります。',
+      ]),
+    },
+    {
+      label:'動物タイプ診断',
+      items:buildDossierFoundationItems([
+        animalParts?.oneLine,
+        animalParts?.strength,
+        animalParts?.caution,
+        animalParts?.inConsultation,
+        animalParts?.name&&!/結果/.test(animalParts.name)?`${animalParts.name}タイプの反応として読んでいます。`:'',
+      ],[
+        '反応の出方から、力が戻る条件を読んでいます。',
+        '意味のあることほど、深く集中しやすいタイプです。',
+        '自由度が低い場所では、熱が落ちやすくなります。',
+        '納得できる目的があるほど、強みが表に出ます。',
+        '今の迷いは、自分の軸を取り戻す合図です。',
+      ]),
+    },
+  ];
 }
 
 function getDossierReadingDigest(kind='len'){
   const raw=kind==='orc'?LAST_OUTPUTS.orc:LAST_OUTPUTS.len;
-  const source=redactDossierPrivateNames(String(raw||''))
+  const source=sanitizeRashinVisibleText(redactDossierPrivateNames(String(raw||'')))
     .replace(/<[^>]+>/g,' ')
     .replace(/\r\n?/g,'\n')
     .trim();
@@ -11401,7 +11469,7 @@ function getDossierReadingDigests(){
   return [
     {title:'ルノルマンから見えたこと',copy:getDossierReadingDigest('len')},
     {title:'オラクルが示す向き合い方',copy:getDossierReadingDigest('orc')},
-  ].map(item=>({...item,copy:redactDossierPrivateNames(item.copy)})).filter(item=>item.copy);
+  ].map(item=>({...item,copy:sanitizeRashinVisibleText(redactDossierPrivateNames(item.copy))})).filter(item=>item.copy);
 }
 
 function renderDossierReadingDigest(){
@@ -11423,6 +11491,7 @@ function renderDossierReadingDigest(){
 
 function renderDossierSaveCard(card){
   card=resolveDossierCardData(card);
+  const foundationSections=getDossierFoundationBulletSections();
   return`
     <article class="dossier-save-card">
       <div class="dossier-save-visual">
@@ -11451,22 +11520,12 @@ function renderDossierSaveCard(card){
       </div>
       <div class="dossier-save-details">
         <div class="dossier-save-detail-grid">
-          <div class="dossier-save-section">
-            <div class="dossier-save-heading">整う兆し</div>
-            ${renderDossierConditionList(card.REMAIN_CONDITIONS)}
-          </div>
-          <div class="dossier-save-section">
-            <div class="dossier-save-heading">気をつけること</div>
-            ${renderDossierConditionList(card.MOVE_CONDITIONS)}
-          </div>
-          <div class="dossier-save-section">
-            <div class="dossier-save-heading">まだ見えていない点</div>
-            ${renderDossierConditionList(card.HOLD_CONDITIONS||[])}
-          </div>
-        </div>
-        <div class="dossier-save-section">
-          <div class="dossier-save-heading">保存キーワード</div>
-          <div class="dossier-chip-row dossier-save-keywords">${card.KEYWORDS.map(item=>`<div class="dossier-chip">${escapeHtml(item)}</div>`).join('\n')}</div>
+          ${foundationSections.map(section=>`
+            <div class="dossier-save-section">
+              <div class="dossier-save-heading">${escapeHtml(section.label)}</div>
+              ${renderDossierConditionList(section.items)}
+            </div>
+          `).join('\n')}
         </div>
       </div>
     </article>`;
@@ -11485,24 +11544,21 @@ function detectDossierCardQualityIssues(data={},options={}){
   const primary=normalizePrimaryThemeValue(focus);
   const text=buildDossierPlainText(card);
   const displayText=[text,options.renderedText||''].join('\n');
-  const conditionGroups=[
-    {label:'整う兆し',items:card.REMAIN_CONDITIONS||[]},
-    {label:'気をつけること',items:card.MOVE_CONDITIONS||[]},
-    {label:'まだ見えていない点',items:card.HOLD_CONDITIONS||[]},
-  ];
+  const conditionGroups=getDossierFoundationBulletSections();
   if(text.length>1000) issues.push('羅針カードが1000字を超えている');
   if(text.length>800) issues.push('羅針カードが800字を超えている');
+  issues.push(...detectRashinVisibleTextPolicyIssues(displayText,'羅針カード'));
   if(containsDossierPrivateName(displayText)) issues.push('羅針カードに本名または姓名判断用の名前が含まれている');
   if(/[^\n。]{10,},[^\n。]{10,}/.test(text)) issues.push('羅針カードにカンマ区切り配列のような表示がある');
   issues.push(...detectBrokenDecisionCriteriaPhraseIssues(text,'羅針カード'));
   if(/Q[:：]|A[:：]|【相談者の補足|相談者の補足整理|追加質問への回答/.test(text)) issues.push('羅針カード本体に追加質問rawが混入している');
   if(/No\.\d+|カード番号|配置名|中心十字|下の段|上の段|現状の列|未来の列|右側の流れ|左側の流れ/.test(text)) issues.push('羅針カード本体に内部根拠やカード番号が混入している');
   if(/保存カードやPDFには含めません|根拠を見る|土台から見えたこと|追加質問から見えたこと/.test(text)) issues.push('羅針カード本体に根拠詳細が混ざっている');
+  if(new RegExp('保存'+'キーワード').test(displayText)) issues.push('羅針カードに不要なキーワード欄が残っている');
   if(/進む条件|止まる条件|残る条件|動く条件|保留条件|関わる条件|距離を置く条件|今週の一手|7日以内|30日以内|確認してください|書き出してください|材料を集め/.test(text)) issues.push('羅針カードに旧方針の条件表または作業指示が混入している');
   if(/です。があるなら|ことです。があるなら|確認してから選ぶことです。が/.test(displayText)) issues.push('羅針カードに接続崩れがあります');
   conditionGroups.forEach(group=>{
-    if((group.items||[]).length<2) issues.push(`${group.label}が2項目未満`);
-    if((group.items||[]).length>2) issues.push(`${group.label}が2項目を超えている`);
+    if((group.items||[]).length!==5) issues.push(`${group.label}が5行ではない`);
     const seen=new Set();
     (group.items||[]).forEach(item=>{
       if(isDossierIncompleteText(item)) issues.push(`${group.label}に文途中切りがある`);
@@ -11525,7 +11581,6 @@ function detectDossierCardQualityIssues(data={},options={}){
     issues.push('羅針カードの箇条書きが表示テキストで連結して見える可能性があります');
   }
   if(!card.CLOSING||isDossierIncompleteText(card.CLOSING)) issues.push(`${INTEGRATION_CLOSING_HEADING}がない、または未完文`);
-  if((card.KEYWORDS||[]).length<4||(card.KEYWORDS||[]).length>6) issues.push('保存キーワードが4〜6個ではない');
   return Array.from(new Set(issues));
 }
 
@@ -12627,30 +12682,33 @@ function renderClarifyScreen(){
   container.innerHTML='';
   if(!CLARIFY_ACTIVE_QUESTIONS.length) CLARIFY_ACTIVE_QUESTIONS=buildClarifyQuestions();
   if(!CLARIFY_ACTIVE_QUESTIONS.length) return;
-  if(progressEl) progressEl.textContent=`追加確認 ${CLARIFY_ACTIVE_QUESTIONS.length}問`;
+  if(progressEl) progressEl.textContent=`深める問い ${CLARIFY_ACTIVE_QUESTIONS.length}問`;
 
   CLARIFY_ACTIVE_QUESTIONS.forEach((qDef,i)=>{
     const block=document.createElement('div');
     block.className='clarify-q';
     block.dataset.qid=qDef.id;
     const taId=`ct-${qDef.id}`;
-    const badgeHtml=qDef.badge
-      ?`<div class="clarify-q-badge">見えていない点 <span>${escapeHtml(qDef.badge)}</span></div>`
+    const visibleBadge=sanitizeRashinVisibleText(qDef.badge||'');
+    const visibleQuestion=sanitizeRashinVisibleText(qDef.q||'');
+    const visibleHint=sanitizeRashinVisibleText(qDef.hint||'');
+    const badgeHtml=visibleBadge
+      ?`<div class="clarify-q-badge">見えていない点 <span>${escapeHtml(visibleBadge)}</span></div>`
       :'';
-    const hintHtml=qDef.hint
-      ?`<div class="clarify-q-hint">${escapeHtml(qDef.hint)}</div>`
+    const hintHtml=visibleHint
+      ?`<div class="clarify-q-hint">${escapeHtml(visibleHint)}</div>`
       :'';
     const tmplBtns=(qDef.templates||[]).map(t=>{
-      const safe=escapeHtml(t);
+      const safe=escapeHtml(sanitizeRashinVisibleText(t));
       return `<button class="tmpl-btn" data-target="${taId}" data-tmpl="${safe}" onclick="setTemplate(this)">${safe}</button>`;
     }).join('');
     block.innerHTML=`
       <div class="clarify-q-num">質問 ${String(i+1).padStart(2,'0')}</div>
       ${badgeHtml}
-      <div class="clarify-q-text">${escapeHtml(qDef.q)}</div>
+      <div class="clarify-q-text">${escapeHtml(visibleQuestion)}</div>
       ${hintHtml}
       <div class="tmpl-answers">${tmplBtns}</div>
-      <textarea class="clarify-textarea" id="${taId}" maxlength="3000" placeholder="選択肢を選ぶか、自由に書いてください。"></textarea>`;
+      <textarea class="clarify-textarea" id="${taId}" maxlength="3000" placeholder="選択肢を選ぶか、今の言葉で残せます。"></textarea>`;
     container.appendChild(block);
   });
 }
@@ -12674,10 +12732,10 @@ function collectClarifyAnswers(){
     if(!def) return;
     answers[qid]={
       id:def.id,
-      badge:def.badge,
+      badge:sanitizeRashinVisibleText(def.badge||''),
       anchor:def.anchor||'',
-      hint:def.hint||'',
-      q:def.q,
+      hint:sanitizeRashinVisibleText(def.hint||''),
+      q:sanitizeRashinVisibleText(def.q||''),
       a:ta.value.trim(),
     };
   });
@@ -12706,7 +12764,7 @@ function getClarifyEntries(){
     return values.flatMap((entry,entryIndex)=>
       (entry.qs||[]).map((qa,qaIndex)=>({
         id:`legacy-${entryIndex}-${qaIndex}`,
-        badge:entry.card||'補足確認',
+        badge:entry.card||'補足の焦点',
         anchor:'',
         q:qa.q||'',
         a:qa.a||'',
@@ -12715,7 +12773,7 @@ function getClarifyEntries(){
   }
   return values.map((entry,index)=>({
     id:entry.id||`clarify-${index}`,
-    badge:entry.badge||'補足確認',
+    badge:entry.badge||'補足の焦点',
     anchor:entry.anchor||'',
     hint:entry.hint||'',
     q:entry.q||'',
@@ -12729,19 +12787,20 @@ function hasClarifyAnswers(){
 
 function getClarifyDisplayLabel(entry={}){
   const map={
-    core:'白黒つけたい核心',
-    mismatch:'動けない理由',
+    core:'迷いの核心',
+    mismatch:'止まっている理由',
     branch:'分かれ道',
     readiness:'今の向き合い方',
     locus:'影響している相手',
-    ideal:'持ち帰りたい判断軸',
+    ideal:'残したい羅針',
     theme_priority:'分かれ道',
     ambiguity:'言葉にしきれていない違和感',
     blocker:'止まっている理由',
     people:'影響している相手',
-    positive:'整う兆し',
+    positive:'安心の兆し',
     oracle_action:'今の向き合い方',
     decision_branch:'分かれ道',
+    reconciliation_context:'手放せない理由',
   };
   return map[entry.id]||entry.badge||'見えていない点';
 }
@@ -13004,9 +13063,9 @@ function buildClarifyThemePriorityQuestion(ctx){
   const first=labels[0]||'ひとつ目のテーマ';
   const second=labels[1]||'もう一方のテーマ';
   return makeClarifyCandidate(
-    'theme_priority','主テーマの確認',buildClarifyAnchor(ctx.coreCard||ctx.currentOrc,'焦点を絞るカード'),
+    'theme_priority','先に見たいこと',buildClarifyAnchor(ctx.coreCard||ctx.currentOrc,'焦点を絞るカード'),
     `相談文には${first}と${second}が両方あります。今回先に読みたいのは、${first}の判断ですか。それとも${second}の判断ですか？`,
-    '複数テーマが混ざっているため、先に読む主訴を決めると最終判断がぶれにくくなります。',
+    '複数テーマが混ざっているため、先に見る焦点が立つと答えの輪郭が濃くなります。',
     [`${first}を先に見たい`,`${second}を先に見たい`,`${first}は背景で、${second}が主テーマ`,`${second}は背景で、${first}が主テーマ`],
     98,'theme_priority',{answeredByPattern:/今回は[^。！？\n]*(先に|優先|主軸|主テーマ)|主テーマは|先に見たいのは/}
   );
@@ -13027,11 +13086,11 @@ function buildClarifyAmbiguityQuestion(ctx){
       :`「${subject}」でいま一番はっきりしていないのは、相手の気持ち・関係の形・自分の本音のどれに近いですか？`;
     templates=isWork
       ?['評価がどう変わるかが見えない','収入や条件が不透明','続けた先の成長が見えない','辞めた後の道がまだ見えない']
-      :['相手の気持ちが読めない','関係の形が曖昧','自分の本音が揺れている','確認すると関係が崩れそうで怖い'];
+      :['相手の気持ちが読めない','関係の形が曖昧','自分の本音が揺れている','踏み込むと関係が崩れそうで怖い'];
   }else if(card.id===26){
     q=isWork
-      ?`「${subject}」について、まだ職場や比較先に確認できていないことがあるなら、それは何ですか？`
-      :`「${subject}」について、まだ相手に確認できていないことがあるなら、それは何ですか？`;
+      ?`「${subject}」について、職場や比較先でまだ腑に落ちていない点があるなら、それは何ですか？`
+      :`「${subject}」について、相手との間でまだ安心に変わっていない点があるなら、それは何ですか？`;
     templates=isWork
       ?['評価や待遇の見込み','異動や転職先の条件','続けた場合に残る経験','自分が何を優先してよいか']
       :['相手の気持ち','今後会う意思','過去の原因への受け止め方','連絡や返信の温度感'];
@@ -13048,11 +13107,11 @@ function buildClarifyAmbiguityQuestion(ctx){
       ?['相手の反応で揺れる','周囲の目が気になる','期待しすぎて苦しくなる','自分の直感を信じきれない']
       :['評価が気になる','周囲の目が気になる','期待と現実の差で揺れる','自分の判断を信じきれない'];
   }else{
-    q=`「${subject}」について、まだ言葉にできていない不安や未確認の点があるなら、それは何ですか？`;
-    templates=['相手や環境の本音が分からない','まだ確認していないことがある','自分の気持ちがまとまっていない','どこまで信じてよいか迷う'];
+    q=`「${subject}」について、まだ言葉にできていない不安や腑に落ちていない点があるなら、それは何ですか？`;
+    templates=['相手や環境の本音が分からない','まだ腑に落ちていないことがある','自分の気持ちがまとまっていない','どこまで信じてよいか迷う'];
   }
   return makeClarifyCandidate(
-    'ambiguity','未確認の本音',anchor,q,
+    'ambiguity','言葉にしきれていない違和感',anchor,q,
     '曖昧さを示すカードが出ているため、ここを言葉にすると最終判断が強くなります。',
     templates,91,'ambiguity',{card,answeredByPattern:/確認済み|すでに[^。！？\n]*(聞いた|確認した|話した)|もう[^。！？\n]*(聞いた|確認した|伝えた)/}
   );
@@ -13115,7 +13174,7 @@ function buildClarifyPeopleQuestion(ctx){
   let q='';
   let templates=[];
   if((card.id===28||card.id===29)&&isLove){
-    q='今回見たい相手について、連絡の有無・会う姿勢・気持ちの読みにくさのうち、どこを一番確認したいですか？';
+    q='今回見たい相手について、連絡の有無・会う姿勢・気持ちの読みにくさのうち、どこが一番引っかかっていますか？';
     templates=['連絡や返信の温度感','会おうとする姿勢','気持ちが読めない理由','過去の原因への向き合い方'];
   }else if(card.id===15&&isWork){
     q='いま一番影響が大きいのは、上司や権限者の判断・収入面・自分への圧のどれに近いですか？';
@@ -13137,8 +13196,8 @@ function buildClarifyPeopleQuestion(ctx){
     templates=['相手本人','上司や同僚','家族や周囲','自分自身の反応'];
   }
   return makeClarifyCandidate(
-    'people','人物の焦点',anchor,q,
-    '人物性のあるカードが出ているため、誰の態度を見るかを絞ります。',
+    'people','影響している相手',anchor,q,
+    '人物性のあるカードが出ているため、誰の態度や距離感が流れを左右しているかを見ます。',
     templates,86,'people',{card}
   );
 }
@@ -13154,8 +13213,8 @@ function buildClarifyPositiveQuestion(ctx){
   let templates=[];
   if(card.id===33){
     q=isWork
-      ?'今の仕事で、これが確認できたら残るか動くかを判断できると思える条件は何ですか？'
-      :`「${subject}」で、これが確認できたら前に進めると思える相手の反応や一言は何ですか？`;
+      ?'今の仕事で、これが見えたら心が決まりやすいと思える兆しは何ですか？'
+      :`「${subject}」で、これが見えたら前に進めると思える相手の反応や一言は何ですか？`;
     templates=isWork
       ?['収入や評価の見通し','成長につながる役割','働きやすさの改善','次の準備が具体化すること']
       :['相手から連絡が来る','会う意思が見える','過去の原因を話せる','言葉と行動が一致する'];
@@ -13183,7 +13242,7 @@ function buildClarifyPositiveQuestion(ctx){
     templates=['連絡や会話が増えた','状況説明が増えた','自分の不安が少し減った','現実的な条件が見えてきた'];
   }
   return makeClarifyCandidate(
-    'positive','整う兆し',anchor,q,
+    'positive','安心の兆し',anchor,q,
     '好転を示すカードが出ているため、どこに安心が戻りそうかを言葉にします。',
     templates,83,'positive',{card}
   );
@@ -13255,7 +13314,7 @@ function buildClarifyReconciliationQuestion(ctx){
   const subject=getClarifyThemeKeyword(ctx);
   let q='元恋人ともう一度進めるかを判断するために、過去の別れの原因で「もう繰り返したくないこと」は何ですか？';
   if(/過去の別れ|別れた原因|原因/.test(source)&&!/本気|向き合/.test(source)){
-    q='相手が本気で向き合っていると判断できる行動は何ですか？';
+    q='相手に信頼の温度があると感じる態度は何ですか？';
   }else if(/本気|向き合/.test(source)&&!/区切|止まる/.test(source)){
     q='これが続くなら区切るべきだと思う相手の態度は何ですか？';
   }else if(/区切|止まる/.test(source)){
@@ -13263,7 +13322,7 @@ function buildClarifyReconciliationQuestion(ctx){
   }
   const profile=getLoveSubtypeProfile('reconciliation');
   return makeClarifyCandidate(
-    'reconciliation_context','復縁の核心',buildClarifyAnchor(ctx.coreCard||ctx.blockerCard||ctx.ambiguityCard,'復縁の分かれ目'),
+    'reconciliation_context','手放せない理由',buildClarifyAnchor(ctx.coreCard||ctx.blockerCard||ctx.ambiguityCard,'復縁の分かれ目'),
     `「${subject}」について、${q}`,
     '復縁相談では、好きかどうかだけでなく、過去の原因と信頼を作り直せる温度が大事になります。',
     profile?.clarify?.templates||['過去の原因から逃げていない感覚','曖昧な連絡だけで続いている不安','寂しさだけか本音か分からない'],
@@ -13385,33 +13444,33 @@ function getPremiumBriefLenSignal(card,ctx={}){
   const isWork=isClarifyWork(ctx);
   const isReunion=isClarifyReunion(ctx);
   if(card.id===6) return isWork?'評価・収入・続けた先がまだ曇っている':'相手の気持ち、関係の形、自分の本音のどれかが曇っている';
-  if(card.id===26) return isWork?'職場や比較先にまだ確認できていない情報がある':'相手にまだ確認できていない本音や事実がある';
+  if(card.id===26) return isWork?'職場や比較先でまだ腑に落ちていない点がある':'相手との間でまだ安心に変わっていない点がある';
   if(card.id===21) return isWork?'収入・評価・体力・次の準備のいずれかが壁になっている':'距離・タイミング・相手の態度・自分の怖さのいずれかが壁になっている';
   if(card.id===36) return 'もう背負いたくない負担が判断を重くしている';
   if(card.id===23) return '続けるほど少しずつ削られるものがある';
   if(card.id===11) return '同じ話し合い、不安、ストレスが繰り返されやすい';
   if(card.id===8) return '今の形を終わらせる、または切り替える段階が近い';
   if(card.id===10) return '切り替えの決断を急ぎすぎると痛みが出やすい';
-  if(card.id===33) return 'これが確認できたら進めるという鍵を探す';
-  if(card.id===16) return '進みたい未来像が見えるかを確認する';
+  if(card.id===33) return 'これが見えたら進めるという鍵を探す';
+  if(card.id===16) return '進みたい未来像が見えるかを読む';
   if(card.id===9) return '嬉しさが安心なのか一時的な喜びなのかを分ける';
   if(card.id===1) return '連絡、提案、行動の変化を具体的に見る';
   if(card.id===28||card.id===29) return isReunion?'元恋人の態度、連絡、過去への向き合い方を行動で見る':'相手本人の態度と距離感を行動で見る';
-  if(card.id===15) return isWork?'上司、権限者、収入面、自分への圧を確認する':'強い立場の人、守る力、圧のかかり方を確認する';
-  if(card.id===18) return '信頼できる支えが誰か、または何かを確認する';
+  if(card.id===15) return isWork?'上司、権限者、収入面、自分への圧を読む':'強い立場の人、守る力、圧のかかり方を読む';
+  if(card.id===18) return '信頼できる支えが誰か、または何かを読む';
   if(card.id===7||card.id===14) return '信用しきれない言葉、態度、第三者要因を現実に落とす';
   if(isLove) return '相手の心を断定せず、連絡・会う姿勢・向き合い方で読む';
   if(isWork) return '気持ちだけでなく、収入・評価・成長・消耗度で読む';
-  return '相談者の現実の判断材料へ翻訳する';
+  return '相談者の現実の判断根拠へ翻訳する';
 }
 
 function getPremiumBriefOracleSignal(card){
   const direction=getClarifyOracleDirection(card);
-  if(direction==='move') return '小さく動く。今週できる確認、連絡、比較、下書きへ落とす';
+  if(direction==='move') return '小さく動くより先に、隠してきた本音へ焦点を戻す';
   if(direction==='support') return '合わせすぎを整える。相手や環境に寄せすぎている場面を見る';
   if(direction==='change') return '関係や働き方を少し変える。負荷、距離、頻度、役割を調整する';
-  if(direction==='reflect') return '急がず確認する。今週ひとつだけ集める情報や反応を決める';
-  return '選ぶ。確認する、伝える、待つ、距離を置くのどれかへ絞る';
+  if(direction==='reflect') return '急がず、違和感の出どころに焦点を戻す';
+  return '選ぶ。伝える、待つ、距離を置くのどこに心が傾いているかを見る';
 }
 
 function collectConsultationMirrorTerms(context={},max=8){
@@ -14388,9 +14447,9 @@ function normalizeLenormandReadingText(text='',context={}){
     recordPaidDebugQuality('len_normalize',[...undrawnIssues,'ルノルマン本文の構造欠落、途中終了、または未出カード混入を検出したため、カード由来fallbackへ切り替えました'].filter(Boolean));
     const fallbackName=context.name||(typeof getFullname==='function'?getFullname():'')||'あなた';
     const fallbackText=buildRichLenFallback(fallbackName,context.cat||'総合');
-    return formatLenormandFourSections(fallbackText)||fallbackText;
+    return sanitizeRashinVisibleText(formatLenormandFourSections(fallbackText)||fallbackText);
   }
-  return structured;
+  return sanitizeRashinVisibleText(structured);
 }
 
 function completeDanglingReadingLine(line=''){
@@ -14496,7 +14555,7 @@ function getRashinReadingPolicyPrompt(scope='all'){
 - 羅針カード: SNS保存・見返し用の短い判断カード。長文要約ではなく、判断軸を思い出せる短い言葉にする。
 
 【ユーザー表示で禁止】
-確認してください / 確認する / 書き出してください / 書き出す / 材料を集めてください / 材料を集める / 比較してください / 比較する / メモしてください / メモする / 整理してください / 整理する / 情報収集してください / 情報収集する / 条件を洗い出してください / 条件を洗い出す / 7日以内 / 30日以内 / 今週の一手 / 次の一手 / 機械的な条件表 / 進む条件 / 止まる条件 / 残る条件 / 動く条件 / 保留条件 / 関わる条件 / 距離を置く条件。
+確認してください / 確認する / 確認できる / 確認できない / 確認したとき / まだ確認していない / 本気度確認 / 条件確認 / 判断条件 / 書き出してください / 書き出す / 材料を集めてください / 材料を集める / 比較してください / 比較する / メモしてください / メモする / 整理してください / 整理する / 情報収集してください / 情報収集する / 条件を洗い出してください / 条件を洗い出す / 7日以内 / 30日以内 / 今週の一手 / 次の一手 / 機械的な条件表 / 進む条件 / 止まる条件 / 残る条件 / 動く条件 / 保留条件 / 関わる条件 / 距離を置く条件。
 内部では判断ロジックとして使ってよいが、表では現実の見立て、違和感の言語化、内面の整え方、羅針の指針へ変換してください。
 
 【品質】
@@ -14506,34 +14565,52 @@ function getRashinReadingPolicyPrompt(scope='all'){
 function sanitizeRashinVisibleText(text=''){
   let output=String(text||'');
   const replacements=[
-    [/確認してください/g,'見えてきます'],
-    [/確認して下さい/g,'見えてきます'],
-    [/確認する/g,'見えてくる'],
-    [/確認できる/g,'見えている'],
-    [/確認できない/g,'見えていない'],
+    [/ご確認ください/g,'目を向ける流れです'],
+    [/確認してください/g,'目を向ける流れです'],
+    [/確認して下さい/g,'目を向ける流れです'],
+    [/まだ確認していないことが多い/g,'安心の根拠がまだ薄い'],
+    [/まだ確認していない/g,'まだ安心の根拠が薄い'],
+    [/確認できていないこと/g,'安心に変わっていない点'],
+    [/確認できていない/g,'安心の根拠が薄い'],
+    [/確認したとき/g,'向き合った場面'],
+    [/確認した時/g,'向き合った場面'],
+    [/確認してから/g,'輪郭が見えてから'],
+    [/確認できる条件/g,'現実に見えている根拠'],
+    [/確認できる事実/g,'現実に見えている根拠'],
+    [/確認できる/g,'現実に見えている'],
+    [/確認できない/g,'安心の根拠が薄い'],
+    [/本気度確認/g,'信頼の温度'],
+    [/条件確認/g,'安心の根拠'],
+    [/確認材料/g,'見えている根拠'],
+    [/確認ポイント/g,'見えている焦点'],
+    [/確認不足/g,'安心の根拠が薄い'],
+    [/確認済み/g,'すでに見えている'],
+    [/何を確認/g,'どこに目を向けるか'],
+    [/確認する/g,'輪郭が見えてくる'],
     [/書き出してください/g,'言葉にしてみる余地があります'],
     [/書き出す/g,'言葉になる'],
-    [/材料を集めてください/g,'判断材料が見えてくる流れです'],
-    [/材料を集める/g,'判断材料が見えてくる'],
+    [/材料を集めてください/g,'判断の輪郭が濃くなる流れです'],
+    [/材料を集める/g,'判断の輪郭が濃くなる'],
     [/比較してください/g,'違いが見えてきます'],
     [/比較する/g,'違いが見えてくる'],
     [/メモしてください/g,'心に残ります'],
     [/メモする/g,'心に留まる'],
-    [/整理してください/g,'整っていきます'],
-    [/整理する/g,'整っていく'],
+    [/整理してください/g,'輪郭が整っていきます'],
+    [/整理する/g,'輪郭が整う'],
     [/情報収集してください/g,'見える情報を増やす余地があります'],
     [/情報収集する/g,'見える情報が増えていく'],
     [/条件を洗い出してください/g,'大事な点が見えてきます'],
     [/条件を洗い出す/g,'大事な点が見えてくる'],
-    [/見てください/g,'見えてきます'],
-    [/決めてください/g,'見えてきます'],
-    [/準備してください/g,'余地が見えてきます'],
+    [/見てください/g,'見ることが大切です'],
+    [/決めてください/g,'決まっていきます'],
+    [/準備してください/g,'整う余地があります'],
     [/7日以内の一手/g,INTEGRATION_ACTION_GUIDE_HEADING],
     [/30日以内に見ること/g,INTEGRATION_FLOW_HEADING],
     [/今週の一手/g,INTEGRATION_ACTION_GUIDE_HEADING],
     [/次の一手/g,INTEGRATION_ACTION_GUIDE_HEADING],
     [/今回の最終判断/g,INTEGRATION_FINAL_HEADING],
     [/内なる羅針盤/g,ORACLE_COMPASS_HEADING],
+    [/判断条件/g,'判断軸'],
     [/進む条件/g,'進める兆し'],
     [/進める条件/g,'進める兆し'],
     [/止まる条件/g,'立ち止まるサイン'],
@@ -14559,6 +14636,19 @@ function sanitizeRashinVisibleText(text=''){
     output=output.replace(pattern,replacement);
   });
   return output.replace(/\n{3,}/g,'\n\n').trim();
+}
+
+function detectRashinVisibleTextPolicyIssues(text='',label='text'){
+  const source=String(text||'');
+  const rules=[
+    {name:'確認系の作業語',pattern:/確認してください|確認して下さい|ご確認ください|確認する|確認できる|確認できない|確認したとき|確認した時|まだ確認していない|本気度確認|条件確認|確認材料|確認ポイント|確認不足/},
+    {name:'書く・集める・比較する作業語',pattern:/書き出してください|書き出す|材料を集めてください|材料を集める|比較してください|比較する|メモしてください|メモする|整理してください|整理する|情報収集してください|情報収集する|条件を洗い出してください|条件を洗い出す/},
+    {name:'期限つき作業指示',pattern:/7日以内|30日以内|今週の一手|次の一手/},
+    {name:'機械的な条件表',pattern:/進む条件|止まる条件|残る条件|動く条件|保留条件|関わる条件|距離を置く条件|条件A|条件B|条件C|Aなら進む|Bなら止まる|Cなら保留|判断条件/},
+  ];
+  return rules
+    .filter(rule=>rule.pattern.test(source))
+    .map(rule=>`${label}に${rule.name}が残っています`);
 }
 
 function buildWorkFinalJudgmentText(name='あなた',cat='総合',theme='',context={}){
@@ -14749,44 +14839,44 @@ function getIntegrationSupplementItems(heading='',focus={},cat='総合',theme=''
   const subtypeHold=getLoveSubtypeSupplement(ctx,'hold');
   const byTheme={
     work_life_direction:{
-      positive:[`今の環境で${criteriaChoice}が確認できる。`,'続けることで、次の選択肢に使える材料が残る。','条件や評価が変わる余地を確認できる。'],
-      negative:[`負担だけが増え、${criteria}が確認できない。`,'本音を出すほど居づらくなる。','比較候補を見たときに気持ちが軽くなる。',`${timing}準備できる材料が見えている。`],
-      hold:['比較材料が足りない。','不安が強い日に一気に決めようとしている。','相手や環境の反応、条件をまだ確認していない。','続けるか変えるかを一度に決めようとしている。'],
+      positive:[`今の環境に${criteriaChoice}が現実として返っている。`,'続けることで、次の選択肢にも使える経験が残る。','評価や役割が変わる余地がある。'],
+      negative:[`負担だけが増え、${criteria}が戻ってこない。`,'本音を出すほど居づらくなる。','別の候補を思うだけで気持ちが軽くなる。',`${timing}次へ移れる輪郭が見えている。`],
+      hold:['判断の根拠がまだ薄い。','不安が強い日に一気に決めようとしている。','相手や環境の反応がまだ安心に変わっていない。','続けるか変えるかを一度に決めようとしている。'],
     },
     career:{
-      positive:[`今の選択で${criteriaChoice}が確認できる。`,'続けることで次の選択肢に使える材料が残る。','相談や調整で条件が変わる余地がある。'],
-      negative:[`続けても${criteria}が確認できない。`,'負担だけが増え、見返りや納得感が戻らない。','別候補を見たときに気持ちが軽くなる。'],
-      hold:['比較材料が足りない。','疲れた勢いで決めようとしている。','条件や反応をまだ確認していない。'],
+      positive:[`今の選択に${criteriaChoice}が現実として残っている。`,'続けることで次の選択肢にも使える経験が残る。','相談や調整で働き方が変わる余地がある。'],
+      negative:[`続けても${criteria}が戻ってこない。`,'負担だけが増え、見返りや納得感が戻らない。','別候補を思うだけで気持ちが軽くなる。'],
+      hold:['判断の根拠がまだ薄い。','疲れた勢いで決めようとしている。','条件や反応がまだ安心に変わっていない。'],
     },
     love:{
       positive:['不安や本音を伝えたとき、相手が向き合う。',`関わった後に${criteriaChoice}が増える。`,'言葉だけでなく、行動の安定が見える。'],
-      negative:['曖昧さや一方的な我慢が続く。','大事な確認を避けられ、安心感が増えない。','待つ側にだけ負担が偏る。'],
-      hold:['まだ確認していないことが多い。','寂しさや不安が強い日に決めようとしている。','相手の反応を想像だけで補っている。'],
+      negative:['曖昧さや一方的な我慢が続く。','大事な話が避けられ、安心感が増えない。','待つ側にだけ負担が偏る。'],
+      hold:['安心の根拠がまだ薄い。','寂しさや不安が強い日に決めようとしている。','相手の反応を想像だけで補っている。'],
     },
     relationship:{
       positive:['関わることで自然体でいられる。',`距離を調整しても${criteria}が保てる。`,'境界線を伝えても関係が崩れない。'],
       negative:['関わるほど消耗や自己否定が増える。','境界線を越えられ、安心して関われない。','相手に合わせるほど自分の生活が乱れる。'],
-      hold:['距離感や役割が曖昧なままになっている。','相手の反応を確認していない。','不安な日に近づくか離れるかを決めようとしている。'],
+      hold:['距離感や役割が曖昧なままになっている。','相手の反応がまだ安心に変わっていない。','不安な日に近づくか離れるかを決めようとしている。'],
     },
     dual_concern:{
-      positive:['それぞれの悩みを分けて確認できる。','先に動かすテーマが一つに絞れている。',`確認後に${criteriaChoice}が残る。`],
-      negative:['複数の悩みを同じ不安で一気に決めようとしている。','どちらも確認しないまま負担だけが増えている。','一方の不安をもう一方で埋めようとしている。'],
-      hold:['優先順位がまだ決まっていない。','確認事項が混ざっている。','不安が強い日に両方の結論を出そうとしている。'],
+      positive:['それぞれの悩みを分けて見られている。','先に動かすテーマが一つに絞れている。',`焦点が立った後に${criteriaChoice}が残る。`],
+      negative:['複数の悩みを同じ不安で一気に決めようとしている。','どちらも輪郭が薄いまま負担だけが増えている。','一方の不安をもう一方で埋めようとしている。'],
+      hold:['優先順位がまだ決まっていない。','見たい焦点が混ざっている。','不安が強い日に両方の結論を出そうとしている。'],
     },
     money:{
-      positive:['収支と上限を確認してから動ける。',`その判断で${criteriaChoice}を守れる。`,'30日以内に見直せる数字がある。'],
+      positive:['収支と上限が見えたうえで動ける。',`その判断で${criteriaChoice}を守れる。`,'少し先まで見直せる数字がある。'],
       negative:['焦りや不安を埋めるためだけに動いている。','生活に必要な分まで使おうとしている。','比較材料や上限が決まっていない。'],
-      hold:['収支や上限がまだ見えていない。','家族や関係者への確認が終わっていない。','不安が強い日に決めようとしている。'],
+      hold:['収支や上限がまだ見えていない。','家族や関係者との合意がまだ薄い。','不安が強い日に決めようとしている。'],
     },
     family:{
       positive:['関わることで安心感や協力が増える。',`距離を調整しても${criteria}が保てる。`,'役割や負担を言葉にしても関係が崩れない。'],
       negative:['関わるほど負担や自己否定が増える。','役割を一方的に背負っている。','境界線を伝えても尊重されない。'],
-      hold:['家族内の役割や期待が曖昧なままになっている。','相手の反応を確認していない。','罪悪感が強い日に距離を決めようとしている。'],
+      hold:['家族内の役割や期待が曖昧なままになっている。','相手の反応がまだ安心に変わっていない。','罪悪感が強い日に距離を決めようとしている。'],
     },
     general:{
-      positive:[`その選択が${criteriaChoice}に合っている。`,'確認した後も納得感が残る。','小さく試しても生活が崩れない。'],
-      negative:['誰かに合わせるためだけの選択になっている。','確認しても同じ不安が繰り返される。','負担だけが増え、納得感が戻らない。'],
-      hold:['本音、条件、現実の情報が混ざっている。','まだ確認していないことが多い。','不安が強い日に決めようとしている。'],
+      positive:[`その選択が${criteriaChoice}に合っている。`,'向き合った後も納得感が残る。','小さく試しても生活が崩れない。'],
+      negative:['誰かに合わせるためだけの選択になっている。','向き合っても同じ不安が繰り返される。','負担だけが増え、納得感が戻らない。'],
+      hold:['本音、現実、安心の根拠が混ざっている。','安心の根拠がまだ薄い。','不安が強い日に決めようとしている。'],
     },
   };
   const themeItems=isReconciliationContext(ctx)
@@ -14922,6 +15012,7 @@ function detectPaidTextQualityIssues(key='',text=''){
   const issues=[];
   const source=String(text||'').trim();
   if(!source) return [`${key}が空です`];
+  issues.push(...detectRashinVisibleTextPolicyIssues(source,key));
   if(hasUnclosedJapaneseQuote(source)) issues.push(`${key}に閉じていない引用符があります`);
   const lines=source.split('\n');
   lines.forEach((line,index)=>{
@@ -15301,7 +15392,7 @@ ${getRashinReadingPolicyPrompt('quality')}
 - 土台詳細表示にも文途中省略が混じっていないか
 - 同じ助言を3回以上繰り返していないか
 - ルノルマン・オラクル・統合判断が同じ役割の助言を繰り返していないか
-- 羅針カードが長文鑑定書ではなく、一言結論・今の現実・整う兆し・気をつけること・今の流れ・${INTEGRATION_ACTION_GUIDE_HEADING}・${INTEGRATION_CLOSING_HEADING}の短い判断カードになっているか
+- 羅針カードが長文鑑定書ではなく、一言結論・今の現実・姓名判断・四柱推命・動物タイプ診断・今の流れ・${INTEGRATION_ACTION_GUIDE_HEADING}・${INTEGRATION_CLOSING_HEADING}の短い判断カードになっているか
 - 「整理してください」だけで終わっていないか
 - ルノルマン9枚の読みがあるか
 - オラクル3枚の助言があるか
@@ -15497,10 +15588,10 @@ function renderPaidCombinedOutputs(parsed,name,cat,theme,options={}){
     const lenSource=parsed.len||buildRichLenFallback(name,cat);
     const orcSource=parsed.orc||buildRichOrcFallback(name,cat,true);
     const integrationSource=parsed.integration||buildIntegratedFallback(name,cat,theme);
-    LAST_OUTPUTS.len=normalizeLenormandReadingText(lenSource,{...options,focus,cat,theme});
-    LAST_OUTPUTS.orc=normalizeOracleReadingText(normalizePaidReadingText(orcSource),{...options,focus});
+    LAST_OUTPUTS.len=sanitizeRashinVisibleText(normalizeLenormandReadingText(lenSource,{...options,focus,cat,theme}));
+    LAST_OUTPUTS.orc=sanitizeRashinVisibleText(normalizeOracleReadingText(normalizePaidReadingText(orcSource),{...options,focus}));
     const integrationText=normalizePaidReadingText(integrationSource);
-    LAST_OUTPUTS.integration=ensureFinalJudgmentText(integrationText,name,cat,theme,{...options,focus});
+    LAST_OUTPUTS.integration=sanitizeRashinVisibleText(ensureFinalJudgmentText(integrationText,name,cat,theme,{...options,focus}));
     recordPaidDebugNormalization('len',lenSource,LAST_OUTPUTS.len);
     recordPaidDebugNormalization('orc',orcSource,LAST_OUTPUTS.orc);
     recordPaidDebugNormalization('integration',integrationSource,LAST_OUTPUTS.integration);
@@ -16051,7 +16142,7 @@ ${lenInfo}${spreadAxisInfo}${pairAndChainInfo}${advancedLenInfo}
 ${keyCardInSpread}${ambigInfo}${personInfo}${cloudInfo}${ringInfo}
 
 上記の全情報を内部で使い切りつつ、メイン本文ではカード名や占術用語を最小限にしてください。カード名・配置・占術根拠は別の根拠レイヤーで表示するため、本文は現実の判断軸へ翻訳してください。
-相談者が読みたいのは「背景から何が続いているか」「いま何を意識しておくべきか」「今週どう動けばいいか」です。
+相談者が読みたいのは「背景から何が続いているか」「いま何を意識しておくべきか」「どこに判断軸を戻せばいいか」です。
 ${buildReadingOutputFormatGuide('len',is9,focus)}`;
 
   try{
@@ -16059,10 +16150,10 @@ ${buildReadingOutputFormatGuide('len',is9,focus)}`;
       taskKey:PLAN==='paid'?'paid':'free',
       images:buildCardImageRefs('len',PLAN==='paid'?'paid':'free'),
     });
-    LAST_OUTPUTS.len=normalizeLenormandReadingText(res,{focus,cat,theme});
+    LAST_OUTPUTS.len=sanitizeRashinVisibleText(normalizeLenormandReadingText(res,{focus,cat,theme}));
     renderFormattedResultText('r-len-block',LAST_OUTPUTS.len,'len');
   }catch(e){
-    LAST_OUTPUTS.len=normalizeLenormandReadingText(buildRichLenFallback(name,cat),{focus,cat,theme});
+    LAST_OUTPUTS.len=sanitizeRashinVisibleText(normalizeLenormandReadingText(buildRichLenFallback(name,cat),{focus,cat,theme}));
     renderFormattedResultText('r-len-block',LAST_OUTPUTS.len,'len');
   }
   await ensureStageMinimumTime('len',stageStartedAt);
@@ -16176,10 +16267,10 @@ ${buildReadingOutputFormatGuide('orc',false,focus)}`;
       taskKey:PLAN==='paid'?'paid':'free',
       images:buildCardImageRefs('orc',PLAN==='paid'?'paid':'free'),
     });
-    LAST_OUTPUTS.orc=normalizeOracleReadingText(res,{focus,cat,theme,clarifyText});
+    LAST_OUTPUTS.orc=sanitizeRashinVisibleText(normalizeOracleReadingText(res,{focus,cat,theme,clarifyText}));
     renderFormattedResultText('r-orc-block',LAST_OUTPUTS.orc,'orc');
   }catch(e){
-    LAST_OUTPUTS.orc=normalizeOracleReadingText(buildRichOrcFallback(name,cat,is3),{focus,cat,theme,clarifyText});
+    LAST_OUTPUTS.orc=sanitizeRashinVisibleText(normalizeOracleReadingText(buildRichOrcFallback(name,cat,is3),{focus,cat,theme,clarifyText}));
     renderFormattedResultText('r-orc-block',LAST_OUTPUTS.orc,'orc');
   }
   await ensureStageMinimumTime('orc',stageStartedAt);
@@ -16190,7 +16281,7 @@ ${buildReadingOutputFormatGuide('orc',false,focus)}`;
 async function runIntegration(){
   const stageStartedAt=Date.now();
   setResultStageStatus('integration','working');
-  setIntegrationLoading('結論を整えています','ここまでの読みを一本にまとめ、今どう動くかまで落とし込んでいます。');
+  setIntegrationLoading('結論を整えています','ここまでの読みを一本にまとめ、どこに判断軸を戻すかまで整えています。');
   const name=getReadingDisplayName();
   const cat=normalizeConsultationCategoryTag(document.getElementById('f-cat')?.value||'総合');
   const theme=document.getElementById('f-theme')?.value||'';
@@ -16309,12 +16400,12 @@ ${buildReadingOutputFormatGuide('integration',false,focus)}`;
       taskKey:PLAN==='paid'?'paid':'free',
       images:buildCardImageRefs('all',PLAN==='paid'?'paid':'free'),
     });
-    LAST_OUTPUTS.integration=ensureFinalJudgmentText(res,name,cat,theme,{focus,clarifyText:clarifyFull});
+    LAST_OUTPUTS.integration=sanitizeRashinVisibleText(ensureFinalJudgmentText(res,name,cat,theme,{focus,clarifyText:clarifyFull}));
     document.getElementById('r-aiload').style.display='none';
     document.getElementById('r-integration').style.display='block';
     renderFormattedResultText('r-integration',LAST_OUTPUTS.integration,'integration');
   }catch(e){
-    LAST_OUTPUTS.integration=ensureFinalJudgmentText(buildIntegratedFallback(name,cat,theme,{focus,clarifyText:clarifyFull}),name,cat,theme,{focus,clarifyText:clarifyFull});
+    LAST_OUTPUTS.integration=sanitizeRashinVisibleText(ensureFinalJudgmentText(buildIntegratedFallback(name,cat,theme,{focus,clarifyText:clarifyFull}),name,cat,theme,{focus,clarifyText:clarifyFull}));
     document.getElementById('r-aiload').style.display='none';
     document.getElementById('r-integration').style.display='block';
     renderFormattedResultText('r-integration',LAST_OUTPUTS.integration,'integration');
@@ -16413,7 +16504,7 @@ ${getRashinReadingPolicyPrompt('dossier-polish')}
 - カード名、占術名、並び、システム説明は一切出さない
 - HEADLINE・CORE・CLOSINGの中身が同じにならないよう各セクションの役割を明確に分ける
 - RECURRING は、鑑定履歴・相談テーマ・カードの反復から「繰り返し出ているテーマ」を1〜3文でまとめる。履歴が少ない場合は、今回の相談で繰り返し向き合いそうな判断テーマを書く
-- KEYWORDS には、動物タイプ診断のタグや決める目印になる言葉を優先して入れる（カード名は禁止）
+- キーワード欄は出力しない。羅針カードの表示枠には、姓名判断・四柱推命・動物タイプ診断の短い結果を使う
 - 不安を煽りすぎず、希望だけでも誤魔化さない
 - 相談者が占いを知らなくても自然に読める文体にする
 
@@ -16428,7 +16519,6 @@ ${getRashinReadingPolicyPrompt('dossier-polish')}
 [[WARNING]]1行ずつ2〜4項目。言い切りで書く[[/WARNING]]
 [[LUCK]]1行ずつ2〜4項目。実用的サインとして書く[[/LUCK]]
 [[RECURRING]]繰り返し出ているテーマを1〜3文で書く[[/RECURRING]]
-[[KEYWORDS]]/ 区切りで4〜6個[[/KEYWORDS]]
 [[CLOSING]]HEADLINEの繰り返しではなく「この先の自分をどう扱うか」に触れる[[/CLOSING]]`;
 
   const prompt=`以下は鑑定書の下書きです。
@@ -16456,7 +16546,7 @@ function buildPremiumDossierCardSystemPrompt(todayText){
 ${getRashinReadingPolicyPrompt('dossier')}
 
 守ること:
-- メインは一言結論、今の現実、整う兆し、気をつけること、今の流れ、${INTEGRATION_ACTION_GUIDE_HEADING}、${INTEGRATION_CLOSING_HEADING}だけに絞る
+- メインは一言結論、今の現実、姓名判断、四柱推命、動物タイプ診断、今の流れ、${INTEGRATION_ACTION_GUIDE_HEADING}、${INTEGRATION_CLOSING_HEADING}だけに絞る
 - ${isReconciliationContext(ctx)?'恋愛サブテーマは復縁。羅針カードでは「まだ好きか」ではなく「もう一度信頼を作れるか」「過去の原因に向き合えるか」「曖昧な連絡だけで続いていないか」を残す':'相談テーマに合わせたラベルと判断軸を使う'}
 - 羅針カードは占い結果の全文ではなく、あとで読み返す判断軸にする
 - 羅針カードはSNS投稿・画像共有される前提です。表示に使ってよい名前は内部資料の「呼び名」だけ。姓名判断用の本名、姓、名、ログイン名は絶対に出さない
@@ -16479,20 +16569,19 @@ ${getRashinReadingPolicyPrompt('dossier')}
 - TITLEは最大28字
 - ONE_LINEは最大42字
 - VERDICTは2〜3文、最大180字
-- DECISION_AXISは「整う兆し：...」「気をつけること：...」の形で各2項目まで
-- HOLD_CONDITIONSに「まだ見えていない点」を2項目まで入れる
+- DECISION_AXISは内部判断用。表示枠には使わず、条件表の見出しや作業指示にしない
+- HOLD_CONDITIONSは内部判断用。表示枠には使わず、見えていない違和感を自然な文章にする
 - ACTION7は1文だけ。作業指示ではなく、羅針の指針を書く
-- KEYWORDSは4〜6個
+- キーワード欄は出力しない。表示枠には姓名判断・四柱推命・動物タイプ診断の5行箇条書きを使う
 - CLOSINGは最大60字
 
 出力タグ:
 [[TITLE]]羅針カードのタイトル[[/TITLE]]
 [[ONE_LINE]]一言結論[[/ONE_LINE]]
 [[VERDICT]]今回の答え。2〜3文[[/VERDICT]]
-[[DECISION_AXIS]]整う兆しと気をつけることだけ。各2行まで。1行1項目[[/DECISION_AXIS]]
-[[HOLD_CONDITIONS]]まだ見えていない点を2行まで。1行1項目[[/HOLD_CONDITIONS]]
+[[DECISION_AXIS]]内部判断用。条件表にせず、短い自然文を1〜2行[[/DECISION_AXIS]]
+[[HOLD_CONDITIONS]]内部判断用。見えていない違和感を1〜2行[[/HOLD_CONDITIONS]]
 [[ACTION7]]羅針の指針を1文[[/ACTION7]]
-[[KEYWORDS]]4〜6個を / 区切り[[/KEYWORDS]]
 [[CLOSING]]${INTEGRATION_CLOSING_HEADING}[[/CLOSING]]
 [[EVIDENCE_SUMMARY]]根拠を見る用の短い要約。通常表示には出さない[[/EVIDENCE_SUMMARY]]`;
 }
@@ -16505,7 +16594,7 @@ function buildPremiumDossierCardPrompt(source){
 追加質問のraw回答、カード番号、配置名、履歴データは羅針カード本体に出さないでください。
 SNS投稿用のカードなので、表示名は内部資料の「呼び名」だけを使ってください。相談者の本名、姓名、姓、名、ログイン名は本文にも根拠にも出さないでください。
 機械的な条件表、7日以内、30日以内、確認する、書き出す、比較する、材料を集める、今週の一手は出さないでください。
-整う兆し、気をつけること、まだ見えていない点は最大2項目ずつ、羅針の指針は1文だけにしてください。
+表示枠の「姓名判断」「四柱推命」「動物タイプ診断」はアプリ側で5行ずつ整えるため、ここでは本名や生年月日を出さず、羅針の指針は1文だけにしてください。
 配列やカンマ区切りを本文に出さず、文途中で終わらせないでください。
 EVIDENCE_SUMMARYだけは、根拠を見る人向けに短く残してください。`;
 }
