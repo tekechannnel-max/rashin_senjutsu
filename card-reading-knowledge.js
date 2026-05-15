@@ -83,9 +83,24 @@
     }
   };
 
+  const lenReadingRoles={
+    ambiguity:[6,7,14,26,32],
+    blocker:[8,10,11,19,21,23,36],
+    people:[7,14,15,18,28,29,30],
+    positive:[1,2,9,16,17,25,31,33],
+    movement:[1,3,10,17,22,27],
+    stability:[4,25,30,35],
+    value:[15,34,35],
+    relationship:[18,24,25,28,29,30],
+    support:[2,9,16,18,31,33],
+    choice:[12,20,22,27],
+    ending:[8,10,17,36],
+  };
+
   const knowledge={
-    version:'2026-05-15',
-    loveSubtypes
+    version:'2026-05-16',
+    loveSubtypes,
+    lenReadingRoles
   };
 
   global.RASHIN_CARD_READING_KNOWLEDGE=Object.freeze(knowledge);

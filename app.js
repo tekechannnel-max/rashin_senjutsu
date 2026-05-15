@@ -7958,7 +7958,7 @@ const LEN_FALLBACK_GROUPS={
   choice:[12,20,22,27],
 };
 
-const LEN_READING_ROLES={
+const DEFAULT_LEN_READING_ROLES={
   ambiguity:[6,7,14,26,32],
   blocker:[8,10,11,19,21,23,36],
   people:[7,14,15,18,28,29,30],
@@ -7972,6 +7972,14 @@ const LEN_READING_ROLES={
   ending:[8,10,17,36],
 };
 
+function getLenReadingRoles(){
+  const configured=getCardReadingKnowledge().lenReadingRoles;
+  if(configured&&typeof configured==='object'&&!Array.isArray(configured)){
+    return configured;
+  }
+  return DEFAULT_LEN_READING_ROLES;
+}
+
 function hasLenGroup(ids,groupKey){
   const group=LEN_FALLBACK_GROUPS[groupKey]||[];
   return ids.some(id=>group.includes(id));
@@ -7984,7 +7992,7 @@ function getCurrentLenReadingIds(context={}){
 }
 
 function getLenReadingRolesForId(id){
-  return Object.entries(LEN_READING_ROLES)
+  return Object.entries(getLenReadingRoles())
     .filter(([,ids])=>ids.includes(Number(id)))
     .map(([role])=>role);
 }
@@ -8196,7 +8204,7 @@ function getLenPairReadingPhrase(pair={},ctx={}){
   if(has('blocker')&&has('positive')){
     const blocker=cards.find(card=>card.roles?.includes('blocker'));
     const positive=cards.find(card=>card.roles?.includes('positive'));
-    return `${getLenRealityPhrase(blocker,ctx,'blocker')}のそばに${getLenRealityPhrase(positive,ctx,'positive')}もあり、止まるか進むかではなく、何を安心の根拠にするかが分かれ目です。`;
+    return `${getLenRealityPhrase(blocker,ctx,'blocker')}のそばに${getLenRealityPhrase(positive,ctx,'positive')}もあり、白黒を急ぐより何を安心の根拠にするかが分かれ目です。`;
   }
   if(has('ambiguity')&&has('people')){
     return ctx.primaryTheme==='love'
@@ -11251,13 +11259,20 @@ function buildDossierCardCompassLine(ctx={},reading={}){
 
 function buildDossierCardEvidenceSummary(ctx={},reading={}){
   if(!reading.ids?.length) return '';
-  const core=reading.core?`中心の${reading.core.name}`:'中心カード';
-  const parts=[core];
-  if(reading.mainBlocker) parts.push(`${reading.mainBlocker.name}の重さ`);
-  if(reading.mainAmbiguity) parts.push(`${reading.mainAmbiguity.name}の曖昧さ`);
-  if(reading.mainPositive) parts.push(`${reading.mainPositive.name}の突破口`);
-  if(reading.mainPeople) parts.push(`${reading.mainPeople.name}の人物影響`);
-  return `${parts.slice(0,4).join('、')}を、${getDecisionAxisShortPhrase(ctx)}の判断へつなげています。`;
+  const cardReasons=new Map();
+  const addReason=(card,reason)=>{
+    if(!card||!reason) return;
+    const current=cardReasons.get(card.id)||{name:card.name,reasons:[]};
+    if(!current.reasons.includes(reason)) current.reasons.push(reason);
+    cardReasons.set(card.id,current);
+  };
+  addReason(reading.core,'主題');
+  addReason(reading.mainBlocker,'重さ');
+  addReason(reading.mainAmbiguity,'曖昧さ');
+  addReason(reading.mainPositive,'突破口');
+  addReason(reading.mainPeople,reading.mainPeople?.roles?.includes('ambiguity')?'複雑さ':'人物性');
+  const parts=[...cardReasons.values()].map(item=>`${item.name}の${item.reasons.slice(0,2).join('と')}`);
+  return `${parts.slice(0,4).join('、')}から、${getDecisionAxisShortPhrase(ctx)}の判断へつなげています。`;
 }
 
 function buildDossierCardVerdict(ctx={},reading={}){
