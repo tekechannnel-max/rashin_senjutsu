@@ -11893,7 +11893,6 @@ const DOSSIER_ORACLE_GUIDANCE_HEADING='数秘オラクルの示し';
 
 function buildDossierPlainText(data){
   const safeData=resolveDossierCardData(data);
-  const readingDigests=getDossierReadingDigests();
   const foundationBlocks=getDossierFoundationBulletSections().map(section=>`${section.label}：\n${section.items.map(item=>`・${item}`).join('\n')}`);
   const guidance=buildDossierSignalSummaries(safeData);
   const blocks=[
@@ -11901,7 +11900,6 @@ function buildDossierPlainText(data){
     safeData.TITLE,
     `一言結論：\n${safeData.ONE_LINE}`,
     `今回の答え：\n${safeData.VERDICT}`,
-    readingDigests.length?`カードから見えたこと：\n${readingDigests.map(item=>`・${item.title}：${item.copy}`).join('\n')}`:'',
     ...foundationBlocks,
     `${DOSSIER_LENORMAND_GUIDANCE_HEADING}：\n${guidance.lenormand}`,
     `${DOSSIER_ORACLE_GUIDANCE_HEADING}：\n${guidance.oracle}`,
@@ -11922,7 +11920,6 @@ function buildDossierPlainText(data){
     compact.TITLE,
     `一言結論：\n${compact.ONE_LINE}`,
     `今回の答え：\n${compact.VERDICT}`,
-    readingDigests.length?`カードから見えたこと：\n${readingDigests.map(item=>`・${item.title}：${trimDossierTextSafely(item.copy,56,18)}`).join('\n')}`:'',
     ...foundationBlocks,
     `${DOSSIER_LENORMAND_GUIDANCE_HEADING}：\n${guidance.lenormand}`,
     `${DOSSIER_ORACLE_GUIDANCE_HEADING}：\n${guidance.oracle}`,
@@ -12174,30 +12171,6 @@ function getOracleSectionBodyForDossier(pattern){
   return picked?.body||'';
 }
 
-function getDossierReadingDigests(){
-  return [
-    {title:'ルノルマンから見えたこと',copy:getDossierReadingDigest('len')},
-    {title:'オラクルが示す向き合い方',copy:getDossierReadingDigest('orc')},
-  ].map(item=>({...item,copy:sanitizeRashinVisibleText(redactDossierPrivateNames(item.copy))})).filter(item=>item.copy);
-}
-
-function renderDossierReadingDigest(){
-  const items=getDossierReadingDigests();
-  if(!items.length) return '';
-  return`
-      <div class="dossier-save-section dossier-save-card-focus">
-        <div class="dossier-save-heading">今の流れ</div>
-        <div class="dossier-save-reading-grid">
-          ${items.map(item=>`
-            <div class="dossier-save-reading">
-              <div class="dossier-save-reading-title">${escapeHtml(item.title)}</div>
-              <div class="dossier-save-reading-copy">${escapeHtml(item.copy)}</div>
-            </div>
-          `).join('\n')}
-        </div>
-      </div>`;
-}
-
 function renderDossierSaveCard(card){
   card=resolveDossierCardData(card);
   const foundationSections=getDossierFoundationBulletSections();
@@ -12215,7 +12188,6 @@ function renderDossierSaveCard(card){
             <div class="dossier-save-heading">今回の答え</div>
             <div class="dossier-save-verdict">${escapeHtml(card.VERDICT)}</div>
           </div>
-          ${renderDossierReadingDigest()}
           <div class="dossier-save-section dossier-save-visual-action">
             <div class="dossier-save-guidance-block dossier-save-guidance-lenormand">
               <div class="dossier-save-heading">${escapeHtml(DOSSIER_LENORMAND_GUIDANCE_HEADING)}</div>
@@ -12256,7 +12228,7 @@ function detectDossierCardQualityIssues(data={},options={}){
   const displayText=[text,options.renderedText||''].join('\n');
   const conditionGroups=getDossierFoundationBulletSections();
   const guidance=buildDossierSignalSummaries(card);
-  const readingDigestCopies=getDossierReadingDigests().map(item=>item.copy).filter(Boolean);
+  const readingDigestCopies=[];
   if(text.length>1000) issues.push('羅針カードが1000字を超えている');
   if(text.length>800) issues.push('羅針カードが800字を超えている');
   issues.push(...detectRashinVisibleTextPolicyIssues(displayText,'羅針カード'));
@@ -16450,7 +16422,7 @@ ${getRashinReadingPolicyPrompt('quality')}
 - ルノルマン・オラクル・統合判断が同じ役割の助言を繰り返していないか
 - 相談テーマに合わない語彙を中心にしていないか。恋愛を復縁と誤読していないか、復縁を一般恋愛として薄くしていないか
 - ルノルマンの「今見えている流れ」が羅列ではなく、一本の自然な流れになっているか
-- 羅針カードが長文鑑定書ではなく、一言結論・今の現実・姓名判断・四柱推命・動物タイプ診断・今の流れ・${DOSSIER_LENORMAND_GUIDANCE_HEADING}・${DOSSIER_ORACLE_GUIDANCE_HEADING}の短い判断カードになっているか
+- 羅針カードが長文鑑定書ではなく、一言結論・今の現実・姓名判断・四柱推命・動物タイプ診断・${DOSSIER_LENORMAND_GUIDANCE_HEADING}・${DOSSIER_ORACLE_GUIDANCE_HEADING}の短い判断カードになっているか
 - 「整理してください」だけで終わっていないか
 - ルノルマン9枚の読みがあるか
 - オラクル3枚の助言があるか
@@ -17604,7 +17576,7 @@ function buildPremiumDossierCardSystemPrompt(todayText){
 ${getRashinReadingPolicyPrompt('dossier')}
 
 守ること:
-- メインは一言結論、今の現実、姓名判断、四柱推命、動物タイプ診断、今の流れ、${DOSSIER_LENORMAND_GUIDANCE_HEADING}、${DOSSIER_ORACLE_GUIDANCE_HEADING}だけに絞る
+- メインは一言結論、今の現実、姓名判断、四柱推命、動物タイプ診断、${DOSSIER_LENORMAND_GUIDANCE_HEADING}、${DOSSIER_ORACLE_GUIDANCE_HEADING}だけに絞る
 - ${isReconciliationContext(ctx)?'恋愛サブテーマは復縁。羅針カードでは「まだ好きか」ではなく「もう一度信頼を作れるか」「過去の原因に向き合えるか」「曖昧な連絡だけで続いていないか」を残す':'相談テーマに合わせたラベルと判断軸を使う'}
 - 羅針カードは占い結果の全文ではなく、あとで読み返す判断軸にする
 - 羅針カードはSNS投稿・画像共有される前提です。表示に使ってよい名前は内部資料の「呼び名」だけ。姓名判断用の本名、姓、名、ログイン名は絶対に出さない
@@ -18083,30 +18055,6 @@ async function createDossierShareImageBlob(cardData){
   ctx.font=`700 ${Math.round(w*.015)}px "Shippori Mincho", serif`;
   drawWrappedCanvasText(ctx,card.VERDICT||'',textX+Math.round(w*.015),y+Math.round(h*.082),maxTextW-Math.round(w*.03),Math.round(h*.033),{maxLines:3,ellipsis:true});
   y+=answerH+Math.round(h*.015);
-
-  const digests=getDossierReadingDigests().slice(0,2);
-  if(digests.length){
-    const digestH=Math.round(h*.255);
-    drawCanvasPanel(ctx,textX,y,maxTextW,digestH,{fill:'rgba(6,14,30,.70)',stroke:'rgba(176,226,218,.32)'});
-    ctx.fillStyle='rgba(176,226,218,.95)';
-    ctx.font=`700 ${Math.round(w*.015)}px "Shippori Mincho", serif`;
-    ctx.fillText('今の流れ',textX+Math.round(w*.015),y+Math.round(h*.04));
-    const panelGap=Math.round(w*.013);
-    const panelW=digests.length>1?Math.floor((maxTextW-(panelGap*3))/2):maxTextW-Math.round(w*.03);
-    const panelH=Math.round(h*.165);
-    digests.forEach((item,index)=>{
-      const px=textX+Math.round(w*.015)+(index*(panelW+panelGap));
-      const py=y+Math.round(h*.064);
-      drawCanvasPanel(ctx,px,py,panelW,panelH,{fill:'rgba(255,255,255,.04)',stroke:'rgba(176,226,218,.16)',lineWidth:1});
-      ctx.fillStyle='rgba(242,213,123,.95)';
-      ctx.font=`700 ${Math.round(w*.013)}px "Shippori Mincho", serif`;
-      ctx.fillText(item.title,px+Math.round(w*.012),py+Math.round(h*.038));
-      ctx.fillStyle='rgba(246,240,220,.9)';
-      ctx.font=`500 ${Math.round(w*.013)}px "Shippori Mincho", serif`;
-      drawWrappedCanvasText(ctx,item.copy,px+Math.round(w*.012),py+Math.round(h*.074),panelW-Math.round(w*.024),Math.round(h*.029),{maxLines:3,ellipsis:true});
-    });
-    y+=digestH+Math.round(h*.015);
-  }
 
   const guidance=buildDossierSignalSummaries(card);
   const actionH=Math.max(Math.round(h*.135),Math.min(Math.round(h*.18),safeY+safeH-y-Math.round(h*.012)));
