@@ -10522,7 +10522,7 @@ function normalizeDossierCardData(data={}){
     const next=fallbackKeywords.shift();
     if(next&&!keywords.includes(next)) keywords.push(next);
   }
-  const closingFallback=getIntegrationSupplementItems('背中を押す一文',focus)[0]||fallback.CLOSING;
+  const closingFallback=buildDossierClosingForDecisionContext(ctx)||getIntegrationSupplementItems('背中を押す一文',focus)[0]||fallback.CLOSING;
   return{
     TITLE:limitTextByChars(source.TITLE||fallback.TITLE||'羅針カード',28,12),
     ONE_LINE:limitTextByChars(source.ONE_LINE||source.HEADLINE||fallback.ONE_LINE,42,18),
@@ -10536,7 +10536,7 @@ function normalizeDossierCardData(data={}){
     DECISION_AXIS:[...remainConditions,...moveConditions],
     ACTION7:action7.length?action7:[normalizeDossierSentence(fallback.ACTION7,actionFallback,{max:76,action:true})],
     KEYWORDS:keywords.length?keywords.slice(0,6):normalizeDossierKeywords(fallback.KEYWORDS).slice(0,6),
-    CLOSING:normalizeDossierSentence(source.CLOSING,closingFallback,{max:68}),
+    CLOSING:normalizeDossierSentence(closingFallback,closingFallback,{max:68}),
     EVIDENCE_SUMMARY:normalizeDossierParagraph(source.EVIDENCE_SUMMARY,fallback.EVIDENCE_SUMMARY,260),
   };
 }
@@ -14421,9 +14421,7 @@ function getIntegrationSupplementItems(heading='',focus={},cat='総合',theme=''
     [ctx.holdLabel]:themeItems.hold,
     '7日以内の一手':buildThemeSpecificActionPlan(focus),
     '30日以内に見ること':buildThirtyDayActionPlan(focus),
-    '背中を押す一文':[
-      getLoveSubtypeSupplement(ctx,'push')[0]||`今週は、答えを急ぐより、${ctx.positiveLabel}と${ctx.negativeLabel}を選べる材料を集める週です。`
-    ],
+    '背中を押す一文':[buildDossierClosingForDecisionContext(ctx)],
   };
   return positiveMap[heading]||negativeMap[heading]||shared[heading]||[];
 }
