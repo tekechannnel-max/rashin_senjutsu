@@ -11411,20 +11411,82 @@ function renderDossierConditionList(items=[]){
   return `<ul class="dossier-save-list">${items.map(item=>`<li class="dossier-save-item">${escapeHtml(sanitizeRashinVisibleText(redactDossierPrivateNames(item)))}</li>`).join('\n')}</ul>`;
 }
 
+function buildDossierWeightedSignalFallbacks(card={},focus=getCurrentRefinedFocus()){
+  const ctx=buildDecisionContext(focus);
+  const criteria=ctx.criteriaText||'安心の根拠';
+  if(ctx.primaryTheme==='love'){
+    if(isReconciliationContext(ctx)){
+      return{
+        lenormand:'今の焦点は、懐かしさではなく信頼をもう一度作れる流れかです。曖昧なまま戻るほど、同じ不安が残りやすくなります。',
+        oracle:'向き合い方は、戻りたい気持ちより自分を守れる安心を優先することです。',
+      };
+    }
+    return{
+      lenormand:'今の焦点は、言葉の温度が安心できる行動として続くかです。待つ側だけが消耗する流れを、愛情と混ぜないことが軸になります。',
+      oracle:'向き合い方は、信じたい気持ちだけで自分を待たせ続けないことです。',
+    };
+  }
+  if(ctx.primaryTheme==='career'||ctx.primaryTheme==='work_life_direction'){
+    return{
+      lenormand:`今の焦点は、努力が${criteria}として現実に返る場所かどうかです。外の選択肢が見えるほど、居場所と消耗の違いもはっきりします。`,
+      oracle:'向き合い方は、頑張りが返らない場所に自分を置き続けないことです。',
+    };
+  }
+  if(ctx.primaryTheme==='relationship'){
+    return{
+      lenormand:'今の焦点は、関係を守ることと自分を削ることを混ぜないことです。距離感が整うほど、安心して関われる余地も見えてきます。',
+      oracle:'向き合い方は、場の空気より自分の消耗に先に気づくことです。',
+    };
+  }
+  if(ctx.primaryTheme==='family'){
+    return{
+      lenormand:'今の焦点は、向き合うことと抱え込むことを分けることです。責任の偏りが見えるほど、自分を守る距離も取り戻せます。',
+      oracle:'向き合い方は、家族だから全部背負うという思い込みを緩めることです。',
+    };
+  }
+  if(ctx.primaryTheme==='money'){
+    return{
+      lenormand:'今の焦点は、不安で動くより安心が残る選び方へ戻ることです。守るべき余白が見えるほど、流れは落ち着きます。',
+      oracle:'向き合い方は、焦りではなく長く続く安定を基準にすることです。',
+    };
+  }
+  if(ctx.primaryTheme==='creative'){
+    return{
+      lenormand:'今の焦点は、義務感だけで続けていないかを見ることです。熱量が戻る形を選べるほど、楽しさも息を吹き返します。',
+      oracle:'向き合い方は、休むことを失敗ではなく熱量の戻り道として扱うことです。',
+    };
+  }
+  if(ctx.primaryTheme==='self_understanding'){
+    return{
+      lenormand:'今の焦点は、違和感を消すより本音の置き場所を見つけることです。自分を雑に扱わない軸が戻るほど、選び方も整います。',
+      oracle:'向き合い方は、正しさより自分の感覚を置き去りにしないことです。',
+    };
+  }
+  return{
+    lenormand:'今の焦点は、感情だけで決めず現実の反応と違和感を同じ場所で見ることです。焦らないほど、判断の軸は戻ります。',
+    oracle:'向き合い方は、答えを急ぐより自分を雑に扱わない視点へ戻ることです。',
+  };
+}
+
 function buildDossierSignalSummaries(card={}){
   const safeCard=card&&card.TITLE?card:resolveDossierCardData(card);
-  const lenRaw=getDossierReadingDigest('len')||safeCard.VERDICT||safeCard.ONE_LINE;
-  const oracleRaw=getDossierReadingDigest('orc')||(safeCard.ACTION7||[])[0]||safeCard.CLOSING||safeCard.ONE_LINE;
-  const lenFallback='今は、現実の反応と安心できる流れが残るかを見ている段階です。';
-  const oracleFallback='自分を雑に扱わない視点へ戻ることが大切です。';
-  const lenormand=normalizeDossierSentence(
-    limitJapaneseBodyBySentences(sanitizeRashinVisibleText(redactDossierPrivateNames(lenRaw)),126,2),
-    safeCard.VERDICT||lenFallback,
-    {max:126}
-  );
-  const oracleBase=trimDossierTextSafely(sanitizeRashinVisibleText(redactDossierPrivateNames(oracleRaw)),52,12)
-    ||limitTextByChars(sanitizeRashinVisibleText(redactDossierPrivateNames(oracleRaw)),52,12);
-  const oracle=normalizeDossierSentence(oracleBase,oracleFallback,{max:56});
+  const focus=resolveDossierFocusFromData(safeCard)||getCurrentRefinedFocus();
+  const topLen=getDossierReadingDigest('len');
+  const topOracle=getDossierReadingDigest('orc');
+  const fallback=buildDossierWeightedSignalFallbacks(safeCard,focus);
+  const visibleSummaries=[topLen,topOracle].filter(Boolean);
+  const lenormand=pickDossierSignalSummary([
+    fallback.lenormand,
+    safeCard.DECISION_AXIS,
+    safeCard.VERDICT,
+    safeCard.ONE_LINE,
+  ],visibleSummaries,fallback.lenormand,{max:128,maxSentences:2});
+  const oracle=pickDossierSignalSummary([
+    fallback.oracle,
+    getOracleSectionBodyForDossier(/羅針盤|向き合|メッセージ|光/),
+    safeCard.CLOSING,
+    safeCard.ACTION7,
+  ],visibleSummaries.concat(lenormand),fallback.oracle,{max:64,maxSentences:1});
   return{lenormand,oracle};
 }
 
@@ -11520,6 +11582,58 @@ function getDossierReadingDigest(kind='len'){
   return limitJapaneseBodyBySentences(body,98,2);
 }
 
+function normalizeDossierSummaryDuplicateKey(text=''){
+  return sanitizeRashinVisibleText(redactDossierPrivateNames(String(text||'')))
+    .replace(/[「」『』（）()\[\]【】、。,.，．・\s]/g,'')
+    .slice(0,90);
+}
+
+function isDossierSummaryDuplicate(candidate='',used=[]){
+  const key=normalizeDossierSummaryDuplicateKey(candidate);
+  if(key.length<18) return false;
+  return used.some(item=>{
+    const other=normalizeDossierSummaryDuplicateKey(item);
+    if(other.length<18) return false;
+    const keyHead=key.slice(0,32);
+    const otherHead=other.slice(0,32);
+    return key===other||key.includes(otherHead)||other.includes(keyHead)||keyHead===otherHead;
+  });
+}
+
+function flattenDossierSummaryCandidate(value=''){
+  return toDossierValueArray(value)
+    .flatMap(item=>sectionLines(item))
+    .map(item=>cleanDossierItemText(item))
+    .filter(Boolean)
+    .join(' ');
+}
+
+function pickDossierSignalSummary(candidates=[],used=[],fallback='',options={}){
+  const max=options.max||92;
+  const maxSentences=options.maxSentences||1;
+  for(const raw of candidates){
+    const flat=flattenDossierSummaryCandidate(raw);
+    if(!flat) continue;
+    const summary=normalizeDossierSentence(
+      limitJapaneseBodyBySentences(sanitizeRashinVisibleText(redactDossierPrivateNames(flat)),max,maxSentences),
+      fallback,
+      {max}
+    );
+    if(summary&&!isDossierIncompleteText(summary)&&!isDossierSummaryDuplicate(summary,used)){
+      return summary;
+    }
+  }
+  return normalizeDossierSentence(fallback,fallback,{max});
+}
+
+function getOracleSectionBodyForDossier(pattern){
+  const source=sanitizeRashinVisibleText(redactDossierPrivateNames(String(LAST_OUTPUTS.orc||''))).trim();
+  if(!source) return '';
+  const sections=splitSections(source).map(parseStructuredSection);
+  const picked=sections.find(section=>pattern.test(section.title));
+  return picked?.body||'';
+}
+
 function getDossierReadingDigests(){
   return [
     {title:'ルノルマンから見えたこと',copy:getDossierReadingDigest('len')},
@@ -11602,6 +11716,7 @@ function detectDossierCardQualityIssues(data={},options={}){
   const displayText=[text,options.renderedText||''].join('\n');
   const conditionGroups=getDossierFoundationBulletSections();
   const guidance=buildDossierSignalSummaries(card);
+  const readingDigestCopies=getDossierReadingDigests().map(item=>item.copy).filter(Boolean);
   if(text.length>1000) issues.push('羅針カードが1000字を超えている');
   if(text.length>800) issues.push('羅針カードが800字を超えている');
   issues.push(...detectRashinVisibleTextPolicyIssues(displayText,'羅針カード'));
@@ -11637,6 +11752,12 @@ function detectDossierCardQualityIssues(data={},options={}){
   });
   if(!guidance.lenormand||isDossierIncompleteText(guidance.lenormand)) issues.push(`${DOSSIER_LENORMAND_GUIDANCE_HEADING}がない、または未完文`);
   if(!guidance.oracle||isDossierIncompleteText(guidance.oracle)) issues.push(`${DOSSIER_ORACLE_GUIDANCE_HEADING}がない、または未完文`);
+  if(isDossierSummaryDuplicate(guidance.lenormand,readingDigestCopies)){
+    issues.push(`${DOSSIER_LENORMAND_GUIDANCE_HEADING}が今の流れの再掲になっています`);
+  }
+  if(isDossierSummaryDuplicate(guidance.oracle,readingDigestCopies.concat(guidance.lenormand))){
+    issues.push(`${DOSSIER_ORACLE_GUIDANCE_HEADING}が今の流れまたはルノルマンの再掲になっています`);
+  }
   if(options.renderedText&&/<li/i.test(options.renderedHtml||'')&&!/\n|・/.test(options.renderedText)){
     issues.push('羅針カードの箇条書きが表示テキストで連結して見える可能性があります');
   }
