@@ -18515,6 +18515,10 @@ function getXIntentUrl(text){
   return 'https://twitter.com/intent/tweet?text='+encodeURIComponent(text);
 }
 
+function buildXShareInstructionText(){
+  return '#羅針占術\nダウンロードした画像を貼ってください';
+}
+
 function openPendingShareWindow(){
   const shareWindow=window.open('about:blank','_blank');
   if(shareWindow){
@@ -18538,6 +18542,27 @@ function navigatePendingShareWindow(shareWindow,url){
     return true;
   }
   return false;
+}
+
+function downloadBlobFile(blob,filename='rashin-card.png'){
+  if(!blob||typeof document==='undefined') return{ok:false,reason:'blob_unavailable'};
+  try{
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=filename;
+    a.rel='noopener';
+    a.style.display='none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{
+      try{ URL.revokeObjectURL(url); }catch(_error){}
+      try{ a.remove(); }catch(_error){}
+    },2500);
+    return{ok:true,reason:'downloaded'};
+  }catch(error){
+    return{ok:false,reason:error?.name||error?.message||'download_failed'};
+  }
 }
 
 async function copyImageBlobToClipboard(blob){
@@ -18572,28 +18597,42 @@ async function copyDossierShareImageToClipboard(channel='x'){
   return result;
 }
 
+async function downloadDossierShareImage(channel='x'){
+  if(!shouldShowDossierActions()) return{ok:false,reason:'no_dossier'};
+  const file=await buildDossierShareImageFile();
+  if(!file){
+    trackEvent('share_image_unavailable',{channel,source:'dossier'});
+    return{ok:false,reason:'image_unavailable'};
+  }
+  const result=downloadBlobFile(file,'rashin-card.png');
+  trackEvent(result.ok?'share_image_download':'share_image_download_failed',{
+    channel,
+    source:'dossier',
+    reason:result.reason,
+  });
+  return result;
+}
+
 async function shareToX(){
-  const primaryCard=getPrimaryShareCard();
-  const shareUrl=primaryCard?buildShareCardUrl(primaryCard):location.origin+location.pathname;
-  const text=buildShareText({shareUrl});
+  const text=buildXShareInstructionText();
   trackEvent('share_click',{channel:'x',source:'result'});
   const shareWindow=openPendingShareWindow();
-  const clipboardResult=await copyDossierShareImageToClipboard('x');
+  const downloadResult=await downloadDossierShareImage('x');
   const opened=navigatePendingShareWindow(shareWindow,getXIntentUrl(text));
   trackEvent('share_x_intent',{
     source:'result',
-    imageClipboard:clipboardResult.ok,
-    reason:clipboardResult.reason,
+    imageDownload:downloadResult.ok,
+    reason:downloadResult.reason,
     opened,
   });
   if(!opened){
     showToast('X投稿画面を開けませんでした。ポップアップ設定をご確認ください。');
-  }else if(clipboardResult.ok){
-    showToast('X投稿画面を開きました。羅針カード画像はコピー済みです。投稿欄で貼り付けてください。');
-  }else if(clipboardResult.reason==='image_unavailable'){
+  }else if(downloadResult.ok){
+    showToast('羅針カード画像をダウンロードしました。X投稿画面で画像を添付してください。');
+  }else if(downloadResult.reason==='image_unavailable'){
     showToast('X投稿画面を開きました。羅針カード画像を作成できませんでした。');
   }else{
-    showToast('X投稿画面を開きました。画像の自動添付はブラウザ仕様上できません。');
+    showToast('X投稿画面を開きました。羅針カード画像をダウンロードできませんでした。');
   }
 }
 
