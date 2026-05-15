@@ -2719,6 +2719,10 @@ async function confirmConsultationTag(){
     await continueStartFlowAfterTag(pending.plan,true);
     return;
   }
+  if(pending?.type==='startAuthorizedPaidFlow'){
+    startFlowUnlocked('paid',{preserveTagConfirmation:true});
+    return;
+  }
   showScreen('s-input',20);
 }
 
@@ -4753,7 +4757,7 @@ async function submitRashinCode(){
     const purchased=await requestRashinCodePurchase(intent);
     if(!purchased) return;
     if(intent==='upgrade-paid') upgradeCurrentReadingToPaidUnlocked();
-    else startFlowUnlocked('paid');
+    else if(document.getElementById('consultation-tag-modal')?.hidden!==false) startAuthorizedPaidFlowWithTags();
   }catch(_error){
     setRashinCodeStatus('羅針コードの保存に失敗しました','ng');
   }finally{
@@ -5579,7 +5583,7 @@ async function requestRashinCodePurchaseBooth(intent='upgrade-paid'){
       if(!PENDING_PAID_READING_ID) PENDING_PAID_READING_ID=createReadingId();
       const prepared=await preparePaidReadingTicket(sourceReadingId,PENDING_PAID_READING_ID);
       if(!prepared.ok&&prepared.message) showToast(prepared.message);
-      if(prepared.ok&&intent==='start-paid') startFlowUnlocked('paid');
+      if(prepared.ok&&intent==='start-paid') startAuthorizedPaidFlowWithTags();
       return !!prepared.ok;
     }
     if(!RASHIN_BOOTH_PURCHASE_ENABLED){
@@ -5636,7 +5640,7 @@ async function requestRashinCodePurchaseBooth(intent='upgrade-paid'){
       if(!PENDING_PAID_READING_ID) PENDING_PAID_READING_ID=createReadingId();
       const prepared=await preparePaidReadingTicket(ACTIVE_PAID_SOURCE_READING_ID,PENDING_PAID_READING_ID);
       if(prepared.ok){
-        startFlowUnlocked('paid');
+        startAuthorizedPaidFlowWithTags();
         return true;
       }
       showToast('深掘り鑑定の利用準備に失敗しました');
@@ -5962,7 +5966,7 @@ async function handleStripeReturnFlow(){
         ACTIVE_PAID_SOURCE_READING_ID=data.sourceReadingId||'';
         const prepared=await preparePaidReadingTicket(ACTIVE_PAID_SOURCE_READING_ID,paidReadingId);
         if(prepared.ok){
-          startFlowUnlocked('paid');
+          startAuthorizedPaidFlowWithTags();
           return;
         }
       }
@@ -6306,14 +6310,14 @@ function resumePendingMemberIntent(){
     return;
   }
   if(isMemberActive()){
-    if(intent==='start-paid') startFlowUnlocked('paid');
+    if(intent==='start-paid') startAuthorizedPaidFlowWithTags();
     if(intent==='upgrade-paid'&&canContinueCurrentReadingToPaid()) upgradeCurrentReadingToPaidUnlocked();
     return;
   }
   if(MEMBER_AUTH.authLoggedIn){
     if(intent==='start-paid'){
       void (async()=>{
-        if(await ensurePaidAccess('start-paid')) startFlowUnlocked('paid');
+        if(await ensurePaidAccess('start-paid')) startAuthorizedPaidFlowWithTags();
       })();
       return;
     }
@@ -12895,6 +12899,14 @@ async function continueStartFlowAfterTag(plan,preserveTagConfirmation=false){
   const normalized=plan===SIMPLE_READING_PLAN?SIMPLE_READING_PLAN:(plan==='paid'?'paid':'free');
   if(normalized==='paid'&&!(await ensurePaidAccess('start-paid'))) return;
   startFlowUnlocked(normalized,{preserveTagConfirmation});
+}
+
+function startAuthorizedPaidFlowWithTags(){
+  setConsultationTagSelections([]);
+  CONSULTATION_TAG_PENDING_ACTION={type:'startAuthorizedPaidFlow'};
+  if(openConsultationTagModal(document.getElementById('f-cat')?.value||'総合')) return;
+  CONSULTATION_TAG_PENDING_ACTION=null;
+  startFlowUnlocked('paid',{preserveTagConfirmation:true});
 }
 
 function startFlowUnlocked(plan,options={}){
