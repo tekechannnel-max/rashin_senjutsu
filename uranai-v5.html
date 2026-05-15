@@ -4499,9 +4499,8 @@ body{
 .dossier-save-card{
   position:relative;z-index:1;
   isolation:isolate;
-  width:min(760px,100%);
+  width:min(1080px,100%);
   margin:0 auto;
-  padding:clamp(20px,4vw,32px);
   border:1px solid rgba(228,184,74,.34);
   background:linear-gradient(145deg,rgba(5,8,18,.98),rgba(12,9,22,.97) 54%,rgba(5,12,18,.98));
   backdrop-filter:blur(6px);
@@ -4510,32 +4509,63 @@ body{
   color:rgba(246,240,220,.9);
   overflow:hidden;
 }
-.dossier-save-card::before{
-  content:'';
-  position:absolute;
-  inset:0;
-  z-index:-2;
-  background:url('占い素材/羅針カード背景.png?v=20260515-rashin-card-bg') center/cover no-repeat;
-  filter:saturate(.82) brightness(.72);
+.dossier-save-visual{
+  position:relative;
+  aspect-ratio:16 / 9;
+  min-height:0;
+  overflow:hidden;
 }
-.dossier-save-card::after{
+.dossier-save-visual::before{
   content:'';
   position:absolute;
   inset:0;
-  z-index:-1;
+  z-index:0;
+  background:url('占い素材/羅針カード背景.png?v=20260515-rashin-card-bg-full') center/100% 100% no-repeat;
+  filter:saturate(.96) brightness(.86);
+}
+.dossier-save-visual::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  z-index:1;
   background:
-    radial-gradient(circle at 50% 10%,rgba(228,184,74,.18),transparent 34%),
-    linear-gradient(180deg,rgba(4,6,16,.72),rgba(4,6,16,.9) 58%,rgba(4,6,16,.95));
+    linear-gradient(90deg,rgba(2,8,28,.64) 0%,rgba(2,8,28,.46) 45%,rgba(2,8,28,.10) 64%,transparent 100%),
+    radial-gradient(circle at 28% 50%,rgba(2,8,28,.42),transparent 54%);
   pointer-events:none;
 }
-.dossier-save-card > *{
+.dossier-save-safe-area{
   position:relative;
-  z-index:1;
+  z-index:2;
+  width:58%;
+  min-height:100%;
+  padding:clamp(18px,3vw,34px) clamp(18px,3.2vw,40px);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:clamp(10px,1.4vw,16px);
+}
+.dossier-save-details{
+  position:relative;
+  z-index:2;
+  display:grid;
+  gap:14px;
+  padding:18px clamp(18px,3vw,28px) 24px;
+  background:linear-gradient(180deg,rgba(4,8,20,.96),rgba(4,8,20,.9));
+}
+.dossier-save-detail-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+}
+.dossier-save-detail-grid .dossier-save-section{
+  padding:14px 14px 13px;
+  border:1px solid rgba(228,184,74,.14);
+  background:rgba(255,255,255,.025);
 }
 
 .dossier-save-top{
-  padding-bottom:16px;
-  border-bottom:1px solid rgba(228,184,74,.22);
+  padding-bottom:0;
+  border-bottom:0;
 }
 
 .dossier-save-kicker{
@@ -4546,15 +4576,15 @@ body{
 
 .dossier-save-title{
   font-family:'Shippori Mincho',serif;
-  font-size:clamp(24px,4vw,34px);
+  font-size:clamp(22px,3.1vw,34px);
   line-height:1.35;
   color:var(--gold-l);
-  margin-bottom:12px;
+  margin-bottom:8px;
 }
 
 .dossier-save-one{
-  font-size:15px;
-  line-height:1.75;
+  font-size:clamp(13px,1.35vw,16px);
+  line-height:1.65;
   color:rgba(255,246,210,.92);
 }
 
@@ -4571,19 +4601,19 @@ body{
   gap:12px;
 }
 .dossier-save-card-focus{
-  margin-top:18px;
-  padding:18px 18px 20px;
+  margin-top:0;
+  padding:13px 14px 15px;
   border:1px solid rgba(176,226,218,.26);
-  background:linear-gradient(180deg,rgba(8,20,38,.58),rgba(6,10,24,.5));
+  background:linear-gradient(180deg,rgba(3,13,34,.6),rgba(3,8,22,.52));
 }
 .dossier-save-card-focus .dossier-save-heading{
   color:rgba(242,213,123,.96);
-  font-size:15px;
-  margin-bottom:13px;
+  font-size:clamp(12px,1.1vw,14px);
+  margin-bottom:10px;
 }
 .dossier-save-card-focus .dossier-save-reading-grid{
   grid-template-columns:1fr;
-  gap:14px;
+  gap:8px;
 }
 .dossier-save-reading{
   border:1px solid rgba(176,226,218,.18);
@@ -4593,7 +4623,7 @@ body{
 .dossier-save-card-focus .dossier-save-reading{
   border-color:rgba(176,226,218,.24);
   background:rgba(5,12,28,.62);
-  padding:16px 18px;
+  padding:10px 12px;
 }
 .dossier-save-reading-title{
   font-size:11px;
@@ -4602,7 +4632,7 @@ body{
   margin-bottom:7px;
 }
 .dossier-save-card-focus .dossier-save-reading-title{
-  font-size:13px;
+  font-size:clamp(11px,1vw,13px);
   color:rgba(176,226,218,.96);
 }
 .dossier-save-reading-copy{
@@ -4611,9 +4641,24 @@ body{
   color:rgba(246,240,220,.82);
 }
 .dossier-save-card-focus .dossier-save-reading-copy{
-  font-size:15px;
-  line-height:1.9;
+  font-size:clamp(12px,1vw,14px);
+  line-height:1.65;
   color:rgba(248,242,222,.92);
+}
+.dossier-save-visual-action{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:12px;
+  padding:12px 14px 14px;
+  border:1px solid rgba(228,184,74,.2);
+  background:rgba(4,9,24,.54);
+}
+.dossier-save-visual-action .dossier-save-list{
+  gap:4px;
+}
+.dossier-save-visual-action .dossier-save-item{
+  font-size:clamp(11px,1vw,13px);
+  line-height:1.55;
 }
 
 .dossier-save-section,
@@ -4957,7 +5002,7 @@ body.dossier-viewer-open{
 
   body.print-dossier .dossier-hero,
 
-  body.print-dossier .dossier-save-card{
+  body.print-dossier .dossier-save-details{
 
     background:#fff !important;border-color:#bbb !important;box-shadow:none !important;
 
@@ -5017,7 +5062,9 @@ body.dossier-viewer-open{
 
   body.print-dossier .dossier-grid{gap:10px;}
 
-  body.print-dossier .dossier-save-card{width:100%;max-width:720px;margin:0 auto;page-break-inside:avoid;}
+  body.print-dossier .dossier-save-card{width:100%;max-width:980px;margin:0 auto;page-break-inside:avoid;}
+  body.print-dossier .dossier-save-visual{border:1px solid #bbb;}
+  body.print-dossier .dossier-save-detail-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
 
   body.print-dossier .dossier-save-columns{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
 
@@ -5930,6 +5977,19 @@ body.dossier-viewer-open{
   .ritual-grid{grid-template-columns:1fr;}
   .dossier-proof-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
   .dossier-grid{grid-template-columns:1fr;}
+  .dossier-save-safe-area{width:62%;padding:10px 12px;gap:5px;}
+  .dossier-save-title{font-size:13px;line-height:1.25;margin-bottom:4px;}
+  .dossier-save-one{font-size:9.5px;line-height:1.45;}
+  .dossier-save-kicker{font-size:8px;margin-bottom:4px;}
+  .dossier-save-card-focus{padding:7px 8px;}
+  .dossier-save-card-focus .dossier-save-heading{font-size:9px;margin-bottom:5px;}
+  .dossier-save-card-focus .dossier-save-reading:nth-child(n+2){display:none;}
+  .dossier-save-card-focus .dossier-save-reading{padding:6px 7px;}
+  .dossier-save-card-focus .dossier-save-reading-title{font-size:9px;margin-bottom:3px;}
+  .dossier-save-card-focus .dossier-save-reading-copy{font-size:9px;line-height:1.35;}
+  .dossier-save-visual-action{display:none;}
+  .dossier-save-details{padding:16px 14px 18px;}
+  .dossier-save-detail-grid{grid-template-columns:1fr;}
   .dossier-save-columns{grid-template-columns:1fr;gap:14px;}
   .dossier-save-reading-grid{grid-template-columns:1fr;}
   .dossier-cta-card{align-items:stretch;flex-direction:column;}

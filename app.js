@@ -11274,39 +11274,49 @@ function renderDossierReadingDigest(){
 function renderDossierSaveCard(card){
   return`
     <article class="dossier-save-card">
-      <div class="dossier-save-top">
-        <div class="dossier-save-kicker">RASHIN CARD</div>
-        <div class="dossier-save-title">${escapeHtml(card.TITLE)}</div>
-        <div class="dossier-save-one">${escapeHtml(card.ONE_LINE)}</div>
+      <div class="dossier-save-visual">
+        <div class="dossier-save-safe-area">
+          <div class="dossier-save-top">
+            <div class="dossier-save-kicker">RASHIN CARD</div>
+            <div class="dossier-save-title">${escapeHtml(card.TITLE)}</div>
+            <div class="dossier-save-one">${escapeHtml(card.ONE_LINE)}</div>
+          </div>
+          ${renderDossierReadingDigest()}
+          <div class="dossier-save-section dossier-save-visual-action">
+            <div>
+              <div class="dossier-save-heading">今週の一手</div>
+              ${renderDossierConditionList(card.ACTION7)}
+            </div>
+            <div>
+              <div class="dossier-save-heading">${escapeHtml(INTEGRATION_ACTION_GUIDE_HEADING)}</div>
+              <div class="dossier-save-closing">${escapeHtml(card.CLOSING)}</div>
+            </div>
+          </div>
+        </div>
       </div>
-      ${renderDossierReadingDigest()}
-      <div class="dossier-save-section">
-        <div class="dossier-save-heading">今回の答え</div>
-        <div class="dossier-save-verdict">${escapeHtml(card.VERDICT)}</div>
-      </div>
-      <div class="dossier-save-section">
-        <div class="dossier-save-heading">${escapeHtml(card.POSITIVE_LABEL||'残る条件')}</div>
-        ${renderDossierConditionList(card.REMAIN_CONDITIONS)}
-      </div>
-      <div class="dossier-save-section">
-        <div class="dossier-save-heading">${escapeHtml(card.NEGATIVE_LABEL||'動く条件')}</div>
-        ${renderDossierConditionList(card.MOVE_CONDITIONS)}
-      </div>
-      <div class="dossier-save-section">
-        <div class="dossier-save-heading">${escapeHtml(card.HOLD_LABEL||'保留条件')}</div>
-        ${renderDossierConditionList(card.HOLD_CONDITIONS||[])}
-      </div>
-      <div class="dossier-save-section">
-        <div class="dossier-save-heading">今週の一手</div>
-        ${renderDossierConditionList(card.ACTION7)}
-      </div>
-      <div class="dossier-save-section">
-        <div class="dossier-save-heading">保存キーワード</div>
-        <div class="dossier-chip-row dossier-save-keywords">${card.KEYWORDS.map(item=>`<div class="dossier-chip">${escapeHtml(item)}</div>`).join('\n')}</div>
-      </div>
-      <div class="dossier-save-section">
-        <div class="dossier-save-heading">${escapeHtml(INTEGRATION_ACTION_GUIDE_HEADING)}</div>
-        <div class="dossier-save-closing">${escapeHtml(card.CLOSING)}</div>
+      <div class="dossier-save-details">
+        <div class="dossier-save-section">
+          <div class="dossier-save-heading">今回の答え</div>
+          <div class="dossier-save-verdict">${escapeHtml(card.VERDICT)}</div>
+        </div>
+        <div class="dossier-save-detail-grid">
+          <div class="dossier-save-section">
+            <div class="dossier-save-heading">${escapeHtml(card.POSITIVE_LABEL||'残る条件')}</div>
+            ${renderDossierConditionList(card.REMAIN_CONDITIONS)}
+          </div>
+          <div class="dossier-save-section">
+            <div class="dossier-save-heading">${escapeHtml(card.NEGATIVE_LABEL||'動く条件')}</div>
+            ${renderDossierConditionList(card.MOVE_CONDITIONS)}
+          </div>
+          <div class="dossier-save-section">
+            <div class="dossier-save-heading">${escapeHtml(card.HOLD_LABEL||'保留条件')}</div>
+            ${renderDossierConditionList(card.HOLD_CONDITIONS||[])}
+          </div>
+        </div>
+        <div class="dossier-save-section">
+          <div class="dossier-save-heading">保存キーワード</div>
+          <div class="dossier-chip-row dossier-save-keywords">${card.KEYWORDS.map(item=>`<div class="dossier-chip">${escapeHtml(item)}</div>`).join('\n')}</div>
+        </div>
       </div>
     </article>`;
 }
@@ -16664,22 +16674,19 @@ function canvasToPngBlob(canvas){
 async function createDossierShareImageBlob(cardData){
   const card=resolveDossierCardData(cardData);
   const canvas=document.createElement('canvas');
-  canvas.width=1080;
-  canvas.height=1350;
-  const ctx=canvas.getContext('2d');
-  if(!ctx) return null;
   if(document.fonts?.ready){
     try{ await document.fonts.ready; }catch(_error){}
   }
   const bg=await loadImageForCanvas('占い素材/羅針カード背景.png?v=20260515-rashin-card-share');
+  canvas.width=bg?.width||1672;
+  canvas.height=bg?.height||941;
+  const ctx=canvas.getContext('2d');
+  if(!ctx) return null;
   const w=canvas.width;
   const h=canvas.height;
   if(bg){
-    const scale=Math.max(w/bg.width,h/bg.height);
-    const bw=bg.width*scale;
-    const bh=bg.height*scale;
-    ctx.drawImage(bg,(w-bw)/2,(h-bh)/2,bw,bh);
-    ctx.fillStyle='rgba(4,6,16,.80)';
+    ctx.drawImage(bg,0,0,w,h);
+    ctx.fillStyle='rgba(3,8,28,.18)';
     ctx.fillRect(0,0,w,h);
   }else{
     const gradient=ctx.createLinearGradient(0,0,w,h);
@@ -16689,94 +16696,76 @@ async function createDossierShareImageBlob(cardData){
     ctx.fillStyle=gradient;
     ctx.fillRect(0,0,w,h);
   }
-  ctx.strokeStyle='rgba(228,184,74,.62)';
-  ctx.lineWidth=4;
-  ctx.strokeRect(44,44,w-88,h-88);
-  ctx.strokeStyle='rgba(176,226,218,.22)';
-  ctx.lineWidth=2;
-  ctx.strokeRect(66,66,w-132,h-132);
+  const safeX=Math.round(w*.055);
+  const safeY=Math.round(h*.10);
+  const safeW=Math.round(w*.52);
+  const safeH=Math.round(h*.80);
+  const pad=Math.round(w*.024);
+  const panelGradient=ctx.createLinearGradient(safeX,0,safeX+safeW,0);
+  panelGradient.addColorStop(0,'rgba(2,8,28,.74)');
+  panelGradient.addColorStop(.72,'rgba(2,8,28,.52)');
+  panelGradient.addColorStop(1,'rgba(2,8,28,.20)');
+  drawCanvasPanel(ctx,safeX,safeY,safeW,safeH,{fill:panelGradient,stroke:'rgba(228,184,74,.22)',lineWidth:1});
 
-  let y=112;
+  ctx.strokeStyle='rgba(228,184,74,.58)';
+  ctx.lineWidth=Math.max(2,Math.round(w*.0024));
+  ctx.strokeRect(Math.round(w*.022),Math.round(h*.038),w-Math.round(w*.044),h-Math.round(h*.076));
+
+  const textX=safeX+pad;
+  const maxTextW=safeW-(pad*2);
+  let y=safeY+pad+6;
   ctx.fillStyle='rgba(176,226,218,.92)';
-  ctx.font='700 24px "Shippori Mincho", serif';
-  ctx.fillText('RASHIN CARD',82,y);
-  y+=60;
+  ctx.font=`700 ${Math.round(w*.016)}px "Shippori Mincho", serif`;
+  ctx.fillText('RASHIN CARD',textX,y);
+  y+=Math.round(h*.055);
   ctx.fillStyle='#f2d57b';
-  ctx.font='700 48px "Shippori Mincho", serif';
-  y=drawWrappedCanvasText(ctx,card.TITLE||'羅針カード',82,y,916,58,{maxLines:2,ellipsis:true})+18;
+  ctx.font=`700 ${Math.round(w*.027)}px "Shippori Mincho", serif`;
+  y=drawWrappedCanvasText(ctx,card.TITLE||'羅針カード',textX,y,maxTextW,Math.round(h*.056),{maxLines:2,ellipsis:true})+Math.round(h*.014);
   ctx.fillStyle='rgba(255,247,216,.94)';
-  ctx.font='500 28px "Shippori Mincho", serif';
-  y=drawWrappedCanvasText(ctx,card.ONE_LINE||'',82,y,916,42,{maxLines:2,ellipsis:true})+34;
+  ctx.font=`500 ${Math.round(w*.016)}px "Shippori Mincho", serif`;
+  y=drawWrappedCanvasText(ctx,card.ONE_LINE||'',textX,y,maxTextW,Math.round(h*.037),{maxLines:2,ellipsis:true})+Math.round(h*.024);
 
   const digests=getDossierReadingDigests().slice(0,2);
   if(digests.length){
-    drawCanvasPanel(ctx,76,y,928,260,{fill:'rgba(6,14,30,.72)',stroke:'rgba(176,226,218,.34)'});
+    const digestH=Math.round(h*.28);
+    drawCanvasPanel(ctx,textX,y,maxTextW,digestH,{fill:'rgba(6,14,30,.70)',stroke:'rgba(176,226,218,.32)'});
     ctx.fillStyle='rgba(176,226,218,.95)';
-    ctx.font='700 26px "Shippori Mincho", serif';
-    ctx.fillText('ルノルマン・オラクルから見えたこと',110,y+46);
-    const panelW=digests.length>1?424:860;
+    ctx.font=`700 ${Math.round(w*.016)}px "Shippori Mincho", serif`;
+    ctx.fillText('ルノルマン・オラクルから見えたこと',textX+Math.round(w*.015),y+Math.round(h*.045));
+    const panelGap=Math.round(w*.013);
+    const panelW=digests.length>1?Math.floor((maxTextW-(panelGap*3))/2):maxTextW-Math.round(w*.03);
+    const panelH=Math.round(h*.17);
     digests.forEach((item,index)=>{
-      const px=110+(index*(panelW+28));
-      drawCanvasPanel(ctx,px,y+74,panelW,152,{fill:'rgba(255,255,255,.035)',stroke:'rgba(176,226,218,.16)',lineWidth:1});
+      const px=textX+Math.round(w*.015)+(index*(panelW+panelGap));
+      const py=y+Math.round(h*.07);
+      drawCanvasPanel(ctx,px,py,panelW,panelH,{fill:'rgba(255,255,255,.04)',stroke:'rgba(176,226,218,.16)',lineWidth:1});
       ctx.fillStyle='rgba(242,213,123,.95)';
-      ctx.font='700 22px "Shippori Mincho", serif';
-      ctx.fillText(item.title,px+22,y+112);
+      ctx.font=`700 ${Math.round(w*.013)}px "Shippori Mincho", serif`;
+      ctx.fillText(item.title,px+Math.round(w*.012),py+Math.round(h*.038));
       ctx.fillStyle='rgba(246,240,220,.9)';
-      ctx.font='500 23px "Shippori Mincho", serif';
-      drawWrappedCanvasText(ctx,item.copy,px+22,y+150,panelW-44,34,{maxLines:3,ellipsis:true});
+      ctx.font=`500 ${Math.round(w*.013)}px "Shippori Mincho", serif`;
+      drawWrappedCanvasText(ctx,item.copy,px+Math.round(w*.012),py+Math.round(h*.074),panelW-Math.round(w*.024),Math.round(h*.03),{maxLines:3,ellipsis:true});
     });
-    y+=292;
+    y+=digestH+Math.round(h*.026);
   }
 
-  drawCanvasPanel(ctx,76,y,928,180,{fill:'rgba(8,8,20,.66)',stroke:'rgba(228,184,74,.3)'});
-  ctx.fillStyle='rgba(242,213,123,.95)';
-  ctx.font='700 25px "Shippori Mincho", serif';
-  ctx.fillText('今回の答え',110,y+44);
-  ctx.fillStyle='rgba(246,240,220,.9)';
-  ctx.font='500 25px "Shippori Mincho", serif';
-  drawWrappedCanvasText(ctx,card.VERDICT||card.ONE_LINE||'',110,y+84,860,38,{maxLines:3,ellipsis:true});
-  y+=212;
-
-  const axis=[
-    {label:card.POSITIVE_LABEL||'残る条件',items:card.REMAIN_CONDITIONS||[]},
-    {label:card.NEGATIVE_LABEL||'動く条件',items:card.MOVE_CONDITIONS||[]},
-    {label:card.HOLD_LABEL||'保留条件',items:card.HOLD_CONDITIONS||[]},
-  ];
-  const colW=290;
-  axis.forEach((group,index)=>{
-    const x=76+index*(colW+29);
-    drawCanvasPanel(ctx,x,y,colW,214,{fill:'rgba(4,7,18,.68)',stroke:'rgba(228,184,74,.22)',lineWidth:1});
-    ctx.fillStyle='rgba(242,213,123,.95)';
-    ctx.font='700 22px "Shippori Mincho", serif';
-    ctx.fillText(group.label,x+20,y+40);
-    ctx.fillStyle='rgba(246,240,220,.88)';
-    ctx.font='500 21px "Shippori Mincho", serif';
-    let itemY=y+82;
-    (group.items||[]).slice(0,2).forEach(item=>{
-      ctx.fillStyle='rgba(228,184,74,.9)';
-      ctx.fillRect(x+20,itemY-13,7,7);
-      ctx.fillStyle='rgba(246,240,220,.88)';
-      itemY=drawWrappedCanvasText(ctx,item,x+40,itemY,colW-64,30,{maxLines:2,ellipsis:true})+12;
-    });
-  });
-  y+=246;
-
-  drawCanvasPanel(ctx,76,y,928,116,{fill:'rgba(176,226,218,.07)',stroke:'rgba(176,226,218,.24)'});
+  const actionH=Math.round(h*.16);
+  drawCanvasPanel(ctx,textX,y,maxTextW,actionH,{fill:'rgba(4,9,24,.58)',stroke:'rgba(228,184,74,.22)'});
   ctx.fillStyle='rgba(176,226,218,.95)';
-  ctx.font='700 23px "Shippori Mincho", serif';
-  ctx.fillText('今週の一手',110,y+42);
+  ctx.font=`700 ${Math.round(w*.014)}px "Shippori Mincho", serif`;
+  ctx.fillText('今週の一手',textX+Math.round(w*.015),y+Math.round(h*.046));
   ctx.fillStyle='rgba(246,240,220,.92)';
-  ctx.font='500 24px "Shippori Mincho", serif';
-  drawWrappedCanvasText(ctx,(card.ACTION7||[])[0]||'',260,y+42,700,34,{maxLines:2,ellipsis:true});
-  y+=148;
+  ctx.font=`500 ${Math.round(w*.014)}px "Shippori Mincho", serif`;
+  drawWrappedCanvasText(ctx,(card.ACTION7||[])[0]||'',textX+Math.round(w*.13),y+Math.round(h*.046),maxTextW-Math.round(w*.16),Math.round(h*.034),{maxLines:2,ellipsis:true});
+  y+=actionH+Math.round(h*.026);
 
   ctx.fillStyle='rgba(176,226,218,.9)';
-  ctx.font='700 22px "Shippori Mincho", serif';
-  ctx.fillText(INTEGRATION_ACTION_GUIDE_HEADING,82,y);
-  y+=42;
+  ctx.font=`700 ${Math.round(w*.014)}px "Shippori Mincho", serif`;
+  ctx.fillText(INTEGRATION_ACTION_GUIDE_HEADING,textX,y);
+  y+=Math.round(h*.045);
   ctx.fillStyle='rgba(255,232,171,.96)';
-  ctx.font='700 31px "Shippori Mincho", serif';
-  drawWrappedCanvasText(ctx,card.CLOSING||'',82,y,916,46,{maxLines:2,ellipsis:true});
+  ctx.font=`700 ${Math.round(w*.019)}px "Shippori Mincho", serif`;
+  drawWrappedCanvasText(ctx,card.CLOSING||'',textX,y,maxTextW,Math.round(h*.046),{maxLines:2,ellipsis:true});
 
   const blob=await canvasToPngBlob(canvas);
   return blob&&blob.size?blob:null;
