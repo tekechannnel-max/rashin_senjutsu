@@ -10314,7 +10314,7 @@ function cleanDossierItemText(text='',labels=[]){
     '続ける条件','切り替える条件','関わる条件','距離を置く条件',
     '今週の一手','7日以内の一手','今回の答え','一言結論',
     '今の現実','整う兆し','気をつけること','今の流れ','羅針の指針','最後の一言',
-    '姓名判断','四柱推命','動物タイプ診断',
+    '姓名判断','四柱推命','動物タイプ診断','ルノルマンの示し','数秘オラクルの示し',
   ].filter(Boolean);
   if(labelList.length){
     clean=clean.replace(new RegExp(`^(?:${labelList.map(escapeRegExp).join('|')})\\s*(?:[：:・-]\\s*|\\s+)`),'').trim();
@@ -11312,10 +11312,14 @@ function renderDossierIncludedSections(){
     </div>`;
 }
 
+const DOSSIER_LENORMAND_GUIDANCE_HEADING='ルノルマンの示し';
+const DOSSIER_ORACLE_GUIDANCE_HEADING='数秘オラクルの示し';
+
 function buildDossierPlainText(data){
   const safeData=resolveDossierCardData(data);
   const readingDigests=getDossierReadingDigests();
   const foundationBlocks=getDossierFoundationBulletSections().map(section=>`${section.label}：\n${section.items.map(item=>`・${item}`).join('\n')}`);
+  const guidance=buildDossierSignalSummaries(safeData);
   const blocks=[
     'RASHIN CARD',
     safeData.TITLE,
@@ -11323,9 +11327,8 @@ function buildDossierPlainText(data){
     `今回の答え：\n${safeData.VERDICT}`,
     readingDigests.length?`カードから見えたこと：\n${readingDigests.map(item=>`・${item.title}：${item.copy}`).join('\n')}`:'',
     ...foundationBlocks,
-    `${INTEGRATION_ACTION_GUIDE_HEADING}：\n${safeData.ACTION7.map(item=>`・${item}`).join('\n')}`,
-    `${INTEGRATION_CLOSING_HEADING}：`,
-    safeData.CLOSING,
+    `${DOSSIER_LENORMAND_GUIDANCE_HEADING}：\n${guidance.lenormand}`,
+    `${DOSSIER_ORACLE_GUIDANCE_HEADING}：\n${guidance.oracle}`,
   ];
   const text=blocks.map(block=>String(block||'').trim()).filter(Boolean).join('\n\n');
   if(text.length<=1000) return sanitizeRashinVisibleText(redactDossierPrivateNames(text));
@@ -11345,9 +11348,8 @@ function buildDossierPlainText(data){
     `今回の答え：\n${compact.VERDICT}`,
     readingDigests.length?`カードから見えたこと：\n${readingDigests.map(item=>`・${item.title}：${trimDossierTextSafely(item.copy,56,18)}`).join('\n')}`:'',
     ...foundationBlocks,
-    `${INTEGRATION_ACTION_GUIDE_HEADING}：\n${compact.ACTION7.map(item=>`・${item}`).join('\n')}`,
-    `${INTEGRATION_CLOSING_HEADING}：`,
-    compact.CLOSING,
+    `${DOSSIER_LENORMAND_GUIDANCE_HEADING}：\n${guidance.lenormand}`,
+    `${DOSSIER_ORACLE_GUIDANCE_HEADING}：\n${guidance.oracle}`,
   ].map(block=>String(block||'').trim()).filter(Boolean).join('\n\n')));
 }
 
@@ -11371,6 +11373,23 @@ function renderDossierEvidenceDetails(card){
 
 function renderDossierConditionList(items=[]){
   return `<ul class="dossier-save-list">${items.map(item=>`<li class="dossier-save-item">${escapeHtml(sanitizeRashinVisibleText(redactDossierPrivateNames(item)))}</li>`).join('\n')}</ul>`;
+}
+
+function buildDossierSignalSummaries(card={}){
+  const safeCard=card&&card.TITLE?card:resolveDossierCardData(card);
+  const lenRaw=getDossierReadingDigest('len')||safeCard.VERDICT||safeCard.ONE_LINE;
+  const oracleRaw=getDossierReadingDigest('orc')||(safeCard.ACTION7||[])[0]||safeCard.CLOSING||safeCard.ONE_LINE;
+  const lenFallback='今は、現実の反応と安心できる流れが残るかを見ている段階です。';
+  const oracleFallback='自分を雑に扱わない視点へ戻ることが大切です。';
+  const lenormand=normalizeDossierSentence(
+    limitJapaneseBodyBySentences(sanitizeRashinVisibleText(redactDossierPrivateNames(lenRaw)),126,2),
+    safeCard.VERDICT||lenFallback,
+    {max:126}
+  );
+  const oracleBase=trimDossierTextSafely(sanitizeRashinVisibleText(redactDossierPrivateNames(oracleRaw)),52,12)
+    ||limitTextByChars(sanitizeRashinVisibleText(redactDossierPrivateNames(oracleRaw)),52,12);
+  const oracle=normalizeDossierSentence(oracleBase,oracleFallback,{max:56});
+  return{lenormand,oracle};
 }
 
 function buildDossierFoundationItems(items=[],fallbackItems=[]){
@@ -11492,6 +11511,7 @@ function renderDossierReadingDigest(){
 function renderDossierSaveCard(card){
   card=resolveDossierCardData(card);
   const foundationSections=getDossierFoundationBulletSections();
+  const guidance=buildDossierSignalSummaries(card);
   return`
     <article class="dossier-save-card">
       <div class="dossier-save-visual">
@@ -11507,13 +11527,13 @@ function renderDossierSaveCard(card){
           </div>
           ${renderDossierReadingDigest()}
           <div class="dossier-save-section dossier-save-visual-action">
-            <div>
-              <div class="dossier-save-heading">${escapeHtml(INTEGRATION_ACTION_GUIDE_HEADING)}</div>
-              ${renderDossierConditionList(card.ACTION7)}
+            <div class="dossier-save-guidance-block dossier-save-guidance-lenormand">
+              <div class="dossier-save-heading">${escapeHtml(DOSSIER_LENORMAND_GUIDANCE_HEADING)}</div>
+              <div class="dossier-save-guidance-copy">${escapeHtml(guidance.lenormand)}</div>
             </div>
-            <div>
-              <div class="dossier-save-heading">${escapeHtml(INTEGRATION_CLOSING_HEADING)}</div>
-              <div class="dossier-save-closing">${escapeHtml(card.CLOSING)}</div>
+            <div class="dossier-save-guidance-block dossier-save-guidance-oracle">
+              <div class="dossier-save-heading">${escapeHtml(DOSSIER_ORACLE_GUIDANCE_HEADING)}</div>
+              <div class="dossier-save-guidance-copy">${escapeHtml(guidance.oracle)}</div>
             </div>
           </div>
         </div>
@@ -11545,6 +11565,7 @@ function detectDossierCardQualityIssues(data={},options={}){
   const text=buildDossierPlainText(card);
   const displayText=[text,options.renderedText||''].join('\n');
   const conditionGroups=getDossierFoundationBulletSections();
+  const guidance=buildDossierSignalSummaries(card);
   if(text.length>1000) issues.push('羅針カードが1000字を超えている');
   if(text.length>800) issues.push('羅針カードが800字を超えている');
   issues.push(...detectRashinVisibleTextPolicyIssues(displayText,'羅針カード'));
@@ -11555,6 +11576,7 @@ function detectDossierCardQualityIssues(data={},options={}){
   if(/No\.\d+|カード番号|配置名|中心十字|下の段|上の段|現状の列|未来の列|右側の流れ|左側の流れ/.test(text)) issues.push('羅針カード本体に内部根拠やカード番号が混入している');
   if(/保存カードやPDFには含めません|根拠を見る|土台から見えたこと|追加質問から見えたこと/.test(text)) issues.push('羅針カード本体に根拠詳細が混ざっている');
   if(new RegExp('保存'+'キーワード').test(displayText)) issues.push('羅針カードに不要なキーワード欄が残っている');
+  if(new RegExp(`${escapeRegExp(INTEGRATION_ACTION_GUIDE_HEADING)}|${escapeRegExp(INTEGRATION_CLOSING_HEADING)}`).test(displayText)) issues.push('羅針カードに旧見出しが残っている');
   if(/進む条件|止まる条件|残る条件|動く条件|保留条件|関わる条件|距離を置く条件|今週の一手|7日以内|30日以内|確認してください|書き出してください|材料を集め/.test(text)) issues.push('羅針カードに旧方針の条件表または作業指示が混入している');
   if(/です。があるなら|ことです。があるなら|確認してから選ぶことです。が/.test(displayText)) issues.push('羅針カードに接続崩れがあります');
   conditionGroups.forEach(group=>{
@@ -11575,8 +11597,8 @@ function detectDossierCardQualityIssues(data={},options={}){
       }
     }
   });
-  if((card.ACTION7||[]).length!==1) issues.push(`${INTEGRATION_ACTION_GUIDE_HEADING}が1項目ではない`);
-  if((card.ACTION7||[]).some(item=>isDossierIncompleteText(item))) issues.push(`${INTEGRATION_ACTION_GUIDE_HEADING}が未完文です`);
+  if(!guidance.lenormand||isDossierIncompleteText(guidance.lenormand)) issues.push(`${DOSSIER_LENORMAND_GUIDANCE_HEADING}がない、または未完文`);
+  if(!guidance.oracle||isDossierIncompleteText(guidance.oracle)) issues.push(`${DOSSIER_ORACLE_GUIDANCE_HEADING}がない、または未完文`);
   if(options.renderedText&&/<li/i.test(options.renderedHtml||'')&&!/\n|・/.test(options.renderedText)){
     issues.push('羅針カードの箇条書きが表示テキストで連結して見える可能性があります');
   }
@@ -15419,7 +15441,7 @@ ${getRashinReadingPolicyPrompt('quality')}
 - 土台詳細表示にも文途中省略が混じっていないか
 - 同じ助言を3回以上繰り返していないか
 - ルノルマン・オラクル・統合判断が同じ役割の助言を繰り返していないか
-- 羅針カードが長文鑑定書ではなく、一言結論・今の現実・姓名判断・四柱推命・動物タイプ診断・今の流れ・${INTEGRATION_ACTION_GUIDE_HEADING}・${INTEGRATION_CLOSING_HEADING}の短い判断カードになっているか
+- 羅針カードが長文鑑定書ではなく、一言結論・今の現実・姓名判断・四柱推命・動物タイプ診断・今の流れ・${DOSSIER_LENORMAND_GUIDANCE_HEADING}・${DOSSIER_ORACLE_GUIDANCE_HEADING}の短い判断カードになっているか
 - 「整理してください」だけで終わっていないか
 - ルノルマン9枚の読みがあるか
 - オラクル3枚の助言があるか
@@ -16573,7 +16595,7 @@ function buildPremiumDossierCardSystemPrompt(todayText){
 ${getRashinReadingPolicyPrompt('dossier')}
 
 守ること:
-- メインは一言結論、今の現実、姓名判断、四柱推命、動物タイプ診断、今の流れ、${INTEGRATION_ACTION_GUIDE_HEADING}、${INTEGRATION_CLOSING_HEADING}だけに絞る
+- メインは一言結論、今の現実、姓名判断、四柱推命、動物タイプ診断、今の流れ、${DOSSIER_LENORMAND_GUIDANCE_HEADING}、${DOSSIER_ORACLE_GUIDANCE_HEADING}だけに絞る
 - ${isReconciliationContext(ctx)?'恋愛サブテーマは復縁。羅針カードでは「まだ好きか」ではなく「もう一度信頼を作れるか」「過去の原因に向き合えるか」「曖昧な連絡だけで続いていないか」を残す':'相談テーマに合わせたラベルと判断軸を使う'}
 - 羅針カードは占い結果の全文ではなく、あとで読み返す判断軸にする
 - 羅針カードはSNS投稿・画像共有される前提です。表示に使ってよい名前は内部資料の「呼び名」だけ。姓名判断用の本名、姓、名、ログイン名は絶対に出さない
@@ -16598,7 +16620,8 @@ ${getRashinReadingPolicyPrompt('dossier')}
 - VERDICTは2〜3文、最大180字
 - DECISION_AXISは内部判断用。表示枠には使わず、条件表の見出しや作業指示にしない
 - HOLD_CONDITIONSは内部判断用。表示枠には使わず、見えていない違和感を自然な文章にする
-- ACTION7は1文だけ。作業指示ではなく、羅針の指針を書く
+- 表示枠では、${DOSSIER_LENORMAND_GUIDANCE_HEADING}を上、${DOSSIER_ORACLE_GUIDANCE_HEADING}を下に置く。内容はルノルマン8割、数秘オラクル2割の要約にする
+- ACTION7とCLOSINGは内部補助用。表示見出しとして「${INTEGRATION_ACTION_GUIDE_HEADING}」「${INTEGRATION_CLOSING_HEADING}」は出さない
 - キーワード欄は出力しない。表示枠には姓名判断・四柱推命・動物タイプ診断の5行箇条書きを使う
 - CLOSINGは最大60字
 
@@ -16608,8 +16631,8 @@ ${getRashinReadingPolicyPrompt('dossier')}
 [[VERDICT]]今回の答え。2〜3文[[/VERDICT]]
 [[DECISION_AXIS]]内部判断用。条件表にせず、短い自然文を1〜2行[[/DECISION_AXIS]]
 [[HOLD_CONDITIONS]]内部判断用。見えていない違和感を1〜2行[[/HOLD_CONDITIONS]]
-[[ACTION7]]羅針の指針を1文[[/ACTION7]]
-[[CLOSING]]${INTEGRATION_CLOSING_HEADING}[[/CLOSING]]
+[[ACTION7]]内部補助用。数秘オラクル由来の向き合い方を1文[[/ACTION7]]
+[[CLOSING]]内部補助用。短い締めの一文[[/CLOSING]]
 [[EVIDENCE_SUMMARY]]根拠を見る用の短い要約。通常表示には出さない[[/EVIDENCE_SUMMARY]]`;
 }
 
@@ -16621,7 +16644,7 @@ function buildPremiumDossierCardPrompt(source){
 追加質問のraw回答、カード番号、配置名、履歴データは羅針カード本体に出さないでください。
 SNS投稿用のカードなので、表示名は内部資料の「呼び名」だけを使ってください。相談者の本名、姓名、姓、名、ログイン名は本文にも根拠にも出さないでください。
 機械的な条件表、7日以内、30日以内、確認する、書き出す、比較する、材料を集める、今週の一手は出さないでください。
-表示枠の「姓名判断」「四柱推命」「動物タイプ診断」はアプリ側で5行ずつ整えるため、ここでは本名や生年月日を出さず、羅針の指針は1文だけにしてください。
+表示枠の「姓名判断」「四柱推命」「動物タイプ診断」はアプリ側で5行ずつ整えます。カード内の下部指針は「${DOSSIER_LENORMAND_GUIDANCE_HEADING}」を上、「${DOSSIER_ORACLE_GUIDANCE_HEADING}」を下にし、ルノルマン8割・数秘オラクル2割の要約として扱います。本名や生年月日は出さないでください。
 配列やカンマ区切りを本文に出さず、文途中で終わらせないでください。
 EVIDENCE_SUMMARYだけは、根拠を見る人向けに短く残してください。`;
 }
@@ -17074,20 +17097,27 @@ async function createDossierShareImageBlob(cardData){
     y+=digestH+Math.round(h*.015);
   }
 
-  const actionH=Math.max(Math.round(h*.11),Math.min(Math.round(h*.145),safeY+safeH-y-Math.round(h*.012)));
+  const guidance=buildDossierSignalSummaries(card);
+  const actionH=Math.max(Math.round(h*.135),Math.min(Math.round(h*.18),safeY+safeH-y-Math.round(h*.012)));
   drawCanvasPanel(ctx,textX,y,maxTextW,actionH,{fill:'rgba(4,9,24,.58)',stroke:'rgba(228,184,74,.22)'});
   ctx.fillStyle='rgba(176,226,218,.95)';
   ctx.font=`700 ${Math.round(w*.014)}px "Shippori Mincho", serif`;
-  ctx.fillText(INTEGRATION_ACTION_GUIDE_HEADING,textX+Math.round(w*.015),y+Math.round(h*.046));
+  ctx.fillText(DOSSIER_LENORMAND_GUIDANCE_HEADING,textX+Math.round(w*.015),y+Math.round(h*.038));
   ctx.fillStyle='rgba(246,240,220,.92)';
   ctx.font=`500 ${Math.round(w*.014)}px "Shippori Mincho", serif`;
-  drawWrappedCanvasText(ctx,(card.ACTION7||[])[0]||'',textX+Math.round(w*.13),y+Math.round(h*.046),maxTextW-Math.round(w*.16),Math.round(h*.03),{maxLines:1,ellipsis:true});
+  drawWrappedCanvasText(ctx,guidance.lenormand,textX+Math.round(w*.17),y+Math.round(h*.038),maxTextW-Math.round(w*.19),Math.round(h*.03),{maxLines:2,ellipsis:true});
+  ctx.strokeStyle='rgba(228,184,74,.14)';
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(textX+Math.round(w*.015),y+Math.round(actionH*.62));
+  ctx.lineTo(textX+maxTextW-Math.round(w*.015),y+Math.round(actionH*.62));
+  ctx.stroke();
   ctx.fillStyle='rgba(176,226,218,.9)';
   ctx.font=`700 ${Math.round(w*.014)}px "Shippori Mincho", serif`;
-  ctx.fillText(INTEGRATION_CLOSING_HEADING,textX+Math.round(w*.015),y+Math.round(h*.095));
+  ctx.fillText(DOSSIER_ORACLE_GUIDANCE_HEADING,textX+Math.round(w*.015),y+Math.round(actionH*.78));
   ctx.fillStyle='rgba(255,232,171,.96)';
   ctx.font=`700 ${Math.round(w*.015)}px "Shippori Mincho", serif`;
-  drawWrappedCanvasText(ctx,card.CLOSING||'',textX+Math.round(w*.15),y+Math.round(h*.095),maxTextW-Math.round(w*.17),Math.round(h*.031),{maxLines:1,ellipsis:true});
+  drawWrappedCanvasText(ctx,guidance.oracle,textX+Math.round(w*.17),y+Math.round(actionH*.78),maxTextW-Math.round(w*.19),Math.round(h*.031),{maxLines:1,ellipsis:true});
 
   const blob=await canvasToPngBlob(canvas);
   return blob&&blob.size?blob:null;
