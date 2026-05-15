@@ -926,6 +926,34 @@ function getFullname(){
   return sei||mei||'';
 }
 
+function normalizeUsernameInput(value=''){
+  return String(value||'')
+    .replace(NAME_DROP_SUFFIXES,'')
+    .replace(/\s+/g,' ')
+    .trim()
+    .slice(0,32);
+}
+
+function getUsername(){
+  return normalizeUsernameInput(document.getElementById('f-username')?.value||'');
+}
+
+function getInputDisplayName(input=null,fallback='あなた'){
+  const candidate=normalizeUsernameInput(input?.username||input?.displayName||'');
+  return candidate||fallback;
+}
+
+function getReadingDisplayName(fallback='あなた'){
+  return getInputDisplayName({username:getUsername()},fallback);
+}
+
+function getPromptDisplayNameBlock(name=getReadingDisplayName()){
+  return [
+    formatUserDataBlock('呼び名',name||'あなた',80),
+    '※表に出す鑑定文、鑑定結果、羅針カード、SNS共有文ではこの呼び名だけを使い、姓名判断用の本名は出さないこと。'
+  ].join('\n');
+}
+
 function requireFullnameForNameJudge(){
   const seiEl=document.getElementById('f-sei');
   const meiEl=document.getElementById('f-mei');
@@ -2393,6 +2421,7 @@ function getCurrentInputAnalytics(){
   const month=Number.parseInt(document.getElementById('f-month')?.value,10);
   const day=getSelectedBirthDay();
   const fullname=getFullname();
+  const username=getUsername();
   const theme=document.getElementById('f-theme')?.value?.trim()||'';
   const catTags=getConsultationTagSelections();
   return{
@@ -2402,6 +2431,7 @@ function getCurrentInputAnalytics(){
     theme_length:theme.length,
     has_birthdate:hasFullBirthDate(year,month,day),
     has_name:!!fullname,
+    has_username:!!username,
   };
 }
 
@@ -4301,6 +4331,7 @@ function syncCheckSaveUI(){
 function hasStoredInputData(saved){
   return !!(saved&&(
     saved.fullname||
+    saved.username||
     saved.year||
     saved.month||
     saved.day!==undefined||
@@ -4314,9 +4345,11 @@ function hasStoredInputData(saved){
 function resetInputFields(){
   const seiEl=document.getElementById('f-sei');
   const meiEl=document.getElementById('f-mei');
+  const usernameEl=document.getElementById('f-username');
   const themeEl=document.getElementById('f-theme');
   if(seiEl) seiEl.value='';
   if(meiEl) meiEl.value='';
+  if(usernameEl) usernameEl.value='';
   if(themeEl) themeEl.value='';
   updateThemeCounter();
   setGender('');
@@ -4353,6 +4386,8 @@ function loadSaved(){
       if(seiEl) seiEl.value=splitName?.sei||'';
       if(meiEl) meiEl.value=splitName?.mei||'';
     }
+    const usernameEl=document.getElementById('f-username');
+    if(usernameEl) usernameEl.value=normalizeUsernameInput(saved.username||saved.displayName||'');
     setGender(saved.gender||'');
     if(saved.year) document.getElementById('f-year').value=saved.year;
     if(saved.month) document.getElementById('f-month').value=saved.month;
@@ -7087,8 +7122,11 @@ function formatHistoryDate(iso){
 }
 
 function getCurrentInputSnapshot(){
+  const username=getUsername();
   return{
     fullname:getFullname(),
+    username,
+    displayName:getInputDisplayName({username}),
     gender:GENDER,
     year:parseInt(document.getElementById('f-year')?.value,10)||null,
     month:parseInt(document.getElementById('f-month')?.value,10)||null,
@@ -8505,7 +8543,7 @@ function highlightNamesInElement(el,fullname){
 function renderFormattedResultText(id,text,kind='default'){
   const el=document.getElementById(id);
   if(!el) return;
-  const normalized=String(text||'')
+  const normalized=redactDossierPrivateNames(String(text||''))
     .replace(/\r\n?/g,'\n')
     .replace(/\n{3,}/g,'\n\n')
     .trim();
@@ -8517,8 +8555,8 @@ function renderFormattedResultText(id,text,kind='default'){
   el.innerHTML=kind==='foundation'
     ?buildFoundationSummaryMarkup(normalized)
     :buildFormattedReadingMarkup(normalized,kind);
-  const fullname=typeof getFullname==='function'?getFullname():'';
-  if(fullname) highlightNamesInElement(el,fullname);
+  const displayName=getReadingDisplayName('');
+  if(displayName) highlightNamesInElement(el,displayName);
 }
 
 function buildReadingOutputFormatGuide(kind='len',is9=false,focusOverride=null){
@@ -9157,10 +9195,12 @@ function buildFoundationDeepSourceContext(){
       `誕生日から見える行動の癖: ${lifeText}`,
     ].filter(Boolean).join('\n');
 
+  const displayName=getInputDisplayName(input);
+
   return{
     input,
     focus,
-    contextText:`【相談者】${input.fullname||'あなた'}さん
+    contextText:`【相談者】${displayName}さん
 【相談テーマ】${input.cat||'総合'}「${input.theme||'全般'}」
 【相談者が求めている答え】${focus.answerNeed}
 
@@ -9187,9 +9227,10 @@ function buildFoundationDeepFallback(){
   const nameProfile=buildNameJudgeInsights(NAMEJUDGE);
   const reaction=REACTION_PROFILE;
   const lifeText=buildLifePatternPlainText();
+  const displayName=getInputDisplayName(input);
 
   const backgroundAndCurrent=joinCompactSentences(
-    `${input.fullname||'あなた'}さんは、${focus.shortLabel}の場面で感情だけで決めるより、自分が納得できる筋道が見えたときに力を出しやすいタイプです。`,
+    `${displayName}さんは、${focus.shortLabel}の場面で感情だけで決めるより、自分が納得できる筋道が見えたときに力を出しやすいタイプです。`,
     birthPlain?.overview,
     namePlain?.overview,
     reaction?.summary?`反応面では、${reaction.summary}`:'動物タイプ診断は未入力のため、この部分は簡易表示です。',
@@ -9680,8 +9721,8 @@ async function runFlowAnalysis(){
       const orcNames=(r.selOrc||[]).map(id=>ORACLE[id]?.name).filter(Boolean).join('・')||'不明';
       return `第${i+1}回（${date}）テーマ：${theme} / ルノルマン：${lenNames} / オラクル：${orcNames}`;
     }).join('\n');
-    const name=history[0]?.input?.fullname||'あなた';
-    const prompt=`${formatUserDataBlock('相談者名',name,120)}
+    const name=getInputDisplayName(history[0]?.input||{},'あなた');
+    const prompt=`${getPromptDisplayNameBlock(name)}
 ${formatUserDataBlock('鑑定履歴内のテーマ',summaries,2200)}
 
 鑑定記録を時系列で見直してください。
@@ -9760,8 +9801,10 @@ function hydrateInputsFromRecord(record){
     const splitName=splitJapaneseFullname(input.fullname||'');
     const seiEl=document.getElementById('f-sei');
     const meiEl=document.getElementById('f-mei');
+    const usernameEl=document.getElementById('f-username');
     if(seiEl) seiEl.value=splitName?.sei||'';
     if(meiEl) meiEl.value=splitName?.mei||'';
+    if(usernameEl) usernameEl.value=normalizeUsernameInput(input.username||input.displayName||'');
   }
   setGender(input.gender||'');
   if(input.year) document.getElementById('f-year').value=input.year;
@@ -9815,7 +9858,7 @@ function openHistoryItem(id){
     if(LAST_OUTPUTS.integration){
       LAST_OUTPUTS.integration=ensureFinalJudgmentText(
         LAST_OUTPUTS.integration,
-        record.input?.fullname||'あなた',
+        getInputDisplayName(record.input||{},'あなた'),
         record.input?.cat||'総合',
         record.input?.theme||'',
         {focus:historyFocus,clarifyText:historyClarify}
@@ -10412,8 +10455,9 @@ function getDossierPrivateNameTokens(){
   const values=[];
   try{ values.push(getCurrentInputSnapshot?.().fullname); }catch(_error){}
   try{ values.push(typeof getFullname==='function'?getFullname():''); }catch(_error){}
-  try{ values.push(MEMBER_AUTH?.userName,MEMBER_AUTH?.customerName); }catch(_error){}
+  const displayName=normalizeUsernameInput(typeof getReadingDisplayName==='function'?getReadingDisplayName(''):'');
   const skip=new Set(['あなた','相談者','本人','確認者','ゲスト','ユーザー','user','guest']);
+  if(displayName) skip.add(displayName);
   const tokens=[];
   const add=value=>{
     const raw=String(value||'').replace(NAME_DROP_SUFFIXES,'').trim();
@@ -10439,7 +10483,7 @@ function getDossierPrivateNameTokens(){
   return Array.from(new Set(tokens)).sort((a,b)=>b.length-a.length);
 }
 
-function redactDossierPrivateNames(value='',replacement='あなた'){
+function redactDossierPrivateNames(value='',replacement=getReadingDisplayName()){
   let text=String(value||'');
   if(!text) return '';
   getDossierPrivateNameTokens().forEach(token=>{
@@ -10788,6 +10832,7 @@ function buildFallbackDossier(){
   const timing=getSectionBody(LAST_OUTPUTS.integration,1)||getSectionBody(LAST_OUTPUTS.orc,2)||'大きな結論は急がず、今週の確認で見えてくる変化を手がかりにしてください。';
   const verdict=limitTextByChars(`${headline} ${core}`,180,90);
   const evidenceSummary=limitTextByChars(`土台では、${core} ルノルマンとオラクルでは、${timing}`,360,120);
+  const displayName=getInputDisplayName(input);
   return{
     ...themedData,
     TITLE:themedData.TITLE||focus.dossierTitle,
@@ -10799,7 +10844,7 @@ function buildFallbackDossier(){
     STOP_SIGN:buildDossierWarnings(focus).join('\n'),
     GO_SIGN:buildDossierLuck(focus).join('\n'),
     KEYWORDS:buildDossierKeywords(focus),
-    CLOSING:themedData.CLOSING||`${input.fullname||'あなた'}さんの答えは、急ぐほどではなく整えるほど見えてきます。`,
+    CLOSING:themedData.CLOSING||`${displayName}さんの答えは、急ぐほどではなく整えるほど見えてきます。`,
     EVIDENCE_SUMMARY:evidenceSummary,
     SUBTITLE:'これは未来を決めつける結果ではなく、あなたが次に動くための作戦書です。',
     HEADLINE:headline,
@@ -10811,7 +10856,7 @@ function buildFallbackDossier(){
     LUCK:buildDossierLuck(focus).join('\n'),
     RECURRING:buildDossierRecurringThemeText(focus),
     KEYWORDS:buildDossierKeywords(focus),
-    CLOSING:themedData.CLOSING||`${input.fullname||'あなた'}さんに必要なのは、納得して決めるための目印を先に持つことです。`,
+    CLOSING:themedData.CLOSING||`${displayName}さんに必要なのは、納得して決めるための目印を先に持つことです。`,
   };
 }
 
@@ -11466,7 +11511,7 @@ function detectDossierCardQualityIssues(data={},options={}){
   ];
   if(text.length>1000) issues.push('羅針カードが1000字を超えている');
   if(text.length>800) issues.push('羅針カードが800字を超えている');
-  if(containsDossierPrivateName(displayText)) issues.push('羅針カードに本名または入力名が含まれている');
+  if(containsDossierPrivateName(displayText)) issues.push('羅針カードに本名または姓名判断用の名前が含まれている');
   if(/[^\n。]{10,},[^\n。]{10,}/.test(text)) issues.push('羅針カードにカンマ区切り配列のような表示がある');
   issues.push(...detectBrokenDecisionCriteriaPhraseIssues(text,'羅針カード'));
   if(/Q[:：]|A[:：]|【相談者の補足|相談者の補足整理|追加質問への回答/.test(text)) issues.push('羅針カード本体に追加質問rawが混入している');
@@ -12258,7 +12303,7 @@ function goToLen(){
   NAMEJUDGE=calcNameJudge(fullname);
 
   if(checkSave){
-    try{localStorage.setItem(INPUT_STORAGE_KEY,JSON.stringify({fullname,gender:GENDER,year,month,day,hour,cat,catTags:getConsultationTagSelections(),theme,reactionAnswers:getReactionAnswersSnapshot(),reactionProfile:REACTION_PROFILE}));}catch(e){}
+    try{localStorage.setItem(INPUT_STORAGE_KEY,JSON.stringify({fullname,username:getUsername(),gender:GENDER,year,month,day,hour,cat,catTags:getConsultationTagSelections(),theme,reactionAnswers:getReactionAnswersSnapshot(),reactionProfile:REACTION_PROFILE}));}catch(e){}
   }
 
   showScreen('s-len',40);
@@ -12307,7 +12352,7 @@ function goToSimpleReading(){
   LP=hasFullBirthDate(year,month,day)?calcLp(year,month,day):null;
   NAMEJUDGE=fullname?calcNameJudge(fullname):null;
   if(checkSave){
-    try{localStorage.setItem(INPUT_STORAGE_KEY,JSON.stringify({fullname,gender:GENDER,year,month,day,hour,cat,catTags:getConsultationTagSelections(),theme,reactionAnswers:getReactionAnswersSnapshot(),reactionProfile:REACTION_PROFILE}));}catch(e){}
+    try{localStorage.setItem(INPUT_STORAGE_KEY,JSON.stringify({fullname,username:getUsername(),gender:GENDER,year,month,day,hour,cat,catTags:getConsultationTagSelections(),theme,reactionAnswers:getReactionAnswersSnapshot(),reactionProfile:REACTION_PROFILE}));}catch(e){}
   }
   showScreen('s-result',90);
   renderResult();
@@ -15491,7 +15536,7 @@ async function runPaidCombinedReading(){
   setReadingBlockLoading('r-orc-block','気持ちの流れを整理しています','これまでの流れと、今から整えることをつなげてまとめています。');
   setIntegrationLoading('結論を整えています','ここまでの読みを一本にまとめ、今どう動くかまで落とし込んでいます。');
 
-  const name=getFullname()||'あなた';
+  const name=getReadingDisplayName();
   const cat=normalizeConsultationCategoryTag(document.getElementById('f-cat')?.value||'総合');
   const theme=document.getElementById('f-theme')?.value||'';
   let focus=analyzeConsultationFocus(cat,theme);
@@ -15540,7 +15585,7 @@ ${lenSpreadContext.chainDetails}`;
       ?`鑑定 ${historyStats.total}件 / 深掘り ${historyStats.paidCount}件 / 相談テーマ ${historyStats.topCat||'まだ少ない'} / 繰り返し出ているカード ${historyStats.topLen||'まだ少ない'} / 行動指針カード ${historyStats.topOrc||'まだ少ない'}`
     :'まだ履歴が少ない';
   const paidUserData=[
-    formatUserDataBlock('相談者名',name,120),
+    getPromptDisplayNameBlock(name),
     formatUserDataBlock('相談テーマ分類',cat,80),
     formatUserDataBlock('相談本文',theme||'全般',1200),
     formatUserDataBlock('追加質問への回答',clarifyText,1600),
@@ -15856,7 +15901,7 @@ async function runLenReading(){
   const stageStartedAt=Date.now();
   setResultStageStatus('len','working');
   setReadingBlockLoading('r-len-block','いま起きていることを整理しています','迷いを増やさないように、今見るべきことだけを言葉にしています。');
-  const name=getFullname()||'あなた';
+  const name=getReadingDisplayName();
   const cat=normalizeConsultationCategoryTag(document.getElementById('f-cat')?.value||'総合');
   const theme=document.getElementById('f-theme')?.value||'';
   const clarifyText=buildClarifyPromptText('detail');
@@ -15977,7 +16022,7 @@ ${focus.isDualConcern&&!isWorkLifeDirectionFocus(focus)?`恋愛と仕事が両�
   // 絞り込み回答があれば注入
   const fixedCardText=buildFixedGenderCardPromptText();
   const userDataText=[
-    formatUserDataBlock('相談者名',name,120),
+    getPromptDisplayNameBlock(name),
     formatUserDataBlock('相談テーマ分類',cat,80),
     formatUserDataBlock('相談本文',theme||'全般',1200),
     formatUserDataBlock('追加質問への回答',clarifyText,1600),
@@ -16017,7 +16062,7 @@ async function runOrcReading(){
   const stageStartedAt=Date.now();
   setResultStageStatus('orc','working');
   setReadingBlockLoading('r-orc-block','気持ちの流れを整理しています','これまでの流れと、今から整えることをつなげてまとめています。');
-  const name=getFullname()||'あなた';
+  const name=getReadingDisplayName();
   const cat=normalizeConsultationCategoryTag(document.getElementById('f-cat')?.value||'総合');
   const theme=document.getElementById('f-theme')?.value||'';
   const clarifyText=buildClarifyPromptText('compact');
@@ -16091,7 +16136,7 @@ OK「相手に合わせすぎていることが消耗の根本原因です。次
 合計${is3?'820字前後':'460字前後'}。冒頭だけは短く締め、その後は脱線しない範囲で必要なら深く書いてよい。1文は短く、難しい言葉は禁止。`;
 
   const userPrompt=`【相談者入力データ】
-${formatUserDataBlock('相談者名',name,120)}
+${getPromptDisplayNameBlock(name)}
 ${formatUserDataBlock('相談テーマ分類',cat,80)}
 ${formatUserDataBlock('相談本文',theme||'全般',1200)}
 ${formatUserDataBlock('追加質問への回答',clarifyText,1600)}
@@ -16137,7 +16182,7 @@ async function runIntegration(){
   const stageStartedAt=Date.now();
   setResultStageStatus('integration','working');
   setIntegrationLoading('結論を整えています','ここまでの読みを一本にまとめ、今どう動くかまで落とし込んでいます。');
-  const name=getFullname()||'あなた';
+  const name=getReadingDisplayName();
   const cat=normalizeConsultationCategoryTag(document.getElementById('f-cat')?.value||'総合');
   const theme=document.getElementById('f-theme')?.value||'';
   const clarifyFull=buildClarifyPromptText('compact');
@@ -16213,7 +16258,7 @@ ${focus.isDualConcern?`恋愛と仕事が両方あるので、「恋愛では〜
 合計700字前後。1文は短く、難しい言葉は禁止。`;
 
  const prompt=`【相談者入力データ】
-${formatUserDataBlock('相談者名',name,120)}
+${getPromptDisplayNameBlock(name)}
 ${formatUserDataBlock('相談テーマ分類',cat,80)}
 ${formatUserDataBlock('相談本文',theme||'全般',1200)}
 ${formatUserDataBlock('追加質問への回答',clarifyFull,1600)}
@@ -16297,7 +16342,7 @@ function buildPremiumDossierSourceContext(){
     ?`鑑定 ${stats.total}件 / 深掘り ${stats.paidCount}件 / 相談テーマ ${stats.topCat||'まだ少ない'} / 繰り返し出ているカード ${stats.topLen||'まだ少ない'} / 行動指針カード ${stats.topOrc||'まだ少ない'}`
     :'まだ履歴が少ない';
   const contextText=`【相談者入力データ】
-${formatUserDataBlock('相談者名',input.fullname||'あなた',120)}
+${getPromptDisplayNameBlock(getInputDisplayName(input))}
 ${formatUserDataBlock('相談テーマ分類',input.cat||'総合',80)}
 ${formatUserDataBlock('相談本文',input.theme||'全般',1200)}
 ${formatUserDataBlock('追加質問への回答',clarifyText,1600)}
@@ -16394,8 +16439,8 @@ function buildPremiumDossierCardSystemPrompt(todayText){
 - メインは一言結論、${ctx.positiveLabel}、${ctx.negativeLabel}、${ctx.holdLabel}、今週の一手、保存キーワード、${INTEGRATION_ACTION_GUIDE_HEADING}だけに絞る
 - ${isReconciliationContext(ctx)?'恋愛サブテーマは復縁。羅針カードでは「まだ好きか」ではなく「もう一度信頼を作れるか」「過去の原因に向き合えるか」「曖昧な連絡だけで続いていないか」を残す':'相談テーマに合わせたラベルと判断軸を使う'}
 - 羅針カードは占い結果の全文ではなく、あとで読み返す判断軸にする
-- 羅針カードはSNS投稿・画像共有される前提です。相談者の本名、姓名、入力名、ログイン名、個人を特定できる呼び名は絶対に出さない
-- 名前を呼ぶ必要がある箇所は「あなた」に置き換える。可能なら主語を省き、名前なしで自然に読める文にする
+- 羅針カードはSNS投稿・画像共有される前提です。表示に使ってよい名前は内部資料の「呼び名」だけ。姓名判断用の本名、姓、名、ログイン名は絶対に出さない
+- 呼び名が「あなた」の場合は「あなた」で書く。呼び名が入力されている場合は、その呼び名だけで統一する
 - 本編のトップ結論、最終判断カード、羅針カードで同じ判断軸を一貫させる
 - 追加質問の回答をそのまま再掲しない。内部で要約して使う
 - カード番号、配置名、履歴の生データ、画数や命式の羅列は通常表示に出さない
@@ -16438,7 +16483,7 @@ function buildPremiumDossierCardPrompt(source){
 上記を内部資料として使い、「長い鑑定書」ではなく短い羅針カードを作成してください。
 本編で読んだ内容の再掲ではなく、あとで見返すための判断軸と行動だけに再編集してください。
 追加質問のraw回答、カード番号、配置名、履歴データは羅針カード本体に出さないでください。
-SNS投稿用のカードなので、相談者の本名、姓名、入力名、ログイン名は本文にも根拠にも出さないでください。
+SNS投稿用のカードなので、表示名は内部資料の「呼び名」だけを使ってください。相談者の本名、姓名、姓、名、ログイン名は本文にも根拠にも出さないでください。
 進む/残る条件、止まる/動く条件、保留条件は最大2項目ずつ、今週の一手は1文だけにしてください。
 配列やカンマ区切りを本文に出さず、文途中で終わらせないでください。
 EVIDENCE_SUMMARYだけは、根拠を見る人向けに短く残してください。`;
@@ -16503,8 +16548,9 @@ function renderReturnRitual(){
   const gridEl=document.getElementById('ritual-grid');
   if(!titleEl||!copyEl||!gridEl) return;
   const input=getCurrentInputSnapshot();
+  const displayName=getInputDisplayName(input);
   titleEl.textContent='次に戻るタイミング';
-  copyEl.textContent=`今回の鑑定を「読みっぱなし」で終わらせないために、${input.fullname||'あなた'}さん向けの戻り方を置いておきます。読み返したあとにどう動くかまで、ここで整えます。`;
+  copyEl.textContent=`今回の鑑定を「読みっぱなし」で終わらせないために、${displayName}さん向けの戻り方を置いておきます。読み返したあとにどう動くかまで、ここで整えます。`;
   gridEl.innerHTML=getReturnRitualSteps().map(step=>`
     <div class="ritual-step">
       <div class="ritual-step-eyebrow">${escapeHtml(step.eyebrow)}</div>
@@ -16518,7 +16564,7 @@ function buildFollowupContext(){
   const lenNames=(SEL_LEN||[]).map(id=>`No.${id} ${LENORMAND[id]?.name||''}`).join(' / ');
   const orcNames=(SEL_ORC||[]).map(id=>`No.${id} ${ORACLE[id]?.name||''}`).join(' / ');
   return `【相談者入力データ】
-${formatUserDataBlock('相談者名',input.fullname||'あなた',120)}
+${getPromptDisplayNameBlock(getInputDisplayName(input))}
 ${formatUserDataBlock('相談テーマ分類',input.cat||'総合',80)}
 ${formatUserDataBlock('相談本文',input.theme||'全般',1200)}
 【動物タイプ診断の補足】${buildReactionPromptSnippet()}
