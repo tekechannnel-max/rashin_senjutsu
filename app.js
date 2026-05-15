@@ -7958,6 +7958,20 @@ const LEN_FALLBACK_GROUPS={
   choice:[12,20,22,27],
 };
 
+const LEN_READING_ROLES={
+  ambiguity:[6,7,14,26,32],
+  blocker:[8,10,11,19,21,23,36],
+  people:[7,14,15,18,28,29,30],
+  positive:[1,2,9,16,17,25,31,33],
+  movement:[1,3,10,17,22,27],
+  stability:[4,25,30,35],
+  value:[15,34,35],
+  relationship:[18,24,25,28,29,30],
+  support:[2,9,16,18,31,33],
+  choice:[12,20,22,27],
+  ending:[8,10,17,36],
+};
+
 function hasLenGroup(ids,groupKey){
   const group=LEN_FALLBACK_GROUPS[groupKey]||[];
   return ids.some(id=>group.includes(id));
@@ -7969,26 +7983,335 @@ function getCurrentLenReadingIds(context={}){
   return [...ids].map(id=>Number(id)).filter(Boolean);
 }
 
-function buildCardReadingFlags(focus={},context={}){
+function getLenReadingRolesForId(id){
+  return Object.entries(LEN_READING_ROLES)
+    .filter(([,ids])=>ids.includes(Number(id)))
+    .map(([role])=>role);
+}
+
+function getLenThemeCategoryForReading(ctx={},context={}){
+  if(context?.cat) return context.cat;
+  if(ctx.primaryTheme==='love') return '恋愛';
+  if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return '仕事・進路';
+  if(ctx.primaryTheme==='money') return 'お金';
+  if(ctx.primaryTheme==='relationship') return '人間関係';
+  if(ctx.primaryTheme==='family') return '家族';
+  if(ctx.primaryTheme==='creative') return '趣味・創作';
+  if(ctx.primaryTheme==='self_understanding') return '自己理解';
+  return '総合';
+}
+
+function createLenReadingCard(id,index,total,cat='総合'){
+  const data=LENORMAND[id]||{};
+  const catKey=getLenCategoryKey(cat);
+  return{
+    id:Number(id),
+    index,
+    label:getLenSpreadLabel(index,total),
+    name:data.name||`No.${id}`,
+    kw:data.kw||'',
+    themeText:data[catKey]||data.love||data.rel||data.kw||'',
+    roles:getLenReadingRolesForId(id),
+  };
+}
+
+function scoreLenCardPosition(card={},total=0){
+  if(!card||!Number.isFinite(card.index)) return 0;
+  if(total===9){
+    if(card.index===4) return 100;
+    if([1,3,5,7].includes(card.index)) return 82;
+    if([2,5,8].includes(card.index)) return 76;
+    if([6,7,8].includes(card.index)) return 70;
+    return 56;
+  }
+  if(total===FREE_LEN_COUNT){
+    return card.index===1?88:(card.index===0?76:70);
+  }
+  return card.index===0?80:60;
+}
+
+function sortLenCardsByReadingWeight(cards=[],total=0){
+  return [...cards].sort((a,b)=>scoreLenCardPosition(b,total)-scoreLenCardPosition(a,total));
+}
+
+function pickLenRoleCard(cards=[],role,total=0){
+  return sortLenCardsByReadingWeight(cards.filter(card=>card.roles?.includes(role)),total)[0]||null;
+}
+
+function getLenReadingThemeWords(ctx={}){
+  if(isReconciliationContext(ctx)){
+    return{
+      field:'復縁',
+      object:'相手との信頼',
+      base:'過去の原因',
+      strain:'同じ傷',
+      movement:'もう一度向き合う余地',
+      safety:'信頼を作り直せる手応え',
+      outside:'懐かしさだけではない現実',
+    };
+  }
+  if(ctx.primaryTheme==='love'){
+    return{
+      field:'この恋愛',
+      object:'相手との距離',
+      base:'安心の根拠',
+      strain:'信じたい気持ち',
+      movement:'関係が動く余地',
+      safety:'言葉のあとに残る安心',
+      outside:'曖昧なまま続く不安',
+    };
+  }
+  if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
+    return{
+      field:'今の場所',
+      object:'仕事の方向性',
+      base:'努力の見返り',
+      strain:'負担だけが増える感覚',
+      movement:'外の選択肢',
+      safety:'評価や役割として返ってくるもの',
+      outside:'次の場所へ向く気配',
+    };
+  }
+  if(ctx.primaryTheme==='relationship'||ctx.primaryTheme==='family'){
+    return{
+      field:'この関係',
+      object:'相手との距離',
+      base:'自分を削らない距離',
+      strain:'合わせすぎている感覚',
+      movement:'距離感を変える余地',
+      safety:'自然体でいられる感覚',
+      outside:'空気を読みすぎない場所',
+    };
+  }
+  if(ctx.primaryTheme==='money'){
+    return{
+      field:'お金の扱い',
+      object:'収支の流れ',
+      base:'安心して使える余白',
+      strain:'不安からの支出',
+      movement:'流れを変える余地',
+      safety:'手元に残る安心',
+      outside:'使い方を変える気配',
+    };
+  }
+  if(ctx.primaryTheme==='creative'){
+    return{
+      field:'創作や好きなこと',
+      object:'熱量の向け方',
+      base:'熱量が戻る形',
+      strain:'義務感',
+      movement:'やり方を変える余地',
+      safety:'楽しさが戻る感覚',
+      outside:'別の表現へ向く気配',
+    };
+  }
+  if(ctx.primaryTheme==='self_understanding'){
+    return{
+      field:'今の自分',
+      object:'力の出し方',
+      base:'自分らしく力を出せる感覚',
+      strain:'本音を抑える癖',
+      movement:'見方を変える余地',
+      safety:'納得できる感覚',
+      outside:'違う自分を許す気配',
+    };
+  }
+  return{
+    field:'今回の相談',
+    object:'迷いの中心',
+    base:'納得できる根拠',
+    strain:'違和感',
+    movement:'流れが変わる余地',
+    safety:'自分を雑に扱わない感覚',
+    outside:'別の見方',
+  };
+}
+
+function getLenPositionTone(card={},total=0){
+  if(total!==9||!card) return '今回の展開に';
+  if(card.index===4) return '判断の中心に';
+  if([1,3,5,7].includes(card.index)) return '判断のすぐ近くに';
+  if([2,5,8].includes(card.index)) return 'これからの流れに';
+  if([6,7,8].includes(card.index)) return '深いところに';
+  return '外側の条件に';
+}
+
+function getLenRealityPhrase(card={},ctx={},role=''){
+  if(!card) return '';
+  const w=getLenReadingThemeWords(ctx);
+  switch(Number(card.id)){
+    case 1:return `${w.field}に連絡や動きが入り始める気配`;
+    case 2:return '小さな追い風や偶然の助け';
+    case 3:return `${w.field}を今の場所だけで決めず、外の選択肢も視界に入る流れ`;
+    case 4:return `${w.safety}を守りたい気持ち`;
+    case 6:
+      if(isReconciliationContext(ctx)) return '過去の原因や相手の反応が曖昧なまま残る状態';
+      if(ctx.primaryTheme==='love') return '安心の根拠が曇り、相手の態度を読みすぎやすい状態';
+      if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return '努力の見返りが曇り、残る意味を見失いやすい状態';
+      return `${w.base}が曇り、状況を必要以上に複雑に見やすい状態`;
+    case 7:return '信用しきれない違和感や、言葉の裏を読ませる複雑さ';
+    case 8:return `${w.field}の今の形が、そのままでは続きにくい気配`;
+    case 9:return '嬉しい言葉や好意が、安心へつながるかを見る流れ';
+    case 10:return '先延ばしにしてきたものを切り替える圧';
+    case 11:return '同じ不安や話し合いを繰り返しやすい熱';
+    case 12:return '周囲の声や迷いが判断を散らす気配';
+    case 14:return '本音より自己防衛や利害が前に出る違和感';
+    case 15:return '力関係や守る役割';
+    case 16:return `${w.field}の先に描きたい未来像`;
+    case 17:return '形を変えることで流れが戻る気配';
+    case 18:return '信頼できる支えや、味方になる存在';
+    case 19:return '距離、孤立、近づきにくさ';
+    case 20:return '人の目や場の空気に左右されやすい状態';
+    case 21:return `${w.field}で越えにくい現実の壁`;
+    case 22:return 'どちらを選ぶかより、何を分けて考えるかが問われる分岐';
+    case 23:return `${w.field}を続けるほど少しずつ削られる消耗`;
+    case 24:return '気持ちの強さが、冷静な判断を追い越しやすい状態';
+    case 25:return `${w.object}を続ける意味や約束の重さ`;
+    case 26:return 'まだ表に出ていない本音や、言葉になりきっていない事情';
+    case 27:return '言葉、連絡、通知に答えの温度が出る流れ';
+    case 28:return '相手側の主導権や態度';
+    case 29:return '受け止め方や自分の立ち位置';
+    case 30:return '長く続いた関係や落ち着きが、安心か停滞かを分ける場面';
+    case 31:return '前に進む力や明るさが戻る兆し';
+    case 32:return '気分、自尊心、評判への揺れが判断に混ざる状態';
+    case 33:return `${w.base}が戻る突破口`;
+    case 34:return '収入、価値、循環として返ってくるもの';
+    case 35:return `${w.field}を長く続ける土台と、動きを止める固定の両方`;
+    case 36:return '背負い続けた責任や、避けて通れない重さ';
+    default:
+      if(role==='blocker') return `${w.field}を重くしている現実の引っかかり`;
+      if(role==='positive') return `${w.field}が整い直す兆し`;
+      if(role==='ambiguity') return `${w.base}がまだ薄い状態`;
+      if(role==='people') return `${w.object}に影響する人物の距離感`;
+      return `${w.field}の判断に関わる要素`;
+  }
+}
+
+function getLenPairReadingPhrase(pair={},ctx={}){
+  const cards=pair.cards||[];
+  if(cards.length<2) return '';
+  const [a,b]=cards;
+  const has=(role)=>cards.some(card=>card.roles?.includes(role));
+  const w=getLenReadingThemeWords(ctx);
+  if(has('blocker')&&has('positive')){
+    const blocker=cards.find(card=>card.roles?.includes('blocker'));
+    const positive=cards.find(card=>card.roles?.includes('positive'));
+    return `${getLenRealityPhrase(blocker,ctx,'blocker')}のそばに${getLenRealityPhrase(positive,ctx,'positive')}もあり、止まるか進むかではなく、何を安心の根拠にするかが分かれ目です。`;
+  }
+  if(has('ambiguity')&&has('people')){
+    return ctx.primaryTheme==='love'
+      ?'相手の態度に曖昧さが重なり、言葉だけでは安心の根拠が足りない状態です。'
+      :'影響の大きい相手や周囲の動きに曖昧さが重なり、答えの輪郭がぼやけています。';
+  }
+  if(has('movement')&&has('choice')){
+    return `${w.field}は止まっているだけではなく、選び方を変えることで動き出す気配があります。`;
+  }
+  if(has('ending')&&has('relationship')){
+    return `${w.object}を続ける意味が、今までと同じ形では保ちにくくなっています。`;
+  }
+  return '';
+}
+
+function buildCardReadingContext(focus={},context={}){
+  const ctx=buildDecisionContext(focus,context);
   const ids=getCurrentLenReadingIds(context);
-  const is9=ids.length===9;
-  const coreId=is9?ids[4]:(ids[0]||null);
-  const futureIds=is9?[ids[2],ids[5],ids[8]].filter(Boolean):ids.slice(-1);
-  const hiddenIds=is9?[ids[6],ids[7],ids[8]].filter(Boolean):[];
+  const total=ids.length;
+  const cat=getLenThemeCategoryForReading(ctx,context);
+  const cards=ids.map((id,index)=>createLenReadingCard(id,index,total,cat));
+  const cardAt=index=>cards[index]||null;
+  const is9=total===9;
+  const core=is9?cardAt(4):(cards[0]||null);
+  const future=is9?[cardAt(2),cardAt(5),cardAt(8)].filter(Boolean):(cards.length?[cards[cards.length-1]]:[]);
+  const bottom=is9?[cardAt(6),cardAt(7),cardAt(8)].filter(Boolean):[];
+  const near=is9?[cardAt(1),cardAt(3),cardAt(5),cardAt(7)].filter(Boolean):cards.slice(0,2);
+  const far=is9?[cardAt(0),cardAt(2),cardAt(6),cardAt(8)].filter(Boolean):cards.slice(2);
+  const pairGuides=is9?LEN_ADJACENT_PAIR_GUIDES_9:(total===FREE_LEN_COUNT?LEN_ADJACENT_PAIR_GUIDES_FREE:[]);
+  const adjacentPairs=pairGuides.map(guide=>({
+    title:guide.title,
+    indexes:guide.indexes,
+    cards:guide.indexes.map(cardAt).filter(Boolean),
+  })).filter(pair=>pair.cards.length===pair.indexes.length);
+  const mirrorPairs=is9?LEN_MIRROR_PAIR_GUIDES.map(guide=>({
+    title:guide.title,
+    indexes:guide.indexes,
+    cards:guide.indexes.map(cardAt).filter(Boolean),
+  })).filter(pair=>pair.cards.length===2):[];
+  const importantPairs=[...adjacentPairs,...mirrorPairs]
+    .map(pair=>({...pair,phrase:getLenPairReadingPhrase(pair,ctx)}))
+    .filter(pair=>pair.phrase);
+  const mainAmbiguity=pickLenRoleCard(cards,'ambiguity',total);
+  const mainBlocker=pickLenRoleCard(cards,'blocker',total);
+  const mainPeople=pickLenRoleCard(cards,'people',total);
+  const mainPositive=pickLenRoleCard(cards,'positive',total);
+  const mainMovement=pickLenRoleCard(cards,'movement',total);
+  const mainChoice=pickLenRoleCard(cards,'choice',total);
+  const mainValue=pickLenRoleCard(cards,'value',total);
+  const futurePositive=pickLenRoleCard(future,'positive',total);
+  const futureBlocker=pickLenRoleCard(future,'blocker',total);
+  const bottomAmbiguity=pickLenRoleCard(bottom,'ambiguity',total);
+  const nearBlocker=pickLenRoleCard(near,'blocker',total);
+  const nearPeople=pickLenRoleCard(near,'people',total);
+  const groundingTerms=uniqueNonEmpty([
+    core?.name,
+    mainAmbiguity&&getLenRealityPhrase(mainAmbiguity,ctx,'ambiguity'),
+    mainBlocker&&getLenRealityPhrase(mainBlocker,ctx,'blocker'),
+    mainPeople&&getLenRealityPhrase(mainPeople,ctx,'people'),
+    mainPositive&&getLenRealityPhrase(mainPositive,ctx,'positive'),
+    futurePositive&&getLenRealityPhrase(futurePositive,ctx,'positive'),
+    futureBlocker&&getLenRealityPhrase(futureBlocker,ctx,'blocker'),
+    mainValue&&getLenRealityPhrase(mainValue,ctx,'value'),
+  ].filter(Boolean).flatMap(item=>String(item).split(/[、。・\s]+/)).filter(item=>item.length>=3));
   return{
     ids,
+    total,
+    cards,
+    ctx,
+    core,
+    future,
+    bottom,
+    near,
+    far,
+    adjacentPairs,
+    mirrorPairs,
+    importantPairs,
+    mainAmbiguity,
+    mainBlocker,
+    mainPeople,
+    mainPositive,
+    mainMovement,
+    mainChoice,
+    mainValue,
+    futurePositive,
+    futureBlocker,
+    bottomAmbiguity,
+    nearBlocker,
+    nearPeople,
+    groundingTerms,
+  };
+}
+
+function buildCardReadingFlags(focus={},context={}){
+  const reading=buildCardReadingContext(focus,context);
+  const ids=reading.ids;
+  const is9=ids.length===9;
+  const coreId=reading.core?.id||(ids[0]||null);
+  const futureIds=reading.future.map(card=>card.id);
+  const hiddenIds=reading.bottom.map(card=>card.id);
+  return{
+    ...reading,
+    ids,
     coreId,
-    coreName:coreId?LENORMAND[coreId]?.name||'':'',
+    coreName:reading.core?.name||'',
     coreText:coreId?getLenCoreFocusText(coreId):'',
-    futureNames:futureIds.map(id=>LENORMAND[id]?.name).filter(Boolean),
-    hasHidden:hasLenGroup(ids,'hidden')||hasLenGroup(hiddenIds,'hidden'),
-    hasEnding:hasLenGroup(ids,'ending')||hasLenGroup(futureIds,'ending'),
-    hasStability:hasLenGroup(ids,'stability'),
-    hasValue:hasLenGroup(ids,'value'),
-    hasRelationship:hasLenGroup(ids,'relationship'),
-    hasBurden:hasLenGroup(ids,'burden')||hasLenGroup(hiddenIds,'burden'),
-    hasSupport:hasLenGroup(ids,'support')||hasLenGroup(futureIds,'support'),
-    hasChoice:hasLenGroup(ids,'choice'),
+    futureNames:reading.future.map(card=>card.name).filter(Boolean),
+    hasHidden:!!reading.mainAmbiguity||hasLenGroup(ids,'hidden')||hasLenGroup(hiddenIds,'hidden'),
+    hasEnding:!!pickLenRoleCard(reading.cards,'ending',reading.total)||hasLenGroup(ids,'ending')||hasLenGroup(futureIds,'ending'),
+    hasStability:!!pickLenRoleCard(reading.cards,'stability',reading.total)||hasLenGroup(ids,'stability'),
+    hasValue:!!reading.mainValue||hasLenGroup(ids,'value'),
+    hasRelationship:!!pickLenRoleCard(reading.cards,'relationship',reading.total)||hasLenGroup(ids,'relationship'),
+    hasBurden:!!reading.mainBlocker||hasLenGroup(ids,'burden')||hasLenGroup(hiddenIds,'burden'),
+    hasSupport:!!reading.mainPositive||hasLenGroup(ids,'support')||hasLenGroup(futureIds,'support'),
+    hasChoice:!!reading.mainChoice||hasLenGroup(ids,'choice'),
   };
 }
 
@@ -7999,63 +8322,78 @@ function simplifyLenCoreTextForVerdict(text=''){
     .trim();
 }
 
+function coerceCardReadingContext(ctx={},flags={}){
+  if(flags?.cards) return flags;
+  const focus={
+    primaryTheme:ctx.primaryTheme||'general',
+    loveSubtype:ctx.loveSubtype||'general',
+    decisionCriteriaList:ctx.decisionCriteriaList||[],
+    explicitUserPriority:ctx.explicitUserPriority||'',
+  };
+  const context=Array.isArray(flags?.ids)?{lenCardIds:flags.ids}:flags;
+  return buildCardReadingContext(focus,context);
+}
+
 function buildCardGroundedVerdictSentence(ctx={},flags={}){
   if(!flags.ids?.length) return '';
+  const reading=coerceCardReadingContext(ctx,flags);
+  const w=getLenReadingThemeWords(ctx);
+  const pair=reading.importantPairs?.[0]?.phrase||'';
+  const blocker=reading.nearBlocker||reading.mainBlocker;
+  const ambiguity=reading.bottomAmbiguity||reading.mainAmbiguity;
+  const positive=reading.futurePositive||reading.mainPositive;
+  const people=reading.nearPeople||reading.mainPeople;
+  if(pair) return pair;
+  if(blocker&&positive){
+    return `${getLenPositionTone(blocker,reading.total)}${getLenRealityPhrase(blocker,ctx,'blocker')}があり、同時に${getLenRealityPhrase(positive,ctx,'positive')}も残っています。答えは我慢ではなく、${w.base}が戻る形へ寄せることです。`;
+  }
+  if(ambiguity&&people){
+    return ctx.primaryTheme==='love'
+      ?'相手の態度に曖昧さが重なり、言葉だけでは安心の根拠が足りない状態です。'
+      :'影響の大きい相手や周囲の動きに曖昧さが重なり、答えの輪郭がぼやけています。';
+  }
+  if(ambiguity){
+    return `${getLenPositionTone(ambiguity,reading.total)}${getLenRealityPhrase(ambiguity,ctx,'ambiguity')}があり、迷いの正体は気持ちの弱さではなく、${w.base}の薄さです。`;
+  }
+  if(blocker){
+    return `${getLenPositionTone(blocker,reading.total)}${getLenRealityPhrase(blocker,ctx,'blocker')}があり、平気なふりで進むほど判断は重くなります。`;
+  }
+  if(positive){
+    return `${getLenPositionTone(positive,reading.total)}${getLenRealityPhrase(positive,ctx,'positive')}が出ており、流れは完全には閉じていません。`;
+  }
   const core=simplifyLenCoreTextForVerdict(flags.coreText);
-  if(flags.hasBurden&&flags.hasSupport){
-    return '今出ている流れは、負担が判断の中心に入りながらも、支えや突破口も同時に残っています。';
-  }
-  if(flags.hasHidden){
-    return isReconciliationContext(ctx)
-      ?'見えていない本音や過去の原因が、復縁の答えを曇らせています。'
-      :'見えていない事情や言葉になっていない本音が、答えの輪郭をぼかしています。';
-  }
-  if(flags.hasBurden){
-    return '負担や消耗が近くにあり、平気なふりで進めるほど判断は重くなります。';
-  }
-  if(flags.hasEnding){
-    return '区切りや変化の気配があり、先送りするほど状況側に押されやすくなります。';
-  }
-  if(flags.hasStability){
-    return '安定に見えるものが、守る土台なのか停滞なのかを見分ける場面です。';
-  }
-  if(flags.hasSupport){
-    return '支えや突破口の気配もあり、流れは完全に閉じていません。';
-  }
   return core?`今回強く出ているのは、${core}${/[こと点段階状態]$/.test(core)?'です':'ことです'}。`:'';
 }
 
 function buildCardGroundedFlowText(ctx={},flags={}){
   if(!flags.ids?.length) return '';
+  const reading=coerceCardReadingContext(ctx,flags);
+  const w=getLenReadingThemeWords(ctx);
   const sentences=[];
-  if(flags.hasHidden){
-    sentences.push(isReconciliationContext(ctx)
-      ?'今は、まだ触れられていない本音や過去の原因が、関係の温度を曖昧にしている流れです。'
-      :'今は、見えていない事情や言葉になっていない本音が、判断の輪郭をぼかしている流れです。');
-  }else if(flags.hasBurden){
-    sentences.push(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'
-      ?'今は、努力の先に残るものよりも、負担や消耗の重さが前に出やすい流れです。'
-      :'今は、気持ちだけで押し切るほど負担が濃くなりやすい流れです。');
-  }else if(flags.hasChoice){
-    sentences.push('今は、選べないのではなく、選ぶ前に分けるべきものが見え始めている流れです。');
-  }else{
-    sentences.push('');
+  const core=reading.core;
+  const blocker=reading.nearBlocker||reading.mainBlocker;
+  const ambiguity=reading.bottomAmbiguity||reading.mainAmbiguity;
+  const positive=reading.futurePositive||reading.mainPositive;
+  const futureBlocker=reading.futureBlocker;
+  const choice=reading.mainChoice||reading.mainMovement;
+  if(ambiguity){
+    sentences.push(`今は、${getLenRealityPhrase(ambiguity,ctx,'ambiguity')}が${w.field}の見え方を曇らせています。`);
+  }else if(blocker){
+    sentences.push(`今は、${getLenRealityPhrase(blocker,ctx,'blocker')}が前に出て、${w.base}よりも重さを感じやすい流れです。`);
+  }else if(core){
+    sentences.push(`今は、${getLenRealityPhrase(core,ctx,core.roles?.[0]||'')}が中心になり、${w.field}の答えを急ぎにくい流れです。`);
   }
-  if(flags.hasStability){
-    sentences.push(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'
-      ?'安定に見える今の場所も、力を育てる土台なのか、動きを止める固定なのかで意味が変わります。'
-      :'安定に見える関係や環境も、安心の土台なのか、曖昧なまま固定されているだけなのかで意味が変わります。');
+  if(positive){
+    sentences.push(`${getLenPositionTone(positive,reading.total)}${getLenRealityPhrase(positive,ctx,'positive')}があるため、流れは閉じ切っていません。`);
+  }else if(choice){
+    sentences.push(`${getLenRealityPhrase(choice,ctx,'choice')}が出ており、同じ場所で我慢を続けるより、見方を分けるほど道筋が戻ります。`);
   }
-  if(flags.hasValue){
-    sentences.push(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'
-      ?'評価や見返りの現実も絡むため、気持ちの我慢だけで続けるほど消耗へ傾きます。'
-      :'価値や見返りの現実も絡むため、情だけで抱えるほど違和感が残ります。');
-  }
-  if(flags.hasEnding){
-    sentences.push('区切りや変化の気配もあるため、先送りを続けるほど自分で選ぶ余地が狭くなります。');
-  }
-  if(flags.hasSupport){
-    sentences.push('一方で、支えや突破口も残っているため、見る順番を間違えなければ流れは整え直せます。');
+  if(futureBlocker){
+    sentences.push(`ただし、${getLenRealityPhrase(futureBlocker,ctx,'blocker')}を薄く見積もると、先へ進むほど同じ違和感が残ります。`);
+  }else if(blocker&&positive){
+    sentences.push(`大事なのは楽観ではなく、${w.base}が現実として戻る方向へ流れを寄せることです。`);
+  }else if(ambiguity){
+    sentences.push(`${w.base}が増えるほど、迷いは自然に薄くなります。`);
   }
   const clean=sentences.filter(Boolean);
   return clean.length?limitJapaneseBodyBySentences(clean.join(''),330,3):'';
@@ -10759,6 +11097,12 @@ function normalizeDossierCardData(data={}){
   const focus=resolveDossierFocusFromData(data)||getCurrentRefinedFocus();
   const ctx=buildDecisionContext(focus);
   const themedFallback=buildWorkLifeDossierData(focus);
+  if(scoreCardGroundingInText(`${source.ONE_LINE||''} ${source.VERDICT||''}`,focus,{})<1){
+    source.VERDICT=themedFallback.VERDICT;
+    source.ACTION7=themedFallback.ACTION7;
+    source.KEYWORDS=themedFallback.KEYWORDS;
+    source.EVIDENCE_SUMMARY=themedFallback.EVIDENCE_SUMMARY;
+  }
   if(isReconciliationContext(ctx)&&!/復縁|元恋人|過去の|信頼|区切り|曖昧な連絡/.test(`${source.TITLE||''} ${source.ONE_LINE||''} ${source.VERDICT||''} ${source.DECISION_AXIS||''} ${source.KEYWORDS||''}`)){
     Object.assign(source,themedFallback,{EVIDENCE_SUMMARY:source.EVIDENCE_SUMMARY||themedFallback.EVIDENCE_SUMMARY});
   }
@@ -10871,7 +11215,66 @@ function buildDossierOneLineForDecisionContext(ctx){
   return `${ctx.primaryLabel}は、違和感の出どころを見るほど整います。`;
 }
 
-function buildDossierVerdictForDecisionContext(ctx){
+function buildDossierLeadForDecisionContext(ctx){
+  if(isReconciliationContext(ctx)) return 'この復縁は、好きな気持ちより信頼を作り直せる温度が軸です。';
+  if(ctx.primaryTheme==='love') return 'この恋愛は、気持ちの強さより安心の根拠が軸です。';
+  if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return '今の場所は、努力の見返りが残るかで意味が変わります。';
+  if(ctx.primaryTheme==='relationship') return 'この関係は、近さより自分を削らない距離が軸です。';
+  if(ctx.primaryTheme==='creative') return '創作や好きなことは、義務感より熱量が戻る形が軸です。';
+  if(ctx.primaryTheme==='money') return 'お金の判断は、不安を消すことより安心が残る余白が軸です。';
+  if(ctx.primaryTheme==='family') return '家族の判断は、役割より境界線が戻る距離が軸です。';
+  if(ctx.primaryTheme==='self_understanding') return '今の自分は、正解探しより力を出せる感覚が軸です。';
+  return '今回の相談は、違和感を消すより判断軸を取り戻すことが中心です。';
+}
+
+function buildDossierCardKeywords(ctx={},reading={}){
+  const items=[];
+  if(reading.mainAmbiguity) items.push(isReconciliationContext(ctx)?'見えない本音':'安心の根拠');
+  if(reading.mainBlocker) items.push(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'?'消耗の重さ':'現実の壁');
+  if(reading.mainPeople) items.push(ctx.primaryTheme==='love'?'相手の距離感':'影響する相手');
+  if(reading.mainPositive) items.push('突破口');
+  if(reading.mainValue) items.push(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'?'努力の見返り':'返ってくるもの');
+  if(reading.mainChoice) items.push('分かれ道');
+  return uniqueNonEmpty(items).slice(0,4);
+}
+
+function buildDossierCardCompassLine(ctx={},reading={}){
+  if(!reading.ids?.length) return '';
+  const w=getLenReadingThemeWords(ctx);
+  if(reading.mainAmbiguity) return `${w.base}が薄い場所では、気持ちより違和感の出どころを信じていい。`;
+  if(reading.mainBlocker&&reading.mainPositive) return `重さだけで決めず、${w.base}が戻る方向を選んでいい。`;
+  if(reading.mainBlocker) return `平気なふりで続けるほど、${w.field}は自分を削りやすくなります。`;
+  if(reading.mainPositive) return `${w.field}は、安心の根拠が戻るところから整い直します。`;
+  if(reading.mainChoice) return `選べない時ほど、先に大事にするものを分けていい。`;
+  return `${w.field}の答えは、違和感を薄めず扱うほど見えてきます。`;
+}
+
+function buildDossierCardEvidenceSummary(ctx={},reading={}){
+  if(!reading.ids?.length) return '';
+  const core=reading.core?`中心の${reading.core.name}`:'中心カード';
+  const parts=[core];
+  if(reading.mainBlocker) parts.push(`${reading.mainBlocker.name}の重さ`);
+  if(reading.mainAmbiguity) parts.push(`${reading.mainAmbiguity.name}の曖昧さ`);
+  if(reading.mainPositive) parts.push(`${reading.mainPositive.name}の突破口`);
+  if(reading.mainPeople) parts.push(`${reading.mainPeople.name}の人物影響`);
+  return `${parts.slice(0,4).join('、')}を、${getDecisionAxisShortPhrase(ctx)}の判断へつなげています。`;
+}
+
+function buildDossierCardVerdict(ctx={},reading={}){
+  if(!reading.ids?.length) return '';
+  const lead=buildDossierLeadForDecisionContext(ctx);
+  const verdict=buildCardGroundedVerdictSentence(ctx,reading);
+  const flow=buildCardGroundedFlowText(ctx,reading);
+  const flowFirst=splitJapaneseSentences(flow)[0]||'';
+  const body=[lead,verdict,flowFirst]
+    .filter(Boolean)
+    .join('');
+  return limitJapaneseBodyBySentences(sanitizeRashinVisibleText(body),180,3);
+}
+
+function buildDossierVerdictForDecisionContext(ctx,cardReading={}){
+  const cardVerdict=buildDossierCardVerdict(ctx,cardReading);
+  if(cardVerdict) return cardVerdict;
   const criteriaChoice=getDecisionAxisFullPhrase(ctx);
   const axisShort=getDecisionAxisShortPhrase(ctx);
   if(ctx.primaryTheme==='love'){
@@ -10905,10 +11308,13 @@ function buildDossierClosingForDecisionContext(ctx){
   return '違和感を消すより、違和感が教えている軸を取り戻していい。';
 }
 
-function buildWorkLifeDossierData(focus={}){
-  const ctx=buildDecisionContext(focus);
+function buildWorkLifeDossierData(focus={},context={}){
+  const ctx=buildDecisionContext(focus,context);
+  const cardReading=buildCardReadingContext(focus,context);
   const positive=getIntegrationSupplementItems(ctx.positiveLabel,focus).slice(0,2);
   const negative=getIntegrationSupplementItems(ctx.negativeLabel,focus).slice(0,2);
+  const cardKeywords=buildDossierCardKeywords(ctx,cardReading);
+  const themedKeywords=normalizeDossierKeywords(buildDossierKeywords(focus),[]);
   return{
     PRIMARY_THEME:ctx.primaryTheme,
     LOVE_SUBTYPE:ctx.loveSubtype,
@@ -10918,16 +11324,16 @@ function buildWorkLifeDossierData(focus={}){
     DECISION_CRITERIA:ctx.criteriaText,
     TITLE:buildDossierTitleForDecisionContext(ctx),
     ONE_LINE:buildDossierOneLineForDecisionContext(ctx),
-    VERDICT:buildDossierVerdictForDecisionContext(ctx),
+    VERDICT:buildDossierVerdictForDecisionContext(ctx,cardReading),
     DECISION_AXIS:[
       ...positive.map(item=>`整う兆し：${item.replace(/。$/,'')}`),
       ...negative.map(item=>`気をつけること：${item.replace(/。$/,'')}`)
     ].join('\n'),
     HOLD_CONDITIONS:getIntegrationSupplementItems(ctx.holdLabel,focus).slice(0,2).join('\n'),
-    ACTION7:buildThemeSpecificActionPlan(focus).slice(0,1).join('\n'),
-    KEYWORDS:buildDossierKeywords(focus),
+    ACTION7:buildDossierCardCompassLine(ctx,cardReading)||buildThemeSpecificActionPlan(focus).slice(0,1).join('\n'),
+    KEYWORDS:uniqueNonEmpty([...cardKeywords,...themedKeywords]).slice(0,6).join(' / '),
     CLOSING:buildDossierClosingForDecisionContext(ctx),
-    EVIDENCE_SUMMARY:`追加質問と相談文から、主テーマは${ctx.primaryLabel}として整理しています。羅針カードでは、${ctx.criteriaText}を判断軸に短く残します。`,
+    EVIDENCE_SUMMARY:buildDossierCardEvidenceSummary(ctx,cardReading)||`追加質問と相談文から、主テーマは${ctx.primaryLabel}として整理しています。羅針カードでは、${ctx.criteriaText}を判断軸に短く残します。`,
   };
 }
 
@@ -10971,11 +11377,11 @@ function buildFallbackDossier(){
     ONE_LINE:themedData.ONE_LINE||headline,
     VERDICT:themedData.VERDICT||verdict,
     DECISION_AXIS:themedData.DECISION_AXIS,
-    ACTION7:action7.slice(0,1).join('\n'),
+    ACTION7:themedData.ACTION7||action7.slice(0,1).join('\n'),
     ACTION30:action30.join('\n'),
     STOP_SIGN:buildDossierWarnings(focus).join('\n'),
     GO_SIGN:buildDossierLuck(focus).join('\n'),
-    KEYWORDS:buildDossierKeywords(focus),
+    KEYWORDS:themedData.KEYWORDS||buildDossierKeywords(focus),
     CLOSING:themedData.CLOSING||`${displayName}さんの答えは、急ぐほどではなく整えるほど見えてきます。`,
     EVIDENCE_SUMMARY:evidenceSummary,
     SUBTITLE:'これは未来を決めつける結果ではなく、あなたの判断軸を思い出すための羅針カードです。',
@@ -14787,6 +15193,17 @@ function dedupeJapaneseSentences(text=''){
     .join('\n');
 }
 
+function buildPrimaryTopVerdictExtraSentence(ctx={}){
+  if(isReconciliationContext(ctx)) return '懐かしさだけで進めるほど、同じ傷が戻りやすくなります。';
+  if(ctx.primaryTheme==='love') return 'そこが曖昧なままなら、信じたい気持ちほど自分を疲れさせます。';
+  if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return '見返りのない負担だけが増えるなら、それは成長ではなく消耗です。';
+  if(ctx.primaryTheme==='relationship'||ctx.primaryTheme==='family') return '近づくほど自然体が失われるなら、その違和感が今の羅針です。';
+  if(ctx.primaryTheme==='money') return '焦りを埋める支出が増えるなら、守るべき余白が先です。';
+  if(ctx.primaryTheme==='creative') return '義務感だけが増えるなら、やり方を変える合図です。';
+  if(ctx.primaryTheme==='self_understanding') return '違和感を押し込めるほど、自分の輪郭はぼやけます。';
+  return '自分を雑に扱う方向へ進むほど、答えは遠ざかります。';
+}
+
 function buildPrimaryTopVerdictText(name='あなた',focus={},theme='',context={}){
   const ctx=buildDecisionContext(focus,{...context,theme});
   const axisFull=getDecisionAxisFullPhrase(ctx);
@@ -14817,19 +15234,46 @@ function buildPrimaryTopVerdictText(name='あなた',focus={},theme='',context={
     if(cardVerdict) lines.push(cardVerdict);
     lines.push(`${axisFull}が保てる距離なら、関わり方はまだ整います。`);
     lines.push(`近づくほど自然体が失われるなら、その違和感が今の羅針です。`);
-  }else{
-    lines.push(`今回の答えは、無条件で今の場所に残ることではありません。`);
-    lines.unshift(`今の迷いは、続けるか変えるかの二択ではありません。`);
+  }else if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
+    lines.push(`今の迷いは、続けるか変えるかの二択ではありません。`);
     if(cardVerdict) lines.push(cardVerdict);
-    lines.push(`${axisFull}が返ってくるなら、努力はまだ未来につながります。`);
+    lines.push(`今回の答えは、${axisShort}が戻る場所に力を残すことです。`);
     lines.push(`見返りのない負担だけが増えるなら、それは成長ではなく消耗です。`);
+  }else if(ctx.primaryTheme==='money'){
+    lines.push(`今回の答えは、不安を消すために急いで動くことではありません。`);
+    if(cardVerdict) lines.push(cardVerdict);
+    lines.push(`${axisFull}が残る選び方なら、お金の流れは落ち着きを取り戻します。`);
+    lines.push(`焦りを埋める支出が増えるなら、守るべき余白が先です。`);
+  }else if(ctx.primaryTheme==='creative'){
+    lines.push(`今回の答えは、好きだから全部抱えることではありません。`);
+    if(cardVerdict) lines.push(cardVerdict);
+    lines.push(`${axisFull}が残る形なら、熱量は戻ります。`);
+    lines.push(`義務感だけが増えるなら、やり方を変える合図です。`);
+  }else if(ctx.primaryTheme==='self_understanding'){
+    lines.push(`今回の答えは、自分を正解に合わせることではありません。`);
+    if(cardVerdict) lines.push(cardVerdict);
+    lines.push(`${axisFull}が戻るほど、力の出し方は自然に見えてきます。`);
+    lines.push(`違和感を押し込めるほど、自分の輪郭はぼやけます。`);
+  }else{
+    lines.push(`今回の答えは、違和感を消すより判断軸を取り戻すことです。`);
+    if(cardVerdict) lines.push(cardVerdict);
+    lines.push(`${axisFull}が残る選び方なら、迷いは少しずつ薄くなります。`);
+    lines.push(`自分を雑に扱う方向へ進むほど、答えは遠ざかります。`);
   }
   const secondary=buildSecondaryThemeSentence(ctx);
   if(secondary) lines.push(secondary);
-  return limitJapaneseBodyBySentences(dedupeJapaneseSentences(lines.join('\n')).replace(new RegExp(escapeRegExp(axisFull),'g'),(match,offset,full)=>{
+  let body=dedupeJapaneseSentences(lines.join('\n')).replace(new RegExp(escapeRegExp(axisFull),'g'),(match,offset,full)=>{
     const first=full.indexOf(match);
     return offset===first?match:axisShort;
-  }),360,5);
+  });
+  if(splitJapaneseSentences(body).length<3){
+    body=dedupeJapaneseSentences(`${body}\n${buildPrimaryTopVerdictExtraSentence(ctx)}`);
+  }
+  let limited=limitJapaneseBodyBySentences(body,360,5);
+  if(splitJapaneseSentences(limited).length<3){
+    limited=limitJapaneseBodyBySentences(`${limited}\n${buildPrimaryTopVerdictExtraSentence(ctx)}`,360,5);
+  }
+  return limited;
 }
 
 function buildWorkLifeTopVerdictText(name='あなた',focus={},theme='',context={}){
@@ -15401,12 +15845,46 @@ function normalizeIntegrationFlowBody(body='',focus={},cat='総合',theme='',con
   return limitJapaneseBodyBySentences(source,280,3);
 }
 
+function scoreCardGroundingInText(text='',focus={},context={}){
+  const source=String(text||'');
+  const reading=buildCardReadingContext(focus,context);
+  if(!reading.ids.length) return 1;
+  let score=0;
+  const terms=uniqueNonEmpty(reading.groundingTerms||[]).filter(term=>term.length>=3);
+  if(terms.some(term=>source.includes(term))) score+=1;
+  if(reading.mainAmbiguity&&/曖昧|見えていない|本音|根拠|輪郭|言葉にな/.test(source)) score+=1;
+  if(reading.mainBlocker&&/負担|消耗|壁|重|削|切り替|責任|先延ばし|繰り返/.test(source)) score+=1;
+  if(reading.mainPositive&&/突破口|支え|追い風|明る|整|安心|流れは閉じ|余地/.test(source)) score+=1;
+  if(reading.mainPeople&&/相手|周囲|人物|距離感|態度|力関係|主導権/.test(source)) score+=1;
+  if(reading.mainChoice&&/選|分岐|分ける|道筋|見方/.test(source)) score+=1;
+  if(reading.mainValue&&/評価|役割|収入|価値|見返り|返ってくる|循環/.test(source)) score+=1;
+  if(reading.importantPairs?.length&&/そば|重な|同時|分かれ目|色づけ/.test(source)) score+=1;
+  return score;
+}
+
+function detectCardGroundingIssues(text='',focus={},context={},label='text'){
+  const reading=buildCardReadingContext(focus,context);
+  if(!reading.ids.length) return [];
+  const score=scoreCardGroundingInText(text,focus,context);
+  if(score>=1) return [];
+  return [`${label}にルノルマン9枚の具体的な読解根拠が残っていません`];
+}
+
 function ensureIntegrationFlowNarrative(output='',focus={},cat='総合',theme='',context={}){
   return replaceHeadingBody(output,INTEGRATION_FLOW_HEADING,normalizeIntegrationFlowBody(extractHeadingBody(output,INTEGRATION_FLOW_HEADING),focus,cat,theme,context));
 }
 
 function ensureTopVerdictInIntegration(output='',name='あなた',focus={},theme='',context={}){
-  return replaceHeadingBody(output,INTEGRATION_FINAL_HEADING,buildPrimaryTopVerdictText(name,focus,theme,context));
+  const existing=sanitizeRashinVisibleText(extractHeadingBody(output,INTEGRATION_FINAL_HEADING));
+  const fallback=buildPrimaryTopVerdictText(name,focus,theme,context);
+  const sentenceCount=splitJapaneseSentences(existing).length;
+  const hasForbidden=detectRashinVisibleTextPolicyIssues(existing,'今回の答え').length>0;
+  const hasCardGrounding=scoreCardGroundingInText(existing,focus,context)>=1;
+  const tooLoose=sentenceCount<2||sentenceCount>5||countMeaningfulChars(existing)>380;
+  const normalized=(!existing||hasForbidden||!hasCardGrounding||tooLoose)
+    ?fallback
+    :limitJapaneseBodyBySentences(dedupeJapaneseSentences(existing),360,5);
+  return replaceHeadingBody(output,INTEGRATION_FINAL_HEADING,normalized);
 }
 
 function ensureIntegrationSlots(text='',name='あなた',cat='総合',theme='',context={}){
@@ -15825,6 +16303,7 @@ function validateIntegrationSatisfaction(text='',context={}){
   }
   issues.push(...detectIntegrationHeadingDuplicateIssues(source,focus));
   issues.push(...detectIntegrationFlowListIssues(source));
+  issues.push(...detectCardGroundingIssues(source,focus,context,'integration'));
   const pushLine=extractHeadingBody(source,INTEGRATION_ACTION_GUIDE_HEADING);
   if(!pushLine) issues.push(`integrationに${INTEGRATION_ACTION_GUIDE_HEADING}の本文がありません`);
   if(focus.explicitUserPriority||isWorkLifeDirectionFocus(focus)){
@@ -15873,6 +16352,7 @@ function validatePaidReadingQuality(parsed={},context={}){
     issues.push(...detectJapanesePunctuationSpacingIssues(parsed[key]||'',key));
   });
   issues.push(...validateIntegrationSatisfaction(parsed.integration||'',context));
+  issues.push(...detectCardGroundingIssues(parsed.len||'',context.focus||getFocusForContext(context.cat||'',context.theme||'',context),context,'len'));
   issues.push(...detectLenormandRoleIssues(parsed.len||'',context.focus||getFocusForContext(context.cat||'',context.theme||'',context),parsed.integration||''));
   issues.push(...detectOracleLabelIssues(parsed.orc||''));
   issues.push(...detectOracleFallbackJapaneseIssues(parsed.orc||''));
