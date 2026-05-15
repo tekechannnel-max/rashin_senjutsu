@@ -4590,7 +4590,7 @@ body{
   height:100%;
 }
 .dossier-save-detail-grid .dossier-save-section{
-  padding:clamp(8px,.95vw,12px);
+  padding:clamp(6px,.75vw,10px);
   border:1px solid rgba(228,184,74,.2);
   background:rgba(3,8,24,.5);
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.02);
@@ -4635,8 +4635,8 @@ body{
 
 .dossier-save-verdict{
   margin:0;
-  font-size:clamp(12px,1.15vw,16px);
-  line-height:1.62;
+  font-size:clamp(11px,1.05vw,14px);
+  line-height:1.52;
   color:rgba(248,242,222,.9);
 }
 
@@ -4660,8 +4660,8 @@ body{
   border-bottom:1px solid rgba(228,184,74,.14);
 }
 .dossier-save-guidance-copy{
-  font-size:clamp(10px,.95vw,13px);
-  line-height:1.45;
+  font-size:clamp(9px,.84vw,11px);
+  line-height:1.38;
   color:rgba(246,240,220,.9);
 }
 .dossier-save-guidance-oracle .dossier-save-guidance-copy{
@@ -4697,7 +4697,7 @@ body{
 
 .dossier-save-list{
   display:grid;
-  gap:clamp(3px,.35vw,5px);
+  gap:clamp(4px,.42vw,6px);
   margin:0;
   padding:0;
   list-style:none;
@@ -4707,12 +4707,13 @@ body{
 .dossier-save-item{
   position:relative;
   padding-left:clamp(9px,.9vw,13px);
-  font-size:clamp(8px,.83vw,11px);
-  line-height:1.32;
+  font-size:clamp(8px,.72vw,9.5px);
+  line-height:1.35;
   color:rgba(246,240,220,.82);
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  white-space:normal;
+  overflow:visible;
+  text-overflow:clip;
+  overflow-wrap:anywhere;
 }
 
 .dossier-save-item::before{

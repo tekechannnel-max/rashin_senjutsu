@@ -3454,7 +3454,7 @@ function installDailyOracleStageStyles(){
     .daily-oracle-ritual-frame::after{inset:34px;border-color:rgba(146,210,207,.13);transform:rotate(-4deg);}
     .daily-oracle-ritual-deck{
       position:absolute;width:clamp(132px,18vw,176px);aspect-ratio:2/3;border-radius:10px;
-      background:url('images/ui/oracle-card-back.jpg') center/cover no-repeat;
+      background:url('占い素材/オラクルカード表紙デザイン2.png?v=20260516-card-cover2') center/cover no-repeat;
       border:1px solid rgba(245,211,112,.4);box-shadow:0 20px 44px rgba(0,0,0,.5);
       transform:translate(-18px,10px) rotate(-8deg);opacity:.76;
     }
@@ -3495,7 +3495,7 @@ function installDailyOracleStageStyles(){
     .daily-oracle-ritual-back{
       background:
         linear-gradient(180deg,rgba(255,255,255,.04),rgba(0,0,0,.08)),
-        url('images/ui/oracle-card-back.jpg') center/cover no-repeat;
+        url('占い素材/オラクルカード表紙デザイン2.png?v=20260516-card-cover2') center/cover no-repeat;
     }
     .daily-oracle-ritual-front{transform:rotateY(180deg);}
     .daily-oracle-ritual-front img{width:100%;height:100%;object-fit:cover;display:block;}
@@ -11311,7 +11311,7 @@ function buildDossierCardVerdict(ctx={},reading={}){
   const body=[lead,verdict,flowFirst]
     .filter(Boolean)
     .join('');
-  return limitJapaneseBodyBySentences(sanitizeRashinVisibleText(body),180,3);
+  return limitJapaneseBodyBySentences(sanitizeRashinVisibleText(body),132,2);
 }
 
 function buildDossierVerdictForDecisionContext(ctx,cardReading={}){
@@ -11916,7 +11916,7 @@ const DOSSIER_ORACLE_GUIDANCE_HEADING='数秘オラクルの示し';
 
 function buildDossierPlainText(data){
   const safeData=resolveDossierCardData(data);
-  const foundationBlocks=getDossierFoundationBulletSections().map(section=>`${section.label}：\n${section.items.map(item=>`・${item}`).join('\n')}`);
+  const foundationBlocks=getDossierSaveCardFoundationSections().map(section=>`${section.label}：\n${section.items.map(item=>`・${item}`).join('\n')}`);
   const guidance=buildDossierSignalSummaries(safeData);
   const blocks=[
     'RASHIN CARD',
@@ -11969,6 +11969,24 @@ function renderDossierEvidenceDetails(card){
 
 function renderDossierConditionList(items=[]){
   return `<ul class="dossier-save-list">${items.map(item=>`<li class="dossier-save-item">${escapeHtml(sanitizeRashinVisibleText(redactDossierPrivateNames(item)))}</li>`).join('\n')}</ul>`;
+}
+
+function compactDossierSaveCardItem(item=''){
+  const clean=cleanDossierItemText(sanitizeRashinVisibleText(redactDossierPrivateNames(String(item||''))));
+  const compact=trimDossierTextSafely(clean,24,6)||limitTextByChars(clean,24,6);
+  return compact?ensureJapaneseSentence(compact):'';
+}
+
+function getDossierSaveCardFoundationSections(){
+  return getDossierFoundationBulletSections()
+    .map(section=>({
+      ...section,
+      items:(section.items||[])
+        .map(compactDossierSaveCardItem)
+        .filter(Boolean)
+        .slice(0,2),
+    }))
+    .filter(section=>section.items.length);
 }
 
 function buildDossierWeightedSignalFallbacks(card={},focus=getCurrentRefinedFocus()){
@@ -12040,13 +12058,13 @@ function buildDossierSignalSummaries(card={}){
     safeCard.DECISION_AXIS,
     safeCard.VERDICT,
     safeCard.ONE_LINE,
-  ],visibleSummaries,fallback.lenormand,{max:128,maxSentences:2});
-  const oracle=pickDossierSignalSummary([
+  ],visibleSummaries,fallback.lenormand,{max:70,maxSentences:1});
+  const oracle=compactDossierSignalText(pickDossierSignalSummary([
     fallback.oracle,
     getOracleSectionBodyForDossier(/羅針盤|向き合|メッセージ|光/),
     safeCard.CLOSING,
     safeCard.ACTION7,
-  ],visibleSummaries.concat(lenormand),fallback.oracle,{max:64,maxSentences:1});
+  ],visibleSummaries.concat(lenormand),fallback.oracle,{max:36,maxSentences:1}),28);
   return{lenormand,oracle};
 }
 
@@ -12186,6 +12204,18 @@ function pickDossierSignalSummary(candidates=[],used=[],fallback='',options={}){
   return normalizeDossierSentence(fallback,fallback,{max});
 }
 
+function compactDossierSignalText(text='',max=70){
+  const clean=cleanDossierItemText(sanitizeRashinVisibleText(redactDossierPrivateNames(String(text||''))))
+    .replace(/^向き合い方は、?/,'')
+    .replace(/^答えを急ぐより/,'')
+    .replace(/視点へ戻ることです。?$/,'ことです。');
+  if(!clean) return '';
+  if(clean.length<=max) return ensureJapaneseSentence(clean);
+  let compact=limitTextByChars(clean,max,6)||clean.slice(0,max).trim();
+  if(compact.length<Math.min(14,max-4)) compact=clean.slice(0,max).trim();
+  return compact?ensureJapaneseSentence(compact):'';
+}
+
 function getOracleSectionBodyForDossier(pattern){
   const source=sanitizeRashinVisibleText(redactDossierPrivateNames(String(LAST_OUTPUTS.orc||''))).trim();
   if(!source) return '';
@@ -12196,7 +12226,7 @@ function getOracleSectionBodyForDossier(pattern){
 
 function renderDossierSaveCard(card){
   card=resolveDossierCardData(card);
-  const foundationSections=getDossierFoundationBulletSections();
+  const foundationSections=getDossierSaveCardFoundationSections();
   const guidance=buildDossierSignalSummaries(card);
   return`
     <article class="dossier-save-card">
@@ -12249,7 +12279,7 @@ function detectDossierCardQualityIssues(data={},options={}){
   const primary=normalizePrimaryThemeValue(focus);
   const text=buildDossierPlainText(card);
   const displayText=[text,options.renderedText||''].join('\n');
-  const conditionGroups=getDossierFoundationBulletSections();
+  const conditionGroups=getDossierSaveCardFoundationSections();
   const guidance=buildDossierSignalSummaries(card);
   const readingDigestCopies=[];
   if(text.length>1000) issues.push('羅針カードが1000字を超えている');
@@ -12268,7 +12298,7 @@ function detectDossierCardQualityIssues(data={},options={}){
   if(/進む条件|止まる条件|残る条件|動く条件|保留条件|関わる条件|距離を置く条件|今週の一手|7日以内|30日以内|確認してください|書き出してください|材料を集め/.test(text)) issues.push('羅針カードに旧方針の条件表または作業指示が混入している');
   if(/です。があるなら|ことです。があるなら|確認してから選ぶことです。が/.test(displayText)) issues.push('羅針カードに接続崩れがあります');
   conditionGroups.forEach(group=>{
-    if((group.items||[]).length!==5) issues.push(`${group.label}が5行ではない`);
+    if((group.items||[]).length!==2) issues.push(`${group.label}が2行ではない`);
     const seen=new Set();
     (group.items||[]).forEach(item=>{
       if(isDossierIncompleteText(item)) issues.push(`${group.label}に文途中切りがある`);
@@ -12608,7 +12638,7 @@ function installLiveCardMotionStyles(){
     .shuffle-area.live-shuffling .shuffle-card{
       left:50% !important;
       top:50% !important;
-      margin-left:-70px !important;
+      margin-left:-59.1px !important;
       margin-top:-105px !important;
       animation:none !important;
       transition:none !important;
@@ -12617,9 +12647,9 @@ function installLiveCardMotionStyles(){
       will-change:transform,opacity !important;
     }
     #orc-deck.live-shuffling .shuffle-card{
-      width:117.2px !important;
+      width:118.2px !important;
       height:210px !important;
-      margin-left:-58.6px !important;
+      margin-left:-59.1px !important;
       margin-top:-105px !important;
       background-size:cover,cover !important;
     }
@@ -12630,7 +12660,7 @@ function installLiveCardMotionStyles(){
       opacity:.14 !important;
     }
     .result-card-placeholder.len-placeholder{
-      background-size:100% 100%, 100% 100% !important;
+      background-size:cover, cover !important;
       background-repeat:no-repeat !important;
       background-position:center !important;
       background-color:#080512 !important;
@@ -12679,15 +12709,15 @@ function installLiveCardMotionStyles(){
         transform:translateY(10px) rotateX(7deg) rotateY(-9deg) rotateZ(-1deg) !important;
       }
       .shuffle-area.live-shuffling .shuffle-card{
-        width:122px !important;
+        width:103px !important;
         height:183px !important;
-        margin-left:-61px !important;
+        margin-left:-51.5px !important;
         margin-top:-91px !important;
       }
       #orc-deck.live-shuffling .shuffle-card{
-        width:102.2px !important;
+        width:103px !important;
         height:183px !important;
-        margin-left:-51.1px !important;
+        margin-left:-51.5px !important;
         margin-top:-91.5px !important;
       }
     }
@@ -18006,7 +18036,9 @@ function drawWrappedCanvasText(ctx,text,x,y,maxWidth,lineHeight,options={}){
   const maxLines=Number.isFinite(options.maxLines)?options.maxLines:99;
   const paragraphs=String(text||'').replace(/\r\n?/g,'\n').split('\n');
   const lines=[];
-  for(const paragraph of paragraphs){
+  let truncated=false;
+  for(let paragraphIndex=0;paragraphIndex<paragraphs.length;paragraphIndex++){
+    const paragraph=paragraphs[paragraphIndex];
     const chars=Array.from(paragraph.trim());
     if(!chars.length){
       if(lines.length<maxLines) lines.push('');
@@ -18018,17 +18050,26 @@ function drawWrappedCanvasText(ctx,text,x,y,maxWidth,lineHeight,options={}){
       if(ctx.measureText(test).width>maxWidth&&line){
         lines.push(line);
         line=char;
-        if(lines.length>=maxLines) break;
+        if(lines.length>=maxLines){
+          truncated=true;
+          break;
+        }
       }else{
         line=test;
       }
     }
-    if(lines.length>=maxLines) break;
+    if(lines.length>=maxLines){
+      if(paragraphIndex<paragraphs.length-1) truncated=true;
+      break;
+    }
     if(line) lines.push(line);
-    if(lines.length>=maxLines) break;
+    if(lines.length>=maxLines){
+      if(paragraphIndex<paragraphs.length-1) truncated=true;
+      break;
+    }
   }
   if(lines.length>maxLines) lines.length=maxLines;
-  if(options.ellipsis&&lines.length===maxLines){
+  if(options.ellipsis&&truncated&&lines.length===maxLines){
     let last=lines[lines.length-1]||'';
     while(last&&ctx.measureText(`${last}…`).width>maxWidth) last=last.slice(0,-1);
     lines[lines.length-1]=`${last}…`;
@@ -18110,6 +18151,9 @@ async function createDossierShareImageBlob(cardData){
 
   const textX=safeX+pad;
   const maxTextW=safeW-(pad*2);
+  const shareTitle=limitTextByChars(card.TITLE||'羅針カード',30,10);
+  const shareOneLine=normalizeDossierSentence(card.ONE_LINE||'',card.TITLE||'',{max:38});
+  const shareVerdict=normalizeDossierSentence(card.VERDICT||'',card.ONE_LINE||'',{max:112});
   let y=safeY+pad+6;
   ctx.fillStyle='rgba(176,226,218,.92)';
   ctx.font=`700 ${Math.round(w*.016)}px "Shippori Mincho", serif`;
@@ -18117,10 +18161,10 @@ async function createDossierShareImageBlob(cardData){
   y+=Math.round(h*.055);
   ctx.fillStyle='#f2d57b';
   ctx.font=`700 ${Math.round(w*.027)}px "Shippori Mincho", serif`;
-  y=drawWrappedCanvasText(ctx,card.TITLE||'羅針カード',textX,y,maxTextW,Math.round(h*.049),{maxLines:2,ellipsis:true})+Math.round(h*.012);
+  y=drawWrappedCanvasText(ctx,shareTitle,textX,y,maxTextW,Math.round(h*.049),{maxLines:2,ellipsis:true})+Math.round(h*.012);
   ctx.fillStyle='rgba(255,247,216,.94)';
   ctx.font=`500 ${Math.round(w*.016)}px "Shippori Mincho", serif`;
-  y=drawWrappedCanvasText(ctx,card.ONE_LINE||'',textX,y,maxTextW,Math.round(h*.031),{maxLines:2,ellipsis:true})+Math.round(h*.016);
+  y=drawWrappedCanvasText(ctx,shareOneLine,textX,y,maxTextW,Math.round(h*.031),{maxLines:1,ellipsis:true})+Math.round(h*.016);
 
   const answerH=Math.round(h*.19);
   drawCanvasPanel(ctx,textX,y,maxTextW,answerH,{fill:'rgba(9,10,22,.64)',stroke:'rgba(228,184,74,.30)'});
@@ -18129,7 +18173,7 @@ async function createDossierShareImageBlob(cardData){
   ctx.fillText('今回の答え',textX+Math.round(w*.015),y+Math.round(h*.043));
   ctx.fillStyle='rgba(246,240,220,.94)';
   ctx.font=`700 ${Math.round(w*.015)}px "Shippori Mincho", serif`;
-  drawWrappedCanvasText(ctx,card.VERDICT||'',textX+Math.round(w*.015),y+Math.round(h*.082),maxTextW-Math.round(w*.03),Math.round(h*.033),{maxLines:3,ellipsis:true});
+  drawWrappedCanvasText(ctx,shareVerdict,textX+Math.round(w*.015),y+Math.round(h*.082),maxTextW-Math.round(w*.03),Math.round(h*.033),{maxLines:3,ellipsis:true});
   y+=answerH+Math.round(h*.015);
 
   const guidance=buildDossierSignalSummaries(card);
@@ -18151,7 +18195,7 @@ async function createDossierShareImageBlob(cardData){
   ctx.font=`700 ${Math.round(w*.014)}px "Shippori Mincho", serif`;
   ctx.fillText(DOSSIER_ORACLE_GUIDANCE_HEADING,textX+Math.round(w*.015),y+Math.round(actionH*.78));
   ctx.fillStyle='rgba(255,232,171,.96)';
-  ctx.font=`700 ${Math.round(w*.015)}px "Shippori Mincho", serif`;
+  ctx.font=`700 ${Math.round(w*.013)}px "Shippori Mincho", serif`;
   drawWrappedCanvasText(ctx,guidance.oracle,textX+Math.round(w*.17),y+Math.round(actionH*.78),maxTextW-Math.round(w*.19),Math.round(h*.031),{maxLines:1,ellipsis:true});
 
   const blob=await canvasToPngBlob(canvas);
