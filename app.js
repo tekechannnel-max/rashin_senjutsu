@@ -4759,11 +4759,6 @@ function installRashinBonusStyles(){
     .rashin-calendar-button{min-height:42px;border:1px solid rgba(143,216,210,.5);background:rgba(7,18,32,.56);color:#f4e8c8;font-weight:900;padding:9px 13px;cursor:pointer;display:grid;gap:2px;text-align:center}
     .rashin-calendar-button small{font-size:11px;color:rgba(143,216,210,.9);font-weight:800}
     .rashin-calendar-button:hover{border-color:rgba(143,216,210,.82);background:rgba(143,216,210,.12)}
-    .rashin-oracle-cta{margin-top:14px;padding:13px 14px;border:1px solid rgba(143,216,210,.28);background:rgba(6,14,28,.34);display:grid;gap:8px}
-    .rashin-oracle-cta-title{font-size:15px;line-height:1.55;color:#fff;font-weight:900}
-    .rashin-oracle-cta-sub{font-size:13px;line-height:1.65;color:rgba(244,232,200,.82)}
-    .rashin-oracle-cta-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:2px}
-    .rashin-oracle-cta .rashin-bonus-btn,.rashin-oracle-cta .rashin-bonus-link{min-height:40px;padding:9px 13px}
     .upgrade-bonus-note{margin-top:6px;color:#f4cd62;font-size:13px;line-height:1.6}
     .upgrade-price-normal{display:block;color:rgba(255,255,255,.72);text-decoration:line-through;font-size:13px}
     .upgrade-price-discount{display:block;color:#fff;font-size:18px;font-weight:800}
@@ -4798,36 +4793,6 @@ function ensureRashinBonusSlot(){
 
 function getRashinAvailableDiscount(status=RASHIN_BONUS_STATUS){
   return null;
-}
-
-function renderDailyOracleDeepCta(status=RASHIN_BONUS_STATUS){
-  const snapshot=getRashinFragmentSnapshot(status);
-  const context=getConsultationCtaContext();
-  const freeTicketAvailable=!!snapshot.freeReadingBenefit?.available;
-  const canUseFreeTicket=freeTicketAvailable&&PLAN==='free'&&canContinueCurrentReadingToPaid();
-  const ctaLabel=getDeepReadingCtaLabel({...context,preferHistory:context.hasHistory});
-  const freeRemaining=snapshot.freeReadingBenefit?.remainingStones??Math.max(0,30-snapshot.stones);
-  const title=freeTicketAvailable
-    ?'羅針のかけらが30個集まっています'
-    :'今日のカードを、今の悩みに重ねて読む';
-  const sub=freeTicketAvailable
-    ?(canUseFreeTicket
-      ?'深掘り鑑定1回分として使えます。'
-      :'無料鑑定の結果から進むと、深掘り鑑定1回分として使えます。')
-    :`今すぐ深掘りすることもできます。あと${freeRemaining}個で深掘り鑑定1回分として使えます。`;
-  const primary=freeTicketAvailable&&canUseFreeTicket
-    ?'<button class="rashin-bonus-btn" type="button" onclick="startDailyOracleDeepReading(\'daily_oracle_free_ticket\',true)">30個で深掘り鑑定へ</button>'
-    :`<button class="rashin-bonus-btn" type="button" onclick="startDailyOracleDeepReading('daily_oracle',false)">${escapeHtml(ctaLabel)}</button>`;
-  return `
-        <div class="rashin-oracle-cta">
-          <div class="rashin-oracle-cta-title">${escapeHtml(title)}</div>
-          <div class="rashin-oracle-cta-sub">${escapeHtml(sub)}</div>
-          <div class="rashin-oracle-cta-actions">
-            ${primary}
-            <button class="rashin-bonus-link" type="button" onclick="startFlow('paid')">深掘り鑑定を見る</button>
-          </div>
-          <div class="rashin-oracle-cta-sub">プレリリース中は単発780円で深掘りできます。</div>
-        </div>`;
 }
 
 function renderRashinBonusCard(){
@@ -4928,7 +4893,6 @@ function renderRashinBonusCard(){
             ?`<button class="rashin-bonus-btn" type="button" onclick="claimRashinBonus()" ${RASHIN_BONUS_LOADING?'disabled':''}>羅針のかけらを受け取る</button>`
             :`<button class="rashin-bonus-link" type="button" disabled>${escapeHtml(settledText)}</button>`}
         </div>
-        ${renderDailyOracleDeepCta(status)}
       </div>
       <div class="rashin-bonus-side">
         <div class="rashin-bonus-stones" aria-label="羅針のかけら ${stones}個">
