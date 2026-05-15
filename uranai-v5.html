@@ -2944,9 +2944,9 @@ body{
 #rs-dossier{order:9;}
 #result-actions{order:10;}
 #s-result.paid-result-mode #rs-animal-reveal{display:none!important;}
-#s-result.paid-result-mode #rs-len{order:2;}
-#s-result.paid-result-mode #rs-orc{order:3;}
-#s-result.paid-result-mode #rs-integration{order:4;}
+#s-result.paid-result-mode #rs-integration{order:2;}
+#s-result.paid-result-mode #rs-len{order:3;}
+#s-result.paid-result-mode #rs-orc{order:4;}
 #s-result.paid-result-mode #rs-foundation-mini{order:5;}
 #s-result.paid-result-mode #rs-dossier{order:6;}
 #s-result.paid-result-mode #result-upgrade-panel{order:8;}
@@ -4509,48 +4509,59 @@ body{
   color:rgba(246,240,220,.9);
   overflow:hidden;
 }
-.dossier-save-visual{
-  position:relative;
-  aspect-ratio:16 / 9;
-  min-height:0;
-  overflow:hidden;
-}
-.dossier-save-visual::before{
+.dossier-save-card::before{
   content:'';
   position:absolute;
   inset:0;
   z-index:0;
-  background:url('占い素材/羅針カード背景.png?v=20260515-rashin-card-bg-full') center/100% 100% no-repeat;
-  filter:saturate(.96) brightness(.86);
+  background:url('占い素材/羅針カード背景.png?v=20260515-rashin-card-bg-full-card') top center/100% auto no-repeat;
+  filter:saturate(.96) brightness(.88);
+  pointer-events:none;
+}
+.dossier-save-card::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  z-index:0;
+  background:
+    linear-gradient(90deg,rgba(2,8,28,.78) 0%,rgba(2,8,28,.58) 46%,rgba(2,8,28,.18) 66%,rgba(2,8,28,.04) 100%),
+    linear-gradient(180deg,rgba(2,8,28,.06) 0%,rgba(2,8,28,.22) 48%,rgba(2,8,28,.92) 100%);
+  pointer-events:none;
+}
+.dossier-save-visual{
+  position:relative;
+  min-height:clamp(560px,58vw,690px);
+  overflow:visible;
+  display:flex;
 }
 .dossier-save-visual::after{
   content:'';
   position:absolute;
   inset:0;
-  z-index:1;
+  z-index:0;
   background:
-    linear-gradient(90deg,rgba(2,8,28,.64) 0%,rgba(2,8,28,.46) 45%,rgba(2,8,28,.10) 64%,transparent 100%),
-    radial-gradient(circle at 28% 50%,rgba(2,8,28,.42),transparent 54%);
+    linear-gradient(90deg,rgba(2,8,28,.48) 0%,rgba(2,8,28,.28) 46%,rgba(2,8,28,.06) 68%,transparent 100%),
+    radial-gradient(circle at 28% 50%,rgba(2,8,28,.34),transparent 54%);
   pointer-events:none;
 }
 .dossier-save-safe-area{
   position:relative;
-  z-index:2;
+  z-index:1;
   width:58%;
-  min-height:100%;
+  min-height:0;
   padding:clamp(18px,3vw,34px) clamp(18px,3.2vw,40px);
   display:flex;
   flex-direction:column;
-  justify-content:center;
+  justify-content:flex-start;
   gap:clamp(10px,1.4vw,16px);
 }
 .dossier-save-details{
   position:relative;
-  z-index:2;
+  z-index:1;
   display:grid;
   gap:14px;
   padding:18px clamp(18px,3vw,28px) 24px;
-  background:linear-gradient(180deg,rgba(4,8,20,.96),rgba(4,8,20,.9));
+  background:linear-gradient(180deg,rgba(4,8,20,.82),rgba(4,8,20,.9));
 }
 .dossier-save-detail-grid{
   display:grid;
@@ -4586,6 +4597,16 @@ body{
   font-size:clamp(13px,1.35vw,16px);
   line-height:1.65;
   color:rgba(255,246,210,.92);
+}
+.dossier-save-answer{
+  padding:14px 16px 16px;
+  border:1px solid rgba(228,184,74,.26);
+  background:linear-gradient(180deg,rgba(9,10,22,.66),rgba(4,8,20,.56));
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.025);
+}
+.dossier-save-answer .dossier-save-heading{
+  color:rgba(242,213,123,.96);
+  font-size:clamp(13px,1.15vw,15px);
 }
 
 .dossier-save-verdict{
@@ -5063,7 +5084,9 @@ body.dossier-viewer-open{
   body.print-dossier .dossier-grid{gap:10px;}
 
   body.print-dossier .dossier-save-card{width:100%;max-width:980px;margin:0 auto;page-break-inside:avoid;}
-  body.print-dossier .dossier-save-visual{border:1px solid #bbb;}
+  body.print-dossier .dossier-save-card::before,
+  body.print-dossier .dossier-save-card::after{display:none;}
+  body.print-dossier .dossier-save-visual{border:1px solid #bbb;min-height:auto;}
   body.print-dossier .dossier-save-detail-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
 
   body.print-dossier .dossier-save-columns{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
@@ -5977,17 +6000,23 @@ body.dossier-viewer-open{
   .ritual-grid{grid-template-columns:1fr;}
   .dossier-proof-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
   .dossier-grid{grid-template-columns:1fr;}
-  .dossier-save-safe-area{width:62%;padding:10px 12px;gap:5px;}
-  .dossier-save-title{font-size:13px;line-height:1.25;margin-bottom:4px;}
-  .dossier-save-one{font-size:9.5px;line-height:1.45;}
-  .dossier-save-kicker{font-size:8px;margin-bottom:4px;}
-  .dossier-save-card-focus{padding:7px 8px;}
-  .dossier-save-card-focus .dossier-save-heading{font-size:9px;margin-bottom:5px;}
+  .dossier-save-card::before{background-size:auto 100%;background-position:top right;}
+  .dossier-save-visual{min-height:auto;}
+  .dossier-save-visual::after{background:linear-gradient(90deg,rgba(2,8,28,.76),rgba(2,8,28,.52));}
+  .dossier-save-safe-area{width:100%;padding:16px 14px 18px;gap:8px;}
+  .dossier-save-title{font-size:20px;line-height:1.35;margin-bottom:6px;}
+  .dossier-save-one{font-size:13px;line-height:1.65;}
+  .dossier-save-kicker{font-size:10px;margin-bottom:5px;}
+  .dossier-save-answer{padding:11px 12px 12px;}
+  .dossier-save-answer .dossier-save-heading{font-size:12px;margin-bottom:6px;}
+  .dossier-save-answer .dossier-save-verdict{font-size:13px;line-height:1.7;}
+  .dossier-save-card-focus{padding:9px 10px;}
+  .dossier-save-card-focus .dossier-save-heading{font-size:10px;margin-bottom:6px;}
   .dossier-save-card-focus .dossier-save-reading:nth-child(n+2){display:none;}
-  .dossier-save-card-focus .dossier-save-reading{padding:6px 7px;}
-  .dossier-save-card-focus .dossier-save-reading-title{font-size:9px;margin-bottom:3px;}
-  .dossier-save-card-focus .dossier-save-reading-copy{font-size:9px;line-height:1.35;}
-  .dossier-save-visual-action{display:none;}
+  .dossier-save-card-focus .dossier-save-reading{padding:7px 8px;}
+  .dossier-save-card-focus .dossier-save-reading-title{font-size:10px;margin-bottom:4px;}
+  .dossier-save-card-focus .dossier-save-reading-copy{font-size:11px;line-height:1.55;}
+  .dossier-save-visual-action{grid-template-columns:1fr;padding:10px 12px;}
   .dossier-save-details{padding:16px 14px 18px;}
   .dossier-save-detail-grid{grid-template-columns:1fr;}
   .dossier-save-columns{grid-template-columns:1fr;gap:14px;}
@@ -6099,7 +6128,8 @@ body.dossier-viewer-open{
 
 .modal-btns{display:flex;gap:10px;margin-top:20px;}
 
-.modal-save{
+.modal-save,
+.modal-confirm{
 
   flex:2;padding:13px;background:linear-gradient(135deg,var(--gold-d),var(--gold));
 
@@ -6107,6 +6137,11 @@ body.dossier-viewer-open{
 
   font-size:13px;letter-spacing:.2em;color:#04030a;cursor:pointer;font-weight:600;
 
+}
+.modal-confirm:disabled{
+  opacity:.42;
+  cursor:not-allowed;
+  box-shadow:none;
 }
 
 .modal-cancel{
@@ -6151,7 +6186,19 @@ body.dossier-viewer-open{
   color:var(--muted);
   font-size:13px;
   line-height:1.8;
-  margin-bottom:20px;
+  margin-bottom:10px;
+}
+.consultation-tag-count{
+  display:inline-flex;
+  align-items:center;
+  min-height:28px;
+  padding:5px 10px;
+  margin-bottom:18px;
+  border:1px solid rgba(176,226,218,.18);
+  background:rgba(176,226,218,.07);
+  color:rgba(176,226,218,.9);
+  font-size:11px;
+  letter-spacing:.12em;
 }
 .consultation-tag-grid{
   display:grid;
@@ -6174,6 +6221,9 @@ body.dossier-viewer-open{
   transform:translateY(-1px);
   outline:none;
 }
+.consultation-tag-btn.is-selected{
+  box-shadow:0 0 0 1px rgba(234,190,92,.28),0 12px 28px rgba(201,149,42,.16);
+}
 .consultation-tag-btn span{
   display:block;
   color:var(--gold-l);
@@ -6189,6 +6239,7 @@ body.dossier-viewer-open{
 }
 .consultation-tag-actions{
   display:flex;
+  gap:10px;
   justify-content:flex-end;
   margin-top:20px;
 }
@@ -7003,10 +7054,12 @@ body.consultation-tag-open{overflow:hidden;}
 <div class="consultation-tag-modal" id="consultation-tag-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="consultation-tag-title" hidden onclick="if(event.target===this)closeConsultationTagModal()">
   <div class="consultation-tag-box">
     <div class="consultation-tag-title" id="consultation-tag-title">占い対象は？</div>
-    <div class="consultation-tag-desc">この選択で、鑑定の主テーマと条件ラベルを決めます。複数ある場合でも、今回いちばん見たい対象を選んでください。</div>
+    <div class="consultation-tag-desc">最初に今回見たい対象を選んでください。2つまで選べます。</div>
+    <div class="consultation-tag-count" id="consultation-tag-count">最大2つまで選択できます</div>
     <div class="consultation-tag-grid" id="consultation-tag-grid"></div>
     <div class="consultation-tag-actions">
       <button class="modal-cancel" type="button" onclick="closeConsultationTagModal()">戻る</button>
+      <button class="modal-confirm" id="consultation-tag-go" type="button" onclick="confirmConsultationTag()" disabled>占いに行く</button>
     </div>
   </div>
 </div>

@@ -2394,8 +2394,11 @@ function getCurrentInputAnalytics(){
   const day=getSelectedBirthDay();
   const fullname=getFullname();
   const theme=document.getElementById('f-theme')?.value?.trim()||'';
+  const catTags=getConsultationTagSelections();
   return{
-    category:normalizeConsultationCategoryTag(document.getElementById('f-cat')?.value||'総合'),
+    category:catTags[0]||normalizeConsultationCategoryTag(document.getElementById('f-cat')?.value||'総合'),
+    category_count:catTags.length||1,
+    category_secondary:catTags[1]||'',
     theme_length:theme.length,
     has_birthdate:hasFullBirthDate(year,month,day),
     has_name:!!fullname,
@@ -2515,6 +2518,7 @@ const CONSULTATION_CATEGORY_TAGS=Object.freeze([
 ]);
 let CONSULTATION_TAG_CONFIRMED=false;
 let CONSULTATION_TAG_PENDING_ACTION=null;
+let CONSULTATION_TAG_SELECTED_VALUES=[];
 
 function normalizeConsultationCategoryTag(category=''){
   const raw=String(category||'').trim();
@@ -2568,10 +2572,64 @@ function setConsultationCategory(category){
   const exact=[...catEl.options].find(option=>option.value===desired);
   if(exact){
     catEl.value=exact.value;
+    setConsultationTagSelections([exact.value]);
     return;
   }
   const partial=[...catEl.options].find(option=>option.textContent.includes(desired));
   catEl.value=partial?.value||catEl.options[0]?.value||'';
+  setConsultationTagSelections([catEl.value||'総合']);
+}
+
+function normalizeConsultationTagSelections(values=[]){
+  const unique=[];
+  (Array.isArray(values)?values:[values]).forEach(value=>{
+    const normalized=normalizeConsultationCategoryTag(value);
+    if(normalized&&!unique.includes(normalized)) unique.push(normalized);
+  });
+  return unique.slice(0,2);
+}
+
+function setConsultationTagSelections(values=[]){
+  CONSULTATION_TAG_SELECTED_VALUES=normalizeConsultationTagSelections(values);
+}
+
+function getConsultationTagSelections(options={}){
+  const selected=normalizeConsultationTagSelections(CONSULTATION_TAG_SELECTED_VALUES);
+  if(selected.length||options.includeCurrent===false) return selected;
+  return normalizeConsultationTagSelections([document.getElementById('f-cat')?.value||'総合']);
+}
+
+function getConsultationPrimaryCategory(){
+  return getConsultationTagSelections()[0]||normalizeConsultationCategoryTag(document.getElementById('f-cat')?.value||'総合');
+}
+
+function syncConsultationTagModalState(){
+  const modal=document.getElementById('consultation-tag-modal');
+  if(!modal) return;
+  const selected=getConsultationTagSelections({includeCurrent:false});
+  modal.querySelectorAll('[data-consultation-tag]').forEach(button=>{
+    const value=button.getAttribute('data-consultation-tag')||'';
+    const isSelected=selected.includes(value);
+    button.classList.toggle('is-selected',isSelected);
+    button.setAttribute('aria-pressed',isSelected?'true':'false');
+  });
+  const countEl=document.getElementById('consultation-tag-count');
+  if(countEl) countEl.textContent=selected.length?`${selected.length}/2 選択中`:'最大2つまで選択できます';
+  const goBtn=document.getElementById('consultation-tag-go');
+  if(goBtn) goBtn.disabled=!selected.length;
+}
+
+function toggleConsultationTagSelection(category){
+  const value=normalizeConsultationCategoryTag(category);
+  const selected=getConsultationTagSelections({includeCurrent:false});
+  const exists=selected.includes(value);
+  const next=exists?selected.filter(item=>item!==value):selected.concat(value);
+  if(!exists&&selected.length>=2){
+    showToast('占い対象は2つまで選べます');
+    return;
+  }
+  setConsultationTagSelections(next);
+  syncConsultationTagModalState();
 }
 
 function renderConsultationTagButtons(){
@@ -2583,8 +2641,9 @@ function renderConsultationTagButtons(){
     button.type='button';
     button.className='consultation-tag-btn';
     button.setAttribute('data-consultation-tag',tag.value);
+    button.setAttribute('aria-pressed','false');
     button.innerHTML=`<span>${tag.label}</span><small>${tag.hint}</small>`;
-    button.addEventListener('click',()=>confirmConsultationTag(tag.value));
+    button.addEventListener('click',()=>toggleConsultationTagSelection(tag.value));
     host.appendChild(button);
   });
 }
@@ -2594,10 +2653,10 @@ function openConsultationTagModal(currentCategory=''){
   renderConsultationTagButtons();
   const modal=document.getElementById('consultation-tag-modal');
   if(!modal) return false;
-  const current=normalizeConsultationCategoryTag(currentCategory||document.getElementById('f-cat')?.value||'総合');
-  modal.querySelectorAll('[data-consultation-tag]').forEach(button=>{
-    button.classList.toggle('is-selected',button.getAttribute('data-consultation-tag')===current);
-  });
+  if(currentCategory&&CONSULTATION_TAG_SELECTED_VALUES.length){
+    setConsultationTagSelections(CONSULTATION_TAG_SELECTED_VALUES);
+  }
+  syncConsultationTagModalState();
   modal.hidden=false;
   modal.setAttribute('aria-hidden','false');
   document.body.classList.add('consultation-tag-open');
@@ -2614,17 +2673,23 @@ function closeConsultationTagModal(clearPending=true){
   if(clearPending) CONSULTATION_TAG_PENDING_ACTION=null;
 }
 
-async function confirmConsultationTag(category){
+async function confirmConsultationTag(){
+  const selected=getConsultationTagSelections({includeCurrent:false});
+  if(!selected.length){
+    showToast('占い対象を1つ以上選んでください');
+    return;
+  }
   const pending=CONSULTATION_TAG_PENDING_ACTION;
   CONSULTATION_TAG_PENDING_ACTION=null;
-  setConsultationCategory(category);
+  setConsultationCategory(selected[0]);
+  setConsultationTagSelections(selected);
   CONSULTATION_TAG_CONFIRMED=true;
   closeConsultationTagModal(false);
   if(pending?.type==='startFlow'){
     await continueStartFlowAfterTag(pending.plan,true);
     return;
   }
-  goToLen();
+  showScreen('s-input',20);
 }
 
 function applyEntryCardPrefill(card){
@@ -4294,7 +4359,10 @@ function loadSaved(){
     syncDayOptions(saved.day??null);
     document.getElementById('f-day').value=saved.day==null?'unknown':String(saved.day);
     if(saved.hour!==undefined&&saved.hour!==null) document.getElementById('f-hour').value=String(saved.hour);
-    if(saved.cat) setConsultationCategory(saved.cat);
+    if(Array.isArray(saved.catTags)&&saved.catTags.length){
+      setConsultationCategory(saved.catTags[0]);
+      setConsultationTagSelections(saved.catTags);
+    }else if(saved.cat) setConsultationCategory(saved.cat);
     if(saved.theme!==undefined){
       document.getElementById('f-theme').value=saved.theme;
       updateThemeCounter();
@@ -7062,7 +7130,8 @@ function getCurrentInputSnapshot(){
     month:parseInt(document.getElementById('f-month')?.value,10)||null,
     day:getSelectedBirthDay(),
     hour:getSelectedBirthHour(),
-    cat:normalizeConsultationCategoryTag(document.getElementById('f-cat')?.value||'総合'),
+    cat:getConsultationPrimaryCategory(),
+    catTags:getConsultationTagSelections(),
     theme:document.getElementById('f-theme')?.value?.trim()||'',
     reactionAnswers:getReactionAnswersSnapshot(),
   };
@@ -11281,6 +11350,10 @@ function renderDossierSaveCard(card){
             <div class="dossier-save-title">${escapeHtml(card.TITLE)}</div>
             <div class="dossier-save-one">${escapeHtml(card.ONE_LINE)}</div>
           </div>
+          <div class="dossier-save-section dossier-save-answer">
+            <div class="dossier-save-heading">今回の答え</div>
+            <div class="dossier-save-verdict">${escapeHtml(card.VERDICT)}</div>
+          </div>
           ${renderDossierReadingDigest()}
           <div class="dossier-save-section dossier-save-visual-action">
             <div>
@@ -11295,10 +11368,6 @@ function renderDossierSaveCard(card){
         </div>
       </div>
       <div class="dossier-save-details">
-        <div class="dossier-save-section">
-          <div class="dossier-save-heading">今回の答え</div>
-          <div class="dossier-save-verdict">${escapeHtml(card.VERDICT)}</div>
-        </div>
         <div class="dossier-save-detail-grid">
           <div class="dossier-save-section">
             <div class="dossier-save-heading">${escapeHtml(card.POSITIVE_LABEL||'残る条件')}</div>
@@ -11961,6 +12030,7 @@ function showScreen(id,progress){
 async function startFlow(plan){
   const normalized=plan===SIMPLE_READING_PLAN?SIMPLE_READING_PLAN:(plan==='paid'?'paid':'free');
   if(normalized!==SIMPLE_READING_PLAN){
+    setConsultationTagSelections([]);
     CONSULTATION_TAG_PENDING_ACTION={type:'startFlow',plan:normalized};
     if(openConsultationTagModal(document.getElementById('f-cat')?.value||'総合')) return;
     CONSULTATION_TAG_PENDING_ACTION=null;
@@ -12100,7 +12170,8 @@ function goToLen(){
   const month=parseInt(document.getElementById('f-month').value);
   const day=getSelectedBirthDay();
   const hour=getSelectedBirthHour();
-  const cat=normalizeConsultationCategoryTag(document.getElementById('f-cat')?.value||'総合');
+  const catTags=getConsultationTagSelections();
+  const cat=catTags[0]||normalizeConsultationCategoryTag(document.getElementById('f-cat')?.value||'総合');
   const theme=document.getElementById('f-theme')?.value?.trim()||'';
   if(!ensureRequiredGender()) return;
   const fullname=requireFullnameForNameJudge();
@@ -12110,11 +12181,9 @@ function goToLen(){
     syncDayOptions(day);
     return;
   }
-  if(!CONSULTATION_TAG_CONFIRMED){
-    if(openConsultationTagModal(cat)) return;
-  }
   CONSULTATION_TAG_CONFIRMED=false;
   setConsultationCategory(cat);
+  setConsultationTagSelections(catTags.length?catTags:[cat]);
 
   // 現時点のファネル計測は無料フォームのみ。有料再鑑定フォームは必要になった時点で別途追加する。
   if(PLAN==='free'){
@@ -12132,7 +12201,7 @@ function goToLen(){
   NAMEJUDGE=calcNameJudge(fullname);
 
   if(checkSave){
-    try{localStorage.setItem(INPUT_STORAGE_KEY,JSON.stringify({fullname,gender:GENDER,year,month,day,hour,cat,theme,reactionAnswers:getReactionAnswersSnapshot(),reactionProfile:REACTION_PROFILE}));}catch(e){}
+    try{localStorage.setItem(INPUT_STORAGE_KEY,JSON.stringify({fullname,gender:GENDER,year,month,day,hour,cat,catTags:getConsultationTagSelections(),theme,reactionAnswers:getReactionAnswersSnapshot(),reactionProfile:REACTION_PROFILE}));}catch(e){}
   }
 
   showScreen('s-len',40);
@@ -12181,7 +12250,7 @@ function goToSimpleReading(){
   LP=hasFullBirthDate(year,month,day)?calcLp(year,month,day):null;
   NAMEJUDGE=fullname?calcNameJudge(fullname):null;
   if(checkSave){
-    try{localStorage.setItem(INPUT_STORAGE_KEY,JSON.stringify({fullname,gender:GENDER,year,month,day,hour,cat,theme,reactionAnswers:getReactionAnswersSnapshot(),reactionProfile:REACTION_PROFILE}));}catch(e){}
+    try{localStorage.setItem(INPUT_STORAGE_KEY,JSON.stringify({fullname,gender:GENDER,year,month,day,hour,cat,catTags:getConsultationTagSelections(),theme,reactionAnswers:getReactionAnswersSnapshot(),reactionProfile:REACTION_PROFILE}));}catch(e){}
   }
   showScreen('s-result',90);
   renderResult();
@@ -16697,10 +16766,10 @@ async function createDossierShareImageBlob(cardData){
     ctx.fillRect(0,0,w,h);
   }
   const safeX=Math.round(w*.055);
-  const safeY=Math.round(h*.10);
-  const safeW=Math.round(w*.52);
-  const safeH=Math.round(h*.80);
-  const pad=Math.round(w*.024);
+  const safeY=Math.round(h*.065);
+  const safeW=Math.round(w*.54);
+  const safeH=Math.round(h*.87);
+  const pad=Math.round(w*.022);
   const panelGradient=ctx.createLinearGradient(safeX,0,safeX+safeW,0);
   panelGradient.addColorStop(0,'rgba(2,8,28,.74)');
   panelGradient.addColorStop(.72,'rgba(2,8,28,.52)');
@@ -16720,52 +16789,59 @@ async function createDossierShareImageBlob(cardData){
   y+=Math.round(h*.055);
   ctx.fillStyle='#f2d57b';
   ctx.font=`700 ${Math.round(w*.027)}px "Shippori Mincho", serif`;
-  y=drawWrappedCanvasText(ctx,card.TITLE||'羅針カード',textX,y,maxTextW,Math.round(h*.056),{maxLines:2,ellipsis:true})+Math.round(h*.014);
+  y=drawWrappedCanvasText(ctx,card.TITLE||'羅針カード',textX,y,maxTextW,Math.round(h*.049),{maxLines:2,ellipsis:true})+Math.round(h*.012);
   ctx.fillStyle='rgba(255,247,216,.94)';
   ctx.font=`500 ${Math.round(w*.016)}px "Shippori Mincho", serif`;
-  y=drawWrappedCanvasText(ctx,card.ONE_LINE||'',textX,y,maxTextW,Math.round(h*.037),{maxLines:2,ellipsis:true})+Math.round(h*.024);
+  y=drawWrappedCanvasText(ctx,card.ONE_LINE||'',textX,y,maxTextW,Math.round(h*.031),{maxLines:2,ellipsis:true})+Math.round(h*.016);
+
+  const answerH=Math.round(h*.19);
+  drawCanvasPanel(ctx,textX,y,maxTextW,answerH,{fill:'rgba(9,10,22,.64)',stroke:'rgba(228,184,74,.30)'});
+  ctx.fillStyle='rgba(242,213,123,.97)';
+  ctx.font=`700 ${Math.round(w*.016)}px "Shippori Mincho", serif`;
+  ctx.fillText('今回の答え',textX+Math.round(w*.015),y+Math.round(h*.043));
+  ctx.fillStyle='rgba(246,240,220,.94)';
+  ctx.font=`700 ${Math.round(w*.015)}px "Shippori Mincho", serif`;
+  drawWrappedCanvasText(ctx,card.VERDICT||'',textX+Math.round(w*.015),y+Math.round(h*.082),maxTextW-Math.round(w*.03),Math.round(h*.033),{maxLines:3,ellipsis:true});
+  y+=answerH+Math.round(h*.015);
 
   const digests=getDossierReadingDigests().slice(0,2);
   if(digests.length){
-    const digestH=Math.round(h*.28);
+    const digestH=Math.round(h*.255);
     drawCanvasPanel(ctx,textX,y,maxTextW,digestH,{fill:'rgba(6,14,30,.70)',stroke:'rgba(176,226,218,.32)'});
     ctx.fillStyle='rgba(176,226,218,.95)';
-    ctx.font=`700 ${Math.round(w*.016)}px "Shippori Mincho", serif`;
-    ctx.fillText('ルノルマン・オラクルから見えたこと',textX+Math.round(w*.015),y+Math.round(h*.045));
+    ctx.font=`700 ${Math.round(w*.015)}px "Shippori Mincho", serif`;
+    ctx.fillText('ルノルマン・オラクルから見えたこと',textX+Math.round(w*.015),y+Math.round(h*.04));
     const panelGap=Math.round(w*.013);
     const panelW=digests.length>1?Math.floor((maxTextW-(panelGap*3))/2):maxTextW-Math.round(w*.03);
-    const panelH=Math.round(h*.17);
+    const panelH=Math.round(h*.165);
     digests.forEach((item,index)=>{
       const px=textX+Math.round(w*.015)+(index*(panelW+panelGap));
-      const py=y+Math.round(h*.07);
+      const py=y+Math.round(h*.064);
       drawCanvasPanel(ctx,px,py,panelW,panelH,{fill:'rgba(255,255,255,.04)',stroke:'rgba(176,226,218,.16)',lineWidth:1});
       ctx.fillStyle='rgba(242,213,123,.95)';
       ctx.font=`700 ${Math.round(w*.013)}px "Shippori Mincho", serif`;
       ctx.fillText(item.title,px+Math.round(w*.012),py+Math.round(h*.038));
       ctx.fillStyle='rgba(246,240,220,.9)';
       ctx.font=`500 ${Math.round(w*.013)}px "Shippori Mincho", serif`;
-      drawWrappedCanvasText(ctx,item.copy,px+Math.round(w*.012),py+Math.round(h*.074),panelW-Math.round(w*.024),Math.round(h*.03),{maxLines:3,ellipsis:true});
+      drawWrappedCanvasText(ctx,item.copy,px+Math.round(w*.012),py+Math.round(h*.074),panelW-Math.round(w*.024),Math.round(h*.029),{maxLines:3,ellipsis:true});
     });
-    y+=digestH+Math.round(h*.026);
+    y+=digestH+Math.round(h*.015);
   }
 
-  const actionH=Math.round(h*.16);
+  const actionH=Math.max(Math.round(h*.11),Math.min(Math.round(h*.145),safeY+safeH-y-Math.round(h*.012)));
   drawCanvasPanel(ctx,textX,y,maxTextW,actionH,{fill:'rgba(4,9,24,.58)',stroke:'rgba(228,184,74,.22)'});
   ctx.fillStyle='rgba(176,226,218,.95)';
   ctx.font=`700 ${Math.round(w*.014)}px "Shippori Mincho", serif`;
   ctx.fillText('今週の一手',textX+Math.round(w*.015),y+Math.round(h*.046));
   ctx.fillStyle='rgba(246,240,220,.92)';
   ctx.font=`500 ${Math.round(w*.014)}px "Shippori Mincho", serif`;
-  drawWrappedCanvasText(ctx,(card.ACTION7||[])[0]||'',textX+Math.round(w*.13),y+Math.round(h*.046),maxTextW-Math.round(w*.16),Math.round(h*.034),{maxLines:2,ellipsis:true});
-  y+=actionH+Math.round(h*.026);
-
+  drawWrappedCanvasText(ctx,(card.ACTION7||[])[0]||'',textX+Math.round(w*.13),y+Math.round(h*.046),maxTextW-Math.round(w*.16),Math.round(h*.03),{maxLines:1,ellipsis:true});
   ctx.fillStyle='rgba(176,226,218,.9)';
   ctx.font=`700 ${Math.round(w*.014)}px "Shippori Mincho", serif`;
-  ctx.fillText(INTEGRATION_ACTION_GUIDE_HEADING,textX,y);
-  y+=Math.round(h*.045);
+  ctx.fillText(INTEGRATION_ACTION_GUIDE_HEADING,textX+Math.round(w*.015),y+Math.round(h*.095));
   ctx.fillStyle='rgba(255,232,171,.96)';
-  ctx.font=`700 ${Math.round(w*.019)}px "Shippori Mincho", serif`;
-  drawWrappedCanvasText(ctx,card.CLOSING||'',textX,y,maxTextW,Math.round(h*.046),{maxLines:2,ellipsis:true});
+  ctx.font=`700 ${Math.round(w*.015)}px "Shippori Mincho", serif`;
+  drawWrappedCanvasText(ctx,card.CLOSING||'',textX+Math.round(w*.15),y+Math.round(h*.095),maxTextW-Math.round(w*.17),Math.round(h*.031),{maxLines:1,ellipsis:true});
 
   const blob=await canvasToPngBlob(canvas);
   return blob&&blob.size?blob:null;
