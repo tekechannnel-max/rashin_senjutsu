@@ -8208,7 +8208,9 @@ function getLenPairReadingPhrase(pair={},ctx={}){
   if(has('blocker')&&has('positive')){
     const blocker=cards.find(card=>card.roles?.includes('blocker'));
     const positive=cards.find(card=>card.roles?.includes('positive'));
-    return `${getLenRealityPhrase(blocker,ctx,'blocker')}のそばに${getLenRealityPhrase(positive,ctx,'positive')}もあり、白黒を急ぐより何を安心の根拠にするかが分かれ目です。`;
+    const blockerPhrase=getLenRealityPhrase(blocker,ctx,'blocker');
+    const positivePhrase=getLenRealityPhrase(positive,ctx,'positive');
+    return `今は、${blockerPhrase}が判断を重くしています。一方で${positivePhrase}も見えているため、白黒を急ぐより安心の根拠が戻る方向を選ぶ流れです。`;
   }
   if(has('ambiguity')&&has('people')){
     return ctx.primaryTheme==='love'
@@ -8357,7 +8359,9 @@ function buildCardGroundedVerdictSentence(ctx={},flags={}){
   const people=reading.nearPeople||reading.mainPeople;
   if(pair) return pair;
   if(blocker&&positive){
-    return `${getLenPositionTone(blocker,reading.total)}${getLenRealityPhrase(blocker,ctx,'blocker')}があり、同時に${getLenRealityPhrase(positive,ctx,'positive')}も残っています。答えは我慢ではなく、${w.base}が戻る形へ寄せることです。`;
+    const blockerPhrase=getLenRealityPhrase(blocker,ctx,'blocker');
+    const positivePhrase=getLenRealityPhrase(positive,ctx,'positive');
+    return `${getLenPositionTone(blocker,reading.total)}${blockerPhrase}が判断を重くしています。けれど、${positivePhrase}も見えています。答えは我慢ではなく、${w.base}が戻る形へ寄せることです。`;
   }
   if(ambiguity&&people){
     return ctx.primaryTheme==='love'
@@ -8396,9 +8400,9 @@ function buildCardGroundedFlowText(ctx={},flags={}){
     sentences.push(`今は、${getLenRealityPhrase(core,ctx,core.roles?.[0]||'')}が中心になり、${w.field}の答えを急ぎにくい流れです。`);
   }
   if(positive){
-    sentences.push(`${getLenPositionTone(positive,reading.total)}${getLenRealityPhrase(positive,ctx,'positive')}があるため、流れは閉じ切っていません。`);
+    sentences.push(`${getLenPositionTone(positive,reading.total)}${getLenRealityPhrase(positive,ctx,'positive')}があり、流れはまだ整う余地を残しています。`);
   }else if(choice){
-    sentences.push(`${getLenRealityPhrase(choice,ctx,'choice')}が出ており、同じ場所で我慢を続けるより、見方を分けるほど道筋が戻ります。`);
+    sentences.push(`${getLenRealityPhrase(choice,ctx,'choice')}が見えており、同じ場所で我慢を続けるより、見方を分けるほど道筋が戻ります。`);
   }
   if(futureBlocker){
     sentences.push(`ただし、${getLenRealityPhrase(futureBlocker,ctx,'blocker')}を薄く見積もると、先へ進むほど同じ違和感が残ります。`);
@@ -9037,10 +9041,13 @@ function highlightNamesInElement(el,fullname){
 function renderFormattedResultText(id,text,kind='default'){
   const el=document.getElementById(id);
   if(!el) return;
-  const normalized=sanitizeRashinVisibleText(redactDossierPrivateNames(String(text||'')))
+  let normalized=sanitizeRashinVisibleText(redactDossierPrivateNames(String(text||'')))
     .replace(/\r\n?/g,'\n')
     .replace(/\n{3,}/g,'\n\n')
     .trim();
+  if(kind==='integration'){
+    normalized=removeLegacyIntegrationSections(normalized);
+  }
   el.classList.add('formatted-output');
   if(!normalized){
     el.innerHTML='';
@@ -9167,9 +9174,7 @@ function buildReadingOutputFormatGuide(kind='len',is9=false,focusOverride=null){
       '',
       `■ ${INTEGRATION_ACTION_GUIDE_HEADING}`,
       '▶ オラクル由来の向き合い方として、どの視点に戻ると自分を雑に扱わずに済むかを書く。',
-      '',
-      `■ ${INTEGRATION_CLOSING_HEADING}`,
-      '▶ 保存したくなる短い一文で締める。宿題ではなく、読み返した時に判断軸へ戻れる言葉にする。',
+      `▶ ${INTEGRATION_CLOSING_HEADING}は出さない。締めの強さは${INTEGRATION_ACTION_GUIDE_HEADING}の本文に含める。`,
       '【強調マークアップ】「■ 今回の答え」の最初の判断フレーズを1箇所だけ **テキスト** で囲むこと。多用しない。',
     ].join('\n');
   }
@@ -13515,7 +13520,7 @@ function buildClarifyPromptText(mode='detail'){
   }).join('\n')}`;
   if(mode==='detail'){
     const detail=entries.map(entry=>`▼${getClarifyDisplayLabel(entry)}\nQ：${entry.q}${entry.hint?`\n推定：${entry.hint}`:''}${entry.anchor?`\n根拠メモ：${entry.anchor}`:''}\nA：${entry.a}`).join('\n');
-    return `\n${summary}\n【相談者の補足回答（推定背景と実回答）】\n${detail}\n\n※上記補足は、相談者の回答をそのまま再掲するためではなく、${INTEGRATION_FINAL_HEADING}、${INTEGRATION_CORE_HEADING}、${INTEGRATION_FLOW_HEADING}、${INTEGRATION_ACTION_GUIDE_HEADING}、${INTEGRATION_CLOSING_HEADING}の解像度を上げるために使ってください。`;
+    return `\n${summary}\n【相談者の補足回答（推定背景と実回答）】\n${detail}\n\n※上記補足は、相談者の回答をそのまま再掲するためではなく、${INTEGRATION_FINAL_HEADING}、${INTEGRATION_CORE_HEADING}、${INTEGRATION_FLOW_HEADING}、${INTEGRATION_ACTION_GUIDE_HEADING}の解像度を上げるために使ってください。`;
   }
   if(mode==='compact'){
     return `\n${summary}`;
@@ -14256,7 +14261,7 @@ ${buildPremiumClarifyAnswerBrief()}
 【データ圧縮ルール】
 - 全カードを本文に使い切ろうとしない。主軸、障害、見えていない点、人物、流れ、好転、オラクルの向き合い方だけを優先する
 - カード名や配置説明は本文に出しすぎず、相談者の現実の言葉へ翻訳する
-- 追加質問回答は引用せず、${INTEGRATION_FINAL_HEADING}、${INTEGRATION_CORE_HEADING}、${INTEGRATION_FLOW_HEADING}、${INTEGRATION_ACTION_GUIDE_HEADING}、${INTEGRATION_CLOSING_HEADING}へ変換する
+- 追加質問回答は引用せず、${INTEGRATION_FINAL_HEADING}、${INTEGRATION_CORE_HEADING}、${INTEGRATION_FLOW_HEADING}、${INTEGRATION_ACTION_GUIDE_HEADING}へ変換する
 【断定レベル】
 - 他人の心、未来、医療・法律・投資判断は断定しない
 - ただし迷いの正体と判断軸は曖昧にしない`;
@@ -15268,9 +15273,10 @@ function buildPrimaryTopVerdictText(name='あなた',focus={},theme='',context={
   if(splitJapaneseSentences(body).length<3){
     body=dedupeJapaneseSentences(`${body}\n${buildPrimaryTopVerdictExtraSentence(ctx)}`);
   }
-  let limited=limitJapaneseBodyBySentences(body,360,5);
+  body=repairAwkwardConnectionPhrases(varyRepeatedWorkPlacePhrases(compressRepeatedDecisionAxisSets(body)));
+  let limited=limitJapaneseBodyBySentences(body,320,5);
   if(splitJapaneseSentences(limited).length<3){
-    limited=limitJapaneseBodyBySentences(`${limited}\n${buildPrimaryTopVerdictExtraSentence(ctx)}`,360,5);
+    limited=limitJapaneseBodyBySentences(`${limited}\n${buildPrimaryTopVerdictExtraSentence(ctx)}`,320,5);
   }
   return limited;
 }
@@ -15313,7 +15319,8 @@ function getRashinReadingPolicyPrompt(scope='all'){
 - ルノルマンの説明やカード配置の説明を混ぜない。`,
     integration:`【統合判断専用】
 - 鑑定結果の最初に出す、相談者が持ち帰る答えです。
-- ${INTEGRATION_FINAL_HEADING}、${INTEGRATION_CORE_HEADING}、${INTEGRATION_FLOW_HEADING}、${INTEGRATION_ACTION_GUIDE_HEADING}、${INTEGRATION_CLOSING_HEADING}を自然な文章で返す。
+- ${INTEGRATION_FINAL_HEADING}、${INTEGRATION_CORE_HEADING}、${INTEGRATION_FLOW_HEADING}、${INTEGRATION_ACTION_GUIDE_HEADING}を自然な文章で返す。
+- ${INTEGRATION_CLOSING_HEADING}は${INTEGRATION_ACTION_GUIDE_HEADING}と重複するため、統合判断の表示セクションとして出さない。
 - まとめではなく、迷いの正体と自分を雑に扱わない判断軸を先に出す。
 - ${INTEGRATION_FINAL_HEADING}では同じ意味の文を繰り返さず、${INTEGRATION_FLOW_HEADING}は箇条書き風の条件リストにしない。`,
     paid:`【有料鑑定全体】
@@ -15332,7 +15339,7 @@ function getRashinReadingPolicyPrompt(scope='all'){
     quality:`【品質監査専用】
 - 禁止語、作業指示、条件表、重複、テーマ語彙の混線、入力にない関係性、カード辞書説明、オラクルの行動タスク化を検査する。
 - 曖昧な関係を復縁として誤読していないか、復縁相談を一般恋愛として薄くしていないかを見る。
-- ルノルマン由来の現実見立て、オラクル由来の向き合い方、最後に保存したくなる一言があるかを見る。`,
+- ルノルマン由来の現実見立て、オラクル由来の向き合い方、羅針の指針に保存したくなる強さがあるかを見る。`,
     all:`【役割】
 - ルノルマン: 今の現実、止まっている理由、改善の兆し、気をつけることを読む。
 - オラクル: 助言、内面整理、向き合い方を読む。
@@ -15403,13 +15410,58 @@ function rewriteRashinTaskSentences(text=''){
   });
 }
 
+function replaceRepeatedPhraseAfterFirst(text='',phrase='',alternatives=[]){
+  if(!phrase||!alternatives.length) return String(text||'');
+  let count=0;
+  return String(text||'').replace(new RegExp(escapeRegExp(phrase),'g'),()=>{
+    count+=1;
+    if(count===1) return phrase;
+    return alternatives[(count-2)%alternatives.length];
+  });
+}
+
+function varyRepeatedWorkPlacePhrases(text=''){
+  let output=String(text||'');
+  output=replaceRepeatedPhraseAfterFirst(output,'今の場所',['この環境','今の働き方','ここに残る意味','今の流れ']);
+  output=replaceRepeatedPhraseAfterFirst(output,'今の環境',['この環境','今の働き方','ここに残る意味','今の流れ']);
+  return output;
+}
+
+function repairAwkwardConnectionPhrases(text=''){
+  return String(text||'')
+    .replace(/今の場所の今の形/g,'この環境の今の形')
+    .replace(/([^。\n]{12,90})のそばに([^。\n]{8,90})もあり、/g,(match,left,right)=>`${left}が判断を重くしています。一方で${right}も見えています。`)
+    .replace(/([^。\n]{12,90})のそばに([^。\n]{8,90})もあります。/g,(match,left,right)=>`${left}が判断を重くしています。一方で${right}も見えています。`);
+}
+
+function rewriteCardExplanationSmell(text=''){
+  return String(text||'')
+    .replace(/「([^」]{1,12})」が出る時は、?/g,'')
+    .replace(/「([^」]{1,12})」は、?([^。\n]{4,90})(?:を示します|を示しています|を意味します|を表します)[。]?/g,(match,card,body)=>`${body}が見えています。`)
+    .replace(/「([^」]{1,12})」は、?([^。\n]{4,90})(?:カードとして読めます|カードとして読みます)[。]?/g,(match,card,body)=>`${body}として現実に見ます。`)
+    .replace(/「([^」]{1,12})」のような/g,'現実に出ている')
+    .replace(/([一-龥ぁ-んァ-ン]{1,8})・([一-龥ぁ-んァ-ン]{1,8})のような/g,'重さや壁のような')
+    .replace(/このカードは[^。\n]{0,80}(?:を示します|を意味します|を表します)[。]?/g,'今の現実に出ている違和感として見ます。');
+}
+
 function compressRepeatedDecisionAxisSets(text=''){
   const seen=new Map();
   const shortCycle=['努力の見返り','返ってくるもの','続ける意味','今の場所に残る価値','自信として残るもの'];
+  let workAxisSeen=false;
   return String(text||'').replace(/(?:[一-龥ぁ-んァ-ンA-Za-z0-9０-９]{2,12}[・／\/、,，]){3,}[一-龥ぁ-んァ-ンA-Za-z0-9０-９]{2,12}/g,match=>{
     const terms=match.split(/[・／\/、,，]+/).map(item=>item.trim()).filter(Boolean);
     if(terms.length<4) return match;
     const key=[...new Set(terms)].join('・');
+    const isWorkAxis=/収入/.test(key)&&/成長/.test(key)&&/評価/.test(key)&&/役割/.test(key);
+    if(isWorkAxis){
+      if(!workAxisSeen){
+        workAxisSeen=true;
+        return match;
+      }
+      const count=seen.get('work_axis')||0;
+      seen.set('work_axis',count+1);
+      return shortCycle[count%shortCycle.length];
+    }
     const count=seen.get(key)||0;
     seen.set(key,count+1);
     if(count===0) return match;
@@ -15494,6 +15546,9 @@ function sanitizeRashinVisibleText(text=''){
     output=output.replace(pattern,replacement);
   });
   output=rewriteRashinTaskSentences(output);
+  output=repairAwkwardConnectionPhrases(output);
+  output=rewriteCardExplanationSmell(output);
+  output=varyRepeatedWorkPlacePhrases(output);
   output=compressRepeatedDecisionAxisSets(output);
   output=dedupeRashinMeaningSentences(output);
   output=polishRashinVisibleText(output);
@@ -15532,10 +15587,7 @@ ${topVerdict}
 ${buildIntegrationFlowNarrative(focus,cat,theme,context)}
 
 ■ ${INTEGRATION_ACTION_GUIDE_HEADING}
-${ensureJapaneseSentence(push)}
-
-■ ${INTEGRATION_CLOSING_HEADING}
-${buildDossierClosingForDecisionContext(ctx)}`);
+${ensureJapaneseSentence(push)}`);
 }
 
 function buildDefaultFinalJudgmentText(name='あなた',cat='総合',theme=''){
@@ -15551,10 +15603,7 @@ ${buildPrimaryTopVerdictText(name,focus,theme)}
 ${buildIntegrationFlowNarrative(focus,cat,theme,{})}
 
 ■ ${INTEGRATION_ACTION_GUIDE_HEADING}
-${ensureJapaneseSentence(getIntegrationSupplementItems(INTEGRATION_ACTION_GUIDE_HEADING,focus,cat,theme)[0]||'迷いを消すより、違和感の出どころを言葉にするほど判断軸が戻ります。')}
-
-■ ${INTEGRATION_CLOSING_HEADING}
-答えは急がなくていい。ただ、自分を削る選び方だけは選ばなくていい。`);
+${ensureJapaneseSentence(getIntegrationSupplementItems(INTEGRATION_ACTION_GUIDE_HEADING,focus,cat,theme)[0]||'迷いを消すより、違和感の出どころを言葉にするほど判断軸が戻ります。')}`);
 }
 
 function getFinalJudgmentFallback(name='あなた',cat='総合',theme='',context={}){
@@ -15578,6 +15627,7 @@ function replaceHeadingBody(text='',heading='',body=''){
 function removeLegacyIntegrationSections(text=''){
   return String(text||'')
     .replace(/\n?■\s*(判断ポイント|次にやること)\s*\n[\s\S]*?(?=\n■\s|$)/g,'')
+    .replace(/\n?■\s*最後の一言\s*\n[\s\S]*?(?=\n■\s|$)/g,'')
     .replace(/\n{3,}/g,'\n\n')
     .trim();
 }
@@ -15602,7 +15652,7 @@ function getIntegrationHeadingRequirements(focus={}){
 }
 
 function getRequiredIntegrationHeadings(focus={}){
-  return[INTEGRATION_FINAL_HEADING,INTEGRATION_CORE_HEADING,INTEGRATION_FLOW_HEADING,INTEGRATION_ACTION_GUIDE_HEADING,INTEGRATION_CLOSING_HEADING];
+  return[INTEGRATION_FINAL_HEADING,INTEGRATION_CORE_HEADING,INTEGRATION_FLOW_HEADING,INTEGRATION_ACTION_GUIDE_HEADING];
 }
 
 function escapeRegExp(text=''){
@@ -15815,7 +15865,7 @@ function buildIntegrationFlowNarrative(focus={},cat='総合',theme='',context={}
     return '今は、気持ちの強さよりも言葉のあとに行動が続くかで流れが分かれています。優しさが安定した反応として残るなら、関係は少しずつ整います。曖昧さや待つ側の負担だけが続くなら、信じたい気持ちほど消耗へ傾きます。';
   }
   if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
-    return '今は、今の場所に残る意味を探しながらも、外の選択肢へ意識が向き始めている流れです。評価や役割が返ってくるなら、今の環境を使う意味はまだ残ります。けれど、負担だけが増えて本音を出しにくくなるなら、気持ちは自然と次の場所へ傾きやすくなります。';
+    return '今は、ここに残る意味を探しながらも、外の選択肢へ意識が向き始めている流れです。評価や役割が返ってくるなら、この環境を使う意味はまだ残ります。けれど、負担だけが増えて本音を出しにくくなるなら、気持ちは自然と次の場所へ傾きやすくなります。';
   }
   if(ctx.primaryTheme==='relationship'||ctx.primaryTheme==='family'){
     return '今は、関係を守りたい気持ちと、自分を削りたくない感覚がぶつかりやすい流れです。距離を整えても自然体が戻るなら、関わり方はまだ育てられます。近づくほど我慢が増えるなら、その違和感は境界線を取り戻すサインです。';
@@ -15857,7 +15907,7 @@ function scoreCardGroundingInText(text='',focus={},context={}){
   if(reading.mainPeople&&/相手|周囲|人物|距離感|態度|力関係|主導権/.test(source)) score+=1;
   if(reading.mainChoice&&/選|分岐|分ける|道筋|見方/.test(source)) score+=1;
   if(reading.mainValue&&/評価|役割|収入|価値|見返り|返ってくる|循環/.test(source)) score+=1;
-  if(reading.importantPairs?.length&&/そば|重な|同時|分かれ目|色づけ/.test(source)) score+=1;
+  if(reading.importantPairs?.length&&/一方|白黒|重な|分かれ目|色づけ|判断を重く/.test(source)) score+=1;
   return score;
 }
 
@@ -15873,16 +15923,22 @@ function ensureIntegrationFlowNarrative(output='',focus={},cat='総合',theme=''
   return replaceHeadingBody(output,INTEGRATION_FLOW_HEADING,normalizeIntegrationFlowBody(extractHeadingBody(output,INTEGRATION_FLOW_HEADING),focus,cat,theme,context));
 }
 
+function hasAwkwardRashinVerdictText(text=''){
+  const source=String(text||'');
+  return /のそばに|今の場所の今の形|「[^」]{1,12}」が出る時は|「[^」]{1,12}」は、?[^。\n]*(?:示します|意味します|表します|カードとして読めます|カードとして読みます)/.test(source)
+    ||(source.match(/今の場所/g)||[]).length>=2;
+}
+
 function ensureTopVerdictInIntegration(output='',name='あなた',focus={},theme='',context={}){
   const existing=sanitizeRashinVisibleText(extractHeadingBody(output,INTEGRATION_FINAL_HEADING));
   const fallback=buildPrimaryTopVerdictText(name,focus,theme,context);
   const sentenceCount=splitJapaneseSentences(existing).length;
   const hasForbidden=detectRashinVisibleTextPolicyIssues(existing,'今回の答え').length>0;
   const hasCardGrounding=scoreCardGroundingInText(existing,focus,context)>=1;
-  const tooLoose=sentenceCount<2||sentenceCount>5||countMeaningfulChars(existing)>380;
+  const tooLoose=sentenceCount<3||sentenceCount>5||countMeaningfulChars(existing)>320||hasAwkwardRashinVerdictText(existing);
   const normalized=(!existing||hasForbidden||!hasCardGrounding||tooLoose)
     ?fallback
-    :limitJapaneseBodyBySentences(dedupeJapaneseSentences(existing),360,5);
+    :limitJapaneseBodyBySentences(dedupeJapaneseSentences(repairAwkwardConnectionPhrases(varyRepeatedWorkPlacePhrases(existing))),320,5);
   return replaceHeadingBody(output,INTEGRATION_FINAL_HEADING,normalized);
 }
 
@@ -15891,6 +15947,7 @@ function ensureIntegrationSlots(text='',name='あなた',cat='総合',theme='',c
   const focus=getFocusForContext(cat,theme,context);
   const fallback=getFinalJudgmentFallback(name,cat,theme,{...context,focus});
   output=normalizeIntegrationActionGuideHeading(output);
+  output=removeLegacyIntegrationSections(output);
   const ctx=buildDecisionContext(focus,{...context,cat,theme});
   const required=getRequiredIntegrationHeadings(focus);
   const hasForbiddenSurface=/7日以内|30日以内|今週の一手|次の一手|進む条件|止まる条件|残る条件|動く条件|保留条件|関わる条件|距離を置く条件|確認してください|書き出してください|比較してください|材料を集め/.test(output);
@@ -15912,9 +15969,7 @@ function ensureIntegrationSlots(text='',name='あなた',cat='総合',theme='',c
     output=replaceHeadingBody(output,INTEGRATION_FLOW_HEADING,extractHeadingBody(fallback,INTEGRATION_FLOW_HEADING));
   }
   output=ensureIntegrationFlowNarrative(output,focus,cat,theme,context);
-  if(!extractHeadingBody(output,INTEGRATION_CLOSING_HEADING)){
-    output=replaceHeadingBody(output,INTEGRATION_CLOSING_HEADING,extractHeadingBody(fallback,INTEGRATION_CLOSING_HEADING));
-  }
+  output=removeLegacyIntegrationSections(output);
   return sanitizeRashinVisibleText(output.trim());
 }
 
@@ -16285,6 +16340,9 @@ function validateIntegrationSatisfaction(text='',context={}){
   getRequiredIntegrationHeadings(focus).forEach(heading=>{
     if(!hasIntegrationHeading(source,heading)) issues.push(`integrationに${heading}がありません`);
   });
+  if(hasIntegrationHeading(source,INTEGRATION_CLOSING_HEADING)){
+    issues.push(`integrationに${INTEGRATION_CLOSING_HEADING}が残っています`);
+  }
   if(!/今回の答え|答え/.test(source)) issues.push('integrationが相談者の質問に直接答えていません');
   if(/確認してください|書き出してください|比較してください|材料を集めてください|7日以内|30日以内|今週の一手|次の一手|進む条件|止まる条件|残る条件|動く条件|保留条件/.test(source)){
     issues.push('integrationに作業指示または機械的な条件表が残っています');
@@ -16402,12 +16460,12 @@ ${getRashinReadingPolicyPrompt('quality')}
 - 明示された優先順位がある場合、LENがdual concern型の主構造に戻っていないか
 - 優先順位がない複合相談の場合だけ、dual concern型の読みが自然に使われているか
 - 結論があるか
-- ${INTEGRATION_FINAL_HEADING} / ${INTEGRATION_CORE_HEADING} / ${INTEGRATION_FLOW_HEADING} / ${INTEGRATION_ACTION_GUIDE_HEADING} / ${INTEGRATION_CLOSING_HEADING}があるか
+- ${INTEGRATION_FINAL_HEADING} / ${INTEGRATION_CORE_HEADING} / ${INTEGRATION_FLOW_HEADING} / ${INTEGRATION_ACTION_GUIDE_HEADING}があり、${INTEGRATION_CLOSING_HEADING}を表示セクションとして出していないか
 - この鑑定を読んだ有料ユーザーが、自分の迷いの正体と言葉にできていなかった違和感を受け取れるか
 - 作業指示や機械的な条件表ではなく、現実の見立て・違和感の言語化・内面の整え方になっているか
 - 相談者の入力文の言い換えだけで終わらず、内面の矛盾を解釈しているか
 - 無責任な断定を避けつつ、判断軸は明確か
-- 最後の一文が保存したくなる強さを持っているか
+- ${INTEGRATION_ACTION_GUIDE_HEADING}が保存したくなる強さを持っているか
 - 相談者の質問に直接答えているか
 - 相談者入力にない職種、年月、条件を作っていないか
 - 相談者が出した判断軸「${ctx.criteriaText}」が反映されているか。不足時だけテーマ別の汎用見立てで補っているか
@@ -16485,7 +16543,7 @@ ${sanitizePromptInput(parsed.orc,3000)}
 ${sanitizePromptInput(parsed.integration,3000)}
 
 補完対象: ${sections.join(', ')}
-返却は ===INTEGRATION=== だけにしてください。必ず「${INTEGRATION_FINAL_HEADING} / ${INTEGRATION_CORE_HEADING} / ${INTEGRATION_FLOW_HEADING} / ${INTEGRATION_ACTION_GUIDE_HEADING} / ${INTEGRATION_CLOSING_HEADING}」を含めてください。
+返却は ===INTEGRATION=== だけにしてください。必ず「${INTEGRATION_FINAL_HEADING} / ${INTEGRATION_CORE_HEADING} / ${INTEGRATION_FLOW_HEADING} / ${INTEGRATION_ACTION_GUIDE_HEADING}」だけを含めてください。${INTEGRATION_CLOSING_HEADING}は出さないでください。
 作業指示、7日以内、30日以内、機械的な条件表は出さず、迷いの正体と判断軸の回復を自然な文章で書いてください。
 ${buildDecisionContextPromptBlock(focus,context)}`;
   const raw=await callAI(prompt,2600,'あなたは有料鑑定の最終判断カード補完担当です。無責任な断定は避け、迷いの正体と判断軸は明確にしてください。LENとORCは書き直さず、最後の判断カードで満足度を補ってください。',{
@@ -16538,9 +16596,6 @@ LENとORCは書き直さず、INTEGRATIONだけを強化してください。
 
 ■ ${INTEGRATION_ACTION_GUIDE_HEADING}
 自分を雑に扱わないために戻る視点を書く。
-
-■ ${INTEGRATION_CLOSING_HEADING}
-保存したくなる短い一文。
 
 ${buildDecisionContextPromptBlock(focus,context)}
 
@@ -16747,7 +16802,7 @@ ${premiumFocusBrief}
 - トップ結論: 迷いの核心、今回の答え、主テーマを先に見る理由
 - LEN: 現実で何が起きているか、判断を誤りやすい場所、主テーマが副テーマへ影響する構造
 - ORC: 光のメッセージ、内面の整え方、自分を雑に扱わない視点
-- INTEGRATION: ${INTEGRATION_FINAL_HEADING}、${INTEGRATION_CORE_HEADING}、${INTEGRATION_FLOW_HEADING}、${INTEGRATION_ACTION_GUIDE_HEADING}、${INTEGRATION_CLOSING_HEADING}
+- INTEGRATION: ${INTEGRATION_FINAL_HEADING}、${INTEGRATION_CORE_HEADING}、${INTEGRATION_FLOW_HEADING}、${INTEGRATION_ACTION_GUIDE_HEADING}
 - 羅針カード: 判断軸を思い出せる短い言葉だけを残す
 ${decisionLabels.explicitUserPriority?'- 明示された優先テーマがある場合、「恋愛と仕事を同じ重さで同時に解決しようとしている」は主構造にしない。':'- 優先順位が明示されていない複合相談では、dual concern型の読みを使ってよい。'}
 
@@ -16764,7 +16819,7 @@ ${decisionLabels.explicitUserPriority?'- 明示された優先テーマがある
 - 最後の結論は、ルノルマンの流れを上書きしない
 - 無料鑑定で扱う姓名判断・四柱推命・動物タイプ診断の内容も土台として含める
 - 追加質問がある場合は悩みの前提を具体化し、鑑定履歴がある場合は前回からの変化や繰り返すテーマに触れる
-- 追加質問の回答は、${INTEGRATION_FINAL_HEADING}、${INTEGRATION_CORE_HEADING}、${INTEGRATION_FLOW_HEADING}、${INTEGRATION_ACTION_GUIDE_HEADING}、${INTEGRATION_CLOSING_HEADING}の精度を上げる材料として使う
+- 追加質問の回答は、${INTEGRATION_FINAL_HEADING}、${INTEGRATION_CORE_HEADING}、${INTEGRATION_FLOW_HEADING}、${INTEGRATION_ACTION_GUIDE_HEADING}の精度を上げる材料として使う
 - 追加質問の回答をraw textのように再掲しない。相談者の具体語を、迷いの正体と判断軸に翻訳する
 - 保存したくなる鑑定として、判断軸・違和感の言語化・内面の整え方につながる読みを出す
 
@@ -16798,7 +16853,7 @@ ${SEL_LEN.length===9?`- LENの「今の流れ」または「迷いの構造」�
 - 相手の気持ちは「行動から見ると〜」の形で読む。心の中を断定しない
 - 作業指示ではなく、${decisionLabels.positiveLabel}、${decisionLabels.negativeLabel}、${decisionLabels.holdLabel}を自然な見立てとして本文に溶かす
 - 「整理してください」だけで終わらせない。相談者の違和感がどこから来ているかを言葉にする
-- ${INTEGRATION_FINAL_HEADING} / ${INTEGRATION_CORE_HEADING} / ${INTEGRATION_FLOW_HEADING} / ${INTEGRATION_ACTION_GUIDE_HEADING} / ${INTEGRATION_CLOSING_HEADING}を必ず入れる
+- ${INTEGRATION_FINAL_HEADING} / ${INTEGRATION_CORE_HEADING} / ${INTEGRATION_FLOW_HEADING} / ${INTEGRATION_ACTION_GUIDE_HEADING}を必ず入れる。${INTEGRATION_CLOSING_HEADING}は出さない
 - 相談者が時期を出している場合だけ、その時期を準備や見直しの目安として扱う
 - ルノルマンは長い1ブロックにしない。「迷いの構造」「今の流れ」「気をつけること」「あなたの引力」に分け、1セクションを短くする
 - ORCの「${ORACLE_COMPASS_HEADING}」は判断軸と内面の向き合い方だけを書く。箇条書きの行動リストは禁止
@@ -16826,8 +16881,7 @@ ${SEL_LEN.length===9?`- LENの「今の流れ」または「迷いの構造」�
 ■ ${INTEGRATION_FINAL_HEADING}
 ■ ${INTEGRATION_CORE_HEADING}
 ■ ${INTEGRATION_FLOW_HEADING}
-■ ${INTEGRATION_ACTION_GUIDE_HEADING}
-■ ${INTEGRATION_CLOSING_HEADING}`;
+■ ${INTEGRATION_ACTION_GUIDE_HEADING}`;
 
   const prompt=`【相談者入力データ】
 ${paidUserData}
@@ -16947,7 +17001,7 @@ ${orcFull}
 - 相談文から言えない季節、月、時期を作らない
 - 「魂」「波動」「宇宙」は使わない。「本音」「本質」は根拠付きなら使ってよい
 - 無根拠な未来・他人の心・専門判断は断定しない。ただし迷いの正体と判断軸は曖昧にしない
-- INTEGRATIONには「${INTEGRATION_FINAL_HEADING} / ${INTEGRATION_CORE_HEADING} / ${INTEGRATION_FLOW_HEADING} / ${INTEGRATION_ACTION_GUIDE_HEADING} / ${INTEGRATION_CLOSING_HEADING}」を必ず入れる
+- INTEGRATIONには「${INTEGRATION_FINAL_HEADING} / ${INTEGRATION_CORE_HEADING} / ${INTEGRATION_FLOW_HEADING} / ${INTEGRATION_ACTION_GUIDE_HEADING}」を必ず入れる。${INTEGRATION_CLOSING_HEADING}は出さない
 - 条件表、7日以内、30日以内、次の一手、確認する、書き出す、比較する、材料を集めるは禁止
 - 主結論は、明示された優先テーマ「${decisionLabels.primaryLabel}」に直接答える
 - 条件分岐は内部で使い、表には現実の見立て、違和感の言語化、羅針の指針として出す`;
@@ -17375,7 +17429,7 @@ ${premiumFocusBrief}
 - 相談者が相談文で使った具体的な言葉（例:「評価されない」「曖昧」「怖い」「このままでいいのか」）を「■ ${INTEGRATION_FINAL_HEADING}」または「■ ${INTEGRATION_CORE_HEADING}」に1箇所、自然な鑑定の文脈に溶け込ませる（ミラーリング）。引用記号は使わず、鑑定者自身の言葉として使うこと
 
 【出力形式・厳守】
-次の5見出しだけで書くこと。見出し以外の前置きは不要。
+次の4見出しだけで書くこと。見出し以外の前置きは不要。
 
 ■ ${INTEGRATION_FINAL_HEADING}
 今回の答えを2〜4文で書く。進む/止まる/保留の機械表ではなく、今の現実に対して何を大事にすればよいかを言い切る。
@@ -17388,9 +17442,6 @@ ${premiumFocusBrief}
 
 ■ ${INTEGRATION_ACTION_GUIDE_HEADING}
 オラクル由来の向き合い方として、どこに意識を戻すと自分を雑に扱わずに済むかを書く。作業指示にしない。
-
-■ ${INTEGRATION_CLOSING_HEADING}
-保存したくなる強さのある短い一言で締める。
 
 合計700字前後。1文は短く、難しい言葉は禁止。`;
 
@@ -19263,8 +19314,6 @@ function buildIntegratedFallback(name,cat,theme='',context={}){
   lines.push(`${hasSupport?'支えや好転の兆しはあります。':''}${hasEnding?'一方で、先送りが続くほど流れに押されやすい状態です。':''}${hasHidden?'まだ言葉になっていない本音が残っています。':''}`||'今は、焦って答えを出すより違和感の輪郭が戻るほど判断しやすい流れです。');
   lines.push('',`■ ${INTEGRATION_ACTION_GUIDE_HEADING}`,'');
   lines.push(actionPlan[0]||'違和感を消すより、違和感が教えている軸を取り戻していい。');
-  lines.push('',`■ ${INTEGRATION_CLOSING_HEADING}`,'');
-  lines.push('自分を削る選び方だけは、選ばなくていい。');
   return lines.join('\n');
 }
 
