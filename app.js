@@ -1618,7 +1618,9 @@ const RASHIN_CODE_REDEEM_ENDPOINT='/api/rashin-code/redeem';
 const RASHIN_PAID_CODE_REDEEM_ENDPOINT='/api/rashin-paid-code/redeem';
 const RASHIN_PAID_CODE_BOOTH_CLAIM_ENDPOINT='/api/rashin-paid-code/booth/claim';
 const PAID_READING_PREPARE_ENDPOINT='/api/paid-reading/prepare-ticket';
-const RASHIN_BOOTH_PURCHASE_ENABLED=false;
+const BOOTH_RASHIN_SHOP_URL='https://teke-sensai.booth.pm/';
+const BOOTH_ANY_GOODS_NOTE='BOOTH内のどのグッズを購入しても、購入後のBOOTH注文番号で深掘り羅針鑑定を利用できます。';
+const RASHIN_BOOTH_PURCHASE_ENABLED=true;
 const PAID_READING_USE_ENDPOINT='/api/paid-reading/use-ticket';
 const PAID_READING_RELEASE_ENDPOINT='/api/paid-reading/release-ticket';
 const DEEP_READING_PRERELEASE_PRICE=780;
@@ -1693,7 +1695,7 @@ const REACTION_QUESTION_BANK={
     prompt:'一番強く感じることは？',
     options:[
       {id:'direct',label:'自分の力で圧倒して勝ちたい'},
-      {id:'strategic',label:'ブレインとして勝ちたい'},
+      {id:'strategic',label:'ブレインとして人を動かして勝ちたい'},
     ],
   },
   connection_style:{
@@ -2152,12 +2154,9 @@ const MEMBERSHIP_PLAN={
     },
   ],
 };
-const CHECKOUT_DISCLOSURE_HTML=RASHIN_BOOTH_PURCHASE_ENABLED
-  ?'深掘り羅針鑑定は、BOOTH購入後に注文番号を入力して利用できる有料鑑定です。料金はプレリリース価格780円、正式リリース後は1000円予定です。無料鑑定を先に作成する必要はありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。'
-  :'深掘り羅針鑑定は、羅針のかけら30個または運営者から受け取った羅針コードで利用できます。料金はプレリリース価格780円、正式リリース後は1000円予定です。無料鑑定を先に作成する必要はありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
-const RESULT_CHECKOUT_DISCLOSURE_HTML=RASHIN_BOOTH_PURCHASE_ENABLED
-  ?'深掘り鑑定はプレリリース価格780円、正式リリース後は1000円予定です。無料で引いたカードの続きから追加カードを展開することも、直接有料鑑定から始めることもできます。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。'
-  :'深掘り鑑定は、羅針のかけら30個または羅針コードで利用できます。無料で引いたカードの続きから追加カードを展開することも、直接有料鑑定から始めることもできます。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。';
+const BOOTH_RASHIN_GUIDE_HTML=`深掘り羅針鑑定は、BOOTH購入後に注文番号を入力して利用できる有料鑑定です。${BOOTH_ANY_GOODS_NOTE} 購入はこちら：<a href="${BOOTH_RASHIN_SHOP_URL}" target="_blank" rel="noopener">${BOOTH_RASHIN_SHOP_URL}</a> 料金はプレリリース価格780円、正式リリース後は1000円予定です。無料鑑定を先に作成する必要はありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。`;
+const CHECKOUT_DISCLOSURE_HTML=BOOTH_RASHIN_GUIDE_HTML;
+const RESULT_CHECKOUT_DISCLOSURE_HTML=`深掘り鑑定はBOOTH購入後に注文番号を入力して利用できます。${BOOTH_ANY_GOODS_NOTE} 購入はこちら：<a href="${BOOTH_RASHIN_SHOP_URL}" target="_blank" rel="noopener">${BOOTH_RASHIN_SHOP_URL}</a> 無料で引いたカードの続きから追加カードを展開することも、直接有料鑑定から始めることもできます。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。`;
 
 // 全カード・各3問の解釈絞り込みテンプレート
 const CLARIFY_DEF={
@@ -4435,7 +4434,7 @@ function canUseAccessCode(){
 }
 
 function getPaidEntryActionLabel(){
-  return RASHIN_BOOTH_PURCHASE_ENABLED?'BOOTH購入で始める':'30個または羅針コードで始める';
+  return RASHIN_BOOTH_PURCHASE_ENABLED?'BOOTH購入で始める':'BOOTH購入または羅針コードで始める';
 }
 
 function canUseRashinCode(){
@@ -5476,17 +5475,18 @@ function openBoothOrderModal({booth={},finalAmount=DEEP_READING_PRICE}={}){
     modal.id='booth-order-modal';
     modal.setAttribute('aria-hidden','true');
     modal.setAttribute('inert','');
-    const purchaseLink=url
-      ?`<a class="booth-open-link" href="${escapeHtml(url)}" target="_blank" rel="noopener">BOOTHで購入する</a>`
+    const purchaseUrl=url||BOOTH_RASHIN_SHOP_URL;
+    const purchaseLink=purchaseUrl
+      ?`<a class="booth-open-link" href="${escapeHtml(purchaseUrl)}" target="_blank" rel="noopener">BOOTHで購入する</a><div class="booth-url-box">${escapeHtml(purchaseUrl)}</div>`
       :'<div class="booth-url-box">BOOTHの商品ページから対象商品を購入してください。</div>';
     modal.innerHTML=`
       <div class="modal-box booth-modal-box" role="dialog" aria-modal="true" aria-labelledby="booth-order-title">
         <div class="modal-title" id="booth-order-title">BOOTH購入番号を入力</div>
-        <div class="modal-desc">BOOTHで深掘り鑑定チケット、または対象グッズを購入後、BOOTH注文番号を入力してください。</div>
+        <div class="modal-desc">BOOTHでグッズを購入後、BOOTH注文番号を入力してください。どのグッズの購入でも、深掘り羅針鑑定を利用できます。</div>
         <div class="booth-payment-detail">
           <div class="booth-amount">対象金額：${escapeHtml(String(finalAmount))}円</div>
           ${purchaseLink}
-          <div class="booth-reference-hint">注文番号は、BOOTHの注文内容確認メール、または購入履歴から確認できます。公開投稿やリプライには書かず、この画面に入力してください。</div>
+          <div class="booth-reference-hint">${escapeHtml(BOOTH_ANY_GOODS_NOTE)} 注文番号は、BOOTHの注文内容確認メール、または購入履歴から確認できます。公開投稿やリプライには書かず、この画面に入力してください。</div>
           ${booth.note?`<div class="booth-reference-hint">${escapeHtml(booth.note)}</div>`:''}
         </div>
         <div class="booth-reference-row">
@@ -6037,19 +6037,19 @@ function openMemberAccessModal(intent=''){
   clearMemberAccessError();
   clearGoogleAuthError();
   clearDeveloperAccessError();
-  if(title) title.textContent=(pendingRashinCode||paidCodeIntent)?'羅針コードの確認':(bonusLogin?'今日の羅針':(compactPaidStart&&RASHIN_BOOTH_PURCHASE_ENABLED?'深掘り鑑定の購入':'深掘り鑑定の確認'));
+  if(title) title.textContent=pendingRashinCode?'羅針コードの確認':(paidCodeIntent?'深掘り鑑定の購入案内':(bonusLogin?'今日の羅針':(compactPaidStart&&RASHIN_BOOTH_PURCHASE_ENABLED?'深掘り鑑定の購入':'深掘り鑑定の確認')));
   if(desc){
     desc.style.display='';
     desc.textContent=pendingRashinCode
       ?'ログイン後、保存済みの羅針コードを確認します。'
       :paidCodeIntent
-      ?'羅針コードを入力してから有料鑑定を開始します。'
+      ?'BOOTHで購入後、注文番号または羅針コードで有料鑑定を開始します。'
       :bonusLogin
       ?'Googleログインで今日のカードを記録し、羅針のかけらを1つ受け取ります。'
       :canUseDeveloperQuickAccess()
       ?'確認用アクセスは上のボタンから進めます。'
       :(MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn
-        ?(RASHIN_BOOTH_PURCHASE_ENABLED?'Googleログインで購入を続けます。':'Googleログイン後、羅針のかけら30個または羅針コードを確認します。')
+        ?(RASHIN_BOOTH_PURCHASE_ENABLED?'Googleログインで購入を続けます。':'Googleログイン後、BOOTH購入または羅針コードを確認します。')
         :'深掘り鑑定は、利用状態を確認できたときだけ開きます。');
   }
   if(guide){
@@ -6057,7 +6057,7 @@ function openMemberAccessModal(intent=''){
     guide.textContent=pendingRashinCode
       ?''
       :suppressPaidPrepCopy
-      ?''
+      ?`${BOOTH_ANY_GOODS_NOTE} 購入先：${BOOTH_RASHIN_SHOP_URL}`
       :canUseDeveloperQuickAccess()
       ?'確認用アクセスは上のボタン。その他の確認方法は下から選べます。'
       :(MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn
@@ -6085,7 +6085,10 @@ function openMemberAccessModal(intent=''){
           :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':(RASHIN_BOOTH_PURCHASE_ENABLED?'BOOTH購入番号を確認します':'羅針コードを入力してください')}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':(RASHIN_BOOTH_PURCHASE_ENABLED?'購入後の注文番号で利用状態を確認します。':'羅針コードを入力済みの場合は、ログイン後に確認します。')}</div>`);
     }
   }
-  if(disclosure) disclosure.style.display='none';
+  if(disclosure){
+    disclosure.innerHTML=CHECKOUT_DISCLOSURE_HTML;
+    disclosure.style.display=(MEMBER_PENDING_INTENT==='start-paid'||MEMBER_PENDING_INTENT==='upgrade-paid'||paidCodeIntent)?'':'none';
+  }
   if(localBtn){
     if(canUsePaidTestMode()) localBtn.removeAttribute('hidden');
     localBtn.style.display=canUsePaidTestMode()?'inline-flex':'none';
@@ -6122,11 +6125,11 @@ function ensurePaidEntryGuideModal(){
   modal.setAttribute('inert','');
   modal.innerHTML=`
     <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="paid-entry-guide-title">
-      <div class="modal-title" id="paid-entry-guide-title">${RASHIN_BOOTH_PURCHASE_ENABLED?'深掘り羅針鑑定のBOOTH購入番号入力へ進みます':'深掘り羅針鑑定の利用確認へ進みます'}</div>
-      <div class="modal-desc">無料鑑定を先に作成する必要はありません。プレリリース価格780円、正式リリース後は1000円予定です。</div>
+      <div class="modal-title" id="paid-entry-guide-title">${RASHIN_BOOTH_PURCHASE_ENABLED?'深掘り羅針鑑定のBOOTH購入番号入力へ進みます':'深掘り羅針鑑定の購入案内へ進みます'}</div>
+      <div class="modal-desc">無料鑑定を先に作成する必要はありません。${BOOTH_ANY_GOODS_NOTE} 購入先：<a href="${BOOTH_RASHIN_SHOP_URL}" target="_blank" rel="noopener">${BOOTH_RASHIN_SHOP_URL}</a></div>
       <div class="runtime-status ok">
-        <div class="runtime-status-title">${RASHIN_BOOTH_PURCHASE_ENABLED?'BOOTH購入後に有料鑑定を開始します':'羅針のかけら30個または羅針コードで開始します'}</div>
-        <div class="runtime-status-detail">${RASHIN_BOOTH_PURCHASE_ENABLED?'BOOTH注文番号を入力すると、深掘り鑑定を解放します。':'ログイン後、30個あれば先にチケット化し、不足時は羅針コードを確認します。'}</div>
+        <div class="runtime-status-title">${RASHIN_BOOTH_PURCHASE_ENABLED?'BOOTH購入後に有料鑑定を開始します':'BOOTH購入または羅針コードで開始します'}</div>
+        <div class="runtime-status-detail">${RASHIN_BOOTH_PURCHASE_ENABLED?'BOOTH注文番号を入力すると、深掘り鑑定を解放します。':'購入後の注文番号、または羅針コードで利用状態を確認します。'}</div>
       </div>
       <div class="modal-btns">
         <button class="modal-save" type="button" onclick="startFlow('paid')">${getPaidEntryActionLabel()}</button>

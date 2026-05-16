@@ -166,9 +166,9 @@ const STRIPE_SUBSCRIPTION_NAME = process.env.STRIPE_SUBSCRIPTION_NAME || '\u6df1
 const STRIPE_TRIAL_PERIOD_DAYS = Math.max(0, parseInt(process.env.STRIPE_TRIAL_PERIOD_DAYS || '7', 10) || 0);
 const STRIPE_CHECKOUT_PAYMENT_METHOD_TYPES = parseStripePaymentMethodTypes(process.env.STRIPE_PAYMENT_METHOD_TYPES);
 const RASHIN_CODE_ADMIN_SECRET = normalizeEnvValue(process.env.RASHIN_CODE_ADMIN_SECRET || '');
-const BOOTH_DEEP_READING_URL = normalizeEnvValue(process.env.BOOTH_DEEP_READING_URL || process.env.BOOTH_PRODUCT_URL || process.env.BOOTH_SHOP_URL || '');
+const BOOTH_DEEP_READING_URL = normalizeEnvValue(process.env.BOOTH_DEEP_READING_URL || process.env.BOOTH_PRODUCT_URL || process.env.BOOTH_SHOP_URL || 'https://teke-sensai.booth.pm/');
 const BOOTH_PAYMENT_LABEL = normalizeEnvValue(process.env.BOOTH_PAYMENT_LABEL || '羅針占術 BOOTH');
-const BOOTH_PAYMENT_NOTE = normalizeEnvValue(process.env.BOOTH_PAYMENT_NOTE || 'BOOTHで購入後、注文番号を入力してください。');
+const BOOTH_PAYMENT_NOTE = normalizeEnvValue(process.env.BOOTH_PAYMENT_NOTE || 'BOOTH内のどのグッズを購入しても、購入後のBOOTH注文番号で深掘り羅針鑑定を利用できます。');
 const BOOTH_GMAIL_VERIFICATION_REQUIRED = normalizeEnvValue(process.env.BOOTH_GMAIL_VERIFICATION_REQUIRED || 'true').toLowerCase() !== 'false';
 const BOOTH_GMAIL_IMAP_USER = normalizeEnvValue(process.env.BOOTH_GMAIL_IMAP_USER || process.env.BOOTH_GMAIL_USER || '');
 const BOOTH_GMAIL_IMAP_APP_PASSWORD = normalizeEnvValue(process.env.BOOTH_GMAIL_IMAP_APP_PASSWORD || process.env.BOOTH_GMAIL_APP_PASSWORD || '');
