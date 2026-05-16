@@ -9230,10 +9230,10 @@ function buildReadingOutputFormatGuide(kind='len',is9=false,focusOverride=null){
       '▶ 相談者が本当はどこで迷っているかを、作業指示ではなく自然な文章で言語化する。',
       '',
       `■ ${INTEGRATION_FLOW_HEADING}`,
-      '▶ ルノルマン由来の現実見立てとして、今起きている流れ、止まっている理由、改善の兆しをまとめる。',
+      '▶ 現実見立てとして、今起きている流れ、止まっている理由、改善の兆しをまとめる。',
       '',
       `■ ${INTEGRATION_ACTION_GUIDE_HEADING}`,
-      '▶ オラクル由来の向き合い方として、どの視点に戻ると自分を雑に扱わずに済むかを書く。',
+      '▶ 内面の向き合い方として、どの視点に戻ると自分を雑に扱わずに済むかを書く。',
       `▶ ${INTEGRATION_CLOSING_HEADING}は出さない。締めの強さは${INTEGRATION_ACTION_GUIDE_HEADING}の本文に含める。`,
       '【強調マークアップ】「■ 今回の答え」の最初の判断フレーズを1箇所だけ **テキスト** で囲むこと。多用しない。',
     ].join('\n');
@@ -16106,6 +16106,11 @@ function getReadingCardNameRegex(){
   return names.length?new RegExp(`「(?:${names.join('|')})」`,'g'):/a^/g;
 }
 
+function getReadingCardNameTestRegex(){
+  const names=getReadingCardNames().map(escapeRegExp).filter(Boolean);
+  return names.length?new RegExp(`「(?:${names.join('|')})」`):/a^/;
+}
+
 function stripMainReadingCardExplanationText(text=''){
   const protectedRashin='__RASHIN_CARD_LABEL__';
   let source=rewriteCardExplanationSmell(String(text||'')).replace(/羅針カード/g,protectedRashin);
@@ -16268,7 +16273,12 @@ function detectRashinVisibleTextPolicyIssues(text='',label='text'){
 
 function detectCardExplanationSmellIssues(text=''){
   const source=String(text||'');
+  const protectedSource=source.replace(/羅針カード/g,'');
+  const quotedCardName=getReadingCardNameTestRegex();
   const patterns=[
+    quotedCardName,
+    /(?:ルノルマン|数秘オラクル|オラクル)(?:カード)?(?:由来|から見た|から|では|で|の)?/,
+    /(?:カード名|カード説明|カード辞書|カード解説|カード意味|占術名|占術説明|配置説明|カード由来)/,
     /「[^」]{1,12}」が出る時は/,
     /「[^」]{1,12}」が出ている(?:ため|ので)/,
     /「[^」]{1,12}」は、?[^。\n]*(?:示します|示しています|意味します|表します|カードです|カードとして読めます|カードとして読みます)/,
@@ -16276,7 +16286,7 @@ function detectCardExplanationSmellIssues(text=''){
     /「?[^」\s]{1,8}」?・「?[^」\s]{1,8}」?のようなカードは/,
     /このカードは[^。\n]*(?:示します|意味します|表します)/,
   ];
-  return patterns.some(pattern=>pattern.test(source))?['カード説明の文が現実語に変換されていません']:[];
+  return patterns.some(pattern=>pattern.test(protectedSource))?['根拠を見る以外にカード名・カード説明・占術説明が残っています']:[];
 }
 
 function detectAwkwardRashinJapaneseIssues(text=''){
@@ -18622,7 +18632,7 @@ ${getRashinReadingPolicyPrompt('dossier')}
 [[VERDICT]]今回の答え。2〜3文[[/VERDICT]]
 [[DECISION_AXIS]]内部判断用。条件表にせず、短い自然文を1〜2行[[/DECISION_AXIS]]
 [[HOLD_CONDITIONS]]内部判断用。見えていない違和感を1〜2行[[/HOLD_CONDITIONS]]
-[[ACTION7]]内部補助用。数秘オラクル由来の向き合い方を1文[[/ACTION7]]
+[[ACTION7]]内部補助用。内面の向き合い方を1文[[/ACTION7]]
 [[CLOSING]]内部補助用。短い締めの一文[[/CLOSING]]
 [[EVIDENCE_SUMMARY]]根拠を見る用の短い要約。通常表示には出さない[[/EVIDENCE_SUMMARY]]`;
 }
