@@ -2790,13 +2790,8 @@ function getConsultationCtaContext(){
   };
 }
 
-function getDeepReadingCtaLabel(context={}){
-  if(context.hasHistory&&context.preferHistory) return'前回からの変化を読む';
-  if(context.group==='love') return'相手の反応と判断軸を読む';
-  if(context.group==='work') return'続ける・変える・待つの判断軸を読む';
-  if(context.group==='money') return'使う時期・控える時期を見る';
-  if(context.group==='relationship') return'相手との境界線を整理する';
-  return'今日のカードを、今の悩みに重ねて読む';
+function getDeepReadingCtaLabel(_context={}){
+  return'深掘り羅針鑑定をする';
 }
 
 function getNextDeepThemeSuggestion(group='general'){
@@ -9182,10 +9177,16 @@ function buildReadingOutputFormatGuide(kind='len',is9=false,focusOverride=null){
   const priorityFocus=!!focus.explicitUserPriority||isWorkLifeDirectionFocus(focus);
   if(kind==='len'){
     const requireFour=PLAN==='paid'||is9;
+    const targetLength=requireFour
+      ?'合計は700〜1100字を目安にし、短くしすぎないでください。'
+      :'合計は480〜620字を目安にし、2枚読みの根拠で言える範囲に絞ってください。';
+    const blockLength=requireFour
+      ?'1ブロックは120〜350字を目安にし、役割の違う内容を混ぜないでください。'
+      :'1ブロックは120〜220字を目安にし、3見出し全体で重複を増やさないでください。';
     const baseLines=[
       '【文章量のルール】',
-      '合計は700〜1100字を目安にし、短くしすぎないでください。',
-      '1ブロックは120〜350字を目安にし、役割の違う内容を混ぜないでください。',
+      targetLength,
+      blockLength,
       '1文は45〜60字を目安に短くし、結論は必ず先頭の1文で言い切ってください。',
       '条件の再掲にしないでください。現実・障害・見落とし・相手や環境の反応を読むパートです。',
       '本文には「下の段」「現状の列」「右側の流れ」「中心のすぐ近く」「中心十字」「配置」「対称ペア」「ナイト」などの内部説明を書かないでください。根拠は別レイヤーへ回してください。',
@@ -15810,28 +15811,42 @@ function parseLenormandSectionMap(text=''){
   return map;
 }
 
-function formatLenormandFourSections(text=''){
+function getRequiredLenormandSectionTitles(context={}){
+  const requireFour=Object.prototype.hasOwnProperty.call(context,'requireFour')
+    ?!!context.requireFour
+    :(PLAN==='paid'||SEL_LEN.length===9);
+  return requireFour
+    ?LENORMAND_SECTION_TITLES
+    :LENORMAND_SECTION_TITLES.filter(title=>title!=='迷いの構造');
+}
+
+function formatLenormandSections(text='',context={}){
   const map=parseLenormandSectionMap(text);
+  const requiredTitles=getRequiredLenormandSectionTitles(context);
   const limits={
     迷いの構造:{chars:220,sentences:4},
     今の流れ:{chars:360,sentences:6},
     気をつけること:{chars:320,sentences:5},
     あなたの引力:{chars:230,sentences:4},
   };
-  if(LENORMAND_SECTION_TITLES.some(title=>countMeaningfulChars(map[title]||'')<45)) return '';
-  return LENORMAND_SECTION_TITLES.map(title=>{
+  if(requiredTitles.some(title=>countMeaningfulChars(map[title]||'')<45)) return '';
+  return requiredTitles.map(title=>{
     const limit=limits[title]||{chars:260,sentences:4};
     return `■ ${title}\n${limitJapaneseBodyBySentences(map[title],limit.chars,limit.sentences)}`;
   }).join('\n\n');
 }
 
-function hasBrokenLenormandText(text='',integration=''){
+function formatLenormandFourSections(text=''){
+  return formatLenormandSections(text,{requireFour:true});
+}
+
+function hasBrokenLenormandText(text='',integration='',context={}){
   const source=String(text||'');
   if(/。\s*■\s*(今の流れ|気をつけること|あなたの引力)[。．.]?/.test(source)) return true;
   if(/■\s*(迷いの構造|今の流れ|気をつけること|あなたの引力)[。．.]\s*$/.test(source)) return true;
   if(countMeaningfulChars(source)<300) return true;
   const map=parseLenormandSectionMap(source);
-  if(LENORMAND_SECTION_TITLES.some(title=>countMeaningfulChars(map[title]||'')<45)) return true;
+  if(getRequiredLenormandSectionTitles(context).some(title=>countMeaningfulChars(map[title]||'')<45)) return true;
   if(integration){
     const lenKey=normalizeIntegrationItemKey(source).slice(0,160);
     const integrationKey=normalizeIntegrationItemKey(integration).slice(0,160);
@@ -15869,13 +15884,13 @@ function normalizeLenormandReadingText(text='',context={}){
     recordPaidDebugQuality('len_normalize',['ルノルマン本文の辞書説明と「合図」の連発を相談文向けに補正しました']);
   }
   source=normalizeLenormandSectionHeadings(source);
-  const structured=formatLenormandFourSections(source);
+  const structured=formatLenormandSections(source,context);
   const undrawnIssues=detectUndrawnLenormandCardNameIssues(structured||source);
-  if(!structured||hasBrokenLenormandText(structured,context.integration||'')||undrawnIssues.length){
+  if(!structured||hasBrokenLenormandText(structured,context.integration||'',context)||undrawnIssues.length){
     recordPaidDebugQuality('len_normalize',[...undrawnIssues,'ルノルマン本文の構造欠落、途中終了、または未出カード混入を検出したため、カード由来fallbackへ切り替えました'].filter(Boolean));
     const fallbackName=context.name||(typeof getFullname==='function'?getFullname():'')||'あなた';
     const fallbackText=buildRichLenFallback(fallbackName,context.cat||'総合');
-    return sanitizeRashinVisibleText(formatLenormandFourSections(fallbackText)||fallbackText);
+    return sanitizeRashinVisibleText(formatLenormandSections(fallbackText,context)||fallbackText);
   }
   return sanitizeRashinVisibleText(ensureLenormandFlowNarrative(structured,focus,context));
 }
