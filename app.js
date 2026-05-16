@@ -2555,6 +2555,7 @@ function normalizeConsultationCategoryTag(category=''){
   if(!raw) return '総合';
   if(CONSULTATION_CATEGORY_TAGS.some(tag=>tag.value===raw)) return raw;
   if(/恋愛|結婚|復縁|片思|片想|パートナー|彼氏|彼女|相手/.test(raw)) return '恋愛';
+  if(/金運|お金|支出|家計|貯金|借金|投資|財|金銭/.test(raw)) return 'お金';
   if(/仕事|転職|職場|キャリア|進路|働|退職|就職|副業|独立/.test(raw)) return '仕事・進路';
   if(/人間関係|友人|知人|同僚|対人|距離|境界|仲直り/.test(raw)) return '人間関係';
   if(/趣味|創作|推し|学び|習い|作品|活動/.test(raw)) return '趣味・創作';
@@ -7483,9 +7484,16 @@ function extractDecisionCriteriaList(source='',focus={}){
     '自分らしさ','続ける意味','消耗度','信頼','役割','将来性','納得感',
     '働きやすさ','経験','実績','次の候補','外の候補','生活','時間','健康','楽しさ','上達実感','表現しやすさ',
     '過去の原因','信頼再構築','本気度','曖昧な連絡','同じ傷','寂しさ','未練','区切り',
+    '支出','家計','貯金','収支','副業','余裕','月末','将来の安心',
   ];
   const explicit=candidates.filter(item=>text.includes(item));
   const primary=normalizePrimaryThemeValue(focus);
+  if(primary==='money'){
+    const moneyCandidates=['収入','支出','家計','貯金','収支','生活','副業','余裕','月末','将来の安心'];
+    const moneyExplicit=moneyCandidates.filter(item=>text.includes(item));
+    if(moneyExplicit.length) return uniqueNonEmpty(moneyExplicit).slice(0,5);
+    return ['収支','支出','貯金','生活の余白'];
+  }
   if(explicit.length) return mergeSubtypeCriteria(explicit,focus,text);
   if(primary==='work_life_direction'||primary==='career') return ['続ける意味','評価','消耗度'];
   if(primary==='love') return mergeSubtypeCriteria(['安心感','相手の反応','信頼'],focus,text);
@@ -7521,6 +7529,7 @@ function getDecisionAxisShortPhrase(ctx={}){
 }
 
 function getDecisionAxisFullPhrase(ctx={}){
+  if(ctx.primaryTheme==='money') return '収支と手元に残る安心';
   return formatDecisionCriteriaChoice(ctx.decisionCriteriaList,ctx.criteriaText||getDecisionAxisShortPhrase(ctx));
 }
 
@@ -8153,11 +8162,16 @@ function getLenRealityPhrase(card={},ctx={},role=''){
   const w=getLenReadingThemeWords(ctx);
   switch(Number(card.id)){
     case 1:
+      if(ctx.primaryTheme==='money') return 'お金の使い方を変える小さな動き';
       if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return '動きや知らせが入り始める気配';
       return `${w.field}に連絡や動きが入り始める気配`;
-    case 2:return '小さな追い風や偶然の助け';
+    case 2:
+      if(ctx.primaryTheme==='money') return '小さく整えられる余地';
+      return '小さな追い風や偶然の助け';
     case 3:return `${w.field}を今の場所だけで決めず、外の選択肢も視界に入る流れ`;
-    case 4:return `${w.safety}を守りたい気持ち`;
+    case 4:
+      if(ctx.primaryTheme==='money') return '生活の土台を守りたい気持ち';
+      return `${w.safety}を守りたい気持ち`;
     case 6:
       if(isReconciliationContext(ctx)) return '過去の原因や相手の反応が曖昧なまま残る状態';
       if(ctx.primaryTheme==='love') return '安心の根拠が薄く、相手の態度を読みすぎやすい状態';
@@ -8171,11 +8185,19 @@ function getLenRealityPhrase(card={},ctx={},role=''){
     case 9:return '嬉しい言葉や好意が、安心へつながるかが焦点';
     case 10:return '先延ばしにしてきたものを切り替える圧';
     case 11:return '同じ不安や話し合いを繰り返しやすい熱';
-    case 12:return '周囲の声や迷いが判断を散らす気配';
-    case 14:return '本音より自己防衛や利害が前に出る違和感';
+    case 12:
+      if(ctx.primaryTheme==='money') return '小さな出費や情報の多さで判断が散りやすい気配';
+      return '周囲の声や迷いが判断を散らす気配';
+    case 14:
+      if(ctx.primaryTheme==='money') return '不安を隠すために、焦った選び方へ寄りやすい違和感';
+      return '本音より自己防衛や利害が前に出る違和感';
     case 15:return '力関係や守る役割';
-    case 16:return `${w.field}の先に描きたい未来像`;
-    case 17:return '形を変えることで流れが戻る気配';
+    case 16:
+      if(ctx.primaryTheme==='money') return '将来の安心へ向けた見通し';
+      return `${w.field}の先に描きたい未来像`;
+    case 17:
+      if(ctx.primaryTheme==='money') return '使い方や稼ぎ方を小さく変える余地';
+      return '形を変えることで流れが戻る気配';
     case 18:return '信頼できる支えや、味方になる存在';
     case 19:return '距離、孤立、近づきにくさ';
     case 20:return '人の目や場の空気に左右されやすい状態';
@@ -8193,6 +8215,7 @@ function getLenRealityPhrase(card={},ctx={},role=''){
     case 32:return '気分、自尊心、評判への揺れが判断に混ざる状態';
     case 33:
       if(isReconciliationContext(ctx)) return '過去の原因に向き合う突破口';
+      if(ctx.primaryTheme==='money') return 'お金の流れを立て直す鍵';
       return `${w.base}が戻る突破口`;
     case 34:return '収入、価値、循環として返ってくるもの';
     case 35:return `${w.field}を長く続ける土台と、動きを止める固定の両方`;
@@ -8448,7 +8471,7 @@ function getLenCoreFocusText(id){
     case 33:return 'いま一番大事なのは、答えの形は見えているのに、安心の根拠がまだ薄いことです。';
     case 6:return 'いま一番大事なのは、不安が大きくなりすぎて、状況を必要以上に複雑に見てしまっていることです。';
     default:
-      if([15,34].includes(id)) return 'いま一番大事なのは、お金・役割・自立の問題を無視しないことです。';
+      if([15,34].includes(id)) return 'いま一番大事なのは、お金・自立・巡りの問題を無視しないことです。';
       if([24,25,30].includes(id)) return 'いま一番大事なのは、情とつながり方を見直すことです。';
       if([8,10,17].includes(id)) return 'いま一番大事なのは、変化や区切りを避けて通れないところです。';
       return 'いま一番大事なのは、気持ちだけで決めず、大事な点の輪郭を見ることです。';
@@ -15798,6 +15821,7 @@ function varyRepeatedWorkPlacePhrases(text=''){
 
 function repairAwkwardConnectionPhrases(text=''){
   return String(text||'')
+    .replace(/([ぁ-ん])\1{2,}(?:さん)?の迷い/g,'今回の迷い')
     .replace(/相手の反応・距離感のどれかが保てる距離なら/g,'相手の反応や距離感の中に、自然体でいられる余地があるなら')
     .replace(/([一-龥ぁ-んァ-ン]{2,12}(?:・[一-龥ぁ-んァ-ン]{2,12}){1,4})のどれかが保てる距離なら/g,(match,list)=>`${list.replace(/・/g,'や')}の中に、自然体でいられる余地があるなら`)
     .replace(/自分が力を出しやすい条件を言葉にしたとき/g,'場に合わせるだけでなく、自分が無理なくいられる形を選べたとき')
@@ -16962,6 +16986,15 @@ function detectThemeVocabularyDriftIssues(text='',focus={},label='text',context=
   }
   if(primary==='money'&&/破綻|終わりです|失敗します|危険です/.test(source)){
     issues.push(`${label}がお金相談で不安を煽りすぎています`);
+  }
+  if(primary==='money'){
+    const workCoreCount=countTextOccurrences(source,/評価|役割|職場|上司|転職先|キャリアアップ|昇進|利害/g);
+    if(workCoreCount>=2){
+      issues.push(`${label}がお金相談に仕事・利害寄り語彙を混ぜすぎています`);
+    }
+    if(countMeaningfulChars(source)>=120&&!/収支|支出|貯金|家計|月末|手元|余白|副業|収入|お金/.test(source)){
+      issues.push(`${label}にお金相談固有の現実語が足りません`);
+    }
   }
   return [...new Set(issues)];
 }
@@ -19851,17 +19884,19 @@ function buildRichLenFallback(name,cat){
   const burdenNames=ids.filter(id=>LEN_FALLBACK_GROUPS.burden.includes(id)).map(cardName).filter(Boolean).slice(0,2);
   const structureLines=[];
   if(ctx.primaryTheme==='love'&&isReconciliationContext(ctx)){
-    structureLines.push(`${name}さんが迷っているのは、まだ好きかどうかだけではなく、元恋人ともう一度信頼を作れるか、過去の原因に向き合えるかがまだ見えていないからです。`);
+    structureLines.push('今回の迷いは、まだ好きかどうかだけではなく、元恋人ともう一度信頼を作れるか、過去の原因に向き合えるかがまだ見えていないところから来ています。');
   }else if(ctx.primaryTheme==='love'){
-    structureLines.push(`${name}さんが迷っているのは、相手を好きかどうかではなく、${ctx.criteriaText}が相手の言葉と行動の中に見えていないからです。`);
+    structureLines.push(`今回の迷いは、相手を好きかどうかではなく、${ctx.criteriaText}が相手の言葉と行動の中に見えていないところから来ています。`);
   }else if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
-    structureLines.push(`${name}さんが迷っているのは、今の環境の良し悪しだけではなく、続けた先に${ctx.criteriaText}が残るかをまだ見極めきれていないからです。`);
+    structureLines.push(`今回の迷いは、今の環境の良し悪しだけではなく、続けた先に${ctx.criteriaText}が残るかをまだ見極めきれていないところから来ています。`);
+  }else if(ctx.primaryTheme==='money'){
+    structureLines.push('今回の迷いは、浪費しているかどうかではなく、働いているのに手元の安心が増えにくいところから来ています。月末の不安と副業への怖さが重なり、使うことも増やすことも落ち着いて選びにくくなっています。');
   }else if(ctx.primaryTheme==='relationship'){
-    structureLines.push(`${name}さんが迷っているのは、関わりたい気持ちと、関わるほど消耗する感覚のどちらも無視できないからです。`);
+    structureLines.push('今回の迷いは、関わりたい気持ちと、関わるほど消耗する感覚のどちらも無視できないところから来ています。');
   }else if(ctx.primaryTheme==='dual_concern'&&!focus.explicitUserPriority){
-    structureLines.push(`${name}さんの迷いは、複数のテーマを同じ重さで抱えていることから来ています。どちらも大事だからこそ、先に見る現実と後で扱う感情を分ける必要があります。`);
+    structureLines.push('今回の迷いは、複数のテーマを同じ重さで抱えていることから来ています。どちらも大事だからこそ、先に見る現実と後で扱う感情を分ける必要があります。');
   }else{
-    structureLines.push(`${name}さんの迷いは、選択肢そのものより、何を見れば納得して選べるかがまだ定まっていないところから来ています。`);
+    structureLines.push('今回の迷いは、選択肢そのものより、何を見れば納得して選べるかがまだ定まっていないところから来ています。');
   }
   structureLines.push(cardSignal(coreId)||getLenCoreFocusText(coreId));
 
@@ -19873,12 +19908,16 @@ function buildRichLenFallback(name,cat){
       :'今の流れには、まだ言葉にされていない本音や、曖昧なまま残っている違和感があります。ここを飛ばすと、楽なほうを選んだつもりでも不安が残りやすいです。');
   }
   if(hasRelationship){
-    flowLines.push('関係性の流れも出ているため、相手や環境の反応を見ずに一人で答えを決めると、読み違いが起きやすくなります。');
+    flowLines.push(ctx.primaryTheme==='money'
+      ?'人との関わりや場の空気に合わせる出費も絡みやすく、一人で我慢を増やすほど不安の出どころが見えにくくなります。'
+      :'関係性の流れも出ているため、相手や環境の反応を見ずに一人で答えを決めると、読み違いが起きやすくなります。');
   }
   if(hasStability){
     flowLines.push(isReconciliationContext(ctx)
       ?'安定へ向かう流れがある一方で、復縁ではその安定が安心なのか、曖昧な連絡が固定されているだけなのかを分けて見る必要があります。'
-      :'安定へ向かう流れがある一方で、安定そのものが変化を遅らせる理由にもなっています。安心できる形なのか、ただ動かない形なのかが焦点です。');
+      :ctx.primaryTheme==='money'
+        ?'安定はありますが、その安定が貯金を増やす土台なのか、収入も支出も変わらないまま不安を固定しているのかが焦点です。'
+        :'安定へ向かう流れがある一方で、安定そのものが変化を遅らせる理由にもなっています。安心できる形なのか、ただ動かない形なのかが焦点です。');
   }
   if(hasChoice||currentChoice){
     flowLines.push('選ぶ前に見えていない点も出ています。選べないのではなく、選ぶ前に反応や違和感の輪郭がまだ薄い状態です。');
@@ -19904,7 +19943,9 @@ function buildRichLenFallback(name,cat){
   if(hasValue){
     warningLines.push(isReconciliationContext(ctx)
       ?'価値や見返りの現実も絡んでいます。好きかどうかだけで判断せず、もう一度信頼を作れる関係なのか、期待だけが増えていないかが大事です。'
-      :'価値や見返りの現実も絡んでいます。好き嫌いだけで判断せず、続けることで何が残り、何を失うのかが大事です。');
+      :ctx.primaryTheme==='money'
+        ?'お金そのもののカードも絡んでいます。金運の良し悪しではなく、収入が入っても手元に安心が残る流れになっているかが大事です。'
+        :'価値や見返りの現実も絡んでいます。好き嫌いだけで判断せず、続けることで何が残り、何を失うのかが大事です。');
   }
   if(hiddenRelationship){
     warningLines.push('表に出している理由とは別に、情やつながりへの未練も残りやすい流れです。その前提を認めたほうが、かえって判断は整います。');
@@ -19912,7 +19953,7 @@ function buildRichLenFallback(name,cat){
 
   const attractionLines=[];
   if(supportNames.length){
-    attractionLines.push(`「${supportNames.join('」「')}」は、助けや見通しを受け取れる余地として読めます。`);
+    attractionLines.push('助けや見通しを受け取れる余地も残っています。');
   }else{
     attractionLines.push('今使える力は、迷いを一気に片づける強さではなく、現実を一つずつ見つめる落ち着きです。');
   }
@@ -19922,6 +19963,8 @@ function buildRichLenFallback(name,cat){
     attractionLines.push('遠回しに試すより、いちばん気になっている違和感が言葉になるほど、進める関係か立ち止まる関係かが見えやすくなります。');
   }else if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
     attractionLines.push(`${ctx.criteriaText}を言葉にできるほど、今の場所を使う道と次へ移る道を自分で選び直しやすくなります。`);
+  }else if(ctx.primaryTheme==='money'){
+    attractionLines.push('月末に不安が残る使い方を減らし、手元に安心が残る流れへ寄せるほど、副業や転職も焦りではなく選択肢として見やすくなります。');
   }else{
     attractionLines.push('自分の中だけで答えを閉じず、反応や事実が見えてくるほど、次に進める流れを引き寄せやすくなります。');
   }
