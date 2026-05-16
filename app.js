@@ -6682,12 +6682,12 @@ function repairStaticCopy(){
   updateAnimalReveal();
   setText('#rs-len .rs-eyebrow','カード鑑定 01');
   setHtml('#rs-len .rs-title','<span class="rs-icon">⚜</span>ルノルマンカード鑑定');
-  setText('#rs-len .rs-copy','ルノルマンカードは、いまの現実と見落としやすい注意点を読み解きます。');
+  setText('#rs-len .rs-copy','いまの現実と見落としやすい注意点を見ます。');
   setText('#r-len-block .ai-load-title','いま起きていることを整理しています');
   setText('#r-len-block .ai-load-detail','迷いを増やさないように、今見るべきことだけを言葉にしています。');
   setText('#rs-orc .rs-eyebrow','カード鑑定 02');
   setHtml('#rs-orc .rs-title','<span class="rs-icon">✦</span>オラクルカード鑑定');
-  setText('#rs-orc .rs-copy','数秘オラクルカードは、次に進むためのアドバイスを示します。');
+  setText('#rs-orc .rs-copy','気持ちの向き合い方と、自分を雑に扱わない視点を補います。');
   setText('#r-orc-block .ai-load-title','気持ちの整理を進めています');
   setText('#r-orc-block .ai-load-detail','迷った日に戻れる言葉と、今日からできる一歩へ絞ってまとめています。');
   setButtons('#result-actions .nav-btn',['最初に戻る','もう一度占う','過去の占いへ']);
@@ -14234,7 +14234,7 @@ function buildClarifyAmbiguityQuestion(ctx){
   }
   return makeClarifyCandidate(
     'ambiguity','言葉にしきれていない違和感',anchor,q,
-    '曖昧さを示すカードが出ているため、ここを言葉にすると最終判断が強くなります。',
+    '曖昧さが強く出ているため、ここを言葉にすると最終判断が強くなります。',
     templates,91,'ambiguity',{card,answeredByPattern:/確認済み|すでに[^。！？\n]*(聞いた|確認した|話した)|もう[^。！？\n]*(聞いた|確認した|伝えた)/}
   );
 }
@@ -14282,7 +14282,7 @@ function buildClarifyBlockerQuestion(ctx){
   }
   return makeClarifyCandidate(
     'blocker','止まっている理由',anchor,q,
-    '障害を示すカードが出ているため、止まっている理由が言葉になると迷いの正体が見えやすくなります。',
+    '止まっている理由が強く出ているため、そこが言葉になると迷いの正体が見えやすくなります。',
     templates,89,'blocker',{card,answeredByPattern:/壁は[^。！？\n]+|負担は[^。！？\n]+|削られているのは[^。！？\n]+/}
   );
 }
@@ -14319,7 +14319,7 @@ function buildClarifyPeopleQuestion(ctx){
   }
   return makeClarifyCandidate(
     'people','影響している相手',anchor,q,
-    '人物性のあるカードが出ているため、誰の態度や距離感が流れを左右しているかを見ます。',
+    '誰かの態度や距離感が強く影響しているため、どの相手の動きが流れを左右しているかを見ます。',
     templates,86,'people',{card}
   );
 }
@@ -14365,7 +14365,7 @@ function buildClarifyPositiveQuestion(ctx){
   }
   return makeClarifyCandidate(
     'positive','安心の兆し',anchor,q,
-    '好転を示すカードが出ているため、どこに安心が戻りそうかを言葉にします。',
+    '好転の兆しが出ているため、どこに安心が戻りそうかを言葉にします。',
     templates,83,'positive',{card}
   );
 }
@@ -15293,7 +15293,7 @@ function downloadPaidDebugJson(){
 }
 
 function normalizePaidReadingText(text=''){
-  return normalizeBrokenDecisionCriteriaPhrases(normalizeJapanesePunctuationSpacing(String(text||'')))
+  const normalized=normalizeBrokenDecisionCriteriaPhrases(normalizeJapanesePunctuationSpacing(String(text||'')))
     .replace(/\r\n?/g,'\n')
     .replace(/\n{3,}/g,'\n\n')
     .replace(/(【(?:進めてよい目印|止まる目印|確認する質問|今日|今日から3日以内|次に会う時|7日以内|1週間以内)】)/g,'\n\n$1\n')
@@ -15305,6 +15305,7 @@ function normalizePaidReadingText(text=''){
     .map(completeDanglingReadingLine)
     .join('\n')
     .trim();
+  return stripMainReadingCardExplanationText(normalized);
 }
 
 function buildLenormandInternalTermRegex(){
