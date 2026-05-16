@@ -366,17 +366,24 @@ function readRashinReusablePaidCodeHashFile() {
   if (!Array.isArray(entries)) {
     throw new Error('RASHIN_REUSABLE_PAID_CODE_HASH_FILE must contain an array or a hashes array.');
   }
-  const hashes = [];
+  const entriesOut = [];
   const invalid = [];
   entries.forEach((entry, index) => {
-    const hash = normalizeRashinPaidCodeHash(entry);
-    if (hash) hashes.push(hash);
-    else invalid.push(index + 1);
+    const hash = normalizeRashinPaidCodeHash(typeof entry === 'string' ? entry : entry?.hash);
+    const expiresAt = typeof entry === 'object' && entry ? normalizeEnvValue(entry.expiresAt || entry.expires_at || '') : '';
+    if (!hash || (expiresAt && Number.isNaN(Date.parse(expiresAt)))) {
+      invalid.push(index + 1);
+      return;
+    }
+    entriesOut.push({
+      hash,
+      expiresAt,
+    });
   });
   if (invalid.length) {
     throw new Error(`RASHIN_REUSABLE_PAID_CODE_HASH_FILE has invalid hash entries at positions: ${invalid.slice(0, 10).join(', ')}`);
   }
-  return hashes;
+  return entriesOut;
 }
 
 function readRashinReusablePaidCodeEnvHashes() {
@@ -387,14 +394,20 @@ function readRashinReusablePaidCodeEnvHashes() {
     .map(value => normalizeRashinPaidCode(value))
     .filter(value => /^[A-Z0-9]{12}$/.test(value))
     .map(value => getRashinPaidCodeHash(value))
-    .filter(Boolean);
+    .filter(Boolean)
+    .map(hash => ({ hash, expiresAt: '' }));
 }
 
 function loadRashinReusablePaidCodeHashes() {
-  return new Set([
+  const entries = [
     ...readRashinReusablePaidCodeEnvHashes(),
     ...readRashinReusablePaidCodeHashFile(),
-  ]);
+  ];
+  const map = new Map();
+  entries.forEach(entry => {
+    if (entry?.hash) map.set(entry.hash, entry);
+  });
+  return map;
 }
 
 const MIME_TYPES = {
@@ -2717,7 +2730,11 @@ function isConfiguredFreeRashinPaidCode(code) {
 
 function isConfiguredReusableRashinPaidCode(code) {
   const codeHash = getRashinPaidCodeHash(code);
-  return !!codeHash && RASHIN_REUSABLE_PAID_CODE_HASHES.has(codeHash);
+  if (!codeHash) return false;
+  const entry = RASHIN_REUSABLE_PAID_CODE_HASHES.get(codeHash);
+  if (!entry) return false;
+  if (entry.expiresAt && isExpiredIso(entry.expiresAt)) return false;
+  return true;
 }
 
 function createFreeRashinPaidCodeRecord({ code, userRecord, sourceReadingId }) {
