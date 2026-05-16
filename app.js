@@ -7513,8 +7513,14 @@ function extractDecisionCriteriaList(source='',focus={}){
     if(moneyExplicit.length) return uniqueNonEmpty(moneyExplicit).slice(0,5);
     return ['収支','支出','貯金','生活の余白'];
   }
+  if(primary==='work_life_direction'||primary==='career'){
+    const workCandidates=['収入','成長','評価','役割','将来性','働きやすさ','経験','実績','消耗度','続ける意味','次の候補','外の候補','生活','時間','健康'];
+    const workExplicit=workCandidates.filter(item=>text.includes(item));
+    if(workExplicit.length) return uniqueNonEmpty(workExplicit).slice(0,5);
+    return ['続ける意味','評価','役割','消耗度'];
+  }
   if(explicit.length) return mergeSubtypeCriteria(explicit,focus,text);
-  if(primary==='work_life_direction'||primary==='career') return ['続ける意味','評価','消耗度'];
+  if(primary==='work_life_direction'||primary==='career') return ['続ける意味','評価','役割','消耗度'];
   if(primary==='love') return mergeSubtypeCriteria(['安心感','相手の反応','信頼'],focus,text);
   if(primary==='relationship') return ['距離感','境界線','自然体でいられるか'];
   if(primary==='money') return ['収支','上限','見直し基準'];
@@ -11090,7 +11096,7 @@ function redactDossierCardData(data={}){
         items:toDossierValueArray(section?.items||[])
           .map(item=>sanitizeRashinVisibleText(redactDossierPrivateNames(item)))
           .filter(Boolean)
-          .slice(0,2),
+          .slice(0,3),
       }))
       .filter(section=>section.label&&section.items.length);
   }
@@ -11318,7 +11324,7 @@ function normalizeDossierCardFoundationSections(sections=[]){
       items:toDossierValueArray(section?.items||[])
         .map(compactDossierSaveCardItem)
         .filter(Boolean)
-        .slice(0,2),
+        .slice(0,3),
     }))
     .filter(section=>section.label&&section.items.length)
     .slice(0,3);
@@ -11342,11 +11348,12 @@ function getDossierCardGuidance(card={}){
   const safeCard=resolveDossierCardData(card);
   const fallback=buildDossierSignalSummaries(safeCard);
   const lenormand=safeCard.GUIDANCE_LENORMAND
-    ?normalizeDossierCardGuidanceText(safeCard.GUIDANCE_LENORMAND,4,24,getDossierGuidanceLines(fallback.lenormand))
+    ?normalizeDossierCardGuidanceText(safeCard.GUIDANCE_LENORMAND,5,24,getDossierGuidanceLines(fallback.lenormand))
     :fallback.lenormand;
-  const oracle=safeCard.GUIDANCE_ORACLE
-    ?normalizeDossierCardGuidanceText(safeCard.GUIDANCE_ORACLE,2,24,getDossierGuidanceLines(fallback.oracle))
-    :fallback.oracle;
+  const oracle=buildDossierOracleAdviceSummary([
+    safeCard.GUIDANCE_ORACLE,
+    fallback.oracle,
+  ],[lenormand],fallback.oracle);
   return{lenormand,oracle};
 }
 
@@ -12133,7 +12140,7 @@ function getDossierSaveCardFoundationSections(){
       items:(section.items||[])
         .map(compactDossierSaveCardItem)
         .filter(Boolean)
-        .slice(0,2),
+        .slice(0,3),
     }))
     .filter(section=>section.items.length);
 }
@@ -12210,9 +12217,9 @@ function buildDossierSignalSummaries(card={}){
     safeCard.EVIDENCE_SUMMARY,
     ...themeBullets.lenormand,
   ],[topOracle].filter(Boolean),fallback.lenormand,{
-    target:4,
-    min:4,
-    max:4,
+    target:5,
+    min:5,
+    max:5,
     maxChars:24,
     reserve:[
       ...themeBullets.lenormand,
@@ -12223,7 +12230,7 @@ function buildDossierSignalSummaries(card={}){
       '焦らないほど判断の軸は戻ります。',
     ],
   });
-  const oracle=buildDossierGuidanceBulletSummary([
+  const oracleRaw=buildDossierGuidanceBulletSummary([
     topOracle,
     getOracleSectionBodyForDossier(/羅針盤|向き合|メッセージ|光/),
     fallback.oracle,
@@ -12242,6 +12249,11 @@ function buildDossierSignalSummaries(card={}){
       '答えを急ぎすぎないことです。',
     ],
   });
+  const oracle=buildDossierOracleAdviceSummary([
+    oracleRaw,
+    fallback.oracle,
+    ...themeBullets.oracle,
+  ],[lenormand],fallback.oracle);
   return{lenormand,oracle};
 }
 
@@ -12294,9 +12306,10 @@ function getDossierNameFoundationSummaryItems(namePlain=null){
   if(lines.length<2&&yinYang?.label==='陰優勢') addDossierFoundationSummaryLine(lines,'観察してから動くほど安定します。');
   if(lines.length<2&&yinYang?.label==='均衡型') addDossierFoundationSummaryLine(lines,'押し出しと受け止めを切り替えられます。');
   if(lines.length<2&&namePlain?.overview) addDossierFoundationSummaryLine(lines,compactFoundationInsightSentence(namePlain.overview,'調整と継続で強みが育ちます。'));
-  addDossierFoundationSummaryLine(lines,'調整と継続で強みが育ちます。');
-  addDossierFoundationSummaryLine(lines,'対話の中で評価を積み上げやすい土台です。');
-  return lines.slice(0,2);
+  addDossierFoundationSummaryLine(lines,'調整と継続が強みです。');
+  addDossierFoundationSummaryLine(lines,'対話で評価が積み上がります。');
+  addDossierFoundationSummaryLine(lines,'環境選びで名前の出方が変わります。');
+  return lines.slice(0,3);
 }
 
 function getDossierBirthFoundationSummaryItems(birthPlain=null){
@@ -12311,33 +12324,35 @@ function getDossierBirthFoundationSummaryItems(birthPlain=null){
   else if(/学び|内省|発想/.test(timing)) addDossierFoundationSummaryLine(lines,'学びや内省が判断の質を上げます。');
   else if(/責任|役割|評価/.test(timing)) addDossierFoundationSummaryLine(lines,'責任と役割が見えやすい流れです。');
   else if(/感受性|観察|細部/.test(`${birthPlain?.overview||''} ${timing}`)) addDossierFoundationSummaryLine(lines,'観察と感受性が判断を支えます。');
-  if(lines.length<2&&birthPlain?.overview) addDossierFoundationSummaryLine(lines,compactFoundationInsightSentence(birthPlain.overview,'現実を整えるほど判断が安定します。'));
-  addDossierFoundationSummaryLine(lines,'現実を整えるほど判断が安定します。');
-  addDossierFoundationSummaryLine(lines,'急ぐより、土台を整える流れです。');
-  return lines.slice(0,2);
+  if(lines.length<2&&birthPlain?.overview) addDossierFoundationSummaryLine(lines,compactFoundationInsightSentence(birthPlain.overview,'現実を整えると安定します。'));
+  addDossierFoundationSummaryLine(lines,'現実を整えるほど安定します。');
+  addDossierFoundationSummaryLine(lines,'土台を整える流れです。');
+  addDossierFoundationSummaryLine(lines,'受容で精度が上がります。');
+  return lines.slice(0,3);
 }
 
 function getDossierAnimalFoundationSummaryItems(animalParts=null){
   const name=animalParts?.name||REACTION_PROFILE?.animal||REACTION_PROFILE?.label||'';
   const byAnimal={
-    オニヤンマ:['突破力と決断力が強みです。','軽く扱われると消耗しやすいです。'],
-    女王アリ:['段取り力と巻き込み力が強みです。','責任が曖昧だと負担が重くなります。'],
-    バンドウイルカ:['場を明るく動かす力があります。','反応が薄い場では熱が落ちます。'],
-    秋田犬:['誠実さと深い信頼が強みです。','雑な関係では消耗しやすいです。'],
-    ベンガルネコ:['観察力と距離感の精度が強みです。','距離を詰められると疲れます。'],
-    ラッコ:['試しながら伸びる力があります。','停滞が続くと熱が落ちます。'],
-    アジアゾウ:['誠実さと継続力が強みです。','理想を軽く扱われると揺れます。'],
-    オオカミ:['集中力と改革する力が強みです。','意味が見えない場では熱が落ちます。'],
-    タコ:['適応力と表現力が強みです。','自分の言葉に戻るほど安定します。'],
+    オニヤンマ:['突破力と決断力が強みです。','軽く扱われると消耗します。','主導権で力が出ます。'],
+    女王アリ:['段取り力と巻き込み力が強みです。','責任が曖昧だと負担が重いです。','役割が見えるほど安定します。'],
+    バンドウイルカ:['場を明るく動かす力があります。','反応が薄い場では熱が落ちます。','人との温度差に敏感です。'],
+    秋田犬:['誠実さと深い信頼が強みです。','雑な関係では消耗しやすいです。','約束が見えるほど安心できます。'],
+    ベンガルネコ:['観察力と距離感の精度が強みです。','距離を詰められると疲れます。','自由度があるほど整います。'],
+    ラッコ:['試しながら伸びる力があります。','停滞が続くと熱が落ちます。','楽しさが戻るほど動けます。'],
+    アジアゾウ:['誠実さと継続力が強みです。','理想を軽く扱われると揺れます。','納得できる目的で粘れます。'],
+    オオカミ:['集中力と改革力が強みです。','意味が見えない場では熱が落ちます。','納得できる目的で進めます。'],
+    タコ:['適応力と表現力が強みです。','自分の言葉へ戻ると安定します。','良い手本を自分の形にできます。'],
   };
   const picked=byAnimal[name]||byAnimal[String(name).replace(/タイプ$/,'')];
   if(picked) return picked;
   const lines=[];
-  if(animalParts?.strength) addDossierFoundationSummaryLine(lines,compactFoundationInsightSentence(animalParts.strength,'反応の出方に強みが表れます。'));
-  if(animalParts?.caution) addDossierFoundationSummaryLine(lines,compactFoundationInsightSentence(animalParts.caution,'負担が続く場では消耗しやすいです。'));
-  addDossierFoundationSummaryLine(lines,'反応の出方に強みが表れます。');
-  addDossierFoundationSummaryLine(lines,'自分の軸に戻るほど判断が安定します。');
-  return lines.slice(0,2);
+  if(animalParts?.strength) addDossierFoundationSummaryLine(lines,compactFoundationInsightSentence(animalParts.strength,'反応の出方が強みです。'));
+  if(animalParts?.caution) addDossierFoundationSummaryLine(lines,compactFoundationInsightSentence(animalParts.caution,'負担が続く場では消耗します。'));
+  addDossierFoundationSummaryLine(lines,'反応の出方が強みです。');
+  addDossierFoundationSummaryLine(lines,'自分軸に戻ると安定します。');
+  addDossierFoundationSummaryLine(lines,'負担の置き場所で流れが変わります。');
+  return lines.slice(0,3);
 }
 
 function compactFoundationInsightSentence(text='',fallback=''){
@@ -12349,8 +12364,9 @@ function compactFoundationInsightSentence(text='',fallback=''){
   if(/責任/.test(source)&&/重|曖昧|負担/.test(source)) return '責任が曖昧だと負担が重くなります。';
   if(/極端な衝突が少なく/.test(source)) return '衝突が少なく、継続で強みが育ちます。';
   if(/かなり追い風/.test(source)) return 'かなり追い風のある名前です。';
-  if(/観察|感受性/.test(source)) return '観察と感受性が判断を支えます。';
+  if(/観察|感受性/.test(source)) return '観察と感受性が支えます。';
   if(/調整|継続/.test(source)) return '調整と継続で強みが育ちます。';
+  if(/現実/.test(source)&&/整/.test(source)) return '現実を整えるほど安定します。';
   return fallback;
 }
 
@@ -12447,6 +12463,65 @@ function compactDossierSignalText(text='',max=70){
   let compact=limitTextByChars(clean,max,6)||clean.slice(0,max).trim();
   if(compact.length<Math.min(14,max-4)) compact=clean.slice(0,max).trim();
   return compact?ensureJapaneseSentence(compact):'';
+}
+
+function normalizeDossierOracleAdviceLine(text='',max=24){
+  const source=cleanDossierItemText(sanitizeRashinVisibleText(redactDossierPrivateNames(String(text||''))));
+  if(!source) return '';
+  const pairs=[
+    [/場に合わせ|自分の形|反応の出方/, '場に合わせすぎず自分の形へ戻ることです。'],
+    [/頑張り|努力|返らない|見返り/, '返らない場所に自分を置き続けないことです。'],
+    [/信じたい|待たせ|待つ側/, '信じたい気持ちだけで待ち続けないことです。'],
+    [/相手に合わせ|合わせすぎ/, '相手に合わせすぎないことです。'],
+    [/本音|小さく/, '本音を小さくしないことです。'],
+    [/焦り|急ぎ/, '焦りで結論を急がないことです。'],
+    [/安心|余白/, '安心できる余白を残すことです。'],
+    [/空気|感覚/, '空気より自分の感覚を優先することです。'],
+    [/役割|背負/, '無理な役割を背負いすぎないことです。'],
+    [/好き|責め/, '好きな気持ちを責めないことです。'],
+    [/休む|熱量/, '休むことも流れの一部にすることです。'],
+    [/正しさ|感覚/, '正しさより自分の感覚を信じることです。'],
+    [/雑に扱/, '自分を雑に扱わないことです。'],
+  ];
+  const picked=pairs.find(([pattern,line])=>pattern.test(source)&&line.length<=max);
+  if(picked) return picked[1];
+  let line=normalizeDossierGuidanceBulletLine(source,max);
+  if(!line||isDossierIncompleteText(line)) return '';
+  line=line
+    .replace(/が焦点です。?$/,'から目を逸らさないことです。')
+    .replace(/が必要です。?$/,'を避けないことです。')
+    .replace(/が大切です。?$/,'を大切にすることです。')
+    .replace(/へ戻ります。?$/,'へ戻ることです。')
+    .replace(/が戻ります。?$/,'を戻すことです。');
+  if(!/(ことです|大切です|しないでください|避けてください|戻してください)。?$/.test(line)){
+    line=line.replace(/[。.!?！？]+$/,'');
+    line=`${line}ことです。`;
+  }
+  return line.length<=max&&!hasDanglingDossierGuidanceLine(line)?ensureJapaneseSentence(line):'';
+}
+
+function buildDossierOracleAdviceSummary(candidates=[],used=[],fallback=''){
+  const lines=[];
+  const push=raw=>{
+    toDossierValueArray(raw).flatMap(value=>[
+      ...String(value||'').split(/\r?\n+/),
+      ...splitJapaneseSentences(value),
+      ...sectionLines(value),
+    ]).forEach(value=>{
+      if(lines.length>=2) return;
+      const line=normalizeDossierOracleAdviceLine(value,24);
+      if(!line||isDossierSummaryDuplicate(line,used.concat(lines))) return;
+      lines.push(line);
+    });
+  };
+  candidates.forEach(push);
+  if(lines.length<2) push(fallback);
+  [
+    '自分を雑に扱わないことです。',
+    '焦りで結論を急がないことです。',
+    '安心できる余白を残すことです。',
+  ].forEach(push);
+  return lines.slice(0,2).join('\n');
 }
 
 function compactDossierGuidanceMeaningLine(clean='',max=36){
@@ -12760,7 +12835,7 @@ function detectDossierCardQualityIssues(data={},options={}){
   if(/進む条件|止まる条件|残る条件|動く条件|保留条件|関わる条件|距離を置く条件|今週の一手|7日以内|30日以内|確認してください|書き出してください|材料を集め/.test(text)) issues.push('羅針カードに旧方針の条件表または作業指示が混入している');
   if(/です。があるなら|ことです。があるなら|確認してから選ぶことです。が/.test(displayText)) issues.push('羅針カードに接続崩れがあります');
   conditionGroups.forEach(group=>{
-    if((group.items||[]).length!==2) issues.push(`${group.label}が2行ではない`);
+    if((group.items||[]).length!==3) issues.push(`${group.label}が3行ではない`);
     const seen=new Set();
     (group.items||[]).forEach(item=>{
       if(isDossierIncompleteText(item)) issues.push(`${group.label}に文途中切りがある`);
@@ -12781,8 +12856,11 @@ function detectDossierCardQualityIssues(data={},options={}){
   if(!guidance.oracle||isDossierIncompleteText(guidance.oracle)) issues.push(`${DOSSIER_ORACLE_GUIDANCE_HEADING}がない、または未完文`);
   const oracleLineCount=getDossierGuidanceLines(guidance.oracle).length;
   const lenormandLineCount=getDossierGuidanceLines(guidance.lenormand).length;
-  if(lenormandLineCount!==4) issues.push(`${DOSSIER_LENORMAND_GUIDANCE_HEADING}が4行ではない`);
+  if(lenormandLineCount<4||lenormandLineCount>5) issues.push(`${DOSSIER_LENORMAND_GUIDANCE_HEADING}が4〜5行ではない`);
   if(oracleLineCount!==2) issues.push(`${DOSSIER_ORACLE_GUIDANCE_HEADING}が2行ではない`);
+  if(getDossierGuidanceLines(guidance.oracle).some(line=>!/(ことです|大切です|しないでください|避けてください|戻してください)。?$/.test(line))){
+    issues.push(`${DOSSIER_ORACLE_GUIDANCE_HEADING}が断定寄りアドバイスになっていません`);
+  }
   if(isDossierSummaryDuplicate(guidance.lenormand,readingDigestCopies)){
     issues.push(`${DOSSIER_LENORMAND_GUIDANCE_HEADING}が今の流れの再掲になっています`);
   }
@@ -16142,6 +16220,9 @@ function repairAwkwardConnectionPhrases(text=''){
     .replace(/ここまでのあなたは、元恋人とのつながりを切りきれないまま、もう一度信頼を作れるのかを見極めようとしてきたはずです。?/g,'ここまでのあなたは、元恋人への気持ちを残しながら、もう一度信頼を作れる関係なのかをずっと感じ取ろうとしてきました。')
     .replace(/ここまでのあなたは、今の環境で踏ん張りながら自分の力がどこで返ってくるかを見極めようとしてきたはずです。?/g,'ここまでのあなたは、今の環境で踏ん張りながら、自分の力がどこで返ってくるのかを探してきました。')
     .replace(/ここまでのあなたは、今の環境で踏ん張りながら条件を見極めようとしてきたはずです。?/g,'ここまでのあなたは、今の環境で踏ん張りながら、続ける意味と変える必要の差を探してきました。')
+    .replace(/収入・成長・相手の反応・評価・続ける意味/g,'収入・成長・評価・役割・続ける意味')
+    .replace(/続けた先に([^。\n]{4,80})が残るかをまだ見極めきれていないところ/g,'続けた先に$1が残るのか、まだ見えきっていないところ')
+    .replace(/価値や見返りの現実も絡んでいます。好き嫌いだけで判断せず、続けることで何が残り、何を失うのかが大事です。?/g,'評価や役割として返るものも絡んでいます。続けることで何が残り、何を失うのかが大事です。')
     .replace(/気をつけることは、気持ちが整うまで待ち続けてしまうことです。?/g,'気持ちが整うまで待ち続けるほど、現実の反応が見えにくくなります。')
     .replace(/今の流れには、まだ言葉にされていない本音や、曖昧なまま残っている違和感があります。?/g,'まだ言葉になっていない本音や、曖昧なまま残っている違和感があります。')
     .replace(/ここを飛ばすと、楽なほうを選んだつもりでも不安が残りやすいです。?/g,'そこを置き去りにすると、楽なほうを選んだつもりでも不安が残りやすくなります。')
@@ -18735,7 +18816,7 @@ ${getRashinReadingPolicyPrompt('dossier')}
 - VERDICTは2〜3文、最大180字
 - DECISION_AXISは内部判断用。表示枠には使わず、条件表の見出しや作業指示にしない
 - HOLD_CONDITIONSは内部判断用。表示枠には使わず、見えていない違和感を自然な文章にする
-- 表示枠では、${DOSSIER_LENORMAND_GUIDANCE_HEADING}を上、${DOSSIER_ORACLE_GUIDANCE_HEADING}を下に置く。内容はルノルマン8割、数秘オラクル2割の要約にする。ルノルマンは3〜5行、数秘オラクルは2行を目安にする
+- 表示枠では、${DOSSIER_LENORMAND_GUIDANCE_HEADING}を上、${DOSSIER_ORACLE_GUIDANCE_HEADING}を下に置く。内容はルノルマン8割、数秘オラクル2割の要約にする。ルノルマンは4〜5行、数秘オラクルは断定寄りアドバイス2行にする
 - ACTION7とCLOSINGは内部補助用。表示見出しとして「${INTEGRATION_ACTION_GUIDE_HEADING}」「${INTEGRATION_CLOSING_HEADING}」は出さない
 - キーワード欄は出力しない。表示枠には姓名判断・四柱推命・動物タイプ診断の短い箇条書きを使う
 - CLOSINGは最大60字
@@ -18760,7 +18841,7 @@ function buildPremiumDossierCardPrompt(source){
 追加質問のraw回答、カード番号、配置名、履歴データは羅針カード本体に出さないでください。
 SNS投稿用のカードなので、表示名は内部資料の「呼び名」だけを使ってください。相談者の本名、姓名、姓、名、ログイン名は本文にも根拠にも出さないでください。
 機械的な条件表、7日以内、30日以内、確認する、書き出す、比較する、材料を集める、今週の一手は出さないでください。
-表示枠の「姓名判断」「四柱推命」「動物タイプ診断」はアプリ側で短い箇条書きに整えます。カード内の下部指針は「${DOSSIER_LENORMAND_GUIDANCE_HEADING}」を上、「${DOSSIER_ORACLE_GUIDANCE_HEADING}」を下にし、ルノルマン3〜5行・数秘オラクル2行、比重はルノルマン8割・数秘オラクル2割の要約として扱います。本名や生年月日は出さないでください。
+表示枠の「姓名判断」「四柱推命」「動物タイプ診断」はアプリ側で短い箇条書き3行に整えます。カード内の下部指針は「${DOSSIER_LENORMAND_GUIDANCE_HEADING}」を上、「${DOSSIER_ORACLE_GUIDANCE_HEADING}」を下にし、ルノルマン4〜5行・数秘オラクルは断定寄りアドバイス2行、比重はルノルマン8割・数秘オラクル2割の要約として扱います。本名や生年月日は出さないでください。
 配列やカンマ区切りを本文に出さず、文途中で終わらせないでください。
 カード名の意味説明ではなく、相談者の現実に使える言葉へ変換してください。不自然な比喩や長すぎる接続は避けてください。
 EVIDENCE_SUMMARYだけは、根拠を見る人向けに短く残してください。`;
@@ -19236,7 +19317,7 @@ async function createDossierShareImageBlob(cardData){
   y+=answerH+Math.round(h*.018);
 
   const guidance=getDossierCardGuidance(card);
-  const lenGuidanceLines=getDossierGuidanceLines(guidance.lenormand).slice(0,4);
+  const lenGuidanceLines=getDossierGuidanceLines(guidance.lenormand).slice(0,5);
   const oracleGuidanceLines=getDossierGuidanceLines(guidance.oracle).slice(0,2);
   const actionH=Math.min(Math.round(h*.20),detailY-y-Math.round(h*.026));
   drawCanvasPanel(ctx,textX,y,maxTextW,actionH,{fill:'rgba(4,9,24,.58)',stroke:'rgba(228,184,74,.22)'});
@@ -19248,8 +19329,8 @@ async function createDossierShareImageBlob(cardData){
   const lenStartY=y+Math.round(h*.038);
   ctx.fillText(DOSSIER_LENORMAND_GUIDANCE_HEADING,guidanceLabelX,lenStartY);
   ctx.fillStyle='rgba(246,240,220,.92)';
-  ctx.font=`700 ${Math.round(w*.0062)}px "Shippori Mincho", serif`;
-  drawCanvasBulletLines(ctx,lenGuidanceLines,guidanceBodyX,lenStartY,guidanceBodyW,Math.round(h*.0205),{maxLines:4,bulletSize:Math.max(3,Math.round(w*.0022))});
+  ctx.font=`700 ${Math.round(w*.0068)}px "Shippori Mincho", serif`;
+  drawCanvasBulletLines(ctx,lenGuidanceLines,guidanceBodyX,lenStartY,guidanceBodyW,Math.round(h*.0215),{maxLines:5,bulletSize:Math.max(3,Math.round(w*.0022))});
   ctx.strokeStyle='rgba(228,184,74,.14)';
   ctx.lineWidth=1;
   const dividerY=y+Math.round(actionH*.60);
@@ -19262,8 +19343,8 @@ async function createDossierShareImageBlob(cardData){
   const oracleStartY=y+Math.round(actionH*.72);
   ctx.fillText(DOSSIER_ORACLE_GUIDANCE_HEADING,guidanceLabelX,oracleStartY);
   ctx.fillStyle='rgba(255,232,171,.96)';
-  ctx.font=`700 ${Math.round(w*.0064)}px "Shippori Mincho", serif`;
-  drawCanvasBulletLines(ctx,oracleGuidanceLines,guidanceBodyX,oracleStartY,guidanceBodyW,Math.round(h*.019),{maxLines:2,bulletSize:Math.max(3,Math.round(w*.0022))});
+  ctx.font=`700 ${Math.round(w*.0069)}px "Shippori Mincho", serif`;
+  drawCanvasBulletLines(ctx,oracleGuidanceLines,guidanceBodyX,oracleStartY,guidanceBodyW,Math.round(h*.0205),{maxLines:2,bulletSize:Math.max(3,Math.round(w*.0022))});
 
   const foundationSections=getDossierCardFoundationSections(card);
   const detailsX=cardLeft;
@@ -19287,12 +19368,12 @@ async function createDossierShareImageBlob(cardData){
     ctx.font=`600 ${Math.round(w*.0057)}px "Shippori Mincho", serif`;
     drawCanvasBulletLines(
       ctx,
-      (section.items||[]).slice(0,2),
+      (section.items||[]).slice(0,3),
       itemX+Math.round(w*.008),
       innerY+Math.round(h*.065),
       itemW-Math.round(w*.016),
-      Math.round(h*.026),
-      {maxLines:2,bulletSize:Math.max(3,Math.round(w*.0022))}
+      Math.round(h*.0215),
+      {maxLines:3,bulletSize:Math.max(3,Math.round(w*.0022))}
     );
   });
 
@@ -20277,7 +20358,7 @@ function buildRichLenFallback(name,cat){
   }else if(ctx.primaryTheme==='love'){
     structureLines.push(`今回の迷いは、相手を好きかどうかではなく、${ctx.criteriaText}が相手の言葉と行動の中に見えていないところから来ています。`);
   }else if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
-    structureLines.push(`今回の迷いは、今の環境の良し悪しだけではなく、続けた先に${ctx.criteriaText}が残るかをまだ見極めきれていないところから来ています。`);
+    structureLines.push(`今回の迷いは、今の環境の良し悪しだけではなく、続けた先に${ctx.criteriaText}が残るのか、まだ見えきっていないところから来ています。`);
   }else if(ctx.primaryTheme==='money'){
     structureLines.push('今回の迷いは、浪費しているかどうかではなく、働いているのに手元の安心が増えにくいところから来ています。月末の不安と副業への怖さが重なり、使うことも増やすことも落ち着いて選びにくくなっています。');
   }else if(ctx.primaryTheme==='relationship'){
@@ -20334,6 +20415,8 @@ function buildRichLenFallback(name,cat){
       ?'価値や見返りの現実も絡んでいます。好きかどうかだけで判断せず、もう一度信頼を作れる関係なのか、期待だけが増えていないかが大事です。'
       :ctx.primaryTheme==='money'
         ?'お金そのもののカードも絡んでいます。金運の良し悪しではなく、収入が入っても手元に安心が残る流れになっているかが大事です。'
+        :ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'
+          ?'評価や役割として返るものも絡んでいます。続けることで何が残り、何を失うのかが大事です。'
         :'価値や見返りの現実も絡んでいます。好き嫌いだけで判断せず、続けることで何が残り、何を失うのかが大事です。');
   }
   if(hiddenRelationship){
