@@ -12024,7 +12024,7 @@ function renderDossierGuidanceList(text=''){
 
 function compactDossierSaveCardItem(item=''){
   const clean=cleanDossierItemText(sanitizeRashinVisibleText(redactDossierPrivateNames(String(item||''))));
-  const compact=trimDossierTextSafely(clean,24,6)||limitTextByChars(clean,24,6);
+  const compact=trimDossierTextSafely(clean,36,10)||limitTextByChars(clean,36,10);
   return compact?ensureJapaneseSentence(compact):'';
 }
 
@@ -12164,6 +12164,98 @@ function buildDossierFoundationItems(items=[],fallbackItems=[]){
   return unique.slice(0,5);
 }
 
+function addDossierFoundationSummaryLine(lines,line='',max=36){
+  const clean=cleanDossierItemText(sanitizeRashinVisibleText(redactDossierPrivateNames(String(line||''))));
+  if(!clean||isDossierIncompleteText(clean)) return;
+  let sentence=ensureJapaneseSentence(clean);
+  if(sentence.length>max){
+    const firstSentence=splitJapaneseSentences(sentence).find(item=>item.length<=max&&!hasDanglingJapaneseFragment(item));
+    if(firstSentence) sentence=firstSentence;
+  }
+  if(sentence.length>max||hasDanglingJapaneseFragment(sentence)) return;
+  if(/確認する|確認して|書き出|比較する|材料を集め|整理する|整理して|7日以内|30日以内/.test(sentence)) return;
+  const key=sentence.replace(/[。、\s]/g,'');
+  if(key.length<8||lines.some(item=>item.replace(/[。、\s]/g,'')===key)) return;
+  lines.push(sentence);
+}
+
+function getDossierNameFoundationSummaryItems(namePlain=null){
+  const lines=[];
+  const power=NAMEJUDGE?evaluateNameJudgePower(NAMEJUDGE):null;
+  const threeTalent=NAMEJUDGE?evaluateThreeTalents(NAMEJUDGE):null;
+  const yinYang=NAMEJUDGE?evaluateYinYangBalance(NAMEJUDGE):null;
+  if(power?.score>=2.2) addDossierFoundationSummaryLine(lines,'対人面と長期運が評価へつながります。');
+  else if(power?.score>=1.1) addDossierFoundationSummaryLine(lines,'積み上げと関わりで強みが育ちます。');
+  else if(power?.score<=-1.4) addDossierFoundationSummaryLine(lines,'勢いより整え方で差が出ます。');
+  else if(power) addDossierFoundationSummaryLine(lines,'出し方を整えるほど名前の良さが出ます。');
+  if(threeTalent?.label==='吉配') addDossierFoundationSummaryLine(lines,'土台から行動まで流れが通ります。');
+  else if(threeTalent?.label==='安定型') addDossierFoundationSummaryLine(lines,'衝突が少なく、継続で強みが育ちます。');
+  else if(threeTalent?.label==='葛藤型') addDossierFoundationSummaryLine(lines,'環境選びで負担が変わります。');
+  else addDossierFoundationSummaryLine(lines,'出し方を整えるほど力が出ます。');
+  if(lines.length<2&&yinYang?.label==='陽優勢') addDossierFoundationSummaryLine(lines,'自分から動くほど力が出ます。');
+  if(lines.length<2&&yinYang?.label==='陰優勢') addDossierFoundationSummaryLine(lines,'観察してから動くほど安定します。');
+  if(lines.length<2&&yinYang?.label==='均衡型') addDossierFoundationSummaryLine(lines,'押し出しと受け止めを切り替えられます。');
+  if(lines.length<2&&namePlain?.overview) addDossierFoundationSummaryLine(lines,compactFoundationInsightSentence(namePlain.overview,'調整と継続で強みが育ちます。'));
+  addDossierFoundationSummaryLine(lines,'調整と継続で強みが育ちます。');
+  addDossierFoundationSummaryLine(lines,'対話の中で評価を積み上げやすい土台です。');
+  return lines.slice(0,2);
+}
+
+function getDossierBirthFoundationSummaryItems(birthPlain=null){
+  const lines=[];
+  if(MEIMEI?.strengthLabel==='身強') addDossierFoundationSummaryLine(lines,'自分から流れを作るほど力が出ます。');
+  else if(MEIMEI?.strengthLabel==='やや身強') addDossierFoundationSummaryLine(lines,'前に出るほど力を出しやすい命式です。');
+  else if(MEIMEI?.strengthLabel==='身弱') addDossierFoundationSummaryLine(lines,'周囲の流れを受け取るほど整います。');
+  else if(MEIMEI?.strengthLabel==='やや身弱') addDossierFoundationSummaryLine(lines,'一人で抱えず、助けを入れるほど力が出ます。');
+  else if(MEIMEI) addDossierFoundationSummaryLine(lines,'役割を切り替えながら力を出せます。');
+  const timing=`${birthPlain?.timing||''} ${birthPlain?.advice||''}`;
+  if(/管理|現実|立て直/.test(timing)) addDossierFoundationSummaryLine(lines,'管理と立て直しが判断を支えます。');
+  else if(/学び|内省|発想/.test(timing)) addDossierFoundationSummaryLine(lines,'学びや内省が判断の質を上げます。');
+  else if(/責任|役割|評価/.test(timing)) addDossierFoundationSummaryLine(lines,'責任と役割が見えやすい流れです。');
+  else if(/感受性|観察|細部/.test(`${birthPlain?.overview||''} ${timing}`)) addDossierFoundationSummaryLine(lines,'観察と感受性が判断を支えます。');
+  if(lines.length<2&&birthPlain?.overview) addDossierFoundationSummaryLine(lines,compactFoundationInsightSentence(birthPlain.overview,'現実を整えるほど判断が安定します。'));
+  addDossierFoundationSummaryLine(lines,'現実を整えるほど判断が安定します。');
+  addDossierFoundationSummaryLine(lines,'急ぐより、土台を整える流れです。');
+  return lines.slice(0,2);
+}
+
+function getDossierAnimalFoundationSummaryItems(animalParts=null){
+  const name=animalParts?.name||REACTION_PROFILE?.animal||REACTION_PROFILE?.label||'';
+  const byAnimal={
+    オニヤンマ:['突破力と決断力が強みです。','軽く扱われると消耗しやすいです。'],
+    女王アリ:['段取り力と巻き込み力が強みです。','責任が曖昧だと負担が重くなります。'],
+    バンドウイルカ:['場を明るく動かす力があります。','反応が薄い場では熱が落ちます。'],
+    秋田犬:['誠実さと深い信頼が強みです。','雑な関係では消耗しやすいです。'],
+    ベンガルネコ:['観察力と距離感の精度が強みです。','距離を詰められると疲れます。'],
+    ラッコ:['試しながら伸びる力があります。','停滞が続くと熱が落ちます。'],
+    アジアゾウ:['誠実さと継続力が強みです。','理想を軽く扱われると揺れます。'],
+    オオカミ:['集中力と改革する力が強みです。','意味が見えない場では熱が落ちます。'],
+    タコ:['適応力と表現力が強みです。','自分の言葉に戻るほど安定します。'],
+  };
+  const picked=byAnimal[name]||byAnimal[String(name).replace(/タイプ$/,'')];
+  if(picked) return picked;
+  const lines=[];
+  if(animalParts?.strength) addDossierFoundationSummaryLine(lines,compactFoundationInsightSentence(animalParts.strength,'反応の出方に強みが表れます。'));
+  if(animalParts?.caution) addDossierFoundationSummaryLine(lines,compactFoundationInsightSentence(animalParts.caution,'負担が続く場では消耗しやすいです。'));
+  addDossierFoundationSummaryLine(lines,'反応の出方に強みが表れます。');
+  addDossierFoundationSummaryLine(lines,'自分の軸に戻るほど判断が安定します。');
+  return lines.slice(0,2);
+}
+
+function compactFoundationInsightSentence(text='',fallback=''){
+  const source=cleanDossierItemText(String(text||''));
+  if(!source) return fallback;
+  if(/一人で抱えるより|助けや流れ/.test(source)) return '一人で抱えず、助けを入れるほど力が出ます。';
+  if(/管理|現実面|立て直し/.test(source)) return '管理と立て直しが判断を支えます。';
+  if(/段取り力|巻き込み力|人を巻き込む/.test(source)) return '段取り力と巻き込み力が強みです。';
+  if(/責任/.test(source)&&/重|曖昧|負担/.test(source)) return '責任が曖昧だと負担が重くなります。';
+  if(/極端な衝突が少なく/.test(source)) return '衝突が少なく、継続で強みが育ちます。';
+  if(/かなり追い風/.test(source)) return 'かなり追い風のある名前です。';
+  if(/観察|感受性/.test(source)) return '観察と感受性が判断を支えます。';
+  if(/調整|継続/.test(source)) return '調整と継続で強みが育ちます。';
+  return fallback;
+}
+
 function getDossierFoundationBulletSections(){
   const namePlain=buildNamePlainInsight(NAMEJUDGE);
   const birthPlain=buildBirthPlainInsight(MEIMEI);
@@ -12171,51 +12263,15 @@ function getDossierFoundationBulletSections(){
   return [
     {
       label:'姓名判断',
-      items:buildDossierFoundationItems([
-        namePlain?.overview,
-        namePlain?.timing,
-        namePlain?.advice,
-        '対話と調整の力で場を整えやすい流れです。',
-        '表に残す呼び名と本来の土台を分けて読んでいます。',
-      ],[
-        '名前の流れは、調整と継続で力が出ます。',
-        '押し出す場面と受け止める場面の切り替えが鍵です。',
-        '面倒見の良さを抱え込みに変えないことが大切です。',
-        '対話の中で評価を積み上げやすい土台です。',
-        '表に残す呼び名と本来の土台を分けて読んでいます。',
-      ]),
+      items:getDossierNameFoundationSummaryItems(namePlain),
     },
     {
       label:'四柱推命',
-      items:buildDossierFoundationItems([
-        birthPlain?.overview,
-        birthPlain?.timing,
-        birthPlain?.advice,
-        '管理と立て直しが、今の判断を支える流れです。',
-        '現実を整えるほど、判断の輪郭が安定します。',
-      ],[
-        '生まれの流れは、観察と調整で力が出ます。',
-        '急ぐより、現実を整えるほど読みが安定します。',
-        '学びや内省が、次の判断の支えになります。',
-        '管理と立て直しが強みに変わりやすい時期です。',
-        '感情だけでなく、続けられる形が鍵になります。',
-      ]),
+      items:getDossierBirthFoundationSummaryItems(birthPlain),
     },
     {
       label:'動物タイプ診断',
-      items:buildDossierFoundationItems([
-        animalParts?.oneLine,
-        animalParts?.strength,
-        animalParts?.caution,
-        animalParts?.inConsultation,
-        animalParts?.name&&!/結果/.test(animalParts.name)?`${animalParts.name}タイプの反応として読んでいます。`:'',
-      ],[
-        '反応の出方から、力が戻る手応えを読んでいます。',
-        '意味のあることほど、深く集中しやすいタイプです。',
-        '自由度が低い場所では、熱が落ちやすくなります。',
-        '納得できる目的があるほど、強みが表に出ます。',
-        '今の迷いは、自分の軸を取り戻す合図です。',
-      ]),
+      items:getDossierAnimalFoundationSummaryItems(animalParts),
     },
   ];
 }
@@ -12247,10 +12303,10 @@ function normalizeDossierSummaryDuplicateKey(text=''){
 
 function isDossierSummaryDuplicate(candidate='',used=[]){
   const key=normalizeDossierSummaryDuplicateKey(candidate);
-  if(key.length<18) return false;
   return used.some(item=>{
     const other=normalizeDossierSummaryDuplicateKey(item);
-    if(other.length<18) return false;
+    if(key.length>=8&&other.length>=8&&key===other) return true;
+    if(key.length<18||other.length<18) return false;
     const keyHead=key.slice(0,32);
     const otherHead=other.slice(0,32);
     return key===other||key.includes(otherHead)||other.includes(keyHead)||keyHead===otherHead;
@@ -12293,6 +12349,36 @@ function compactDossierSignalText(text='',max=70){
   let compact=limitTextByChars(clean,max,6)||clean.slice(0,max).trim();
   if(compact.length<Math.min(14,max-4)) compact=clean.slice(0,max).trim();
   return compact?ensureJapaneseSentence(compact):'';
+}
+
+function compactDossierGuidanceMeaningLine(clean='',max=36){
+  const text=cleanDossierItemText(String(clean||''));
+  if(!text) return '';
+  const themed=[
+    [/(?:月末.*(?:副業|怖さ|不安)|(?:副業|怖さ|不安).*月末)/, '月末の不安と副業の怖さが重なります。'],
+    [/迷っているのは|今回の迷いは/, '迷いの焦点は感情より現実の反応です。'],
+    [/続けた先.*(収入|成長|評価|信頼|役割)|努力.*(収入|成長|評価|信頼|役割)/, '続けた先の見返りが焦点です。'],
+    [/不安で動くより安心が残る|安心が残る選び方/, '不安より安心が残る選び方です。'],
+    [/守るべき余白|余白が見える/, '守る余白が見えるほど流れは落ち着きます。'],
+    [/ここまでのあなたは|場に合わせるだけでなく|反応の出方/, '場に合わせすぎず自分の形へ戻ります。'],
+    [/外の選択肢|居場所と消耗/, '外の選択肢で消耗との差が見えます。'],
+    [/言葉.*行動|行動.*安定/, '言葉より行動の安定が焦点です。'],
+    [/曖昧|待つ側/, '曖昧なまま待つほど負担が偏ります。'],
+    [/関係を守る|自分を削る/, '守る関係と削る関係の違いが出ています。'],
+    [/熱量|義務感/, '義務感より熱量が戻る形を選ぶ流れです。'],
+    [/本音|違和感/, '違和感は本音の置き場所を示しています。'],
+  ];
+  const picked=themed.find(([pattern,line])=>pattern.test(text)&&line.length<=max);
+  return picked?picked[1]:'';
+}
+
+function hasDanglingDossierGuidanceLine(line=''){
+  const text=String(line||'').trim();
+  const core=text.replace(/[。、,.，．]+$/,'').trim();
+  if(!text) return true;
+  if(core.length<8) return true;
+  if(/^(ここまでのあなたは|今回の迷いは|迷っているのは|反応の出方を見ると)$/.test(core)) return true;
+  return /(ではなく|だけでなく|重なり|として|なら|ほど|けれど|ただし|または|そして|から|まで|より|よりも|には|では|ところ|もの|こと|を|が|に|へ|と|で|は)$/.test(core);
 }
 
 function getDossierThemedGuidanceBullets(focus={},card={}){
@@ -12422,7 +12508,9 @@ function normalizeDossierGuidanceBulletLine(text='',max=36){
     .replace(/今の環境に(?:続ける意味・評価・消耗度|収入・成長・評価・信頼・役割)のどれかが現実として返っている。?/,'返ってくるものがあるなら残れます。')
     .replace(/外の選択肢が見えるほど、居場所と消耗の違いもはっきりします。?/,'外の選択肢で居場所と消耗の差が見えます。');
   if(!clean) return '';
-  if(clean.length<=max) return ensureJapaneseSentence(clean);
+  const semantic=compactDossierGuidanceMeaningLine(clean,max);
+  if(semantic) return semantic;
+  if(clean.length<=max&&!hasDanglingDossierGuidanceLine(clean)) return ensureJapaneseSentence(clean);
   const clauses=clean.split(/[、。]/).map(item=>item.trim()).filter(Boolean);
   let line='';
   for(const clause of clauses){
@@ -12434,7 +12522,7 @@ function normalizeDossierGuidanceBulletLine(text='',max=36){
     if(clean.length>max) return '';
     line=clean.slice(0,max).trim();
   }
-  if(/(なら|ほど|けれど|ただし|または|そして|から|まで|より|よりも|には|では|ところ|もの|を|が|に|へ|と|で)$/.test(line)) return '';
+  if(hasDanglingDossierGuidanceLine(line)) return '';
   return ensureJapaneseSentence(line);
 }
 
@@ -12454,20 +12542,26 @@ function buildDossierGuidanceBulletSummary(candidates=[],used=[],fallback='',opt
   const seen=new Set();
   const lines=[];
   const push=raw=>{
+    let addedFromRaw=false;
     const values=toDossierValueArray(raw).flatMap(value=>[
       ...String(value||'').split(/\r?\n+/),
       ...splitJapaneseSentences(value),
       ...sectionLines(value),
     ]);
     values.forEach(value=>{
-      if(lines.length>=max) return;
+      if(lines.length>=max||addedFromRaw) return;
       const line=normalizeDossierGuidanceBulletLine(value,maxChars);
       if(!line||isDossierIncompleteText(line)) return;
-      if(isDossierSummaryDuplicate(line,used.concat(lines))) return;
+      const usedLines=used.concat(lines)
+        .flatMap(item=>String(item||'').split(/\r?\n+/))
+        .map(item=>item.trim())
+        .filter(Boolean);
+      if(isDossierSummaryDuplicate(line,usedLines)) return;
       const key=normalizeDossierSummaryDuplicateKey(line);
       if(!key||seen.has(key)) return;
       seen.add(key);
       lines.push(line);
+      addedFromRaw=true;
     });
   };
   candidates.forEach(push);
