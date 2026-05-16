@@ -14501,6 +14501,35 @@ function getPremiumBriefOracleSignal(card){
   return '選ぶ。伝える、待つ、距離を置くのどこに心が傾いているかを見る';
 }
 
+const PERSONA_REALITY_KEYWORDS=[
+  '一人暮らし','家族と同居','実家暮らし','既婚','独身','子ども','介護',
+  '一般事務','事務職','営業','接客','販売','派遣','正社員','契約社員','フリーランス','自営業',
+  '年収','月収','300万円','400万円','500万円','貯金','家賃','食費','スマホ代','サブスク','交際費','月末','月初','生活費','固定費','副業','転職','退職','収入','節約','浪費','借金','投資','将来','老後','失敗','我慢ばかり','余裕がない',
+  '連絡','返信','会う','会えない','既読','未読','曖昧な関係','片思い','復縁','元恋人','元彼','元カレ','元カノ','別れた相手','結婚','離婚','不倫','遠距離','音信不通','告白',
+  '上司','同僚','部下','職場','評価','役割','残業','異動','昇給','成果','成長','消耗','便利使い',
+  '友人','親友','家族','親','母','父','兄弟','姉妹','空気を読む','境界線','我慢','合わせる',
+  '創作','作品','発信','SNS','売上','反応','自己理解','生き方','向いていること'
+];
+
+function collectPersonaRealityTerms(context={},max=10){
+  const source=[
+    context.theme,
+    context.clarifyText,
+    context.paidUserData&&typeof context.paidUserData==='object'?stringifyFocusSupplement(context.paidUserData):context.paidUserData,
+    context.userDataText,
+    stringifyFocusSupplement(context.input||{}),
+  ].join(' ');
+  const compact=source.replace(/\s+/g,' ');
+  const amountTerms=(compact.match(/[0-9０-９]{2,4}\s*万(?:円)?(?:前後)?|[0-9０-９]{1,3}\s*歳/g)||[])
+    .filter(term=>!/^\s*[0-9０-９]{1,3}\s*歳/.test(term));
+  const hitTerms=PERSONA_REALITY_KEYWORDS.filter(term=>compact.includes(term));
+  const expenseTerms=(compact.match(/(?:家賃|食費|スマホ代|サブスク|交際費|生活費|固定費|月末|貯金|副業|転職|節約|我慢ばかり|失敗するのも怖い|何から始めればいいか分からない)/g)||[]);
+  const terms=Array.from(new Set([...amountTerms,...hitTerms,...expenseTerms]))
+    .filter(term=>term&&term.length>=2)
+    .filter(term=>!/氏名|読み|生年月日|性別|居住|相談テーマ|人物像|現在の悩み/.test(term));
+  return terms.slice(0,max);
+}
+
 function collectConsultationMirrorTerms(context={},max=8){
   const source=[
     context.theme,
@@ -14516,10 +14545,28 @@ function collectConsultationMirrorTerms(context={},max=8){
     '家族','お金','人間関係','自己理解','生き方','将来','準備',
   ];
   const hits=priorityTerms.filter(term=>source.includes(term));
+  const personaHits=collectPersonaRealityTerms(context,max);
   const fallback=(source.match(/[一-龥ぁ-んァ-ンー]{2,12}/g)||[])
     .filter(term=>!/相談者|相談本文|追加質問|回答|今回|鑑定|カード|ルノルマン|オラクル|ください|あります|します|です|ます/.test(term))
+    .filter(term=>!/氏名|読み|生年月日|年齢|性別|居住|職業|家族構成|人物像|現在|悩み/.test(term))
     .filter(term=>term.length>=2);
-  return Array.from(new Set([...hits,...fallback])).slice(0,max);
+  return Array.from(new Set([...personaHits,...hits,...fallback])).slice(0,max);
+}
+
+function countTermsInText(text='',terms=[]){
+  const source=String(text||'');
+  return terms.filter(term=>term&&source.includes(term)).length;
+}
+
+function buildPersonaRealityBrief(context={}){
+  const terms=collectPersonaRealityTerms(context,10);
+  if(!terms.length) return '- 相談者の生活条件が薄い場合も、相談本文にある具体語を最低2語は拾い、誰にでも言える文章にしない';
+  const required=Math.min(4,Math.max(2,Math.ceil(terms.length/2)));
+  return [
+    `- 今回の生活条件・具体語: ${terms.join(' / ')}`,
+    `- LENとINTEGRATIONで、この中から合計${required}語以上を自然に反映する`,
+    '- 固有情報の羅列ではなく、「何が不安を重くしているか」「何が判断を鈍らせているか」へ翻訳する',
+  ].join('\n');
 }
 
 function buildPremiumClarifyAnswerBrief(max=5){
@@ -14569,6 +14616,11 @@ function buildPremiumReadingFocusBrief(context={}){
     theme:context.theme||ctx.theme,
     input:ctx.input,
   },8);
+  const personaBrief=buildPersonaRealityBrief({
+    ...context,
+    theme:context.theme||ctx.theme,
+    input:ctx.input,
+  });
   const reaction=ctx.reactionProfile?.summary||ctx.reactionProfile?.label||ctx.reactionProfile?.animal||'なし';
   return `【鑑定ブリーフ：本文生成ではこの順に優先】
 - 主テーマ: ${decision.primaryLabel}${decision.loveSubtypeProfile?.label?` / ${decision.loveSubtypeProfile.label}`:''}
@@ -14576,6 +14628,8 @@ function buildPremiumReadingFocusBrief(context={}){
 - 最初の2文で答えること: 迷いの正体と今回の答えを先に言う
 - 本文へ自然に混ぜる相談者語: ${mirrorTerms.length?mirrorTerms.join(' / '):'相談本文の具体語を1〜2語拾う'}
 - 動物タイプ診断の使い方: ${reaction}。性格診断として広げず、自分を雑に扱わない視点へつなげる
+【今回のペルソナ差分】
+${personaBrief}
 【カード根拠の優先順位】
 ${buildPremiumCardEvidenceBrief(ctx)}
 【追加質問回答の使い方】
@@ -14595,6 +14649,24 @@ function detectPersonalizationCoverageIssues(parsed={},context={}){
   const terms=collectConsultationMirrorTerms(context,6).filter(term=>term.length>=2);
   if(terms.length>=2&&!terms.some(term=>joined.includes(term))){
     issues.push('相談者本文の具体語が鑑定本文に反映されていません');
+  }
+  const personaTerms=collectPersonaRealityTerms(context,10);
+  if(personaTerms.length>=3){
+    const targetTerms=personaTerms.slice(0,8);
+    const totalHits=countTermsInText(joined,targetTerms);
+    const lenHits=countTermsInText(parsed.len||'',targetTerms);
+    const integrationHits=countTermsInText(parsed.integration||'',targetTerms);
+    const requiredTotal=Math.min(4,Math.max(2,Math.ceil(targetTerms.length/2)));
+    const requiredPerCore=targetTerms.length>=4?2:1;
+    if(totalHits<requiredTotal){
+      issues.push('相談者の生活条件・具体語が鑑定全体に足りません');
+    }
+    if(lenHits<requiredPerCore){
+      issues.push('相談者の生活条件がルノルマン本文の現実見立てに反映されていません');
+    }
+    if(integrationHits<requiredPerCore){
+      issues.push('相談者の具体語が統合判断の迷いの正体に反映されていません');
+    }
   }
   if(/相談者の補足整理|追加質問/.test(String(context.clarifyText||context.userDataText||context.paidUserData||''))){
     const integration=String(parsed.integration||'');
@@ -17197,6 +17269,8 @@ ${getRashinReadingPolicyPrompt('quality')}
 - 相談者の質問に直接答えているか
 - 相談者入力にない職種、年月、条件を作っていないか
 - 相談者が出した判断軸「${ctx.criteriaText}」が反映されているか。不足時だけテーマ別の汎用見立てで補っているか
+- 相談者の人物像・生活条件・本文の具体語が、LENとINTEGRATIONに複数入っているか
+- 具体語が入っていても、単なる引用や羅列ではなく、迷いの正体と現実の壁へ翻訳されているか
 - 鑑定ブリーフの主テーマ、カード根拠、追加質問回答が本文の迷いの正体へ変換されているか
 - 文が途中で切れていないか
 - ORC本文内に「ルノルマンカード」が混入していないか
@@ -17573,7 +17647,8 @@ ${decisionLabels.explicitUserPriority?'- 明示された優先テーマがある
 - Markdown記号（**、###、箇条書き記号の乱用）
 
 【共鳴・根拠付け】
-- 相談者が相談文で使った具体的な言葉（例:「評価されない」「曖昧」「怖い」「このままでいいのか」）を、LENとINTEGRATIONに各1箇所、自然な鑑定の文脈に溶け込ませる（ミラーリング）。引用記号は使わず、鑑定者自身の言葉として使うこと
+- 相談者が相談文や人物像で使った具体的な言葉（例:「評価されない」「曖昧」「怖い」「月末」「一人暮らし」「副業」「貯金」）を、LENとINTEGRATIONに各2語以上、自然な鑑定の文脈に溶け込ませる（ミラーリング）。引用記号は使わず、鑑定者自身の言葉として使うこと
+- ただし具体語の羅列にしない。生活条件や関係性を「迷いの正体」「現実の壁」「判断が鈍る理由」へ翻訳すること
 ${SEL_LEN.length===9?`- LENの「今の流れ」または「迷いの構造」の冒頭で、左列（①②③）のカードが示す背景・原因に基づき「今の状況は以前から繰り返されてきた選択かパターンが関係している」という視点を1文で述べる（後退予言）。左列カードの意味から外れた作り話は絶対禁止`:''}
 
 【出力ルール】
@@ -17929,7 +18004,8 @@ OK「転職のタイミングを急ぎすぎているというより、努力が
 OK「この関係は相手の心を決めつけるより、言葉のあとに安心できる行動が続くかが羅針になります」→ 判断軸が明確`:''}
 
 【共鳴・根拠付け】
-- 相談者が相談文で使った具体的な言葉（例:「評価されない」「曖昧」「怖い」「このままでいいのか」）を「■ 今の流れ」または「■ 気をつけること」に1箇所、自然な鑑定の文脈に溶け込ませる（ミラーリング）。引用記号は使わず、鑑定者自身の言葉として使うこと
+- 相談者が相談文や人物像で使った具体的な言葉（例:「評価されない」「曖昧」「怖い」「月末」「一人暮らし」「副業」「貯金」）を「■ 迷いの構造」「■ 今の流れ」「■ 気をつけること」のどこかに合計2語以上、自然な鑑定の文脈に溶け込ませる（ミラーリング）。引用記号は使わず、鑑定者自身の言葉として使うこと
+- 具体語はカードの説明に貼り付けず、相談者の現実として「どこで不安が重くなっているか」「何が選びにくさを作っているか」へ翻訳すること
 ${is9?`- 「■ 迷いの構造」の冒頭1文は、左列（①②③）のカードが示す背景・原因に根ざした後退予言にする。「今の状況は以前から繰り返されてきた選択かパターンが関係している」という形で1文断言する。左列カードの意味から外れた推測は書かない`:''}
 
 【出力形式】
@@ -18168,7 +18244,8 @@ ${premiumFocusBrief}
 - 7日以内、30日以内、次の一手、今週の一手、確認する、書き出す、比較する、材料を集める、機械的な条件表
 
 【共鳴・根拠付け】
-- 相談者が相談文で使った具体的な言葉（例:「評価されない」「曖昧」「怖い」「このままでいいのか」）を「■ ${INTEGRATION_FINAL_HEADING}」または「■ ${INTEGRATION_CORE_HEADING}」に1箇所、自然な鑑定の文脈に溶け込ませる（ミラーリング）。引用記号は使わず、鑑定者自身の言葉として使うこと
+- 相談者が相談文や人物像で使った具体的な言葉（例:「評価されない」「曖昧」「怖い」「月末」「一人暮らし」「副業」「貯金」）を「■ ${INTEGRATION_FINAL_HEADING}」または「■ ${INTEGRATION_CORE_HEADING}」に2語以上、自然な鑑定の文脈に溶け込ませる（ミラーリング）。引用記号は使わず、鑑定者自身の言葉として使うこと
+- 具体語はコピペせず、相談者の現実として「なぜ迷いが重いのか」「どこに安心の根拠が足りないのか」へ翻訳すること
 
 【出力形式・厳守】
 次の4見出しだけで書くこと。見出し以外の前置きは不要。
