@@ -7906,7 +7906,7 @@ function buildDecisionSupportPromptGuide(cat='',theme='',focusOverride=null){
     lines.push('');
     lines.push('【恋愛相談の語彙】');
     lines.push('- 中心語は安心、信頼、関係の温度、行動の安定、本音を置ける余地、言葉と行動のつながり、待つ側の負担、曖昧な距離に寄せる');
-    lines.push('- 成長、使命、影響力、役割、評価、力を出しやすい条件を中心語にしない');
+    lines.push('- 成長、使命、影響力、役割、評価、無理なく力を出せる形を中心語にしない');
     if(!isReconciliationContext(ctx)){
       lines.push('- 元恋人、復縁、別れた相手、やり直したい等が入力にない場合は復縁として読まない');
     }
@@ -8160,15 +8160,15 @@ function getLenRealityPhrase(card={},ctx={},role=''){
     case 4:return `${w.safety}を守りたい気持ち`;
     case 6:
       if(isReconciliationContext(ctx)) return '過去の原因や相手の反応が曖昧なまま残る状態';
-      if(ctx.primaryTheme==='love') return '安心の根拠が曇り、相手の態度を読みすぎやすい状態';
-      if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return '努力の見返りが曇り、残る意味を見失いやすい状態';
-      return `${w.base}が曇り、状況を必要以上に複雑に見やすい状態`;
+      if(ctx.primaryTheme==='love') return '安心の根拠が薄く、相手の態度を読みすぎやすい状態';
+      if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return '努力の見返りが見えにくく、残る意味を見失いやすい状態';
+      return `${w.base}が見えにくく、状況を必要以上に複雑に見やすい状態`;
     case 7:return '信用しきれない違和感や、言葉の裏を読ませる複雑さ';
     case 8:
       if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return 'この環境をそのまま続ける難しさ';
       if(isReconciliationContext(ctx)) return '過去の関係を同じ形で続ける難しさ';
       return `${w.field}の今の形を続けにくい気配`;
-    case 9:return '嬉しい言葉や好意が、安心へつながるかを見る流れ';
+    case 9:return '嬉しい言葉や好意が、安心へつながるかが焦点';
     case 10:return '先延ばしにしてきたものを切り替える圧';
     case 11:return '同じ不安や話し合いを繰り返しやすい熱';
     case 12:return '周囲の声や迷いが判断を散らす気配';
@@ -8411,7 +8411,7 @@ function buildCardGroundedFlowText(ctx={},flags={}){
   const futureBlocker=reading.futureBlocker;
   const choice=reading.mainChoice||reading.mainMovement;
   if(ambiguity){
-    sentences.push(`今は、${getLenRealityPhrase(ambiguity,ctx,'ambiguity')}が${w.field}の見え方を曇らせています。`);
+    sentences.push(`今は、${getLenRealityPhrase(ambiguity,ctx,'ambiguity')}が前に出て、${w.field}の判断を鈍らせています。`);
   }else if(blocker){
     sentences.push(`今は、${getLenRealityPhrase(blocker,ctx,'blocker')}が前に出て、${w.base}よりも重さを感じやすい流れです。`);
   }else if(core){
@@ -15132,7 +15132,7 @@ function translateLenormandInternalSentence(sentence='',focus={},context={}){
     .replace(/下の段には、?/g,'表に出ていないところには、')
     .replace(/上の段には、?/g,'意識している部分には、')
     .replace(/中心のすぐ近くに/g,'判断に近いところに')
-    .replace(/負担の強いカードが寄っている/g,'負担として見ておきたい点が重なっている')
+    .replace(/負担の強いカードが寄っている/g,'平気なふりでは軽くならない負担が重なっている')
     .replace(/カードは好転の余地を示しています。?/g,'小さな好転の余地も残っています。')
     .replace(/中心十字|対称ペア|ナイト|テーマカード周辺|配置|行・列|角の枠|角読み|隣接/g,'カードの組み合わせ');
 }
@@ -15289,7 +15289,7 @@ function softenLenormandSignalWording(text=''){
     .replace(/安定を示す合図/g,'安定へ向かう流れ')
     .replace(/選択の合図/g,'選ぶ前に見える焦点')
     .replace(/支えや好転を示す合図/g,'支えや好転につながる兆し')
-    .replace(/負担の合図/g,'負担として見ておきたい点')
+    .replace(/負担の合図/g,'軽く扱えない負担')
     .replace(/区切りを示す合図/g,'区切りにつながる流れ')
     .replace(/価値や見返りの合図/g,'価値や見返りの判断材料')
     .replace(/再起動の合図/g,'再び動かすきっかけ')
@@ -15575,6 +15575,7 @@ function getRashinReadingPolicyPrompt(scope='all'){
 「今見えている流れ」は条件の列挙ではなく、現在の動き、強まりやすい方向、注意点をひと続きの自然な流れとして書いてください。「Aがある。Bもある。Cなら良い」のような条件リストにしないでください。
 カード名を出す場合は最大2〜3枚までにし、「このカードは〜を示します」「〜が出る時は」で終わらせず、必ず相談者の現実語に変換してください。
 主語と述語が噛み合わない文、長すぎる接続、不自然な比喩、読み直さないと意味が取れない文を出さないでください。
+「曇る」「流れがあり、流れは」「安心へつながるかを見る流れ」「条件を言葉にしたとき」「のどれかが保てる距離」のような濁った接続は禁止です。自然な現実語へ言い換えてください。
 同じ意味の文を繰り返さず、相談テーマに合わない語彙を中心にしないでください。`;
   const scopes={
     len:`【ルノルマン専用】
@@ -15782,11 +15783,29 @@ function varyRepeatedWorkPlacePhrases(text=''){
 
 function repairAwkwardConnectionPhrases(text=''){
   return String(text||'')
+    .replace(/相手の反応・距離感のどれかが保てる距離なら/g,'相手の反応や距離感の中に、自然体でいられる余地があるなら')
+    .replace(/([一-龥ぁ-んァ-ン]{2,12}(?:・[一-龥ぁ-んァ-ン]{2,12}){1,4})のどれかが保てる距離なら/g,(match,list)=>`${list.replace(/・/g,'や')}の中に、自然体でいられる余地があるなら`)
+    .replace(/自分が力を出しやすい条件を言葉にしたとき/g,'場に合わせるだけでなく、自分が無理なくいられる形を選べたとき')
+    .replace(/力を出しやすい条件を言葉にしたとき/g,'無理なく力を出せる形が見えたとき')
+    .replace(/条件を言葉にしたとき/g,'無理のない形が見えたとき')
+    .replace(/力を出しやすい条件/g,'無理なく力を出せる形')
+    .replace(/条件を言葉にする/g,'無理のない形を見つける')
     .replace(/今の場所の今の形/g,'この環境のあり方')
+    .replace(/無理のない距離が曇り/g,'無理のない距離が見えにくくなり')
+    .replace(/無理のない距離が曇る/g,'無理のない距離が見えにくくなる')
     .replace(/距離が曇る/g,'距離が見えにくくなる')
+    .replace(/距離が曇り/g,'距離が見えにくくなり')
+    .replace(/見え方を曇らせています/g,'判断を鈍らせています')
+    .replace(/見え方が曇ります/g,'判断が鈍ります')
+    .replace(/曇らせています/g,'鈍らせています')
+    .replace(/曇ります/g,'鈍ります')
     .replace(/突破口が戻る/g,'前に進む手がかりが戻る')
     .replace(/判断軸が曇る/g,'判断軸が見えにくくなる')
     .replace(/気配のそばに/g,'気配があり、')
+    .replace(/安心へつながるかを見る流れがあり、流れはまだ整う余地を残しています。?/g,'安心へつながる反応が残るなら、関わり方はまだ整います。')
+    .replace(/流れがあり、流れは/g,'動きがあり、そこは')
+    .replace(/流れはまだ整う余地を残しています/g,'関わり方はまだ整う余地があります')
+    .replace(/流れはまだ整う余地があります/g,'関わり方はまだ整う余地があります')
     .replace(/ただ今は、今は/g,'今は')
     .replace(/今は、今は/g,'今は')
     .replace(/([^。\n]{12,90})のそばに([^。\n]{8,90})もあり、/g,(match,left,right)=>`${left}が判断を重くしています。一方で${right}も見えています。`)
@@ -15826,6 +15845,14 @@ function rewriteCardExplanationSentence(sentence=''){
   if(!source) return '';
   const match=source.match(/^「([^」]{1,12})」(?:が出る時は|が出ているため|が出ているので|は|のようなカードは)、?(.+)$/);
   if(match) return buildCardRealityRewrite(match[1],match[2]);
+  const adjacentPair=source.match(/^「([^」]{1,12})」「([^」]{1,12})」のような([^。\n]{0,48})(?:として)?見ておきたい点/);
+  if(adjacentPair){
+    const cards=[adjacentPair[1],adjacentPair[2]].join(' ');
+    if(/ネズミ|十字架|山|鞭|鎌|棺/.test(cards)){
+      return '平気なふりを続けるほど、少しずつ削られる負担が重くなりやすい状態です。';
+    }
+    return 'カード名よりも、現実に残っている違和感の重さが焦点です。';
+  }
   const pair=source.match(/^「?([一-龥ぁ-んァ-ン]{1,8})」?・「?([一-龥ぁ-んァ-ン]{1,8})」?のようなカードは、?(.+)$/);
   if(pair) return ensureJapaneseSentence(String(pair[3]||'').replace(/カードとして.*$/,'').trim());
   return source;
@@ -15836,6 +15863,8 @@ function rewriteCardExplanationSmell(text=''){
     .split('\n')
     .map(line=>line.split(/(?<=。)/).map(rewriteCardExplanationSentence).join(''))
     .join('\n')
+    .replace(/「(?:ネズミ|十字架|山|鞭|鎌|棺)」「(?:ネズミ|十字架|山|鞭|鎌|棺)」のような[^。\n]{0,80}(?:見ておきたい点|負担)[^。\n]*[。]?/g,'平気なふりを続けるほど、少しずつ削られる負担が重くなりやすい状態です。')
+    .replace(/「[^」]{1,12}」「[^」]{1,12}」のような[^。\n]{0,80}(?:見ておきたい点|として見ておきたい点)[。]?/g,'現実に残っている違和感の重さが焦点です。')
     .replace(/このカードは[^。\n]{0,80}(?:を示します|を意味します|を表します)[。]?/g,'今の現実に出ている違和感として見ます。');
 }
 
@@ -15895,8 +15924,12 @@ function dedupeRashinMeaningSentences(text=''){
 function polishRashinVisibleText(text=''){
   return String(text||'')
     .replace(/目を向ける流れです/g,'安心の根拠が見えてきます')
-    .replace(/する流れです/g,'そういう流れです')
+    .replace(/確認する流れです/g,'安心の根拠が見えてきます')
+    .replace(/整理する流れです/g,'違和感の出どころが見えてきます')
+    .replace(/比較する流れです/g,'心が軽くなる方向が見えてきます')
     .replace(/言葉になる流れです/g,'言葉になっていきます')
+    .replace(/安心へつながるかを見る流れ/g,'安心へつながる反応を見極める場面')
+    .replace(/流れがあり、流れは/g,'動きがあり、そこは')
     .replace(/見ることが大切です/g,'そこが大切です')
     .replace(/安心の根拠コード/g,'合言葉コード')
     .replace(/安心の根拠してください/g,'安心の根拠が見えてきます')
@@ -15947,6 +15980,7 @@ function sanitizeRashinVisibleText(text=''){
   output=compressRepeatedDecisionAxisSets(output);
   output=compressRepeatedRashinPhrases(output);
   output=dedupeRashinMeaningSentences(output);
+  output=repairAwkwardConnectionPhrases(output);
   output=polishRashinVisibleText(output);
   return output.replace(/\n{3,}/g,'\n\n').trim();
 }
@@ -15973,6 +16007,7 @@ function detectCardExplanationSmellIssues(text=''){
     /「[^」]{1,12}」が出る時は/,
     /「[^」]{1,12}」が出ている(?:ため|ので)/,
     /「[^」]{1,12}」は、?[^。\n]*(?:示します|示しています|意味します|表します|カードです|カードとして読めます|カードとして読みます)/,
+    /「[^」]{1,12}」「[^」]{1,12}」のような[^。\n]{0,80}(?:見ておきたい点|負担|として見ます)/,
     /「?[^」\s]{1,8}」?・「?[^」\s]{1,8}」?のようなカードは/,
     /このカードは[^。\n]*(?:示します|意味します|表します)/,
   ];
@@ -15985,7 +16020,11 @@ function detectAwkwardRashinJapaneseIssues(text=''){
   const awkwardPatterns=[
     {label:'「今の場所」の接続が不自然です',pattern:/今の場所の今の形/},
     {label:'「そばに〜もあり」の接続が不自然です',pattern:/のそばに[^。\n]{4,80}も(?:あり|あります)/},
-    {label:'比喩が曖昧です',pattern:/距離が曇る|突破口が戻る|気配のそばに|判断軸が曇る/},
+    {label:'「のどれかが保てる距離」が不自然です',pattern:/のどれかが保てる距離/},
+    {label:'比喩が曖昧です',pattern:/曇る|曇り|曇らせ|距離が曇|突破口が戻る|気配のそばに|判断軸が曇る/},
+    {label:'「流れ」の同語反復があります',pattern:/流れがあり、流れは|見る流れがあり|流れはまだ整う余地/},
+    {label:'オラクルが条件文に寄っています',pattern:/力を出しやすい条件|条件を言葉にしたとき|条件を言葉にする/},
+    {label:'カード名を出した説明臭が残っています',pattern:/「[^」]{1,12}」「[^」]{1,12}」のような[^。\n]{0,80}(?:見ておきたい点|負担)/},
     {label:'近接した同語反復があります',pattern:/ただ今は、今は|今は、今は|まだ、まだ|安心、安心/},
   ];
   awkwardPatterns.forEach(item=>{
@@ -16001,6 +16040,36 @@ function detectAwkwardRashinJapaneseIssues(text=''){
       issues.push(`一文に判断軸を詰め込みすぎています: ${limitTextByChars(clean,46,18)}`);
     }
   });
+  issues.push(...detectNearTermRepetitionIssues(source));
+  return [...new Set(issues)];
+}
+
+function detectNearTermRepetitionIssues(text=''){
+  const issues=[];
+  const sentences=splitJapaneseSentences(text).map(sentence=>sentence.trim()).filter(Boolean);
+  const watched=[
+    {term:'流れ',max:1},
+    {term:'距離',max:1},
+    {term:'条件',max:1},
+    {term:'曇',max:0},
+  ];
+  sentences.forEach(sentence=>{
+    watched.forEach(({term,max})=>{
+      const count=countTextOccurrences(sentence,new RegExp(escapeRegExp(term),'g'));
+      if(count>max){
+        issues.push(`近い文で「${term}」が濁るほど繰り返されています: ${limitTextByChars(sentence,46,18)}`);
+      }
+    });
+  });
+  for(let i=0;i<sentences.length-1;i+=1){
+    const pair=`${sentences[i]}${sentences[i+1]}`;
+    ['流れ','距離','条件'].forEach(term=>{
+      const count=countTextOccurrences(pair,new RegExp(escapeRegExp(term),'g'));
+      if(count>=3){
+        issues.push(`近接する文で「${term}」が連発されています`);
+      }
+    });
+  }
   return [...new Set(issues)];
 }
 
@@ -16502,6 +16571,9 @@ function detectPaidTextQualityIssues(key='',text=''){
   if(key==='integration'){
     issues.push(...detectIntegrationFlowListIssues(source));
   }
+  if(key==='orc'&&/力を出しやすい条件|条件を言葉にしたとき|条件を言葉にする/.test(source)){
+    issues.push('orcが内省支援ではなく作業臭のある条件文に寄っています');
+  }
   return [...new Set(issues)];
 }
 
@@ -16784,9 +16856,9 @@ function detectThemeVocabularyDriftIssues(text='',focus={},label='text',context=
   const primary=ctx.primaryTheme;
   const issues=[];
   if(primary==='love'){
-    const workCoreCount=countTextOccurrences(source,/成長|使命|影響力|力を出しやすい条件|役割|評価/g);
-    const hardWorkCount=countTextOccurrences(source,/力を出しやすい条件|役割|評価/g);
-    if(/力を出しやすい条件/.test(source)||hardWorkCount>=3||workCoreCount>=5){
+    const workCoreCount=countTextOccurrences(source,/成長|使命|影響力|無理なく力を出せる形|役割|評価/g);
+    const hardWorkCount=countTextOccurrences(source,/無理なく力を出せる形|役割|評価/g);
+    if(/無理なく力を出せる形/.test(source)||hardWorkCount>=3||workCoreCount>=5){
       issues.push(`${label}が恋愛相談に仕事寄り語彙を中心化しています`);
     }
     if(!isReconciliationContext(ctx)&&/復縁|元恋人|元彼|元カレ|元カノ|別れた相手|やり直したい|やり直す|別れの原因|懐かしさ|同じ傷/.test(source)){
@@ -17099,6 +17171,7 @@ LENとORCは書き直さず、INTEGRATIONだけを強化してください。
 「今見えている流れ」は条件リストにせず、現在の動き、強まりやすい方向、注意点がつながる一本の文章にしてください。
 カード名を説明する文に戻さず、カード由来の根拠は相談者の現実語として書いてください。
 主語と述語が噛み合わない文、長すぎる接続、不自然な比喩は出さないでください。
+「曇る」「流れがあり、流れは」「安心へつながるかを見る流れ」「条件を言葉にしたとき」「のどれかが保てる距離」のような濁った接続は禁止です。
 
 必ずこの構成で返してください。
 ■ ${INTEGRATION_FINAL_HEADING}
@@ -17524,7 +17597,8 @@ ${orcFull}
 - 同じ意味の文、同じ判断軸セット、同じ比喩を繰り返さない。2回目以降は短い自然語へ圧縮する
 - ${INTEGRATION_FLOW_HEADING}は条件リストではなく、現在の動き、強まりやすい方向、注意点がつながる一本の流れにする
 - 「カードは〜を示します」「〜が出る時は」で終わらせず、カード由来の根拠を相談者の現実語へ変換する
-- 主語と述語が噛み合わない文、長すぎる接続、不自然な比喩を出さない`;
+- 主語と述語が噛み合わない文、長すぎる接続、不自然な比喩を出さない
+- 「曇る」「流れがあり、流れは」「安心へつながるかを見る流れ」「条件を言葉にしたとき」「のどれかが保てる距離」は禁止。自然な現実語へ直す`;
       const retryPrompt=`${prompt}
 
 【前回出力の不合格理由】
@@ -19752,8 +19826,8 @@ function buildRichLenFallback(name,cat){
   const warningLines=[];
   if(hasBurden||hiddenBurden){
     warningLines.push(isReconciliationContext(ctx)
-      ?`${burdenNames.length?`「${burdenNames.join('」「')}」のような`:''}過去の痛みや背負ってきた重さがあるため、平気なふりを続けるほど復縁の判断は重くなります。同じ傷つき方を繰り返さないために、過去の原因が羅針の中心になります。`
-      :`${burdenNames.length?`「${burdenNames.join('」「')}」のような`:''}負担として見ておきたい点があるため、平気なふりを続けるほど判断が重くなります。迷いを気合いで押し切るより、何が負担になっているかが今の羅針です。`);
+      ?'過去の痛みや背負ってきた重さがあるため、平気なふりを続けるほど復縁の判断は重くなります。同じ傷つき方を繰り返さないために、過去の原因が羅針の中心になります。'
+      :'平気なふりを続けるほど、少しずつ削られる負担が重くなりやすい状態です。迷いを気合いで押し切るより、何が負担になっているかが今の羅針です。');
   }else{
     warningLines.push('気をつけることは、気持ちが整うまで待ち続けてしまうことです。現実の反応を見ないまま考え続けると、安心の根拠が増えず、同じ迷いに戻りやすくなります。');
   }
@@ -19884,7 +19958,7 @@ function buildRichOrcFallback(name,cat,is3){
     lines.push(normalizeJapaneseNearDuplicateText(currentLine));
   }
   if(reaction?.power){
-    lines.push('反応の出方を見ると、場に合わせるだけでなく、自分が力を出しやすい条件を言葉にしたときに判断が安定しやすい人です。');
+    lines.push('反応の出方を見ると、場に合わせるだけでなく、自分が無理なくいられる形を選べたときに判断が安定しやすい人です。');
   }else if(reaction?.summary){
     lines.push(reaction.summary);
   }
