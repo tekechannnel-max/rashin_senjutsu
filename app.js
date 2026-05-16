@@ -11367,12 +11367,17 @@ function buildDossierCardSnapshot(data={}){
   return resolveDossierCardData(snapshot);
 }
 
+function hasDossierCardPayload(){
+  return !!(LAST_OUTPUTS.dossier||isDossierCardSnapshot(LAST_OUTPUTS.dossierCard));
+}
+
 function getCurrentDossierCardData(options={}){
   if(!options.refresh&&isDossierCardSnapshot(LAST_OUTPUTS.dossierCard)){
     return resolveDossierCardData(LAST_OUTPUTS.dossierCard);
   }
-  const snapshot=buildDossierCardSnapshot(getDossierRawData());
-  LAST_OUTPUTS.dossierCard=snapshot;
+  const hasRawDossier=!!LAST_OUTPUTS.dossier;
+  const snapshot=buildDossierCardSnapshot(hasRawDossier?getDossierRawData():buildFallbackDossier());
+  if(hasRawDossier||options.cacheFallback) LAST_OUTPUTS.dossierCard=snapshot;
   return snapshot;
 }
 
@@ -12804,7 +12809,8 @@ function renderPremiumDossier(loading=false){
   if(!section||!titleEl||!subtitleEl||!loadingEl||!proofEl||!renderedEl||!printBtn||!copyBtn) return;
   const shell=section.querySelector('.dossier-shell');
 
-  const shouldPrepare=PLAN==='paid'||!!LAST_OUTPUTS.dossier||!!LAST_OUTPUTS.dossierCard;
+  const hasPayload=hasDossierCardPayload();
+  const shouldPrepare=PLAN==='paid'||hasPayload;
   section.style.display='none';
   if(!shouldPrepare) return;
 
@@ -12822,8 +12828,8 @@ function renderPremiumDossier(loading=false){
     return;
   }
 
-  const parsed=getDossierRawData();
-  if(isPaidDebugEnabled()&&PAID_DEBUG_LOG&&PAID_DEBUG_LOG.rawOutputs&&!Object.prototype.hasOwnProperty.call(PAID_DEBUG_LOG.rawOutputs,'dossier')){
+  const parsed=hasPayload?getDossierRawData():buildFallbackDossier();
+  if(hasPayload&&isPaidDebugEnabled()&&PAID_DEBUG_LOG&&PAID_DEBUG_LOG.rawOutputs&&!Object.prototype.hasOwnProperty.call(PAID_DEBUG_LOG.rawOutputs,'dossier')){
     recordPaidDebugRaw('dossier',LAST_OUTPUTS.dossier||'[local fallback dossier]',parsed);
   }
   const safeData=getCurrentDossierCardData();
@@ -12839,22 +12845,26 @@ function renderPremiumDossier(loading=false){
   renderedEl.innerHTML=renderedHtml;
   const renderedText=renderedEl.textContent||'';
   const qualityIssues=detectDossierCardQualityIssues(safeData,{renderedText,renderedHtml,focus:getCurrentRefinedFocus()});
-  recordPaidDebugParsed('dossier',parsed);
-  if(isPaidDebugEnabled()&&PAID_DEBUG_LOG){
-    PAID_DEBUG_LOG.normalization.dossier={
-      before:parsed,
-      after:safeData,
-      changed:JSON.stringify(parsed)!==JSON.stringify(safeData),
-    };
-    PAID_DEBUG_LOG.dossier={
-      parsed,
-      normalized:safeData,
-      renderedText,
-      renderedHtml,
-      qualityIssues,
-    };
+  if(hasPayload){
+    recordPaidDebugParsed('dossier',parsed);
+    if(isPaidDebugEnabled()&&PAID_DEBUG_LOG){
+      PAID_DEBUG_LOG.normalization.dossier={
+        before:parsed,
+        after:safeData,
+        changed:JSON.stringify(parsed)!==JSON.stringify(safeData),
+      };
+      PAID_DEBUG_LOG.dossier={
+        parsed,
+        normalized:safeData,
+        renderedText,
+        renderedHtml,
+        qualityIssues,
+      };
+    }
+    if(qualityIssues.length){
+      recordPaidDebugQuality('dossier_card',qualityIssues);
+    }
   }
-  if(qualityIssues.length) recordPaidDebugQuality('dossier_card',qualityIssues);
   section.style.display='block';
   printBtn.style.display='none';
   copyBtn.style.display='none';
@@ -12862,7 +12872,7 @@ function renderPremiumDossier(loading=false){
 }
 
 function shouldShowDossierActions(){
-  return PLAN==='paid'||!!LAST_OUTPUTS.dossier||!!LAST_OUTPUTS.dossierCard;
+  return PLAN==='paid'||hasDossierCardPayload();
 }
 
 function setDossierActionButtonsVisible(visible){
@@ -12944,7 +12954,7 @@ function closeDossierViewer(){
 }
 
 async function ensureDossierReady(){
-  if(LAST_OUTPUTS.dossierCard||LAST_OUTPUTS.dossier){
+  if(hasDossierCardPayload()){
     getCurrentDossierCardData();
     return true;
   }
@@ -12956,7 +12966,7 @@ async function ensureDossierReady(){
     await runPremiumDossier();
     persistCurrentReading();
     renderPremiumDossier(false);
-    return !!(LAST_OUTPUTS.dossierCard||LAST_OUTPUTS.dossier||LAST_OUTPUTS.integration||LAST_OUTPUTS.len||LAST_OUTPUTS.orc);
+    return !!(hasDossierCardPayload()||LAST_OUTPUTS.integration||LAST_OUTPUTS.len||LAST_OUTPUTS.orc);
   }catch(_error){
     renderPremiumDossier(false);
     return !!(LAST_OUTPUTS.integration||LAST_OUTPUTS.len||LAST_OUTPUTS.orc);
