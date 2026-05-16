@@ -1984,7 +1984,7 @@ let RASHIN_DISCOUNT_RESULT_ID='';
 let ACTIVE_FOLLOWUP_KEY='';
 let FOLLOWUP_LOADING=false;
 let DOSSIER_LOADING=false;
-let LAST_OUTPUTS={about:'',foundationDeep:'',len:'',orc:'',integration:'',dossier:'',followups:{}};
+let LAST_OUTPUTS={about:'',foundationDeep:'',len:'',orc:'',integration:'',dossier:'',dossierCard:null,followups:{}};
 let PAID_DEBUG_LOG=null;
 let TOP_PAGE_VIEW_TRACKED=false;
 let LAST_DEEPEN_CTA_POSITION='unknown';
@@ -6850,7 +6850,7 @@ function isMemberActive(){
 }
 
 function resetLatestOutputs(){
-  LAST_OUTPUTS={about:'',foundationDeep:'',len:'',orc:'',integration:'',dossier:'',followups:{}};
+  LAST_OUTPUTS={about:'',foundationDeep:'',len:'',orc:'',integration:'',dossier:'',dossierCard:null,followups:{}};
   PAID_DEBUG_LOG=null;
   ACTIVE_FOLLOWUP_KEY='';
   FOLLOWUP_LOADING=false;
@@ -10387,9 +10387,10 @@ function openHistoryItem(id){
   FIXED_GENDER_CARD=record.fixedGenderCard||null;
   CLARIFY_ANSWERS=record.clarifyAnswers||{};
   CLARIFY_ACTIVE_QUESTIONS=[];
-  LAST_OUTPUTS=record.outputs||{about:'',foundationDeep:'',len:'',orc:'',integration:'',followups:{}};
+  LAST_OUTPUTS=record.outputs||{about:'',foundationDeep:'',len:'',orc:'',integration:'',dossier:'',dossierCard:null,followups:{}};
   if(!LAST_OUTPUTS.foundationDeep) LAST_OUTPUTS.foundationDeep='';
   if(!LAST_OUTPUTS.dossier) LAST_OUTPUTS.dossier='';
+  if(!LAST_OUTPUTS.dossierCard) LAST_OUTPUTS.dossierCard=null;
   if(!LAST_OUTPUTS.followups) LAST_OUTPUTS.followups={};
   if(record.plan==='paid'){
     const historyClarify=buildClarifyPromptText('compact');
@@ -11059,7 +11060,8 @@ function redactDossierCardData(data={}){
   const out={...data};
   [
     'TITLE','ONE_LINE','VERDICT','POSITIVE_LABEL','NEGATIVE_LABEL','HOLD_LABEL',
-    'CLOSING','EVIDENCE_SUMMARY','SUBTITLE','HEADLINE','CORE','TIMING','RECURRING'
+    'CLOSING','EVIDENCE_SUMMARY','SUBTITLE','HEADLINE','CORE','TIMING','RECURRING',
+    'GUIDANCE_LENORMAND','GUIDANCE_ORACLE'
   ].forEach(key=>{
     if(Object.prototype.hasOwnProperty.call(out,key)) out[key]=sanitizeRashinVisibleText(redactDossierPrivateNames(out[key]));
   });
@@ -11080,6 +11082,17 @@ function redactDossierCardData(data={}){
       ...out.KEYWORDS.filter(item=>!generic.has(String(item||'').trim())),
       ...fallback,
     ])).slice(0,6);
+  }
+  if(Array.isArray(out.FOUNDATION_SECTIONS)){
+    out.FOUNDATION_SECTIONS=out.FOUNDATION_SECTIONS
+      .map(section=>({
+        label:sanitizeRashinVisibleText(redactDossierPrivateNames(section?.label||'')),
+        items:toDossierValueArray(section?.items||[])
+          .map(item=>sanitizeRashinVisibleText(redactDossierPrivateNames(item)))
+          .filter(Boolean)
+          .slice(0,2),
+      }))
+      .filter(section=>section.label&&section.items.length);
   }
   return out;
 }
@@ -11281,6 +11294,86 @@ function resolveDossierCardData(data={}){
     ...(isNormalizedDossierCardData(data)?data:normalizeDossierCardData(data)),
     TITLE:RASHIN_READING_CARD_TITLE,
   });
+}
+
+function getDossierRawData(){
+  return LAST_OUTPUTS.dossier?parseTaggedDossier(LAST_OUTPUTS.dossier):buildFallbackDossier();
+}
+
+function isDossierCardSnapshot(data={}){
+  return !!(data&&typeof data==='object'&&!Array.isArray(data)&&
+    isNormalizedDossierCardData(data)&&
+    typeof data.GUIDANCE_LENORMAND==='string'&&
+    typeof data.GUIDANCE_ORACLE==='string'&&
+    Array.isArray(data.FOUNDATION_SECTIONS)
+  );
+}
+
+function normalizeDossierCardFoundationSections(sections=[]){
+  const fallback=getDossierSaveCardFoundationSections();
+  const source=Array.isArray(sections)&&sections.length?sections:fallback;
+  return source
+    .map(section=>({
+      label:cleanDossierItemText(section?.label||''),
+      items:toDossierValueArray(section?.items||[])
+        .map(compactDossierSaveCardItem)
+        .filter(Boolean)
+        .slice(0,2),
+    }))
+    .filter(section=>section.label&&section.items.length)
+    .slice(0,3);
+}
+
+function normalizeDossierCardGuidanceText(text='',target=4,maxChars=24,reserve=[]){
+  const lines=getDossierGuidanceLines(text)
+    .map(line=>normalizeDossierGuidanceBulletLine(line,maxChars))
+    .filter(line=>line&&!isDossierIncompleteText(line));
+  if(lines.length>=target) return lines.slice(0,target).join('\n');
+  return buildDossierGuidanceBulletSummary([text],[],text,{
+    target,
+    min:target,
+    max:target,
+    maxChars,
+    reserve,
+  });
+}
+
+function getDossierCardGuidance(card={}){
+  const safeCard=resolveDossierCardData(card);
+  const fallback=buildDossierSignalSummaries(safeCard);
+  const lenormand=safeCard.GUIDANCE_LENORMAND
+    ?normalizeDossierCardGuidanceText(safeCard.GUIDANCE_LENORMAND,4,24,getDossierGuidanceLines(fallback.lenormand))
+    :fallback.lenormand;
+  const oracle=safeCard.GUIDANCE_ORACLE
+    ?normalizeDossierCardGuidanceText(safeCard.GUIDANCE_ORACLE,2,24,getDossierGuidanceLines(fallback.oracle))
+    :fallback.oracle;
+  return{lenormand,oracle};
+}
+
+function getDossierCardFoundationSections(card={}){
+  return normalizeDossierCardFoundationSections(card?.FOUNDATION_SECTIONS);
+}
+
+function buildDossierCardSnapshot(data={}){
+  const base=resolveDossierCardData(data);
+  const guidance=buildDossierSignalSummaries(base);
+  // Freeze display/share-only text so later main-reading edits do not reshape the saved card.
+  const snapshot={
+    ...base,
+    GUIDANCE_LENORMAND:guidance.lenormand,
+    GUIDANCE_ORACLE:guidance.oracle,
+    FOUNDATION_SECTIONS:getDossierSaveCardFoundationSections(),
+  };
+  return resolveDossierCardData(snapshot);
+}
+
+function getCurrentDossierCardData(options={}){
+  if(!options.refresh&&isDossierCardSnapshot(LAST_OUTPUTS.dossierCard)){
+    return resolveDossierCardData(LAST_OUTPUTS.dossierCard);
+  }
+  const snapshot=buildDossierCardSnapshot(getDossierRawData());
+  LAST_OUTPUTS.dossierCard=snapshot;
+  return snapshot;
 }
 
 function buildDossierTitleForDecisionContext(ctx){
@@ -11962,8 +12055,8 @@ const DOSSIER_ORACLE_GUIDANCE_HEADING='数秘オラクルの示し';
 
 function buildDossierPlainText(data){
   const safeData=resolveDossierCardData(data);
-  const foundationBlocks=getDossierSaveCardFoundationSections().map(section=>`${section.label}：\n${section.items.map(item=>`・${item}`).join('\n')}`);
-  const guidance=buildDossierSignalSummaries(safeData);
+  const foundationBlocks=getDossierCardFoundationSections(safeData).map(section=>`${section.label}：\n${section.items.map(item=>`・${item}`).join('\n')}`);
+  const guidance=getDossierCardGuidance(safeData);
   const blocks=[
     'RASHIN CARD',
     safeData.TITLE,
@@ -12590,8 +12683,8 @@ function getOracleSectionBodyForDossier(pattern){
 
 function renderDossierSaveCard(card){
   card=resolveDossierCardData(card);
-  const foundationSections=getDossierSaveCardFoundationSections();
-  const guidance=buildDossierSignalSummaries(card);
+  const foundationSections=getDossierCardFoundationSections(card);
+  const guidance=getDossierCardGuidance(card);
   return`
     <article class="dossier-save-card">
       <div class="dossier-save-visual">
@@ -12643,8 +12736,8 @@ function detectDossierCardQualityIssues(data={},options={}){
   const primary=normalizePrimaryThemeValue(focus);
   const text=buildDossierPlainText(card);
   const displayText=[text,options.renderedText||''].join('\n');
-  const conditionGroups=getDossierSaveCardFoundationSections();
-  const guidance=buildDossierSignalSummaries(card);
+  const conditionGroups=getDossierCardFoundationSections(card);
+  const guidance=getDossierCardGuidance(card);
   const readingDigestCopies=[];
   if(text.length>1000) issues.push('羅針カードが1000字を超えている');
   if(text.length>800) issues.push('羅針カードが800字を超えている');
@@ -12711,7 +12804,7 @@ function renderPremiumDossier(loading=false){
   if(!section||!titleEl||!subtitleEl||!loadingEl||!proofEl||!renderedEl||!printBtn||!copyBtn) return;
   const shell=section.querySelector('.dossier-shell');
 
-  const shouldPrepare=PLAN==='paid'||!!LAST_OUTPUTS.dossier;
+  const shouldPrepare=PLAN==='paid'||!!LAST_OUTPUTS.dossier||!!LAST_OUTPUTS.dossierCard;
   section.style.display='none';
   if(!shouldPrepare) return;
 
@@ -12729,11 +12822,11 @@ function renderPremiumDossier(loading=false){
     return;
   }
 
-  const parsed=LAST_OUTPUTS.dossier?parseTaggedDossier(LAST_OUTPUTS.dossier):buildFallbackDossier();
+  const parsed=getDossierRawData();
   if(isPaidDebugEnabled()&&PAID_DEBUG_LOG&&PAID_DEBUG_LOG.rawOutputs&&!Object.prototype.hasOwnProperty.call(PAID_DEBUG_LOG.rawOutputs,'dossier')){
     recordPaidDebugRaw('dossier',LAST_OUTPUTS.dossier||'[local fallback dossier]',parsed);
   }
-  const safeData=resolveDossierCardData(parsed);
+  const safeData=getCurrentDossierCardData();
   titleEl.textContent='羅針カードを発行できます';
   subtitleEl.textContent='本編はここで終わりです。保存したいときだけ、短い羅針カードを開いてください。';
   loadingEl.style.display='none';
@@ -12769,7 +12862,7 @@ function renderPremiumDossier(loading=false){
 }
 
 function shouldShowDossierActions(){
-  return PLAN==='paid'||!!LAST_OUTPUTS.dossier;
+  return PLAN==='paid'||!!LAST_OUTPUTS.dossier||!!LAST_OUTPUTS.dossierCard;
 }
 
 function setDossierActionButtonsVisible(visible){
@@ -12793,8 +12886,7 @@ function isDossierViewerOpen(){
 function renderDossierViewerContent(mode='card'){
   const target=document.getElementById('dossier-viewer-content');
   if(!target) return false;
-  const parsed=LAST_OUTPUTS.dossier?parseTaggedDossier(LAST_OUTPUTS.dossier):buildFallbackDossier();
-  const card=resolveDossierCardData(parsed);
+  const card=getCurrentDossierCardData();
   target.innerHTML=mode==='evidence'
     ?renderDossierEvidenceDetails(card)
     :renderDossierSaveCard(card);
@@ -12852,7 +12944,10 @@ function closeDossierViewer(){
 }
 
 async function ensureDossierReady(){
-  if(LAST_OUTPUTS.dossier) return true;
+  if(LAST_OUTPUTS.dossierCard||LAST_OUTPUTS.dossier){
+    getCurrentDossierCardData();
+    return true;
+  }
   if(DOSSIER_LOADING) return false;
   DOSSIER_LOADING=true;
   renderPremiumDossier(true);
@@ -12861,7 +12956,7 @@ async function ensureDossierReady(){
     await runPremiumDossier();
     persistCurrentReading();
     renderPremiumDossier(false);
-    return !!(LAST_OUTPUTS.dossier||LAST_OUTPUTS.integration||LAST_OUTPUTS.len||LAST_OUTPUTS.orc);
+    return !!(LAST_OUTPUTS.dossierCard||LAST_OUTPUTS.dossier||LAST_OUTPUTS.integration||LAST_OUTPUTS.len||LAST_OUTPUTS.orc);
   }catch(_error){
     renderPremiumDossier(false);
     return !!(LAST_OUTPUTS.integration||LAST_OUTPUTS.len||LAST_OUTPUTS.orc);
@@ -12876,8 +12971,7 @@ async function copyDossier(){
     showToast('羅針カードの準備に失敗しました');
     return;
   }
-  const parsed=LAST_OUTPUTS.dossier?parseTaggedDossier(LAST_OUTPUTS.dossier):buildFallbackDossier();
-  const raw=buildDossierPlainText(parsed);
+  const raw=buildDossierPlainText(getCurrentDossierCardData());
   if(!navigator.clipboard?.writeText){
     showToast('この環境ではコピー機能を使えません');
     return;
@@ -18674,9 +18768,12 @@ async function runPremiumDossier(){
         images:buildCardImageRefs('all','dossier'),
       }
     )||'';
-    recordPaidDebugRaw('dossier',LAST_OUTPUTS.dossier,parseTaggedDossier(LAST_OUTPUTS.dossier));
+    const parsed=parseTaggedDossier(LAST_OUTPUTS.dossier);
+    LAST_OUTPUTS.dossierCard=buildDossierCardSnapshot(parsed);
+    recordPaidDebugRaw('dossier',LAST_OUTPUTS.dossier,parsed);
   }catch(e){
     LAST_OUTPUTS.dossier='';
+    LAST_OUTPUTS.dossierCard=buildDossierCardSnapshot(buildFallbackDossier());
     recordPaidDebugQuality('dossier_generation_failed',[e?.message||'dossier generation failed']);
   }
   renderPremiumDossier(false);
@@ -19118,7 +19215,7 @@ async function createDossierShareImageBlob(cardData){
   drawWrappedCanvasText(ctx,shareVerdict,textX+Math.round(w*.014),y+Math.round(h*.064),maxTextW-Math.round(w*.028),Math.round(h*.026),{maxLines:4,ellipsis:true});
   y+=answerH+Math.round(h*.018);
 
-  const guidance=buildDossierSignalSummaries(card);
+  const guidance=getDossierCardGuidance(card);
   const lenGuidanceLines=getDossierGuidanceLines(guidance.lenormand).slice(0,4);
   const oracleGuidanceLines=getDossierGuidanceLines(guidance.oracle).slice(0,2);
   const actionH=Math.min(Math.round(h*.20),detailY-y-Math.round(h*.026));
@@ -19148,7 +19245,7 @@ async function createDossierShareImageBlob(cardData){
   ctx.font=`700 ${Math.round(w*.0064)}px "Shippori Mincho", serif`;
   drawCanvasBulletLines(ctx,oracleGuidanceLines,guidanceBodyX,oracleStartY,guidanceBodyW,Math.round(h*.019),{maxLines:2,bulletSize:Math.max(3,Math.round(w*.0022))});
 
-  const foundationSections=getDossierSaveCardFoundationSections();
+  const foundationSections=getDossierCardFoundationSections(card);
   const detailsX=cardLeft;
   const detailsW=cardTextW;
   drawCanvasPanel(ctx,detailsX,detailY,detailsW,detailH,{fill:'rgba(3,8,24,.48)',stroke:'rgba(228,184,74,.22)',lineWidth:1});
@@ -19188,8 +19285,7 @@ async function buildDossierShareImageFile(){
   const ready=await ensureDossierReady();
   if(!ready) return null;
   renderPremiumDossier(false);
-  const parsed=LAST_OUTPUTS.dossier?parseTaggedDossier(LAST_OUTPUTS.dossier):buildFallbackDossier();
-  const blob=await createDossierShareImageBlob(resolveDossierCardData(parsed));
+  const blob=await createDossierShareImageBlob(getCurrentDossierCardData());
   if(!blob) return null;
   try{
     return new File([blob],'rashin-card.png',{type:'image/png'});
