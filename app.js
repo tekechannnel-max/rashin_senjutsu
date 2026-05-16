@@ -1620,7 +1620,7 @@ const RASHIN_PAID_CODE_BOOTH_CLAIM_ENDPOINT='/api/rashin-paid-code/booth/claim';
 const PAID_READING_PREPARE_ENDPOINT='/api/paid-reading/prepare-ticket';
 const BOOTH_RASHIN_SHOP_URL='https://teke-sensai.booth.pm/';
 const BOOTH_ANY_GOODS_NOTE='BOOTH内のどのグッズを購入しても、購入後のBOOTH注文番号で深掘り羅針鑑定を利用できます。';
-const RASHIN_BOOTH_PURCHASE_ENABLED=true;
+let RASHIN_BOOTH_PURCHASE_ENABLED=false;
 const PAID_READING_USE_ENDPOINT='/api/paid-reading/use-ticket';
 const PAID_READING_RELEASE_ENDPOINT='/api/paid-reading/release-ticket';
 const DEEP_READING_PRERELEASE_PRICE=780;
@@ -2157,6 +2157,14 @@ const MEMBERSHIP_PLAN={
 const BOOTH_RASHIN_GUIDE_HTML=`深掘り羅針鑑定は、BOOTH購入後に注文番号を入力して利用できる有料鑑定です。${BOOTH_ANY_GOODS_NOTE} 購入はこちら：<a href="${BOOTH_RASHIN_SHOP_URL}" target="_blank" rel="noopener">${BOOTH_RASHIN_SHOP_URL}</a> 料金はプレリリース価格780円、正式リリース後は1000円予定です。無料鑑定を先に作成する必要はありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。`;
 const CHECKOUT_DISCLOSURE_HTML=BOOTH_RASHIN_GUIDE_HTML;
 const RESULT_CHECKOUT_DISCLOSURE_HTML=`深掘り鑑定はBOOTH購入後に注文番号を入力して利用できます。${BOOTH_ANY_GOODS_NOTE} 購入はこちら：<a href="${BOOTH_RASHIN_SHOP_URL}" target="_blank" rel="noopener">${BOOTH_RASHIN_SHOP_URL}</a> 無料で引いたカードの続きから追加カードを展開することも、直接有料鑑定から始めることもできます。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。`;
+const RASHIN_PAID_CODE_GUIDE_HTML=`深掘り羅針鑑定は、運営者から受け取った羅針コードで利用できる有料鑑定です。羅針コードを入力し、Googleログイン後に利用状態を確認します。無料鑑定を先に作成する必要はありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。`;
+const RASHIN_PAID_CODE_RESULT_DISCLOSURE_HTML=`深掘り鑑定は、運営者から受け取った羅針コードで利用できます。無料で引いたカードの続きから追加カードを展開することも、直接有料鑑定から始めることもできます。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。`;
+function getCheckoutDisclosureHtml(){
+  return RASHIN_BOOTH_PURCHASE_ENABLED?CHECKOUT_DISCLOSURE_HTML:RASHIN_PAID_CODE_GUIDE_HTML;
+}
+function getResultCheckoutDisclosureHtml(){
+  return RASHIN_BOOTH_PURCHASE_ENABLED?RESULT_CHECKOUT_DISCLOSURE_HTML:RASHIN_PAID_CODE_RESULT_DISCLOSURE_HTML;
+}
 
 // 全カード・各3問の解釈絞り込みテンプレート
 const CLARIFY_DEF={
@@ -4434,7 +4442,7 @@ function canUseAccessCode(){
 }
 
 function getPaidEntryActionLabel(){
-  return RASHIN_BOOTH_PURCHASE_ENABLED?'BOOTH購入で始める':'BOOTH購入または羅針コードで始める';
+  return RASHIN_BOOTH_PURCHASE_ENABLED?'購入番号または羅針コードで始める':'羅針コードで始める';
 }
 
 function canUseRashinCode(){
@@ -5219,8 +5227,8 @@ function renderGoogleAuthShell(){
   const pendingRashinCode=isPendingRashinPaidCodeIntent(MEMBER_PENDING_INTENT);
   copy.textContent=pendingRashinCode
     ?'ログイン後、保存済みの羅針コードを確認します。'
-    :MEMBER_PENDING_INTENT==='start-paid'
-    ?'ログインして購入へ進む'
+    :(MEMBER_PENDING_INTENT==='start-paid'||MEMBER_PENDING_INTENT==='upgrade-paid')
+    ?(RASHIN_BOOTH_PURCHASE_ENABLED?'ログイン後、BOOTH注文番号または羅針コードを確認します。':'ログイン後、羅針コードを確認します。')
     :MEMBER_PENDING_INTENT==='rashin-bonus'
     ?'ログインして羅針のかけらを受け取る'
     :(MEMBER_AUTH.authLoggedIn
@@ -5496,6 +5504,7 @@ function openBoothOrderModal({booth={},finalAmount=DEEP_READING_PRICE}={}){
         </div>
         <div class="modal-btns">
           <button class="modal-save" type="button" id="booth-reference-submit">注文番号を入力して始める</button>
+          <button class="modal-cancel" type="button" id="booth-reference-code">羅針コードで始める</button>
           <button class="modal-cancel" type="button" id="booth-reference-cancel">キャンセル</button>
         </div>
       </div>`;
@@ -5523,6 +5532,10 @@ function openBoothOrderModal({booth={},finalAmount=DEEP_READING_PRICE}={}){
       finish(value);
     };
     modal.querySelector('#booth-reference-submit')?.addEventListener('click',submit);
+    modal.querySelector('#booth-reference-code')?.addEventListener('click',async()=>{
+      const code=await promptForPendingRashinPaidCode();
+      if(code) finish({useRashinCode:true});
+    });
     modal.querySelector('#booth-reference-cancel')?.addEventListener('click',()=>finish(null));
     input?.addEventListener('input',()=>{if(error) error.style.display='none';});
     input?.addEventListener('keydown',event=>{
@@ -5606,6 +5619,9 @@ async function requestRashinCodePurchaseBooth(intent='upgrade-paid'){
     const booth=purchaseData?.booth||{};
     const finalAmount=Number(purchaseData?.finalAmount||DEEP_READING_PRICE);
     const boothOrderNumber=await openBoothOrderModal({booth,finalAmount});
+    if(boothOrderNumber&&typeof boothOrderNumber==='object'&&boothOrderNumber.useRashinCode){
+      return requestRashinCodePurchaseBooth(intent);
+    }
     if(boothOrderNumber===null) return false;
     const normalizedReference=String(boothOrderNumber||'').trim();
     if(!normalizedReference){
@@ -6029,27 +6045,28 @@ function openMemberAccessModal(intent=''){
   const accessLabel=document.getElementById('member-access-label');
   const input=document.getElementById('member-access-input');
   const submitBtn=document.getElementById('member-access-submit-btn');
-  const compactPaidStart=MEMBER_PENDING_INTENT==='start-paid';
+  const paidCodeBtn=document.getElementById('member-rashin-paid-code-btn');
   const bonusLogin=MEMBER_PENDING_INTENT==='rashin-bonus';
+  const paidFlowIntent=MEMBER_PENDING_INTENT==='start-paid'||MEMBER_PENDING_INTENT==='upgrade-paid';
   const pendingRashinCode=isPendingRashinPaidCodeIntent(MEMBER_PENDING_INTENT);
   const paidCodeIntent=(MEMBER_PENDING_INTENT==='start-paid'||MEMBER_PENDING_INTENT==='upgrade-paid')&&!RASHIN_BOOTH_PURCHASE_ENABLED;
   const suppressPaidPrepCopy=paidCodeIntent&&!canUseAccessCode()&&!canUsePaidTestMode()&&!canUseDeveloperQuickAccess();
   clearMemberAccessError();
   clearGoogleAuthError();
   clearDeveloperAccessError();
-  if(title) title.textContent=pendingRashinCode?'羅針コードの確認':(paidCodeIntent?'深掘り鑑定の購入案内':(bonusLogin?'今日の羅針':(compactPaidStart&&RASHIN_BOOTH_PURCHASE_ENABLED?'深掘り鑑定の購入':'深掘り鑑定の確認')));
+  if(title) title.textContent=pendingRashinCode?'羅針コードの確認':(paidFlowIntent?'深掘り鑑定の確認':(bonusLogin?'今日の羅針':'深掘り鑑定の確認'));
   if(desc){
     desc.style.display='';
     desc.textContent=pendingRashinCode
       ?'ログイン後、保存済みの羅針コードを確認します。'
-      :paidCodeIntent
-      ?'BOOTHで購入後、注文番号または羅針コードで有料鑑定を開始します。'
+      :paidFlowIntent
+      ?(RASHIN_BOOTH_PURCHASE_ENABLED?'BOOTH注文番号または羅針コードで有料鑑定を開始します。':'羅針コードで有料鑑定を開始します。')
       :bonusLogin
       ?'Googleログインで今日のカードを記録し、羅針のかけらを1つ受け取ります。'
       :canUseDeveloperQuickAccess()
       ?'確認用アクセスは上のボタンから進めます。'
       :(MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn
-        ?(RASHIN_BOOTH_PURCHASE_ENABLED?'Googleログインで購入を続けます。':'Googleログイン後、BOOTH購入または羅針コードを確認します。')
+        ?(RASHIN_BOOTH_PURCHASE_ENABLED?'Googleログイン後、BOOTH注文番号または羅針コードを確認します。':'Googleログイン後、羅針コードを確認します。')
         :'深掘り鑑定は、利用状態を確認できたときだけ開きます。');
   }
   if(guide){
@@ -6082,12 +6099,12 @@ function openMemberAccessModal(intent=''){
         ?'<div class="runtime-status-title">このまま深掘り鑑定フローへ進めます</div><div class="runtime-status-detail">確認用の状態で深掘り鑑定フローを確認できます。</div>'
         :(usesGoogle
           ?'<div class="runtime-status-title">Googleログインで続行</div><div class="runtime-status-detail">履歴と購入確認を保存します。</div>'
-          :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':(RASHIN_BOOTH_PURCHASE_ENABLED?'BOOTH購入番号を確認します':'羅針コードを入力してください')}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':(RASHIN_BOOTH_PURCHASE_ENABLED?'購入後の注文番号で利用状態を確認します。':'羅針コードを入力済みの場合は、ログイン後に確認します。')}</div>`);
+          :`<div class="runtime-status-title">${canUseAccessCode()?'確認コードを使えます':(RASHIN_BOOTH_PURCHASE_ENABLED?'BOOTH購入番号または羅針コードを確認します':'羅針コードを入力してください')}</div><div class="runtime-status-detail">${canUseAccessCode()?'確認コードで利用状態を確認できます。':(RASHIN_BOOTH_PURCHASE_ENABLED?'購入後の注文番号、または運営者から受け取った羅針コードで利用状態を確認します。':'羅針コードを入力済みの場合は、ログイン後に確認します。')}</div>`);
     }
   }
   if(disclosure){
-    disclosure.innerHTML=CHECKOUT_DISCLOSURE_HTML;
-    disclosure.style.display=(MEMBER_PENDING_INTENT==='start-paid'||MEMBER_PENDING_INTENT==='upgrade-paid'||paidCodeIntent)?'':'none';
+    disclosure.innerHTML=getCheckoutDisclosureHtml();
+    disclosure.style.display=(paidFlowIntent||paidCodeIntent)?'':'none';
   }
   if(localBtn){
     if(canUsePaidTestMode()) localBtn.removeAttribute('hidden');
@@ -6104,6 +6121,10 @@ function openMemberAccessModal(intent=''){
     input.style.display=showAccess?'block':'none';
   }
   if(submitBtn) submitBtn.style.display=showAccess?'inline-flex':'none';
+  if(paidCodeBtn){
+    paidCodeBtn.style.display=paidFlowIntent?'inline-flex':'none';
+    paidCodeBtn.textContent=MEMBER_AUTH.authLoggedIn?'羅針コードで始める':'羅針コードを先に入力';
+  }
   setModalOpen(modal,true);
 }
 
@@ -6125,11 +6146,11 @@ function ensurePaidEntryGuideModal(){
   modal.setAttribute('inert','');
   modal.innerHTML=`
     <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="paid-entry-guide-title">
-      <div class="modal-title" id="paid-entry-guide-title">${RASHIN_BOOTH_PURCHASE_ENABLED?'深掘り羅針鑑定のBOOTH購入番号入力へ進みます':'深掘り羅針鑑定の購入案内へ進みます'}</div>
-      <div class="modal-desc">無料鑑定を先に作成する必要はありません。${BOOTH_ANY_GOODS_NOTE} 購入先：<a href="${BOOTH_RASHIN_SHOP_URL}" target="_blank" rel="noopener">${BOOTH_RASHIN_SHOP_URL}</a></div>
+      <div class="modal-title" id="paid-entry-guide-title">${RASHIN_BOOTH_PURCHASE_ENABLED?'深掘り羅針鑑定の購入番号または羅針コード入力へ進みます':'深掘り羅針鑑定の羅針コード入力へ進みます'}</div>
+      <div class="modal-desc">${getCheckoutDisclosureHtml()}</div>
       <div class="runtime-status ok">
-        <div class="runtime-status-title">${RASHIN_BOOTH_PURCHASE_ENABLED?'BOOTH購入後に有料鑑定を開始します':'BOOTH購入または羅針コードで開始します'}</div>
-        <div class="runtime-status-detail">${RASHIN_BOOTH_PURCHASE_ENABLED?'BOOTH注文番号を入力すると、深掘り鑑定を解放します。':'購入後の注文番号、または羅針コードで利用状態を確認します。'}</div>
+        <div class="runtime-status-title">${RASHIN_BOOTH_PURCHASE_ENABLED?'BOOTH購入番号または羅針コードで開始します':'羅針コードで開始します'}</div>
+        <div class="runtime-status-detail">${RASHIN_BOOTH_PURCHASE_ENABLED?'BOOTH注文番号、または運営者から受け取った羅針コードで利用状態を確認します。':'運営者から受け取った羅針コードで利用状態を確認します。'}</div>
       </div>
       <div class="modal-btns">
         <button class="modal-save" type="button" onclick="startFlow('paid')">${getPaidEntryActionLabel()}</button>
@@ -6186,6 +6207,25 @@ async function submitMemberAccessCode(){
   if(!ok) return;
   closeMemberAccessModal(false);
   resumePendingMemberIntent();
+}
+
+async function redeemRashinPaidCodeFromMemberModal(){
+  const intent=MEMBER_PENDING_INTENT||(PLAN==='free'&&CURRENT_READING_ID&&canContinueCurrentReadingToPaid()?'upgrade-paid':'start-paid');
+  const code=await promptForPendingRashinPaidCode();
+  if(!code) return false;
+  if(!MEMBER_AUTH.authLoggedIn){
+    showToast('羅針コードを保存しました。Googleログイン後に確認します。');
+    renderGoogleAuthShell();
+    return false;
+  }
+  const redeemed=await requestRashinCodePurchase(intent);
+  if(!redeemed) return false;
+  closeMemberAccessModal(false);
+  MEMBER_PENDING_INTENT='';
+  if(intent==='upgrade-paid'&&canContinueCurrentReadingToPaid()){
+    upgradeCurrentReadingToPaidUnlocked();
+  }
+  return true;
 }
 
 async function submitDeveloperAccess(){
@@ -6508,7 +6548,7 @@ function repairStaticCopy(){
   });
   document.querySelectorAll('.checkout-disclosure').forEach(el=>{
     if(el.closest('#member-access-modal')) return;
-    el.innerHTML=CHECKOUT_DISCLOSURE_HTML;
+    el.innerHTML=getCheckoutDisclosureHtml();
   });
 
   const faqItems=document.querySelectorAll('.top-faq-item');
@@ -6824,7 +6864,7 @@ function renderPremiumEntrySection(){
         <a class="today-cta today-cta-simple" href="?flow=simple" data-flow-target="simple" data-track="simple_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('simple');return false;}">${SIMPLE_READING_LABEL_HTML}</a>
       </div>
       <div class="paid-band-note">深掘り羅針鑑定 プレリリース780円 / 通常1000円予定</div>
-      <div class="checkout-disclosure">${CHECKOUT_DISCLOSURE_HTML}</div>
+      <div class="checkout-disclosure">${getCheckoutDisclosureHtml()}</div>
     </div>`;
 }
 
@@ -9978,7 +10018,7 @@ function renderPremiumEntryFallback(){
         <a class="today-cta today-cta-simple" href="?flow=simple" data-flow-target="simple" data-track="simple_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('simple');return false;}">${SIMPLE_READING_LABEL_HTML}</a>
       </div>
       <div class="paid-band-note">深掘り羅針鑑定 プレリリース780円 / 通常1000円予定</div>
-      <div class="checkout-disclosure">${CHECKOUT_DISCLOSURE_HTML}</div>
+      <div class="checkout-disclosure">${getCheckoutDisclosureHtml()}</div>
     </div>`;
 }
 
@@ -10728,7 +10768,7 @@ function renderResultUpgradePanel(){
       </div>
       <div class="upgrade-actions">
         <button class="result-unified-cta-btn deep-premium-button" type="button" data-track="deepen_cta_click" data-track-position="result_unified" onclick="upgradeCurrentReadingToPaid()">${escapeHtml(ctaLabel)}</button>
-        <div class="checkout-disclosure">${RESULT_CHECKOUT_DISCLOSURE_HTML}</div>
+        <div class="checkout-disclosure">${getResultCheckoutDisclosureHtml()}</div>
       </div>
     </div>
     `;
@@ -12822,6 +12862,7 @@ function detectDossierCardQualityIssues(data={},options={}){
   if(text.length>1000) issues.push('羅針カードが1000字を超えている');
   if(text.length>800) issues.push('羅針カードが800字を超えている');
   issues.push(...detectRashinVisibleTextPolicyIssues(displayText,'羅針カード'));
+  issues.push(...detectJapaneseSurfaceQualityIssues(displayText,'羅針カード'));
   issues.push(...detectThemeVocabularyDriftIssues(text,focus,'羅針カード',options));
   issues.push(...detectRepeatedAdviceIssues(text).map(issue=>`羅針カード: ${issue}`));
   if(containsDossierPrivateName(displayText)) issues.push('羅針カードに本名または姓名判断用の名前が含まれている');
@@ -16233,6 +16274,27 @@ function repairAwkwardConnectionPhrases(text=''){
     .replace(/([^。\n]{12,90})のそばに([^。\n]{8,90})もあります。/g,(match,left,right)=>`${left}が判断を重くしています。一方で${right}も見えています。`);
 }
 
+function repairJapaneseSurfaceText(text=''){
+  return String(text||'')
+    .replace(/です。です。/g,'です。')
+    .replace(/ます。ます。/g,'ます。')
+    .replace(/ことです。ことです。/g,'ことです。')
+    .replace(/、。/g,'。')
+    .replace(/。、/g,'。')
+    .replace(/([。！？!?])\1+/g,'$1')
+    .replace(/(?:今は、){2,}/g,'今は、')
+    .replace(/ただ今は、今は/g,'今は')
+    .replace(/今は、今は/g,'今は')
+    .replace(/ただ、ただ、/g,'ただ、')
+    .replace(/まだ、まだ/g,'まだ')
+    .replace(/安心安心/g,'安心')
+    .replace(/信頼信頼/g,'信頼')
+    .replace(/流れ流れ/g,'流れ')
+    .replace(/条件条件/g,'条件')
+    .replace(/距離距離/g,'距離')
+    .replace(/\n{3,}/g,'\n\n');
+}
+
 function buildCardRealityRewrite(card='',body=''){
   const cleanBody=String(body||'')
     .replace(/(?:を)?(?:示しています|示します|意味します|表します|カードです|カードとして読めます|カードとして読みます)[。.]?$/,'')
@@ -16447,6 +16509,7 @@ function sanitizeRashinVisibleText(text=''){
   output=dedupeRashinMeaningSentences(output);
   output=repairAwkwardConnectionPhrases(output);
   output=polishRashinVisibleText(output);
+  output=repairJapaneseSurfaceText(output);
   return output.replace(/\n{3,}/g,'\n\n').trim();
 }
 
@@ -16511,6 +16574,51 @@ function detectAwkwardRashinJapaneseIssues(text=''){
     }
   });
   issues.push(...detectNearTermRepetitionIssues(source));
+  return [...new Set(issues)];
+}
+
+function detectJapaneseSurfaceQualityIssues(text='',label='text'){
+  const source=String(text||'');
+  const issues=[];
+  const wholeTextPatterns=[
+    {label:'句読点が崩れています',pattern:/、。|。、|。。|！！{2,}|？？{2,}|です。です。|ます。ます。|ことです。ことです。/},
+    {label:'近接する同じ言葉が重複しています',pattern:/(?:今は、){2,}|ただ今は、今は|今は、今は|ただ、ただ、|まだ、まだ|安心安心|信頼信頼|流れ流れ|条件条件|距離距離/},
+    {label:'読点だけで文が切れています',pattern:/[、,]\s*(?:\n|$)/},
+  ];
+  wholeTextPatterns.forEach(item=>{
+    if(item.pattern.test(source)) issues.push(`${label}に${item.label}`);
+  });
+  String(source).split('\n').forEach((line,index)=>{
+    const trimmed=line.trim();
+    if(!trimmed||isPaidTextHeading(trimmed)) return;
+    if(/[、,・／\/]$/.test(trimmed)){
+      issues.push(`${label}の${index+1}行目が途中で切れています`);
+    }
+    if(/(?:が|を|に|へ|と|で|から|より|なら|ので|ため|ほど|だけ|として|ながら|つつ)$/.test(trimmed)){
+      issues.push(`${label}の${index+1}行目が助詞や接続で終わっています`);
+    }
+    if(/^[、,。・／\/]/.test(trimmed)){
+      issues.push(`${label}の${index+1}行目が句読点や区切り記号で始まっています`);
+    }
+  });
+  splitJapaneseSentences(source).forEach(sentence=>{
+    const clean=sentence.trim();
+    if(!clean||isPaidTextHeading(clean)) return;
+    const commaCount=(clean.match(/[、，]/g)||[]).length;
+    const axisCount=(clean.match(/・/g)||[]).length;
+    if(clean.length>=120&&commaCount>=4){
+      issues.push(`${label}に長すぎて読みづらい文があります: ${limitTextByChars(clean,46,18)}`);
+    }
+    if(clean.length>=90&&axisCount>=4){
+      issues.push(`${label}に判断軸を詰め込みすぎた文があります: ${limitTextByChars(clean,46,18)}`);
+    }
+    if(/[一-龥ぁ-んァ-ン]{2,10}(?:・[一-龥ぁ-んァ-ン]{2,10}){4,}/.test(clean)){
+      issues.push(`${label}に語句の羅列が残っています: ${limitTextByChars(clean,46,18)}`);
+    }
+    if(/(安心|信頼|流れ|条件|距離|判断|違和感|本音|評価|役割)\1/.test(clean)){
+      issues.push(`${label}に同語の連結があります: ${limitTextByChars(clean,46,18)}`);
+    }
+  });
   return [...new Set(issues)];
 }
 
@@ -17007,6 +17115,7 @@ function detectPaidTextQualityIssues(key='',text=''){
   const source=String(text||'').trim();
   if(!source) return [`${key}が空です`];
   issues.push(...detectRashinVisibleTextPolicyIssues(source,key));
+  issues.push(...detectJapaneseSurfaceQualityIssues(source,key));
   issues.push(...detectCardExplanationSmellIssues(source).map(issue=>`${key}: ${issue}`));
   issues.push(...detectAwkwardRashinJapaneseIssues(source).map(issue=>`${key}: ${issue}`));
   issues.push(...detectRepeatedRashinPhraseIssues(source).map(issue=>`${key}: ${issue}`));
@@ -19972,6 +20081,7 @@ async function loadServerHealth(silent=false){
       if(typeof ab.anthropicModel==='string'&&ab.anthropicModel.trim()) AI_MODELS.paid=ab.anthropicModel.trim();
       if(typeof ab.openaiModel==='string'&&ab.openaiModel.trim()) AI_MODELS.paidAbOpenai=ab.openaiModel.trim();
     }
+    RASHIN_BOOTH_PURCHASE_ENABLED=!!data?.boothPurchaseReady;
     AI_MODEL_CONFIG.free.model=AI_MODELS.free;
     AI_MODEL_CONFIG.paid.model=AI_MODELS.paid;
     AI_MODEL_CONFIG.paid.fallbackModel=AI_MODELS.paidFallback;
@@ -19995,6 +20105,10 @@ async function loadServerHealth(silent=false){
       rashinCodeConfigured:!!data?.rashinCodeConfigured,
       stripeCheckoutReady:!!data?.stripeCheckoutReady,
       stripePortalReady:!!data?.stripePortalReady,
+      boothPurchaseReady:!!data?.boothPurchaseReady,
+      boothProductUrlConfigured:!!data?.boothProductUrlConfigured,
+      boothGmailVerificationRequired:!!data?.boothGmailVerificationRequired,
+      boothGmailVerificationConfigured:!!data?.boothGmailVerificationConfigured,
       paidModelAbTestEnabled:!!PAID_MODEL_AB_TEST.enabled,
       paidModelAbTestOpenaiWeight:PAID_MODEL_AB_TEST.openaiWeight,
       error:'',
@@ -20744,6 +20858,7 @@ if(typeof window!=='undefined'){
   window.closePaidEntryGuide=closePaidEntryGuide;
   window.startFreeFromPaidEntryGuide=startFreeFromPaidEntryGuide;
   window.promptAndRedeemRashinPaidCode=promptAndRedeemRashinPaidCode;
+  window.redeemRashinPaidCodeFromMemberModal=redeemRashinPaidCodeFromMemberModal;
   window.openStripeCheckout=openStripeCheckout;
   window.openStripeBillingPortal=openStripeBillingPortal;
   window.comparePaidModelsForDev=comparePaidModelsForDev;
