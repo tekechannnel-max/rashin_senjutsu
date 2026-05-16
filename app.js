@@ -1620,7 +1620,8 @@ const RASHIN_PAID_CODE_BOOTH_CLAIM_ENDPOINT='/api/rashin-paid-code/booth/claim';
 const PAID_READING_PREPARE_ENDPOINT='/api/paid-reading/prepare-ticket';
 const BOOTH_RASHIN_SHOP_URL='https://teke-sensai.booth.pm/';
 const BOOTH_ANY_GOODS_NOTE='BOOTH内のどのグッズを購入しても、購入後のBOOTH注文番号で深掘り羅針鑑定を利用できます。';
-let RASHIN_BOOTH_PURCHASE_ENABLED=false;
+const RASHIN_BOOTH_PURCHASE_ENABLED=true;
+let RASHIN_BOOTH_ORDER_CLAIM_READY=false;
 const PAID_READING_USE_ENDPOINT='/api/paid-reading/use-ticket';
 const PAID_READING_RELEASE_ENDPOINT='/api/paid-reading/release-ticket';
 const DEEP_READING_PRERELEASE_PRICE=780;
@@ -4442,7 +4443,7 @@ function canUseAccessCode(){
 }
 
 function getPaidEntryActionLabel(){
-  return RASHIN_BOOTH_PURCHASE_ENABLED?'購入番号または羅針コードで始める':'羅針コードで始める';
+  return RASHIN_BOOTH_PURCHASE_ENABLED?'BOOTH購入または羅針コードで始める':'羅針コードで始める';
 }
 
 function canUseRashinCode(){
@@ -5599,6 +5600,15 @@ async function requestRashinCodePurchaseBooth(intent='upgrade-paid'){
       if(!prepared.ok&&prepared.message) showToast(prepared.message);
       if(prepared.ok&&intent==='start-paid') startAuthorizedPaidFlowWithTags();
       return !!prepared.ok;
+    }
+    if(!RASHIN_BOOTH_ORDER_CLAIM_READY){
+      const boothOrderNumber=await openBoothOrderModal({booth:{url:BOOTH_RASHIN_SHOP_URL},finalAmount:DEEP_READING_PRICE});
+      if(boothOrderNumber&&typeof boothOrderNumber==='object'&&boothOrderNumber.useRashinCode){
+        return requestRashinCodePurchaseBooth(intent);
+      }
+      if(boothOrderNumber===null) return false;
+      showToast('BOOTH購入番号の自動照合は準備中です。羅針コードをお持ちの場合は、羅針コードで始めてください。');
+      return false;
     }
     if(!RASHIN_BOOTH_PURCHASE_ENABLED){
       showToast('BOOTHでの購入受付は現在停止中です。羅針コードをお持ちの場合のみ有料鑑定を利用できます。');
@@ -20081,7 +20091,7 @@ async function loadServerHealth(silent=false){
       if(typeof ab.anthropicModel==='string'&&ab.anthropicModel.trim()) AI_MODELS.paid=ab.anthropicModel.trim();
       if(typeof ab.openaiModel==='string'&&ab.openaiModel.trim()) AI_MODELS.paidAbOpenai=ab.openaiModel.trim();
     }
-    RASHIN_BOOTH_PURCHASE_ENABLED=!!data?.boothPurchaseReady;
+    RASHIN_BOOTH_ORDER_CLAIM_READY=!!data?.boothPurchaseReady;
     AI_MODEL_CONFIG.free.model=AI_MODELS.free;
     AI_MODEL_CONFIG.paid.model=AI_MODELS.paid;
     AI_MODEL_CONFIG.paid.fallbackModel=AI_MODELS.paidFallback;
