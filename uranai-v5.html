@@ -4654,8 +4654,8 @@ body{
 }
 .dossier-save-guidance-block{
   display:grid;
-  grid-template-columns:minmax(126px,10.2vw) minmax(0,1fr);
-  gap:clamp(7px,.9vw,11px);
+  grid-template-columns:minmax(106px,8.6vw) minmax(0,1fr);
+  gap:clamp(5px,.62vw,8px);
   align-items:start;
   min-height:0;
 }
@@ -4665,13 +4665,13 @@ body{
   overflow:hidden;
 }
 .dossier-save-guidance-copy{
-  font-size:clamp(7.4px,.62vw,8.8px);
-  line-height:1.18;
+  font-size:clamp(7px,.58vw,8.2px);
+  line-height:1.15;
   color:rgba(246,240,220,.9);
 }
 .dossier-save-guidance-block .dossier-save-heading{
   white-space:nowrap;
-  font-size:clamp(9px,.78vw,11px);
+  font-size:clamp(8px,.68vw,10px);
   line-height:1.22;
 }
 .dossier-save-guidance-list{
@@ -4684,7 +4684,9 @@ body{
 .dossier-save-guidance-list li{
   position:relative;
   padding-left:clamp(8px,.72vw,10px);
-  overflow-wrap:anywhere;
+  white-space:nowrap;
+  overflow:visible;
+  overflow-wrap:normal;
 }
 .dossier-save-guidance-list li::before{
   content:'';
@@ -4699,7 +4701,7 @@ body{
   color:rgba(255,232,171,.94);
 }
 .dossier-save-guidance-oracle .dossier-save-guidance-list{
-  min-height:2.36em;
+  min-height:2.3em;
 }
 
 .dossier-save-section,
@@ -6025,9 +6027,9 @@ body.dossier-viewer-open{
   .dossier-save-answer .dossier-save-heading{font-size:10px;margin-bottom:4px;}
   .dossier-save-answer .dossier-save-verdict{font-size:11px;line-height:1.45;}
   .dossier-save-visual-action{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto;padding:7px 9px;gap:3px;}
-  .dossier-save-guidance-block{grid-template-columns:112px minmax(0,1fr);gap:6px;}
-  .dossier-save-guidance-copy{font-size:7px;line-height:1.16;}
-  .dossier-save-guidance-block .dossier-save-heading{font-size:8px;}
+  .dossier-save-guidance-block{grid-template-columns:96px minmax(0,1fr);gap:5px;}
+  .dossier-save-guidance-copy{font-size:6.7px;line-height:1.14;}
+  .dossier-save-guidance-block .dossier-save-heading{font-size:7.2px;}
   .dossier-save-guidance-list{gap:1px;}
   .dossier-save-details{padding:9px 10px;}
   .dossier-save-detail-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
