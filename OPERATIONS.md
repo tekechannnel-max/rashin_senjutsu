@@ -5,6 +5,7 @@
 - This app currently assumes a single Render instance for payment and bonus state changes.
 - Runtime state under `data/` must be persistent for production operation.
 - Do not scale horizontally with multiple app instances while the current file-based storage and lock files are in use.
+- Treat single-instance operation and persistent `data/` storage as release gates, not performance preferences. If either is not verified, keep paid access in test-only mode even when local syntax checks pass.
 
 ## Limited prerelease SNS operation
 
@@ -33,7 +34,7 @@ The following production paths are part of the app's state and must persist acro
 
 Before horizontal scaling, move these operations to a database with transactions or conditional writes:
 
-- Google user record updates for `rashin_stones` (displayed as 鄒・・縺ｮ縺九￠繧・ and `last_rashin_bonus_claimed_date`
+- Google user record updates for `rashin_stones` (displayed as 羅針のかけら) and `last_rashin_bonus_claimed_date`
 - Rashin fragment paid-ticket exchange
 - Purchase order creation and status changes
 - Rashin paid code issue and redemption
@@ -59,8 +60,8 @@ Set these on the Render service and redeploy before testing:
 - `DEEP_READING_PRERELEASE_AMOUNT=780`
 - `DEEP_READING_RELEASE_AMOUNT=1000`
 - `BOOTH_DEEP_READING_URL=<your BOOTH product URL>`
-- `BOOTH_PAYMENT_LABEL=鄒・・蜊陦・BOOTH`
-- `BOOTH_PAYMENT_NOTE=BOOTH縺ｧ雉ｼ蜈･蠕後∵ｳｨ譁・分蜿ｷ繧貞・蜉帙＠縺ｦ縺上□縺輔＞縲Ａ
+- `BOOTH_PAYMENT_LABEL=羅針占術 BOOTH`
+- `BOOTH_PAYMENT_NOTE=BOOTH内のどのグッズを購入しても、購入後のBOOTH注文番号で深掘り羅針鑑定を利用できます。`
 - `BOOTH_GMAIL_VERIFICATION_REQUIRED=true`
 - `BOOTH_GMAIL_IMAP_USER=<Gmail address that receives BOOTH order mail>`
 - `BOOTH_GMAIL_IMAP_APP_PASSWORD=<Gmail app password>`
@@ -198,4 +199,5 @@ Do not enable paid sales unless all are true:
 - Duplicate code redemption does not create another ticket.
 - Unpaid orders do not consume stones.
 - 30-fragment exchanges consume exactly 30 stones and create exactly one free paid ticket.
-- Render is running as a single instance, or state has been moved to transactional storage.
+- Render `data/` paths are backed by persistent storage and survive redeploys/restarts.
+- Render is running as a single app instance, or state has been moved to transactional storage.
