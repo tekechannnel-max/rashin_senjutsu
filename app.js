@@ -12069,7 +12069,20 @@ function buildDossierSignalSummaries(card={}){
     safeCard.DECISION_AXIS,
     safeCard.EVIDENCE_SUMMARY,
     ...themeBullets.lenormand,
-  ],[topOracle].filter(Boolean),fallback.lenormand,{target:4,min:4,max:4,maxChars:34});
+  ],[topOracle].filter(Boolean),fallback.lenormand,{
+    target:4,
+    min:4,
+    max:4,
+    maxChars:24,
+    reserve:[
+      ...themeBullets.lenormand,
+      fallback.lenormand,
+      '安心の根拠が見えるほど迷いは薄れます。',
+      '違和感が残る場所ほど判断が重くなります。',
+      '納得できる方向へ戻る余地があります。',
+      '焦らないほど判断の軸は戻ります。',
+    ],
+  });
   const oracle=buildDossierGuidanceBulletSummary([
     topOracle,
     getOracleSectionBodyForDossier(/羅針盤|向き合|メッセージ|光/),
@@ -12080,14 +12093,13 @@ function buildDossierSignalSummaries(card={}){
   ],[topLen,lenormand].filter(Boolean),fallback.oracle,{
     target:2,
     min:2,
-    max:3,
-    maxChars:32,
+    max:2,
+    maxChars:24,
     reserve:[
       ...themeBullets.oracle,
       fallback.oracle,
       '自分を雑に扱わないことです。',
       '答えを急ぎすぎないことです。',
-      '安心できる感覚へ戻ることです。',
     ],
   });
   return{lenormand,oracle};
@@ -12534,7 +12546,9 @@ function detectDossierCardQualityIssues(data={},options={}){
   if(!guidance.lenormand||isDossierIncompleteText(guidance.lenormand)) issues.push(`${DOSSIER_LENORMAND_GUIDANCE_HEADING}がない、または未完文`);
   if(!guidance.oracle||isDossierIncompleteText(guidance.oracle)) issues.push(`${DOSSIER_ORACLE_GUIDANCE_HEADING}がない、または未完文`);
   const oracleLineCount=getDossierGuidanceLines(guidance.oracle).length;
-  if(oracleLineCount<2||oracleLineCount>3) issues.push(`${DOSSIER_ORACLE_GUIDANCE_HEADING}が2〜3行ではない`);
+  const lenormandLineCount=getDossierGuidanceLines(guidance.lenormand).length;
+  if(lenormandLineCount!==4) issues.push(`${DOSSIER_LENORMAND_GUIDANCE_HEADING}が4行ではない`);
+  if(oracleLineCount!==2) issues.push(`${DOSSIER_ORACLE_GUIDANCE_HEADING}が2行ではない`);
   if(isDossierSummaryDuplicate(guidance.lenormand,readingDigestCopies)){
     issues.push(`${DOSSIER_LENORMAND_GUIDANCE_HEADING}が今の流れの再掲になっています`);
   }
@@ -18749,8 +18763,8 @@ async function createDossierShareImageBlob(cardData){
   y+=answerH+Math.round(h*.018);
 
   const guidance=buildDossierSignalSummaries(card);
-  const lenGuidanceLines=getDossierGuidanceLines(guidance.lenormand).slice(0,5);
-  const oracleGuidanceLines=getDossierGuidanceLines(guidance.oracle).slice(0,3);
+  const lenGuidanceLines=getDossierGuidanceLines(guidance.lenormand).slice(0,4);
+  const oracleGuidanceLines=getDossierGuidanceLines(guidance.oracle).slice(0,2);
   const actionH=Math.min(Math.round(h*.20),detailY-y-Math.round(h*.026));
   drawCanvasPanel(ctx,textX,y,maxTextW,actionH,{fill:'rgba(4,9,24,.58)',stroke:'rgba(228,184,74,.22)'});
   ctx.fillStyle='rgba(176,226,218,.95)';
@@ -18762,7 +18776,7 @@ async function createDossierShareImageBlob(cardData){
   ctx.fillText(DOSSIER_LENORMAND_GUIDANCE_HEADING,guidanceLabelX,lenStartY);
   ctx.fillStyle='rgba(246,240,220,.92)';
   ctx.font=`700 ${Math.round(w*.0062)}px "Shippori Mincho", serif`;
-  drawCanvasBulletLines(ctx,lenGuidanceLines,guidanceBodyX,lenStartY,guidanceBodyW,Math.round(h*.0205),{maxLines:5,bulletSize:Math.max(3,Math.round(w*.0022))});
+  drawCanvasBulletLines(ctx,lenGuidanceLines,guidanceBodyX,lenStartY,guidanceBodyW,Math.round(h*.0205),{maxLines:4,bulletSize:Math.max(3,Math.round(w*.0022))});
   ctx.strokeStyle='rgba(228,184,74,.14)';
   ctx.lineWidth=1;
   const dividerY=y+Math.round(actionH*.60);
@@ -18776,7 +18790,7 @@ async function createDossierShareImageBlob(cardData){
   ctx.fillText(DOSSIER_ORACLE_GUIDANCE_HEADING,guidanceLabelX,oracleStartY);
   ctx.fillStyle='rgba(255,232,171,.96)';
   ctx.font=`700 ${Math.round(w*.0064)}px "Shippori Mincho", serif`;
-  drawCanvasBulletLines(ctx,oracleGuidanceLines,guidanceBodyX,oracleStartY,guidanceBodyW,Math.round(h*.019),{maxLines:3,bulletSize:Math.max(3,Math.round(w*.0022))});
+  drawCanvasBulletLines(ctx,oracleGuidanceLines,guidanceBodyX,oracleStartY,guidanceBodyW,Math.round(h*.019),{maxLines:2,bulletSize:Math.max(3,Math.round(w*.0022))});
 
   const foundationSections=getDossierSaveCardFoundationSections();
   const detailsX=cardLeft;
