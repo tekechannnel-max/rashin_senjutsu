@@ -7485,9 +7485,25 @@ function extractDecisionCriteriaList(source='',focus={}){
     '働きやすさ','経験','実績','次の候補','外の候補','生活','時間','健康','楽しさ','上達実感','表現しやすさ',
     '過去の原因','信頼再構築','本気度','曖昧な連絡','同じ傷','寂しさ','未練','区切り',
     '支出','家計','貯金','収支','副業','余裕','月末','将来の安心',
+    '境界線','我慢','自然体','空気','本音',
   ];
   const explicit=candidates.filter(item=>text.includes(item));
   const primary=normalizePrimaryThemeValue(focus);
+  if(primary==='love'){
+    const recon=/復縁|元恋人|元彼|元カレ|元カノ|過去の別れ|もう一度|やり直|同じ傷|信頼再構築/.test(text);
+    const loveCandidates=recon
+      ?['安心感','相手の反応','信頼','過去の原因','信頼再構築','曖昧な連絡','同じ傷','区切り']
+      :['安心感','相手の反応','信頼','距離感','曖昧な連絡','本音','自然体'];
+    const loveExplicit=loveCandidates.filter(item=>text.includes(item));
+    if(loveExplicit.length) return mergeSubtypeCriteria(loveExplicit,focus,text);
+    return mergeSubtypeCriteria(['安心感','相手の反応','信頼'],focus,text);
+  }
+  if(primary==='relationship'){
+    const relationshipCandidates=['距離感','境界線','我慢','消耗度','自然体','空気','本音','役割'];
+    const relationshipExplicit=relationshipCandidates.filter(item=>text.includes(item));
+    if(relationshipExplicit.length) return uniqueNonEmpty(relationshipExplicit).slice(0,5);
+    return ['距離感','境界線','自然体でいられるか'];
+  }
   if(primary==='money'){
     const moneyCandidates=['収入','支出','家計','貯金','収支','生活','副業','余裕','月末','将来の安心'];
     const moneyExplicit=moneyCandidates.filter(item=>text.includes(item));
@@ -7497,7 +7513,7 @@ function extractDecisionCriteriaList(source='',focus={}){
   if(explicit.length) return mergeSubtypeCriteria(explicit,focus,text);
   if(primary==='work_life_direction'||primary==='career') return ['続ける意味','評価','消耗度'];
   if(primary==='love') return mergeSubtypeCriteria(['安心感','相手の反応','信頼'],focus,text);
-  if(primary==='relationship') return ['距離感','消耗度','自然体でいられるか'];
+  if(primary==='relationship') return ['距離感','境界線','自然体でいられるか'];
   if(primary==='money') return ['収支','上限','見直し基準'];
   if(primary==='family') return ['家族の理解','安心感','役割'];
   if(primary==='creative') return ['楽しさ','上達実感','表現しやすさ'];
@@ -15648,6 +15664,7 @@ function getRashinReadingPolicyPrompt(scope='all'){
 - 「今回の答え」「迷いの正体」「今見えている流れ」「羅針の指針」「羅針カード本文」で、同じ意味の文が近接していないかを見る。
 - 同じ判断軸セットや比喩が3回以上出ていないか、「今見えている流れ」が条件リストになっていないか、不自然な日本語になっていないかを見る。
 - ルノルマン9枚に曖昧カード・障害カード・好転カードが出ている場合、それぞれがカード名説明ではなく現実語として本文に反映されているかを見る。
+- 個別事例の丸暗記で直さず、テーマごとの必要語彙と混線語彙を見る。恋愛は安心・信頼・相手の反応・距離感、人間関係は境界線・我慢・自然体・消耗、お金は収支・支出・手元の余白、仕事は評価・役割・成長・消耗を中心に検査する。
 - 曖昧な関係を復縁として誤読していないか、復縁相談を一般恋愛として薄くしていないかを見る。
 - ルノルマン由来の現実見立て、オラクル由来の向き合い方、羅針の指針に保存したくなる強さがあるかを見る。`,
     all:`【役割】
@@ -16937,12 +16954,91 @@ function detectFocusRegressionIssues(baseFocus={},refinedFocus={},context={}){
   return issues;
 }
 
+const RASHIN_THEME_QUALITY_PROFILES=Object.freeze({
+  love:{
+    required:/安心|信頼|相手|反応|距離感|言葉|行動|曖昧|本音|関係|違和感|好き/,
+    foreign:[
+      {label:'仕事・評価語彙',pattern:/職場|転職|評価|役割|キャリア|上司|同僚|成長|働き方|無理なく力を出せる形/g,max:1},
+      {label:'お金語彙',pattern:/収支|支出|貯金|家計|月末|副業|収入|投資|借金/g,max:1},
+    ],
+    missing:'恋愛相談なのに、安心・信頼・相手の反応・距離感などの恋愛の現実語が足りません',
+  },
+  relationship:{
+    required:/距離|境界線|我慢|自然体|関係|空気|消耗|負担|違和感|自分を削|本音|役割/,
+    foreign:[
+      {label:'恋愛前提語彙',pattern:/好き|恋愛|復縁|元恋人|元彼|元カレ|元カノ|別れた相手|選ばれたい|相手の気持ち|曖昧な連絡/g,max:1},
+      {label:'仕事語彙',pattern:/転職|職場|評価|収入|キャリア|上司|昇進|副業/g,max:1},
+      {label:'お金語彙',pattern:/収支|支出|貯金|家計|投資|借金|月末/g,max:1},
+    ],
+    missing:'人間関係相談なのに、境界線・我慢・自然体・消耗などの関係の現実語が足りません',
+  },
+  family:{
+    required:/家族|親|子ども|夫婦|実家|役割|境界線|安心|我慢|負担|距離/,
+    foreign:[
+      {label:'恋愛語彙',pattern:/好き|恋愛|復縁|元恋人|選ばれたい|相手の気持ち/g,max:1},
+      {label:'仕事語彙',pattern:/転職|職場|評価|収入|キャリア|昇進/g,max:1},
+    ],
+    missing:'家族相談なのに、家族・役割・境界線・安心などの現実語が足りません',
+  },
+  money:{
+    required:/収支|支出|貯金|家計|月末|手元|余白|副業|収入|お金|生活/,
+    foreign:[
+      {label:'仕事・利害語彙',pattern:/評価|役割|職場|上司|転職先|キャリアアップ|昇進|利害/g,max:1},
+      {label:'恋愛語彙',pattern:/好き|恋愛|復縁|相手の気持ち|選ばれたい/g,max:1},
+    ],
+    missing:'お金相談なのに、収支・支出・貯金・手元の余白などの現実語が足りません',
+  },
+  career:{
+    required:/仕事|職場|評価|役割|成長|収入|働き方|消耗|経験|続ける意味|努力の見返り/,
+    foreign:[
+      {label:'恋愛語彙',pattern:/好き|復縁|選ばれたい|相手の気持ち|曖昧な距離|待つ側の負担/g,max:1},
+    ],
+    missing:'仕事相談なのに、評価・役割・成長・消耗などの仕事の現実語が足りません',
+  },
+});
+
+function getThemeQualityProfileKey(primary='general'){
+  if(primary==='work_life_direction'||primary==='career') return 'career';
+  if(primary==='relationship') return 'relationship';
+  if(primary==='family') return 'family';
+  if(primary==='money') return 'money';
+  if(primary==='love') return 'love';
+  return '';
+}
+
+function countThemePatternMatches(source='',pattern){
+  const flags=pattern.flags.includes('g')?pattern.flags:`${pattern.flags}g`;
+  const re=new RegExp(pattern.source,flags);
+  return (String(source||'').match(re)||[]).length;
+}
+
+function detectThemeProfileQualityIssues(text='',focus={},label='text',context={}){
+  const source=String(text||'');
+  if(countMeaningfulChars(source)<120) return [];
+  const ctx=buildDecisionContext(focus,context);
+  const key=getThemeQualityProfileKey(ctx.primaryTheme);
+  const profile=key?RASHIN_THEME_QUALITY_PROFILES[key]:null;
+  if(!profile) return [];
+  const issues=[];
+  if(!profile.required.test(source)) issues.push(`${label}: ${profile.missing}`);
+  (profile.foreign||[]).forEach(rule=>{
+    const count=countThemePatternMatches(source,rule.pattern);
+    if(count>rule.max){
+      issues.push(`${label}が${ctx.primaryLabel}相談に${rule.label}を混ぜすぎています`);
+    }
+  });
+  if(ctx.primaryTheme==='love'&&!isReconciliationContext(ctx)&&/復縁|元恋人|元彼|元カレ|元カノ|別れた相手|やり直したい|やり直す|別れの原因|懐かしさ|同じ傷/.test(source)){
+    issues.push(`${label}が入力にない復縁前提を足しています`);
+  }
+  return [...new Set(issues)];
+}
+
 function detectThemeVocabularyDriftIssues(text='',focus={},label='text',context={}){
   const source=String(text||'');
   if(!source.trim()) return [];
   const ctx=buildDecisionContext(focus,context);
   const primary=ctx.primaryTheme;
-  const issues=[];
+  const issues=[...detectThemeProfileQualityIssues(source,focus,label,context)];
   if(primary==='love'){
     const workCoreCount=countTextOccurrences(source,/成長|使命|影響力|無理なく力を出せる形|役割|評価/g);
     const hardWorkCount=countTextOccurrences(source,/無理なく力を出せる形|役割|評価/g);
