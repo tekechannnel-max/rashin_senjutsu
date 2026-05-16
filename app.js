@@ -15663,7 +15663,6 @@ function getRashinReadingPolicyPrompt(scope='all'){
 - 禁止語、作業指示、条件表、重複、語句連呼、テーマ語彙の混線、入力にない関係性、カード辞書説明、オラクルの行動タスク化を検査する。
 - 「今回の答え」「迷いの正体」「今見えている流れ」「羅針の指針」「羅針カード本文」で、同じ意味の文が近接していないかを見る。
 - 同じ判断軸セットや比喩が3回以上出ていないか、「今見えている流れ」が条件リストになっていないか、不自然な日本語になっていないかを見る。
-- ルノルマン9枚に曖昧カード・障害カード・好転カードが出ている場合、それぞれがカード名説明ではなく現実語として本文に反映されているかを見る。
 - 個別事例の丸暗記で直さず、テーマごとの必要語彙と混線語彙を見る。恋愛は安心・信頼・相手の反応・距離感、人間関係は境界線・我慢・自然体・消耗、お金は収支・支出・手元の余白、仕事は評価・役割・成長・消耗を中心に検査する。
 - 曖昧な関係を復縁として誤読していないか、復縁相談を一般恋愛として薄くしていないかを見る。
 - ルノルマン由来の現実見立て、オラクル由来の向き合い方、羅針の指針に保存したくなる強さがあるかを見る。`,
@@ -16505,52 +16504,6 @@ function detectCardGroundingIssues(text='',focus={},context={},label='text'){
   return [`${label}にルノルマン9枚の具体的な読解根拠が残っていません`];
 }
 
-function hasLenRoleEvidenceInText(text='',role='',card=null,focus={},context={}){
-  const source=String(text||'');
-  if(!source) return false;
-  if(card?.name&&source.includes(`「${card.name}」`)) return true;
-  const ctx=buildDecisionContext(focus,context);
-  const reality=card?getLenRealityPhrase(card,ctx,role):'';
-  const realityTerms=String(reality||'').split(/[、。・\s]+/).filter(term=>term.length>=3);
-  if(realityTerms.some(term=>source.includes(term))) return true;
-  const rolePatterns={
-    ambiguity:/曖昧|見えていない|本音|情報|根拠が薄|安心しきれ|輪郭|読めない|言葉になっていない|不透明|決め打ちできない/,
-    blocker:/負担|消耗|壁|重く|削られ|切り替|責任|先延ばし|繰り返|限界|平気なふり|止まっている/,
-    positive:/突破口|支え|追い風|明る|整う|安心|信頼|好転|余地|戻る|開ける|続く/,
-    people:/相手|周囲|人物|距離感|態度|主導権|力関係|影響の大きい相手|関わる人/,
-    choice:/選|分岐|分かれ|道筋|切り替|方向|次の場所|外の選択肢/,
-    value:/評価|役割|収入|価値|見返り|返ってくる|循環|居場所|便利使い/,
-  };
-  return !!(rolePatterns[role]&&rolePatterns[role].test(source));
-}
-
-function detectLenormandPrecisionCoverageIssues(text='',focus={},context={},label='LEN'){
-  const reading=buildCardReadingContext(focus,context);
-  if(reading.total<9) return [];
-  const roleCards=[
-    ['ambiguity',reading.bottomAmbiguity||reading.mainAmbiguity,'曖昧カードの未確認感'],
-    ['blocker',reading.nearBlocker||reading.mainBlocker,'障害カードの負担'],
-    ['positive',reading.futurePositive||reading.mainPositive,'好転カードの整う兆し'],
-    ['people',reading.nearPeople||reading.mainPeople,'人物カードの影響'],
-    ['choice',reading.mainChoice||reading.mainMovement,'分岐カードの選び直し'],
-    ['value',reading.mainValue,'価値カードの見返り'],
-  ].filter(([,card])=>!!card);
-  if(!roleCards.length) return [];
-  const covered=roleCards.filter(([role,card])=>hasLenRoleEvidenceInText(text,role,card,focus,context));
-  const issues=[];
-  const required=Math.min(3,Math.max(1,roleCards.length-1));
-  if(covered.length<required){
-    issues.push(`${label}がルノルマン9枚の役割読解を拾いきれていません`);
-  }
-  [['ambiguity','曖昧カードの未確認感'],['blocker','障害カードの負担'],['positive','好転カードの整う兆し']].forEach(([role,desc])=>{
-    const entry=roleCards.find(([candidate])=>candidate===role);
-    if(entry&&!hasLenRoleEvidenceInText(text,role,entry[1],focus,context)){
-      issues.push(`${label}に${desc}が現実語として残っていません`);
-    }
-  });
-  return [...new Set(issues)];
-}
-
 function ensureIntegrationFlowNarrative(output='',focus={},cat='総合',theme='',context={}){
   return replaceHeadingBody(output,INTEGRATION_FLOW_HEADING,normalizeIntegrationFlowBody(extractHeadingBody(output,INTEGRATION_FLOW_HEADING),focus,cat,theme,context));
 }
@@ -16852,7 +16805,6 @@ function detectLenormandRoleIssues(text='',focus={},integration='',context={}){
   if(isReconciliationContext(ctx)&&!/復縁|元恋人|過去の|別れの原因|信頼を作|曖昧な連絡|寂しさ|懐かしさ|同じ傷/.test(source)){
     issues.push('LENに復縁固有の現実読みが足りません');
   }
-  issues.push(...detectLenormandPrecisionCoverageIssues(source,focus,{...context,focus},'LEN'));
   issues.push(...detectUndrawnLenormandCardNameIssues(source));
   issues.push(...detectBrokenDecisionCriteriaPhraseIssues(source,'LEN本文'));
   if(!isWorkLifeDirectionFocus(focus)&&!focus.explicitUserPriority) return issues;
