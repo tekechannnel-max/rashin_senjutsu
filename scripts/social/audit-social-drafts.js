@@ -11,7 +11,7 @@ const RELEASE_DATE = PRERELEASE_START_DATE;
 const THREADS_LIMIT = 500;
 const X_LIMIT = 280;
 const BLUESKY_LIMIT = 300;
-const BLUESKY_IMAGE_LIMIT_BYTES = 2 * 1024 * 1024;
+const BLUESKY_IMAGE_LIMIT_BYTES = 1_000_000;
 const REQUIRED_HASHTAG = '#羅針占術';
 
 const HARD_NG_PATTERNS = [
@@ -91,6 +91,16 @@ function hasUtm(text) {
   return /[?&]utm_content=/i.test(String(text || ''));
 }
 
+function normalizeForRepeat(text) {
+  return String(text || '')
+    .replace(/https?:\/\/\S+/gi, '')
+    .replace(/\butm_[a-z]+=[^\s&]+/gi, '')
+    .replace(/\d{4}-\d{2}-\d{2}/g, '')
+    .replace(/\d{1,2}\/\d{1,2}/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function getReleasePhase(dateKey) {
   if (dateKey < PRERELEASE_START_DATE) return 'prelaunch';
   if (dateKey <= PRERELEASE_END_DATE) return 'prerelease';
@@ -124,6 +134,8 @@ function auditText({ text, dateKey, kind, platform }) {
 
   if (!value.trim()) addIssue(issues, 'error', 'empty', '投稿文が空です。');
   if (length > limit) addIssue(issues, 'error', 'length', `${platform}の文字数上限を超えています: ${length}/${limit}`);
+  if (!hasPublicUrl(value)) addIssue(issues, 'error', 'tracked_url_missing', `${platform}投稿にはUTM付きURLが必要です。`);
+  if (!hasUtm(value)) addIssue(issues, 'error', 'utm_missing', `${platform}投稿にはutm_contentが必要です。`);
   if (!value.includes(REQUIRED_HASHTAG)) addIssue(issues, 'error', 'hashtag_missing', `${REQUIRED_HASHTAG} がありません。`);
   const hashtagCount = countHashtags(value);
   if (platform === 'threads' && hashtagCount !== 1) {
@@ -141,8 +153,6 @@ function auditText({ text, dateKey, kind, platform }) {
   }
 
   if (prelaunch) {
-    if (hasPublicUrl(value)) addIssue(issues, 'error', 'prelaunch_url', 'プレリリース前の投稿にURLがあります。');
-    if (hasUtm(value)) addIssue(issues, 'error', 'prelaunch_utm', 'プレリリース前の投稿にUTMがあります。');
     if (!hasPrelaunchAnchor(value)) addIssue(issues, 'error', 'prelaunch_anchor', '5/16公開前の先行投稿だと分かる文脈が不足しています。');
     if (!hasPrelaunchWaitCta(value)) addIssue(issues, 'error', 'prelaunch_cta', 'プレリリース前はフォロー/保存/待つCTAが必要です。');
     for (const pattern of PRELAUNCH_LIVE_CTA_PATTERNS) {
@@ -155,8 +165,6 @@ function auditText({ text, dateKey, kind, platform }) {
       addIssue(issues, 'warn', 'early_deep_cta', '公開3日前以前の深掘り言及は弱めに抑えてください。');
     }
   } else if (platform === 'threads') {
-    if (!hasPublicUrl(value)) addIssue(issues, 'error', 'postrelease_url', '公開後のThreads投稿には導線URLが必要です。');
-    if (!hasUtm(value)) addIssue(issues, 'error', 'postrelease_utm', '公開後のThreads投稿にはutm_contentが必要です。');
     if (kind === 'oracle' && !value.trim().endsWith('あなたも今日の1枚を引かない？')) {
       addIssue(issues, 'error', 'oracle_closing', '公開後の朝オラクルは指定の締めで終える必要があります。');
     }
@@ -181,7 +189,7 @@ function auditText({ text, dateKey, kind, platform }) {
 
 function auditImage({ draft, kind, platform }) {
   const issues = [];
-  if (!['x', 'bluesky'].includes(platform)) return issues;
+  if (!['threads', 'x', 'bluesky'].includes(platform)) return issues;
   const entry = draft[kind] || {};
   const imagePath = platform === 'bluesky' ? entry.blueskyImagePath : entry.imagePath;
   const altText = entry.altText;
@@ -192,7 +200,7 @@ function auditImage({ draft, kind, platform }) {
   } else if (platform === 'bluesky') {
     const size = fs.statSync(imagePath).size;
     if (size > BLUESKY_IMAGE_LIMIT_BYTES) {
-      addIssue(issues, 'error', 'bluesky_image_too_large', `Bluesky用画像が2MBを超えています: ${size}/${BLUESKY_IMAGE_LIMIT_BYTES} ${imagePath}`);
+      addIssue(issues, 'error', 'bluesky_image_too_large', `Bluesky用画像が1,000,000 bytesを超えています: ${size}/${BLUESKY_IMAGE_LIMIT_BYTES} ${imagePath}`);
     }
   }
   if (!String(altText || '').trim()) {
@@ -246,6 +254,7 @@ function main() {
   const args = parseArgs(process.argv.slice(2));
   const platforms = args.platforms.split(',').map(item => item.trim()).filter(Boolean);
   const result = { dates: eachDate(args.from, args.to), entries: [] };
+  const seenText = new Map();
 
   for (const dateKey of result.dates) {
     const draft = generateDraft(dateKey, args);
@@ -258,13 +267,20 @@ function main() {
             : draft[kind].text;
         const audit = auditText({ text, dateKey, kind, platform, releaseMode: args.releaseMode });
         const imageIssues = auditImage({ draft, kind, platform });
+        const repeatKey = `${kind}:${platform}:${normalizeForRepeat(text)}`;
+        const repeatIssues = [];
+        if (seenText.has(repeatKey)) {
+          addIssue(repeatIssues, 'error', 'duplicate_text', `${platform}/${kind} の投稿文が ${seenText.get(repeatKey)} と同一です。`);
+        } else {
+          seenText.set(repeatKey, dateKey);
+        }
         result.entries.push({
           date: dateKey,
           kind,
           platform,
           releasePhase: getReleasePhase(dateKey),
           length: audit.length,
-          issues: [...audit.issues, ...imageIssues],
+          issues: [...audit.issues, ...imageIssues, ...repeatIssues],
         });
       }
     }

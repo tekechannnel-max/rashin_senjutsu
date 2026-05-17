@@ -1,5 +1,45 @@
 # SNS運用 Runbook
 
+## 本番前レビュー後の運用ルール
+
+このSNS自動投稿は、Threads / Blueskyの本番投稿前に次を満たす。
+
+- APIキー、アクセストークン、アプリパスワード、個人情報はGit管理ファイル、README、投稿台帳、ログに保存しない。
+- 実投稿は通常端末ではプレビュー表示後に `yes` 入力が必要。Render Cronだけ `SOCIAL_SCHEDULED_RUN=true` の内部フラグで確認を省略する。
+- Threads / Blueskyは投稿前に既存投稿を検索し、UTMの `utm_content` を重複判定用markerとして使う。
+- APIの一時失敗は `SOCIAL_API_RETRY_ATTEMPTS` と `SOCIAL_API_RETRY_BASE_MS` に従って再試行する。認証失敗、アカウント不一致、画像サイズ超過などは再試行しない。
+- すべての投稿URLは `utm_source`、`utm_medium=social`、`utm_campaign`、`utm_content` 付きで生成する。
+- `data/social-posts/posts.csv` は投稿台帳。本文とalt textはSHA-256ハッシュだけを保存し、`tracked_url` と `utm_content` でBOOTH側の流入分析と突き合わせる。
+- 投稿文は `audit-social-drafts.js` で日跨ぎの重複を検査する。公開後のカレンダー外投稿には日別の視点行を入れる。
+- Threads / Blueskyのoracle/concept投稿はいずれも画像とalt textを持つ。Bluesky用画像は1,000,000 bytes以下にする。
+
+本番前に必ず実行する。
+
+```powershell
+npm run check
+npm run social:audit -- --from=2026-05-13 --to=2026-06-06 --platforms=threads,bluesky,x
+git diff --stat
+git diff --name-only
+```
+
+追加・確認する環境変数:
+
+```text
+SOCIAL_POSTS_LEDGER_FILE=data/social-posts/posts.csv
+SOCIAL_API_RETRY_ATTEMPTS=3
+SOCIAL_API_RETRY_BASE_MS=1500
+```
+
+BOOTH購入分析では、アクセス解析またはBOOTH側で確認できる流入URLの `utm_content` を `posts.csv` の `utm_content` / `tracked_url` と照合する。`utm_source=threads` と `utm_source=bluesky` で媒体別、`utm_content=oracle_YYYYMMDD` / `concept_YYYYMMDD` で投稿別に見る。
+
+トラブル時:
+
+- `missing_utm` / `duplicate_text`: 投稿せず、投稿文生成またはUTM生成を修正してから `npm run social:audit` を再実行する。
+- `Real posting requires explicit yes`: 手動実投稿はプレビュー確認後に `yes` を入力するか、確認済みのCI/Renderで `--yes` を使う。
+- `existing_threads_post` / `existing_bluesky_post`: 既に同じmarkerの投稿があるため、重複投稿を避けて終了している。
+- `Missing THREADS_ACCESS_TOKEN` / `Missing BLUESKY_APP_PASSWORD`: Render環境変数だけを修正する。値をファイルやチャットへ貼らない。
+- Bluesky画像サイズエラー: `images/ui/app-thumbnail.jpg` などBluesky用の圧縮済み画像を使い、1,000,000 bytes以下にする。
+
 この1枚をSNS運用の正本にする。古いGitHub Actions前提やローカルWindows常駐前提の手順は使わない。
 
 ## 現在の運用
@@ -60,7 +100,7 @@ THREADS_POST_VERIFY_TIMEOUT_MS=120000
 - 07:00: 数秘オラクル。カード画像、alt text、今日の小さな行動を入れる
 - 20:00: 信頼形成の短文。売り込みより、自己理解、非依存、次の行動を優先する
 - Threadsは500文字以内、基本ハッシュタグは1つ
-- Blueskyは300文字以内、画像1枚とalt textを付ける。Bluesky公式ドキュメント上の画像上限は2MBなので、告知画像は小さい既存JPEGを使う
+- Blueskyは300文字以内、画像1枚とalt textを付ける。運用上の画像上限は1,000,000 bytesなので、告知画像は小さい既存JPEGを使う
 - XはThreads本文の丸写しにしない。今は下書きのみ
 - 不安を煽る、未来を断定する、医療/法律/投資判断の代替に見える表現は禁止
 - BOOTHの購入導線が本番確認済みになるまで、強い有料CTAにしない

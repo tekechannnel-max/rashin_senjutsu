@@ -1,8 +1,10 @@
 const crypto = require('crypto');
 const fs = require('fs/promises');
 const path = require('path');
+const readline = require('readline/promises');
 const threadsClient = require('./threads-client');
 const blueskyClient = require('./bluesky-client');
+const postLedger = require('./post-ledger');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const APP_JS = path.join(ROOT, 'app.js');
@@ -170,12 +172,13 @@ function parseArgs(argv) {
     .split(',')
     .map(s => s.trim())
     .filter(Boolean);
-  const args = { dryRun: false, write: false, post: false, platforms: defaultPlatforms.length ? defaultPlatforms : ['threads'], kind: 'all' };
+  const args = { dryRun: false, write: false, post: false, yes: false, platforms: defaultPlatforms.length ? defaultPlatforms : ['threads'], kind: 'all' };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--dry-run') args.dryRun = true;
     else if (arg === '--write') args.write = true;
     else if (arg === '--post') args.post = true;
+    else if (arg === '--yes') args.yes = true;
     else if (arg === '--platforms') args.platforms = String(argv[++i] || '').split(',').map(s => s.trim()).filter(Boolean);
     else if (arg.startsWith('--platforms=')) args.platforms = arg.split('=')[1].split(',').map(s => s.trim()).filter(Boolean);
     else if (arg === '--date') args.date = argv[++i];
@@ -230,6 +233,34 @@ function truncateText(text, maxChars) {
   const chars = [...String(text || '').trim()];
   if (chars.length <= maxChars) return chars.join('');
   return `${chars.slice(0, Math.max(0, maxChars - 1)).join('')}…`;
+}
+
+function fitPostText(parts, maxChars) {
+  const normalized = parts.map(part => String(part || '').trim()).filter(Boolean);
+  let text = normalized.join('\n\n');
+  if ([...text].length <= maxChars) return text;
+  for (let i = 0; i < normalized.length; i += 1) {
+    if (/https?:\/\//.test(normalized[i]) || normalized[i].startsWith('#')) continue;
+    normalized[i] = truncateText(normalized[i], Math.max(24, [...normalized[i]].length - ([...text].length - maxChars) - 4));
+    text = normalized.join('\n\n');
+    if ([...text].length <= maxChars) return text;
+  }
+  throw new Error(`Could not fit social post within ${maxChars} characters without cutting the tracked URL.`);
+}
+
+function getDailyConceptAngle(dateKey) {
+  const angles = [
+    '今日の視点：迷いを一段だけ小さくする。',
+    '今日の視点：相手より先に、自分の本音を整理する。',
+    '今日の視点：結論より、次の確認を決める。',
+    '今日の視点：焦って選ばず、止まる理由を読む。',
+    '今日の視点：感情と事実を分けて眺める。',
+    '今日の視点：いま動かす一手だけに絞る。',
+    '今日の視点：期待ではなく、反応の変化を見る。',
+  ];
+  const hash = crypto.createHash('sha256').update(`angle:${dateKey}`).digest()[0];
+  const serial = dateKey.replace(/^\d{4}-(\d{2})-(\d{2})$/, '$1$2');
+  return `羅針メモ${serial}：${angles[hash % angles.length].replace(/^今日の視点：/, '')}`;
 }
 
 function normalizeForDuplicateCheck(text) {
@@ -430,20 +461,24 @@ function validatePostText(text, options = {}) {
   if (options.platforms?.includes('bluesky') && [...value].length > BLUESKY_CHARACTER_LIMIT) {
     throw new Error(`${label} is too long for Bluesky: ${[...value].length}/${BLUESKY_CHARACTER_LIMIT}`);
   }
+  if (options.requireTrackedUrl && !hasPublicUrl(value)) {
+    throw new Error(`${label} is missing a tracked URL.`);
+  }
+  if (options.requireTrackedUrl && !extractUtmContent(value)) {
+    throw new Error(`${label} is missing utm_content.`);
+  }
 }
 
 function validateDraft(draft, args) {
   const platforms = Array.isArray(args.platforms) ? args.platforms : ['threads'];
   if (platforms.includes('threads')) {
-    validatePostText(draft.oracle.text, { label: 'oracle Threads post', platforms: ['threads'] });
-    validatePostText(draft.concept.text, { label: 'concept Threads post', platforms: ['threads'] });
+    validatePostText(draft.oracle.text, { label: 'oracle Threads post', platforms: ['threads'], requireTrackedUrl: true });
+    validatePostText(draft.concept.text, { label: 'concept Threads post', platforms: ['threads'], requireTrackedUrl: true });
     const requiredHashtag = draft.meta?.policy?.hashtag || DEFAULT_HASHTAG;
     const preRelease = isPreReleasePosting(draft.date, draft.meta?.socialConfig || {});
     if (!draft.oracle.text.includes(requiredHashtag)) throw new Error('oracle Threads post is missing the required hashtag.');
     if (!draft.concept.text.includes(requiredHashtag)) throw new Error('concept Threads post is missing the required hashtag.');
     if (preRelease) {
-      if (hasPublicUrl(draft.oracle.text)) throw new Error('pre-release oracle Threads post must not include a URL.');
-      if (hasPublicUrl(draft.concept.text)) throw new Error('pre-release concept Threads post must not include a URL.');
       if (draft.oracle.text.includes('あなたも今日の1枚を引かない？')) {
         throw new Error('pre-release oracle Threads post must not use the live oracle closing line.');
       }
@@ -456,15 +491,15 @@ function validateDraft(draft, args) {
     }
   }
   if (platforms.includes('x')) {
-    validatePostText(draft.oracle.xText, { label: 'oracle X post', platforms: ['x'] });
-    validatePostText(draft.concept.xText, { label: 'concept X post', platforms: ['x'] });
+    validatePostText(draft.oracle.xText, { label: 'oracle X post', platforms: ['x'], requireTrackedUrl: true });
+    validatePostText(draft.concept.xText, { label: 'concept X post', platforms: ['x'], requireTrackedUrl: true });
     if (draft.oracle.xText === draft.oracle.text || draft.concept.xText === draft.concept.text) {
       throw new Error('X posts must not be identical to Threads posts.');
     }
   }
   if (platforms.includes('bluesky')) {
-    validatePostText(draft.oracle.blueskyText, { label: 'oracle Bluesky post', platforms: ['bluesky'] });
-    validatePostText(draft.concept.blueskyText, { label: 'concept Bluesky post', platforms: ['bluesky'] });
+    validatePostText(draft.oracle.blueskyText, { label: 'oracle Bluesky post', platforms: ['bluesky'], requireTrackedUrl: true });
+    validatePostText(draft.concept.blueskyText, { label: 'concept Bluesky post', platforms: ['bluesky'], requireTrackedUrl: true });
     const requiredHashtag = draft.meta?.policy?.hashtag || DEFAULT_HASHTAG;
     if (!draft.oracle.blueskyText.includes(requiredHashtag)) throw new Error('oracle Bluesky post is missing the required hashtag.');
     if (!draft.concept.blueskyText.includes(requiredHashtag)) throw new Error('concept Bluesky post is missing the required hashtag.');
@@ -608,6 +643,8 @@ function buildOracleText(card, publicOrigin, options = {}) {
       '',
       ...promo.pitch,
       '',
+      shareUrl,
+      '',
       config.defaultHashtag || DEFAULT_HASHTAG,
       '',
       promo.closing,
@@ -643,20 +680,13 @@ function buildXOracleText(card, publicOrigin, options = {}) {
     ...buildUtmParams(config, `oracle_${dateKey.replace(/-/g, '')}`),
   });
   if (isPreReleasePosting(dateKey, config)) {
-    const promo = PRE_RELEASE_ORACLE_PROMOS[dateKey] || PRE_RELEASE_ORACLE_PROMOS['2026-05-12'];
-    return [
-      promo.intro[0],
-      '',
-      `先行版 今日の1枚：${card.name}`,
-      `テーマ：${card.title}`,
-      '',
-      truncateText(buildOracleLeadLine(card), 58),
-      '',
-      `今日の一手：${truncateText(card.action, 42)}`,
-      '',
-      promo.closing,
+    return fitPostText([
+      `先行オラクル：${card.name} / ${card.title}`,
+      `一手：${truncateText(card.action, 28)}`,
+      '保存して公開日に見返してね',
+      shareUrl,
       hashtags,
-    ].join('\n');
+    ], X_CHARACTER_LIMIT);
   }
   return [
     `今日の数秘オラクル：${card.name}`,
@@ -702,7 +732,8 @@ function buildConceptText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config 
   const paidCta = resolvePaidCta(entry, config);
   const calendarText = entry ? CALENDAR_CONCEPT_POSTS[entry.eveningTheme] : '';
   const index = crypto.createHash('sha256').update(dateKey).digest()[0] % CONCEPT_POSTS.length;
-  const body = calendarText || CONCEPT_POSTS[index];
+  const baseBody = calendarText || CONCEPT_POSTS[index];
+  const body = calendarText ? baseBody : `${getDailyConceptAngle(dateKey)}\n\n${baseBody}`;
   const contentType = paidCta === 'soft_paid' || paidCta === 'active_paid'
     ? 'deep'
     : 'concept';
@@ -713,6 +744,7 @@ function buildConceptText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config 
       body,
       '',
       ctaLine,
+      link,
       '',
       config.defaultHashtag || DEFAULT_HASHTAG,
     ].join('\n');
@@ -752,17 +784,18 @@ function buildXConceptText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config
   const paidCta = resolvePaidCta(entry, config);
   const hashtags = getXHashtagLine(config);
   const fallback = CONCEPT_POSTS[crypto.createHash('sha256').update(`x:${dateKey}`).digest()[0] % CONCEPT_POSTS.length];
-  const body = (entry && X_CONCEPT_POSTS[entry.eveningTheme]) || truncateText(fallback, 96);
+  const calendarBody = entry && X_CONCEPT_POSTS[entry.eveningTheme];
+  const body = calendarBody || `${getDailyConceptAngle(dateKey)}\n${truncateText(fallback, 82)}`;
   const contentType = paidCta === 'soft_paid' || paidCta === 'active_paid' ? 'deep' : 'concept';
   const link = buildTrackedUrl(publicOrigin, '/', buildUtmParams(config, `${contentType}_${dateKey.replace(/-/g, '')}`));
   const ctaLine = buildXCtaLine(paidCta, dateKey, config);
   if (isPreReleasePosting(dateKey, config)) {
-    return [
+    return fitPostText([
       body,
-      '',
       ctaLine,
+      link,
       hashtags,
-    ].join('\n');
+    ], X_CHARACTER_LIMIT);
   }
   return [
     body,
@@ -981,6 +1014,76 @@ async function findExistingBlueskyPost({ marker = null, text = '' } = {}) {
   }) || null;
 }
 
+function selectedKindsFromArgs(args) {
+  if (args.kind === 'all') return ['oracle', 'concept'];
+  return ['oracle', 'concept'].includes(args.kind) ? [args.kind] : ['oracle', 'concept'];
+}
+
+function isScheduledPostingRun() {
+  return process.env.SOCIAL_SCHEDULED_RUN === 'true'
+    && process.env.SOCIAL_AUTOMATED_POSTING_ENABLED === 'true';
+}
+
+function getRetryAttempts() {
+  const raw = String(process.env.SOCIAL_API_RETRY_ATTEMPTS || '3').trim();
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value < 1) return 1;
+  return Math.min(5, Math.floor(value));
+}
+
+function getRetryDelayMs(attempt) {
+  const raw = String(process.env.SOCIAL_API_RETRY_BASE_MS || '1500').trim();
+  const base = Number(raw);
+  const normalizedBase = Number.isFinite(base) && base >= 0 ? base : 1500;
+  return normalizedBase * Math.max(1, attempt);
+}
+
+function isNonRetriableSocialError(error) {
+  const message = String(error?.message || error || '');
+  return /Missing |expected |too long|disabled|Unsupported|must |requires |not include|is empty|credentials/i.test(message);
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function withSocialRetry(label, operation) {
+  const attempts = getRetryAttempts();
+  let lastError = null;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      if (attempt >= attempts || isNonRetriableSocialError(error)) break;
+      console.error(JSON.stringify({
+        retrying: label,
+        attempt,
+        nextAttempt: attempt + 1,
+        error: error?.message || String(error),
+      }));
+      await sleep(getRetryDelayMs(attempt));
+    }
+  }
+  throw lastError;
+}
+
+async function confirmPostingIfNeeded(args) {
+  if (!args.post || args.yes || isScheduledPostingRun()) return;
+  if (!process.stdin.isTTY) {
+    throw new Error('Real posting requires a preview and an explicit yes. Re-run with --yes from an intentional manual command, or use the scheduled Render runner.');
+  }
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    const answer = await rl.question('Type yes to publish the previewed posts: ');
+    if (answer.trim() !== 'yes') {
+      throw new Error('Posting cancelled because confirmation was not "yes".');
+    }
+  } finally {
+    rl.close();
+  }
+}
+
 async function postImageToThreadsOnce({ text, imageUrl, altText, marker }) {
   const existing = await findExistingThreadsPost({ marker, text });
   if (existing) {
@@ -1041,48 +1144,68 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const draft = await buildDraft(args);
   console.log(JSON.stringify(draft, null, 2));
+  const ledgerOptions = {
+    platforms: args.platforms,
+    kinds: selectedKindsFromArgs(args),
+  };
+  if (args.write || args.post) {
+    await postLedger.recordDraft(draft, { ...ledgerOptions, status: 'draft' });
+  }
   if (!args.post) return;
+  await confirmPostingIfNeeded(args);
   const results = {};
-  if (args.platforms.includes('x')) {
-    if (process.env.SOCIAL_X_API_POSTING_ENABLED !== 'true') {
-      throw new Error('X API posting is disabled. Generate X drafts with npm run social:x:drafts and post manually, or set SOCIAL_X_API_POSTING_ENABLED=true when official X API credentials are intentionally configured.');
+  try {
+    if (args.platforms.includes('x')) {
+      if (process.env.SOCIAL_X_API_POSTING_ENABLED !== 'true') {
+        throw new Error('X API posting is disabled. Generate X drafts with npm run social:x:drafts and post manually, or set SOCIAL_X_API_POSTING_ENABLED=true when official X API credentials are intentionally configured.');
+      }
+      if (args.kind === 'all' || args.kind === 'oracle') {
+        results.xOracle = await withSocialRetry('x:oracle', () => postToX(draft.oracle.xText, draft.oracle.imagePath));
+      }
+      if (args.kind === 'all' || args.kind === 'concept') {
+        results.xConcept = await withSocialRetry('x:concept', () => postToX(draft.concept.xText, draft.concept.imagePath));
+      }
     }
-    if (args.kind === 'all' || args.kind === 'oracle') results.xOracle = await postToX(draft.oracle.xText, draft.oracle.imagePath);
-    if (args.kind === 'all' || args.kind === 'concept') results.xConcept = await postToX(draft.concept.xText, draft.concept.imagePath);
-  }
-  if (args.platforms.includes('threads')) {
-    if (args.kind === 'all' || args.kind === 'oracle') {
-      results.threadsOracle = await postImageToThreadsOnce({
-        text: draft.oracle.text,
-        imageUrl: draft.oracle.imageUrl,
-        altText: draft.oracle.altText,
-        marker: extractUtmContent(draft.oracle.text),
-      });
+    if (args.platforms.includes('threads')) {
+      if (args.kind === 'all' || args.kind === 'oracle') {
+        results.threadsOracle = await withSocialRetry('threads:oracle', () => postImageToThreadsOnce({
+          text: draft.oracle.text,
+          imageUrl: draft.oracle.imageUrl,
+          altText: draft.oracle.altText,
+          marker: extractUtmContent(draft.oracle.text),
+        }));
+      }
+      if (args.kind === 'all' || args.kind === 'concept') {
+        results.threadsConcept = await withSocialRetry('threads:concept', () => postImageToThreadsOnce({
+          text: draft.concept.text,
+          imageUrl: draft.concept.imageUrl,
+          altText: draft.concept.altText,
+          marker: extractUtmContent(draft.concept.text),
+        }));
+      }
     }
-    if (args.kind === 'all' || args.kind === 'concept') {
-      results.threadsConcept = await postTextToThreadsOnce({
-        text: draft.concept.text,
-        marker: extractUtmContent(draft.concept.text),
-      });
+    if (args.platforms.includes('bluesky')) {
+      if (args.kind === 'all' || args.kind === 'oracle') {
+        results.blueskyOracle = await withSocialRetry('bluesky:oracle', () => postImageToBlueskyOnce({
+          text: draft.oracle.blueskyText,
+          imagePath: draft.oracle.blueskyImagePath,
+          altText: draft.oracle.altText,
+          marker: extractUtmContent(draft.oracle.blueskyText),
+        }));
+      }
+      if (args.kind === 'all' || args.kind === 'concept') {
+        results.blueskyConcept = await withSocialRetry('bluesky:concept', () => postImageToBlueskyOnce({
+          text: draft.concept.blueskyText,
+          imagePath: draft.concept.blueskyImagePath,
+          altText: draft.concept.altText,
+          marker: extractUtmContent(draft.concept.blueskyText),
+        }));
+      }
     }
-  }
-  if (args.platforms.includes('bluesky')) {
-    if (args.kind === 'all' || args.kind === 'oracle') {
-      results.blueskyOracle = await postImageToBlueskyOnce({
-        text: draft.oracle.blueskyText,
-        imagePath: draft.oracle.blueskyImagePath,
-        altText: draft.oracle.altText,
-        marker: extractUtmContent(draft.oracle.blueskyText),
-      });
-    }
-    if (args.kind === 'all' || args.kind === 'concept') {
-      results.blueskyConcept = await postImageToBlueskyOnce({
-        text: draft.concept.blueskyText,
-        imagePath: draft.concept.blueskyImagePath,
-        altText: draft.concept.altText,
-        marker: extractUtmContent(draft.concept.blueskyText),
-      });
-    }
+    await postLedger.recordDraft(draft, { ...ledgerOptions, status: 'posted', results });
+  } catch (error) {
+    await postLedger.recordDraft(draft, { ...ledgerOptions, status: 'failed', results });
+    throw error;
   }
   console.log(JSON.stringify({ posted: results }, null, 2));
 }

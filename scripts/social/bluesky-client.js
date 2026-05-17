@@ -6,7 +6,7 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const DEFAULT_SERVICE = 'https://bsky.social';
 const DEFAULT_PUBLIC_APPVIEW = 'https://public.api.bsky.app';
 const DEFAULT_EXPECTED_HANDLE = 'tekesensai.bsky.social';
-const IMAGE_LIMIT_BYTES = 2 * 1024 * 1024;
+const IMAGE_LIMIT_BYTES = 1_000_000;
 const BLUESKY_CHARACTER_LIMIT = 300;
 
 function loadLocalEnv() {

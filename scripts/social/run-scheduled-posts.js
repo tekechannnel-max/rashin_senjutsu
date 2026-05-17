@@ -146,7 +146,10 @@ function runPost(kind, dateKey) {
     `--platforms=${platforms}`,
   ], {
     cwd: ROOT,
-    env: process.env,
+    env: {
+      ...process.env,
+      SOCIAL_SCHEDULED_RUN: 'true',
+    },
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
   });

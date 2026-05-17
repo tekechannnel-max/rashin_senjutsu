@@ -106,3 +106,63 @@ node scripts/social/threads-tool.js save-token --token="<token-from-user-token-g
 ```
 
 `THREADS_ACCESS_TOKEN` はmd、Git、チャットに書かない。
+## 本番運用前チェック
+
+本番投稿前は、ローカルで次を通す。
+
+```powershell
+npm run check
+npm run social:audit -- --from=2026-05-13 --to=2026-06-06 --platforms=threads,bluesky,x
+npm run social:draft -- --date=2026-05-18 --platforms=threads,bluesky
+```
+
+- `daily-oracle-post.js` は投稿文、UTM付きURL、画像、alt textを生成する。
+- `post-ledger.js` は `data/social-posts/posts.csv` に投稿台帳を保存する。本文とalt textはSHA-256ハッシュだけを保存し、APIキー、トークン、投稿全文、個人情報は保存しない。
+- `audit-social-drafts.js` は文字数、UTM、画像、alt text、重複本文、禁止表現を検査する。
+- `run-scheduled-posts.js` はRender Cron用。JSTの投稿対象時間だけ `daily-oracle-post.js --write --post --yes` 相当を実行する。
+
+## 手動投稿とプレビュー
+
+実投稿は、通常の端末ではプレビュー後に `yes` を入力しない限り進まない。
+
+```powershell
+npm run social:draft -- --date=2026-05-18 --platforms=threads,bluesky
+npm run social:post -- --date=2026-05-18 --platforms=threads,bluesky
+```
+
+CI、Render Cron、確認済みの手動実行だけ `--yes` を使う。
+
+```powershell
+node scripts/social/daily-oracle-post.js --write --post --yes --date=2026-05-18 --platforms=threads,bluesky --kind=oracle
+```
+
+## 環境変数
+
+```text
+PUBLIC_ORIGIN=https://rashin-senjutsu.onrender.com
+THREADS_USER_ID=<Renderに保存>
+THREADS_ACCESS_TOKEN=<Renderに保存>
+THREADS_EXPECTED_USERNAME=sensai_teke
+BLUESKY_IDENTIFIER=tekesensai.bsky.social
+BLUESKY_APP_PASSWORD=<Renderに保存>
+BLUESKY_EXPECTED_HANDLE=tekesensai.bsky.social
+SOCIAL_AUTOMATED_POSTING_ENABLED=true
+SOCIAL_PLATFORMS=threads,bluesky
+SOCIAL_POSTS_LEDGER_FILE=data/social-posts/posts.csv
+SOCIAL_API_RETRY_ATTEMPTS=3
+SOCIAL_API_RETRY_BASE_MS=1500
+SOCIAL_UTM_CAMPAIGN=202605_prerelease
+```
+
+`THREADS_ACCESS_TOKEN` と `BLUESKY_APP_PASSWORD` はGit、README、チャット、ログに書かない。Renderの環境変数だけに保存する。
+
+## BOOTH分析
+
+投稿ごとのURLには `utm_source`、`utm_medium=social`、`utm_campaign`、`utm_content` が入る。`posts.csv` の `tracked_url`、`platform`、`kind`、`status`、`permalink`、`external_id` を残しておけば、BOOTH側・アクセス解析側の流入データと `utm_content` で突き合わせられる。
+
+## トラブル対応
+
+- 重複投稿が疑わしい: `data/social-posts/posts.csv` の `post_key`、SNS側の既存投稿検索、Renderログの `existing_threads_post` / `existing_bluesky_post` を確認する。
+- API失敗: 一時的な5xx/429/タイムアウトは `SOCIAL_API_RETRY_ATTEMPTS` 回まで待って再試行する。認証不備、expected handle不一致、画像サイズ超過は再試行せず止める。
+- UTMがない: `npm run social:audit -- --from=<開始日> --to=<終了日> --platforms=threads,bluesky,x` を実行し、`missing_utm` を直すまで投稿しない。
+- Bluesky画像で失敗: 画像は1,000,000 bytes以下にする。`audit-social-drafts.js` と `tests/social-posting.test.js` がこの条件を検査する。
