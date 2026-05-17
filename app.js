@@ -5814,10 +5814,15 @@ async function releasePaidReadingTicketLock(){
         identity:getPaidReadingIdentity(),
       }),
     });
-    return res.ok;
+    const data=await readJsonSafe(res);
+    if(res.ok){
+      ACTIVE_PAID_READING_TICKET={...ACTIVE_PAID_READING_TICKET,status:data?.ticketStatus||ACTIVE_PAID_READING_TICKET.status||'unused'};
+      return true;
+    }
   }catch(e){
     return false;
   }
+  return false;
 }
 
 async function openStripeCheckout(intent='start-paid'){
@@ -17953,12 +17958,16 @@ function renderPaidCombinedOutputs(parsed,name,cat,theme,options={}){
   const focus=getFocusForContext(cat,theme,options);
   if(!allowFallback&&(!parsed.len||!parsed.orc||!parsed.integration)){
     const message='深掘り鑑定を作れませんでした。少し時間をおいて、もう一度お試しください。';
+    const ticketReleaseUnconfirmed=options.hadActiveTicket&&options.ticketReleaseOk===false;
+    const integrationDetail=ticketReleaseUnconfirmed
+      ?'鑑定文の品質確認で停止しました。チケットは消費していませんが、ロック解除を確認できませんでした。再試行できない場合は運営側で確認します。'
+      :'鑑定文の品質を確認できなかったため、有料チケットを消費せず停止しました。';
     LAST_OUTPUTS.len=parsed.len||message;
     LAST_OUTPUTS.orc=parsed.orc||message;
     LAST_OUTPUTS.integration=parsed.integration||message;
     setReadingBlockError('r-len-block','深掘り鑑定を停止しました','品質確認を通らない結果を有料鑑定として表示しないため、今回は出力を止めています。');
     setReadingBlockError('r-orc-block','続きの鑑定を停止しました','途中で途切れた結果やfallback文を納品しないため、時間をおいて再度お試しください。');
-    setIntegrationError('チケットは使用していません','鑑定文の品質を確認できなかったため、有料チケットを消費せず停止しました。');
+    setIntegrationError('チケットは使用していません',integrationDetail);
     return;
   }else{
     const lenSource=parsed.len||buildRichLenFallback(name,cat);
@@ -18346,9 +18355,11 @@ ${qualityResult.issues.map(issue=>`- ${issue}`).join('\n')}
         hasCurrentReadingId:!!CURRENT_READING_ID,
       },
     });
+    const hadActiveTicket=!!ACTIVE_PAID_READING_TICKET?.id;
     const releaseOk=await releasePaidReadingTicketLock();
-    recordPaidDebugQuality('paid_generation_failed',[e?.code||e?.message||'paid generation failed']);
-    renderPaidCombinedOutputs({len:'',orc:'',integration:''},name,cat,theme,{...paidDebugContext,allowFallback:false});
+    const releaseIssue=hadActiveTicket&&!releaseOk?'ticket_release_unconfirmed':'';
+    recordPaidDebugQuality('paid_generation_failed',[e?.code||e?.message||'paid generation failed',releaseIssue].filter(Boolean));
+    renderPaidCombinedOutputs({len:'',orc:'',integration:''},name,cat,theme,{...paidDebugContext,allowFallback:false,hadActiveTicket,ticketReleaseOk:releaseOk});
     ['len','orc','integration'].forEach(stage=>setResultStageStatus(stage,'error'));
     completeFailedResultGenerationUI();
     await sendClientLog({
@@ -18362,7 +18373,7 @@ ${qualityResult.issues.map(issue=>`- ${issue}`).join('\n')}
         ticketStatus:ACTIVE_PAID_READING_TICKET?.status||'',
       },
     });
-    showToast(e?.userMessage||'品質を確認できなかったため、チケットは使用せず停止しました。時間をおいて再度お試しください。');
+    showToast(e?.userMessage||(releaseIssue?'品質を確認できなかったため停止しました。チケットは消費していませんが、再試行できない場合は運営側で確認します。':'品質を確認できなかったため、チケットは使用せず停止しました。時間をおいて再度お試しください。'));
     return false;
   }
 
