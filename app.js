@@ -10656,7 +10656,7 @@ function renderResultProgressCard(){
   copyEl.textContent=summary.copy;
   stepsEl.innerHTML=getResultStageDefs().map((def,index)=>{
     const status=RESULT_STAGE_STATE[def.key]||'queued';
-    const statusLabel=status==='done'?'完了':status==='working'?'進行中':'待機';
+    const statusLabel=status==='done'?'完了':status==='working'?'進行中':status==='error'?'停止':'待機';
     return `<div class="result-progress-step is-${status}">
       <div class="result-progress-step-top">
         <div class="result-progress-step-index">段階 ${String(index+1).padStart(2,'0')}</div>
@@ -17956,9 +17956,9 @@ function renderPaidCombinedOutputs(parsed,name,cat,theme,options={}){
     LAST_OUTPUTS.len=parsed.len||message;
     LAST_OUTPUTS.orc=parsed.orc||message;
     LAST_OUTPUTS.integration=parsed.integration||message;
-    setReadingBlockError('r-len-block','鑑定を作れませんでした','通信または生成結果の確認に失敗しました。時間をおいて、もう一度お試しください。');
-    setReadingBlockError('r-orc-block','続きの鑑定を止めています','途中で途切れた結果を出さないため、今回は表示を止めています。');
-    setIntegrationError('最終結論を整えています','入力内容をもとに補助結果を表示します。');
+    setReadingBlockError('r-len-block','深掘り鑑定を停止しました','品質確認を通らない結果を有料鑑定として表示しないため、今回は出力を止めています。');
+    setReadingBlockError('r-orc-block','続きの鑑定を停止しました','途中で途切れた結果やfallback文を納品しないため、時間をおいて再度お試しください。');
+    setIntegrationError('チケットは使用していません','鑑定文の品質を確認できなかったため、有料チケットを消費せず停止しました。');
     return;
   }else{
     const lenSource=parsed.len||buildRichLenFallback(name,cat);
@@ -18235,7 +18235,6 @@ ${orcFull}
   recordPaidDebugQuality('focus_correction',detectFocusRegressionIssues(baseFocus,refinedFocus,paidDebugContext));
 
   let parsed={len:'',orc:'',integration:''};
-  let paidGenerationFailed=false;
   try{
     const res=await callAI(prompt,6000,systemPrompt,{
       taskKey:'paid',
@@ -18279,9 +18278,12 @@ ${orcFull}
         parsed=await supplementPaidReadingSections(parsed,qualityResult,{...paidDebugContext,userDataText:paidUserData});
         parsed=await strengthenPaidIntegration(parsed,paidDebugContext);
         recordPaidDebugParsed('after_quality_supplement',parsed);
-        const postSupplementIssues=validatePaidReadingQuality(parsed,{...paidDebugContext,userDataText:paidUserData});
-        recordPaidDebugQuality('post_supplement_quality',postSupplementIssues);
-        qualityResult={ok:postSupplementIssues.length===0,issues:postSupplementIssues,sections:postSupplementIssues.map(issue=>issue.split('が')[0]).filter(section=>['len','orc','integration'].includes(section)),requiresFullRegeneration:qualityResult.requiresFullRegeneration};
+        const postSupplementQuality=await evaluatePaidReadingQuality(parsed,{...paidDebugContext,userDataText:paidUserData});
+        recordPaidDebugQuality('post_supplement_quality',postSupplementQuality.issues);
+        qualityResult={
+          ...postSupplementQuality,
+          requiresFullRegeneration:qualityResult.requiresFullRegeneration||postSupplementQuality.requiresFullRegeneration,
+        };
       }catch(e){
         qualityResult={...qualityResult,requiresFullRegeneration:true};
       }
@@ -18321,10 +18323,12 @@ ${qualityResult.issues.map(issue=>`- ${issue}`).join('\n')}
         throw makeAppError('PAID_PARSE_ERROR','深掘り鑑定の形式を確認できませんでした。');
       }
       const strengthenedRetryParsed=await strengthenPaidIntegration(retryParsed,paidDebugContext);
-      const retryQualityIssues=validatePaidReadingQuality(strengthenedRetryParsed,{...paidDebugContext,userDataText:paidUserData});
+      const retryQualityResult=await evaluatePaidReadingQuality(strengthenedRetryParsed,{...paidDebugContext,userDataText:paidUserData});
+      const retryQualityIssues=retryQualityResult.issues;
       recordPaidDebugQuality('retry_quality',retryQualityIssues);
-      if(retryQualityIssues.length){
-        throw makeAppError('PAID_QUALITY_ERROR',`深掘り鑑定の品質を確認できませんでした。${retryQualityIssues.join(' / ')}`);
+      if(retryQualityIssues.length||retryQualityResult.requiresFullRegeneration){
+        const reason=retryQualityIssues.length?retryQualityIssues.join(' / '):'再生成後も品質監査で追加確認が必要です';
+        throw makeAppError('PAID_QUALITY_ERROR',`深掘り鑑定の品質を確認できませんでした。${reason}`);
       }
       parsed=strengthenedRetryParsed;
     }
@@ -18342,28 +18346,27 @@ ${qualityResult.issues.map(issue=>`- ${issue}`).join('\n')}
         hasCurrentReadingId:!!CURRENT_READING_ID,
       },
     });
-    paidGenerationFailed=true;
-    parsed={
-      len:buildRichLenFallback(name,cat),
-      orc:buildRichOrcFallback(name,cat,true),
-      integration:buildIntegratedFallback(name,cat,theme),
-    };
-    recordPaidDebugParsed('fallback',parsed);
+    const releaseOk=await releasePaidReadingTicketLock();
+    recordPaidDebugQuality('paid_generation_failed',[e?.code||e?.message||'paid generation failed']);
+    renderPaidCombinedOutputs({len:'',orc:'',integration:''},name,cat,theme,{...paidDebugContext,allowFallback:false});
+    ['len','orc','integration'].forEach(stage=>setResultStageStatus(stage,'error'));
+    completeFailedResultGenerationUI();
+    await sendClientLog({
+      level:'warn',
+      type:'paid_generation_stopped_without_ticket_use',
+      message:'Paid reading generation stopped without fallback delivery or ticket use',
+      meta:{
+        code:e?.code||'',
+        releaseOk,
+        hasActiveTicket:!!ACTIVE_PAID_READING_TICKET?.id,
+        ticketStatus:ACTIVE_PAID_READING_TICKET?.status||'',
+      },
+    });
+    showToast(e?.userMessage||'品質を確認できなかったため、チケットは使用せず停止しました。時間をおいて再度お試しください。');
+    return false;
   }
 
   renderPaidCombinedOutputs(parsed,name,cat,theme,{...paidDebugContext,allowFallback:true});
-  if(paidGenerationFailed){
-    await sendClientLog({
-      level:'warn',
-      type:'paid_generation_fallback_rendered',
-      message:'Paid reading fallback was rendered after generation failure',
-      meta:{
-        hasLen:!!LAST_OUTPUTS.len,
-        hasOrc:!!LAST_OUTPUTS.orc,
-        hasIntegration:!!LAST_OUTPUTS.integration,
-      },
-    });
-  }
 
   await ensureStageMinimumTime('len',lenStageStartedAt);
   setResultStageStatus('len','done');
