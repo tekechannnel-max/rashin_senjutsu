@@ -5,9 +5,11 @@
 ## 現在の運用
 
 - Threads自動投稿: Render Cron Job `rashin-threads-scheduler`
+- Bluesky自動投稿: Render Cron Job `rashin-threads-scheduler` で `SOCIAL_PLATFORMS=threads,bluesky` にした場合だけThreadsと同じ予定時刻で投稿する
 - X: 自動投稿しない。GitHub Actionsで下書きを作り、人間がX画面で確認して投稿する
 - ローカルWindows: Task Scheduler、可視PowerShell、ローカルdaemonを使わない
 - 対象Threads: `https://www.threads.com/@sensai_teke`
+- 対象Bluesky: `https://bsky.app/profile/tekesensai.bsky.social`
 - 対象X: `https://x.com/Teke_Sensai`
 
 ## Render Cron
@@ -36,8 +38,11 @@ PUBLIC_ORIGIN=https://rashin-senjutsu.onrender.com
 THREADS_EXPECTED_USERNAME=sensai_teke
 THREADS_USER_ID=26630452966614276
 THREADS_ACCESS_TOKEN=<Renderにだけ保存する>
+BLUESKY_IDENTIFIER=tekesensai.bsky.social
+BLUESKY_APP_PASSWORD=<Renderにだけ保存する>
+BLUESKY_EXPECTED_HANDLE=tekesensai.bsky.social
 SOCIAL_AUTOMATED_POSTING_ENABLED=true
-SOCIAL_PLATFORMS=threads
+SOCIAL_PLATFORMS=threads,bluesky
 SOCIAL_PAID_CTA_MODE=soft
 SOCIAL_BOOTH_ENABLED=false
 SOCIAL_UTM_CAMPAIGN=202605_prerelease
@@ -48,13 +53,14 @@ THREADS_CONTAINER_TIMEOUT_MS=120000
 THREADS_POST_VERIFY_TIMEOUT_MS=120000
 ```
 
-`THREADS_ACCESS_TOKEN` はチャット、Git、mdに書かない。
+`THREADS_ACCESS_TOKEN` と `BLUESKY_APP_PASSWORD` はチャット、Git、mdに書かない。
 
 ## 投稿内容のルール
 
 - 07:00: 数秘オラクル。カード画像、alt text、今日の小さな行動を入れる
 - 20:00: 信頼形成の短文。売り込みより、自己理解、非依存、次の行動を優先する
 - Threadsは500文字以内、基本ハッシュタグは1つ
+- Blueskyは300文字以内、画像1枚とalt textを付ける。Bluesky公式ドキュメント上の画像上限は2MBなので、告知画像は小さい既存JPEGを使う
 - XはThreads本文の丸写しにしない。今は下書きのみ
 - 不安を煽る、未来を断定する、医療/法律/投資判断の代替に見える表現は禁止
 - BOOTHの購入導線が本番確認済みになるまで、強い有料CTAにしない
@@ -65,8 +71,9 @@ THREADS_POST_VERIFY_TIMEOUT_MS=120000
 
 ```powershell
 npm run check
-npm run social:audit -- --from=2026-05-13 --to=2026-05-29 --platforms=threads,x
+npm run social:audit -- --from=2026-05-13 --to=2026-05-29 --platforms=threads,bluesky,x
 npm run threads:doctor
+npm run bluesky:doctor
 node scripts/social/run-scheduled-posts.js --dry-run
 ```
 
@@ -74,6 +81,7 @@ Render側の接続確認だけをしたい時は、一時的にCommandを次に�
 
 ```text
 npm run threads:doctor
+npm run bluesky:doctor
 ```
 
 確認後は必ず本番Commandに戻す。
@@ -108,23 +116,28 @@ node scripts/social/run-scheduled-posts.js --once --only-kind=all
 "due": ["concept"]
 ```
 
-投稿成功は、`posted` または `existing_threads_post` と、Threads APIの検証結果で判断する。`due: []` は投稿成功ではなく、時間外の正常終了。
+投稿成功は、`posted`、`existing_threads_post`、`existing_bluesky_post` と、対象SNS側の検証結果で判断する。`due: []` は投稿成功ではなく、時間外の正常終了。
 
 ## 完了と言ってよい条件
 
 - Render CronのCommandとScheduleがこのrunbookと一致している
 - Render環境変数に `THREADS_ACCESS_TOKEN` と `THREADS_USER_ID` が入っている
+- Render環境変数に `BLUESKY_IDENTIFIER`、`BLUESKY_APP_PASSWORD`、`BLUESKY_EXPECTED_HANDLE` が入っている
 - Render上の `npm run threads:doctor` が `username: sensai_teke` で成功した
+- Render上の `npm run bluesky:doctor` が `handle: tekesensai.bsky.social` で成功した
 - Render上の本番Commandが時間外で `due: []` または期限切れで `expired` を出して成功した
-- 実際の投稿時間帯にRenderの自動runが作成され、`posted` または `existing_threads_post` を確認した
+- 実際の投稿時間帯にRenderの自動runが作成され、`posted`、`existing_threads_post`、`existing_bluesky_post` を確認した
 
 最後の1つをまだ見ていない場合は、「Render Cronの起動確認済み。次の投稿時間帯の実投稿は未確認」と言う。
 
 ## 失敗時
 
 - `Missing THREADS_ACCESS_TOKEN`: Render環境変数を直す
+- `Missing BLUESKY_APP_PASSWORD`: Blueskyのアプリパスワードを作り、Render環境変数にだけ保存する
 - `Set THREADS_EXPECTED_USERNAME`: Render環境変数に `sensai_teke` を入れる
+- `Set BLUESKY_EXPECTED_HANDLE`: Render環境変数に `tekesensai.bsky.social` を入れる
 - `username` が `sensai_teke` 以外: 投稿を止めてトークンを作り直す
+- `handle` が `tekesensai.bsky.social` 以外: 投稿を止めてBluesky認証情報を作り直す
 - 画像投稿だけ失敗: `SOCIAL_THREADS_IMAGE_FALLBACK_TEXT=true` ならテキスト投稿に落ちる。ログを確認する
 - GitHub Actions scheduleでThreads投稿しようとしている: workflowを直す。Threads本番はRender Cronだけ
 - ローカルWindowsで解決しようとしている: やらない

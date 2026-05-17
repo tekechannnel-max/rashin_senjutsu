@@ -10,6 +10,8 @@ const FIX_PERIOD_END_DATE = '2026-06-05';
 const RELEASE_DATE = PRERELEASE_START_DATE;
 const THREADS_LIMIT = 500;
 const X_LIMIT = 280;
+const BLUESKY_LIMIT = 300;
+const BLUESKY_IMAGE_LIMIT_BYTES = 2 * 1024 * 1024;
 const REQUIRED_HASHTAG = '#羅針占術';
 
 const HARD_NG_PATTERNS = [
@@ -118,7 +120,7 @@ function auditText({ text, dateKey, kind, platform }) {
   const length = textLength(value);
   const prelaunch = isPrelaunchDate(dateKey);
   const releasePhase = getReleasePhase(dateKey);
-  const limit = platform === 'x' ? X_LIMIT : THREADS_LIMIT;
+  const limit = platform === 'x' ? X_LIMIT : platform === 'bluesky' ? BLUESKY_LIMIT : THREADS_LIMIT;
 
   if (!value.trim()) addIssue(issues, 'error', 'empty', '投稿文が空です。');
   if (length > limit) addIssue(issues, 'error', 'length', `${platform}の文字数上限を超えています: ${length}/${limit}`);
@@ -129,6 +131,9 @@ function auditText({ text, dateKey, kind, platform }) {
   }
   if (platform === 'x' && (hashtagCount < 1 || hashtagCount > 2)) {
     addIssue(issues, 'error', 'hashtag_count', `Xのハッシュタグは1〜2個にします: ${hashtagCount}`);
+  }
+  if (platform === 'bluesky' && (hashtagCount < 1 || hashtagCount > 2)) {
+    addIssue(issues, 'error', 'hashtag_count', `Blueskyのハッシュタグは1〜2個にします: ${hashtagCount}`);
   }
 
   for (const [label, pattern] of HARD_NG_PATTERNS) {
@@ -176,15 +181,22 @@ function auditText({ text, dateKey, kind, platform }) {
 
 function auditImage({ draft, kind, platform }) {
   const issues = [];
-  if (platform !== 'x') return issues;
+  if (!['x', 'bluesky'].includes(platform)) return issues;
   const entry = draft[kind] || {};
-  if (!entry.imagePath) {
-    addIssue(issues, 'error', 'x_image_missing', 'X用投稿に画像パスがありません。');
-  } else if (!fs.existsSync(entry.imagePath)) {
-    addIssue(issues, 'error', 'x_image_not_found', `X用画像が見つかりません: ${entry.imagePath}`);
+  const imagePath = platform === 'bluesky' ? entry.blueskyImagePath : entry.imagePath;
+  const altText = entry.altText;
+  if (!imagePath) {
+    addIssue(issues, 'error', `${platform}_image_missing`, `${platform}用投稿に画像パスがありません。`);
+  } else if (!fs.existsSync(imagePath)) {
+    addIssue(issues, 'error', `${platform}_image_not_found`, `${platform}用画像が見つかりません: ${imagePath}`);
+  } else if (platform === 'bluesky') {
+    const size = fs.statSync(imagePath).size;
+    if (size > BLUESKY_IMAGE_LIMIT_BYTES) {
+      addIssue(issues, 'error', 'bluesky_image_too_large', `Bluesky用画像が2MBを超えています: ${size}/${BLUESKY_IMAGE_LIMIT_BYTES} ${imagePath}`);
+    }
   }
-  if (!String(entry.altText || '').trim()) {
-    addIssue(issues, 'error', 'x_alt_missing', 'X用画像のalt textがありません。');
+  if (!String(altText || '').trim()) {
+    addIssue(issues, 'error', `${platform}_alt_missing`, `${platform}用画像のalt textがありません。`);
   }
   return issues;
 }
@@ -239,7 +251,11 @@ function main() {
     const draft = generateDraft(dateKey, args);
     for (const kind of ['oracle', 'concept']) {
       for (const platform of platforms) {
-        const text = platform === 'x' ? draft[kind].xText : draft[kind].text;
+        const text = platform === 'x'
+          ? draft[kind].xText
+          : platform === 'bluesky'
+            ? draft[kind].blueskyText
+            : draft[kind].text;
         const audit = auditText({ text, dateKey, kind, platform, releaseMode: args.releaseMode });
         const imageIssues = auditImage({ draft, kind, platform });
         result.entries.push({

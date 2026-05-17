@@ -86,7 +86,7 @@ jobs:
         shell: bash
         run: |
           today="$(TZ=Asia/Tokyo date +%F)"
-          npm run social:audit -- --from="$today" --to="$today" --platforms=threads,x
+          npm run social:audit -- --from="$today" --to="$today" --platforms=threads,bluesky,x
 
       - name: Confirm Threads token account
         if: steps.secrets.outputs.ready == 'true'
@@ -103,7 +103,7 @@ jobs:
     timeout-minutes: 10
     env:
       PUBLIC_ORIGIN: https://rashin-senjutsu.onrender.com
-      SOCIAL_PLATFORMS: threads,x
+      SOCIAL_PLATFORMS: threads,bluesky,x
       SOCIAL_PAID_CTA_MODE: soft
       SOCIAL_BOOTH_ENABLED: 'false'
       SOCIAL_UTM_CAMPAIGN: 202605_prerelease
@@ -121,11 +121,11 @@ jobs:
       - name: Validate scripts
         run: npm run check
 
-      - name: Audit today's Threads/X drafts
+      - name: Audit today's Threads/Bluesky/X drafts
         shell: bash
         run: |
           today="$(TZ=Asia/Tokyo date +%F)"
-          npm run social:audit -- --from="$today" --to="$today" --platforms=threads,x
+          npm run social:audit -- --from="$today" --to="$today" --platforms=threads,bluesky,x
 
       - name: Export X draft artifacts
         shell: bash

@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const fs = require('fs/promises');
 const path = require('path');
 const threadsClient = require('./threads-client');
+const blueskyClient = require('./bluesky-client');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const APP_JS = path.join(ROOT, 'app.js');
@@ -11,6 +12,7 @@ const DEFAULT_PUBLIC_ORIGIN = 'https://rashin-senjutsu.onrender.com';
 const DEFAULT_HASHTAG = '#羅針占術';
 const THREADS_CHARACTER_LIMIT = 500;
 const X_CHARACTER_LIMIT = 280;
+const BLUESKY_CHARACTER_LIMIT = 300;
 const DEFAULT_SOCIAL_CAMPAIGN = '202605_prerelease';
 const PRERELEASE_START_DATE = '2026-05-16';
 const PRERELEASE_END_DATE = '2026-05-29';
@@ -196,13 +198,18 @@ function boolFromEnv(value) {
 
 function getSocialConfig(args) {
   const platforms = Array.isArray(args.platforms) && args.platforms.length ? args.platforms : ['threads'];
-  const primaryPlatform = platforms.includes('threads') ? 'threads' : platforms[0] || 'threads';
+  const primaryPlatform = platforms.includes('threads')
+    ? 'threads'
+    : platforms.includes('bluesky')
+      ? 'bluesky'
+      : platforms[0] || 'threads';
   const boothUrl = String(process.env.BOOTH_DEEP_READING_URL || process.env.BOOTH_PRODUCT_URL || '').trim();
   const paidCtaMode = normalizeMode(process.env.SOCIAL_PAID_CTA_MODE, SOCIAL_PAID_CTA_MODES, 'soft');
   return {
     timezone: 'Asia/Tokyo',
     primaryPlatform,
     enableX: platforms.includes('x'),
+    enableBluesky: platforms.includes('bluesky'),
     paidCtaMode,
     releaseMode: normalizeMode(process.env.SOCIAL_RELEASE_MODE, SOCIAL_RELEASE_MODES, 'auto'),
     boothEnabled: boolFromEnv(process.env.SOCIAL_BOOTH_ENABLED) && !!boothUrl,
@@ -382,6 +389,17 @@ function getXHashtagLine(config = {}) {
   return configured || `${config.defaultHashtag || DEFAULT_HASHTAG} #AI占い`;
 }
 
+function getBlueskyHashtagLine(config = {}) {
+  const configured = String(process.env.SOCIAL_BLUESKY_HASHTAGS || '').trim();
+  return configured || `${config.defaultHashtag || DEFAULT_HASHTAG}`;
+}
+
+function replaceTrailingHashtagLine(text, currentLine, nextLine) {
+  const value = String(text || '');
+  if (!currentLine || currentLine === nextLine || !value.endsWith(currentLine)) return value;
+  return `${value.slice(0, -currentLine.length)}${nextLine}`;
+}
+
 function validatePostText(text, options = {}) {
   const label = options.label || 'post';
   const value = String(text || '');
@@ -400,11 +418,17 @@ function validatePostText(text, options = {}) {
   if (options.platforms?.includes('x') && hashtagCount > 2) {
     throw new Error(`${label} must use at most two hashtags on X.`);
   }
+  if (options.platforms?.includes('bluesky') && hashtagCount > 2) {
+    throw new Error(`${label} must use at most two hashtags on Bluesky.`);
+  }
   if (options.platforms?.includes('threads') && [...value].length > THREADS_CHARACTER_LIMIT) {
     throw new Error(`${label} is too long for Threads: ${[...value].length}/${THREADS_CHARACTER_LIMIT}`);
   }
   if (options.platforms?.includes('x') && [...value].length > X_CHARACTER_LIMIT) {
     throw new Error(`${label} is too long for X: ${[...value].length}/${X_CHARACTER_LIMIT}`);
+  }
+  if (options.platforms?.includes('bluesky') && [...value].length > BLUESKY_CHARACTER_LIMIT) {
+    throw new Error(`${label} is too long for Bluesky: ${[...value].length}/${BLUESKY_CHARACTER_LIMIT}`);
   }
 }
 
@@ -436,6 +460,19 @@ function validateDraft(draft, args) {
     validatePostText(draft.concept.xText, { label: 'concept X post', platforms: ['x'] });
     if (draft.oracle.xText === draft.oracle.text || draft.concept.xText === draft.concept.text) {
       throw new Error('X posts must not be identical to Threads posts.');
+    }
+  }
+  if (platforms.includes('bluesky')) {
+    validatePostText(draft.oracle.blueskyText, { label: 'oracle Bluesky post', platforms: ['bluesky'] });
+    validatePostText(draft.concept.blueskyText, { label: 'concept Bluesky post', platforms: ['bluesky'] });
+    const requiredHashtag = draft.meta?.policy?.hashtag || DEFAULT_HASHTAG;
+    if (!draft.oracle.blueskyText.includes(requiredHashtag)) throw new Error('oracle Bluesky post is missing the required hashtag.');
+    if (!draft.concept.blueskyText.includes(requiredHashtag)) throw new Error('concept Bluesky post is missing the required hashtag.');
+    if (!draft.oracle.blueskyImagePath || !draft.concept.blueskyImagePath) {
+      throw new Error('Bluesky posts require local image paths.');
+    }
+    if (!draft.oracle.altText || !draft.concept.altText) {
+      throw new Error('Bluesky image posts require alt text.');
     }
   }
 }
@@ -632,6 +669,12 @@ function buildXOracleText(card, publicOrigin, options = {}) {
   ].join('\n');
 }
 
+function buildBlueskyOracleText(card, publicOrigin, options = {}) {
+  const config = options.config || getSocialConfig({ platforms: ['bluesky'] });
+  const text = buildXOracleText(card, publicOrigin, { ...options, config });
+  return replaceTrailingHashtagLine(text, getXHashtagLine(config), getBlueskyHashtagLine(config));
+}
+
 function buildOracleAltText(card) {
   return `数秘オラクルカード No.${card.id}「${card.name}」。テーマは「${card.title}」。`;
 }
@@ -645,6 +688,13 @@ function pickConceptImage(entry, dateKey) {
     return SOCIAL_CONCEPT_IMAGES.icon;
   }
   return SOCIAL_CONCEPT_IMAGES.wide;
+}
+
+function pickBlueskyConceptImage(conceptImage) {
+  if (conceptImage?.file === 'app-hero-wide.png') {
+    return { ...conceptImage, file: 'app-wide.jpg' };
+  }
+  return { ...conceptImage, file: 'app-thumbnail.jpg' };
 }
 
 function buildConceptText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['threads'] })) {
@@ -723,16 +773,24 @@ function buildXConceptText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config
   ].join('\n');
 }
 
+function buildBlueskyConceptText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['bluesky'] })) {
+  const text = buildXConceptText(dateKey, publicOrigin, config);
+  return replaceTrailingHashtagLine(text, getXHashtagLine(config), getBlueskyHashtagLine(config));
+}
+
 async function buildDraft(args) {
   const dateKey = args.date || getJstDateString();
   const publicOrigin = (process.env.PUBLIC_ORIGIN || DEFAULT_PUBLIC_ORIGIN).replace(/\/$/, '');
   const config = getSocialConfig(args);
   const threadsConfig = withPlatform(config, 'threads');
   const xConfig = withPlatform(config, 'x');
+  const blueskyConfig = withPlatform(config, 'bluesky');
   const calendar = getCalendarEntry(dateKey);
   const paidCta = resolvePaidCta(calendar, config);
   const conceptImage = pickConceptImage(calendar, dateKey);
+  const blueskyConceptImage = pickBlueskyConceptImage(conceptImage);
   const conceptImagePath = path.join(ROOT, 'images', 'ui', conceptImage.file);
+  const blueskyConceptImagePath = path.join(ROOT, 'images', 'ui', blueskyConceptImage.file);
   const messages = await loadDailyOracleMessages();
   const card = await pickCard(messages, dateKey, args.write || args.post);
   const imageName = `${String(card.id).padStart(2, '0')}.jpg`;
@@ -749,6 +807,8 @@ async function buildDraft(args) {
       altText: buildOracleAltText(card),
       text: buildOracleText(card, publicOrigin, { dateKey, config: threadsConfig }),
       xText: buildXOracleText(card, publicOrigin, { dateKey, config: xConfig }),
+      blueskyText: buildBlueskyOracleText(card, publicOrigin, { dateKey, config: blueskyConfig }),
+      blueskyImagePath: path.join(ROOT, 'images', 'cards', 'oracle', imageName),
     },
     concept: {
       imagePath: conceptImagePath,
@@ -756,6 +816,9 @@ async function buildDraft(args) {
       altText: conceptImage.altText,
       text: buildConceptText(dateKey, publicOrigin, threadsConfig),
       xText: buildXConceptText(dateKey, publicOrigin, xConfig),
+      blueskyText: buildBlueskyConceptText(dateKey, publicOrigin, blueskyConfig),
+      blueskyImagePath: blueskyConceptImagePath,
+      blueskyImageUrl: `${publicOrigin}/images/ui/${blueskyConceptImage.file}`,
     },
     meta: {
       releasePhase: getReleasePhase(dateKey),
@@ -774,6 +837,7 @@ async function buildDraft(args) {
         boothEnabled: config.boothEnabled,
         stripeEnabled: config.stripeEnabled,
         campaign: config.campaign,
+        enableBluesky: config.enableBluesky,
       },
       calendar: calendar ? {
         morningTheme: calendar.morningTheme,
@@ -899,6 +963,24 @@ async function findExistingThreadsPost({ marker = null, text = '' } = {}) {
   }) || null;
 }
 
+async function findExistingBlueskyPost({ marker = null, text = '' } = {}) {
+  if (process.env.SOCIAL_ALLOW_DUPLICATE_POSTS === 'true') return null;
+  if (!marker && !text) throw new Error('Missing duplicate protection marker or text.');
+  const credentials = blueskyClient.getBlueskyCredentials();
+  const actor = credentials.expectedHandle || credentials.identifier;
+  if (!actor) return null;
+  const recent = await blueskyClient.listBlueskyAuthorFeed({
+    actor,
+    limit: Number(process.env.BLUESKY_DUPLICATE_LOOKBACK || 25),
+  });
+  const normalizedText = normalizeDuplicateText(text);
+  return (recent.feed || []).map(item => item.post).find(post => {
+    const postText = String(post?.record?.text || '');
+    if (marker && postText.includes(`utm_content=${marker}`)) return true;
+    return normalizedText && normalizeDuplicateText(postText) === normalizedText;
+  }) || null;
+}
+
 async function postImageToThreadsOnce({ text, imageUrl, altText, marker }) {
   const existing = await findExistingThreadsPost({ marker, text });
   if (existing) {
@@ -939,6 +1021,22 @@ async function postTextToThreadsOnce({ text, marker }) {
   return postTextToThreads(text);
 }
 
+async function postImageToBlueskyOnce({ text, imagePath, altText, marker }) {
+  const existing = await findExistingBlueskyPost({ marker, text });
+  if (existing) {
+    return {
+      skipped: true,
+      reason: 'existing_bluesky_post',
+      marker,
+      uri: existing.uri,
+      cid: existing.cid,
+      permalink: existing.uri ? `https://bsky.app/profile/${(blueskyClient.getBlueskyCredentials().expectedHandle || '').replace(/^@/, '')}/post/${String(existing.uri).split('/').pop()}` : null,
+      indexedAt: existing.indexedAt,
+    };
+  }
+  return blueskyClient.postImageToBluesky({ text, imagePath, altText });
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const draft = await buildDraft(args);
@@ -965,6 +1063,24 @@ async function main() {
       results.threadsConcept = await postTextToThreadsOnce({
         text: draft.concept.text,
         marker: extractUtmContent(draft.concept.text),
+      });
+    }
+  }
+  if (args.platforms.includes('bluesky')) {
+    if (args.kind === 'all' || args.kind === 'oracle') {
+      results.blueskyOracle = await postImageToBlueskyOnce({
+        text: draft.oracle.blueskyText,
+        imagePath: draft.oracle.blueskyImagePath,
+        altText: draft.oracle.altText,
+        marker: extractUtmContent(draft.oracle.blueskyText),
+      });
+    }
+    if (args.kind === 'all' || args.kind === 'concept') {
+      results.blueskyConcept = await postImageToBlueskyOnce({
+        text: draft.concept.blueskyText,
+        imagePath: draft.concept.blueskyImagePath,
+        altText: draft.concept.altText,
+        marker: extractUtmContent(draft.concept.blueskyText),
       });
     }
   }
