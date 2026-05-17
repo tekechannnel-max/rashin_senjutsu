@@ -5492,6 +5492,12 @@ function openBoothOrderModal({booth={},finalAmount=DEEP_READING_PRICE}={}){
           ${purchaseLink}
           <div class="booth-reference-hint">${escapeHtml(BOOTH_ANY_GOODS_NOTE)} 注文番号は、BOOTHの注文内容確認メール、または購入履歴から確認できます。公開投稿やリプライには書かず、この画面に入力してください。</div>
           ${booth.note?`<div class="booth-reference-hint">${escapeHtml(booth.note)}</div>`:''}
+          <div class="booth-reference-hint booth-contact-hint">
+            有料購入後にBOOTH注文番号で利用できない場合や、不具合が起きた場合は、
+            <a href="https://x.com/Teke_Sensai" target="_blank" rel="noopener">X（@Teke_Sensai）のDM</a>
+            または <a href="mailto:tekechannnel@gmail.com">tekechannnel@gmail.com</a> までご連絡ください。
+            フィードバックやご感想も、同じ連絡先でお待ちしております。
+          </div>
         </div>
         <div class="booth-reference-row">
           <label class="modal-label" for="booth-reference-input">BOOTH注文番号</label>
