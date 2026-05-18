@@ -19,6 +19,7 @@ on:
         options:
           - auto
           - oracle
+          - midday
           - concept
           - all
 

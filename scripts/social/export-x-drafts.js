@@ -11,6 +11,12 @@ const FIX_PERIOD_END_DATE = '2026-06-05';
 const FULL_RELEASE_DATE = '2026-06-06';
 const X_LIMIT = 280;
 const DEFAULT_X_DRAFT_GRACE_MINUTES = 60;
+const SOCIAL_POST_KINDS = ['oracle', 'midday', 'concept'];
+const SCHEDULED_TIME_BY_KIND = {
+  oracle: '07:00 Asia/Tokyo',
+  midday: '12:00 Asia/Tokyo',
+  concept: '20:00 Asia/Tokyo',
+};
 
 function parseArgs(argv) {
   const args = {
@@ -39,7 +45,7 @@ function parseArgs(argv) {
   if (args.date && !/^\d{4}-\d{2}-\d{2}$/.test(args.date)) throw new Error(`Invalid --date: ${args.date}`);
   if (args.from && !/^\d{4}-\d{2}-\d{2}$/.test(args.from)) throw new Error(`Invalid --from: ${args.from}`);
   if (args.to && !/^\d{4}-\d{2}-\d{2}$/.test(args.to)) throw new Error(`Invalid --to: ${args.to}`);
-  if (!['all', 'auto', 'oracle', 'concept'].includes(args.kind)) throw new Error(`Invalid --kind: ${args.kind}`);
+  if (!['all', 'auto', ...SOCIAL_POST_KINDS].includes(args.kind)) throw new Error(`Invalid --kind: ${args.kind}`);
   return args;
 }
 
@@ -111,6 +117,7 @@ function getDateRange(args) {
 function getSchedule() {
   return [
     { kind: 'oracle', time: '07:00', minute: 7 * 60 },
+    { kind: 'midday', time: '12:00', minute: 12 * 60 },
     { kind: 'concept', time: '20:00', minute: 20 * 60 },
   ];
 }
@@ -129,13 +136,11 @@ function getDueKinds() {
 function getKinds(args) {
   if (args.due || args.kind === 'auto') {
     const due = getDueKinds();
-    if (args.kind === 'oracle') return due.includes('oracle') ? ['oracle'] : [];
-    if (args.kind === 'concept') return due.includes('concept') ? ['concept'] : [];
+    if (SOCIAL_POST_KINDS.includes(args.kind)) return due.includes(args.kind) ? [args.kind] : [];
     return due;
   }
-  if (args.kind === 'oracle') return ['oracle'];
-  if (args.kind === 'concept') return ['concept'];
-  return ['oracle', 'concept'];
+  if (SOCIAL_POST_KINDS.includes(args.kind)) return [args.kind];
+  return SOCIAL_POST_KINDS;
 }
 
 function runDailyDraft(dateKey) {
@@ -190,7 +195,7 @@ async function buildEntry(draft, kind) {
     date: draft.date,
     kind,
     platform: 'x',
-    scheduledTime: kind === 'oracle' ? '07:00 Asia/Tokyo' : '20:00 Asia/Tokyo',
+    scheduledTime: SCHEDULED_TIME_BY_KIND[kind] || '',
     releasePhase: draft.meta?.releasePhase || getReleasePhase(draft.date),
     releasePlan: draft.meta?.releasePlan || {
       prelaunchUntil: '2026-05-15',

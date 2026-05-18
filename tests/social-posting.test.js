@@ -55,15 +55,33 @@ function testDraftHasTrackingImagesAndAlt() {
   assertTracked(draft.oracle.text, draft.oracle.trackedUrl, 'threads oracle');
   assertTracked(draft.oracle.blueskyText, draft.oracle.blueskyTrackedUrl, 'bluesky oracle');
   assertTracked(draft.oracle.xText, draft.oracle.xTrackedUrl, 'x oracle');
+  assertTracked(draft.midday.text, draft.midday.trackedUrl, 'threads midday');
+  assertTracked(draft.midday.blueskyText, draft.midday.blueskyTrackedUrl, 'bluesky midday');
+  assertTracked(draft.midday.xText, draft.midday.xTrackedUrl, 'x midday');
   assertTracked(draft.concept.text, draft.concept.trackedUrl, 'threads concept');
   assertTracked(draft.concept.blueskyText, draft.concept.blueskyTrackedUrl, 'bluesky concept');
   assertTracked(draft.concept.xText, draft.concept.xTrackedUrl, 'x concept');
 
   assertImageAndAlt(draft.oracle.imagePath, draft.oracle.altText, 'oracle');
+  assertImageAndAlt(draft.midday.imagePath, draft.midday.altText, 'threads midday');
+  assertImageAndAlt(draft.midday.blueskyImagePath, draft.midday.altText, 'bluesky midday');
   assertImageAndAlt(draft.concept.imagePath, draft.concept.altText, 'threads concept');
   assertImageAndAlt(draft.concept.blueskyImagePath, draft.concept.altText, 'bluesky concept');
   assert.ok(fs.statSync(draft.oracle.blueskyImagePath).size <= 1_000_000, 'Bluesky oracle image must be <= 1,000,000 bytes');
+  assert.ok(fs.statSync(draft.midday.blueskyImagePath).size <= 1_000_000, 'Bluesky midday image must be <= 1,000,000 bytes');
   assert.ok(fs.statSync(draft.concept.blueskyImagePath).size <= 1_000_000, 'Bluesky concept image must be <= 1,000,000 bytes');
+}
+
+function testMiddayCopyIsSharedAcrossThreadsAndBluesky() {
+  const draft = parseDraft();
+  assert.equal(draft.midday.text, draft.midday.blueskyText, 'Threads and Bluesky midday copy should be identical');
+  assert.ok([...draft.midday.blueskyText].length <= 300, 'Bluesky midday post must stay within 300 characters');
+  assert.match(draft.midday.text, /昼の羅針｜/, 'midday post should use the lunch-slot title');
+  assert.match(draft.midday.text, /無料鑑定はこちら/, 'midday post should include the free reading CTA');
+  assert.match(draft.midday.text, /\brashin-senjutsu\.onrender\.com\b/, 'midday post should use the short visible URL');
+  assert.doesNotMatch(draft.midday.text, /utm_source=|utm_content=/, 'midday visible text should not include long tracking parameters');
+  assert.match(draft.midday.trackedUrl, /utm_content=midday_20260518/, 'midday tracked URL should use the midday utm_content');
+  assert.match(draft.midday.blueskyTrackedUrl, /utm_source=bluesky/, 'Bluesky midday tracked URL should keep the Bluesky source in the ledger');
 }
 
 function testNightConceptCopyIsSharedAcrossThreadsAndBluesky() {
@@ -146,9 +164,10 @@ function testPostsLedgerWriteIsTraceableAndSecretSafe() {
 
   const csv = fs.readFileSync(ledgerFile, 'utf8');
   const rows = csv.trim().split(/\r?\n/);
-  assert.equal(rows.length, 5, 'ledger should contain header plus four draft rows');
+  assert.equal(rows.length, 7, 'ledger should contain header plus six draft rows');
   assert.match(rows[0], /post_key,date,kind,platform,status/, 'ledger header is missing expected columns');
   assert.match(csv, /utm_content=oracle_20260518/, 'oracle tracked URL is missing from ledger');
+  assert.match(csv, /utm_content=midday_20260518/, 'midday tracked URL is missing from ledger');
   assert.match(csv, /utm_content=concept_20260518/, 'concept tracked URL is missing from ledger');
   assert.doesNotMatch(csv, /unit-test-threads-token|unit-test-bluesky-password/, 'ledger must not leak tokens');
   assert.doesNotMatch(csv, /今日の|羅針占術|無料鑑定/, 'ledger should store hashes, URLs, and metadata, not full post copy');
@@ -192,6 +211,7 @@ function testBroadSocialAuditPasses() {
 testDraftHasTrackingImagesAndAlt();
 testMorningOracleCopyIsSharedAcrossThreadsAndBluesky();
 testMorningOracleAllCardsAreExpandedNearBlueskyLimit();
+testMiddayCopyIsSharedAcrossThreadsAndBluesky();
 testNightConceptCopyIsSharedAcrossThreadsAndBluesky();
 testPostsLedgerWriteIsTraceableAndSecretSafe();
 testRealPostingRequiresExplicitYesOutsideScheduler();

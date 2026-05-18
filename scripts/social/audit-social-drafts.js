@@ -13,6 +13,7 @@ const X_LIMIT = 280;
 const BLUESKY_LIMIT = 300;
 const BLUESKY_IMAGE_LIMIT_BYTES = 1_000_000;
 const REQUIRED_HASHTAG = '#羅針占術';
+const SOCIAL_POST_KINDS = ['oracle', 'midday', 'concept'];
 
 const HARD_NG_PATTERNS = [
   ['断定的な的中表現', /絶対当たる|100%当たる|必ず当たる/],
@@ -181,6 +182,9 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
   if (kind === 'oracle' && !/今日の1枚|テーマ|一手/.test(value)) {
     addIssue(issues, 'warn', 'oracle_structure', '朝オラクルとしてカード、テーマ、一手のどれかが弱いです。');
   }
+  if (kind === 'midday' && !/昼の羅針|無料鑑定|羅針占術|恋愛|仕事|お金|人間関係|復縁|自己理解|流れ/.test(value)) {
+    addIssue(issues, 'warn', 'midday_axis', '12時投稿として悩み別の入口や羅針占術の価値が弱い可能性があります。');
+  }
   if (kind === 'concept' && !/未来を断定|整理|次の一手|本質|本音|現実|迷|流れ|占い|鑑定|確認|カード|オラクル|行動/.test(value)) {
     addIssue(issues, 'warn', 'concept_axis', '羅針占術の思想軸が弱い可能性があります。');
   }
@@ -259,7 +263,7 @@ function main() {
 
   for (const dateKey of result.dates) {
     const draft = generateDraft(dateKey, args);
-    for (const kind of ['oracle', 'concept']) {
+    for (const kind of SOCIAL_POST_KINDS) {
       for (const platform of platforms) {
         const text = platform === 'x'
           ? draft[kind].xText

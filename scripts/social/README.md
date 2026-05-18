@@ -43,7 +43,7 @@ node scripts/social/run-scheduled-posts.js --once --only-kind=all
 Render schedule:
 
 ```text
-0,5,10,15,20,25,30 22,11 * * *
+0,5,10,15,20,25,30 22,3,11 * * *
 ```
 
 ローカルWindowsのTask Scheduler、可視PowerShell、daemonは使わない。
@@ -80,6 +80,7 @@ npm run social:run-due
 
 ```powershell
 node scripts/social/run-scheduled-posts.js --once --only-kind=oracle
+node scripts/social/run-scheduled-posts.js --once --only-kind=midday
 node scripts/social/run-scheduled-posts.js --once --only-kind=concept
 ```
 
@@ -87,6 +88,7 @@ node scripts/social/run-scheduled-posts.js --once --only-kind=concept
 
 ```powershell
 node scripts/social/run-scheduled-posts.js --force-kind=oracle
+node scripts/social/run-scheduled-posts.js --force-kind=midday
 node scripts/social/run-scheduled-posts.js --force-kind=concept
 ```
 
@@ -121,6 +123,7 @@ npm run social:draft -- --date=2026-05-18 --platforms=threads,bluesky
 - `audit-social-drafts.js` は文字数、UTM、画像、alt text、重複本文、禁止表現を検査する。
 - `run-scheduled-posts.js` はRender Cron用。JSTの投稿対象時間だけ `daily-oracle-post.js --write --post --yes` 相当を実行する。
 - 朝07:00の `oracle` はカード1〜33の投稿文をThreads / Blueskyで同じ本文にする。本文URLは短い `rashin-senjutsu.onrender.com` にし、UTM付きURLは `posts.csv` の分析用URLとして保存する。カード名の次行に `テーマ：...` を出し、`カードメッセージ` と「今日の一手」を入れ、具体行動の押しつけにならない表現で250〜300文字、平均270文字前後にする。
+- 昼12:00の `midday` は悩み別の入口として恋愛、仕事、お金、人間関係、復縁、自己理解、今後の流れをローテーションする。Threads / Blueskyは同じ本文、短い表示URL、画像、alt textを使い、UTM付きURLは `posts.csv` の分析用URLとして保存する。
 - 夜20:00の `concept` はThreads / Blueskyで同じ本文にする。URLの `utm_source` とBluesky用の軽量画像だけは媒体別に変える。
 - 夜20:00の本文は、羅針占術が他のAI占いと違う点と、何を整理できる占いなのかを短く伝える。
 
@@ -151,6 +154,7 @@ BLUESKY_APP_PASSWORD=<Renderに保存>
 BLUESKY_EXPECTED_HANDLE=tekesensai.bsky.social
 SOCIAL_AUTOMATED_POSTING_ENABLED=true
 SOCIAL_PLATFORMS=threads,bluesky
+SOCIAL_MIDDAY_TIME=12:00
 SOCIAL_POSTS_LEDGER_FILE=data/social-posts/posts.csv
 SOCIAL_API_RETRY_ATTEMPTS=3
 SOCIAL_API_RETRY_BASE_MS=1500

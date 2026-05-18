@@ -4,6 +4,12 @@ const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const DEFAULT_LEDGER_FILE = path.join(ROOT, 'data', 'social-posts', 'posts.csv');
+const DEFAULT_KINDS = ['oracle', 'midday', 'concept'];
+const RESULT_SUFFIX_BY_KIND = {
+  oracle: 'Oracle',
+  midday: 'Midday',
+  concept: 'Concept',
+};
 
 const COLUMNS = [
   'post_key',
@@ -152,7 +158,7 @@ function getEntryForPlatform(draft, kind, platform) {
 }
 
 function resultFor(results, kind, platform) {
-  const suffix = kind === 'oracle' ? 'Oracle' : 'Concept';
+  const suffix = RESULT_SUFFIX_BY_KIND[kind] || kind.charAt(0).toUpperCase() + kind.slice(1);
   const key = `${platform}${suffix[0].toUpperCase()}${suffix.slice(1)}`;
   return results?.[key] || null;
 }
@@ -173,7 +179,7 @@ function rowsFromDraft(draft, options = {}) {
     : ['threads'];
   const kinds = Array.isArray(options.kinds) && options.kinds.length
     ? options.kinds
-    : ['oracle', 'concept'];
+    : DEFAULT_KINDS;
   const updatedAt = options.updatedAt || new Date().toISOString();
   const rows = [];
   for (const kind of kinds) {

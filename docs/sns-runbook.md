@@ -9,11 +9,12 @@
 - Threads / Blueskyは投稿前に既存投稿を検索し、UTMの `utm_content` を重複判定用markerとして使う。
 - APIの一時失敗は `SOCIAL_API_RETRY_ATTEMPTS` と `SOCIAL_API_RETRY_BASE_MS` に従って再試行する。認証失敗、アカウント不一致、画像サイズ超過などは再試行しない。
 - すべての投稿には `utm_source`、`utm_medium=social`、`utm_campaign`、`utm_content` 付きの分析用URLを生成し、`posts.csv` に保存する。朝オラクルの本文には短い `rashin-senjutsu.onrender.com` だけを出す。
+- 昼12:00のmidday投稿は、Threads / Blueskyで同じ本文にする。本文URLは短い `rashin-senjutsu.onrender.com` にし、分析用URLは `utm_content=midday_YYYYMMDD` として `posts.csv` に残す。
 - 夜20:00のconcept投稿は、Threads / Blueskyで同じ本文にする。違うのは分析用URLの `utm_source` と、Bluesky用の軽量画像ファイルだけ。
 - 夜20:00の本文は、羅針占術が他のAI占いと違う点と、恋愛・仕事・人間関係などの迷いをどう整理できるかを端的に伝える。
 - `data/social-posts/posts.csv` は投稿台帳。本文とalt textはSHA-256ハッシュだけを保存し、`tracked_url` と `utm_content` でBOOTH側の流入分析と突き合わせる。
 - 投稿文は `audit-social-drafts.js` で日跨ぎの重複を検査する。公開後のカレンダー外投稿には日別の視点行を入れる。
-- Threads / Blueskyのoracle/concept投稿はいずれも画像とalt textを持つ。Bluesky用画像は1,000,000 bytes以下にする。
+- Threads / Blueskyのoracle/midday/concept投稿はいずれも画像とalt textを持つ。Bluesky用画像は1,000,000 bytes以下にする。
 
 本番前に必ず実行する。
 
@@ -32,7 +33,7 @@ SOCIAL_API_RETRY_ATTEMPTS=3
 SOCIAL_API_RETRY_BASE_MS=1500
 ```
 
-BOOTH購入分析では、アクセス解析またはBOOTH側で確認できる流入URLの `utm_content` を `posts.csv` の `utm_content` / `tracked_url` と照合する。`utm_source=threads` と `utm_source=bluesky` で媒体別、`utm_content=oracle_YYYYMMDD` / `concept_YYYYMMDD` で投稿別に見る。
+BOOTH購入分析では、アクセス解析またはBOOTH側で確認できる流入URLの `utm_content` を `posts.csv` の `utm_content` / `tracked_url` と照合する。`utm_source=threads` と `utm_source=bluesky` で媒体別、`utm_content=oracle_YYYYMMDD` / `midday_YYYYMMDD` / `concept_YYYYMMDD` で投稿別に見る。
 
 トラブル時:
 
@@ -62,7 +63,7 @@ Render Cron Job `rashin-threads-scheduler` の設定:
 Runtime: Node
 Build Command: npm ci
 Command: node scripts/social/run-scheduled-posts.js --once --only-kind=all
-Schedule: 0,5,10,15,20,25,30 22,11 * * *
+Schedule: 0,5,10,15,20,25,30 22,3,11 * * *
 Plan: Starter
 ```
 
@@ -70,6 +71,7 @@ RenderのcronはUTC。上のscheduleはJSTで次の時間帯だけ動く。
 
 ```text
 07:00-07:30 JST: oracle
+12:00-12:30 JST: midday
 20:00-20:30 JST: concept
 ```
 
@@ -85,6 +87,7 @@ BLUESKY_APP_PASSWORD=<Renderにだけ保存する>
 BLUESKY_EXPECTED_HANDLE=tekesensai.bsky.social
 SOCIAL_AUTOMATED_POSTING_ENABLED=true
 SOCIAL_PLATFORMS=threads,bluesky
+SOCIAL_MIDDAY_TIME=12:00
 SOCIAL_PAID_CTA_MODE=soft
 SOCIAL_BOOTH_ENABLED=false
 SOCIAL_UTM_CAMPAIGN=202605_prerelease
@@ -100,6 +103,7 @@ THREADS_POST_VERIFY_TIMEOUT_MS=120000
 ## 投稿内容のルール
 
 - 07:00: 数秘オラクル。カード1〜33の投稿はThreads / Blueskyで同じ本文にし、短いURL、カード画像、alt text、`カードメッセージ`、具体指示に寄せすぎない「今日の一手」を入れる。カード名の次行に `テーマ：...` を出し、Bluesky向けに250〜300文字、平均270文字前後を目安にする
+- 12:00: midday。悩み別の入口として恋愛、仕事、お金、人間関係、復縁、自己理解、今後の流れをローテーションする。Threads / Blueskyは同じ本文、短い表示URL、画像、alt textを使い、UTM付きURLは `posts.csv` に保存する
 - 20:00: 信頼形成の短文。売り込みより、自己理解、非依存、次の行動を優先する
 - Threadsは500文字以内、基本ハッシュタグは1つ
 - Blueskyは300文字以内、画像1枚とalt textを付ける。運用上の画像上限は1,000,000 bytesなので、告知画像は小さい既存JPEGを使う
@@ -150,6 +154,12 @@ node scripts/social/run-scheduled-posts.js --once --only-kind=all
 
 ```json
 "due": ["oracle"]
+```
+
+または:
+
+```json
+"due": ["midday"]
 ```
 
 または:

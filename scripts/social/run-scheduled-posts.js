@@ -8,6 +8,7 @@ const OUT_DIR = path.join(ROOT, 'data', 'social-posts');
 const DEFAULT_STATE_FILE = path.join(OUT_DIR, 'scheduled-post-state.json');
 const DAILY_SCRIPT = path.join(__dirname, 'daily-oracle-post.js');
 const DEFAULT_POST_GRACE_MINUTES = 30;
+const SOCIAL_POST_KINDS = ['oracle', 'midday', 'concept'];
 
 function parseArgs(argv) {
   const args = { once: false, dryRun: false, forceKind: '', onlyKind: '' };
@@ -91,6 +92,11 @@ function getSchedule() {
       minute: parseTimeToMinutes(process.env.SOCIAL_ORACLE_TIME, '07:00'),
     },
     {
+      kind: 'midday',
+      time: process.env.SOCIAL_MIDDAY_TIME || '12:00',
+      minute: parseTimeToMinutes(process.env.SOCIAL_MIDDAY_TIME, '12:00'),
+    },
+    {
       kind: 'concept',
       time: process.env.SOCIAL_CONCEPT_TIME || '20:00',
       minute: parseTimeToMinutes(process.env.SOCIAL_CONCEPT_TIME, '20:00'),
@@ -100,7 +106,7 @@ function getSchedule() {
 
 function filterScheduleByKind(schedule, onlyKind) {
   if (!onlyKind || onlyKind === 'all') return schedule;
-  if (!['oracle', 'concept'].includes(onlyKind)) {
+  if (!SOCIAL_POST_KINDS.includes(onlyKind)) {
     throw new Error(`Invalid --only-kind: ${onlyKind}`);
   }
   return schedule.filter(item => item.kind === onlyKind);

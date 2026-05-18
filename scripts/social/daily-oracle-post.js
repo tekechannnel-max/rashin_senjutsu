@@ -24,6 +24,7 @@ const RELEASE_DATE = PRERELEASE_START_DATE;
 const CARD_CYCLE_START_DATE = '2026-05-12';
 const SOCIAL_PAID_CTA_MODES = new Set(['off', 'soft', 'active']);
 const SOCIAL_RELEASE_MODES = new Set(['auto', 'prelaunch', 'prerelease', 'fix', 'release', 'launch', 'postrelease']);
+const SOCIAL_POST_KINDS = ['oracle', 'midday', 'concept'];
 const CARD_OVERRIDES_BY_DATE = {
   '2026-05-12': 8,
   '2026-05-13': 8,
@@ -193,6 +194,71 @@ const NIGHT_CONCEPT_POSTS = [
   '答えがほしい時ほど、まず問いを整える。\n羅針占術は、何に迷っているのか、何を確認すべきか、次に何をするかを一緒に整理します。',
   '「相手はどう思っている？」の前に、「自分は何を望んでいる？」。\n羅針占術は、恋愛の不安を自分の軸から見直すためにも使えます。',
   '羅針占術は、占いを“結論”ではなく“整理の道具”として使います。\n見えにくい本音と現実を分けて、次の一手を考えるためのAI占いです。',
+];
+
+const MIDDAY_TOPIC_POSTS = [
+  {
+    title: '昼の羅針｜これからの流れ',
+    body: 'これからの流れを見るときは、未来を断定するより、今どこで止まりやすいかを見るほうが動きやすくなります。羅針占術は、その止まりやすい点を次の一手へ変える占いです。',
+  },
+  {
+    title: '昼の羅針｜恋愛',
+    body: '相手の気持ちだけを追うほど、自分の安心が見えにくくなることがあります。羅針占術では、ルノルマンカードで現実の解析、数秘オラクルで打開点を見出します。',
+  },
+  {
+    title: '昼の羅針｜仕事・進路',
+    body: '仕事や進路は「辞めるか続けるか」だけで見ると重くなります。羅針占術では、評価・役割・消耗・次に残る意味を分けて、今の判断材料を整理します。',
+  },
+  {
+    title: '昼の羅針｜お金',
+    body: 'お金の不安は、増やす話だけでは整いません。羅針占術では、収支・支出・手元の余白を見ながら、生活の安心が残る流れかを読みます。',
+  },
+  {
+    title: '昼の羅針｜人間関係',
+    body: '人間関係は、相手を変えるより先に、自分がどこで消耗しているかを見ると整理しやすくなります。羅針占術では、距離感と境界線を現実の流れとして読みます。',
+  },
+  {
+    title: '昼の羅針｜復縁・曖昧な関係',
+    body: '復縁や曖昧な関係は、まだ好きかだけでは決めにくい悩みです。羅針占術では、過去の原因・信頼の温度・曖昧な連絡を分けて、今見るべき流れを整理します。',
+  },
+  {
+    title: '昼の羅針｜自己理解',
+    body: '自己理解は、性格診断で終わらせるより、今の迷いにどう出ているかを見ると使いやすくなります。羅針占術では、姓名判断・四柱推命・動物タイプ診断を土台として使います。',
+  },
+];
+
+const MIDDAY_FOCUS_LINES = [
+  '今日の焦点：答えを急がず、事実と気持ちを分けて見る。',
+  '今日の焦点：相手や状況より先に、自分の消耗点を確認する。',
+  '今日の焦点：すぐ動く前に、残したい安心を決める。',
+  '今日の焦点：大きな結論より、今見えている材料を並べる。',
+  '今日の焦点：不安の正体を、気分ではなく流れとして見る。',
+  '今日の焦点：期待していることと、現実に起きていることを分ける。',
+  '今日の焦点：迷いを責めず、次に確認する一点を決める。',
+  '今日の焦点：誰かの反応より、自分の境界線を先に見る。',
+  '今日の焦点：急な判断より、続けても苦しくない形を探す。',
+  '今日の焦点：損得だけでなく、心が荒れない選び方を見る。',
+  '今日の焦点：止まっている理由を、弱さではなく情報として扱う。',
+  '今日の焦点：まだ決めない選択肢も、判断材料として残す。',
+  '今日の焦点：同じ悩みの中で、前回と違う点を探す。',
+  '今日の焦点：相手の本音を決めつけず、見えている行動を読む。',
+  '今日の焦点：欲しい未来より、今の土台が耐えられるかを見る。',
+  '今日の焦点：言葉にする前の違和感を、小さく拾う。',
+  '今日の焦点：不安を消すより、扱える大きさに分ける。',
+  '今日の焦点：結論の前に、次に聞くべき問いを整える。',
+  '今日の焦点：続ける理由と離れる理由を同じ重さで見る。',
+  '今日の焦点：気持ちの強さと現実の進み方を混ぜない。',
+  '今日の焦点：今できる一手を、相手任せにしない形で探す。',
+  '今日の焦点：焦りの中にある本音を、静かに取り出す。',
+  '今日の焦点：自分を納得させるための証拠を探しすぎない。',
+  '今日の焦点：選ばなかった道も、今の判断材料として見る。',
+  '今日の焦点：変えられることと待つしかないことを分ける。',
+  '今日の焦点：強い言葉より、あとで見返せる整理を残す。',
+  '今日の焦点：一度で決めず、次の確認点まで進める。',
+  '今日の焦点：過去の理由と今の可能性を切り分ける。',
+  '今日の焦点：不安の声と本音の声を同じものにしない。',
+  '今日の焦点：動く前に、守りたいものをひとつ決める。',
+  '今日の焦点：答えではなく、次に見る方向を受け取る。',
 ];
 
 const ORACLE_SOFT_ACTIONS = {
@@ -555,6 +621,10 @@ function buildConceptTrackedUrl(dateKey, publicOrigin, config, paidCta) {
   return buildTrackedUrl(publicOrigin, '/', buildUtmParams(config, `${contentType}_${dateKey.replace(/-/g, '')}`));
 }
 
+function buildMiddayTrackedUrl(dateKey, publicOrigin, config) {
+  return buildTrackedUrl(publicOrigin, '/', buildUtmParams(config, `midday_${dateKey.replace(/-/g, '')}`));
+}
+
 function countHashtags(text) {
   return (String(text || '').match(/(^|\s)#[^\s#]+/g) || []).length;
 }
@@ -638,10 +708,12 @@ function validateDraft(draft, args) {
   const platforms = Array.isArray(args.platforms) ? args.platforms : ['threads'];
   if (platforms.includes('threads')) {
     validatePostText(draft.oracle.text, { label: 'oracle Threads post', platforms: ['threads'], requireTrackedUrl: true, trackedUrl: draft.oracle.trackedUrl });
+    validatePostText(draft.midday.text, { label: 'midday Threads post', platforms: ['threads'], requireTrackedUrl: true, trackedUrl: draft.midday.trackedUrl });
     validatePostText(draft.concept.text, { label: 'concept Threads post', platforms: ['threads'], requireTrackedUrl: true, trackedUrl: draft.concept.trackedUrl });
     const requiredHashtag = draft.meta?.policy?.hashtag || DEFAULT_HASHTAG;
     const preRelease = isPreReleasePosting(draft.date, draft.meta?.socialConfig || {});
     if (!draft.oracle.text.includes(requiredHashtag)) throw new Error('oracle Threads post is missing the required hashtag.');
+    if (!draft.midday.text.includes(requiredHashtag)) throw new Error('midday Threads post is missing the required hashtag.');
     if (!draft.concept.text.includes(requiredHashtag)) throw new Error('concept Threads post is missing the required hashtag.');
     if (preRelease) {
       if (draft.oracle.text.includes('あなたも今日の1枚を引かない？')) {
@@ -649,6 +721,7 @@ function validateDraft(draft, args) {
       }
     } else {
       if (!extractUtmContent(draft.oracle.trackedUrl || draft.oracle.text)) throw new Error('oracle Threads post is missing utm_content.');
+      if (!extractUtmContent(draft.midday.trackedUrl || draft.midday.text)) throw new Error('midday Threads post is missing utm_content.');
       if (!extractUtmContent(draft.concept.text)) throw new Error('concept Threads post is missing utm_content.');
       if (!draft.oracle.text.trim().endsWith('あなたも今日の1枚を引かない？')) {
         throw new Error('oracle Threads post must end with the required closing line.');
@@ -657,21 +730,27 @@ function validateDraft(draft, args) {
   }
   if (platforms.includes('x')) {
     validatePostText(draft.oracle.xText, { label: 'oracle X post', platforms: ['x'], requireTrackedUrl: true, trackedUrl: draft.oracle.xTrackedUrl });
+    validatePostText(draft.midday.xText, { label: 'midday X post', platforms: ['x'], requireTrackedUrl: true, trackedUrl: draft.midday.xTrackedUrl });
     validatePostText(draft.concept.xText, { label: 'concept X post', platforms: ['x'], requireTrackedUrl: true, trackedUrl: draft.concept.xTrackedUrl });
-    if (draft.oracle.xText === draft.oracle.text || draft.concept.xText === draft.concept.text) {
+    if (draft.oracle.xText === draft.oracle.text || draft.midday.xText === draft.midday.text || draft.concept.xText === draft.concept.text) {
       throw new Error('X posts must not be identical to Threads posts.');
     }
   }
   if (platforms.includes('bluesky')) {
     validatePostText(draft.oracle.blueskyText, { label: 'oracle Bluesky post', platforms: ['bluesky'], requireTrackedUrl: true, trackedUrl: draft.oracle.blueskyTrackedUrl });
+    validatePostText(draft.midday.blueskyText, { label: 'midday Bluesky post', platforms: ['bluesky'], requireTrackedUrl: true, trackedUrl: draft.midday.blueskyTrackedUrl });
     validatePostText(draft.concept.blueskyText, { label: 'concept Bluesky post', platforms: ['bluesky'], requireTrackedUrl: true, trackedUrl: draft.concept.blueskyTrackedUrl });
     const requiredHashtag = draft.meta?.policy?.hashtag || DEFAULT_HASHTAG;
     if (!draft.oracle.blueskyText.includes(requiredHashtag)) throw new Error('oracle Bluesky post is missing the required hashtag.');
+    if (!draft.midday.blueskyText.includes(requiredHashtag)) throw new Error('midday Bluesky post is missing the required hashtag.');
     if (!draft.concept.blueskyText.includes(requiredHashtag)) throw new Error('concept Bluesky post is missing the required hashtag.');
-    if (!draft.oracle.blueskyImagePath || !draft.concept.blueskyImagePath) {
+    if (draft.midday.text !== draft.midday.blueskyText) {
+      throw new Error('midday Threads and Bluesky posts must use identical copy.');
+    }
+    if (!draft.oracle.blueskyImagePath || !draft.midday.blueskyImagePath || !draft.concept.blueskyImagePath) {
       throw new Error('Bluesky posts require local image paths.');
     }
-    if (!draft.oracle.altText || !draft.concept.altText) {
+    if (!draft.oracle.altText || !draft.midday.altText || !draft.concept.altText) {
       throw new Error('Bluesky image posts require alt text.');
     }
   }
@@ -913,6 +992,70 @@ function buildBlueskyConceptText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, 
   return buildConceptText(dateKey, publicOrigin, config);
 }
 
+function pickMiddayTopic(dateKey) {
+  const date = new Date(`${dateKey}T00:00:00.000Z`);
+  const day = Number.isNaN(date.getTime()) ? 0 : date.getUTCDay();
+  return MIDDAY_TOPIC_POSTS[day % MIDDAY_TOPIC_POSTS.length];
+}
+
+function pickMiddayFocus(dateKey) {
+  const start = new Date(`${CARD_CYCLE_START_DATE}T00:00:00.000Z`);
+  const date = new Date(`${dateKey}T00:00:00.000Z`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(date.getTime())) return MIDDAY_FOCUS_LINES[0];
+  const diffDays = Math.floor((date.getTime() - start.getTime()) / 86400000);
+  return MIDDAY_FOCUS_LINES[((diffDays % MIDDAY_FOCUS_LINES.length) + MIDDAY_FOCUS_LINES.length) % MIDDAY_FOCUS_LINES.length];
+}
+
+function buildMiddayText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['threads'] })) {
+  const focus = pickMiddayFocus(dateKey);
+  if (isPreReleasePosting(dateKey, config)) {
+    return fitPostText([
+      '昼の羅針｜公開前メモ',
+      '羅針占術は5/16公開予定です。悩みを未来の断定で終わらせず、現実と本音を分けて次の一手を整理するAI占いとして準備しています。',
+      focus,
+      '気になる方は保存して、公開日に見返してください。',
+      buildDisplayUrl(publicOrigin),
+      config.defaultHashtag || DEFAULT_HASHTAG,
+    ], BLUESKY_CHARACTER_LIMIT);
+  }
+  const topic = pickMiddayTopic(dateKey);
+  return fitPostText([
+    topic.title,
+    topic.body,
+    focus,
+    '無料鑑定はこちら',
+    buildDisplayUrl(publicOrigin),
+    config.defaultHashtag || DEFAULT_HASHTAG,
+  ], BLUESKY_CHARACTER_LIMIT);
+}
+
+function buildXMiddayText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['x'] })) {
+  const focus = pickMiddayFocus(dateKey);
+  if (isPreReleasePosting(dateKey, config)) {
+    return fitPostText([
+      '昼の羅針｜公開前メモ',
+      '羅針占術は5/16公開予定です。現実と本音を分けて、次の一手を整理するAI占いとして準備しています。',
+      focus,
+      '保存して、公開日に見返してください。',
+      buildDisplayUrl(publicOrigin),
+      getXHashtagLine(config),
+    ], X_CHARACTER_LIMIT);
+  }
+  const topic = pickMiddayTopic(dateKey);
+  return fitPostText([
+    topic.title,
+    topic.body,
+    focus,
+    '無料鑑定はこちら',
+    buildDisplayUrl(publicOrigin),
+    getXHashtagLine(config),
+  ], X_CHARACTER_LIMIT);
+}
+
+function buildBlueskyMiddayText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['bluesky'] })) {
+  return buildMiddayText(dateKey, publicOrigin, config);
+}
+
 async function buildDraft(args) {
   const dateKey = args.date || getJstDateString();
   const publicOrigin = (process.env.PUBLIC_ORIGIN || DEFAULT_PUBLIC_ORIGIN).replace(/\/$/, '');
@@ -924,8 +1067,12 @@ async function buildDraft(args) {
   const paidCta = resolvePaidCta(calendar, config);
   const conceptImage = pickConceptImage(calendar, dateKey);
   const blueskyConceptImage = pickBlueskyConceptImage(conceptImage);
+  const middayImage = SOCIAL_CONCEPT_IMAGES.icon;
+  const blueskyMiddayImage = pickBlueskyConceptImage(middayImage);
   const conceptImagePath = path.join(ROOT, 'images', 'ui', conceptImage.file);
   const blueskyConceptImagePath = path.join(ROOT, 'images', 'ui', blueskyConceptImage.file);
+  const middayImagePath = path.join(ROOT, 'images', 'ui', middayImage.file);
+  const blueskyMiddayImagePath = path.join(ROOT, 'images', 'ui', blueskyMiddayImage.file);
   const messages = await loadDailyOracleMessages();
   const card = await pickCard(messages, dateKey, args.write || args.post);
   const imageName = `${String(card.id).padStart(2, '0')}.jpg`;
@@ -933,6 +1080,7 @@ async function buildDraft(args) {
     date: dateKey,
     schedule: {
       oracle: `${process.env.SOCIAL_ORACLE_TIME || '07:00'} Asia/Tokyo`,
+      midday: `${process.env.SOCIAL_MIDDAY_TIME || '12:00'} Asia/Tokyo`,
       concept: `${process.env.SOCIAL_CONCEPT_TIME || '20:00'} Asia/Tokyo`,
     },
     oracle: {
@@ -947,6 +1095,19 @@ async function buildDraft(args) {
       blueskyText: buildBlueskyOracleText(card, publicOrigin, { dateKey, config: blueskyConfig }),
       blueskyTrackedUrl: buildOracleTrackedUrl(card, publicOrigin, blueskyConfig, dateKey),
       blueskyImagePath: path.join(ROOT, 'images', 'cards', 'oracle', imageName),
+    },
+    midday: {
+      imagePath: middayImagePath,
+      imageUrl: `${publicOrigin}/images/ui/${middayImage.file}`,
+      altText: middayImage.altText,
+      text: buildMiddayText(dateKey, publicOrigin, threadsConfig),
+      trackedUrl: buildMiddayTrackedUrl(dateKey, publicOrigin, threadsConfig),
+      xText: buildXMiddayText(dateKey, publicOrigin, xConfig),
+      xTrackedUrl: buildMiddayTrackedUrl(dateKey, publicOrigin, xConfig),
+      blueskyText: buildBlueskyMiddayText(dateKey, publicOrigin, blueskyConfig),
+      blueskyTrackedUrl: buildMiddayTrackedUrl(dateKey, publicOrigin, blueskyConfig),
+      blueskyImagePath: blueskyMiddayImagePath,
+      blueskyImageUrl: `${publicOrigin}/images/ui/${blueskyMiddayImage.file}`,
     },
     concept: {
       imagePath: conceptImagePath,
@@ -1123,8 +1284,12 @@ async function findExistingBlueskyPost({ marker = null, text = '' } = {}) {
 }
 
 function selectedKindsFromArgs(args) {
-  if (args.kind === 'all') return ['oracle', 'concept'];
-  return ['oracle', 'concept'].includes(args.kind) ? [args.kind] : ['oracle', 'concept'];
+  if (args.kind === 'all') return SOCIAL_POST_KINDS;
+  return SOCIAL_POST_KINDS.includes(args.kind) ? [args.kind] : SOCIAL_POST_KINDS;
+}
+
+function shouldPostKind(args, kind) {
+  return args.kind === 'all' || args.kind === kind;
 }
 
 function isScheduledPostingRun() {
@@ -1267,15 +1432,18 @@ async function main() {
       if (process.env.SOCIAL_X_API_POSTING_ENABLED !== 'true') {
         throw new Error('X API posting is disabled. Generate X drafts with npm run social:x:drafts and post manually, or set SOCIAL_X_API_POSTING_ENABLED=true when official X API credentials are intentionally configured.');
       }
-      if (args.kind === 'all' || args.kind === 'oracle') {
+      if (shouldPostKind(args, 'oracle')) {
         results.xOracle = await withSocialRetry('x:oracle', () => postToX(draft.oracle.xText, draft.oracle.imagePath));
       }
-      if (args.kind === 'all' || args.kind === 'concept') {
+      if (shouldPostKind(args, 'midday')) {
+        results.xMidday = await withSocialRetry('x:midday', () => postToX(draft.midday.xText, draft.midday.imagePath));
+      }
+      if (shouldPostKind(args, 'concept')) {
         results.xConcept = await withSocialRetry('x:concept', () => postToX(draft.concept.xText, draft.concept.imagePath));
       }
     }
     if (args.platforms.includes('threads')) {
-      if (args.kind === 'all' || args.kind === 'oracle') {
+      if (shouldPostKind(args, 'oracle')) {
         results.threadsOracle = await withSocialRetry('threads:oracle', () => postImageToThreadsOnce({
           text: draft.oracle.text,
           imageUrl: draft.oracle.imageUrl,
@@ -1283,17 +1451,25 @@ async function main() {
           marker: extractUtmContent(draft.oracle.trackedUrl || draft.oracle.text),
         }));
       }
-      if (args.kind === 'all' || args.kind === 'concept') {
+      if (shouldPostKind(args, 'midday')) {
+        results.threadsMidday = await withSocialRetry('threads:midday', () => postImageToThreadsOnce({
+          text: draft.midday.text,
+          imageUrl: draft.midday.imageUrl,
+          altText: draft.midday.altText,
+          marker: extractUtmContent(draft.midday.trackedUrl || draft.midday.text),
+        }));
+      }
+      if (shouldPostKind(args, 'concept')) {
         results.threadsConcept = await withSocialRetry('threads:concept', () => postImageToThreadsOnce({
           text: draft.concept.text,
           imageUrl: draft.concept.imageUrl,
           altText: draft.concept.altText,
-          marker: extractUtmContent(draft.concept.text),
+          marker: extractUtmContent(draft.concept.trackedUrl || draft.concept.text),
         }));
       }
     }
     if (args.platforms.includes('bluesky')) {
-      if (args.kind === 'all' || args.kind === 'oracle') {
+      if (shouldPostKind(args, 'oracle')) {
         results.blueskyOracle = await withSocialRetry('bluesky:oracle', () => postImageToBlueskyOnce({
           text: draft.oracle.blueskyText,
           imagePath: draft.oracle.blueskyImagePath,
@@ -1301,12 +1477,20 @@ async function main() {
           marker: extractUtmContent(draft.oracle.blueskyTrackedUrl || draft.oracle.blueskyText),
         }));
       }
-      if (args.kind === 'all' || args.kind === 'concept') {
+      if (shouldPostKind(args, 'midday')) {
+        results.blueskyMidday = await withSocialRetry('bluesky:midday', () => postImageToBlueskyOnce({
+          text: draft.midday.blueskyText,
+          imagePath: draft.midday.blueskyImagePath,
+          altText: draft.midday.altText,
+          marker: extractUtmContent(draft.midday.blueskyTrackedUrl || draft.midday.blueskyText),
+        }));
+      }
+      if (shouldPostKind(args, 'concept')) {
         results.blueskyConcept = await withSocialRetry('bluesky:concept', () => postImageToBlueskyOnce({
           text: draft.concept.blueskyText,
           imagePath: draft.concept.blueskyImagePath,
           altText: draft.concept.altText,
-          marker: extractUtmContent(draft.concept.blueskyText),
+          marker: extractUtmContent(draft.concept.blueskyTrackedUrl || draft.concept.blueskyText),
         }));
       }
     }
