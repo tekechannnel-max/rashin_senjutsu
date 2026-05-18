@@ -2308,7 +2308,8 @@ function getAllowedStaticPath(urlPath) {
   if (
     pathname === '/lenormand-reading-knowledge.js' ||
     pathname === '/oracle-reading-knowledge.js' ||
-    pathname === '/card-reading-knowledge.js'
+    pathname === '/card-reading-knowledge.js' ||
+    pathname === '/rashin-reading-policy.js'
   ) {
     return path.join(ROOT_DIR, pathname.slice(1));
   }

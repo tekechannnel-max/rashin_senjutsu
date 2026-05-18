@@ -127,6 +127,7 @@ function getEntryForPlatform(draft, kind, platform) {
   if (platform === 'x') {
     return {
       text: entry.xText,
+      trackedUrl: entry.xTrackedUrl,
       imagePath: entry.imagePath,
       imageUrl: entry.imageUrl,
       altText: entry.altText,
@@ -135,6 +136,7 @@ function getEntryForPlatform(draft, kind, platform) {
   if (platform === 'bluesky') {
     return {
       text: entry.blueskyText,
+      trackedUrl: entry.blueskyTrackedUrl,
       imagePath: entry.blueskyImagePath || entry.imagePath,
       imageUrl: entry.blueskyImageUrl || entry.imageUrl,
       altText: entry.altText,
@@ -142,6 +144,7 @@ function getEntryForPlatform(draft, kind, platform) {
   }
   return {
     text: entry.text,
+    trackedUrl: entry.trackedUrl,
     imagePath: entry.imagePath,
     imageUrl: entry.imageUrl,
     altText: entry.altText,
@@ -177,7 +180,7 @@ function rowsFromDraft(draft, options = {}) {
     for (const platform of platforms) {
       const entry = getEntryForPlatform(draft, kind, platform);
       const text = String(entry.text || '');
-      const trackedUrl = extractFirstUrl(text);
+      const trackedUrl = String(entry.trackedUrl || '').trim() || extractFirstUrl(text);
       const tracking = extractTracking(trackedUrl);
       const result = resultFor(options.results, kind, platform);
       const utmContent = tracking.utm_content || `${kind}_${draft.date.replace(/-/g, '')}`;

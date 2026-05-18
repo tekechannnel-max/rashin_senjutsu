@@ -2092,8 +2092,8 @@ const BRAND_PROFILE={
       title:'無料で、いまの羅針盤の向きを知る',
       price:'0円 / はじめの1回',
       items:[
-        'ルノルマン2枚・オラクル1枚で、いまの核と次の一歩まで読む',
-        '1枚目を主題、2枚目を修飾として結び、無料でも現実的な答えをつかめる',
+        'ルノルマン2枚で、相談テーマの流れと注意したい一点を読む',
+        '金運ならお金の流れ、恋愛なら距離感、仕事なら案件や評価の流れに絞る',
         '深掘り鑑定との相性を確かめられる',
       ],
     },
@@ -6528,7 +6528,7 @@ function repairStaticCopy(){
       'ルノルマンカード2枚',
       '数秘オラクルカード1枚'
     ].forEach((text,index)=>{ if(freeItems[index]) freeItems[index].textContent=text; });
-    setWithin(planCards[0],'.plan-compare-summary','無料鑑定では、いまの答えと判断軸を読みます。');
+    setWithin(planCards[0],'.plan-compare-summary','無料鑑定では、ルノルマン2枚で今見える流れと注意したい一点を読みます。');
     setWithin(planCards[0],'.plan-compare-action',FREE_RASHIN_CTA_LABEL);
   }
   if(planCards[1]){
@@ -6569,11 +6569,11 @@ function repairStaticCopy(){
 
   const faqItems=document.querySelectorAll('.top-faq-item');
   const faqCopy=[
-    ['ルノルマンカードって何ですか？','36枚の絵柄カードで、いま起きている状況や相手との関係、注意点を具体的に読み解くカードです。<br>羅針占術では、現実と見落としやすいサインを読むために使います。'],
+    ['ルノルマンカードって何ですか？','36枚の絵柄カードで、いま起きている状況や流れ、注意点を具体的に読み解くカードです。<br>羅針占術では、相談テーマに合わせて現実と見落としやすいサインを読むために使います。'],
     ['数秘オラクルカードって何ですか？','誕生日などの数字の意味と、直感で選ぶカードを合わせて読むアドバイスカードです。<br>あなたの強み、今の向き合い方、羅針の指針を示します。'],
     ['AIがどうやって占うのですか？','相談内容・名前・生年月日・カード結果をもとに、設計された占術ロジックに沿って鑑定文を生成します。<br>同じカードでも、相談内容やこれまでの流れによって読み方が変わります。'],
-    ['無料鑑定では何ができますか？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。<br>自分自身の本質、本音、いまの現実、次に進むためのアドバイスを確認できます。'],
-    ['無料鑑定と深掘り鑑定の違いは？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。無料鑑定とミニ鑑定はあわせて1日5回までです。<br>深掘り鑑定では、同じ相談内容を前提に続きの追加カードを引くことも、直接有料鑑定から始めることもできます。ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>料金はプレリリース価格780円、正式リリース後は1000円予定です。有料課金ごとに無料鑑定枠が1回分回復します。'],
+    ['無料鑑定では何ができますか？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。<br>ルノルマン2枚では、金運ならお金の流れ、恋愛なら距離感、仕事なら案件や評価など、相談テーマに合わせて「今見える流れ」と「注意したい一点」を確認できます。'],
+    ['無料鑑定と深掘り鑑定の違いは？','無料鑑定では、ルノルマンカード2枚で相談テーマに対する一点判断を行います。無料鑑定とミニ鑑定はあわせて1日5回までです。<br>深掘り鑑定では、同じ相談内容を前提に続きの追加カードを引くことも、直接有料鑑定から始めることもできます。ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>料金はプレリリース価格780円、正式リリース後は1000円予定です。有料課金ごとに無料鑑定枠が1回分回復します。'],
     ['過去の鑑定は読み返せますか？','はい。これまでの鑑定は「過去の占いを読み返す」から確認できます。<br>前回のテーマやカードの流れを見返すことで、同じ悩みの続きや変化を確認しやすくなります。'],
     ['「鑑定履歴の流れを読み解く」って何ですか？','これまでの鑑定をまとめて、よく出るカード、相談テーマの変化、くり返し向き合っている悩みを時系列で読み解く機能です。<br>鑑定履歴があるほど、変化の流れが見えやすくなります。']
   ];
@@ -6738,7 +6738,7 @@ function repairStaticCopy(){
   updateAnimalReveal();
   setText('#rs-len .rs-eyebrow','カード鑑定 01');
   setHtml('#rs-len .rs-title','<span class="rs-icon">⚜</span>ルノルマンカード鑑定');
-  setText('#rs-len .rs-copy','いまの現実と見落としやすい注意点を見ます。');
+  setText('#rs-len .rs-copy','ルノルマン2枚では、相談テーマに対する今の流れと注意したい一点を見ます。');
   setText('#r-len-block .ai-load-title','いま起きていることを整理しています');
   setText('#r-len-block .ai-load-detail','迷いを増やさないように、今見るべきことだけを言葉にしています。');
   setText('#rs-orc .rs-eyebrow','カード鑑定 02');
@@ -9094,8 +9094,8 @@ function buildFormattedReadingMarkup(text='',kind='default'){
   const heroBody=buildReadingBodyParts(hero.body,true);
   const detailCards=parsedSections.slice(1).map(section=>{
     const bodyHTML=renderStructuredBlocksHTML(section.body);
-    const isWarning=section.title.includes('気をつけること');
-    const isStructure=section.title.includes('迷いの構造');
+    const isWarning=section.title.includes('気をつけること')||section.title.includes('注意したい一点');
+    const isStructure=section.title.includes('迷いの構造')||section.title.includes('2枚で見えること');
     const cardClass=isWarning?'reading-rich-card card-warning':isStructure?'reading-rich-card card-structure':'reading-rich-card';
     return `<div class="${cardClass}">
       <div class="reading-rich-card-title">${escapeHtml(section.title||config.title)}</div>
@@ -9182,12 +9182,63 @@ function renderFormattedResultText(id,text,kind='default'){
   if(displayName) highlightNamesInElement(el,displayName);
 }
 
+function getFreeLenPairThemeTargets(cat='総合'){
+  const normalized=normalizeConsultationCategoryTag(cat);
+  if(normalized==='恋愛') return '恋愛なら、相手の本音の断定ではなく、言葉と行動の手応え、距離感、進展を止めやすい一点を読みます。';
+  if(normalized==='お金') return '金運なら、お金の流れ、収入と支出の偏り、手元に安心が残るかを読みます。恋愛向けの距離感表現へ寄せないこと。';
+  if(normalized==='仕事・進路') return '仕事なら、案件、評価、役割、続けるか切り替えるかを判断しにくくしている一点を読みます。';
+  if(normalized==='人間関係') return '人間関係なら、距離の取り方、消耗しやすい接点、協力できる余地を読みます。';
+  if(normalized==='家族') return '家族なら、家庭内の安心、責任の偏り、言い出しにくい負担の一点を読みます。';
+  if(normalized==='趣味・創作') return '趣味や創作なら、続け方、見せ方、反応に引っ張られやすい一点を読みます。';
+  if(normalized==='自己理解') return '自己理解なら、今の自分の扱い方、違和感の出どころ、整えたい一点を読みます。';
+  return '総合なら、今いちばん目立つ流れと、見落としやすい一点に絞って読みます。';
+}
+
+function buildFreeLenPairScopePrompt(cat='総合'){
+  return [
+    '【無料ルノルマン2枚の扱い】',
+    '無料ルノルマン2枚は、相談テーマに対する一点判断です。深掘り鑑定と同じ密度で原因・背景・未来展開を広げないでください。',
+    '1枚目を主題、2枚目を修飾・答えとして結び、2枚から言える範囲だけを短い現実判断にしてください。',
+    getFreeLenPairThemeTargets(cat),
+    '原因の深掘り、相手の本音の断定、細かい時系列未来、確実な行動指示は書かない。必要なら「2枚から見える範囲では」という前提で言い切ってください。',
+  ].join('\n');
+}
+
 function buildReadingOutputFormatGuide(kind='len',is9=false,focusOverride=null){
   const focus=focusOverride||getCurrentRefinedFocus();
   const ctx=buildDecisionContext(focus);
   const priorityFocus=!!focus.explicitUserPriority||isWorkLifeDirectionFocus(focus);
   if(kind==='len'){
     const requireFour=PLAN==='paid'||is9;
+    const requireFreePair=!requireFour&&SEL_LEN.length===FREE_LEN_COUNT;
+    if(requireFreePair){
+      return [
+        buildFreeLenPairScopePrompt(getConsultationPrimaryCategory()),
+        '',
+        '【文章量のルール】',
+        '合計は360〜520字を目安にし、2枚から言える範囲だけに絞ってください。',
+        '1ブロックは90〜180字を目安にし、原因を何層にも広げないでください。',
+        '1文は45〜60字を目安に短くし、結論は必ず先頭の1文で言い切ってください。',
+        '本文ではカード名を出さないでください。キーワード列挙ではなく、今回の相談への翻訳だけを書いてください。',
+        '',
+        '【出力形式・厳守事項】',
+        '見出しは必ず次の順で固定してください。',
+        '',
+        '■ 2枚で見えること',
+        '▶ 2枚の組み合わせから見える現在の流れを、相談ジャンルに合わせて一点だけ書く。',
+        '▶ 恋愛に偏った「相手との関係性」は、相談テーマが恋愛・対人のときだけ使う。金運ではお金の流れ、仕事では案件や評価の流れに翻訳する。',
+        '',
+        '■ 注意したい一点',
+        '▶ 見落とし、支出、停滞、誤判断、先送りなど、2枚から言える注意点を1つだけ書く。',
+        '▶ 警告を広げすぎず、深い原因分析や相手の本音の断定にしない。',
+        '',
+        '■ 羅針の指針',
+        '▶ 今日から見るべき観点を1つ示す。具体行動の命令ではなく、判断するときに戻る視点として書く。',
+        '▶ 深掘り鑑定の9枚で読む内容と同じ見出し・同じ密度にしない。',
+        '',
+        '【強調マークアップ】最も重要な結論・断言フレーズを1箇所だけ **テキスト** で囲むこと。多用しない。',
+      ].join('\n');
+    }
     const targetLength=requireFour
       ?'合計は700〜1100字を目安にし、短くしすぎないでください。'
       :'合計は480〜620字を目安にし、2枚読みの根拠で言える範囲に絞ってください。';
@@ -15561,11 +15612,28 @@ function buildLenormandInternalTermRegex(){
 
 const LENORMAND_INTERNAL_TERM_RE=buildLenormandInternalTermRegex();
 const LENORMAND_SECTION_TITLES=getLenormandReadingKnowledge().sections||['迷いの構造','今の流れ','気をつけること','あなたの引力'];
+const LENORMAND_FREE_PAIR_SECTION_TITLES=['2枚で見えること','注意したい一点','羅針の指針'];
+const LENORMAND_ALL_SECTION_TITLES=[...new Set([...LENORMAND_SECTION_TITLES,...LENORMAND_FREE_PAIR_SECTION_TITLES])];
+
+function isFreeLenPairReadingContext(context={}){
+  if(context.requireFour===true) return false;
+  const lenCount=Number.isFinite(Number(context.lenCount))
+    ?Number(context.lenCount)
+    :Array.isArray(context.lenCardIds)
+      ?context.lenCardIds.length
+      :SEL_LEN.length;
+  const plan=context.plan||PLAN;
+  return plan==='free'&&lenCount===FREE_LEN_COUNT;
+}
+
+function getLenormandSectionHeadingRegex(flags='g'){
+  return new RegExp(`\\s*■\\s*(${LENORMAND_ALL_SECTION_TITLES.map(escapeRegExp).join('|')})[。．.:：]?\\s*`,flags);
+}
 
 function normalizeLenormandSectionHeadings(text=''){
   return String(text||'')
     .replace(/\r\n?/g,'\n')
-    .replace(/\s*■\s*(迷いの構造|今の流れ|気をつけること|あなたの引力)[。．.:：]?\s*/g,'\n\n■ $1\n')
+    .replace(getLenormandSectionHeadingRegex('g'),'\n\n■ $1\n')
     .replace(/^\n+/,'')
     .replace(/\n{3,}/g,'\n\n')
     .trim();
@@ -15812,17 +15880,23 @@ function parseLenormandSectionMap(text=''){
   const map={};
   splitSections(normalizeLenormandSectionHeadings(text)).forEach(section=>{
     const parsed=parseStructuredSection(section);
-    const title=LENORMAND_SECTION_TITLES.find(item=>parsed.title.includes(item));
+    const title=LENORMAND_ALL_SECTION_TITLES.find(item=>parsed.title.includes(item));
     if(!title) return;
     const body=normalizeLenormandSectionHeadings(parsed.body)
-      .replace(/^■\s*(迷いの構造|今の流れ|気をつけること|あなたの引力)\s*/,'')
+      .replace(new RegExp(`^■\\s*(${LENORMAND_ALL_SECTION_TITLES.map(escapeRegExp).join('|')})\\s*`),'')
       .trim();
-    if(body) map[title]=body;
+    if(body){
+      map[title]=body;
+      if(title==='2枚で見えること'&&!map['今の流れ']) map['今の流れ']=body;
+      if(title==='注意したい一点'&&!map['気をつけること']) map['気をつけること']=body;
+      if(title==='羅針の指針'&&!map['あなたの引力']) map['あなたの引力']=body;
+    }
   });
   return map;
 }
 
 function getRequiredLenormandSectionTitles(context={}){
+  if(isFreeLenPairReadingContext(context)) return LENORMAND_FREE_PAIR_SECTION_TITLES;
   const requireFour=Object.prototype.hasOwnProperty.call(context,'requireFour')
     ?!!context.requireFour
     :(PLAN==='paid'||SEL_LEN.length===9);
@@ -15839,6 +15913,9 @@ function formatLenormandSections(text='',context={}){
     今の流れ:{chars:360,sentences:6},
     気をつけること:{chars:320,sentences:5},
     あなたの引力:{chars:230,sentences:4},
+    '2枚で見えること':{chars:260,sentences:4},
+    注意したい一点:{chars:230,sentences:4},
+    羅針の指針:{chars:230,sentences:4},
   };
   if(requiredTitles.some(title=>countMeaningfulChars(map[title]||'')<45)) return '';
   return requiredTitles.map(title=>{
@@ -15853,9 +15930,10 @@ function formatLenormandFourSections(text=''){
 
 function hasBrokenLenormandText(text='',integration='',context={}){
   const source=String(text||'');
-  if(/。\s*■\s*(今の流れ|気をつけること|あなたの引力)[。．.]?/.test(source)) return true;
-  if(/■\s*(迷いの構造|今の流れ|気をつけること|あなたの引力)[。．.]\s*$/.test(source)) return true;
-  if(countMeaningfulChars(source)<300) return true;
+  const headingPattern=LENORMAND_ALL_SECTION_TITLES.map(escapeRegExp).join('|');
+  if(new RegExp(`。\\s*■\\s*(${headingPattern})[。．.]?`).test(source)) return true;
+  if(new RegExp(`■\\s*(${headingPattern})[。．.]\\s*$`).test(source)) return true;
+  if(countMeaningfulChars(source)<(isFreeLenPairReadingContext(context)?220:300)) return true;
   const map=parseLenormandSectionMap(source);
   if(getRequiredLenormandSectionTitles(context).some(title=>countMeaningfulChars(map[title]||'')<45)) return true;
   if(integration){
@@ -16041,8 +16119,61 @@ const INTEGRATION_CLOSING_HEADING='最後の一言';
 const ORACLE_COMPASS_HEADING='羅針盤が示すもの';
 const LEGACY_INTEGRATION_ACTION_GUIDE_HEADINGS=['背中を'+'押す一文','背中'+'押し文','目下の'+'行動指針','今の行動方針'];
 
+function getRashinReadingPolicyManual(){
+  const root=typeof window!=='undefined'?window:globalThis;
+  return root?.RASHIN_READING_POLICY_MANUAL||null;
+}
+
+function formatRashinManualLines(title='',lines=[]){
+  const items=Array.isArray(lines)?lines.filter(Boolean):[];
+  if(!items.length) return '';
+  return [`【${title}】`,...items.map(item=>`- ${item}`)].join('\n');
+}
+
+function buildRashinExternalPolicyBlock(scope='all'){
+  const manual=getRashinReadingPolicyManual();
+  if(!manual) return '';
+  const normalized=String(scope||'all').toLowerCase();
+  const runtimePlan=typeof PLAN!=='undefined'?String(PLAN||'').toLowerCase():'';
+  const planScope=['len','orc','integration'].includes(normalized)?runtimePlan:normalized;
+  const scopeLines=[
+    ...(manual.scopes?.all||[]),
+    ...(manual.scopes?.[normalized]||[]),
+    ...(manual.scopes?.[planScope]&&planScope!==normalized?manual.scopes[planScope]:[]),
+  ];
+  const planLines=planScope==='free'
+    ?manual.planBoundaries?.free
+    :planScope==='paid'
+      ?manual.planBoundaries?.paid
+      :[];
+  const sections=[
+    formatRashinManualLines(`羅針占術 取扱説明書 v${manual.version||''}`,manual.purpose),
+    formatRashinManualLines('スコープ別運用',scopeLines),
+    formatRashinManualLines('無料・有料の境界',planLines),
+    planScope==='paid'
+      ?formatRashinManualLines('羅針コード・購入運用',manual.paidAccess)
+      :'',
+    ['len','orc','integration','quality'].includes(normalized)
+      ?formatRashinManualLines('文章生成の注意',manual.textGeneration)
+      :'',
+    normalized==='quality'
+      ?formatRashinManualLines('タグ別の中心語彙',Object.entries(manual.themeTargets||{}).map(([key,value])=>`${key}: ${value}`))
+      :'',
+    normalized==='quality'
+      ?formatRashinManualLines('表示禁止語',manual.forbiddenVisibleTerms)
+      :'',
+  ];
+  return sections.filter(Boolean).join('\n\n');
+}
+
+function getExternalRashinForbiddenVisibleTerms(){
+  const terms=getRashinReadingPolicyManual()?.forbiddenVisibleTerms;
+  return Array.isArray(terms)?terms.filter(Boolean):[];
+}
+
 function getRashinReadingPolicyPrompt(scope='all'){
   const normalized=String(scope||'all').toLowerCase();
+  const externalManual=buildRashinExternalPolicyBlock(normalized);
   const base=`【羅針占術の鑑定方針】
 羅針占術はカードの意味説明ではなく、相談者の現実・違和感・我慢している点・見失っている判断軸を言葉にする内省支援型リーディングです。
 目的は宿題を増やすことではなく、「自分はここで迷っていたのか」と読後に納得できる言語化を返すことです。
@@ -16103,7 +16234,7 @@ function getRashinReadingPolicyPrompt(scope='all'){
 - 羅針カード: SNS保存・見返し用の短い判断カード。`,
   };
   const body=scopes[normalized]||scopes.all;
-  return [base,body,forbidden,quality].filter(Boolean).join('\n\n');
+  return [externalManual,base,body,forbidden,quality].filter(Boolean).join('\n\n');
 }
 
 function inferRashinThemeFromText(text=''){
@@ -16560,9 +16691,13 @@ function detectRashinVisibleTextPolicyIssues(text='',label='text'){
     {name:'不自然な禁止語置換',pattern:/する流れです|目を向ける流れです|言葉になる流れです|見ることが大切です|安心の根拠コード|安心の根拠してください/},
     {name:'カード辞書説明',pattern:/「[^」]{1,12}」は、?[^。\n]*(?:示します|示しています|意味します|表します|カードです|カードとして読めます|カードとして読みます)/},
   ];
-  return rules
+  const staticIssues=rules
     .filter(rule=>rule.pattern.test(source))
     .map(rule=>`${label}に${rule.name}が残っています`);
+  const manualIssues=getExternalRashinForbiddenVisibleTerms()
+    .filter(term=>term&&source.includes(term))
+    .map(term=>`${label}に取扱説明書の表示禁止語「${term}」が残っています`);
+  return [...new Set([...staticIssues,...manualIssues])];
 }
 
 function detectCardExplanationSmellIssues(text=''){
@@ -16710,9 +16845,10 @@ function detectFlowNarrativeListIssues(text='',label='text',heading=INTEGRATION_
 }
 
 function ensureLenormandFlowNarrative(text='',focus={},context={}){
-  const body=parseLenormandSectionMap(text)['今の流れ']||'';
+  const heading=isFreeLenPairReadingContext(context)?'2枚で見えること':'今の流れ';
+  const body=parseLenormandSectionMap(text)[heading]||parseLenormandSectionMap(text)['今の流れ']||'';
   if(!body||!looksLikeConditionListNarrative(body)) return text;
-  return replaceHeadingBody(text,'今の流れ',buildIntegrationFlowNarrative(focus,context.cat||'総合',context.theme||'',context));
+  return replaceHeadingBody(text,heading,buildIntegrationFlowNarrative(focus,context.cat||'総合',context.theme||'',context));
 }
 
 function buildWorkFinalJudgmentText(name='あなた',cat='総合',theme='',context={}){
@@ -17192,6 +17328,112 @@ function detectPaidTextQualityIssues(key='',text=''){
     issues.push('orcが内省支援ではなく作業臭のある条件文に寄っています');
   }
   return [...new Set(issues)];
+}
+
+function getFreeReadingQualityMinimum(kind='',context={}){
+  const key=String(kind||'').toLowerCase();
+  if(key==='len') return isFreeLenPairReadingContext(context)?220:180;
+  if(key==='orc') return (context.orcCount||SEL_ORC.length)===FREE_ORC_COUNT?170:300;
+  if(key==='integration') return isFreeLenPairReadingContext(context)?240:280;
+  return 120;
+}
+
+function detectFreeLenPairScopeIssues(text='',context={}){
+  if(!isFreeLenPairReadingContext(context)) return [];
+  const source=String(text||'');
+  const issues=[];
+  const sectionMap=parseLenormandSectionMap(source);
+  LENORMAND_FREE_PAIR_SECTION_TITLES.forEach(title=>{
+    if(countMeaningfulChars(sectionMap[title]||'')<38){
+      issues.push(`free len pairの${title}が短すぎます`);
+    }
+  });
+  if(LENORMAND_SECTION_TITLES.some(title=>source.includes(`■ ${title}`))){
+    issues.push('free len pairに有料9枚向けの見出しが混入しています');
+  }
+  if(/9枚|中心十字|対称ペア|ナイト|追加カード|追加質問|鑑定履歴|深掘り|履歴解析/.test(source)){
+    issues.push('free len pairが深掘り鑑定の材料に踏み込みすぎています');
+  }
+  if(normalizeConsultationCategoryTag(context.cat||'')==='お金'
+    &&/恋愛|相手の気持ち|好き|復縁|距離感|言葉と行動|信頼の温度/.test(source)){
+    issues.push('free len pairのお金相談に恋愛向け語彙が混入しています');
+  }
+  return [...new Set(issues)];
+}
+
+function validateFreeReadingSectionQuality(kind='',text='',context={}){
+  const key=String(kind||'').toLowerCase();
+  const source=String(text||'').trim();
+  const issues=[];
+  if(!source) return [`${key||'free'}が空です`];
+  const count=countMeaningfulChars(source);
+  const min=getFreeReadingQualityMinimum(key,context);
+  if(count<min) issues.push(`${key}が短い（${count}字）`);
+  const focus=context.focus||getFocusForContext(context.cat||'',context.theme||'',context);
+  issues.push(...detectPaidTextQualityIssues(key,source));
+  issues.push(...detectThemeVocabularyDriftIssues(source,focus,key,context));
+  issues.push(...detectWeakEscapeIssues(source).map(issue=>`${key}: ${issue}`));
+  issues.push(...detectTruncatedSummaryIssues(source).map(issue=>`${key}: ${issue}`));
+  issues.push(...detectJapanesePunctuationSpacingIssues(source,key));
+  issues.push(...detectIrresponsibleAssertionIssues(source));
+  issues.push(...detectRepeatedAdviceIssues(source));
+  if(key==='len') issues.push(...detectFreeLenPairScopeIssues(source,context));
+  if(key==='orc'){
+    issues.push(...detectOracleLabelIssues(source));
+    issues.push(...detectOracleFallbackJapaneseIssues(source));
+  }
+  if(key==='integration'){
+    const integrationIssues=validateIntegrationSatisfaction(source,context)
+      .filter(issue=>!(context.plan==='free'&&/ルノルマン9枚/.test(issue)));
+    issues.push(...integrationIssues);
+  }
+  return [...new Set(issues)];
+}
+
+function buildFreeReadingQualityFallback(kind='',context={}){
+  const key=String(kind||'').toLowerCase();
+  const name=context.name||getReadingDisplayName();
+  const cat=normalizeConsultationCategoryTag(context.cat||'総合');
+  const theme=context.theme||'';
+  const focus=context.focus||getFocusForContext(cat,theme,context);
+  const shared={...context,name,cat,theme,focus,plan:'free'};
+  if(key==='len'){
+    return normalizeLenormandReadingText(
+      buildRichLenFallback(name,cat),
+      {...shared,lenCount:context.lenCount||SEL_LEN.length}
+    );
+  }
+  if(key==='orc'){
+    return normalizeOracleReadingText(
+      buildRichOrcFallback(name,cat,(context.orcCount||SEL_ORC.length)===3),
+      {...shared,clarifyText:context.clarifyText||''}
+    );
+  }
+  if(key==='integration'){
+    return ensureFinalJudgmentText(
+      buildIntegratedFallback(name,cat,theme,shared),
+      name,
+      cat,
+      theme,
+      shared
+    );
+  }
+  return String(context.fallbackText||'').trim();
+}
+
+function applyFreeReadingQualityGate(kind='',text='',context={}){
+  const plan=context.plan||PLAN;
+  if(plan!=='free') return text;
+  const key=String(kind||'').toLowerCase();
+  const safeContext={...context,plan:'free'};
+  const issues=validateFreeReadingSectionQuality(key,text,safeContext);
+  if(!issues.length) return text;
+  recordPaidDebugQuality(`free_${key}_quality`,issues);
+  if(context.fallbackAlready) return text;
+  const fallback=buildFreeReadingQualityFallback(key,safeContext);
+  const fallbackIssues=validateFreeReadingSectionQuality(key,fallback,{...safeContext,fallbackAlready:true});
+  if(fallbackIssues.length) recordPaidDebugQuality(`free_${key}_fallback_quality`,fallbackIssues);
+  return (!fallbackIssues.length||fallbackIssues.length<=issues.length)?fallback:text;
 }
 
 function detectRepeatedAdviceIssues(text=''){
@@ -18442,6 +18684,37 @@ async function runLenReading(){
   const ringIdx=SEL_LEN.indexOf(25);
   const ringInfo=ringIdx>=0&&is9?`\n【指輪カード特殊ルール】指輪は⑤より左側=ネガティブ（束縛・浮気）、右側=ポジティブ（結婚・深い約束）。現在位置は${['①','②','③','④','⑤','⑥','⑦','⑧','⑨'][ringIdx]}です。`:'';
 
+  const freePairScopeInfo=isFreePair?buildFreeLenPairScopePrompt(cat):'';
+  const lenOutputFormatBlock=isFreePair
+    ?`【出力形式】
+見出し以外の前置きは不要。次の3見出しだけで書くこと。
+
+■ 2枚で見えること
+2枚の組み合わせから、相談テーマに対して今いちばん目立つ流れを一点だけ書く。恋愛なら距離感、金運ならお金の流れ、仕事なら案件や評価の流れなど、ジャンルに合わせて翻訳する。
+
+■ 注意したい一点
+2枚から言える注意点を1つだけ書く。原因を何層にも広げず、相手の本音や細かい未来を断定しない。
+${focus.isDualConcern&&!isWorkLifeDirectionFocus(focus)?`複数テーマがある場合も、無料2枚では一度に深掘りせず、いま最も目立つ一点に絞る。`:''}
+
+■ 羅針の指針
+判断するときに戻る視点を1つだけ書く。具体行動の命令ではなく、どこを見れば判断が整うかを示す。
+合計360〜520字。本文では「下の段」「現状の列」「右側の流れ」「中心十字」「配置」「ナイト」などの内部説明語を使わず、カードから読んだ現実解釈として書く。`
+    :`【出力形式】
+見出し以外の前置きは不要。次の${PLAN==='paid'||is9?'4':'3'}見出しだけで書くこと。
+
+${PLAN==='paid'||is9?`■ 迷いの構造
+相談者がなぜ迷っているかを、カードから見た現実構造として書く。INTEGRATIONの条件カードを再掲せず、表の悩みと本当の詰まりを分ける。`:''}
+
+■ 今の流れ
+いま関係・仕事・状況で何が起きているかを書く。小さな好転、曖昧さ、壁、見えていない点など、内部根拠から読める現実読みだけを残す。
+
+■ 気をつけること
+ここがこの鑑定で一番大事な現実的な警戒点です。消耗だけに寄せず、見落とし、障害、誤判断、先送り、周囲や相手や環境の影響を正直に言い切る。「かもしれない」で逃げず「〜になりやすい」と伝える。改善の兆しや好転の余地が見えるなら、必ず「一方で〜という兆しもある」とセットで伝える。
+${focus.isDualConcern&&!isWorkLifeDirectionFocus(focus)?`恋愛と仕事が両方あるので、必要なら「恋愛では」「仕事では」と分けて整理する。`:''}
+
+■ あなたの引力
+ルノルマンカードの良メッセージとして書く。カードの中にある「良い兆しを引き込める要素」だけを取り出し、改善傾向、好機、追い風、支え、タイミング、相談者の潜在的な力を具体的に書く。カード全体がネガティブに見えるときも、必ず好転要素か潜在的な力を見つけて書く。「良い情報がない」とは書かない。
+合計${PLAN==='paid'||is9?'700〜1100字':isFreePair?'520字前後':'260字前後'}。本文では「下の段」「現状の列」「右側の流れ」「中心十字」「配置」「ナイト」などの内部説明語を使わず、カードから読んだ現実解釈として書く。`;
 
   const systemPrompt=`あなたは、「迷いの正体を言葉にする」ことを使命とする一流の鑑定者です。
 役割は状況を説明することではなく、「相談者が自分の判断軸を取り戻す目印」を与えることです。
@@ -18451,6 +18724,7 @@ ${buildDecisionSupportPromptGuide(cat,theme,focus)}
 ${getRashinReadingPolicyPrompt('len')}
 
 ${premiumFocusBrief}
+${freePairScopeInfo}
 
 ${focus.explicitUserPriority||isWorkLifeDirectionFocus(focus)?`【今回のルノルマン主軸】
 ${buildDecisionContextPromptBlock(focus,{cat,theme})}
@@ -18500,26 +18774,11 @@ OK「転職のタイミングを急ぎすぎているというより、努力が
 OK「この関係は相手の心を決めつけるより、言葉のあとに安心できる行動が続くかが羅針になります」→ 判断軸が明確`:''}
 
 【共鳴・根拠付け】
-- 相談者が相談文や人物像で使った具体的な言葉（例:「評価されない」「曖昧」「怖い」「月末」「一人暮らし」「副業」「貯金」）を「■ 迷いの構造」「■ 今の流れ」「■ 気をつけること」のどこかに合計2語以上、自然な鑑定の文脈に溶け込ませる（ミラーリング）。引用記号は使わず、鑑定者自身の言葉として使うこと
+- 相談者が相談文や人物像で使った具体的な言葉（例:「評価されない」「曖昧」「怖い」「月末」「一人暮らし」「副業」「貯金」）を${isFreePair?'「■ 2枚で見えること」「■ 注意したい一点」「■ 羅針の指針」':'「■ 迷いの構造」「■ 今の流れ」「■ 気をつけること」'}のどこかに合計2語以上、自然な鑑定の文脈に溶け込ませる（ミラーリング）。引用記号は使わず、鑑定者自身の言葉として使うこと
 - 具体語はカードの説明に貼り付けず、相談者の現実として「どこで不安が重くなっているか」「何が選びにくさを作っているか」へ翻訳すること
 ${is9?`- 「■ 迷いの構造」の冒頭1文は、左列（①②③）のカードが示す背景・原因に根ざした後退予言にする。「今の状況は以前から繰り返されてきた選択かパターンが関係している」という形で1文断言する。左列カードの意味から外れた推測は書かない`:''}
 
-【出力形式】
-見出し以外の前置きは不要。次の${PLAN==='paid'||is9?'4':'3'}見出しだけで書くこと。
-
-${PLAN==='paid'||is9?`■ 迷いの構造
-相談者がなぜ迷っているかを、カードから見た現実構造として書く。INTEGRATIONの条件カードを再掲せず、表の悩みと本当の詰まりを分ける。`:''}
-
-■ 今の流れ
-いま関係・仕事・状況で何が起きているかを書く。小さな好転、曖昧さ、壁、見えていない点など、内部根拠から読める現実読みだけを残す。
-
-■ 気をつけること
-ここがこの鑑定で一番大事な現実的な警戒点です。消耗だけに寄せず、見落とし、障害、誤判断、先送り、周囲や相手や環境の影響を正直に言い切る。「かもしれない」で逃げず「〜になりやすい」と伝える。改善の兆しや好転の余地が見えるなら、必ず「一方で〜という兆しもある」とセットで伝える。
-${focus.isDualConcern&&!isWorkLifeDirectionFocus(focus)?`恋愛と仕事が両方あるので、必要なら「恋愛では」「仕事では」と分けて整理する。`:''}
-
-■ あなたの引力
-ルノルマンカードの良メッセージとして書く。カードの中にある「良い兆しを引き込める要素」だけを取り出し、改善傾向、好機、追い風、支え、タイミング、相談者の潜在的な力を具体的に書く。カード全体がネガティブに見えるときも、必ず好転要素か潜在的な力を見つけて書く。「良い情報がない」とは書かない。
-合計${PLAN==='paid'||is9?'700〜1100字':isFreePair?'520字前後':'260字前後'}。本文では「下の段」「現状の列」「右側の流れ」「中心十字」「配置」「ナイト」などの内部説明語を使わず、カードから読んだ現実解釈として書く。`;
+${lenOutputFormatBlock}`;
   // 絞り込み回答があれば注入
   const fixedCardText=buildFixedGenderCardPromptText();
   const userDataText=[
@@ -18540,7 +18799,7 @@ ${lenInfo}${spreadAxisInfo}${pairAndChainInfo}${advancedLenInfo}
 ${keyCardInSpread}${ambigInfo}${personInfo}${cloudInfo}${ringInfo}
 
 上記の全情報を内部で使い切りつつ、メイン本文ではカード名・カード説明・占術用語を出さないでください。名称・配置・根拠は別の根拠レイヤーで表示するため、本文は現実の判断軸へ翻訳してください。
-相談者が読みたいのは「背景から何が続いているか」「いま何を意識しておくべきか」「どこに判断軸を戻せばいいか」です。
+相談者が読みたいのは${isFreePair?'「2枚から今見える一点」「注意したい一点」「判断するときに戻る視点」です。':'「背景から何が続いているか」「いま何を意識しておくべきか」「どこに判断軸を戻せばいいか」です。'}
 ${buildReadingOutputFormatGuide('len',is9,focus)}`;
 
   try{
@@ -18548,10 +18807,12 @@ ${buildReadingOutputFormatGuide('len',is9,focus)}`;
       taskKey:PLAN==='paid'?'paid':'free',
       images:buildCardImageRefs('len',PLAN==='paid'?'paid':'free'),
     });
-    LAST_OUTPUTS.len=sanitizeRashinVisibleText(normalizeLenormandReadingText(res,{focus,cat,theme}));
+    const normalized=normalizeLenormandReadingText(res,{focus,cat,theme,plan:PLAN,lenCount:SEL_LEN.length});
+    LAST_OUTPUTS.len=sanitizeRashinVisibleText(applyFreeReadingQualityGate('len',normalized,{name,focus,cat,theme,plan:PLAN,lenCount:SEL_LEN.length}));
     renderFormattedResultText('r-len-block',LAST_OUTPUTS.len,'len');
   }catch(e){
-    LAST_OUTPUTS.len=sanitizeRashinVisibleText(normalizeLenormandReadingText(buildRichLenFallback(name,cat),{focus,cat,theme}));
+    const fallback=normalizeLenormandReadingText(buildRichLenFallback(name,cat),{focus,cat,theme,plan:PLAN,lenCount:SEL_LEN.length});
+    LAST_OUTPUTS.len=sanitizeRashinVisibleText(applyFreeReadingQualityGate('len',fallback,{name,focus,cat,theme,plan:PLAN,lenCount:SEL_LEN.length,fallbackAlready:true}));
     renderFormattedResultText('r-len-block',LAST_OUTPUTS.len,'len');
   }
   await ensureStageMinimumTime('len',stageStartedAt);
@@ -18665,10 +18926,12 @@ ${buildReadingOutputFormatGuide('orc',false,focus)}`;
       taskKey:PLAN==='paid'?'paid':'free',
       images:buildCardImageRefs('orc',PLAN==='paid'?'paid':'free'),
     });
-    LAST_OUTPUTS.orc=sanitizeRashinVisibleText(normalizeOracleReadingText(res,{focus,cat,theme,clarifyText}));
+    const normalized=normalizeOracleReadingText(res,{focus,cat,theme,clarifyText});
+    LAST_OUTPUTS.orc=sanitizeRashinVisibleText(applyFreeReadingQualityGate('orc',normalized,{name,focus,cat,theme,clarifyText,plan:PLAN,orcCount:SEL_ORC.length}));
     renderFormattedResultText('r-orc-block',LAST_OUTPUTS.orc,'orc');
   }catch(e){
-    LAST_OUTPUTS.orc=sanitizeRashinVisibleText(normalizeOracleReadingText(buildRichOrcFallback(name,cat,is3),{focus,cat,theme,clarifyText}));
+    const fallback=normalizeOracleReadingText(buildRichOrcFallback(name,cat,is3),{focus,cat,theme,clarifyText});
+    LAST_OUTPUTS.orc=sanitizeRashinVisibleText(applyFreeReadingQualityGate('orc',fallback,{name,focus,cat,theme,clarifyText,plan:PLAN,orcCount:SEL_ORC.length,fallbackAlready:true}));
     renderFormattedResultText('r-orc-block',LAST_OUTPUTS.orc,'orc');
   }
   await ensureStageMinimumTime('orc',stageStartedAt);
@@ -18796,12 +19059,14 @@ ${buildReadingOutputFormatGuide('integration',false,focus)}`;
       taskKey:PLAN==='paid'?'paid':'free',
       images:buildCardImageRefs('all',PLAN==='paid'?'paid':'free'),
     });
-    LAST_OUTPUTS.integration=sanitizeRashinVisibleText(ensureFinalJudgmentText(res,name,cat,theme,{focus,clarifyText:clarifyFull}));
+    const normalized=ensureFinalJudgmentText(res,name,cat,theme,{focus,clarifyText:clarifyFull});
+    LAST_OUTPUTS.integration=sanitizeRashinVisibleText(applyFreeReadingQualityGate('integration',normalized,{name,focus,cat,theme,clarifyText:clarifyFull,plan:PLAN,lenCount:SEL_LEN.length,orcCount:SEL_ORC.length}));
     document.getElementById('r-aiload').style.display='none';
     document.getElementById('r-integration').style.display='block';
     renderFormattedResultText('r-integration',LAST_OUTPUTS.integration,'integration');
   }catch(e){
-    LAST_OUTPUTS.integration=sanitizeRashinVisibleText(ensureFinalJudgmentText(buildIntegratedFallback(name,cat,theme,{focus,clarifyText:clarifyFull}),name,cat,theme,{focus,clarifyText:clarifyFull}));
+    const fallback=ensureFinalJudgmentText(buildIntegratedFallback(name,cat,theme,{focus,clarifyText:clarifyFull}),name,cat,theme,{focus,clarifyText:clarifyFull});
+    LAST_OUTPUTS.integration=sanitizeRashinVisibleText(applyFreeReadingQualityGate('integration',fallback,{name,focus,cat,theme,clarifyText:clarifyFull,plan:PLAN,lenCount:SEL_LEN.length,orcCount:SEL_ORC.length,fallbackAlready:true}));
     document.getElementById('r-aiload').style.display='none';
     document.getElementById('r-integration').style.display='block';
     renderFormattedResultText('r-integration',LAST_OUTPUTS.integration,'integration');
@@ -20511,6 +20776,58 @@ function buildRichLenFallback(name,cat){
     if(!namePart||!themePart) return '';
     return buildLenormandCardReadingSentence(namePart,themePart,ctx);
   };
+  if(isFreePair){
+    const pairHasHidden=hasLenGroup(ids,'hidden');
+    const pairHasEnding=hasLenGroup(ids,'ending');
+    const pairHasStability=hasLenGroup(ids,'stability');
+    const pairHasValue=hasLenGroup(ids,'value');
+    const pairHasRelationship=hasLenGroup(ids,'relationship');
+    const pairHasBurden=hasLenGroup(ids,'burden');
+    const pairHasSupport=hasLenGroup(ids,'support');
+    const pairHasChoice=hasLenGroup(ids,'choice');
+    const flowByTheme=()=>{
+      if(ctx.primaryTheme==='money'){
+        if(pairHasValue) return '2枚から見ると、今は金運の良し悪しより、お金が入ったあと手元に安心として残るかが焦点です。増やす話と使う話を同じ勢いで進めると、流れの輪郭がぼやけやすくなります。';
+        if(pairHasBurden||pairHasEnding) return '2枚から見ると、今は収入を増やす前に、支出や消耗の流れを止めることが焦点です。大きく悪い流れというより、少しずつ減るものを放置しないほうが整いやすい状態です。';
+        return '2枚から見ると、今はお金の入り口より、出入りの流れをどう整えるかが焦点です。焦って増やす判断より、残る安心と減りやすい部分を分けて見るほど現実的に動きやすくなります。';
+      }
+      if(ctx.primaryTheme==='career'||ctx.primaryTheme==='work_life_direction'){
+        if(pairHasChoice) return `2枚から見ると、今は${ctx.criteriaText}が残る働き方かどうかを一点で見る場面です。続けるか変えるかを急ぐより、評価や役割として返っているものを確認するほど判断が整います。`;
+        if(pairHasBurden) return '2枚から見ると、今は努力不足ではなく、負担や停滞が判断を重くしている流れです。職場や案件の全体像を決めつけるより、どこで消耗が増えているかを見る段階です。';
+        return '2枚から見ると、今は仕事や進路の全体結論より、目の前の案件や役割が次につながるかを一点で見る場面です。焦って広げるほど、見るべき判断材料が散りやすくなります。';
+      }
+      if(ctx.primaryTheme==='love'){
+        return isReconciliationContext(ctx)
+          ?'2枚から見ると、今は復縁できるかの断定より、もう一度信頼を作れる流れがあるかを一点で見る段階です。懐かしさだけではなく、言葉のあとに安心できる動きが続くかが焦点です。'
+          :'2枚から見ると、今は相手の本音を決めつけるより、言葉と行動の手応えがそろうかを一点で見る段階です。距離感を詰める前に、安心できる反応が続くかが焦点になります。';
+      }
+      if(ctx.primaryTheme==='relationship'){
+        return '2枚から見ると、今は相手を変えようとするより、関わるほど消耗する接点と協力できる余地を分けて見る段階です。距離の取り方が整うほど、判断もしやすくなります。';
+      }
+      return '2枚から見ると、今は全体を深く掘るより、いちばん目立つ流れと見落としやすい一点を確認する段階です。答えを広げすぎず、今の現実で何が強く出ているかを見るほど整います。';
+    };
+    const warningByTheme=()=>{
+      if(pairHasPredatorPair) return '注意したいのは、消耗や損失を別の要素が強めやすい点です。誰かや状況に合わせるほど減るものがあるなら、そこを軽く扱わないほうが安全です。';
+      if(pairHasBurden) return ctx.primaryTheme==='money'
+        ?'注意したいのは、小さな出費や負担を気合いで流してしまうことです。金額の大きさだけでなく、続くほど手元の安心を削る流れを見落とさないでください。'
+        :'注意したいのは、負担を慣れとして扱い続けることです。大きな問題に見えなくても、続くほど判断が重くなる一点は早めに言葉にしておく必要があります。';
+      if(pairHasHidden) return '注意したいのは、見えていない部分を都合よく補って判断してしまうことです。まだ確認できていないものを、期待や不安だけで埋めないほうが流れを読み違えません。';
+      if(pairHasEnding) return '注意したいのは、区切りの流れを怖がって先送りすることです。終わりを急ぐ必要はありませんが、変化の兆しを見ないふりすると選ぶ余地が狭くなります。';
+      return '注意したいのは、答えを急いで2枚以上の意味を背負わせることです。今は深い原因まで断定するより、目の前で繰り返している一点を見たほうが判断しやすくなります。';
+    };
+    const compassByTheme=()=>{
+      if(pairHasSupport) return '羅針の指針は、小さな好転を拾える場所を見ることです。悪い流れを探すだけでなく、支えや見通しがどこに残っているかを確認してください。';
+      if(pairHasStability) return '羅針の指針は、安定と停滞を分けて見ることです。安心できる土台なのか、動けなさを固定しているだけなのかを分けると判断が整います。';
+      if(pairHasChoice) return '羅針の指針は、選択肢を増やす前に判断基準を一つに絞ることです。どちらが正しいかより、何を守るために選ぶのかを見てください。';
+      if(pairHasRelationship) return '羅針の指針は、相手や場に合わせる前に、自分が削られない関わり方を確認することです。距離を整えるほど、流れも読みやすくなります。';
+      return '羅針の指針は、今見えている事実と気持ちの反応を分けることです。深く掘る前に、まず一番強く出ている現実を静かに確認してください。';
+    };
+    return[
+      `■ 2枚で見えること\n${flowByTheme()}`,
+      `■ 注意したい一点\n${warningByTheme()}`,
+      `■ 羅針の指針\n${compassByTheme()}`,
+    ].join('\n\n');
+  }
   const supportNames=ids.filter(id=>LEN_FALLBACK_GROUPS.support.includes(id)).map(cardName).filter(Boolean).slice(0,2);
   const burdenNames=ids.filter(id=>LEN_FALLBACK_GROUPS.burden.includes(id)).map(cardName).filter(Boolean).slice(0,2);
   const structureLines=[];

@@ -84,7 +84,7 @@ function countHashtags(text) {
 }
 
 function hasPublicUrl(text) {
-  return /https?:\/\//i.test(String(text || ''));
+  return /https?:\/\//i.test(String(text || '')) || /\brashin-senjutsu\.onrender\.com\b/i.test(String(text || ''));
 }
 
 function hasUtm(text) {
@@ -124,9 +124,10 @@ function addIssue(issues, severity, code, message) {
   issues.push({ severity, code, message });
 }
 
-function auditText({ text, dateKey, kind, platform }) {
+function auditText({ text, trackedUrl, dateKey, kind, platform }) {
   const issues = [];
   const value = String(text || '');
+  const tracking = String(trackedUrl || '');
   const length = textLength(value);
   const prelaunch = isPrelaunchDate(dateKey);
   const releasePhase = getReleasePhase(dateKey);
@@ -134,8 +135,8 @@ function auditText({ text, dateKey, kind, platform }) {
 
   if (!value.trim()) addIssue(issues, 'error', 'empty', '投稿文が空です。');
   if (length > limit) addIssue(issues, 'error', 'length', `${platform}の文字数上限を超えています: ${length}/${limit}`);
-  if (!hasPublicUrl(value)) addIssue(issues, 'error', 'tracked_url_missing', `${platform}投稿にはUTM付きURLが必要です。`);
-  if (!hasUtm(value)) addIssue(issues, 'error', 'utm_missing', `${platform}投稿にはutm_contentが必要です。`);
+  if (!hasPublicUrl(value)) addIssue(issues, 'error', 'visible_url_missing', `${platform}投稿には表示用URLが必要です。`);
+  if (!hasUtm(value) && !hasUtm(tracking)) addIssue(issues, 'error', 'utm_missing', `${platform}投稿には台帳用utm_contentが必要です。`);
   if (!value.includes(REQUIRED_HASHTAG)) addIssue(issues, 'error', 'hashtag_missing', `${REQUIRED_HASHTAG} がありません。`);
   const hashtagCount = countHashtags(value);
   if (platform === 'threads' && hashtagCount !== 1) {
@@ -265,7 +266,12 @@ function main() {
           : platform === 'bluesky'
             ? draft[kind].blueskyText
             : draft[kind].text;
-        const audit = auditText({ text, dateKey, kind, platform, releaseMode: args.releaseMode });
+        const trackedUrl = platform === 'x'
+          ? draft[kind].xTrackedUrl
+          : platform === 'bluesky'
+            ? draft[kind].blueskyTrackedUrl
+            : draft[kind].trackedUrl;
+        const audit = auditText({ text, trackedUrl, dateKey, kind, platform, releaseMode: args.releaseMode });
         const imageIssues = auditImage({ draft, kind, platform });
         const repeatKey = `${kind}:${platform}:${normalizeForRepeat(text)}`;
         const repeatIssues = [];

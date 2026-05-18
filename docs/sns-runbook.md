@@ -8,7 +8,9 @@
 - 実投稿は通常端末ではプレビュー表示後に `yes` 入力が必要。Render Cronだけ `SOCIAL_SCHEDULED_RUN=true` の内部フラグで確認を省略する。
 - Threads / Blueskyは投稿前に既存投稿を検索し、UTMの `utm_content` を重複判定用markerとして使う。
 - APIの一時失敗は `SOCIAL_API_RETRY_ATTEMPTS` と `SOCIAL_API_RETRY_BASE_MS` に従って再試行する。認証失敗、アカウント不一致、画像サイズ超過などは再試行しない。
-- すべての投稿URLは `utm_source`、`utm_medium=social`、`utm_campaign`、`utm_content` 付きで生成する。
+- すべての投稿には `utm_source`、`utm_medium=social`、`utm_campaign`、`utm_content` 付きの分析用URLを生成し、`posts.csv` に保存する。朝オラクルの本文には短い `rashin-senjutsu.onrender.com` だけを出す。
+- 夜20:00のconcept投稿は、Threads / Blueskyで同じ本文にする。違うのは分析用URLの `utm_source` と、Bluesky用の軽量画像ファイルだけ。
+- 夜20:00の本文は、羅針占術が他のAI占いと違う点と、恋愛・仕事・人間関係などの迷いをどう整理できるかを端的に伝える。
 - `data/social-posts/posts.csv` は投稿台帳。本文とalt textはSHA-256ハッシュだけを保存し、`tracked_url` と `utm_content` でBOOTH側の流入分析と突き合わせる。
 - 投稿文は `audit-social-drafts.js` で日跨ぎの重複を検査する。公開後のカレンダー外投稿には日別の視点行を入れる。
 - Threads / Blueskyのoracle/concept投稿はいずれも画像とalt textを持つ。Bluesky用画像は1,000,000 bytes以下にする。
@@ -97,7 +99,7 @@ THREADS_POST_VERIFY_TIMEOUT_MS=120000
 
 ## 投稿内容のルール
 
-- 07:00: 数秘オラクル。カード画像、alt text、今日の小さな行動を入れる
+- 07:00: 数秘オラクル。カード1〜33の投稿はThreads / Blueskyで同じ本文にし、短いURL、カード画像、alt text、`カードメッセージ`、具体指示に寄せすぎない「今日の一手」を入れる。カード名の次行に `テーマ：...` を出し、Bluesky向けに250〜300文字、平均270文字前後を目安にする
 - 20:00: 信頼形成の短文。売り込みより、自己理解、非依存、次の行動を優先する
 - Threadsは500文字以内、基本ハッシュタグは1つ
 - Blueskyは300文字以内、画像1枚とalt textを付ける。運用上の画像上限は1,000,000 bytesなので、告知画像は小さい既存JPEGを使う

@@ -167,6 +167,106 @@ const CONCEPT_POSTS = [
   '羅針占術は、未来を断定するための占いではありません。迷っていることを整理して、次にできる小さな行動を見つけるための羅針盤として使ってください。',
 ];
 
+const NIGHT_CONCEPT_POSTS = [
+  '占い結果を渡して終わり、ではありません。\n羅針占術は、姓名判断・四柱推命・動物タイプ診断で土台を見て、ルノルマンカードで現実を解析し、数秘オラクルで打開点を探します。\n答えより、次に動ける一手を。',
+  'AI占いにほしいのは、派手な断言より「今どう動くか」。\n羅針占術は、命術とカードを重ねて、恋愛・仕事・人間関係の迷いを次の一手まで落とし込みます。',
+  'カードだけで未来を決めつけない。\n羅針占術は、名前・生まれ持つ傾向・動物タイプに加えて、ルノルマンで現実を読み、数秘オラクルで打開点を探すAI占いです。',
+  '「当たった」で終わる占いではなく、「だから何をするか」まで見る占い。\n羅針占術は、本質・本音・現実・次の一手を分けて、悩みを動かせる形にします。',
+  '恋愛で苦しい時ほど、相手の気持ちだけを追うと迷いやすい。\n羅針占術は、自分の本音・相手との距離・今できる一手を分けて整理します。',
+  '仕事や転職で迷う時、必要なのは根性論ではなく判断材料。\n羅針占術は、性質・流れ・今の不安を整理して、次に確認することを見える形にします。',
+  '人間関係の悩みは、正解探しより「どこで苦しくなっているか」を見る方が早い。\n羅針占術は、相手より先に自分の軸を整えるためのAI占いです。',
+  '羅針占術は、怖がらせるための占いではありません。\n曖昧な不安を、本質・本音・現実・次の一手に分けて、今日できることまで小さくします。',
+  '未来を断定されるより、今の状況を整理したい人へ。\n羅針占術は、姓名判断・四柱推命・カードを組み合わせて、迷いの輪郭を言葉にします。',
+  '占いに依存するためではなく、自分で選び直すために。\n羅針占術は、命術で土台を見て、カードで今の流れを読み、最後に一手を決めます。',
+  '「進む」「止まる」「様子を見る」。\n羅針占術は、その選択を感情だけで決めないために、性質・状況・カードの流れを重ねて整理します。',
+  '相手の反応が気になる時ほど、自分の本音が置き去りになります。\n羅針占術は、相手を見る前に、自分が何を望んでいるかを整理します。',
+  '悩みが大きい時は、答えより分解が先です。\n羅針占術は、恋愛・仕事・人間関係の不安を小さく分けて、次にできる行動まで落とします。',
+  '羅針占術が見るのは、運命の一言ではなく「迷いの地図」です。\n自分の性質、今の流れ、カードの示す注意点を重ねて、進み方を探します。',
+  '普通のAI占いで物足りない人へ。\n羅針占術は、命術・カード・動物タイプを重ねて、悩みを一問一答ではなく流れとして読みます。',
+  '「たぶん大丈夫」ではなく、何が不安なのかを見たい。\n羅針占術は、気持ち・現実・次の確認点を分けて、判断しやすい形にします。',
+  'カードは答えを押しつけるものではなく、今の状態を映す鏡です。\n羅針占術は、ルノルマンで現実を見て、数秘オラクルで次の突破口を探します。',
+  '恋愛も仕事も、人間関係も、悩みの根はひとつとは限りません。\n羅針占術は、複数の占術で見る角度を増やし、迷いの芯を探します。',
+  '占いで「当てる」より大事なのは、終わったあと少し動けること。\n羅針占術は、結果を行動に変えるところまで意識したAI占いです。',
+  '今の迷いを、相手・運勢・自分のせいにする前に。\n羅針占術は、状況を分けて見て、次に試せる一手を探します。',
+  '強い言葉で不安を煽る占いはしません。\n羅針占術は、迷いを落ち着いて整理し、自分で選ぶための材料を増やします。',
+  '名前、生まれ持つ流れ、行動傾向、カード。\n羅針占術は、ひとつの占いだけで決めず、複数の視点から今の悩みを見ます。',
+  '答えがほしい時ほど、まず問いを整える。\n羅針占術は、何に迷っているのか、何を確認すべきか、次に何をするかを一緒に整理します。',
+  '「相手はどう思っている？」の前に、「自分は何を望んでいる？」。\n羅針占術は、恋愛の不安を自分の軸から見直すためにも使えます。',
+  '羅針占術は、占いを“結論”ではなく“整理の道具”として使います。\n見えにくい本音と現実を分けて、次の一手を考えるためのAI占いです。',
+];
+
+const ORACLE_SOFT_ACTIONS = {
+  1: '本音に近い方向を、ひとつだけ見失わない。',
+  2: '支える前に、自分の負担も同じだけ見る。',
+  3: '重さを少しゆるめる選び方を探す。',
+  4: '足元を整える意識をひとつ持つ。',
+  5: 'いつもの外側に、小さな余白を見る。',
+  6: '優しさの向きが自分を削っていないか確かめる。',
+  7: 'ひとつを丁寧に扱う意識を持つ。',
+  8: '力を向ける先を、感情だけで決めない。',
+  9: 'もう役目を終えたものに気づく。',
+  10: '再開より、組み直しの視点で見る。',
+  11: 'ひらめきを急いで結論にしない。',
+  12: 'どちらかを責める前に、余白を置く。',
+  13: '続けるものと変えるものを分けて見る。',
+  14: '足しすぎ、減らしすぎの偏りを見る。',
+  15: '引き受ける前に、動機の濁りを見る。',
+  16: '違和感を流さず、事実と感情を分ける。',
+  17: '助言より、希望が残る言葉を選ぶ。',
+  18: '不安より、今ある事実に戻る。',
+  19: '守りたい基準を静かに確認する。',
+  20: '過去の教訓を、今の判断に戻す。',
+  21: '終わらせ方を少し美しくする。',
+  22: '大きな理想を、小さな約束として見る。',
+  23: '流れが変わった前提で、別の見方を探す。',
+  24: '伝え方の品位をひとつ整える。',
+  25: '即答せず、自分の歩幅を取り戻す。',
+  26: '失敗しても崩れない小ささで見る。',
+  27: '進む前に、残すものと手放すものを分ける。',
+  28: '響き合う場所かどうかを感じ直す。',
+  29: '理想を遠くに置かず、今の視点へ近づける。',
+  30: '浮かんだものを形にする意識を持つ。',
+  31: '勢いより、順番を見る。',
+  32: 'ひとりで抱えず、共有の余地を見る。',
+  33: '与える前に、自分の余白を確かめる。',
+};
+
+const ORACLE_SOCIAL_READINGS = {
+  1: '誰かの正解を探すほど、自分の中に残っている小さな願いが見えにくくなります。始まりの火は、外から与えられるものではなく、まだ消えていない本音に宿ります。',
+  2: '静かに支える力は、目立たなくても流れを整えます。ただ、相手のために動くほど自分の輪郭が薄くなりやすい日でもあります。優しさと負担を同じ場所に置いて見てください。',
+  3: '深刻に考えるほど、心の動きが固くなることがあります。軽さは逃げではなく、本音を取り戻すための余白です。少しやわらかく見ることで、選べる道が戻ってきます。',
+  4: '大きな変化を求めるより、足元を締めることで安心が戻るカードです。乱れている場所を責めるのではなく、今の自分を支える土台がどこにあるかを見直す流れです。',
+  5: '同じ選び方を続けていると、可能性まで同じ形に見えてしまいます。冒険は大きな飛躍ではなく、いつもの外側に少しだけ視線を向けることから始まります。',
+  6: '誰かを思う気持ちが強いほど、自分の疲れや本音を後回しにしやすくなります。優しさは自己犠牲と同じではありません。向ける先と量を整えるカードです。',
+  7: '数をこなすより、ひとつの感覚を深く見ることで質が立ち上がる日です。焦って広げるより、今すでに手の中にあるものを磨くほど、自分らしさが見えます。',
+  8: '力がある日ほど、勢いだけで押し切ると大切なものを見落とします。このカードは強さを否定せず、何を守るために力を使うのかを問い直す流れです。',
+  9: '経験が増えるほど、抱えたままの考えや役割も増えていきます。今日は積み上げるより、手放せる余地を見つけることで視界が広がるカードです。',
+  10: '終わったように見えることの中に、別の入口が残っているかもしれません。無理に元通りへ戻すより、いまの自分に合う形へ組み直す視点が鍵になります。',
+  11: 'ひらめきや違和感は、まだ言葉になる前の答えとして届くことがあります。すぐ結論にせず、浮かんだ感覚を雑に扱わないことで、次の形が見えやすくなります。',
+  12: '白黒をつけたい場面ほど、間に置ける余白が流れを変えます。どちらが正しいかを急ぐより、互いの事情が置ける場所を作ることで固さがゆるみます。',
+  13: '守ってきたものを否定する必要はありません。ただ、今の自分に合わなくなった型まで抱え続けると重くなります。残す型と更新する型を見分けるカードです。',
+  14: '変化は一気に別人になることではなく、配合を少し変えることでも起こります。足りないもの、過剰なもの、混ざりすぎたものを見直すことで流れが整います。',
+  15: '人の役に立つことと、自分をすり減らすことは別です。頼まれたから、期待されたからだけで動く前に、その選択に納得があるかを見るカードです。',
+  16: '小さな違和感は、あなたを止めるためではなく、見直す場所を知らせる合図です。不安や思い込みと混ぜず、起きていることと心の反応を分けるほど輪郭が見えてきます。',
+  17: '大きな助けではなくても、残る言葉や小さな姿勢が誰かの希望になります。ただし助言を急ぐより、相手の中に光が残る伝え方を選ぶ流れです。',
+  18: '霧の中では、想像が先に走りやすくなります。急いで答えを決めるより、今見えている事実に戻ることで、恐れと現実の境目が少しずつ分かれていきます。',
+  19: '周りの反応に合わせ続けると、自分の基準が見えにくくなります。このカードは強く押し返すより、内側で守りたい線を静かに思い出す流れです。',
+  20: '過去は責めるためではなく、今の判断に戻せる教訓として現れます。同じ後悔を繰り返さないために、何を学びとして持っていくかを見るカードです。',
+  21: '終えることは負けではなく、次の流れを入れるための区切りです。完璧に仕上げるより、今の自分にとって美しい終わらせ方を選ぶ意識が出ています。',
+  22: '大きな理想や影響力は、派手な言葉より小さな約束の積み重ねに宿ります。遠くを見る力を持ちながら、今日の現実に置ける形へ下ろすカードです。',
+  23: '予定外の流れは、邪魔ではなく別ルートの知らせかもしれません。思い通りに進まないときほど、固執をゆるめて見方を変える余地が生まれます。',
+  24: '同じ本音でも、伝え方が変わると届き方が変わります。強く言うことだけが誠実さではありません。品位と柔らかさが、関係を守る力になります。',
+  25: '急がされるほど、自分の内側の速度を見失いやすくなります。遅さではなく確かさを選ぶカードです。周りの速度に飲まれず、内側のリズムへ戻る流れが出ています。',
+  26: 'まだ形になっていない案でも、小さく試せば道になります。成功を証明するより、崩れない大きさで触れてみることが、次の可能性を開きます。',
+  27: '新しい扉の前では、何を持っていくかだけでなく、何を置いていくかも大切になります。進む前の整理が、次の段階を軽くするカードです。',
+  28: '人や場所との響き合いは、理屈だけでは測れません。縮こまる場所に合わせ続けるより、呼吸が深くなる関係や環境を感じ直す流れです。',
+  29: '理想が遠すぎると、今の自分とは無関係に見えてしまいます。このカードは夢を小さくするのではなく、今の場所から触れられる形へ寄せるために出ています。',
+  30: '頭の中にあるものは、外に出した瞬間から育ちはじめます。完成度を気にしすぎるより、消えやすいひらめきを形として残す意識が流れを作ります。',
+  31: '勢いは悪いものではありません。ただ、順番を見失うと大事なものまで散らばります。何を先に見て、何を後に回すかを整理すると静かに動きます。',
+  32: '一人で抱えるほど、動かないものは重くなります。すべてを任せる必要はありませんが、共有できる余地を見ることで流れが変わるカードです。',
+  33: '誰かを照らす力は、自分の灯が守られているときにいちばん澄んで届きます。与える前に余白を確かめることは、冷たさではなく持続する優しさです。',
+};
+
 function parseArgs(argv) {
   const defaultPlatforms = String(process.env.SOCIAL_PLATFORMS || 'threads')
     .split(',')
@@ -235,12 +335,16 @@ function truncateText(text, maxChars) {
   return `${chars.slice(0, Math.max(0, maxChars - 1)).join('')}…`;
 }
 
+function hasDisplayUrl(text) {
+  return /https?:\/\//i.test(String(text || '')) || /\brashin-senjutsu\.onrender\.com\b/i.test(String(text || ''));
+}
+
 function fitPostText(parts, maxChars) {
   const normalized = parts.map(part => String(part || '').trim()).filter(Boolean);
   let text = normalized.join('\n\n');
   if ([...text].length <= maxChars) return text;
   for (let i = 0; i < normalized.length; i += 1) {
-    if (/https?:\/\//.test(normalized[i]) || normalized[i].startsWith('#')) continue;
+    if (hasDisplayUrl(normalized[i]) || normalized[i].startsWith('#')) continue;
     normalized[i] = truncateText(normalized[i], Math.max(24, [...normalized[i]].length - ([...text].length - maxChars) - 4));
     text = normalized.join('\n\n');
     if ([...text].length <= maxChars) return text;
@@ -270,19 +374,36 @@ function normalizeForDuplicateCheck(text) {
     .trim();
 }
 
+function softenOracleSocialWording(text) {
+  return String(text || '')
+    .replace(/このカードからの一手/g, 'このカードからのヒント');
+}
+
 function buildOracleLeadLine(card) {
   const message = String(card?.message || '').trim();
-  if (message) return message;
+  if (message) return softenOracleSocialWording(message);
 
   const share = String(card?.share || '').trim();
   const title = String(card?.title || '').trim();
   if (share) {
     const normalizedShare = normalizeForDuplicateCheck(share);
     const normalizedTitle = normalizeForDuplicateCheck(title);
-    if (!normalizedTitle || !normalizedShare.includes(normalizedTitle)) return share;
+    if (!normalizedTitle || !normalizedShare.includes(normalizedTitle)) return softenOracleSocialWording(share);
   }
 
   return 'このカードが示すテーマを、今日の行動に少しだけ移してみてください。';
+}
+
+function buildOracleActionLine(card) {
+  const id = Number(card?.id);
+  const action = ORACLE_SOFT_ACTIONS[id] || 'このテーマを、今の迷いに重ねて見る。';
+  return `今日の一手：${action}`;
+}
+
+function buildOracleReadingLine(card) {
+  const id = Number(card?.id);
+  const reading = ORACLE_SOCIAL_READINGS[id] || 'このカードは、結論を急ぐより今の状態を見つめ直すための視点を示しています。';
+  return `カードメッセージ：${reading}結論を急がず、気持ちと現実の接点を少し静かに見てください。`;
 }
 
 function getJstDateString(date = new Date()) {
@@ -371,6 +492,24 @@ function buildXCtaLine(paidCta, dateKey, config) {
   return 'まずは無料の今日のオラクルから。';
 }
 
+function pickNightConceptBody(dateKey) {
+  const index = dateToUtcDay(dateKey) % NIGHT_CONCEPT_POSTS.length;
+  return NIGHT_CONCEPT_POSTS[index];
+}
+
+function buildNightConceptCtaLine(paidCta, dateKey, config) {
+  if (isPreReleasePosting(dateKey, config)) {
+    return '5/16公開。気になる方は保存して、公開日に見返してください。';
+  }
+  if (paidCta === 'active_paid') {
+    return '無料で整理して、必要な方だけ深掘り鑑定へ。';
+  }
+  if (paidCta === 'soft_paid') {
+    return 'まずは無料鑑定で整理して、必要なら深掘りへ。';
+  }
+  return 'まずは無料鑑定で、今の迷いを整理できます。';
+}
+
 function buildTrackedUrl(publicOrigin, pathname = '/', params = {}) {
   const url = new URL(pathname, publicOrigin.endsWith('/') ? publicOrigin : `${publicOrigin}/`);
   Object.entries(params).forEach(([key, value]) => {
@@ -379,6 +518,17 @@ function buildTrackedUrl(publicOrigin, pathname = '/', params = {}) {
     }
   });
   return url.toString();
+}
+
+function buildDisplayUrl(publicOrigin = DEFAULT_PUBLIC_ORIGIN) {
+  try {
+    return new URL(publicOrigin).host.replace(/^www\./i, '');
+  } catch (_error) {
+    return String(publicOrigin || DEFAULT_PUBLIC_ORIGIN)
+      .replace(/^https?:\/\//i, '')
+      .replace(/\/.*$/, '')
+      .replace(/^www\./i, '');
+  }
 }
 
 function buildUtmParams(config, content) {
@@ -390,12 +540,27 @@ function buildUtmParams(config, content) {
   };
 }
 
+function buildOracleTrackedUrl(card, publicOrigin, config, dateKey) {
+  return buildTrackedUrl(publicOrigin, '/share/card', {
+    type: 'oracle',
+    id: card.id,
+    ...buildUtmParams(config, `oracle_${dateKey.replace(/-/g, '')}`),
+  });
+}
+
+function buildConceptTrackedUrl(dateKey, publicOrigin, config, paidCta) {
+  const contentType = paidCta === 'soft_paid' || paidCta === 'active_paid'
+    ? 'deep'
+    : 'concept';
+  return buildTrackedUrl(publicOrigin, '/', buildUtmParams(config, `${contentType}_${dateKey.replace(/-/g, '')}`));
+}
+
 function countHashtags(text) {
   return (String(text || '').match(/(^|\s)#[^\s#]+/g) || []).length;
 }
 
 function stripLineRolePrefix(text) {
-  return String(text || '').replace(/^(今日の1枚|先行版 今日の1枚|今日の数秘オラクル|テーマ|今日の一手|このカードからの一手)[:：]\s*/, '');
+  return String(text || '').replace(/^(今日の1枚|先行版 今日の1枚|今日の数秘オラクル|テーマ|今日の一手|このカードからの一手|ヒント)[:：]\s*/, '');
 }
 
 function findAdjacentRepeatedLine(text) {
@@ -462,9 +627,9 @@ function validatePostText(text, options = {}) {
     throw new Error(`${label} is too long for Bluesky: ${[...value].length}/${BLUESKY_CHARACTER_LIMIT}`);
   }
   if (options.requireTrackedUrl && !hasPublicUrl(value)) {
-    throw new Error(`${label} is missing a tracked URL.`);
+    throw new Error(`${label} is missing a visible URL.`);
   }
-  if (options.requireTrackedUrl && !extractUtmContent(value)) {
+  if (options.requireTrackedUrl && !extractUtmContent(value) && !extractUtmContent(options.trackedUrl)) {
     throw new Error(`${label} is missing utm_content.`);
   }
 }
@@ -472,8 +637,8 @@ function validatePostText(text, options = {}) {
 function validateDraft(draft, args) {
   const platforms = Array.isArray(args.platforms) ? args.platforms : ['threads'];
   if (platforms.includes('threads')) {
-    validatePostText(draft.oracle.text, { label: 'oracle Threads post', platforms: ['threads'], requireTrackedUrl: true });
-    validatePostText(draft.concept.text, { label: 'concept Threads post', platforms: ['threads'], requireTrackedUrl: true });
+    validatePostText(draft.oracle.text, { label: 'oracle Threads post', platforms: ['threads'], requireTrackedUrl: true, trackedUrl: draft.oracle.trackedUrl });
+    validatePostText(draft.concept.text, { label: 'concept Threads post', platforms: ['threads'], requireTrackedUrl: true, trackedUrl: draft.concept.trackedUrl });
     const requiredHashtag = draft.meta?.policy?.hashtag || DEFAULT_HASHTAG;
     const preRelease = isPreReleasePosting(draft.date, draft.meta?.socialConfig || {});
     if (!draft.oracle.text.includes(requiredHashtag)) throw new Error('oracle Threads post is missing the required hashtag.');
@@ -483,7 +648,7 @@ function validateDraft(draft, args) {
         throw new Error('pre-release oracle Threads post must not use the live oracle closing line.');
       }
     } else {
-      if (!extractUtmContent(draft.oracle.text)) throw new Error('oracle Threads post is missing utm_content.');
+      if (!extractUtmContent(draft.oracle.trackedUrl || draft.oracle.text)) throw new Error('oracle Threads post is missing utm_content.');
       if (!extractUtmContent(draft.concept.text)) throw new Error('concept Threads post is missing utm_content.');
       if (!draft.oracle.text.trim().endsWith('あなたも今日の1枚を引かない？')) {
         throw new Error('oracle Threads post must end with the required closing line.');
@@ -491,15 +656,15 @@ function validateDraft(draft, args) {
     }
   }
   if (platforms.includes('x')) {
-    validatePostText(draft.oracle.xText, { label: 'oracle X post', platforms: ['x'], requireTrackedUrl: true });
-    validatePostText(draft.concept.xText, { label: 'concept X post', platforms: ['x'], requireTrackedUrl: true });
+    validatePostText(draft.oracle.xText, { label: 'oracle X post', platforms: ['x'], requireTrackedUrl: true, trackedUrl: draft.oracle.xTrackedUrl });
+    validatePostText(draft.concept.xText, { label: 'concept X post', platforms: ['x'], requireTrackedUrl: true, trackedUrl: draft.concept.xTrackedUrl });
     if (draft.oracle.xText === draft.oracle.text || draft.concept.xText === draft.concept.text) {
       throw new Error('X posts must not be identical to Threads posts.');
     }
   }
   if (platforms.includes('bluesky')) {
-    validatePostText(draft.oracle.blueskyText, { label: 'oracle Bluesky post', platforms: ['bluesky'], requireTrackedUrl: true });
-    validatePostText(draft.concept.blueskyText, { label: 'concept Bluesky post', platforms: ['bluesky'], requireTrackedUrl: true });
+    validatePostText(draft.oracle.blueskyText, { label: 'oracle Bluesky post', platforms: ['bluesky'], requireTrackedUrl: true, trackedUrl: draft.oracle.blueskyTrackedUrl });
+    validatePostText(draft.concept.blueskyText, { label: 'concept Bluesky post', platforms: ['bluesky'], requireTrackedUrl: true, trackedUrl: draft.concept.blueskyTrackedUrl });
     const requiredHashtag = draft.meta?.policy?.hashtag || DEFAULT_HASHTAG;
     if (!draft.oracle.blueskyText.includes(requiredHashtag)) throw new Error('oracle Bluesky post is missing the required hashtag.');
     if (!draft.concept.blueskyText.includes(requiredHashtag)) throw new Error('concept Bluesky post is missing the required hashtag.');
@@ -621,88 +786,60 @@ async function pickCard(messages, dateKey, writeState) {
 function buildOracleText(card, publicOrigin, options = {}) {
   const dateKey = options.dateKey || getJstDateString();
   const config = options.config || getSocialConfig({ platforms: ['threads'] });
-  const shareUrl = buildTrackedUrl(publicOrigin, '/share/card', {
-    type: 'oracle',
-    id: card.id,
-    ...buildUtmParams(config, `oracle_${dateKey.replace(/-/g, '')}`),
-  });
+  const hashtag = config.defaultHashtag || DEFAULT_HASHTAG;
+  const displayUrl = buildDisplayUrl(publicOrigin);
   if (isPreReleasePosting(dateKey, config)) {
-    const promo = PRE_RELEASE_ORACLE_PROMOS[dateKey] || PRE_RELEASE_ORACLE_PROMOS['2026-05-12'];
-    return [
-      '【今日の数秘オラクル・先行版】',
-      '',
-      ...promo.intro,
-      '',
-      `今日の1枚：${card.name}`,
+    return fitPostText([
+      '先行 数秘オラクル',
+      card.name,
       `テーマ：${card.title}`,
-      '',
       buildOracleLeadLine(card),
-      '',
-      'このカードからの一手：',
-      card.action,
-      '',
-      ...promo.pitch,
-      '',
-      shareUrl,
-      '',
-      config.defaultHashtag || DEFAULT_HASHTAG,
-      '',
-      promo.closing,
-    ].join('\n');
+      buildOracleReadingLine(card),
+      buildOracleActionLine(card),
+      displayUrl,
+      hashtag,
+      '保存して公開日に見返してね',
+    ], BLUESKY_CHARACTER_LIMIT);
   }
-  return [
-    '【今日の数秘オラクル】',
-    '',
-    `今日の1枚：${card.name}`,
+  return fitPostText([
+    '今日の数秘オラクル',
+    card.name,
     `テーマ：${card.title}`,
-    '',
-    'カードからのメッセージ：',
     buildOracleLeadLine(card),
-    '',
-    '今日の一手：',
-    card.action,
-    '',
-    shareUrl,
-    '',
-    config.defaultHashtag || DEFAULT_HASHTAG,
-    '',
+    buildOracleReadingLine(card),
+    buildOracleActionLine(card),
+    displayUrl,
+    hashtag,
     'あなたも今日の1枚を引かない？',
-  ].join('\n');
+  ], BLUESKY_CHARACTER_LIMIT);
 }
 
 function buildXOracleText(card, publicOrigin, options = {}) {
   const dateKey = options.dateKey || getJstDateString();
   const config = options.config || getSocialConfig({ platforms: ['x'] });
   const hashtags = getXHashtagLine(config);
-  const shareUrl = buildTrackedUrl(publicOrigin, '/share/card', {
-    type: 'oracle',
-    id: card.id,
-    ...buildUtmParams(config, `oracle_${dateKey.replace(/-/g, '')}`),
-  });
+  const displayUrl = buildDisplayUrl(publicOrigin);
   if (isPreReleasePosting(dateKey, config)) {
     return fitPostText([
       `先行オラクル：${card.name} / ${card.title}`,
-      `一手：${truncateText(card.action, 28)}`,
+      buildOracleActionLine(card),
       '保存して公開日に見返してね',
-      shareUrl,
+      displayUrl,
       hashtags,
     ], X_CHARACTER_LIMIT);
   }
-  return [
+  return fitPostText([
     `今日の数秘オラクル：${card.name}`,
     `テーマ：${card.title}`,
-    '',
-    `一手：${truncateText(card.action, 34)}`,
-    '',
-    shareUrl,
+    buildOracleActionLine(card),
+    displayUrl,
     hashtags,
-  ].join('\n');
+  ], X_CHARACTER_LIMIT);
 }
 
 function buildBlueskyOracleText(card, publicOrigin, options = {}) {
   const config = options.config || getSocialConfig({ platforms: ['bluesky'] });
-  const text = buildXOracleText(card, publicOrigin, { ...options, config });
-  return replaceTrailingHashtagLine(text, getXHashtagLine(config), getBlueskyHashtagLine(config));
+  return buildOracleText(card, publicOrigin, { ...options, config });
 }
 
 function buildOracleAltText(card) {
@@ -730,33 +867,13 @@ function pickBlueskyConceptImage(conceptImage) {
 function buildConceptText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['threads'] })) {
   const entry = getCalendarEntry(dateKey);
   const paidCta = resolvePaidCta(entry, config);
-  const calendarText = entry ? CALENDAR_CONCEPT_POSTS[entry.eveningTheme] : '';
-  const index = crypto.createHash('sha256').update(dateKey).digest()[0] % CONCEPT_POSTS.length;
-  const baseBody = calendarText || CONCEPT_POSTS[index];
-  const body = calendarText ? baseBody : `${getDailyConceptAngle(dateKey)}\n\n${baseBody}`;
-  const contentType = paidCta === 'soft_paid' || paidCta === 'active_paid'
-    ? 'deep'
-    : 'concept';
-  const link = buildTrackedUrl(publicOrigin, '/', buildUtmParams(config, `${contentType}_${dateKey.replace(/-/g, '')}`));
-  const ctaLine = buildThreadsCtaLine(paidCta, dateKey, config);
-  if (isPreReleasePosting(dateKey, config)) {
-    return [
-      body,
-      '',
-      ctaLine,
-      link,
-      '',
-      config.defaultHashtag || DEFAULT_HASHTAG,
-    ].join('\n');
-  }
-  return [
-    body,
-    '',
-    ctaLine,
+  const link = buildConceptTrackedUrl(dateKey, publicOrigin, config, paidCta);
+  return fitPostText([
+    pickNightConceptBody(dateKey),
+    buildNightConceptCtaLine(paidCta, dateKey, config),
     link,
-    '',
     config.defaultHashtag || DEFAULT_HASHTAG,
-  ].join('\n');
+  ], BLUESKY_CHARACTER_LIMIT);
 }
 
 const X_CONCEPT_POSTS = {
@@ -783,32 +900,17 @@ function buildXConceptText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config
   const entry = getCalendarEntry(dateKey);
   const paidCta = resolvePaidCta(entry, config);
   const hashtags = getXHashtagLine(config);
-  const fallback = CONCEPT_POSTS[crypto.createHash('sha256').update(`x:${dateKey}`).digest()[0] % CONCEPT_POSTS.length];
-  const calendarBody = entry && X_CONCEPT_POSTS[entry.eveningTheme];
-  const body = calendarBody || `${getDailyConceptAngle(dateKey)}\n${truncateText(fallback, 82)}`;
-  const contentType = paidCta === 'soft_paid' || paidCta === 'active_paid' ? 'deep' : 'concept';
-  const link = buildTrackedUrl(publicOrigin, '/', buildUtmParams(config, `${contentType}_${dateKey.replace(/-/g, '')}`));
-  const ctaLine = buildXCtaLine(paidCta, dateKey, config);
-  if (isPreReleasePosting(dateKey, config)) {
-    return fitPostText([
-      body,
-      ctaLine,
-      link,
-      hashtags,
-    ], X_CHARACTER_LIMIT);
-  }
-  return [
-    body,
-    '',
-    ctaLine,
+  const link = buildConceptTrackedUrl(dateKey, publicOrigin, config, paidCta);
+  return fitPostText([
+    pickNightConceptBody(dateKey),
+    buildNightConceptCtaLine(paidCta, dateKey, config),
     link,
     hashtags,
-  ].join('\n');
+  ], X_CHARACTER_LIMIT);
 }
 
 function buildBlueskyConceptText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['bluesky'] })) {
-  const text = buildXConceptText(dateKey, publicOrigin, config);
-  return replaceTrailingHashtagLine(text, getXHashtagLine(config), getBlueskyHashtagLine(config));
+  return buildConceptText(dateKey, publicOrigin, config);
 }
 
 async function buildDraft(args) {
@@ -839,8 +941,11 @@ async function buildDraft(args) {
       imageUrl: `${publicOrigin}/images/cards/oracle/${imageName}`,
       altText: buildOracleAltText(card),
       text: buildOracleText(card, publicOrigin, { dateKey, config: threadsConfig }),
+      trackedUrl: buildOracleTrackedUrl(card, publicOrigin, threadsConfig, dateKey),
       xText: buildXOracleText(card, publicOrigin, { dateKey, config: xConfig }),
+      xTrackedUrl: buildOracleTrackedUrl(card, publicOrigin, xConfig, dateKey),
       blueskyText: buildBlueskyOracleText(card, publicOrigin, { dateKey, config: blueskyConfig }),
+      blueskyTrackedUrl: buildOracleTrackedUrl(card, publicOrigin, blueskyConfig, dateKey),
       blueskyImagePath: path.join(ROOT, 'images', 'cards', 'oracle', imageName),
     },
     concept: {
@@ -848,8 +953,11 @@ async function buildDraft(args) {
       imageUrl: `${publicOrigin}/images/ui/${conceptImage.file}`,
       altText: conceptImage.altText,
       text: buildConceptText(dateKey, publicOrigin, threadsConfig),
+      trackedUrl: buildConceptTrackedUrl(dateKey, publicOrigin, threadsConfig, paidCta),
       xText: buildXConceptText(dateKey, publicOrigin, xConfig),
+      xTrackedUrl: buildConceptTrackedUrl(dateKey, publicOrigin, xConfig, paidCta),
       blueskyText: buildBlueskyConceptText(dateKey, publicOrigin, blueskyConfig),
+      blueskyTrackedUrl: buildConceptTrackedUrl(dateKey, publicOrigin, blueskyConfig, paidCta),
       blueskyImagePath: blueskyConceptImagePath,
       blueskyImageUrl: `${publicOrigin}/images/ui/${blueskyConceptImage.file}`,
     },
@@ -974,7 +1082,7 @@ function extractUtmContent(text) {
 }
 
 function hasPublicUrl(text) {
-  return /https?:\/\//i.test(String(text || ''));
+  return hasDisplayUrl(text);
 }
 
 function normalizeDuplicateText(text) {
@@ -1172,7 +1280,7 @@ async function main() {
           text: draft.oracle.text,
           imageUrl: draft.oracle.imageUrl,
           altText: draft.oracle.altText,
-          marker: extractUtmContent(draft.oracle.text),
+          marker: extractUtmContent(draft.oracle.trackedUrl || draft.oracle.text),
         }));
       }
       if (args.kind === 'all' || args.kind === 'concept') {
@@ -1190,7 +1298,7 @@ async function main() {
           text: draft.oracle.blueskyText,
           imagePath: draft.oracle.blueskyImagePath,
           altText: draft.oracle.altText,
-          marker: extractUtmContent(draft.oracle.blueskyText),
+          marker: extractUtmContent(draft.oracle.blueskyTrackedUrl || draft.oracle.blueskyText),
         }));
       }
       if (args.kind === 'all' || args.kind === 'concept') {

@@ -32,11 +32,12 @@ function parseDraft(date = '2026-05-18') {
   return JSON.parse(result.stdout);
 }
 
-function assertTracked(text, label) {
-  assert.match(text, /https:\/\/rashin-senjutsu\.onrender\.com\/\S*utm_source=/, `${label} needs tracked URL`);
-  assert.match(text, /[?&]utm_medium=social\b/, `${label} needs utm_medium`);
-  assert.match(text, /[?&]utm_campaign=/, `${label} needs utm_campaign`);
-  assert.match(text, /[?&]utm_content=/, `${label} needs utm_content`);
+function assertTracked(text, trackedUrl, label) {
+  assert.match(String(text || ''), /rashin-senjutsu\.onrender\.com/, `${label} needs visible app URL`);
+  assert.match(trackedUrl, /https:\/\/rashin-senjutsu\.onrender\.com\/\S*utm_source=/, `${label} needs tracked URL`);
+  assert.match(trackedUrl, /[?&]utm_medium=social\b/, `${label} needs utm_medium`);
+  assert.match(trackedUrl, /[?&]utm_campaign=/, `${label} needs utm_campaign`);
+  assert.match(trackedUrl, /[?&]utm_content=/, `${label} needs utm_content`);
 }
 
 function assertImageAndAlt(imagePath, altText, label) {
@@ -45,20 +46,84 @@ function assertImageAndAlt(imagePath, altText, label) {
   assert.ok(String(altText || '').trim().length >= 10, `${label} alt text is too short`);
 }
 
+function normalizePlatformOnlyUrl(text) {
+  return String(text || '').replace(/utm_source=(threads|bluesky)/g, 'utm_source=<platform>');
+}
+
 function testDraftHasTrackingImagesAndAlt() {
   const draft = parseDraft();
-  assertTracked(draft.oracle.text, 'threads oracle');
-  assertTracked(draft.oracle.blueskyText, 'bluesky oracle');
-  assertTracked(draft.oracle.xText, 'x oracle');
-  assertTracked(draft.concept.text, 'threads concept');
-  assertTracked(draft.concept.blueskyText, 'bluesky concept');
-  assertTracked(draft.concept.xText, 'x concept');
+  assertTracked(draft.oracle.text, draft.oracle.trackedUrl, 'threads oracle');
+  assertTracked(draft.oracle.blueskyText, draft.oracle.blueskyTrackedUrl, 'bluesky oracle');
+  assertTracked(draft.oracle.xText, draft.oracle.xTrackedUrl, 'x oracle');
+  assertTracked(draft.concept.text, draft.concept.trackedUrl, 'threads concept');
+  assertTracked(draft.concept.blueskyText, draft.concept.blueskyTrackedUrl, 'bluesky concept');
+  assertTracked(draft.concept.xText, draft.concept.xTrackedUrl, 'x concept');
 
   assertImageAndAlt(draft.oracle.imagePath, draft.oracle.altText, 'oracle');
   assertImageAndAlt(draft.concept.imagePath, draft.concept.altText, 'threads concept');
   assertImageAndAlt(draft.concept.blueskyImagePath, draft.concept.altText, 'bluesky concept');
   assert.ok(fs.statSync(draft.oracle.blueskyImagePath).size <= 1_000_000, 'Bluesky oracle image must be <= 1,000,000 bytes');
   assert.ok(fs.statSync(draft.concept.blueskyImagePath).size <= 1_000_000, 'Bluesky concept image must be <= 1,000,000 bytes');
+}
+
+function testNightConceptCopyIsSharedAcrossThreadsAndBluesky() {
+  const draft = parseDraft();
+  assert.equal(
+    normalizePlatformOnlyUrl(draft.concept.text),
+    normalizePlatformOnlyUrl(draft.concept.blueskyText),
+    'Threads and Bluesky night concept copy should match except platform UTM source',
+  );
+  assert.ok([...draft.concept.blueskyText].length <= 300, 'Bluesky night concept post must stay within 300 characters');
+  assert.doesNotMatch(draft.concept.text, /羅針メモ\d{4}/, 'night concept post should not use weak daily memo filler');
+  assert.match(draft.concept.text, /他のAI占い|羅針占術|姓名判断|四柱推命|動物タイプ診断|次の一手/, 'night concept post should explain the app difference or capability');
+}
+
+function testMorningOracleCopyIsSharedAcrossThreadsAndBluesky() {
+  const draft = parseDraft();
+  assert.equal(
+    normalizePlatformOnlyUrl(draft.oracle.text),
+    normalizePlatformOnlyUrl(draft.oracle.blueskyText),
+    'Threads and Bluesky morning oracle copy should match except platform UTM source',
+  );
+  assert.ok([...draft.oracle.blueskyText].length <= 300, 'Bluesky morning oracle post must stay within 300 characters');
+  assert.match(draft.oracle.text, /\brashin-senjutsu\.onrender\.com\b/, 'morning oracle post should use the short visible URL');
+  assert.doesNotMatch(draft.oracle.text, /utm_source=|utm_content=|\/share\/card/, 'morning oracle visible text should not include long tracking URL');
+  assert.doesNotMatch(draft.oracle.blueskyText, /utm_source=|utm_content=|\/share\/card/, 'Bluesky morning oracle visible text should not include long tracking URL');
+  assert.match(draft.oracle.text, /今日の一手：/, 'morning oracle post should keep the today one-move label');
+  assert.match(draft.oracle.blueskyText, /今日の一手：/, 'Bluesky morning oracle post should keep the today one-move label');
+  assert.ok(!draft.oracle.text.includes(draft.oracle.card.action), 'morning oracle post must not publish the exact card action');
+  assert.ok(!draft.oracle.blueskyText.includes(draft.oracle.card.action), 'Bluesky morning oracle post must not publish the exact card action');
+}
+
+function addDays(date, days) {
+  const next = new Date(`${date}T00:00:00.000Z`);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next.toISOString().slice(0, 10);
+}
+
+function testMorningOracleAllCardsAreExpandedNearBlueskyLimit() {
+  const seen = new Map();
+  for (let offset = 0; offset < 140 && seen.size < 33; offset += 1) {
+    const draft = parseDraft(addDays('2026-05-16', offset));
+    if (!seen.has(draft.oracle.card.id)) {
+      seen.set(draft.oracle.card.id, draft);
+    }
+  }
+  assert.equal(seen.size, 33, 'morning oracle should cover all 33 fixed cards in the verification range');
+  const lengths = [];
+  for (const draft of seen.values()) {
+    const length = [...draft.oracle.blueskyText].length;
+    lengths.push(length);
+    assert.ok(length >= 250, `card ${draft.oracle.card.id} morning oracle is too short: ${length}`);
+    assert.ok(length <= 300, `card ${draft.oracle.card.id} morning oracle is too long: ${length}`);
+    assert.match(draft.oracle.text, /カードメッセージ：/, `card ${draft.oracle.card.id} needs a card message line`);
+    assert.doesNotMatch(draft.oracle.text, /問いかけ：/, `card ${draft.oracle.card.id} must not include a question line`);
+    assert.match(draft.oracle.text, new RegExp(`${draft.oracle.card.name}\\n\\nテーマ：${draft.oracle.card.title}`), `card ${draft.oracle.card.id} should separate card name and theme`);
+    assert.match(draft.oracle.text, /今日の一手：/, `card ${draft.oracle.card.id} needs a today one-move line`);
+    assert.ok(!draft.oracle.text.includes(draft.oracle.card.action), `card ${draft.oracle.card.id} must not publish the exact card action`);
+  }
+  const average = lengths.reduce((sum, length) => sum + length, 0) / lengths.length;
+  assert.ok(average >= 265 && average <= 280, `average morning oracle length should stay around 270: ${average}`);
 }
 
 function testPostsLedgerWriteIsTraceableAndSecretSafe() {
@@ -125,6 +190,9 @@ function testBroadSocialAuditPasses() {
 }
 
 testDraftHasTrackingImagesAndAlt();
+testMorningOracleCopyIsSharedAcrossThreadsAndBluesky();
+testMorningOracleAllCardsAreExpandedNearBlueskyLimit();
+testNightConceptCopyIsSharedAcrossThreadsAndBluesky();
 testPostsLedgerWriteIsTraceableAndSecretSafe();
 testRealPostingRequiresExplicitYesOutsideScheduler();
 testBroadSocialAuditPasses();

@@ -120,6 +120,9 @@ npm run social:draft -- --date=2026-05-18 --platforms=threads,bluesky
 - `post-ledger.js` は `data/social-posts/posts.csv` に投稿台帳を保存する。本文とalt textはSHA-256ハッシュだけを保存し、APIキー、トークン、投稿全文、個人情報は保存しない。
 - `audit-social-drafts.js` は文字数、UTM、画像、alt text、重複本文、禁止表現を検査する。
 - `run-scheduled-posts.js` はRender Cron用。JSTの投稿対象時間だけ `daily-oracle-post.js --write --post --yes` 相当を実行する。
+- 朝07:00の `oracle` はカード1〜33の投稿文をThreads / Blueskyで同じ本文にする。本文URLは短い `rashin-senjutsu.onrender.com` にし、UTM付きURLは `posts.csv` の分析用URLとして保存する。カード名の次行に `テーマ：...` を出し、`カードメッセージ` と「今日の一手」を入れ、具体行動の押しつけにならない表現で250〜300文字、平均270文字前後にする。
+- 夜20:00の `concept` はThreads / Blueskyで同じ本文にする。URLの `utm_source` とBluesky用の軽量画像だけは媒体別に変える。
+- 夜20:00の本文は、羅針占術が他のAI占いと違う点と、何を整理できる占いなのかを短く伝える。
 
 ## 手動投稿とプレビュー
 
