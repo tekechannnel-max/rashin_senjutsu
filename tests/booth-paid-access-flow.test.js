@@ -1,0 +1,73 @@
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+
+const rootDir = path.resolve(__dirname, '..');
+const serverSource = fs.readFileSync(path.join(rootDir, 'server.js'), 'utf8');
+const appSource = fs.readFileSync(path.join(rootDir, 'app.js'), 'utf8');
+
+function sliceFromMarker(source, startMarker, endMarker) {
+  const start = source.indexOf(startMarker);
+  assert.notStrictEqual(start, -1, `Missing marker: ${startMarker}`);
+  const end = source.indexOf(endMarker, start);
+  assert.notStrictEqual(end, -1, `Missing marker after ${startMarker}: ${endMarker}`);
+  return source.slice(start, end);
+}
+
+const boothVerifierBody = sliceFromMarker(
+  serverSource,
+  'async function verifyBoothOrderReferenceWithGmail',
+  'function getBoothPaymentPayload'
+);
+
+assert.ok(
+  boothVerifierBody.indexOf('boothOrderReferenceAllowlisted(orderReference)') >= 0,
+  'BOOTH order verification must support the confirmed order-number hash allowlist'
+);
+
+assert.ok(
+  boothVerifierBody.indexOf('boothOrderReferenceAllowlisted(orderReference)') <
+    boothVerifierBody.indexOf('BOOTH_GMAIL_NOT_CONFIGURED'),
+  'BOOTH allowlist verification must run before Gmail configuration failure'
+);
+
+assert.ok(
+  serverSource.includes('function boothOrderClaimVerificationConfigured()'),
+  'BOOTH readiness must be based on a real verification path'
+);
+
+assert.ok(
+  serverSource.includes('boothOrderClaimVerificationConfigured: boothOrderClaimVerificationConfigured()'),
+  'health must expose whether BOOTH order-number verification is configured'
+);
+
+const purchaseIntentBody = sliceFromMarker(
+  serverSource,
+  'async function handleRashinPaidCodePurchaseIntent',
+  'async function handleRashinPaidCodeRedeem'
+);
+
+assert.ok(
+  purchaseIntentBody.includes('!boothOrderClaimVerificationConfigured()'),
+  'BOOTH purchase intent must only reject setup when no order-number verification path exists'
+);
+
+const boothClientBody = sliceFromMarker(
+  appSource,
+  'async function requestRashinCodePurchaseBooth',
+  'requestRashinCodePurchase=requestRashinCodePurchaseBooth'
+);
+
+assert.strictEqual(
+  boothClientBody.includes('BOOTH購入番号の自動照合は準備中です'),
+  false,
+  'client must not stop the BOOTH order-number flow with the old preparation-only message'
+);
+
+assert.strictEqual(
+  boothClientBody.includes('if(!RASHIN_BOOTH_ORDER_CLAIM_READY)'),
+  false,
+  'client must not hide the BOOTH order-number claim flow based only on health readiness'
+);
+
+console.log('booth-paid-access-flow.test.js: ok');

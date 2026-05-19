@@ -5602,15 +5602,6 @@ async function requestRashinCodePurchaseBooth(intent='upgrade-paid'){
       if(prepared.ok&&intent==='start-paid') startAuthorizedPaidFlowWithTags();
       return !!prepared.ok;
     }
-    if(!RASHIN_BOOTH_ORDER_CLAIM_READY){
-      const boothOrderNumber=await openBoothOrderModal({booth:{url:BOOTH_RASHIN_SHOP_URL},finalAmount:DEEP_READING_PRICE});
-      if(boothOrderNumber&&typeof boothOrderNumber==='object'&&boothOrderNumber.useRashinCode){
-        return requestRashinCodePurchaseBooth(intent);
-      }
-      if(boothOrderNumber===null) return false;
-      showToast('BOOTH購入番号の自動照合は準備中です。羅針コードをお持ちの場合は、羅針コードで始めてください。');
-      return false;
-    }
     if(!RASHIN_BOOTH_PURCHASE_ENABLED){
       showToast('BOOTHでの購入受付は現在停止中です。羅針コードをお持ちの場合のみ有料鑑定を利用できます。');
       return false;

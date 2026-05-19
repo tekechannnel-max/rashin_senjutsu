@@ -1,0 +1,5 @@
+{
+  "purpose": "Optional BOOTH order-number allowlist. Store sha256(\"booth_order_reference:\" + normalized_lowercase_order_reference) values only; do not store raw order numbers here.",
+  "hashAlgorithm": "sha256(\"booth_order_reference:\" + NORMALIZED_LOWERCASE_BOOTH_ORDER_REFERENCE)",
+  "hashes": []
+}

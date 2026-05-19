@@ -289,10 +289,17 @@ const RASHIN_BONUS_FREE_READING_REQUIRED_STONES = 30;
 const RASHIN_BONUS_DISCOUNTS = [];
 const RASHIN_FREE_PAID_CODE_HASH_FILE = normalizeEnvValue(process.env.RASHIN_FREE_PAID_CODE_HASH_FILE || 'config/rashin-free-paid-code-hashes.json');
 const RASHIN_REUSABLE_PAID_CODE_HASH_FILE = normalizeEnvValue(process.env.RASHIN_REUSABLE_PAID_CODE_HASH_FILE || 'config/rashin-reusable-paid-code-hashes.json');
+const BOOTH_ORDER_REFERENCE_HASH_FILE = normalizeEnvValue(process.env.BOOTH_ORDER_REFERENCE_HASH_FILE || 'config/booth-order-reference-hashes.json');
 const RASHIN_FREE_PAID_CODE_HASHES = loadRashinFreePaidCodeHashes();
 const RASHIN_REUSABLE_PAID_CODE_HASHES = loadRashinReusablePaidCodeHashes();
+const BOOTH_ORDER_REFERENCE_HASHES = loadBoothOrderReferenceHashes();
 
 function normalizeRashinPaidCodeHash(value) {
+  const hash = String(value || '').trim().toLowerCase();
+  return /^[a-f0-9]{64}$/.test(hash) ? hash : '';
+}
+
+function normalizeSha256Hash(value) {
   const hash = String(value || '').trim().toLowerCase();
   return /^[a-f0-9]{64}$/.test(hash) ? hash : '';
 }
@@ -408,6 +415,62 @@ function loadRashinReusablePaidCodeHashes() {
     if (entry?.hash) map.set(entry.hash, entry);
   });
   return map;
+}
+
+function readBoothOrderReferenceHashFilePath() {
+  const configured = normalizeEnvValue(BOOTH_ORDER_REFERENCE_HASH_FILE);
+  if (!configured || isPlaceholderEnvValue(configured)) return '';
+  return path.isAbsolute(configured) ? configured : path.join(ROOT_DIR, configured);
+}
+
+function readBoothOrderReferenceHashFile() {
+  const filePath = readBoothOrderReferenceHashFilePath();
+  if (!filePath || !fs.existsSync(filePath)) return [];
+  let parsed;
+  try {
+    parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch (error) {
+    throw new Error(`BOOTH_ORDER_REFERENCE_HASH_FILE could not be parsed: ${error.message}`);
+  }
+  const entries = Array.isArray(parsed) ? parsed : parsed?.hashes;
+  if (!Array.isArray(entries)) {
+    throw new Error('BOOTH_ORDER_REFERENCE_HASH_FILE must contain an array or a hashes array.');
+  }
+  const hashes = [];
+  const invalid = [];
+  entries.forEach((entry, index) => {
+    const hash = normalizeSha256Hash(typeof entry === 'string' ? entry : entry?.hash);
+    if (hash) hashes.push(hash);
+    else invalid.push(index + 1);
+  });
+  if (invalid.length) {
+    throw new Error(`BOOTH_ORDER_REFERENCE_HASH_FILE has invalid hash entries at positions: ${invalid.slice(0, 10).join(', ')}`);
+  }
+  return hashes;
+}
+
+function getBoothOrderReferenceHash(orderReference) {
+  const normalized = normalizeBoothOrderReference(orderReference);
+  return normalized ? hashPrivateLookupValue('booth_order_reference', normalized) : '';
+}
+
+function readBoothOrderReferenceEnvHashes() {
+  return String(process.env.BOOTH_ORDER_REFERENCE_HASHES || '')
+    .split(/[\s,]+/)
+    .map(value => normalizeSha256Hash(value))
+    .filter(Boolean);
+}
+
+function loadBoothOrderReferenceHashes() {
+  return new Set([
+    ...readBoothOrderReferenceEnvHashes(),
+    ...readBoothOrderReferenceHashFile(),
+  ]);
+}
+
+function boothOrderReferenceAllowlisted(orderReference) {
+  const hash = getBoothOrderReferenceHash(orderReference);
+  return !!(hash && BOOTH_ORDER_REFERENCE_HASHES.has(hash));
 }
 
 const MIME_TYPES = {
@@ -883,6 +946,16 @@ function boothGmailVerificationConfigured() {
   );
 }
 
+function boothOrderReferenceAllowlistConfigured() {
+  return BOOTH_ORDER_REFERENCE_HASHES.size > 0;
+}
+
+function boothOrderClaimVerificationConfigured() {
+  return !BOOTH_GMAIL_VERIFICATION_REQUIRED
+    || boothGmailVerificationConfigured()
+    || boothOrderReferenceAllowlistConfigured();
+}
+
 function escapeGmailSearchPhrase(value) {
   const normalized = String(value || '').replace(/["\\]/g, ' ').replace(/\s+/g, ' ').trim();
   return normalized ? `"${normalized}"` : '';
@@ -1090,6 +1163,15 @@ async function searchBoothOrderInGmail(orderReference, userRecord = null) {
 }
 
 async function verifyBoothOrderReferenceWithGmail(orderReference, { userRecord = null } = {}) {
+  if (boothOrderReferenceAllowlisted(orderReference)) {
+    return {
+      verified: true,
+      allowlisted: true,
+      reason: 'booth_order_reference_allowlist',
+      matchCount: 1,
+      queryHash: hashPrivateLookupValue('booth_order_allowlist', orderReference),
+    };
+  }
   if (!BOOTH_GMAIL_VERIFICATION_REQUIRED) {
     return { verified: true, skipped: true, reason: 'disabled', matchCount: 0, queryHash: '' };
   }
@@ -1135,7 +1217,7 @@ function getBoothPaymentPayload() {
 }
 
 function boothPurchaseReady() {
-  return !!getBoothPaymentPayload().url && (!BOOTH_GMAIL_VERIFICATION_REQUIRED || boothGmailVerificationConfigured());
+  return !!getBoothPaymentPayload().url && boothOrderClaimVerificationConfigured();
 }
 
 async function getRuntimeSetupStatus(req) {
@@ -1145,8 +1227,8 @@ async function getRuntimeSetupStatus(req) {
   if (!GOOGLE_CLIENT_CONFIGURED) issues.push('GOOGLE_CLIENT_ID');
   if (!MEMBER_SESSION_PERSISTENT) issues.push('MEMBER_SESSION_SECRET');
   if (!AUTH_SESSION_PERSISTENT) issues.push('AUTH_SESSION_SECRET');
-  if (BOOTH_GMAIL_VERIFICATION_REQUIRED && !boothGmailVerificationConfigured()) {
-    issues.push('BOOTH_GMAIL_IMAP_USER / BOOTH_GMAIL_IMAP_APP_PASSWORD');
+  if (BOOTH_GMAIL_VERIFICATION_REQUIRED && !boothOrderClaimVerificationConfigured()) {
+    issues.push('BOOTH_GMAIL_IMAP_USER / BOOTH_GMAIL_IMAP_APP_PASSWORD or BOOTH_ORDER_REFERENCE_HASHES');
   }
   const productionReady = issues.length === 0;
   return {
@@ -1157,6 +1239,8 @@ async function getRuntimeSetupStatus(req) {
     boothProductUrlConfigured: !!getBoothPaymentPayload().url,
     boothGmailVerificationRequired: BOOTH_GMAIL_VERIFICATION_REQUIRED,
     boothGmailVerificationConfigured: boothGmailVerificationConfigured(),
+    boothOrderReferenceAllowlistConfigured: boothOrderReferenceAllowlistConfigured(),
+    boothOrderClaimVerificationConfigured: boothOrderClaimVerificationConfigured(),
     deepReadingAmount: DEEP_READING_NORMAL_AMOUNT,
     deepReadingPrereleaseAmount: DEEP_READING_PRERELEASE_AMOUNT,
     deepReadingReleaseAmount: DEEP_READING_RELEASE_AMOUNT,
@@ -5200,10 +5284,10 @@ async function handleRashinPaidCodePurchaseIntent(req, res) {
   const sourceReadingId = normalizeVaultRecordId(
     body?.sourceReadingId || body?.source_reading_id || body?.oracleResultId || body?.oracle_result_id || ''
   );
-  if (BOOTH_GMAIL_VERIFICATION_REQUIRED && !boothGmailVerificationConfigured()) {
+  if (BOOTH_GMAIL_VERIFICATION_REQUIRED && !boothOrderClaimVerificationConfigured()) {
     sendJson(res, 503, {
       error: 'BOOTH_GMAIL_NOT_CONFIGURED',
-      message: 'BOOTH Gmail verification is not configured.',
+      message: 'BOOTH order-number verification is not configured.',
     });
     return;
   }
@@ -5588,12 +5672,17 @@ async function handleBoothOrderClaim(req, res) {
       }
       const gmailVerification = await verifyBoothOrderReferenceWithGmail(providerPaymentId, { userRecord });
       const now = new Date().toISOString();
+      const verificationMethod = gmailVerification.allowlisted
+        ? 'order_reference_allowlist'
+        : (gmailVerification.skipped ? 'verification_disabled' : 'gmail_imap');
       const completed = await completeBoothOrderWithTicket({
         order: {
           ...order,
           providerPaymentId,
           paymentClaimedAt: order.paymentClaimedAt || now,
-          boothGmailVerifiedAt: gmailVerification.skipped ? '' : now,
+          boothGmailVerifiedAt: gmailVerification.skipped || gmailVerification.allowlisted ? '' : now,
+          boothOrderVerifiedAt: now,
+          boothOrderVerificationMethod: verificationMethod,
           boothGmailMatchCount: gmailVerification.matchCount || 0,
           boothGmailQueryHash: gmailVerification.queryHash || '',
         },
@@ -6366,6 +6455,8 @@ async function handleRequest(req, res) {
       boothProductUrlConfigured: setup?.boothProductUrlConfigured ?? !!getBoothPaymentPayload().url,
       boothGmailVerificationRequired: setup?.boothGmailVerificationRequired ?? BOOTH_GMAIL_VERIFICATION_REQUIRED,
       boothGmailVerificationConfigured: setup?.boothGmailVerificationConfigured ?? boothGmailVerificationConfigured(),
+      boothOrderReferenceAllowlistConfigured: setup?.boothOrderReferenceAllowlistConfigured ?? boothOrderReferenceAllowlistConfigured(),
+      boothOrderClaimVerificationConfigured: setup?.boothOrderClaimVerificationConfigured ?? boothOrderClaimVerificationConfigured(),
       paidModelAbTest: setup?.paidModelAbTest || {
         name: PAID_MODEL_AB_TEST_NAME,
         enabled: PAID_MODEL_AB_TEST_ENABLED,

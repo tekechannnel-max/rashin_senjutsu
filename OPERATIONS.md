@@ -69,6 +69,8 @@ Set these on the Render service and redeploy before testing:
 - `BOOTH_GMAIL_SEARCH_FROM=booth.pm`
 - `BOOTH_GMAIL_SEARCH_DAYS=90`
 - `BOOTH_GMAIL_MATCH_BUYER_EMAIL=false`
+- `BOOTH_ORDER_REFERENCE_HASH_FILE=config/booth-order-reference-hashes.json`
+- `BOOTH_ORDER_REFERENCE_HASHES=` as an emergency allowlist for already confirmed BOOTH order numbers. Store only `sha256("booth_order_reference:" + normalized_lowercase_order_reference)`.
 - `OPENAI_PAID_AB_MODEL=gpt-5.5`
 - `PAID_MODEL_AB_TEST_ENABLED=false` for quality-first production. Set `true` only when intentionally testing GPT-5.5 against Sonnet 4.6.
 - `PAID_MODEL_AB_TEST_OPENAI_WEIGHT=50` for a 50/50 split
@@ -89,11 +91,17 @@ This prerelease path removes manual Rashin-code handoff while still keeping paid
 2. Server creates a `booth` purchase order.
 3. User buys the deep reading ticket or eligible goods on BOOTH.
 4. User enters the BOOTH order number in the app.
-5. The server searches the configured Gmail inbox for a BOOTH purchase email containing that order number.
-6. If the Gmail match exists, the server creates and immediately redeems an internal Rashin paid code, creates one paid-reading ticket, and the app continues automatically.
+5. The server verifies the order number by either searching the configured Gmail inbox for a BOOTH purchase email containing that order number, or by checking the BOOTH order-number hash allowlist for already confirmed orders.
+6. If verification succeeds, the server creates and immediately redeems an internal Rashin paid code, creates one paid-reading ticket, and the app continues automatically.
 7. The same BOOTH order number cannot be used again.
 
-Security boundary: Gmail verification confirms that a BOOTH purchase email containing the submitted order number exists in the configured mailbox. It is not an official BOOTH webhook. Keep the Gmail account private, use an app password, and keep duplicate-order blocking enabled.
+Security boundary: Gmail verification confirms that a BOOTH purchase email containing the submitted order number exists in the configured mailbox. The hash allowlist is only for order numbers the operator has already confirmed outside the app. This is not an official BOOTH webhook. Keep the Gmail account private, use an app password, do not store raw order numbers in the repo, and keep duplicate-order blocking enabled.
+
+Hash a confirmed BOOTH order number for the emergency allowlist:
+
+```powershell
+npm run booth:hash-order -- <booth-order-number>
+```
 
 Admin Gmail test:
 
