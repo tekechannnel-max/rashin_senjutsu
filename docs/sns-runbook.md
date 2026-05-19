@@ -41,7 +41,7 @@ BOOTH購入分析では、アクセス解析またはBOOTH側で確認できる�
 - `Real posting requires explicit yes`: 手動実投稿はプレビュー確認後に `yes` を入力するか、確認済みのCI/Renderで `--yes` を使う。
 - `existing_threads_post` / `existing_bluesky_post`: 既に同じmarkerの投稿があるため、重複投稿を避けて終了している。
 - `Missing THREADS_ACCESS_TOKEN` / `Missing BLUESKY_APP_PASSWORD`: Render環境変数だけを修正する。値をファイルやチャットへ貼らない。
-- Bluesky画像サイズエラー: `images/ui/app-thumbnail.jpg` などBluesky用の圧縮済み画像を使い、1,000,000 bytes以下にする。
+- Bluesky画像サイズエラー: `images/ui/oracle-card-cover-social.jpg`、`images/ui/lenormand-card-cover-social.jpg`、`images/ui/app-promo-vertical-social.jpg` などBluesky用の圧縮済み画像を使い、1,000,000 bytes以下にする。
 
 この1枚をSNS運用の正本にする。古いGitHub Actions前提やローカルWindows常駐前提の手順は使わない。
 

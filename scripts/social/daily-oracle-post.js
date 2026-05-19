@@ -32,16 +32,19 @@ const CARD_OVERRIDES_BY_DATE = {
 
 const SOCIAL_CONCEPT_IMAGES = {
   wide: {
-    file: 'app-hero-wide.png',
-    altText: '星空と占星術モチーフを背景に、銀髪のキャラクターが水晶を持つ羅針占術の横長告知画像。',
+    file: 'ルノルマンカード表紙デザイン2.png',
+    blueskyFile: 'lenormand-card-cover-social.jpg',
+    altText: '夜の都市と魔法陣を背景に、青い衣装の人物とカードが描かれたルノルマンカード表紙デザイン。',
   },
   vertical: {
     file: 'app-promo-vertical.png',
+    blueskyFile: 'app-promo-vertical-social.jpg',
     altText: '星空と占星術モチーフを背景に、銀髪のキャラクターと金色の「羅針占術」の文字が入った縦長告知画像。',
   },
   icon: {
-    file: 'app-icon.png',
-    altText: '銀髪のキャラクターと金色の「羅針占術」の文字が入ったアプリアイコン。',
+    file: 'オラクルカード表紙デザイン2.png',
+    blueskyFile: 'oracle-card-cover-social.jpg',
+    altText: '星空を背景に、青い衣装の人物が描かれたオラクルカード表紙デザイン。',
   },
 };
 
@@ -590,6 +593,10 @@ function buildTrackedUrl(publicOrigin, pathname = '/', params = {}) {
   return url.toString();
 }
 
+function buildPublicUiImageUrl(publicOrigin, fileName) {
+  return `${publicOrigin}/images/ui/${encodeURIComponent(fileName)}`;
+}
+
 function buildDisplayUrl(publicOrigin = DEFAULT_PUBLIC_ORIGIN, options = {}) {
   const includeProtocol = Boolean(options.includeProtocol);
   try {
@@ -954,10 +961,10 @@ function pickConceptImage(entry, dateKey) {
 }
 
 function pickBlueskyConceptImage(conceptImage) {
-  if (conceptImage?.file === 'app-hero-wide.png') {
-    return { ...conceptImage, file: 'app-wide.jpg' };
-  }
-  return { ...conceptImage, file: 'app-thumbnail.jpg' };
+  return {
+    ...conceptImage,
+    file: conceptImage?.blueskyFile || conceptImage?.file,
+  };
 }
 
 function buildConceptText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['threads'] })) {
@@ -1115,7 +1122,7 @@ async function buildDraft(args) {
     },
     midday: {
       imagePath: middayImagePath,
-      imageUrl: `${publicOrigin}/images/ui/${middayImage.file}`,
+      imageUrl: buildPublicUiImageUrl(publicOrigin, middayImage.file),
       altText: middayImage.altText,
       text: buildMiddayText(dateKey, publicOrigin, threadsConfig),
       trackedUrl: buildMiddayTrackedUrl(dateKey, publicOrigin, threadsConfig),
@@ -1124,11 +1131,11 @@ async function buildDraft(args) {
       blueskyText: buildBlueskyMiddayText(dateKey, publicOrigin, blueskyConfig),
       blueskyTrackedUrl: buildMiddayTrackedUrl(dateKey, publicOrigin, blueskyConfig),
       blueskyImagePath: blueskyMiddayImagePath,
-      blueskyImageUrl: `${publicOrigin}/images/ui/${blueskyMiddayImage.file}`,
+      blueskyImageUrl: buildPublicUiImageUrl(publicOrigin, blueskyMiddayImage.file),
     },
     concept: {
       imagePath: conceptImagePath,
-      imageUrl: `${publicOrigin}/images/ui/${conceptImage.file}`,
+      imageUrl: buildPublicUiImageUrl(publicOrigin, conceptImage.file),
       altText: conceptImage.altText,
       text: buildConceptText(dateKey, publicOrigin, threadsConfig),
       trackedUrl: buildConceptTrackedUrl(dateKey, publicOrigin, threadsConfig, paidCta),
@@ -1137,7 +1144,7 @@ async function buildDraft(args) {
       blueskyText: buildBlueskyConceptText(dateKey, publicOrigin, blueskyConfig),
       blueskyTrackedUrl: buildConceptTrackedUrl(dateKey, publicOrigin, blueskyConfig, paidCta),
       blueskyImagePath: blueskyConceptImagePath,
-      blueskyImageUrl: `${publicOrigin}/images/ui/${blueskyConceptImage.file}`,
+      blueskyImageUrl: buildPublicUiImageUrl(publicOrigin, blueskyConceptImage.file),
     },
     meta: {
       releasePhase: getReleasePhase(dateKey),

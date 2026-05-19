@@ -3458,7 +3458,7 @@ function installDailyOracleStageStyles(){
     .daily-oracle-ritual-frame::after{inset:34px;border-color:rgba(146,210,207,.13);transform:rotate(-4deg);}
     .daily-oracle-ritual-deck{
       position:absolute;width:clamp(132px,18vw,176px);aspect-ratio:2/3;border-radius:10px;
-      background:url('占い素材/オラクルカード表紙デザイン2.png?v=20260516-card-cover2') center/cover no-repeat;
+      background:url('images/ui/オラクルカード表紙デザイン2.png?v=20260519-ui-cover2') center/cover no-repeat;
       border:1px solid rgba(245,211,112,.4);box-shadow:0 20px 44px rgba(0,0,0,.5);
       transform:translate(-18px,10px) rotate(-8deg);opacity:.76;
     }
@@ -3499,7 +3499,7 @@ function installDailyOracleStageStyles(){
     .daily-oracle-ritual-back{
       background:
         linear-gradient(180deg,rgba(255,255,255,.04),rgba(0,0,0,.08)),
-        url('占い素材/オラクルカード表紙デザイン2.png?v=20260516-card-cover2') center/cover no-repeat;
+        url('images/ui/オラクルカード表紙デザイン2.png?v=20260519-ui-cover2') center/cover no-repeat;
     }
     .daily-oracle-ritual-front{transform:rotateY(180deg);}
     .daily-oracle-ritual-front img{width:100%;height:100%;object-fit:cover;display:block;}
