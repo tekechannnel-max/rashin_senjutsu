@@ -39,6 +39,8 @@ const PRELAUNCH_HARD_PAID_PATTERNS = [
   /有料/,
 ];
 
+const MIDDAY_TOO_SPECIFIC_PATTERN = /恋愛|仕事|進路|お金|人間関係|復縁|曖昧な関係|収支|支出|連絡|評価|役割|境界線/;
+
 function parseArgs(argv) {
   const args = {
     from: process.env.SOCIAL_AUDIT_FROM || '2026-05-12',
@@ -189,8 +191,11 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
   if (kind === 'oracle' && !/今日の1枚|テーマ|一手/.test(value)) {
     addIssue(issues, 'warn', 'oracle_structure', '朝オラクルとしてカード、テーマ、一手のどれかが弱いです。');
   }
-  if (kind === 'midday' && !/昼の羅針|無料鑑定|羅針占術|恋愛|仕事|お金|人間関係|復縁|自己理解|流れ/.test(value)) {
-    addIssue(issues, 'warn', 'midday_axis', '12時投稿として悩み別の入口や羅針占術の価値が弱い可能性があります。');
+  if (kind === 'midday' && MIDDAY_TOO_SPECIFIC_PATTERN.test(value)) {
+    addIssue(issues, 'error', 'midday_too_specific', '12時投稿は悩みジャンルや具体状況に寄せすぎない文面にします。');
+  }
+  if (kind === 'midday' && !/昼の羅針|無料鑑定|羅針占術|迷い|整理|流れ|気持ち|現実|本音|焦点/.test(value)) {
+    addIssue(issues, 'warn', 'midday_axis', '12時投稿として迷いの整理や羅針占術の価値が弱い可能性があります。');
   }
   if (kind === 'concept' && !/未来を断定|整理|次の一手|本質|本音|現実|迷|流れ|占い|鑑定|確認|カード|オラクル|行動/.test(value)) {
     addIssue(issues, 'warn', 'concept_axis', '羅針占術の思想軸が弱い可能性があります。');

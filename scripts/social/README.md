@@ -125,7 +125,7 @@ npm run social:draft -- --date=2026-05-18 --platforms=threads,bluesky
 - `audit-social-drafts.js` は文字数、UTM、画像、alt text、重複本文、禁止表現を検査する。
 - `run-scheduled-posts.js` はRender Cron用。JSTの投稿対象時間だけ `daily-oracle-post.js --write --post --yes` 相当を実行する。
 - 朝07:00の `oracle` はカード1〜33の投稿文をThreads / Blueskyで同じ本文にする。本文URLは短い `rashin-senjutsu.onrender.com` にし、UTM付きURLは `posts.csv` の分析用URLとして保存する。カード名の次行に `テーマ：...` を出し、`カードメッセージ` と「今日の一手」を入れ、具体行動の押しつけにならない表現で250〜300文字、平均270文字前後にする。
-- 昼12:00の `midday` は悩み別の入口として恋愛、仕事、お金、人間関係、復縁、自己理解、今後の流れをローテーションする。Threads / Blueskyは同じ本文、短い表示URL、画像、alt textを使い、UTM付きURLは `posts.csv` の分析用URLとして保存する。
+- 昼12:00の `midday` は悩みジャンルや具体状況を前面に出さず、迷いの整理、気持ちと現実、今の流れ、本音の輪郭などの一般的な整理文をローテーションする。Threads / BlueskyはURLプロトコル差を除いて同じ本文、画像、alt textを使い、UTM付きURLは `posts.csv` の分析用URLとして保存する。
 - 夜20:00の `concept` はThreads / Blueskyで同じ本文にする。URLの `utm_source` とBluesky用の軽量画像だけは媒体別に変える。
 - 夜20:00の本文は、羅針占術が他のAI占いと違う点と、何を整理できる占いなのかを短く伝える。
 

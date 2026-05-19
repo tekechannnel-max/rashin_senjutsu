@@ -76,6 +76,7 @@ function testDraftHasTrackingImagesAndAlt() {
 
 function testMiddayCopyIsSharedAcrossThreadsAndBluesky() {
   const draft = parseDraft();
+  const middaySpecificPattern = /恋愛|仕事|進路|お金|人間関係|復縁|曖昧な関係|収支|支出|連絡|評価|役割|境界線/;
   assert.equal(
     normalizePlatformOnlyUrl(draft.midday.text),
     normalizePlatformOnlyUrl(draft.midday.blueskyText),
@@ -86,6 +87,9 @@ function testMiddayCopyIsSharedAcrossThreadsAndBluesky() {
   assert.match(draft.midday.text, /無料鑑定はこちら/, 'midday post should include the free reading CTA');
   assert.match(draft.midday.text, /\brashin-senjutsu\.onrender\.com\b/, 'midday post should use the short visible URL');
   assert.match(draft.midday.blueskyText, /https:\/\/rashin-senjutsu\.onrender\.com\b/, 'Bluesky midday post should use a clickable URL');
+  assert.doesNotMatch(draft.midday.text, middaySpecificPattern, 'midday Threads post should stay general, not topic-specific');
+  assert.doesNotMatch(draft.midday.blueskyText, middaySpecificPattern, 'midday Bluesky post should stay general, not topic-specific');
+  assert.doesNotMatch(draft.midday.xText, middaySpecificPattern, 'midday X draft should stay general, not topic-specific');
   assert.doesNotMatch(draft.midday.text, /utm_source=|utm_content=/, 'midday visible text should not include long tracking parameters');
   assert.match(draft.midday.trackedUrl, /utm_content=midday_20260518/, 'midday tracked URL should use the midday utm_content');
   assert.match(draft.midday.blueskyTrackedUrl, /utm_source=bluesky/, 'Bluesky midday tracked URL should keep the Bluesky source in the ledger');
@@ -125,6 +129,17 @@ function addDays(date, days) {
   const next = new Date(`${date}T00:00:00.000Z`);
   next.setUTCDate(next.getUTCDate() + days);
   return next.toISOString().slice(0, 10);
+}
+
+function testMiddayPostsStayGeneralAcrossCalendar() {
+  const middaySpecificPattern = /恋愛|仕事|進路|お金|人間関係|復縁|曖昧な関係|収支|支出|連絡|評価|役割|境界線/;
+  for (let offset = 0; offset < 25; offset += 1) {
+    const dateKey = addDays('2026-05-13', offset);
+    const draft = parseDraft(dateKey);
+    assert.doesNotMatch(draft.midday.text, middaySpecificPattern, `${dateKey} Threads midday post is too specific`);
+    assert.doesNotMatch(draft.midday.blueskyText, middaySpecificPattern, `${dateKey} Bluesky midday post is too specific`);
+    assert.doesNotMatch(draft.midday.xText, middaySpecificPattern, `${dateKey} X midday draft is too specific`);
+  }
 }
 
 function testMorningOracleAllCardsAreExpandedNearBlueskyLimit() {
@@ -246,6 +261,7 @@ testDraftHasTrackingImagesAndAlt();
 testMorningOracleCopyIsSharedAcrossThreadsAndBluesky();
 testMorningOracleAllCardsAreExpandedNearBlueskyLimit();
 testMiddayCopyIsSharedAcrossThreadsAndBluesky();
+testMiddayPostsStayGeneralAcrossCalendar();
 testNightConceptCopyIsSharedAcrossThreadsAndBluesky();
 testPostsLedgerWriteIsTraceableAndSecretSafe();
 testRealPostingRequiresExplicitYesOutsideScheduler();

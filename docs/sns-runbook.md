@@ -9,7 +9,7 @@
 - Threads / Blueskyは投稿前に既存投稿を検索し、UTMの `utm_content` を重複判定用markerとして使う。
 - APIの一時失敗は `SOCIAL_API_RETRY_ATTEMPTS` と `SOCIAL_API_RETRY_BASE_MS` に従って再試行する。認証失敗、アカウント不一致、画像サイズ超過などは再試行しない。
 - すべての投稿には `utm_source`、`utm_medium=social`、`utm_campaign`、`utm_content` 付きの分析用URLを生成し、`posts.csv` に保存する。朝オラクルの本文には短い `rashin-senjutsu.onrender.com` だけを出す。
-- 昼12:00のmidday投稿は、Threads / Blueskyで同じ本文にする。本文URLは短い `rashin-senjutsu.onrender.com` にし、分析用URLは `utm_content=midday_YYYYMMDD` として `posts.csv` に残す。
+- 昼12:00のmidday投稿は、Threads / Blueskyで同じ本文にする。悩みジャンルや具体状況に寄せすぎず、迷いの整理・気持ちと現実・今の流れくらいの抽象度にする。本文URLはThreadsでは短い `rashin-senjutsu.onrender.com`、Blueskyではクリック可能な `https://rashin-senjutsu.onrender.com` にし、分析用URLは `utm_content=midday_YYYYMMDD` として `posts.csv` に残す。
 - 夜20:00のconcept投稿は、Threads / Blueskyで同じ本文にする。違うのは分析用URLの `utm_source` と、Bluesky用の軽量画像ファイルだけ。
 - 夜20:00の本文は、羅針占術が他のAI占いと違う点と、恋愛・仕事・人間関係などの迷いをどう整理できるかを端的に伝える。
 - `data/social-posts/posts.csv` は投稿台帳。本文とalt textはSHA-256ハッシュだけを保存し、`tracked_url` と `utm_content` でBOOTH側の流入分析と突き合わせる。
@@ -105,7 +105,7 @@ THREADS_POST_VERIFY_TIMEOUT_MS=120000
 ## 投稿内容のルール
 
 - 07:00: 数秘オラクル。カード1〜33の投稿はThreads / Blueskyで同じ本文にし、短いURL、カード画像、alt text、`カードメッセージ`、具体指示に寄せすぎない「今日の一手」を入れる。カード名の次行に `テーマ：...` を出し、Bluesky向けに250〜300文字、平均270文字前後を目安にする
-- 12:00: midday。悩み別の入口として恋愛、仕事、お金、人間関係、復縁、自己理解、今後の流れをローテーションする。Threads / Blueskyは同じ本文、短い表示URL、画像、alt textを使い、UTM付きURLは `posts.csv` に保存する
+- 12:00: midday。悩みジャンルや具体状況を前面に出さず、迷いの整理、気持ちと現実、今の流れ、本音の輪郭などの一般的な整理文をローテーションする。Threads / BlueskyはURLプロトコル差を除いて同じ本文、画像、alt textを使い、UTM付きURLは `posts.csv` に保存する
 - 20:00: 信頼形成の短文。売り込みより、自己理解、非依存、次の行動を優先する
 - Threadsは500文字以内、基本ハッシュタグは1つ
 - Blueskyは300文字以内、画像1枚とalt textを付ける。運用上の画像上限は1,000,000 bytesなので、告知画像は小さい既存JPEGを使う
