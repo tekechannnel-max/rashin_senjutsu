@@ -405,6 +405,10 @@ function hasDisplayUrl(text) {
   return /https?:\/\//i.test(String(text || '')) || /\brashin-senjutsu\.onrender\.com\b/i.test(String(text || ''));
 }
 
+function normalizeSharedThreadsBlueskyText(text) {
+  return String(text || '').replace(/https:\/\/rashin-senjutsu\.onrender\.com/g, 'rashin-senjutsu.onrender.com');
+}
+
 function fitPostText(parts, maxChars) {
   const normalized = parts.map(part => String(part || '').trim()).filter(Boolean);
   let text = normalized.join('\n\n');
@@ -586,15 +590,23 @@ function buildTrackedUrl(publicOrigin, pathname = '/', params = {}) {
   return url.toString();
 }
 
-function buildDisplayUrl(publicOrigin = DEFAULT_PUBLIC_ORIGIN) {
+function buildDisplayUrl(publicOrigin = DEFAULT_PUBLIC_ORIGIN, options = {}) {
+  const includeProtocol = Boolean(options.includeProtocol);
   try {
-    return new URL(publicOrigin).host.replace(/^www\./i, '');
+    const parsed = new URL(publicOrigin);
+    const host = parsed.host.replace(/^www\./i, '');
+    return includeProtocol ? `${parsed.protocol}//${host}` : host;
   } catch (_error) {
-    return String(publicOrigin || DEFAULT_PUBLIC_ORIGIN)
+    const host = String(publicOrigin || DEFAULT_PUBLIC_ORIGIN)
       .replace(/^https?:\/\//i, '')
       .replace(/\/.*$/, '')
       .replace(/^www\./i, '');
+    return includeProtocol ? `https://${host}` : host;
   }
+}
+
+function buildDisplayUrlForPlatform(publicOrigin, config) {
+  return buildDisplayUrl(publicOrigin, { includeProtocol: config?.primaryPlatform === 'bluesky' });
 }
 
 function buildUtmParams(config, content) {
@@ -744,8 +756,13 @@ function validateDraft(draft, args) {
     if (!draft.oracle.blueskyText.includes(requiredHashtag)) throw new Error('oracle Bluesky post is missing the required hashtag.');
     if (!draft.midday.blueskyText.includes(requiredHashtag)) throw new Error('midday Bluesky post is missing the required hashtag.');
     if (!draft.concept.blueskyText.includes(requiredHashtag)) throw new Error('concept Bluesky post is missing the required hashtag.');
-    if (draft.midday.text !== draft.midday.blueskyText) {
-      throw new Error('midday Threads and Bluesky posts must use identical copy.');
+    if (!/https:\/\/rashin-senjutsu\.onrender\.com\b/i.test(draft.oracle.blueskyText)
+      || !/https:\/\/rashin-senjutsu\.onrender\.com\b/i.test(draft.midday.blueskyText)
+      || !/https:\/\/rashin-senjutsu\.onrender\.com\b/i.test(draft.concept.blueskyText)) {
+      throw new Error('Bluesky posts must use clickable https://rashin-senjutsu.onrender.com URLs.');
+    }
+    if (normalizeSharedThreadsBlueskyText(draft.midday.text) !== normalizeSharedThreadsBlueskyText(draft.midday.blueskyText)) {
+      throw new Error('midday Threads and Bluesky posts must use matching copy except the Bluesky URL protocol.');
     }
     if (!draft.oracle.blueskyImagePath || !draft.midday.blueskyImagePath || !draft.concept.blueskyImagePath) {
       throw new Error('Bluesky posts require local image paths.');
@@ -866,7 +883,7 @@ function buildOracleText(card, publicOrigin, options = {}) {
   const dateKey = options.dateKey || getJstDateString();
   const config = options.config || getSocialConfig({ platforms: ['threads'] });
   const hashtag = config.defaultHashtag || DEFAULT_HASHTAG;
-  const displayUrl = buildDisplayUrl(publicOrigin);
+  const displayUrl = buildDisplayUrlForPlatform(publicOrigin, config);
   if (isPreReleasePosting(dateKey, config)) {
     return fitPostText([
       '先行 数秘オラクル',
@@ -1014,7 +1031,7 @@ function buildMiddayText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config =
       '羅針占術は5/16公開予定です。悩みを未来の断定で終わらせず、現実と本音を分けて次の一手を整理するAI占いとして準備しています。',
       focus,
       '気になる方は保存して、公開日に見返してください。',
-      buildDisplayUrl(publicOrigin),
+      buildDisplayUrlForPlatform(publicOrigin, config),
       config.defaultHashtag || DEFAULT_HASHTAG,
     ], BLUESKY_CHARACTER_LIMIT);
   }
@@ -1024,7 +1041,7 @@ function buildMiddayText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config =
     topic.body,
     focus,
     '無料鑑定はこちら',
-    buildDisplayUrl(publicOrigin),
+    buildDisplayUrlForPlatform(publicOrigin, config),
     config.defaultHashtag || DEFAULT_HASHTAG,
   ], BLUESKY_CHARACTER_LIMIT);
 }

@@ -47,7 +47,9 @@ function assertImageAndAlt(imagePath, altText, label) {
 }
 
 function normalizePlatformOnlyUrl(text) {
-  return String(text || '').replace(/utm_source=(threads|bluesky)/g, 'utm_source=<platform>');
+  return String(text || '')
+    .replace(/https:\/\/rashin-senjutsu\.onrender\.com/g, 'rashin-senjutsu.onrender.com')
+    .replace(/utm_source=(threads|bluesky)/g, 'utm_source=<platform>');
 }
 
 function testDraftHasTrackingImagesAndAlt() {
@@ -74,11 +76,16 @@ function testDraftHasTrackingImagesAndAlt() {
 
 function testMiddayCopyIsSharedAcrossThreadsAndBluesky() {
   const draft = parseDraft();
-  assert.equal(draft.midday.text, draft.midday.blueskyText, 'Threads and Bluesky midday copy should be identical');
+  assert.equal(
+    normalizePlatformOnlyUrl(draft.midday.text),
+    normalizePlatformOnlyUrl(draft.midday.blueskyText),
+    'Threads and Bluesky midday copy should match except Bluesky clickable URL protocol',
+  );
   assert.ok([...draft.midday.blueskyText].length <= 300, 'Bluesky midday post must stay within 300 characters');
   assert.match(draft.midday.text, /昼の羅針｜/, 'midday post should use the lunch-slot title');
   assert.match(draft.midday.text, /無料鑑定はこちら/, 'midday post should include the free reading CTA');
   assert.match(draft.midday.text, /\brashin-senjutsu\.onrender\.com\b/, 'midday post should use the short visible URL');
+  assert.match(draft.midday.blueskyText, /https:\/\/rashin-senjutsu\.onrender\.com\b/, 'Bluesky midday post should use a clickable URL');
   assert.doesNotMatch(draft.midday.text, /utm_source=|utm_content=/, 'midday visible text should not include long tracking parameters');
   assert.match(draft.midday.trackedUrl, /utm_content=midday_20260518/, 'midday tracked URL should use the midday utm_content');
   assert.match(draft.midday.blueskyTrackedUrl, /utm_source=bluesky/, 'Bluesky midday tracked URL should keep the Bluesky source in the ledger');
@@ -105,6 +112,7 @@ function testMorningOracleCopyIsSharedAcrossThreadsAndBluesky() {
   );
   assert.ok([...draft.oracle.blueskyText].length <= 300, 'Bluesky morning oracle post must stay within 300 characters');
   assert.match(draft.oracle.text, /\brashin-senjutsu\.onrender\.com\b/, 'morning oracle post should use the short visible URL');
+  assert.match(draft.oracle.blueskyText, /https:\/\/rashin-senjutsu\.onrender\.com\b/, 'Bluesky morning oracle post should use a clickable URL');
   assert.doesNotMatch(draft.oracle.text, /utm_source=|utm_content=|\/share\/card/, 'morning oracle visible text should not include long tracking URL');
   assert.doesNotMatch(draft.oracle.blueskyText, /utm_source=|utm_content=|\/share\/card/, 'Bluesky morning oracle visible text should not include long tracking URL');
   assert.match(draft.oracle.text, /今日の一手：/, 'morning oracle post should keep the today one-move label');
@@ -198,6 +206,32 @@ function testRealPostingRequiresExplicitYesOutsideScheduler() {
   fs.rmSync(ledgerFile, { force: true });
 }
 
+function testStatelessScheduleCapsWideGraceWindow() {
+  const stateFile = path.join(ROOT, '.tmp-social-schedule-state.json');
+  fs.rmSync(stateFile, { force: true });
+  const result = runNode([
+    'scripts/social/run-scheduled-posts.js',
+    '--once',
+    '--dry-run',
+    '--only-kind=oracle',
+  ], {
+    env: {
+      SOCIAL_STATELESS_MODE: 'true',
+      SOCIAL_POST_GRACE_MINUTES: '30',
+      SOCIAL_NOW_ISO: '2026-05-18T22:05:00.000Z',
+      SOCIAL_SCHEDULE_STATE_FILE: stateFile,
+    },
+  });
+  const report = JSON.parse(result.stdout);
+  assert.equal(report.date, '2026-05-19', 'schedule dry-run should use the JST date');
+  assert.equal(report.configuredGraceMinutes, 30, 'report should keep the configured grace window visible');
+  assert.equal(report.graceMinutes, 2, 'stateless runs should cap the effective grace window');
+  assert.equal(report.graceCappedForStateless, true, 'report should flag the stateless cap');
+  assert.deepEqual(report.due, [], 'a 07:05 stateless repeat tick must not repost the 07:00 oracle');
+  assert.deepEqual(report.expired, ['oracle'], 'the repeat tick should be treated as expired after the narrow window');
+  fs.rmSync(stateFile, { force: true });
+}
+
 function testBroadSocialAuditPasses() {
   const result = runNode([
     'scripts/social/audit-social-drafts.js',
@@ -215,6 +249,7 @@ testMiddayCopyIsSharedAcrossThreadsAndBluesky();
 testNightConceptCopyIsSharedAcrossThreadsAndBluesky();
 testPostsLedgerWriteIsTraceableAndSecretSafe();
 testRealPostingRequiresExplicitYesOutsideScheduler();
+testStatelessScheduleCapsWideGraceWindow();
 testBroadSocialAuditPasses();
 
 console.log('social-posting tests passed');

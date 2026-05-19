@@ -63,17 +63,19 @@ Render Cron Job `rashin-threads-scheduler` の設定:
 Runtime: Node
 Build Command: npm ci
 Command: node scripts/social/run-scheduled-posts.js --once --only-kind=all
-Schedule: 0,5,10,15,20,25,30 22,3,11 * * *
+Schedule: 0 3,11,22 * * *
 Plan: Starter
 ```
 
-RenderのcronはUTC。上のscheduleはJSTで次の時間帯だけ動く。
+RenderのcronはUTC。上のscheduleはJSTで次の時刻に1回ずつ動く。
 
 ```text
-07:00-07:30 JST: oracle
-12:00-12:30 JST: midday
-20:00-20:30 JST: concept
+07:00 JST: oracle
+12:00 JST: midday
+20:00 JST: concept
 ```
+
+5分おきのCronは使わない。Render CronはGit管理の `scheduled-post-state.json` を永続状態として使えないため、広い投稿猶予と複数回起動を組み合わせると同じ投稿が再送される。
 
 ## Render環境変数
 
@@ -92,7 +94,7 @@ SOCIAL_PAID_CTA_MODE=soft
 SOCIAL_BOOTH_ENABLED=false
 SOCIAL_UTM_CAMPAIGN=202605_prerelease
 SOCIAL_STATELESS_MODE=true
-SOCIAL_POST_GRACE_MINUTES=30
+SOCIAL_POST_GRACE_MINUTES=2
 SOCIAL_THREADS_IMAGE_FALLBACK_TEXT=true
 THREADS_CONTAINER_TIMEOUT_MS=120000
 THREADS_POST_VERIFY_TIMEOUT_MS=120000

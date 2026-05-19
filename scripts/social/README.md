@@ -43,8 +43,10 @@ node scripts/social/run-scheduled-posts.js --once --only-kind=all
 Render schedule:
 
 ```text
-0,5,10,15,20,25,30 22,3,11 * * *
+0 3,11,22 * * *
 ```
+
+5分おき実行は使わない。Render Cronでは状態ファイルが永続化されないため、広い猶予で複数回起動すると同じ投稿が再送される。
 
 ローカルWindowsのTask Scheduler、可視PowerShell、daemonは使わない。
 

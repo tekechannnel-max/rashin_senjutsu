@@ -88,6 +88,10 @@ function hasPublicUrl(text) {
   return /https?:\/\//i.test(String(text || '')) || /\brashin-senjutsu\.onrender\.com\b/i.test(String(text || ''));
 }
 
+function hasClickableRashinUrl(text) {
+  return /https:\/\/rashin-senjutsu\.onrender\.com\b/i.test(String(text || ''));
+}
+
 function hasUtm(text) {
   return /[?&]utm_content=/i.test(String(text || ''));
 }
@@ -137,6 +141,9 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
   if (!value.trim()) addIssue(issues, 'error', 'empty', '投稿文が空です。');
   if (length > limit) addIssue(issues, 'error', 'length', `${platform}の文字数上限を超えています: ${length}/${limit}`);
   if (!hasPublicUrl(value)) addIssue(issues, 'error', 'visible_url_missing', `${platform}投稿には表示用URLが必要です。`);
+  if (platform === 'bluesky' && !hasClickableRashinUrl(value)) {
+    addIssue(issues, 'error', 'bluesky_clickable_url', 'Bluesky投稿の羅針占術URLは https:// 付きにします。');
+  }
   if (!hasUtm(value) && !hasUtm(tracking)) addIssue(issues, 'error', 'utm_missing', `${platform}投稿には台帳用utm_contentが必要です。`);
   if (!value.includes(REQUIRED_HASHTAG)) addIssue(issues, 'error', 'hashtag_missing', `${REQUIRED_HASHTAG} がありません。`);
   const hashtagCount = countHashtags(value);

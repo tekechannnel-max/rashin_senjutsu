@@ -7,7 +7,8 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const OUT_DIR = path.join(ROOT, 'data', 'social-posts');
 const DEFAULT_STATE_FILE = path.join(OUT_DIR, 'scheduled-post-state.json');
 const DAILY_SCRIPT = path.join(__dirname, 'daily-oracle-post.js');
-const DEFAULT_POST_GRACE_MINUTES = 30;
+const DEFAULT_POST_GRACE_MINUTES = 2;
+const MAX_STATELESS_POST_GRACE_MINUTES = 2;
 const SOCIAL_POST_KINDS = ['oracle', 'midday', 'concept'];
 
 function parseArgs(argv) {
@@ -57,11 +58,25 @@ function getStateFile() {
   return path.isAbsolute(configured) ? configured : path.resolve(ROOT, configured);
 }
 
-function getPostGraceMinutes() {
+function getConfiguredPostGraceMinutes() {
   const raw = String(process.env.SOCIAL_POST_GRACE_MINUTES || DEFAULT_POST_GRACE_MINUTES).trim();
   const value = Number(raw);
   if (!Number.isFinite(value) || value < 0) throw new Error(`Invalid SOCIAL_POST_GRACE_MINUTES: ${raw}`);
   return value;
+}
+
+function getPostGracePolicy() {
+  const configuredMinutes = getConfiguredPostGraceMinutes();
+  const statelessMode = process.env.SOCIAL_STATELESS_MODE === 'true' || process.env.GITHUB_ACTIONS === 'true';
+  const allowWideStatelessWindow = process.env.SOCIAL_ALLOW_WIDE_STATELESS_WINDOW === 'true';
+  const effectiveMinutes = statelessMode && !allowWideStatelessWindow
+    ? Math.min(configuredMinutes, MAX_STATELESS_POST_GRACE_MINUTES)
+    : configuredMinutes;
+  return {
+    configuredMinutes,
+    effectiveMinutes,
+    cappedForStateless: effectiveMinutes !== configuredMinutes,
+  };
 }
 
 function getJstDateKey(date = new Date()) {
@@ -170,7 +185,8 @@ async function runDue(args) {
   const now = getNow();
   const dateKey = getJstDateKey(now);
   const nowMinute = getJstMinutes(now);
-  const graceMinutes = getPostGraceMinutes();
+  const gracePolicy = getPostGracePolicy();
+  const graceMinutes = gracePolicy.effectiveMinutes;
   const schedule = filterScheduleByKind(getSchedule(), args.onlyKind);
   const stateFile = getStateFile();
   const state = await readJson(stateFile, {});
@@ -191,6 +207,8 @@ async function runDue(args) {
     date: dateKey,
     nowMinute,
     graceMinutes,
+    configuredGraceMinutes: gracePolicy.configuredMinutes,
+    graceCappedForStateless: gracePolicy.cappedForStateless,
     schedule: schedule.map(item => ({ kind: item.kind, time: item.time })),
     onlyKind: args.onlyKind || null,
     due: dueAfterSkips.map(item => item.kind),
