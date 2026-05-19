@@ -12,6 +12,8 @@ const OUT_DIR = path.join(ROOT, 'data', 'social-posts');
 const STATE_FILE = path.join(OUT_DIR, 'daily-oracle-state.json');
 const DEFAULT_PUBLIC_ORIGIN = 'https://rashin-senjutsu.onrender.com';
 const DEFAULT_HASHTAG = '#羅針占術';
+const DEFAULT_THREADS_HASHTAG = '#占い鑑定';
+const DEFAULT_BLUESKY_HASHTAGS = '#羅針占術 #今日の占い #今日の運勢 #占い師';
 const THREADS_CHARACTER_LIMIT = 500;
 const X_CHARACTER_LIMIT = 280;
 const BLUESKY_CHARACTER_LIMIT = 300;
@@ -388,14 +390,19 @@ function getSocialConfig(args) {
     stripeEnabled: false,
     campaign: String(process.env.SOCIAL_UTM_CAMPAIGN || DEFAULT_SOCIAL_CAMPAIGN).trim() || DEFAULT_SOCIAL_CAMPAIGN,
     defaultHashtag: DEFAULT_HASHTAG,
+    threadsHashtag: String(process.env.SOCIAL_THREADS_HASHTAG || DEFAULT_THREADS_HASHTAG).trim() || DEFAULT_THREADS_HASHTAG,
+    blueskyHashtags: String(process.env.SOCIAL_BLUESKY_HASHTAGS || DEFAULT_BLUESKY_HASHTAGS).trim() || DEFAULT_BLUESKY_HASHTAGS,
   };
 }
 
 function withPlatform(config, primaryPlatform) {
-  return {
+  const next = {
     ...config,
     primaryPlatform,
   };
+  if (primaryPlatform === 'threads') next.defaultHashtag = getThreadsHashtagLine(next);
+  if (primaryPlatform === 'bluesky') next.defaultHashtag = getBlueskyHashtagLine(next);
+  return next;
 }
 
 function truncateText(text, maxChars) {
@@ -409,7 +416,9 @@ function hasDisplayUrl(text) {
 }
 
 function normalizeSharedThreadsBlueskyText(text) {
-  return String(text || '').replace(/https:\/\/rashin-senjutsu\.onrender\.com/g, 'rashin-senjutsu.onrender.com');
+  return String(text || '')
+    .replace(/https:\/\/rashin-senjutsu\.onrender\.com/g, 'rashin-senjutsu.onrender.com')
+    .replace(/(^|\n)#[^\s#]+(?:\s+#[^\s#]+)*/g, '$1#<platform-tags>');
 }
 
 function fitPostText(parts, maxChars) {
@@ -674,9 +683,14 @@ function getXHashtagLine(config = {}) {
   return configured || `${config.defaultHashtag || DEFAULT_HASHTAG} #AI占い`;
 }
 
+function getThreadsHashtagLine(config = {}) {
+  const configured = String(process.env.SOCIAL_THREADS_HASHTAG || '').trim();
+  return configured || config.threadsHashtag || DEFAULT_THREADS_HASHTAG;
+}
+
 function getBlueskyHashtagLine(config = {}) {
   const configured = String(process.env.SOCIAL_BLUESKY_HASHTAGS || '').trim();
-  return configured || `${config.defaultHashtag || DEFAULT_HASHTAG}`;
+  return configured || config.blueskyHashtags || DEFAULT_BLUESKY_HASHTAGS;
 }
 
 function replaceTrailingHashtagLine(text, currentLine, nextLine) {
@@ -703,8 +717,8 @@ function validatePostText(text, options = {}) {
   if (options.platforms?.includes('x') && hashtagCount > 2) {
     throw new Error(`${label} must use at most two hashtags on X.`);
   }
-  if (options.platforms?.includes('bluesky') && hashtagCount > 2) {
-    throw new Error(`${label} must use at most two hashtags on Bluesky.`);
+  if (options.platforms?.includes('bluesky') && hashtagCount !== countHashtags(getBlueskyHashtagLine())) {
+    throw new Error(`${label} must use the configured Bluesky hashtags: ${hashtagCount}/${countHashtags(getBlueskyHashtagLine())}.`);
   }
   if (options.platforms?.includes('threads') && [...value].length > THREADS_CHARACTER_LIMIT) {
     throw new Error(`${label} is too long for Threads: ${[...value].length}/${THREADS_CHARACTER_LIMIT}`);
@@ -729,11 +743,14 @@ function validateDraft(draft, args) {
     validatePostText(draft.oracle.text, { label: 'oracle Threads post', platforms: ['threads'], requireTrackedUrl: true, trackedUrl: draft.oracle.trackedUrl });
     validatePostText(draft.midday.text, { label: 'midday Threads post', platforms: ['threads'], requireTrackedUrl: true, trackedUrl: draft.midday.trackedUrl });
     validatePostText(draft.concept.text, { label: 'concept Threads post', platforms: ['threads'], requireTrackedUrl: true, trackedUrl: draft.concept.trackedUrl });
-    const requiredHashtag = draft.meta?.policy?.hashtag || DEFAULT_HASHTAG;
+    const requiredHashtag = draft.meta?.policy?.threadsHashtag || DEFAULT_THREADS_HASHTAG;
     const preRelease = isPreReleasePosting(draft.date, draft.meta?.socialConfig || {});
     if (!draft.oracle.text.includes(requiredHashtag)) throw new Error('oracle Threads post is missing the required hashtag.');
     if (!draft.midday.text.includes(requiredHashtag)) throw new Error('midday Threads post is missing the required hashtag.');
     if (!draft.concept.text.includes(requiredHashtag)) throw new Error('concept Threads post is missing the required hashtag.');
+    if (draft.oracle.text.includes(DEFAULT_HASHTAG) || draft.midday.text.includes(DEFAULT_HASHTAG) || draft.concept.text.includes(DEFAULT_HASHTAG)) {
+      throw new Error('Threads posts must not use the brand hashtag.');
+    }
     if (preRelease) {
       if (draft.oracle.text.includes('あなたも今日の1枚を引かない？')) {
         throw new Error('pre-release oracle Threads post must not use the live oracle closing line.');
@@ -759,10 +776,12 @@ function validateDraft(draft, args) {
     validatePostText(draft.oracle.blueskyText, { label: 'oracle Bluesky post', platforms: ['bluesky'], requireTrackedUrl: true, trackedUrl: draft.oracle.blueskyTrackedUrl });
     validatePostText(draft.midday.blueskyText, { label: 'midday Bluesky post', platforms: ['bluesky'], requireTrackedUrl: true, trackedUrl: draft.midday.blueskyTrackedUrl });
     validatePostText(draft.concept.blueskyText, { label: 'concept Bluesky post', platforms: ['bluesky'], requireTrackedUrl: true, trackedUrl: draft.concept.blueskyTrackedUrl });
-    const requiredHashtag = draft.meta?.policy?.hashtag || DEFAULT_HASHTAG;
-    if (!draft.oracle.blueskyText.includes(requiredHashtag)) throw new Error('oracle Bluesky post is missing the required hashtag.');
-    if (!draft.midday.blueskyText.includes(requiredHashtag)) throw new Error('midday Bluesky post is missing the required hashtag.');
-    if (!draft.concept.blueskyText.includes(requiredHashtag)) throw new Error('concept Bluesky post is missing the required hashtag.');
+    const requiredHashtags = String(draft.meta?.policy?.blueskyHashtags || getBlueskyHashtagLine()).match(/#[^\s#]+/g) || [];
+    for (const requiredHashtag of requiredHashtags) {
+      if (!draft.oracle.blueskyText.includes(requiredHashtag)) throw new Error(`oracle Bluesky post is missing the required hashtag: ${requiredHashtag}`);
+      if (!draft.midday.blueskyText.includes(requiredHashtag)) throw new Error(`midday Bluesky post is missing the required hashtag: ${requiredHashtag}`);
+      if (!draft.concept.blueskyText.includes(requiredHashtag)) throw new Error(`concept Bluesky post is missing the required hashtag: ${requiredHashtag}`);
+    }
     if (!/https:\/\/rashin-senjutsu\.onrender\.com\b/i.test(draft.oracle.blueskyText)
       || !/https:\/\/rashin-senjutsu\.onrender\.com\b/i.test(draft.midday.blueskyText)
       || !/https:\/\/rashin-senjutsu\.onrender\.com\b/i.test(draft.concept.blueskyText)) {
@@ -1172,6 +1191,9 @@ async function buildDraft(args) {
       } : null,
       policy: {
         hashtag: config.defaultHashtag,
+        threadsHashtag: getThreadsHashtagLine(threadsConfig),
+        blueskyHashtags: getBlueskyHashtagLine(blueskyConfig),
+        xHashtags: getXHashtagLine(xConfig),
         blockedWordCount: NG_WORDS.length,
       },
     },

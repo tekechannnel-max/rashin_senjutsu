@@ -49,7 +49,12 @@ function assertImageAndAlt(imagePath, altText, label) {
 function normalizePlatformOnlyUrl(text) {
   return String(text || '')
     .replace(/https:\/\/rashin-senjutsu\.onrender\.com/g, 'rashin-senjutsu.onrender.com')
+    .replace(/(^|\n)#[^\s#]+(?:\s+#[^\s#]+)*/g, '$1#<platform-tags>')
     .replace(/utm_source=(threads|bluesky)/g, 'utm_source=<platform>');
+}
+
+function countHashtags(text) {
+  return (String(text || '').match(/(^|\s)#[^\s#]+/g) || []).length;
 }
 
 function testDraftHasTrackingImagesAndAlt() {
@@ -72,6 +77,26 @@ function testDraftHasTrackingImagesAndAlt() {
   assert.ok(fs.statSync(draft.oracle.blueskyImagePath).size <= 1_000_000, 'Bluesky oracle image must be <= 1,000,000 bytes');
   assert.ok(fs.statSync(draft.midday.blueskyImagePath).size <= 1_000_000, 'Bluesky midday image must be <= 1,000,000 bytes');
   assert.ok(fs.statSync(draft.concept.blueskyImagePath).size <= 1_000_000, 'Bluesky concept image must be <= 1,000,000 bytes');
+}
+
+function testPlatformHashtagPolicy() {
+  const draft = parseDraft('2026-05-20');
+  const blueskyTags = ['#羅針占術', '#今日の占い', '#今日の運勢', '#占い師'];
+  for (const kind of ['oracle', 'midday', 'concept']) {
+    assert.match(draft[kind].text, /#占い鑑定/, `${kind} Threads post should use #占い鑑定`);
+    assert.doesNotMatch(draft[kind].text, /#羅針占術/, `${kind} Threads post should not use #羅針占術`);
+    assert.equal(countHashtags(draft[kind].text), 1, `${kind} Threads post should keep one hashtag`);
+
+    for (const tag of blueskyTags) {
+      assert.ok(draft[kind].blueskyText.includes(tag), `${kind} Bluesky post should include ${tag}`);
+    }
+    assert.equal(countHashtags(draft[kind].blueskyText), blueskyTags.length, `${kind} Bluesky post should use the configured hashtags`);
+
+    assert.match(draft[kind].xText, /#羅針占術/, `${kind} X draft should keep the brand tag`);
+    assert.doesNotMatch(draft[kind].xText, /#占い鑑定/, `${kind} X draft should not use the Threads tag`);
+  }
+  assert.equal(draft.meta.policy.threadsHashtag, '#占い鑑定', 'policy should expose the Threads discovery tag');
+  assert.equal(draft.meta.policy.blueskyHashtags, blueskyTags.join(' '), 'policy should expose the Bluesky hashtag line');
 }
 
 function testMiddayCopyIsSharedAcrossThreadsAndBluesky() {
@@ -164,7 +189,7 @@ function testMorningOracleAllCardsAreExpandedNearBlueskyLimit() {
     assert.ok(!draft.oracle.text.includes(draft.oracle.card.action), `card ${draft.oracle.card.id} must not publish the exact card action`);
   }
   const average = lengths.reduce((sum, length) => sum + length, 0) / lengths.length;
-  assert.ok(average >= 265 && average <= 280, `average morning oracle length should stay around 270: ${average}`);
+  assert.ok(average >= 285 && average <= 298, `average morning oracle length should stay near the expanded Bluesky hashtag limit: ${average}`);
 }
 
 function testPostsLedgerWriteIsTraceableAndSecretSafe() {
@@ -258,6 +283,7 @@ function testBroadSocialAuditPasses() {
 }
 
 testDraftHasTrackingImagesAndAlt();
+testPlatformHashtagPolicy();
 testMorningOracleCopyIsSharedAcrossThreadsAndBluesky();
 testMorningOracleAllCardsAreExpandedNearBlueskyLimit();
 testMiddayCopyIsSharedAcrossThreadsAndBluesky();

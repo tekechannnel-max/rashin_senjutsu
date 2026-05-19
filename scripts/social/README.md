@@ -125,7 +125,8 @@ npm run social:draft -- --date=2026-05-18 --platforms=threads,bluesky
 - `audit-social-drafts.js` は文字数、UTM、画像、alt text、重複本文、禁止表現を検査する。
 - `run-scheduled-posts.js` はRender Cron用。JSTの投稿対象時間だけ `daily-oracle-post.js --write --post --yes` 相当を実行する。
 - 朝07:00の `oracle` はカード1〜33の投稿文をThreads / Blueskyで同じ本文にする。本文URLは短い `rashin-senjutsu.onrender.com` にし、UTM付きURLは `posts.csv` の分析用URLとして保存する。カード名の次行に `テーマ：...` を出し、`カードメッセージ` と「今日の一手」を入れ、具体行動の押しつけにならない表現で250〜300文字、平均270文字前後にする。
-- 昼12:00の `midday` は悩みジャンルや具体状況を前面に出さず、迷いの整理、気持ちと現実、今の流れ、本音の輪郭などの一般的な整理文をローテーションする。Threads / BlueskyはURLプロトコル差を除いて同じ本文、画像、alt textを使い、UTM付きURLは `posts.csv` の分析用URLとして保存する。
+- 昼12:00の `midday` は悩みジャンルや具体状況を前面に出さず、迷いの整理、気持ちと現実、今の流れ、本音の輪郭などの一般的な整理文をローテーションする。Threads / BlueskyはURLプロトコル差とハッシュタグ差を除いて同じ本文、画像、alt textを使い、UTM付きURLは `posts.csv` の分析用URLとして保存する。
+- Threadsのハッシュタグは `#占い鑑定` だけにし、`#羅針占術` は使わない。Blueskyは `#羅針占術 #今日の占い #今日の運勢 #占い師` を使い、300文字を超えたら投稿しない。
 - 夜20:00の `concept` はThreads / Blueskyで同じ本文にする。URLの `utm_source` とBluesky用の軽量画像だけは媒体別に変える。
 - 夜20:00の本文は、羅針占術が他のAI占いと違う点と、何を整理できる占いなのかを短く伝える。
 
@@ -156,6 +157,8 @@ BLUESKY_APP_PASSWORD=<Renderに保存>
 BLUESKY_EXPECTED_HANDLE=tekesensai.bsky.social
 SOCIAL_AUTOMATED_POSTING_ENABLED=true
 SOCIAL_PLATFORMS=threads,bluesky
+SOCIAL_THREADS_HASHTAG=#占い鑑定
+SOCIAL_BLUESKY_HASHTAGS=#羅針占術 #今日の占い #今日の運勢 #占い師
 SOCIAL_MIDDAY_TIME=12:00
 SOCIAL_POSTS_LEDGER_FILE=data/social-posts/posts.csv
 SOCIAL_API_RETRY_ATTEMPTS=3

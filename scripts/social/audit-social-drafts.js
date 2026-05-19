@@ -12,7 +12,11 @@ const THREADS_LIMIT = 500;
 const X_LIMIT = 280;
 const BLUESKY_LIMIT = 300;
 const BLUESKY_IMAGE_LIMIT_BYTES = 1_000_000;
-const REQUIRED_HASHTAG = '#羅針占術';
+const REQUIRED_HASHTAGS_BY_PLATFORM = {
+  threads: ['#占い鑑定'],
+  x: ['#羅針占術'],
+  bluesky: ['#羅針占術', '#今日の占い', '#今日の運勢', '#占い師'],
+};
 const SOCIAL_POST_KINDS = ['oracle', 'midday', 'concept'];
 
 const HARD_NG_PATTERNS = [
@@ -147,16 +151,22 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
     addIssue(issues, 'error', 'bluesky_clickable_url', 'Bluesky投稿の羅針占術URLは https:// 付きにします。');
   }
   if (!hasUtm(value) && !hasUtm(tracking)) addIssue(issues, 'error', 'utm_missing', `${platform}投稿には台帳用utm_contentが必要です。`);
-  if (!value.includes(REQUIRED_HASHTAG)) addIssue(issues, 'error', 'hashtag_missing', `${REQUIRED_HASHTAG} がありません。`);
+  const requiredHashtags = REQUIRED_HASHTAGS_BY_PLATFORM[platform] || REQUIRED_HASHTAGS_BY_PLATFORM.threads;
+  requiredHashtags.forEach(requiredHashtag => {
+    if (!value.includes(requiredHashtag)) addIssue(issues, 'error', 'hashtag_missing', `${requiredHashtag} がありません。`);
+  });
+  if (platform === 'threads' && value.includes('#羅針占術')) {
+    addIssue(issues, 'error', 'threads_brand_hashtag', 'Threads投稿では #羅針占術 を使わず #占い鑑定 のみにします。');
+  }
   const hashtagCount = countHashtags(value);
-  if (platform === 'threads' && hashtagCount !== 1) {
-    addIssue(issues, 'error', 'hashtag_count', `Threadsのハッシュタグは1つだけにします: ${hashtagCount}`);
+  if (platform === 'threads' && hashtagCount !== requiredHashtags.length) {
+    addIssue(issues, 'error', 'hashtag_count', `Threadsのハッシュタグは${requiredHashtags.length}つだけにします: ${hashtagCount}`);
   }
   if (platform === 'x' && (hashtagCount < 1 || hashtagCount > 2)) {
     addIssue(issues, 'error', 'hashtag_count', `Xのハッシュタグは1〜2個にします: ${hashtagCount}`);
   }
-  if (platform === 'bluesky' && (hashtagCount < 1 || hashtagCount > 2)) {
-    addIssue(issues, 'error', 'hashtag_count', `Blueskyのハッシュタグは1〜2個にします: ${hashtagCount}`);
+  if (platform === 'bluesky' && hashtagCount !== requiredHashtags.length) {
+    addIssue(issues, 'error', 'hashtag_count', `Blueskyのハッシュタグは${requiredHashtags.length}個にします: ${hashtagCount}`);
   }
 
   for (const [label, pattern] of HARD_NG_PATTERNS) {

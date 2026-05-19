@@ -89,6 +89,8 @@ BLUESKY_APP_PASSWORD=<Renderにだけ保存する>
 BLUESKY_EXPECTED_HANDLE=tekesensai.bsky.social
 SOCIAL_AUTOMATED_POSTING_ENABLED=true
 SOCIAL_PLATFORMS=threads,bluesky
+SOCIAL_THREADS_HASHTAG=#占い鑑定
+SOCIAL_BLUESKY_HASHTAGS=#羅針占術 #今日の占い #今日の運勢 #占い師
 SOCIAL_MIDDAY_TIME=12:00
 SOCIAL_PAID_CTA_MODE=soft
 SOCIAL_BOOTH_ENABLED=false
@@ -105,10 +107,10 @@ THREADS_POST_VERIFY_TIMEOUT_MS=120000
 ## 投稿内容のルール
 
 - 07:00: 数秘オラクル。カード1〜33の投稿はThreads / Blueskyで同じ本文にし、短いURL、カード画像、alt text、`カードメッセージ`、具体指示に寄せすぎない「今日の一手」を入れる。カード名の次行に `テーマ：...` を出し、Bluesky向けに250〜300文字、平均270文字前後を目安にする
-- 12:00: midday。悩みジャンルや具体状況を前面に出さず、迷いの整理、気持ちと現実、今の流れ、本音の輪郭などの一般的な整理文をローテーションする。Threads / BlueskyはURLプロトコル差を除いて同じ本文、画像、alt textを使い、UTM付きURLは `posts.csv` に保存する
+- 12:00: midday。悩みジャンルや具体状況を前面に出さず、迷いの整理、気持ちと現実、今の流れ、本音の輪郭などの一般的な整理文をローテーションする。Threads / BlueskyはURLプロトコル差とハッシュタグ差を除いて同じ本文、画像、alt textを使い、UTM付きURLは `posts.csv` に保存する
 - 20:00: 信頼形成の短文。売り込みより、自己理解、非依存、次の行動を優先する
-- Threadsは500文字以内、基本ハッシュタグは1つ
-- Blueskyは300文字以内、画像1枚とalt textを付ける。運用上の画像上限は1,000,000 bytesなので、告知画像は小さい既存JPEGを使う
+- Threadsは500文字以内、ハッシュタグは `#占い鑑定` だけにする。`#羅針占術` はThreadsでは使わない
+- Blueskyは300文字以内、ハッシュタグは `#羅針占術 #今日の占い #今日の運勢 #占い師` を使う。画像1枚とalt textを付ける。運用上の画像上限は1,000,000 bytesなので、告知画像は小さい既存JPEGを使う
 - XはThreads本文の丸写しにしない。今は下書きのみ
 - 不安を煽る、未来を断定する、医療/法律/投資判断の代替に見える表現は禁止
 - BOOTHの購入導線が本番確認済みになるまで、強い有料CTAにしない
