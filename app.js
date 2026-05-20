@@ -144,6 +144,23 @@ const SOLAR_TERM_FALLBACK_DATES={
   winterCommences:'11-07',
   heavySnow:'12-07',
 };
+const SOLAR_TERM_TIME_OVERRIDES_JST={
+  // National Astronomical Observatory of Japan, ECO, 2026 solar terms (JST).
+  2026:{
+    minorCold:'2026-01-05 17:23',
+    springCommences:'2026-02-04 05:02',
+    insectsWaken:'2026-03-05 22:59',
+    brightAndClear:'2026-04-05 03:40',
+    summerCommences:'2026-05-05 20:49',
+    cornOnEar:'2026-06-06 00:48',
+    moderateHeat:'2026-07-07 10:57',
+    autumnCommences:'2026-08-07 20:43',
+    whiteDew:'2026-09-07 23:41',
+    coldDew:'2026-10-08 15:29',
+    winterCommences:'2026-11-07 18:52',
+    heavySnow:'2026-12-07 11:53',
+  },
+};
 const EL={木:'#4a8b4a',火:'#c03030',土:'#c0922b',金:'#8080c0',水:'#2b60a0'};
 const EJ={木:'木',火:'火',土:'土',金:'金',水:'水'};
 function mod(n,m){return((n%m)+m)%m;}
@@ -155,14 +172,93 @@ function toDateKey(y,m,d){
 function getSolarTermBoundaries(year){
   const key=String(year);
   const loaded=SOLAR_TERM_BOUNDARIES?.[key];
-  if(loaded&&Object.keys(loaded).length) return loaded;
-  return Object.fromEntries(Object.entries(SOLAR_TERM_FALLBACK_DATES).map(([term,md])=>[term,`${year}-${md}`]));
+  const base=loaded&&Object.keys(loaded).length
+    ?{...loaded}
+    :Object.fromEntries(Object.entries(SOLAR_TERM_FALLBACK_DATES).map(([term,md])=>[term,`${year}-${md}`]));
+  const overrides=SOLAR_TERM_TIME_OVERRIDES_JST?.[year]||{};
+  Object.entries(overrides).forEach(([term,value])=>{
+    const date=String(value).match(/^\d{4}-\d{2}-\d{2}/)?.[0]||'';
+    if(date) base[term]=date;
+  });
+  return base;
 }
 
-function getGanzhiYear(y,m,d){
+function parseBoundaryMinute(value){
+  const raw=String(value||'').trim();
+  const match=raw.match(/(?:T|\s)(\d{1,2}):(\d{2})/)||raw.match(/^(\d{1,2}):(\d{2})$/);
+  if(!match) return null;
+  const hour=Number(match[1]);
+  const minute=Number(match[2]);
+  if(!Number.isFinite(hour)||!Number.isFinite(minute)||hour<0||hour>23||minute<0||minute>59) return null;
+  return hour*60+minute;
+}
+
+function getSolarTermBoundaryInfo(year,term){
+  const boundaries=getSolarTermBoundaries(year);
+  const raw=boundaries?.[term]||'';
+  const override=SOLAR_TERM_TIME_OVERRIDES_JST?.[year]?.[term]||'';
+  const overrideDate=String(override).match(/^\d{4}-\d{2}-\d{2}/)?.[0]||'';
+  const date=overrideDate||String(raw).slice(0,10);
+  const overrideMinute=parseBoundaryMinute(override);
+  const minute=overrideMinute!==null?overrideMinute:parseBoundaryMinute(raw);
+  return{year,term,date,minute,hasExactTime:Number.isFinite(minute)};
+}
+
+function getBirthMinuteForBoundary(hour){
+  if(!Number.isFinite(hour)) return null;
+  return Math.max(0,Math.min(23,Math.floor(hour)))*60;
+}
+
+function compareBirthToBoundary(y,m,d,h,boundary){
+  const birthDate=toDateKey(y,m,d);
+  if(birthDate<boundary.date) return -1;
+  if(birthDate>boundary.date) return 1;
+  if(boundary.hasExactTime&&Number.isFinite(h)){
+    const birthMinute=getBirthMinuteForBoundary(h);
+    if(birthMinute<boundary.minute) return -1;
+    if(birthMinute>boundary.minute) return 1;
+  }
+  return 0;
+}
+
+function isBirthOnOrAfterBoundary(y,m,d,h,boundary){
+  return compareBirthToBoundary(y,m,d,h,boundary)>=0;
+}
+
+function getSolarTermPrecisionNotes(y,m,d,h){
+  if(!Number.isFinite(y)||!Number.isFinite(m)||!Number.isFinite(d)) return[];
   const dateKey=toDateKey(y,m,d);
-  const yearTerms=getSolarTermBoundaries(y);
-  const effectiveYear=dateKey>=yearTerms.springCommences?y:y-1;
+  const checks=[
+    getSolarTermBoundaryInfo(y,'springCommences'),
+    getSolarTermBoundaryInfo(y,'insectsWaken'),
+    getSolarTermBoundaryInfo(y,'brightAndClear'),
+    getSolarTermBoundaryInfo(y,'summerCommences'),
+    getSolarTermBoundaryInfo(y,'cornOnEar'),
+    getSolarTermBoundaryInfo(y,'moderateHeat'),
+    getSolarTermBoundaryInfo(y,'autumnCommences'),
+    getSolarTermBoundaryInfo(y,'whiteDew'),
+    getSolarTermBoundaryInfo(y,'coldDew'),
+    getSolarTermBoundaryInfo(y,'winterCommences'),
+    getSolarTermBoundaryInfo(y,'heavySnow'),
+    getSolarTermBoundaryInfo(y,'minorCold'),
+  ].filter(item=>item.date===dateKey);
+  return checks.map(item=>{
+    const label=FORTUNE_BOUNDARY_LABELS[item.term]||item.term;
+    if(item.hasExactTime){
+      const hh=String(Math.floor(item.minute/60)).padStart(2,'0');
+      const mm=String(item.minute%60).padStart(2,'0');
+      if(!Number.isFinite(h)) return `この日は節入り（${label} ${hh}:${mm}ごろ）に重なるため、出生時刻がわかると命式の境界判定が安定します。`;
+      const diff=Math.abs(getBirthMinuteForBoundary(h)-item.minute);
+      if(diff<=90) return `出生時刻が節入り（${label} ${hh}:${mm}ごろ）に近いため、分単位の違いで年柱・月柱が変わる可能性があります。`;
+      return '';
+    }
+    return `この日は節入り（${label}）の境界日にあたるため、節入り時刻の違いで年柱・月柱が変わる可能性があります。`;
+  }).filter(Boolean);
+}
+
+function getGanzhiYear(y,m,d,h=null){
+  const springBoundary=getSolarTermBoundaryInfo(y,'springCommences');
+  const effectiveYear=isBirthOnOrAfterBoundary(y,m,d,h,springBoundary)?y:y-1;
   const idx=mod(effectiveYear-4,60);
   return{
     effectiveYear,
@@ -171,28 +267,25 @@ function getGanzhiYear(y,m,d){
   };
 }
 
-function getSolarMonthOrder(y,m,d){
-  const dateKey=toDateKey(y,m,d);
-  const prevTerms=getSolarTermBoundaries(y-1);
-  const yearTerms=getSolarTermBoundaries(y);
+function getSolarMonthOrder(y,m,d,h=null){
   const boundaries=[
-    {date:prevTerms.heavySnow,order:10},
-    {date:yearTerms.minorCold,order:11},
-    {date:yearTerms.springCommences,order:0},
-    {date:yearTerms.insectsWaken,order:1},
-    {date:yearTerms.brightAndClear,order:2},
-    {date:yearTerms.summerCommences,order:3},
-    {date:yearTerms.cornOnEar,order:4},
-    {date:yearTerms.moderateHeat,order:5},
-    {date:yearTerms.autumnCommences,order:6},
-    {date:yearTerms.whiteDew,order:7},
-    {date:yearTerms.coldDew,order:8},
-    {date:yearTerms.winterCommences,order:9},
-    {date:yearTerms.heavySnow,order:10},
+    {...getSolarTermBoundaryInfo(y-1,'heavySnow'),order:10},
+    {...getSolarTermBoundaryInfo(y,'minorCold'),order:11},
+    {...getSolarTermBoundaryInfo(y,'springCommences'),order:0},
+    {...getSolarTermBoundaryInfo(y,'insectsWaken'),order:1},
+    {...getSolarTermBoundaryInfo(y,'brightAndClear'),order:2},
+    {...getSolarTermBoundaryInfo(y,'summerCommences'),order:3},
+    {...getSolarTermBoundaryInfo(y,'cornOnEar'),order:4},
+    {...getSolarTermBoundaryInfo(y,'moderateHeat'),order:5},
+    {...getSolarTermBoundaryInfo(y,'autumnCommences'),order:6},
+    {...getSolarTermBoundaryInfo(y,'whiteDew'),order:7},
+    {...getSolarTermBoundaryInfo(y,'coldDew'),order:8},
+    {...getSolarTermBoundaryInfo(y,'winterCommences'),order:9},
+    {...getSolarTermBoundaryInfo(y,'heavySnow'),order:10},
   ];
   let current=boundaries[0].order;
   for(const boundary of boundaries){
-    if(dateKey>=boundary.date) current=boundary.order;
+    if(isBirthOnOrAfterBoundary(y,m,d,h,boundary)) current=boundary.order;
   }
   return current;
 }
@@ -338,8 +431,8 @@ function scoreMeimeiStrength(dayElement,monthBranch,pillars){
 function calcMeimei(y,m,d,h){
   if(!Number.isFinite(d)) return calcMeimeiPartial(y,m,GENDER);
   const birthHour=Number.isFinite(h)?h:null;
-  const yearPillar=getGanzhiYear(y,m,d);
-  const monthOrder=getSolarMonthOrder(y,m,d);
+  const yearPillar=getGanzhiYear(y,m,d,birthHour);
+  const monthOrder=getSolarMonthOrder(y,m,d,birthHour);
   const monthPillar=getGanzhiMonth(yearPillar.kan,monthOrder);
   const dayPillar=getGanzhiDay(y,m,d);
   const hourPillar=birthHour===null?null:getGanzhiHour(dayPillar.kan,birthHour);
@@ -362,6 +455,7 @@ function calcMeimei(y,m,d,h){
     total:Number(Object.values(cnt).reduce((a,b)=>a+b,0).toFixed(2)),
     birthHour,
     useApproxSolarTerms:!SOLAR_TERM_DATA_READY,
+    solarTermPrecisionNotes:getSolarTermPrecisionNotes(y,m,d,birthHour),
     seasonBranch:monthPillar.zhi,
     seasonElement:strength.monthElement,
     strengthLabel:strength.strengthLabel,
@@ -1299,12 +1393,12 @@ const NAME_STROKE_POLICY={
 const KANJI_STROKES={
   '一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,
   '山':3,'川':3,'田':5,'中':4,'大':3,'小':3,'上':3,'下':3,'木':4,'水':4,
-  '火':4,'土':3,'金':8,'花':10,'空':8,'海':9,'星':9,'月':4,'日':4,'年':6,
+  '火':4,'土':3,'金':8,'花':7,'空':8,'海':9,'星':9,'月':4,'日':4,'年':6,
   '春':9,'夏':10,'秋':9,'冬':5,'光':6,'愛':13,'美':9,'幸':8,'希':7,'望':11,
   '夢':13,'虹':9,'風':9,'雨':8,'雪':11,'香':9,'桜':10,'梅':10,'松':8,'竹':6,
   '和':8,'平':5,'安':6,'心':4,'力':2,'勇':9,'智':12,'仁':4,'義':13,'礼':5,
   '信':9,'誠':13,'健':11,'良':7,'正':5,'真':10,'清':11,'純':10,'明':8,'朗':10,
-  '翔':12,'飛':9,'龍':16,'鳳':14,'鷹':24,'雅':13,'薫':16,'葵':12,'菜':11,'彩':11,
+  '翔':12,'飛':9,'鳥':11,'龍':16,'鳳':14,'鷹':24,'翼':17,'雅':13,'薫':16,'葵':12,'菜':11,'彩':11,
   '瑠':14,'璃':15,'琉':11,'珠':10,'玲':9,'瑛':12,'琴':12,'奏':9,'音':9,'響':20,
   '太':4,'郎':9,'男':7,'夫':4,'介':4,'輝':15,'哉':9,'也':3,'吾':7,'悟':10,
   '子':3,'女':3,'里':7,'江':6,'加':5,'代':5,'世':5,'由':5,'美':9,'恵':10,
@@ -1312,7 +1406,7 @@ const KANJI_STROKES={
   '一':1,'伊':6,'依':8,'以':5,'位':7,'維':14,'緯':16,
   '田':5,'畑':9,'畠':10,
   '鈴':13,'木':4,'佐':7,'伯':7,'藤':18,'高':10,'橋':16,'田':5,'中':4,'松':8,'山':3,
-  '渡':12,'辺':15,'伊':6,'藤':18,'斎':11,'齋':17,'齊':14,'谷':7,'吉':6,'吉':6,
+  '渡':12,'辺':5,'遊':12,'伊':6,'藤':18,'斎':11,'齋':17,'齊':14,'谷':7,'吉':6,'吉':6,
   '村':7,'岡':8,'島':10,'野':11,'川':3,'原':10,'小':3,'林':8,'清':11,'水':4,
   '森':12,'近':7,'遠':13,'長':8,'石':5,'今':4,'池':6,'田':5,'上':3,'西':6,
   '東':8,'南':9,'北':5,'阿':8,'井':4,'工':3,'大':3,'前':9,'後':9,'内':4,
@@ -15171,6 +15265,7 @@ function renderMeimei(){
   if(MEIMEI.mode==='partial') noteLines.push('生まれた日の情報がないため、今回は大まかな傾向を中心に見ています。');
   if(MEIMEI.birthHour===null) noteLines.push('生まれた時間がわからないため、細かな出方には少し幅があります。');
   if(MEIMEI.useApproxSolarTerms) noteLines.push('一部はおおまかな時期として読んでいます。');
+  (MEIMEI.solarTermPrecisionNotes||[]).forEach(note=>noteLines.push(note));
   const noteHTML=noteLines.length?`<div class="dm-note">${noteLines.join('<br>')}</div>`:'';
   const lpCard=LP?ORACLE[LP]:null;
   const cards=buildPlainInsightGrid([
