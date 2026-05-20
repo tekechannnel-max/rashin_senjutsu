@@ -9,7 +9,6 @@ const PRERELEASE_START_DATE = '2026-05-16';
 const PRERELEASE_END_DATE = '2026-05-29';
 const FIX_PERIOD_END_DATE = '2026-06-05';
 const FULL_RELEASE_DATE = '2026-06-06';
-const X_LIMIT = 280;
 const DEFAULT_X_DRAFT_GRACE_MINUTES = 60;
 const SOCIAL_POST_KINDS = ['oracle', 'midday', 'concept'];
 const SCHEDULED_TIME_BY_KIND = {
@@ -155,6 +154,7 @@ function runDailyDraft(dateKey) {
     env: {
       ...process.env,
       SOCIAL_STATELESS_MODE: 'true',
+      SOCIAL_ORACLE_CARD_MODE: process.env.SOCIAL_ORACLE_CARD_MODE || 'random',
       SOCIAL_RELEASE_MODE: process.env.SOCIAL_RELEASE_MODE || 'auto',
       SOCIAL_PLATFORMS: 'threads,x',
     },
@@ -187,11 +187,10 @@ async function buildEntry(draft, kind) {
   const imagePath = source.imagePath;
   const altText = source.altText;
   if (!String(text || '').trim()) throw new Error(`${draft.date} ${kind}: X text is empty.`);
-  if (textLength(text) > X_LIMIT) throw new Error(`${draft.date} ${kind}: X text is too long: ${textLength(text)}/${X_LIMIT}`);
   if (!String(imagePath || '').trim()) throw new Error(`${draft.date} ${kind}: imagePath is missing.`);
   if (!String(altText || '').trim()) throw new Error(`${draft.date} ${kind}: altText is missing.`);
   await assertFileExists(imagePath);
-  return {
+  const entry = {
     date: draft.date,
     kind,
     platform: 'x',
@@ -220,6 +219,14 @@ async function buildEntry(draft, kind) {
       'Open this draft, attach the listed image, paste the text, set alt text, and post manually.',
     ],
   };
+  if (kind === 'oracle' && source.card) {
+    entry.oracleCard = {
+      id: source.card.id,
+      name: source.card.name,
+      title: source.card.title,
+    };
+  }
+  return entry;
 }
 
 function markdownForEntry(entry) {
@@ -229,7 +236,8 @@ function markdownForEntry(entry) {
     `- Scheduled: ${entry.scheduledTime}`,
     `- Phase: ${entry.releasePhase}`,
     `- Status: ${entry.status}`,
-    `- Characters: ${entry.characterCount}/${X_LIMIT}`,
+    `- Characters: ${entry.characterCount}`,
+    entry.oracleCard ? `- Oracle card: ${entry.oracleCard.id} ${entry.oracleCard.name} / ${entry.oracleCard.title}` : null,
     `- Image: ${entry.imagePathRelative}`,
     entry.imageUrl ? `- Image URL: ${entry.imageUrl}` : null,
     `- Alt: ${entry.altText}`,

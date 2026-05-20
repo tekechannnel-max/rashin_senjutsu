@@ -21,14 +21,14 @@ function runNode(args, options = {}) {
   return result;
 }
 
-function parseDraft(date = '2026-05-18') {
+function parseDraft(date = '2026-05-18', options = {}) {
   const result = runNode([
     'scripts/social/daily-oracle-post.js',
     '--dry-run',
     `--date=${date}`,
     '--platforms=threads,bluesky,x',
     '--kind=all',
-  ]);
+  ], options);
   return JSON.parse(result.stdout);
 }
 
@@ -97,6 +97,22 @@ function testPlatformHashtagPolicy() {
   }
   assert.equal(draft.meta.policy.threadsHashtag, '#占い鑑定', 'policy should expose the Threads discovery tag');
   assert.equal(draft.meta.policy.blueskyHashtags, blueskyTags.join(' '), 'policy should expose the Bluesky hashtag line');
+}
+
+function testXOracleManualDraftUsesFullTemplate() {
+  const draft = parseDraft('2026-05-20', {
+    env: {
+      SOCIAL_ORACLE_CARD_ID: '24',
+      SOCIAL_ORACLE_CARD_MODE: 'random',
+    },
+  });
+  assert.match(draft.oracle.xText, /^おはてけ🌸🦦/, 'X oracle draft should use the morning greeting');
+  assert.match(draft.oracle.xText, /今日の数秘オラクル\nThe Gracebearer/, 'X oracle draft should show the selected card name');
+  assert.match(draft.oracle.xText, /テーマ：品よく伝える日/, 'X oracle draft should show the selected card theme');
+  assert.match(draft.oracle.xText, /カードメッセージ：/, 'X oracle draft should include the card message block');
+  assert.match(draft.oracle.xText, /今日の１枚ここから引けるで/, 'X oracle draft should keep the manual posting CTA');
+  assert.match(draft.oracle.xText, /#おはようVtuber[\s\S]*#オラクルカード/, 'X oracle draft should keep the richer X hashtag set');
+  assert.ok([...draft.oracle.xText].length > 280, 'X oracle draft should not be trimmed to the old 280-character limit');
 }
 
 function testMiddayCopyIsSharedAcrossThreadsAndBluesky() {
@@ -282,8 +298,33 @@ function testBroadSocialAuditPasses() {
   assert.match(result.stdout, /"errors": 0/, 'audit should report zero errors');
 }
 
+function testXDraftExportUsesRandomOracleAndNoLengthLimit() {
+  const outDir = path.join(ROOT, '.tmp-x-drafts-test');
+  fs.rmSync(outDir, { recursive: true, force: true });
+  const result = runNode([
+    'scripts/social/export-x-drafts.js',
+    '--date=2026-05-21',
+    '--kind=oracle',
+    `--out=${path.basename(outDir)}`,
+  ], {
+    env: {
+      SOCIAL_ORACLE_CARD_MODE: 'random',
+    },
+  });
+  assert.match(result.stdout, /"status": "x_drafts_written"/, 'X draft export should write artifacts');
+  const entry = JSON.parse(fs.readFileSync(path.join(outDir, '2026-05-21-oracle.json'), 'utf8'));
+  assert.equal(entry.kind, 'oracle', 'exported X draft should be the oracle lane');
+  assert.ok(entry.oracleCard.id >= 1 && entry.oracleCard.id <= 33, 'exported X draft should record an oracle card from 1 to 33');
+  assert.match(entry.text, new RegExp(`今日の数秘オラクル\\n${entry.oracleCard.name}`), 'exported text should use the selected random oracle card');
+  assert.ok(entry.characterCount > 280, 'exported X draft should allow long manual-post text');
+  const markdown = fs.readFileSync(path.join(outDir, '2026-05-21-oracle.md'), 'utf8');
+  assert.match(markdown, /- Characters: \d+\n- Oracle card: \d+ /, 'markdown should show character count and selected card without a 280 limit');
+  fs.rmSync(outDir, { recursive: true, force: true });
+}
+
 testDraftHasTrackingImagesAndAlt();
 testPlatformHashtagPolicy();
+testXOracleManualDraftUsesFullTemplate();
 testMorningOracleCopyIsSharedAcrossThreadsAndBluesky();
 testMorningOracleAllCardsAreExpandedNearBlueskyLimit();
 testMiddayCopyIsSharedAcrossThreadsAndBluesky();
@@ -293,5 +334,6 @@ testPostsLedgerWriteIsTraceableAndSecretSafe();
 testRealPostingRequiresExplicitYesOutsideScheduler();
 testStatelessScheduleCapsWideGraceWindow();
 testBroadSocialAuditPasses();
+testXDraftExportUsesRandomOracleAndNoLengthLimit();
 
 console.log('social-posting tests passed');

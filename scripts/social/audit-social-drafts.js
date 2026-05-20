@@ -9,7 +9,6 @@ const PRERELEASE_END_DATE = '2026-05-29';
 const FIX_PERIOD_END_DATE = '2026-06-05';
 const RELEASE_DATE = PRERELEASE_START_DATE;
 const THREADS_LIMIT = 500;
-const X_LIMIT = 280;
 const BLUESKY_LIMIT = 300;
 const BLUESKY_IMAGE_LIMIT_BYTES = 1_000_000;
 const REQUIRED_HASHTAGS_BY_PLATFORM = {
@@ -142,7 +141,7 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
   const length = textLength(value);
   const prelaunch = isPrelaunchDate(dateKey);
   const releasePhase = getReleasePhase(dateKey);
-  const limit = platform === 'x' ? X_LIMIT : platform === 'bluesky' ? BLUESKY_LIMIT : THREADS_LIMIT;
+  const limit = platform === 'x' ? Infinity : platform === 'bluesky' ? BLUESKY_LIMIT : THREADS_LIMIT;
 
   if (!value.trim()) addIssue(issues, 'error', 'empty', '投稿文が空です。');
   if (length > limit) addIssue(issues, 'error', 'length', `${platform}の文字数上限を超えています: ${length}/${limit}`);
@@ -162,8 +161,8 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
   if (platform === 'threads' && hashtagCount !== requiredHashtags.length) {
     addIssue(issues, 'error', 'hashtag_count', `Threadsのハッシュタグは${requiredHashtags.length}つだけにします: ${hashtagCount}`);
   }
-  if (platform === 'x' && (hashtagCount < 1 || hashtagCount > 2)) {
-    addIssue(issues, 'error', 'hashtag_count', `Xのハッシュタグは1〜2個にします: ${hashtagCount}`);
+  if (platform === 'x' && hashtagCount < 1) {
+    addIssue(issues, 'error', 'hashtag_count', `Xのハッシュタグがありません: ${hashtagCount}`);
   }
   if (platform === 'bluesky' && hashtagCount !== requiredHashtags.length) {
     addIssue(issues, 'error', 'hashtag_count', `Blueskyのハッシュタグは${requiredHashtags.length}個にします: ${hashtagCount}`);
@@ -173,7 +172,7 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
     if (pattern.test(value)) addIssue(issues, 'error', 'hard_ng', `${label}に該当する表現があります。`);
   }
 
-  if (prelaunch) {
+  if (prelaunch && !(platform === 'x' && kind === 'oracle')) {
     if (!hasPrelaunchAnchor(value)) addIssue(issues, 'error', 'prelaunch_anchor', '5/16公開前の先行投稿だと分かる文脈が不足しています。');
     if (!hasPrelaunchWaitCta(value)) addIssue(issues, 'error', 'prelaunch_cta', 'プレリリース前はフォロー/保存/待つCTAが必要です。');
     for (const pattern of PRELAUNCH_LIVE_CTA_PATTERNS) {
@@ -301,7 +300,7 @@ function main() {
         const imageIssues = auditImage({ draft, kind, platform });
         const repeatKey = `${kind}:${platform}:${normalizeForRepeat(text)}`;
         const repeatIssues = [];
-        if (seenText.has(repeatKey)) {
+        if (seenText.has(repeatKey) && !(platform === 'x' && kind === 'oracle')) {
           addIssue(repeatIssues, 'error', 'duplicate_text', `${platform}/${kind} の投稿文が ${seenText.get(repeatKey)} と同一です。`);
         } else {
           seenText.set(repeatKey, dateKey);

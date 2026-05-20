@@ -17,6 +17,13 @@ const DEFAULT_BLUESKY_HASHTAGS = '#羅針占術 #今日の占い #今日の運�
 const THREADS_CHARACTER_LIMIT = 500;
 const X_CHARACTER_LIMIT = 280;
 const BLUESKY_CHARACTER_LIMIT = 300;
+const X_ORACLE_HASHTAGS = [
+  '#おはようVtuber',
+  '#羅針占術',
+  '#今日の占い',
+  '#今日の一枚',
+  '#オラクルカード',
+];
 const DEFAULT_SOCIAL_CAMPAIGN = '202605_prerelease';
 const PRERELEASE_START_DATE = '2026-05-16';
 const PRERELEASE_END_DATE = '2026-05-29';
@@ -356,6 +363,10 @@ function parseArgs(argv) {
     else if (arg.startsWith('--date=')) args.date = arg.split('=')[1];
     else if (arg === '--kind') args.kind = argv[++i] || 'all';
     else if (arg.startsWith('--kind=')) args.kind = arg.split('=')[1] || 'all';
+    else if (arg === '--oracle-card') args.oracleCard = argv[++i];
+    else if (arg.startsWith('--oracle-card=')) args.oracleCard = arg.split('=')[1];
+    else if (arg === '--oracle-card-mode') args.oracleCardMode = argv[++i];
+    else if (arg.startsWith('--oracle-card-mode=')) args.oracleCardMode = arg.split('=')[1];
   }
   if (!args.write && !args.post) args.dryRun = true;
   return args;
@@ -714,18 +725,14 @@ function validatePostText(text, options = {}) {
   if (options.platforms?.includes('threads') && hashtagCount > 1) {
     throw new Error(`${label} must use only one hashtag on Threads.`);
   }
-  if (options.platforms?.includes('x') && hashtagCount > 2) {
-    throw new Error(`${label} must use at most two hashtags on X.`);
-  }
   if (options.platforms?.includes('bluesky') && hashtagCount !== countHashtags(getBlueskyHashtagLine())) {
     throw new Error(`${label} must use the configured Bluesky hashtags: ${hashtagCount}/${countHashtags(getBlueskyHashtagLine())}.`);
   }
   if (options.platforms?.includes('threads') && [...value].length > THREADS_CHARACTER_LIMIT) {
     throw new Error(`${label} is too long for Threads: ${[...value].length}/${THREADS_CHARACTER_LIMIT}`);
   }
-  if (options.platforms?.includes('x') && [...value].length > X_CHARACTER_LIMIT) {
-    throw new Error(`${label} is too long for X: ${[...value].length}/${X_CHARACTER_LIMIT}`);
-  }
+  // X draft export is manual-post oriented, so this lane does not enforce a
+  // character limit here. Threads and Bluesky still keep their platform limits.
   if (options.platforms?.includes('bluesky') && [...value].length > BLUESKY_CHARACTER_LIMIT) {
     throw new Error(`${label} is too long for Bluesky: ${[...value].length}/${BLUESKY_CHARACTER_LIMIT}`);
   }
@@ -884,13 +891,37 @@ function deterministicCardId(ids, dateKey) {
   return order[index];
 }
 
+function dateSeededRandomCardId(ids, dateKey) {
+  const seed = process.env.SOCIAL_CARD_RANDOM_SEED || process.env.SOCIAL_UTM_CAMPAIGN || DEFAULT_SOCIAL_CAMPAIGN;
+  const digest = crypto.createHash('sha256').update(`oracle-random:${seed}:${dateKey}`).digest();
+  return ids[digest.readUInt32BE(0) % ids.length];
+}
+
+function explicitCardId(ids, value) {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+  const picked = Number(raw);
+  if (!Number.isInteger(picked) || !ids.includes(picked)) {
+    throw new Error(`Invalid oracle card id: ${raw}`);
+  }
+  return picked;
+}
+
+function getOracleCardMode(args = {}) {
+  return String(args.oracleCardMode || process.env.SOCIAL_ORACLE_CARD_MODE || 'deterministic').trim().toLowerCase();
+}
+
 function useStatelessCardPicking() {
   return process.env.SOCIAL_STATELESS_MODE === 'true' || process.env.GITHUB_ACTIONS === 'true';
 }
 
-async function pickCard(messages, dateKey, writeState) {
+async function pickCard(messages, dateKey, writeState, args = {}) {
   const ids = messages.map(item => item.id);
-  const picked = deterministicCardId(ids, dateKey);
+  const explicit = explicitCardId(ids, args.oracleCard || process.env.SOCIAL_ORACLE_CARD_ID);
+  const mode = getOracleCardMode(args);
+  const picked = explicit || (mode === 'random'
+    ? dateSeededRandomCardId(ids, dateKey)
+    : deterministicCardId(ids, dateKey));
 
   if (!useStatelessCardPicking() && writeState) {
     const state = await readJson(STATE_FILE, { remaining: [], pickedByDate: {} });
@@ -957,6 +988,43 @@ function buildXOracleText(card, publicOrigin, options = {}) {
     displayUrl,
     hashtags,
   ], X_CHARACTER_LIMIT);
+}
+
+function splitSocialSentences(text) {
+  const value = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!value) return [];
+  return value
+    .split(/(?<=。)/u)
+    .map(line => line.trim())
+    .filter(Boolean);
+}
+
+function buildXOracleManualDraftText(card, publicOrigin) {
+  const publicUrl = (publicOrigin || DEFAULT_PUBLIC_ORIGIN).replace(/\/$/, '');
+  const leadLines = splitSocialSentences(card.message || buildOracleLeadLine(card));
+  const readingLines = splitSocialSentences(ORACLE_SOCIAL_READINGS[Number(card.id)] || buildOracleReadingLine(card));
+  const action = String(card.action || ORACLE_SOFT_ACTIONS[Number(card.id)] || '').trim();
+  return [
+    'おはてけ🌸🦦',
+    '',
+    '今日の数秘オラクル',
+    card.name,
+    '',
+    `テーマ：${card.title}`,
+    '',
+    ...leadLines,
+    '',
+    'カードメッセージ：',
+    ...readingLines,
+    '',
+    '今日の一手：',
+    action,
+    '',
+    '今日の１枚ここから引けるで👇😌',
+    publicUrl,
+    '',
+    ...X_ORACLE_HASHTAGS,
+  ].join('\n');
 }
 
 function buildBlueskyOracleText(card, publicOrigin, options = {}) {
@@ -1117,7 +1185,7 @@ async function buildDraft(args) {
   const middayImagePath = path.join(ROOT, 'images', 'ui', middayImage.file);
   const blueskyMiddayImagePath = path.join(ROOT, 'images', 'ui', blueskyMiddayImage.file);
   const messages = await loadDailyOracleMessages();
-  const card = await pickCard(messages, dateKey, args.write || args.post);
+  const card = await pickCard(messages, dateKey, args.write || args.post, args);
   const imageName = `${String(card.id).padStart(2, '0')}.jpg`;
   const draft = {
     date: dateKey,
@@ -1133,7 +1201,7 @@ async function buildDraft(args) {
       altText: buildOracleAltText(card),
       text: buildOracleText(card, publicOrigin, { dateKey, config: threadsConfig }),
       trackedUrl: buildOracleTrackedUrl(card, publicOrigin, threadsConfig, dateKey),
-      xText: buildXOracleText(card, publicOrigin, { dateKey, config: xConfig }),
+      xText: buildXOracleManualDraftText(card, publicOrigin),
       xTrackedUrl: buildOracleTrackedUrl(card, publicOrigin, xConfig, dateKey),
       blueskyText: buildBlueskyOracleText(card, publicOrigin, { dateKey, config: blueskyConfig }),
       blueskyTrackedUrl: buildOracleTrackedUrl(card, publicOrigin, blueskyConfig, dateKey),

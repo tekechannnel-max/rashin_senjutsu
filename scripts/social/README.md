@@ -53,6 +53,8 @@ Render schedule:
 ## X下書き
 
 Xは現在、自動投稿しない。下書きだけ生成する。
+GitHub Actionsの `SNS automation` が、JSTの予定時刻に手動投稿用の下書きをArtifactとStep Summaryへ出す。
+朝オラクルのX下書きは、数秘オラクル1〜33から日付ごとにランダム選択し、Xの280文字制限では切り詰めない。
 
 ```powershell
 npm run social:x:today

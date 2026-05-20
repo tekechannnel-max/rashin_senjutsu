@@ -41,6 +41,7 @@ jobs:
       SOCIAL_BOOTH_ENABLED: 'false'
       SOCIAL_UTM_CAMPAIGN: 202605_prerelease
       SOCIAL_STATELESS_MODE: 'true'
+      SOCIAL_ORACLE_CARD_MODE: random
       SOCIAL_X_DRAFT_GRACE_MINUTES: '60'
     steps:
       - name: Checkout
