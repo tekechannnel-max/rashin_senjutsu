@@ -893,8 +893,11 @@ function deterministicCardId(ids, dateKey) {
 
 function dateSeededRandomCardId(ids, dateKey) {
   const seed = process.env.SOCIAL_CARD_RANDOM_SEED || process.env.SOCIAL_UTM_CAMPAIGN || DEFAULT_SOCIAL_CAMPAIGN;
-  const digest = crypto.createHash('sha256').update(`oracle-random:${seed}:${dateKey}`).digest();
-  return ids[digest.readUInt32BE(0) % ids.length];
+  const offset = dateToUtcDay(dateKey) - dateToUtcDay(CARD_CYCLE_START_DATE);
+  const cycle = Math.floor(offset / ids.length);
+  const index = ((offset % ids.length) + ids.length) % ids.length;
+  const order = seededShuffle(ids, `oracle-random:${seed}:${cycle}`);
+  return order[index];
 }
 
 function explicitCardId(ids, value) {

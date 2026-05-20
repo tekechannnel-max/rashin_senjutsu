@@ -298,6 +298,20 @@ function testBroadSocialAuditPasses() {
   assert.match(result.stdout, /"errors": 0/, 'audit should report zero errors');
 }
 
+function testRandomOracleModeBroadSocialAuditPasses() {
+  const result = runNode([
+    'scripts/social/audit-social-drafts.js',
+    '--from=2026-05-13',
+    '--to=2026-06-06',
+    '--platforms=threads,bluesky,x',
+  ], {
+    env: {
+      SOCIAL_ORACLE_CARD_MODE: 'random',
+    },
+  });
+  assert.match(result.stdout, /"errors": 0/, 'random oracle audit should report zero errors');
+}
+
 function testXDraftExportUsesRandomOracleAndNoLengthLimit() {
   const outDir = path.join(ROOT, '.tmp-x-drafts-test');
   fs.rmSync(outDir, { recursive: true, force: true });
@@ -334,6 +348,7 @@ testPostsLedgerWriteIsTraceableAndSecretSafe();
 testRealPostingRequiresExplicitYesOutsideScheduler();
 testStatelessScheduleCapsWideGraceWindow();
 testBroadSocialAuditPasses();
+testRandomOracleModeBroadSocialAuditPasses();
 testXDraftExportUsesRandomOracleAndNoLengthLimit();
 
 console.log('social-posting tests passed');
