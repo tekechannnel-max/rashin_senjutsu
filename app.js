@@ -4069,6 +4069,8 @@ async function runButtonsAutotest(){
     activeScreens:[...document.querySelectorAll('.screen.active')].map(node=>node.id),
     progressWidth:document.getElementById('progress')?.style.width||'',
     modalOn:document.getElementById('member-access-modal')?.classList.contains('on')||false,
+    tagModalOn:document.getElementById('consultation-tag-modal')?.hidden===false,
+    selectedTags:typeof getConsultationTagSelections==='function'?getConsultationTagSelections():[],
   });
   const waitFor=async(check,timeoutMs=2500)=>{
     const started=Date.now();
@@ -4080,11 +4082,24 @@ async function runButtonsAutotest(){
     }
     return false;
   };
+  const isInputActive=()=>document.getElementById('s-input')?.classList.contains('active');
+  const isTagModalOpen=()=>document.getElementById('consultation-tag-modal')?.hidden===false;
+  const chooseFirstConsultationTag=async()=>{
+    const opened=await waitFor(isTagModalOpen,2500);
+    if(!opened) return false;
+    const first=document.querySelector('#consultation-tag-grid [data-consultation-tag]');
+    if(!first) return false;
+    first.click();
+    const goBtn=document.getElementById('consultation-tag-go');
+    if(!goBtn||goBtn.disabled) return false;
+    goBtn.click();
+    return waitFor(isInputActive,3000);
+  };
   try{
     result.initial={
       topFree:!!document.querySelector('.btn-top.btn-free'),
       topPaid:!!document.querySelector('.btn-top.btn-paid'),
-      bottomPrimary:!!document.querySelector('#premium-entry .today-cta'),
+      bottomPrimary:!!document.querySelector('#premium-entry .today-cta-free'),
       hasStartFlow:typeof window.startFlow,
       hasOpenMemberAccessModal:typeof window.openMemberAccessModal,
       state:captureState(),
@@ -4093,7 +4108,7 @@ async function runButtonsAutotest(){
     const topFreeBtn=document.querySelector('.btn-top.btn-free');
     if(topFreeBtn){
       topFreeBtn.click();
-      const passed=await waitFor(()=>document.getElementById('s-input')?.classList.contains('active'));
+      const passed=await chooseFirstConsultationTag();
       result.steps.push({label:'topFree',passed,state:captureState()});
     }else{
       result.steps.push({label:'topFree',passed:false,reason:'button-missing'});
@@ -4104,24 +4119,19 @@ async function runButtonsAutotest(){
     const topPaidBtn=document.querySelector('.btn-top.btn-paid');
     if(topPaidBtn){
       topPaidBtn.click();
-      const passed=await waitFor(()=>{
-        return document.getElementById('s-input')?.classList.contains('active')
-          || document.getElementById('member-access-modal')?.classList.contains('on');
-      });
+      const passed=await waitFor(isTagModalOpen);
       result.steps.push({label:'topPaid',passed,state:captureState()});
+      if(typeof window.closeConsultationTagModal==='function') window.closeConsultationTagModal();
     }else{
       result.steps.push({label:'topPaid',passed:false,reason:'button-missing'});
     }
 
     if(typeof window.gotoTop==='function') window.gotoTop();
 
-    const bottomPrimaryBtn=document.querySelector('#premium-entry .today-cta');
+    const bottomPrimaryBtn=document.querySelector('#premium-entry .today-cta-free');
     if(bottomPrimaryBtn){
       bottomPrimaryBtn.click();
-      const passed=await waitFor(()=>{
-        return document.getElementById('s-input')?.classList.contains('active')
-          || document.getElementById('member-access-modal')?.classList.contains('on');
-      });
+      const passed=await chooseFirstConsultationTag();
       result.steps.push({label:'bottomPrimary',passed,state:captureState()});
     }else{
       result.steps.push({label:'bottomPrimary',passed:false,reason:'button-missing'});
@@ -4189,7 +4199,7 @@ async function runShuffleAutotest(){
       && result.orc.live
       && result.len.visibleCount>=LIVE_SHUFFLE_MOBILE_CARD_COUNT
       && result.orc.visibleCount>=LIVE_SHUFFLE_MOBILE_CARD_COUNT
-      && /contain/.test(result.back.backgroundSize)
+      && /cover/.test(result.back.backgroundSize)
       && hasMovingTransforms;
   }catch(error){
     result.error=error?.message||String(error);
