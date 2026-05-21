@@ -9,12 +9,15 @@ on:
       - 'scripts/social/**'
       - 'package.json'
       - 'package-lock.json'
+  schedule:
+    # 07:03 JST. This workflow is the visible manual-post X draft lane.
+    - cron: '3 22 * * *'
   workflow_dispatch:
     inputs:
       kind:
         description: 'Draft kind to export'
         required: true
-        default: 'auto'
+        default: 'oracle'
         type: choice
         options:
           - auto
@@ -65,24 +68,18 @@ jobs:
         shell: bash
         run: |
           today="$(TZ=Asia/Tokyo date +%F)"
-          kind="${{ github.event.inputs.kind || 'auto' }}"
+          kind="${{ github.event.inputs.kind || 'oracle' }}"
           args=(--date="$today" --kind="$kind" --out="x-drafts")
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-            args+=(--due)
-          fi
           node scripts/social/export-x-drafts.js "${args[@]}" | tee x-drafts-report.json
 
-      - name: Require scheduled X draft output
-        if: github.event_name == 'schedule'
+      - name: Require X draft output
+        if: github.event_name == 'schedule' || github.event_name == 'push'
         shell: bash
         run: |
           status="$(node -e 'console.log(require("./x-drafts-report.json").status)')"
-          if [ "$status" = "x_drafts_written" ] && ! compgen -G "x-drafts/*.md" > /dev/null; then
-            echo "::error::Scheduled X draft run produced no draft files. Do not treat this as successful X operation."
+          if [ "$status" != "x_drafts_written" ] || ! compgen -G "x-drafts/*.md" > /dev/null; then
+            echo "::error::X draft run produced no draft files. Do not treat this as successful X operation."
             exit 1
-          fi
-          if [ "$status" = "no_due_x_drafts" ]; then
-            echo "No X draft is due in this scheduled health run."
           fi
 
       - name: Add X drafts to workflow summary

@@ -336,6 +336,16 @@ function testXDraftExportUsesRandomOracleAndNoLengthLimit() {
   fs.rmSync(outDir, { recursive: true, force: true });
 }
 
+function testXSocialDraftWorkflowCreatesVisibleDrafts() {
+  const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'x-social-drafts.yml'), 'utf8');
+  assert.match(workflow, /schedule:\s*\n\s*# 07:03 JST\.[\s\S]*cron: '3 22 \* \* \*'/, 'X draft workflow should run every morning in JST');
+  assert.match(workflow, /default: 'oracle'/, 'manual X draft dispatch should default to the oracle draft');
+  assert.match(workflow, /kind="\$\{\{ github\.event\.inputs\.kind \|\| 'oracle' \}\}"/, 'push and schedule runs should export the oracle draft');
+  assert.doesNotMatch(workflow, /args\+=\(--due\)/, 'the visible X draft workflow must not skip artifacts because no due window is active');
+  assert.match(workflow, /if: github\.event_name == 'schedule' \|\| github\.event_name == 'push'/, 'push and schedule runs must require draft output');
+  assert.match(workflow, /\$status" != "x_drafts_written"/, 'empty X draft runs should not pass as success');
+}
+
 testDraftHasTrackingImagesAndAlt();
 testPlatformHashtagPolicy();
 testXOracleManualDraftUsesFullTemplate();
@@ -350,5 +360,6 @@ testStatelessScheduleCapsWideGraceWindow();
 testBroadSocialAuditPasses();
 testRandomOracleModeBroadSocialAuditPasses();
 testXDraftExportUsesRandomOracleAndNoLengthLimit();
+testXSocialDraftWorkflowCreatesVisibleDrafts();
 
 console.log('social-posting tests passed');
