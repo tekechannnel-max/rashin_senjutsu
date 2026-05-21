@@ -10,8 +10,12 @@ on:
       - 'package.json'
       - 'package-lock.json'
   schedule:
-    # 07:03, 12:03, and 20:03 JST. This workflow is the visible manual-post X draft lane.
-    - cron: '3 22,3,11 * * *'
+    # 07:03 JST. X Web draft lane for the morning oracle post.
+    - cron: '3 22 * * *'
+    # 12:03 JST. X Web draft lane for the midday post.
+    - cron: '3 3 * * *'
+    # 20:03 JST. X Web draft lane for the evening concept post.
+    - cron: '3 11 * * *'
   workflow_dispatch:
     inputs:
       kind:
@@ -46,6 +50,8 @@ jobs:
       SOCIAL_STATELESS_MODE: 'true'
       SOCIAL_ORACLE_CARD_MODE: random
       SOCIAL_X_DRAFT_GRACE_MINUTES: '60'
+      X_AUTH_STORAGE_BASE64: ${{ secrets.X_AUTH_STORAGE_BASE64 }}
+      X_AUTH_STORAGE_JSON: ${{ secrets.X_AUTH_STORAGE_JSON }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -54,6 +60,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Validate scripts
         run: npm run check
@@ -64,19 +73,24 @@ jobs:
           today="$(TZ=Asia/Tokyo date +%F)"
           npm run social:audit -- --from="$today" --to="$today" --platforms=threads,bluesky,x
 
-      - name: Export X draft artifacts
+      - name: Select X draft target
+        id: x-target
         shell: bash
         run: |
           today="$(TZ=Asia/Tokyo date +%F)"
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-            kind="auto"
-          else
-            kind="${{ github.event.inputs.kind || 'oracle' }}"
-          fi
-          args=(--date="$today" --kind="$kind" --out="x-drafts")
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-            args+=(--due)
-          fi
+          case "${{ github.event.schedule }}" in
+            "3 22 * * *") kind="oracle" ;;
+            "3 3 * * *") kind="midday" ;;
+            "3 11 * * *") kind="concept" ;;
+            *) kind="${{ github.event.inputs.kind || 'oracle' }}" ;;
+          esac
+          echo "today=$today" >> "$GITHUB_OUTPUT"
+          echo "kind=$kind" >> "$GITHUB_OUTPUT"
+
+      - name: Export X draft artifacts
+        shell: bash
+        run: |
+          args=(--date="${{ steps.x-target.outputs.today }}" --kind="${{ steps.x-target.outputs.kind }}" --out="x-drafts")
           node scripts/social/export-x-drafts.js "${args[@]}" | tee x-drafts-report.json
 
       - name: Require X draft output
@@ -88,6 +102,30 @@ jobs:
             echo "::error::X draft run produced no draft files. Do not treat this as successful X operation."
             exit 1
           fi
+
+      - name: Install Playwright Chromium
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: npx playwright install --with-deps chromium
+
+      - name: Save X Web draft
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          if [ -z "$X_AUTH_STORAGE_BASE64" ] && [ -z "$X_AUTH_STORAGE_JSON" ]; then
+            echo "::error::Set GitHub Actions secret X_AUTH_STORAGE_BASE64. This workflow cannot save an X Web draft without an authenticated X browser session."
+            exit 1
+          fi
+          node scripts/social/save-x-web-draft.js --date="${{ steps.x-target.outputs.today }}" --kind="${{ steps.x-target.outputs.kind }}" --out="x-web-drafts" | tee x-web-drafts-report.json
+
+      - name: Upload X Web draft debug artifacts
+        if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        uses: actions/upload-artifact@v4
+        with:
+          name: x-web-drafts-${{ github.run_id }}
+          path: |
+            x-web-drafts/
+            x-web-drafts-report.json
+          if-no-files-found: ignore
 
       - name: Add X drafts to workflow summary
         shell: bash

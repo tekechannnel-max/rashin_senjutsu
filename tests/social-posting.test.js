@@ -368,13 +368,29 @@ function testXDraftDueWindowsCreateTomorrowDrafts() {
 
 function testXSocialDraftWorkflowCreatesVisibleDrafts() {
   const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'x-social-drafts.yml'), 'utf8');
-  assert.match(workflow, /schedule:\s*\n\s*# 07:03, 12:03, and 20:03 JST\.[\s\S]*cron: '3 22,3,11 \* \* \*'/, 'X draft workflow should run at all JST draft slots');
+  assert.match(workflow, /cron: '3 22 \* \* \*'/, 'X draft workflow should run at the JST morning slot');
+  assert.match(workflow, /cron: '3 3 \* \* \*'/, 'X draft workflow should run at the JST midday slot');
+  assert.match(workflow, /cron: '3 11 \* \* \*'/, 'X draft workflow should run at the JST evening slot');
   assert.match(workflow, /default: 'oracle'/, 'manual X draft dispatch should default to the oracle draft');
-  assert.match(workflow, /kind="auto"/, 'scheduled X draft runs should use the due lane');
+  assert.match(workflow, /"3 22 \* \* \*"\) kind="oracle"/, 'morning schedule should explicitly export the oracle draft');
+  assert.match(workflow, /"3 3 \* \* \*"\) kind="midday"/, 'midday schedule should explicitly export the midday draft');
+  assert.match(workflow, /"3 11 \* \* \*"\) kind="concept"/, 'evening schedule should explicitly export the concept draft');
   assert.match(workflow, /kind="\$\{\{ github\.event\.inputs\.kind \|\| 'oracle' \}\}"/, 'manual and push runs should default to the oracle draft');
-  assert.match(workflow, /args\+=\(--due\)/, 'scheduled X draft runs should only export the due lane');
   assert.match(workflow, /if: github\.event_name == 'schedule' \|\| github\.event_name == 'push'/, 'push and schedule runs must require draft output');
   assert.match(workflow, /\$status" != "x_drafts_written"/, 'empty X draft runs should not pass as success');
+}
+
+function testXWebDraftWorkflowUsesPlaywrightAndSecrets() {
+  const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'x-social-drafts.yml'), 'utf8');
+  const webDraftScript = fs.readFileSync(path.join(ROOT, 'scripts', 'social', 'save-x-web-draft.js'), 'utf8');
+  const captureScript = fs.readFileSync(path.join(ROOT, 'scripts', 'social', 'capture-x-auth-state.js'), 'utf8');
+  assert.match(workflow, /X_AUTH_STORAGE_BASE64: \$\{\{ secrets\.X_AUTH_STORAGE_BASE64 \}\}/, 'workflow should use an encrypted X browser session secret');
+  assert.match(workflow, /npx playwright install --with-deps chromium/, 'workflow should install Chromium for Playwright');
+  assert.match(workflow, /node scripts\/social\/save-x-web-draft\.js/, 'workflow should save a real X Web draft, not only an artifact');
+  assert.match(webDraftScript, /https:\/\/x\.com\/compose\/post/, 'web draft script should open the X compose UI');
+  assert.match(webDraftScript, /Save draft prompt|下書き/, 'web draft script should close the compose box through the draft save UI');
+  assert.match(webDraftScript, /CreateTweet\|\\\/2\\\/tweets\|statuses\\\/update/, 'web draft script should block accidental post requests');
+  assert.match(captureScript, /storageState/, 'auth capture script should export Playwright storage state');
 }
 
 testDraftHasTrackingImagesAndAlt();
@@ -393,5 +409,6 @@ testRandomOracleModeBroadSocialAuditPasses();
 testXDraftExportUsesRandomOracleAndNoLengthLimit();
 testXDraftDueWindowsCreateTomorrowDrafts();
 testXSocialDraftWorkflowCreatesVisibleDrafts();
+testXWebDraftWorkflowUsesPlaywrightAndSecrets();
 
 console.log('social-posting tests passed');
