@@ -20,7 +20,7 @@
 
 ```powershell
 npm run check
-npm run social:audit -- --from=2026-05-13 --to=2026-06-06 --platforms=threads,bluesky,x
+npm run social:audit -- --from=2026-05-13 --to=2026-06-30 --platforms=threads,bluesky,x
 git diff --stat
 git diff --name-only
 ```
@@ -49,7 +49,7 @@ BOOTH購入分析では、アクセス解析またはBOOTH側で確認できる�
 
 - Threads自動投稿: Render Cron Job `rashin-threads-scheduler`
 - Bluesky自動投稿: Render Cron Job `rashin-threads-scheduler` で `SOCIAL_PLATFORMS=threads,bluesky` にした場合だけThreadsと同じ予定時刻で投稿する
-- X: 自動投稿しない。GitHub Actionsで下書きを作り、人間がX画面で確認して投稿する
+- X: 自動投稿しない。GitHub Actions `X social drafts` が 07:03 / 12:03 / 20:03 JST に下書きartifactを作り、人間がX画面で確認して投稿する
 - ローカルWindows: Task Scheduler、可視PowerShell、ローカルdaemonを使わない
 - 対象Threads: `https://www.threads.com/@sensai_teke`
 - 対象Bluesky: `https://bsky.app/profile/tekesensai.bsky.social`
@@ -121,7 +121,7 @@ THREADS_POST_VERIFY_TIMEOUT_MS=120000
 
 ```powershell
 npm run check
-npm run social:audit -- --from=2026-05-13 --to=2026-05-29 --platforms=threads,bluesky,x
+npm run social:audit -- --from=2026-05-13 --to=2026-06-30 --platforms=threads,bluesky,x
 npm run threads:doctor
 npm run bluesky:doctor
 node scripts/social/run-scheduled-posts.js --dry-run
