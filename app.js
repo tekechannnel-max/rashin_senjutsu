@@ -19864,7 +19864,7 @@ async function createDossierShareImageBlob(cardData){
   const cardTextW=Math.round(w*.438);
   const topY=Math.round(h*.06);
   const detailH=Math.round(h*.22);
-  const detailY=h-Math.round(h*.053)-detailH;
+  const detailY=h-Math.round(h*.022)-detailH;
   const padX=Math.round(w*.019);
   const textX=cardLeft+padX;
   const maxTextW=cardTextW-(padX*2);
@@ -19873,41 +19873,41 @@ async function createDossierShareImageBlob(cardData){
   const shareVerdict=normalizeDossierSentence(card.VERDICT||'',card.ONE_LINE||'',{max:112});
   let y=topY+Math.round(h*.04);
   ctx.fillStyle='rgba(176,226,218,.92)';
-  ctx.font=`700 ${Math.round(w*.0074)}px "Shippori Mincho", serif`;
+  ctx.font=`700 ${w*.00888}px "Shippori Mincho", serif`;
   ctx.fillText('RASHIN CARD',textX,y);
   y+=Math.round(h*.055);
   ctx.fillStyle='#f2d57b';
   ctx.font=`700 ${Math.round(w*.027)}px "Shippori Mincho", serif`;
   y=drawWrappedCanvasText(ctx,shareTitle,textX,y,maxTextW,Math.round(h*.049),{maxLines:2,ellipsis:true})+Math.round(h*.010);
   ctx.fillStyle='rgba(255,247,216,.94)';
-  ctx.font=`700 ${Math.round(w*.0115)}px "Shippori Mincho", serif`;
-  y=drawWrappedCanvasText(ctx,shareOneLine,textX,y,maxTextW,Math.round(h*.031),{maxLines:1,ellipsis:true})+Math.round(h*.016);
+  ctx.font=`700 ${w*.0138}px "Shippori Mincho", serif`;
+  y=drawWrappedCanvasText(ctx,shareOneLine,textX,y,maxTextW,Math.round(h*.0372),{maxLines:1,ellipsis:true})+Math.round(h*.016);
 
-  const answerH=Math.round(h*.145);
+  const answerH=Math.round(h*.174);
   drawCanvasPanel(ctx,textX,y,maxTextW,answerH,{fill:'rgba(9,10,22,.64)',stroke:'rgba(228,184,74,.30)'});
   ctx.fillStyle='rgba(242,213,123,.97)';
   ctx.font=`700 ${Math.round(w*.0105)}px "Shippori Mincho", serif`;
   ctx.fillText('今回の答え',textX+Math.round(w*.014),y+Math.round(h*.034));
   ctx.fillStyle='rgba(246,240,220,.94)';
-  ctx.font=`700 ${Math.round(w*.0086)}px "Shippori Mincho", serif`;
-  drawWrappedCanvasText(ctx,shareVerdict,textX+Math.round(w*.014),y+Math.round(h*.064),maxTextW-Math.round(w*.028),Math.round(h*.026),{maxLines:4,ellipsis:true});
+  ctx.font=`700 ${w*.01032}px "Shippori Mincho", serif`;
+  drawWrappedCanvasText(ctx,shareVerdict,textX+Math.round(w*.014),y+Math.round(h*.064),maxTextW-Math.round(w*.028),Math.round(h*.0312),{maxLines:4,ellipsis:true});
   y+=answerH+Math.round(h*.018);
 
   const guidance=getDossierCardGuidance(card);
   const lenGuidanceLines=getDossierGuidanceLines(guidance.lenormand).slice(0,5);
   const oracleGuidanceLines=getDossierGuidanceLines(guidance.oracle).slice(0,2);
-  const actionH=Math.min(Math.round(h*.20),detailY-y-Math.round(h*.026));
+  const actionH=Math.min(Math.round(h*.24),detailY-y-Math.round(h*.026));
   drawCanvasPanel(ctx,textX,y,maxTextW,actionH,{fill:'rgba(4,9,24,.58)',stroke:'rgba(228,184,74,.22)'});
   ctx.fillStyle='rgba(176,226,218,.95)';
-  ctx.font=`700 ${Math.round(w*.0077)}px "Shippori Mincho", serif`;
+  ctx.font=`700 ${w*.00924}px "Shippori Mincho", serif`;
   const guidanceLabelX=textX+Math.round(w*.015);
   const guidanceBodyX=textX+Math.round(w*.135);
   const guidanceBodyW=maxTextW-Math.round(w*.155);
   const lenStartY=y+Math.round(h*.038);
   ctx.fillText(DOSSIER_LENORMAND_GUIDANCE_HEADING,guidanceLabelX,lenStartY);
   ctx.fillStyle='rgba(246,240,220,.92)';
-  ctx.font=`700 ${Math.round(w*.0068)}px "Shippori Mincho", serif`;
-  drawCanvasBulletLines(ctx,lenGuidanceLines,guidanceBodyX,lenStartY,guidanceBodyW,Math.round(h*.0215),{maxLines:5,bulletSize:Math.max(3,Math.round(w*.0022))});
+  ctx.font=`700 ${w*.00816}px "Shippori Mincho", serif`;
+  drawCanvasBulletLines(ctx,lenGuidanceLines,guidanceBodyX,lenStartY,guidanceBodyW,Math.round(h*.0258),{maxLines:5,bulletSize:Math.max(3,Math.round(w*.0022))});
   ctx.strokeStyle='rgba(228,184,74,.14)';
   ctx.lineWidth=1;
   const dividerY=y+Math.round(actionH*.60);
@@ -19916,12 +19916,12 @@ async function createDossierShareImageBlob(cardData){
   ctx.lineTo(textX+maxTextW-Math.round(w*.015),dividerY);
   ctx.stroke();
   ctx.fillStyle='rgba(176,226,218,.9)';
-  ctx.font=`700 ${Math.round(w*.0077)}px "Shippori Mincho", serif`;
+  ctx.font=`700 ${w*.00924}px "Shippori Mincho", serif`;
   const oracleStartY=y+Math.round(actionH*.72);
   ctx.fillText(DOSSIER_ORACLE_GUIDANCE_HEADING,guidanceLabelX,oracleStartY);
   ctx.fillStyle='rgba(255,232,171,.96)';
-  ctx.font=`700 ${Math.round(w*.0069)}px "Shippori Mincho", serif`;
-  drawCanvasBulletLines(ctx,oracleGuidanceLines,guidanceBodyX,oracleStartY,guidanceBodyW,Math.round(h*.0205),{maxLines:2,bulletSize:Math.max(3,Math.round(w*.0022))});
+  ctx.font=`700 ${w*.00828}px "Shippori Mincho", serif`;
+  drawCanvasBulletLines(ctx,oracleGuidanceLines,guidanceBodyX,oracleStartY,guidanceBodyW,Math.round(h*.0246),{maxLines:2,bulletSize:Math.max(3,Math.round(w*.0022))});
 
   const foundationSections=getDossierCardFoundationSections(card);
   const detailsX=cardLeft;
@@ -19939,17 +19939,17 @@ async function createDossierShareImageBlob(cardData){
     const itemX=innerX+(itemW+gap)*index;
     drawCanvasPanel(ctx,itemX,innerY,itemW,itemH,{fill:'rgba(3,8,24,.50)',stroke:'rgba(228,184,74,.20)',lineWidth:1});
     drawDossierShareSectionHeading(ctx,section.label,itemX+Math.round(w*.008),innerY+Math.round(h*.034),{
-      font:`700 ${Math.round(w*.0076)}px "Shippori Mincho", serif`,
+      font:`700 ${w*.00912}px "Shippori Mincho", serif`,
     });
     ctx.fillStyle='rgba(246,240,220,.9)';
-    ctx.font=`600 ${Math.round(w*.0057)}px "Shippori Mincho", serif`;
+    ctx.font=`600 ${w*.00684}px "Shippori Mincho", serif`;
     drawCanvasBulletLines(
       ctx,
       (section.items||[]).slice(0,3),
       itemX+Math.round(w*.008),
       innerY+Math.round(h*.065),
       itemW-Math.round(w*.016),
-      Math.round(h*.0215),
+      Math.round(h*.0258),
       {maxLines:3,bulletSize:Math.max(3,Math.round(w*.0022))}
     );
   });
