@@ -292,7 +292,7 @@ function testBroadSocialAuditPasses() {
   const result = runNode([
     'scripts/social/audit-social-drafts.js',
     '--from=2026-05-13',
-    '--to=2026-06-06',
+    '--to=2026-06-30',
     '--platforms=threads,bluesky,x',
   ]);
   assert.match(result.stdout, /"errors": 0/, 'audit should report zero errors');
@@ -302,7 +302,7 @@ function testRandomOracleModeBroadSocialAuditPasses() {
   const result = runNode([
     'scripts/social/audit-social-drafts.js',
     '--from=2026-05-13',
-    '--to=2026-06-06',
+    '--to=2026-06-30',
     '--platforms=threads,bluesky,x',
   ], {
     env: {
@@ -336,12 +336,43 @@ function testXDraftExportUsesRandomOracleAndNoLengthLimit() {
   fs.rmSync(outDir, { recursive: true, force: true });
 }
 
+function testXDraftDueWindowsCreateTomorrowDrafts() {
+  const outDir = path.join(ROOT, '.tmp-x-drafts-due-test');
+  fs.rmSync(outDir, { recursive: true, force: true });
+  const cases = [
+    { kind: 'oracle', now: '2026-05-21T22:03:00.000Z' },
+    { kind: 'midday', now: '2026-05-22T03:03:00.000Z' },
+    { kind: 'concept', now: '2026-05-22T11:03:00.000Z' },
+  ];
+  for (const item of cases) {
+    const result = runNode([
+      'scripts/social/export-x-drafts.js',
+      '--date=2026-05-22',
+      '--kind=auto',
+      '--due',
+      `--out=${path.basename(outDir)}`,
+    ], {
+      env: {
+        SOCIAL_ORACLE_CARD_MODE: 'random',
+        SOCIAL_NOW_ISO: item.now,
+      },
+    });
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.status, 'x_drafts_written', `${item.kind} due run should write a draft`);
+    assert.equal(report.entries.length, 1, `${item.kind} due run should write only the due lane`);
+    assert.equal(report.entries[0].kind, item.kind, `${item.kind} due run should select the correct lane`);
+    assert.ok(fs.existsSync(path.join(outDir, `2026-05-22-${item.kind}.md`)), `${item.kind} markdown draft should exist`);
+  }
+  fs.rmSync(outDir, { recursive: true, force: true });
+}
+
 function testXSocialDraftWorkflowCreatesVisibleDrafts() {
   const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'x-social-drafts.yml'), 'utf8');
-  assert.match(workflow, /schedule:\s*\n\s*# 07:03 JST\.[\s\S]*cron: '3 22 \* \* \*'/, 'X draft workflow should run every morning in JST');
+  assert.match(workflow, /schedule:\s*\n\s*# 07:03, 12:03, and 20:03 JST\.[\s\S]*cron: '3 22,3,11 \* \* \*'/, 'X draft workflow should run at all JST draft slots');
   assert.match(workflow, /default: 'oracle'/, 'manual X draft dispatch should default to the oracle draft');
-  assert.match(workflow, /kind="\$\{\{ github\.event\.inputs\.kind \|\| 'oracle' \}\}"/, 'push and schedule runs should export the oracle draft');
-  assert.doesNotMatch(workflow, /args\+=\(--due\)/, 'the visible X draft workflow must not skip artifacts because no due window is active');
+  assert.match(workflow, /kind="auto"/, 'scheduled X draft runs should use the due lane');
+  assert.match(workflow, /kind="\$\{\{ github\.event\.inputs\.kind \|\| 'oracle' \}\}"/, 'manual and push runs should default to the oracle draft');
+  assert.match(workflow, /args\+=\(--due\)/, 'scheduled X draft runs should only export the due lane');
   assert.match(workflow, /if: github\.event_name == 'schedule' \|\| github\.event_name == 'push'/, 'push and schedule runs must require draft output');
   assert.match(workflow, /\$status" != "x_drafts_written"/, 'empty X draft runs should not pass as success');
 }
@@ -360,6 +391,7 @@ testStatelessScheduleCapsWideGraceWindow();
 testBroadSocialAuditPasses();
 testRandomOracleModeBroadSocialAuditPasses();
 testXDraftExportUsesRandomOracleAndNoLengthLimit();
+testXDraftDueWindowsCreateTomorrowDrafts();
 testXSocialDraftWorkflowCreatesVisibleDrafts();
 
 console.log('social-posting tests passed');

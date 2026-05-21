@@ -31,6 +31,7 @@ const FIX_PERIOD_END_DATE = '2026-06-05';
 const FULL_RELEASE_DATE = '2026-06-06';
 const RELEASE_DATE = PRERELEASE_START_DATE;
 const CARD_CYCLE_START_DATE = '2026-05-12';
+const ORACLE_CARD_CYCLE_LENGTH = 33;
 const SOCIAL_PAID_CTA_MODES = new Set(['off', 'soft', 'active']);
 const SOCIAL_RELEASE_MODES = new Set(['auto', 'prelaunch', 'prerelease', 'fix', 'release', 'launch', 'postrelease']);
 const SOCIAL_POST_KINDS = ['oracle', 'midday', 'concept'];
@@ -458,6 +459,13 @@ function getDailyConceptAngle(dateKey) {
   const hash = crypto.createHash('sha256').update(`angle:${dateKey}`).digest()[0];
   const serial = dateKey.replace(/^\d{4}-(\d{2})-(\d{2})$/, '$1$2');
   return `羅針メモ${serial}：${angles[hash % angles.length].replace(/^今日の視点：/, '')}`;
+}
+
+function buildRepeatCycleNote(dateKey, cycleLength) {
+  const offset = dateToUtcDay(dateKey) - dateToUtcDay(CARD_CYCLE_START_DATE);
+  if (!Number.isFinite(offset) || !cycleLength || offset < cycleLength) return '';
+  const cycle = Math.floor(offset / cycleLength) + 1;
+  return `${cycle}巡目の視点：同じテーマでも、今日の状況に合わせて読み直す。`;
 }
 
 function normalizeForDuplicateCheck(text) {
@@ -952,6 +960,7 @@ function buildOracleText(card, publicOrigin, options = {}) {
       buildOracleLeadLine(card),
       buildOracleReadingLine(card),
       buildOracleActionLine(card),
+      buildRepeatCycleNote(dateKey, ORACLE_CARD_CYCLE_LENGTH),
       displayUrl,
       hashtag,
       '保存して公開日に見返してね',
@@ -964,6 +973,7 @@ function buildOracleText(card, publicOrigin, options = {}) {
     buildOracleLeadLine(card),
     buildOracleReadingLine(card),
     buildOracleActionLine(card),
+    buildRepeatCycleNote(dateKey, ORACLE_CARD_CYCLE_LENGTH),
     displayUrl,
     hashtag,
     'あなたも今日の1枚を引かない？',
@@ -979,6 +989,7 @@ function buildXOracleText(card, publicOrigin, options = {}) {
     return fitPostText([
       `先行オラクル：${card.name} / ${card.title}`,
       buildOracleActionLine(card),
+      buildRepeatCycleNote(dateKey, ORACLE_CARD_CYCLE_LENGTH),
       '保存して公開日に見返してね',
       displayUrl,
       hashtags,
@@ -988,6 +999,7 @@ function buildXOracleText(card, publicOrigin, options = {}) {
     `今日の数秘オラクル：${card.name}`,
     `テーマ：${card.title}`,
     buildOracleActionLine(card),
+    buildRepeatCycleNote(dateKey, ORACLE_CARD_CYCLE_LENGTH),
     displayUrl,
     hashtags,
   ], X_CHARACTER_LIMIT);
@@ -1002,11 +1014,13 @@ function splitSocialSentences(text) {
     .filter(Boolean);
 }
 
-function buildXOracleManualDraftText(card, publicOrigin) {
+function buildXOracleManualDraftText(card, publicOrigin, options = {}) {
+  const dateKey = options.dateKey || getJstDateString();
   const publicUrl = (publicOrigin || DEFAULT_PUBLIC_ORIGIN).replace(/\/$/, '');
   const leadLines = splitSocialSentences(card.message || buildOracleLeadLine(card));
   const readingLines = splitSocialSentences(ORACLE_SOCIAL_READINGS[Number(card.id)] || buildOracleReadingLine(card));
   const action = String(card.action || ORACLE_SOFT_ACTIONS[Number(card.id)] || '').trim();
+  const cycleNote = buildRepeatCycleNote(dateKey, ORACLE_CARD_CYCLE_LENGTH);
   return [
     'おはてけ🌸🦦',
     '',
@@ -1022,12 +1036,13 @@ function buildXOracleManualDraftText(card, publicOrigin) {
     '',
     '今日の一手：',
     action,
+    cycleNote || null,
     '',
     '今日の１枚ここから引けるで👇😌',
     publicUrl,
     '',
     ...X_ORACLE_HASHTAGS,
-  ].join('\n');
+  ].filter(line => line !== null).join('\n');
 }
 
 function buildBlueskyOracleText(card, publicOrigin, options = {}) {
@@ -1063,6 +1078,7 @@ function buildConceptText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config 
   const link = buildConceptTrackedUrl(dateKey, publicOrigin, config, paidCta);
   return fitPostText([
     pickNightConceptBody(dateKey),
+    buildRepeatCycleNote(dateKey, NIGHT_CONCEPT_POSTS.length),
     buildNightConceptCtaLine(paidCta, dateKey, config),
     link,
     config.defaultHashtag || DEFAULT_HASHTAG,
@@ -1096,6 +1112,7 @@ function buildXConceptText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config
   const link = buildConceptTrackedUrl(dateKey, publicOrigin, config, paidCta);
   return fitPostText([
     pickNightConceptBody(dateKey),
+    buildRepeatCycleNote(dateKey, NIGHT_CONCEPT_POSTS.length),
     buildNightConceptCtaLine(paidCta, dateKey, config),
     link,
     hashtags,
@@ -1204,7 +1221,7 @@ async function buildDraft(args) {
       altText: buildOracleAltText(card),
       text: buildOracleText(card, publicOrigin, { dateKey, config: threadsConfig }),
       trackedUrl: buildOracleTrackedUrl(card, publicOrigin, threadsConfig, dateKey),
-      xText: buildXOracleManualDraftText(card, publicOrigin),
+      xText: buildXOracleManualDraftText(card, publicOrigin, { dateKey }),
       xTrackedUrl: buildOracleTrackedUrl(card, publicOrigin, xConfig, dateKey),
       blueskyText: buildBlueskyOracleText(card, publicOrigin, { dateKey, config: blueskyConfig }),
       blueskyTrackedUrl: buildOracleTrackedUrl(card, publicOrigin, blueskyConfig, dateKey),

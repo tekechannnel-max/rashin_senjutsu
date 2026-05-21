@@ -10,8 +10,8 @@ on:
       - 'package.json'
       - 'package-lock.json'
   schedule:
-    # 07:03 JST. This workflow is the visible manual-post X draft lane.
-    - cron: '3 22 * * *'
+    # 07:03, 12:03, and 20:03 JST. This workflow is the visible manual-post X draft lane.
+    - cron: '3 22,3,11 * * *'
   workflow_dispatch:
     inputs:
       kind:
@@ -68,8 +68,15 @@ jobs:
         shell: bash
         run: |
           today="$(TZ=Asia/Tokyo date +%F)"
-          kind="${{ github.event.inputs.kind || 'oracle' }}"
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            kind="auto"
+          else
+            kind="${{ github.event.inputs.kind || 'oracle' }}"
+          fi
           args=(--date="$today" --kind="$kind" --out="x-drafts")
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            args+=(--due)
+          fi
           node scripts/social/export-x-drafts.js "${args[@]}" | tee x-drafts-report.json
 
       - name: Require X draft output
