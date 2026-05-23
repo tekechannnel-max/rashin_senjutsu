@@ -7,8 +7,9 @@
     "21f4338f9aa50d8380158964f6b864c272b9b884a71de62d9989d2c643f9090b",
     {
       "hash": "0820a04669514cfbd7845e70a0f8b2203d46ac18af400062f96e1761f682f1fe",
-      "expiresAt": "2026-05-23T16:47:30.097+09:00",
-      "note": "Reusable one-week code issued on 2026-05-16."
+      "expiresAt": "2026-05-30T16:47:30.097+09:00",
+      "extendedAt": "2026-05-23T12:20:00.000+09:00",
+      "note": "Reusable one-week code issued on 2026-05-16; extended after paid-start bug fix."
     }
   ]
 }

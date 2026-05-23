@@ -5,6 +5,9 @@ const path = require('path');
 const rootDir = path.resolve(__dirname, '..');
 const serverSource = fs.readFileSync(path.join(rootDir, 'server.js'), 'utf8');
 const appSource = fs.readFileSync(path.join(rootDir, 'app.js'), 'utf8');
+const reusableCodeConfig = JSON.parse(
+  fs.readFileSync(path.join(rootDir, 'config', 'rashin-reusable-paid-code-hashes.json'), 'utf8')
+);
 
 function sliceFromMarker(source, startMarker, endMarker) {
   const start = source.indexOf(startMarker);
@@ -94,6 +97,20 @@ assert.ok(
   boothClientBody.includes('const reuseActiveSource=canReuseActivePaidSourceForPendingCode();') &&
     boothClientBody.includes('sourceReadingId=reuseActiveSource?ACTIVE_PAID_SOURCE_READING_ID:createReadingId();'),
   'direct Rashin-code starts must create a fresh source reading after a previous ticket has been used'
+);
+
+const advertisedReusableHash = '0820a04669514cfbd7845e70a0f8b2203d46ac18af400062f96e1761f682f1fe';
+const advertisedReusableEntry = (Array.isArray(reusableCodeConfig.hashes) ? reusableCodeConfig.hashes : [])
+  .find(entry => (typeof entry === 'string' ? entry : entry?.hash) === advertisedReusableHash);
+
+assert.ok(
+  advertisedReusableEntry && typeof advertisedReusableEntry === 'object',
+  'advertised reusable Rashin code must keep an explicit expiry entry'
+);
+
+assert.ok(
+  new Date(advertisedReusableEntry.expiresAt).getTime() >= new Date('2026-05-30T16:47:30.097+09:00').getTime(),
+  'advertised reusable Rashin code must remain valid through the compensation window'
 );
 
 console.log('booth-paid-access-flow.test.js: ok');
