@@ -6931,7 +6931,7 @@ function repairStaticCopy(){
   updateAnimalReveal();
   setText('#rs-len .rs-eyebrow','カード鑑定 01');
   setHtml('#rs-len .rs-title','<span class="rs-icon">⚜</span>ルノルマンカード鑑定');
-  setText('#rs-len .rs-copy','ルノルマン2枚では、相談テーマに対する今の流れと注意したい一点を見ます。');
+  setText('#rs-len .rs-copy','ルノルマンカードでは、相談テーマに対する今の流れと見落としやすい一点を見ます。');
   setText('#r-len-block .ai-load-title','いま起きていることを整理しています');
   setText('#r-len-block .ai-load-detail','迷いを増やさないように、今見るべきことだけを言葉にしています。');
   setText('#rs-orc .rs-eyebrow','カード鑑定 02');
@@ -6940,7 +6940,7 @@ function repairStaticCopy(){
   setText('#r-orc-block .ai-load-title','気持ちの整理を進めています');
   setText('#r-orc-block .ai-load-detail','迷った日に戻れる言葉と、今日からできる一歩へ絞ってまとめています。');
   setButtons('#result-actions .nav-btn',['最初に戻る','もう一度占う','過去の占いへ']);
-  setText('#rs-integration .rs-eyebrow','今回の答え');
+  setText('#rs-integration .rs-eyebrow','総合鑑定');
   setHtml('#rs-integration .rs-title','<span class="rs-icon">✧</span>いまの答え');
   setText('#rs-integration .rs-copy','迷ったときにここだけ読み返せば、優先順位と次の一歩がわかる形にまとめます。');
   setText('#r-aiload .ai-load-title','結論を整えています');
@@ -11780,9 +11780,14 @@ function buildDossierCardVerdict(ctx={},reading={}){
   const verdict=buildCardGroundedVerdictSentence(ctx,reading);
   const flow=buildCardGroundedFlowText(ctx,reading);
   const flowFirst=splitJapaneseSentences(flow)[0]||'';
-  const body=[lead,verdict,flowFirst]
+  let body=[lead,verdict,flowFirst]
     .filter(Boolean)
     .join('');
+  body=body
+    .replace(/(この恋愛は、[^。]+。)この恋愛は/g,'$1今は')
+    .replace(/(今の場所は、[^。]+。)今の場所は/g,'$1ここは')
+    .replace(/(この関係は、[^。]+。)この関係は/g,'$1今は')
+    .replace(/(今回の相談は、[^。]+。)今回の相談は/g,'$1今は');
   return limitJapaneseBodyBySentences(sanitizeRashinVisibleText(body),132,2);
 }
 
@@ -18529,13 +18534,16 @@ function buildLocalPaidLenormandRepair(name='あなた',cat='総合',theme='',co
   const displayName=sanitizeRashinVisibleText(name||'あなた');
   const focus=context.focus||getFocusForContext(cat,theme,context);
   const ctx=buildDecisionContext(focus,{...context,cat,theme});
+  const cardReading=buildCardReadingContext(focus,{...context,cat,theme});
+  const cardVerdict=buildCardGroundedVerdictSentence(ctx,cardReading);
+  const cardFlow=buildCardGroundedFlowText(ctx,cardReading);
   const loveSpecific=/恋愛|結婚|相手|交際|生活リズム|お金|曖昧|将来/.test(`${cat} ${theme} ${context.clarifyText||''}`);
   if(loveSpecific){
     return sanitizeRashinVisibleText(`■ 迷いの構造
-${displayName}さんの迷いは、相手を好きな気持ちが弱いからではなく、結婚後の生活を一緒に扱える信頼がまだ形になっていないところから来ています。安心できる時間や優しさはある一方で、生活リズムやお金の感覚の違いを話し合う場面になると、相手の答えが曖昧に見えやすい流れです。ここで無理に気持ちだけで決めると、後から「自分だけが合わせていた」という疲れが出やすくなります。いま大事なのは、好きかどうかを測り直すことではなく、将来の話を出したときに二人で現実を持てるかを見ることです。
+${displayName}さんの迷いは、相手を好きな気持ちが弱いからではなく、結婚後の生活を一緒に扱える信頼がまだ形になっていないところから来ています。安心できる時間や優しさはある一方で、生活リズムやお金の感覚の違いを話し合う場面になると、相手の答えが曖昧に見えやすい流れです。${cardVerdict||'ここで無理に気持ちだけで決めると、後から「自分だけが合わせていた」という疲れが出やすくなります。'}いま大事なのは、好きかどうかを測り直すことではなく、将来の話を出したときに二人で現実を持てるかを見ることです。
 
 ■ 今の流れ
-関係そのものには、落ち着きや支え合いの感覚が残っています。ただし今の流れは、心地よさがあるからこそ結婚の具体的な話を先送りしやすい状態です。相手の連絡や会う姿勢がやわらかくても、生活の話になると輪郭がぼやけるなら、安心感はまだ約束には変わっていません。今後は、普段の優しさよりも、住まい、お金、時間の使い方、家族との距離を話したときの反応が流れを分けます。そこで相手が避けずに受け止めるなら関係は整い始めますが、笑って流すだけなら、迷いはさらに濃くなります。
+${cardFlow||'関係そのものには、落ち着きや支え合いの感覚が残っています。ただし今の流れは、心地よさがあるからこそ結婚の具体的な話を先送りしやすい状態です。'}相手の連絡や会う姿勢がやわらかくても、生活の話になると輪郭がぼやけるなら、安心感はまだ約束には変わっていません。今後は、普段の優しさよりも、住まい、お金、時間の使い方、家族との距離を話したときの反応が流れを分けます。そこで相手が避けずに受け止めるなら関係は整い始めますが、笑って流すだけなら、迷いはさらに濃くなります。
 
 ■ 気をつけること
 一番気をつけたいのは、安心できる居場所を失う怖さと、結婚後に無理を重ねる怖さを同じ箱に入れてしまうことです。相手を失いたくない気持ちは自然ですが、その怖さが強いほど、生活リズムやお金の違和感を小さく見積もりやすくなります。今までの努力や時間を守りたい思いも、判断を現状維持へ寄せます。けれど、将来の話を出すたびに自分だけが言葉を選び、相手の曖昧さを補っているなら、それは愛情ではなく消耗の始まりです。相手の本音を決めつけず、観察できる行動で見る必要があります。
@@ -18561,10 +18569,10 @@ function buildLocalPaidOracleRepair(name='あなた',cat='総合',theme='',conte
   const loveSpecific=/恋愛|結婚|相手|交際|生活リズム|お金|曖昧|将来/.test(`${cat} ${theme} ${context.clarifyText||''}`);
   if(loveSpecific){
     return sanitizeRashinVisibleText(`■ 光のメッセージ
-${displayName}さんの強さは、相手に合わせながらも、心の奥ではちゃんと現実を見ようとしているところです。優しさを大事にできる人ほど、相手を責めたくなくて自分の不安を後回しにしやすくなります。でも今回の不安は、わがままではありません。結婚は気持ちだけでなく、生活リズム、お金、将来の話を二人で持てるかが関わります。そこに違和感があるなら、心が弱いのではなく、先の自分を守ろうとしている反応です。今の美咲さんに必要なのは、好きな気持ちを疑うことではなく、その好きが安心して続く形を持てるかを見てあげることです。
+${displayName}さんの強さは、相手に合わせながらも、心の奥ではちゃんと現実を見ようとしているところです。優しさを大事にできる人ほど、相手を責めたくなくて自分の不安を後回しにしやすくなります。でも今回の不安は、わがままではありません。結婚は気持ちだけでなく、生活リズム、お金、将来の話を二人で持てるかが関わります。そこに違和感があるなら、心が弱いのではなく、先の自分を守ろうとしている反応です。今の${displayName}さんに必要なのは、好きな気持ちを疑うことではなく、その好きが安心して続く形を持てるかを見てあげることです。
 
 ■ ${ORACLE_COMPASS_HEADING}
-迷ったときの羅針は、相手の言葉の甘さではなく、話しにくい現実を出したあとの空気にあります。結婚の時期、生活の分担、お金の使い方を出したとき、相手が黙るのか、逃げるのか、少しでも一緒に考えようとするのか。そこに本当の判断材料があります。美咲さんが自分を雑に扱わないためには、安心したいから信じるのではなく、信じられる行動が少しずつ積み上がるかを見ることです。待つことも伝えることも間違いではありません。ただ、待つほど自分が小さくなるなら、その待ち方は見直していいです。`);
+迷ったときの羅針は、相手の言葉の甘さではなく、話しにくい現実を出したあとの空気にあります。結婚の時期、生活の分担、お金の使い方を出したとき、相手が黙るのか、逃げるのか、少しでも一緒に考えようとするのか。そこに本当の判断材料があります。${displayName}さんが自分を雑に扱わないためには、安心したいから信じるのではなく、信じられる行動が少しずつ積み上がるかを見ることです。待つことも伝えることも間違いではありません。ただ、待つほど自分が小さくなるなら、その待ち方は見直していいです。`);
   }
   return sanitizeRashinVisibleText(`■ 光のメッセージ
 ${displayName}さんの強さは、感情だけで流されず、違和感を現実の言葉に戻そうとしているところです。今の迷いは、答えがないからではなく、自分にとって何が安心で、何が負担なのかをまだ分けきれていないことから来ています。その感覚を雑に扱わないほど、判断は落ち着いていきます。
@@ -18575,16 +18583,21 @@ ${displayName}さんの強さは、感情だけで流されず、違和感を現
 
 function buildLocalPaidIntegrationRepair(name='あなた',cat='総合',theme='',context={}){
   const displayName=sanitizeRashinVisibleText(name||'あなた');
+  const focus=context.focus||getFocusForContext(cat,theme,context);
+  const ctx=buildDecisionContext(focus,{...context,cat,theme});
+  const cardReading=buildCardReadingContext(focus,{...context,cat,theme});
+  const cardVerdict=buildCardGroundedVerdictSentence(ctx,cardReading);
+  const cardFlow=buildCardGroundedFlowText(ctx,cardReading);
   const loveSpecific=/恋愛|結婚|相手|交際|生活リズム|お金|曖昧|将来/.test(`${cat} ${theme} ${context.clarifyText||''}`);
   if(loveSpecific){
     return sanitizeRashinVisibleText(`■ ${INTEGRATION_FINAL_HEADING}
-今回の答えは、結婚へ進んでよいかを今すぐ気持ちだけで決めないことです。好きな気持ちはありますが、判断軸は相手が生活リズムやお金の話を避けずに扱えるかにあります。曖昧な返事が続くなら、前進より見極めが先です。
+今回の答えは、結婚へ進んでよいかを今すぐ気持ちだけで決めないことです。好きな気持ちはありますが、判断軸は相手が生活リズムやお金の話を避けずに扱えるかにあります。${cardVerdict||'曖昧な返事が続くなら、前進より見極めが先です。'}
 
 ■ ${INTEGRATION_CORE_HEADING}
 迷いの正体は、安心できる居場所を失う怖さと、結婚後に自分だけが無理を重ねる怖さが同時にあることです。
 
 ■ ${INTEGRATION_FLOW_HEADING}
-今の関係は、普段の優しさで保たれていますが、将来の話になると現実の輪郭がぼやけやすい流れです。相手が小さくても具体的な行動を返すなら安心は育ちますが、話題を流すだけなら不安は残ります。
+${cardFlow||'今の関係は、普段の優しさで保たれていますが、将来の話になると現実の輪郭がぼやけやすい流れです。'}相手が小さくても具体的な行動を返すなら安心は育ちますが、話題を流すだけなら不安は残ります。
 
 ■ ${INTEGRATION_ACTION_GUIDE_HEADING}
 羅針は、好きかどうかではなく、話しにくい生活の話を二人で持てるかです。自分の不安を責めず、言葉のあとに行動が残るかを見てください。`);

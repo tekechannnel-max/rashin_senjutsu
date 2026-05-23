@@ -85,4 +85,26 @@ assert.ok(
   'paid failure state must render a retry action after the ticket lock is released'
 );
 
+assert.strictEqual(
+  appSource.includes("setText('#rs-len .rs-copy','ルノルマン2枚では"),
+  false,
+  'result Lenormand copy must not describe the paid 9-card result as a 2-card reading'
+);
+
+assert.ok(
+  appSource.includes("setText('#rs-integration .rs-eyebrow','総合鑑定')"),
+  'integration result eyebrow must avoid duplicating the first section heading'
+);
+
+assert.strictEqual(
+  appSource.includes('美咲さん'),
+  false,
+  'paid local repair text must not hard-code the verification persona name'
+);
+
+assert.ok(
+  appSource.includes("replace(/(この恋愛は、[^。]+。)この恋愛は/g,'$1今は')"),
+  'dossier verdict normalization must collapse repeated love-subject openings'
+);
+
 console.log('paid-reading-quality-gate.test.js: ok');
