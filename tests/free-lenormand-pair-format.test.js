@@ -16,7 +16,7 @@ function sliceFromMarker(source, startMarker, endMarker) {
 
 const freePairScope = sliceFromMarker(
   appSource,
-  "function buildFreeLenPairScopePrompt(cat='総合')",
+  "function buildFreeLenPairScopePrompt(cat='総合',context={})",
   "function buildReadingOutputFormatGuide"
 );
 
@@ -38,6 +38,12 @@ assert.ok(
 assert.ok(
   appSource.includes('総合なら、生活リズム、健康、人間関係、仕事、将来の準備の中で'),
   'general luck readings must keep overall-life targets instead of collapsing to love/work'
+);
+
+assert.ok(
+  appSource.includes('複数選択なら、無料2枚では両方を深掘りしすぎず、どちらを先に見ると判断が整うか、その一点に絞って読みます。') ||
+    appSource.includes('無料2枚では両方を深掘りしすぎず、どちらを先に見ると判断が整うか、その一点に絞って読みます。'),
+  'multi-tag free readings must not silently collapse to only the first selected tag'
 );
 
 assert.ok(

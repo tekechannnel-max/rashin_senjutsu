@@ -150,10 +150,11 @@ async function selectConsultationTag(page, value) {
   await page.waitForSelector('#consultation-tag-modal:not([hidden])', { timeout: 60000 });
   const ok = await page.evaluate(tagValue => {
     const buttons = [...document.querySelectorAll('[data-consultation-tag]')];
+    const normalize = value => String(value || '').replace(/\s+/g, '').trim();
     const button = buttons.find(el => {
       const rawValue = el.getAttribute('data-consultation-tag') || '';
-      const text = el.textContent || '';
-      return rawValue.includes(tagValue) || text.includes(tagValue);
+      const label = el.querySelector('span')?.textContent || '';
+      return rawValue === tagValue || normalize(rawValue) === normalize(tagValue) || normalize(label) === normalize(tagValue);
     });
     if (!button) return false;
     button.click();

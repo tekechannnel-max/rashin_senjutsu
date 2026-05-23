@@ -17,6 +17,9 @@ function sliceFromMarker(source, startMarker, endMarker) {
   'function hasGeneralLuckScopeSignal',
   'function isGeneralLuckFocus',
   'function isClarifyGeneralLuck',
+  'function getConsultationCategoryTagsFromContext',
+  'function getConsultationThemeSignalsFromTags',
+  'function getConsultationTagPriorityMatch',
   'function removeUnbalancedMarkdownBoldMarkers',
   'function detectGeneralLuckVisibleScopeIssues',
   'function getFreeReadingQualityMinimum',
@@ -91,6 +94,15 @@ assert.ok(
   'general luck focus must not be corrected into a love/work dual concern'
 );
 
+[
+  'multiSpecificTags',
+  'タグが複数選択され、優先順位がまだ明示されていないため',
+  "base.explicitUserPriority=''",
+  'getConsultationTagPriorityMatch(clarifyText,specificTags)||getConsultationTagPriorityMatch(source,specificTags)',
+].forEach(marker => {
+  assert.ok(focusRefiner.includes(marker), `multi-tag focus refiner missing: ${marker}`);
+});
+
 const clarifyContext = sliceFromMarker(
   appSource,
   'function buildClarifyContext',
@@ -101,6 +113,15 @@ assert.ok(
   clarifyContext.includes('generalLuckScope') && clarifyContext.includes('hasMultipleThemes:!generalLuckScope'),
   'general luck clarify flow must not ask a love/work priority question'
 );
+
+[
+  'getConsultationCategoryTagsFromContext(input,category)',
+  'getConsultationThemeSignalsFromTags(selectedTags)',
+  'specificTags.length>=2',
+  "selectedTopicTag:selectedTags.length?selectedTags.join('・'):category",
+].forEach(marker => {
+  assert.ok(clarifyContext.includes(marker), `multi-tag clarify context missing: ${marker}`);
+});
 
 const clarifyQuestions = sliceFromMarker(
   appSource,
