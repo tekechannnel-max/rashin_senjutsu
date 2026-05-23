@@ -6924,7 +6924,7 @@ function repairStaticCopy(){
   }
   if(consultationPanel){
     setWithin(consultationPanel,'.basis-panel-head','今回の相談でどう読むか');
-    setWithin(consultationPanel,'.basis-panel-title','恋愛・距離感・次に取る行動');
+    setWithin(consultationPanel,'.basis-panel-title','判断軸・違和感・次の向き合い方');
     setWithin(consultationPanel,'.basis-panel-copy','今回の相談に合わせて、どこを見ると判断しやすいかを整理します。');
     setWithin(consultationPanel,'.basis-readmore > summary','詳しく読む');
   }
@@ -9653,7 +9653,7 @@ const ANIMAL_TYPE_BRIEF_COPY={
     oneLine:'ラッコタイプは、試しながら学び、自分を更新していく力が強いタイプです。',
     strength:'興味が動いたものへ素早く飛び込み、経験から答えをつかむ力があります。',
     caution:'停滞や干渉が続くと消耗しやすく、気持ちの切り替えが早くなります。',
-    inConsultation:'今回の相談では、勢いだけで進まず、相手の意思表示と続けた時の安心感が判断基準になります。',
+    inConsultation:'今回の相談では、勢いだけで進まず、自由度・試せる余白・続けたときの消耗度が判断基準になります。',
   },
   'アジアゾウ':{
     oneLine:'アジアゾウタイプは、誠実さや理想の在り方を大切にしながら進むタイプです。',
@@ -9724,7 +9724,7 @@ function getAnimalTypeSummaryParts(){
       oneLine:'あなたの反応の出方から、本音や行動傾向を補足します。',
       strength:'人とのつながりを大切にし、相手の空気を読む力が強いタイプです。',
       caution:'関係を保とうとして、自分の疲れを後回しにしやすい傾向があります。',
-      inConsultation:'今回の相談では、気持ちだけで進むより、相手の意思表示と関係の安定感が判断基準になります。',
+      inConsultation:'今回の相談では、気持ちだけで進むより、現実に見えている根拠と自分の消耗度が判断基準になります。',
     };
   }
   const name=REACTION_PROFILE.animal||REACTION_PROFILE.label||'動物タイプ診断結果';
@@ -9734,7 +9734,7 @@ function getAnimalTypeSummaryParts(){
     oneLine:makeSentenceUnitSummary(REACTION_PROFILE.summary,'本音と行動傾向を補足します。',110,2),
     strength:sanitizeFoundationDetailBody(REACTION_PROFILE.power?`${REACTION_PROFILE.power}が出やすいタイプです。`:REACTION_PROFILE.summary,'状況に合わせながら、自分の形に変えて力を出しやすいタイプです。'),
     caution:sanitizeFoundationDetailBody(REACTION_PROFILE.stress?`${REACTION_PROFILE.stress}が続くと消耗しやすくなります。`:'相手に合わせすぎると、自分の消耗に気づきにくくなります。','相手に合わせすぎると、自分の消耗に気づきにくくなります。'),
-    inConsultation:sanitizeFoundationDetailBody(REACTION_PROFILE.handling||'今回の相談では、気持ちだけでなく相手の意思表示や状況の安定感が判断基準になります。','今回の相談では、気持ちだけでなく現実の根拠を分けて見ることが判断基準になります。'),
+    inConsultation:sanitizeFoundationDetailBody(REACTION_PROFILE.handling||'今回の相談では、気持ちだけでなく現実の根拠や状況の安定感が判断基準になります。','今回の相談では、気持ちだけでなく現実の根拠を分けて見ることが判断基準になります。'),
   };
 }
 
@@ -9764,7 +9764,7 @@ function getConsultationBasisSummary(){
   }
   return focus?.answerNeed
     ?`${themeText}では、気持ちだけで決めず、どこに安心の根拠があるかが判断の軸になります。`
-    :'「好きかどうか」だけで決めるより、連絡の安定感、会う目的、相手の意思表示が判断の軸になります。';
+    :'気持ちだけで決めるより、現実に見えている根拠と自分の納得感が判断の軸になります。';
 }
 
 function makeFoundationSummary(type='',fullText='',context={}){
@@ -11424,9 +11424,24 @@ function redactDossierCardData(data={}){
   return out;
 }
 
+function completeDossierQuestionFragmentSentences(text=''){
+  return String(text||'')
+    .replace(/((?:今の会社|今の職場|転職先|候補先|外の候補)なら、[^。]{6,80})か。/g,'$1かどうかが目印です。')
+    .replace(/((?:残る|動く|続ける|切り替える)なら、[^。]{6,80})か。/g,'$1かどうかが目印です。');
+}
+
+function normalizeDossierOneLine(text='',fallback=''){
+  let clean=limitTextByChars(completeDossierQuestionFragmentSentences(text||fallback),42,18);
+  clean=clean.replace(/[。.!?！？]+$/,'').trim();
+  if(/こと$/.test(clean)) clean=`${clean}です`;
+  if(/だけ$/.test(clean)) clean=`${clean}です`;
+  if(/か$/.test(clean)) clean=`${clean}が目印です`;
+  return limitTextByChars(clean,42,18);
+}
+
 function normalizeDossierParagraph(text='',fallback='',max=180){
-  const source=String(text||'').replace(/\[\[\/?[A-Z0-9_]+\]\]/g,' ').replace(/\s+/g,' ').trim();
-  const fallbackSource=String(fallback||'').replace(/\s+/g,' ').trim();
+  const source=completeDossierQuestionFragmentSentences(String(text||'').replace(/\[\[\/?[A-Z0-9_]+\]\]/g,' ').replace(/\s+/g,' ').trim());
+  const fallbackSource=completeDossierQuestionFragmentSentences(String(fallback||'').replace(/\s+/g,' ').trim());
   const build=sentences=>{
     let out='';
     const seen=new Set();
@@ -11587,7 +11602,7 @@ function normalizeDossierCardData(data={}){
     DECISION_CRITERIA_LIST:ctx.decisionCriteriaList,
     DECISION_CRITERIA:ctx.criteriaText,
     TITLE:RASHIN_READING_CARD_TITLE,
-    ONE_LINE:limitTextByChars(source.ONE_LINE||source.HEADLINE||fallback.ONE_LINE,42,18),
+    ONE_LINE:normalizeDossierOneLine(source.ONE_LINE||source.HEADLINE||fallback.ONE_LINE,fallback.ONE_LINE),
     VERDICT:normalizeDossierParagraph(source.VERDICT||source.HEADLINE,fallback.VERDICT,180),
     POSITIVE_LABEL:ctx.positiveLabel,
     NEGATIVE_LABEL:ctx.negativeLabel,
@@ -12856,9 +12871,16 @@ function compactDossierGuidanceMeaningLine(clean='',max=36){
   const text=cleanDossierItemText(String(clean||''));
   if(!text) return '';
   const themed=[
+    [/残る意味.*期待.*評価.*収入.*裁量|評価.*収入.*裁量.*現実/, '残る意味は評価・収入・裁量で見ます。'],
     [/(?:月末.*(?:副業|怖さ|不安)|(?:副業|怖さ|不安).*月末)/, '月末の不安と副業の怖さが重なります。'],
     [/迷っているのは|今回の迷いは/, '迷いの焦点は感情より現実の反応です。'],
+    [/今の会社に残るか|今の職場に残るか|制作会社へ移る|転職.*残る/, '残るか動くかが焦点です。'],
     [/続けた先.*(収入|成長|評価|信頼|役割)|努力.*(収入|成長|評価|信頼|役割)/, '続けた先の見返りが焦点です。'],
+    [/評価.*役割.*頭打ち|頭打ち.*評価|頭打ち.*役割/, '評価や役割の頭打ちが焦点です。'],
+    [/評価.*役割.*(?:言葉|扱い|具体|変わる)/, '評価や役割の具体化が焦点です。'],
+    [/評価条件.*具体化|担当範囲.*具体化|具体化した側/, '評価条件の具体化が焦点です。'],
+    [/家族.*説明|説明.*家族/, '自分で納得できる根拠が必要です。'],
+    [/信頼できる支え|支えがどこにあるか/, '支えの見え方が焦点です。'],
     [/不安で動くより安心が残る|安心が残る選び方/, '不安より安心が残る選び方です。'],
     [/守るべき余白|余白が見える/, '守る余白が見えるほど流れは落ち着きます。'],
     [/ここまでのあなたは|場に合わせるだけでなく|反応の出方/, '場に合わせすぎず自分の形へ戻ります。'],
@@ -12879,7 +12901,8 @@ function hasDanglingDossierGuidanceLine(line=''){
   if(!text) return true;
   if(core.length<8) return true;
   if(/^(ここまでのあなたは|今回の迷いは|迷っているのは|反応の出方を見ると)$/.test(core)) return true;
-  return /(ではなく|だけでなく|重なり|として|なら|ほど|けれど|ただし|または|そして|から|まで|より|よりも|には|では|ところ|もの|こと|を|が|に|へ|と|で|は)$/.test(core);
+  if(/評価[、・]収入$/.test(core)) return true;
+  return /(ではなく|だけでなく|重なり|薄れ|強まり|高まり|増え|減り|残り|見え|動き|戻り|広がり|乱れ|崩れ|揺れ|偏り|止まり|続き|変わり|おり|おらず|られず|できず|ならず|せず|あり|なり|出て|いて|して|持ち|抱え|残し|示し|見せ|受け|寄せ|向かい|比べ|として|なら|ほど|けれど|ただし|または|そして|から|まで|より|よりも|には|では|ところ|もの|こと|か|を|が|に|へ|と|で|は)$/.test(core);
 }
 
 function getDossierThemedGuidanceBullets(focus={},card={}){
@@ -13185,6 +13208,12 @@ function detectDossierCardQualityIssues(data={},options={}){
   if(!guidance.oracle||isDossierIncompleteText(guidance.oracle)) issues.push(`${DOSSIER_ORACLE_GUIDANCE_HEADING}がない、または未完文`);
   const oracleLineCount=getDossierGuidanceLines(guidance.oracle).length;
   const lenormandLineCount=getDossierGuidanceLines(guidance.lenormand).length;
+  if(getDossierGuidanceLines(guidance.lenormand).some(hasDanglingDossierGuidanceLine)){
+    issues.push(`${DOSSIER_LENORMAND_GUIDANCE_HEADING}に途中で切れた行があります`);
+  }
+  if(getDossierGuidanceLines(guidance.oracle).some(hasDanglingDossierGuidanceLine)){
+    issues.push(`${DOSSIER_ORACLE_GUIDANCE_HEADING}に途中で切れた行があります`);
+  }
   if(lenormandLineCount<4||lenormandLineCount>5) issues.push(`${DOSSIER_LENORMAND_GUIDANCE_HEADING}が4〜5行ではない`);
   if(oracleLineCount!==2) issues.push(`${DOSSIER_ORACLE_GUIDANCE_HEADING}が2行ではない`);
   if(getDossierGuidanceLines(guidance.oracle).some(line=>!/(ことです|大切です|しないでください|避けてください|戻してください)。?$/.test(line))){
@@ -17963,7 +17992,7 @@ const RASHIN_THEME_QUALITY_PROFILES=Object.freeze({
   career:{
     required:/仕事|職場|評価|役割|成長|収入|働き方|消耗|経験|続ける意味|努力の見返り/,
     foreign:[
-      {label:'恋愛語彙',pattern:/好き|復縁|選ばれたい|相手の気持ち|曖昧な距離|待つ側の負担/g,max:1},
+      {label:'恋愛語彙',pattern:/結婚|恋愛|復縁|好きな気持ち|選ばれたい|相手の気持ち|曖昧な距離|待つ側の負担/g,max:0},
     ],
     missing:'仕事相談なのに、評価・役割・成長・消耗などの仕事の現実語が足りません',
   },
@@ -18491,6 +18520,75 @@ function normalizePaidParsedSectionsForDelivery(parsed={},context={}){
   return repairPaidParsedSectionsLocally(normalized,{...context,focus,name,cat,theme});
 }
 
+function workContextAllowsFamilyAxis(focus={},context={}){
+  let currentInput={};
+  try{ currentInput=getCurrentInputSnapshot?.()||{}; }catch(_error){}
+  const source=[
+    context?.theme,
+    currentInput.theme,
+  ].map(value=>String(value||'')).join('\n');
+  return /家族|家庭|育児|介護|配偶|子ども|子供|扶養/.test(source);
+}
+
+function getWorkContextSourceText(focus={},context={}){
+  let currentInput={};
+  try{ currentInput=getCurrentInputSnapshot?.()||{}; }catch(_error){}
+  return [
+    focus?.theme,
+    focus?.concern,
+    focus?.question,
+    context?.theme,
+    context?.cat,
+    context?.clarifyText,
+    currentInput.theme,
+    currentInput.cat,
+    ...(Array.isArray(currentInput.catTags)?currentInput.catTags:[]),
+  ].map(value=>String(value||'')).join('\n');
+}
+
+function normalizeWorkPaidVisibleText(text='',focus={},context={}){
+  let clean=String(text||'');
+  clean=clean.replace(/続ける意味場所/g,'努力が返る場所');
+  const contextSource=getWorkContextSourceText(focus,context);
+  if(/制作会社/.test(contextSource)){
+    clean=clean
+      .replace(/外の候補/g,'誘われている制作会社')
+      .replace(/転職先/g,'制作会社')
+      .replace(/転職活動へ動く/g,'制作会社へ移る');
+  }
+  if(!/副業/.test(contextSource)){
+    clean=clean
+      .replace(/、?副業を小さく試すか/g,'')
+      .replace(/、?副業を小さく試したい現実感も/g,'')
+      .replace(/副業を小さく試したい現実感も、?/g,'')
+      .replace(/副業の小さな試し/g,'制作会社の条件確認')
+      .replace(/副業/g,'外の選択肢');
+  }
+  if(workContextAllowsFamilyAxis(focus,context)){
+    return clean
+      .replace(/自分で納得できる根拠/g,'家族にも説明できる根拠')
+      .replace(/自分で納得できる材料/g,'家族にも説明できる材料')
+      .replace(/自分で納得できる現実/g,'家族にも説明できる現実')
+      .replace(/自分で納得できる形/g,'家族にも説明できる形')
+      .replace(/自分でも納得しきれない違和感/g,'家族に説明しきれない違和感');
+  }
+  return clean
+    .replace(/自分と家族に説明できる/g,'自分で納得できる')
+    .replace(/家族にも説明できる/g,'自分で納得できる')
+    .replace(/家族に説明しきれない/g,'自分でも納得しきれない')
+    .replace(/家族に説明できる/g,'自分で納得できる')
+    .replace(/家族へ説明できる/g,'自分で納得できる')
+    .replace(/家族との生活/g,'今後の生活')
+    .replace(/結婚や家族との生活/g,'今後の働き方と生活');
+}
+
+function normalizeWorkPaidAxisText(axis=''){
+  const clean=String(axis||'').trim();
+  if(!clean) return '収入・評価・役割・裁量';
+  if(/続ける意味|消耗度|将来性/.test(clean)) return '収入・評価・役割・裁量';
+  return clean;
+}
+
 function repairPaidParsedSectionsLocally(parsed={},context={}){
   const focus=context.focus||getFocusForContext(context.cat||'',context.theme||'',context);
   const name=context.name||'あなた';
@@ -18498,7 +18596,10 @@ function repairPaidParsedSectionsLocally(parsed={},context={}){
   const theme=context.theme||'';
   const clarify=context.clarifyText||'';
   const next={...parsed};
-  const needLoveSpecific=/恋愛|結婚|相手|交際|生活リズム|お金|曖昧|将来/.test(`${cat} ${theme} ${clarify}`);
+  const primaryTheme=normalizePrimaryThemeValue(focus);
+  const needLoveSpecific=primaryTheme==='love';
+  const needWorkSpecific=primaryTheme==='work_life_direction'||primaryTheme==='career';
+  const workIntegrationTermCount=countTextOccurrences(next.integration||'',/転職|副業|収入|評価|上司|生活リズム|給与|勤務時間|担当範囲|裁量|昇給|役割|働き方|疲れ/g);
   const lenIssueText=[
     ...detectPaidTextQualityIssues('len',next.len||''),
     ...detectLenormandRoleIssues(next.len||'',focus,next.integration||'',context),
@@ -18523,10 +18624,16 @@ function repairPaidParsedSectionsLocally(parsed={},context={}){
     ||!hasIntegrationHeading(next.integration||'',INTEGRATION_FLOW_HEADING)
     ||!hasIntegrationHeading(next.integration||'',INTEGRATION_ACTION_GUIDE_HEADING)
     ||(needLoveSpecific&&!/結婚|生活リズム|お金|曖昧|将来/.test(next.integration||''))
+    ||(needWorkSpecific&&workIntegrationTermCount<3)
     ||/冒頭3文|条件リスト|不自然|主語述語|重複表現/.test(integrationIssueText);
   if(lenNeedsRepair) next.len=buildLocalPaidLenormandRepair(name,cat,theme,{...context,focus});
   if(orcNeedsRepair) next.orc=buildLocalPaidOracleRepair(name,cat,theme,{...context,focus});
   if(integrationNeedsRepair) next.integration=buildLocalPaidIntegrationRepair(name,cat,theme,{...context,focus});
+  if(needWorkSpecific){
+    next.len=normalizeWorkPaidVisibleText(next.len,focus,context);
+    next.orc=normalizeWorkPaidVisibleText(next.orc,focus,context);
+    next.integration=normalizeWorkPaidVisibleText(next.integration,focus,context);
+  }
   return next;
 }
 
@@ -18537,7 +18644,8 @@ function buildLocalPaidLenormandRepair(name='あなた',cat='総合',theme='',co
   const cardReading=buildCardReadingContext(focus,{...context,cat,theme});
   const cardVerdict=buildCardGroundedVerdictSentence(ctx,cardReading);
   const cardFlow=buildCardGroundedFlowText(ctx,cardReading);
-  const loveSpecific=/恋愛|結婚|相手|交際|生活リズム|お金|曖昧|将来/.test(`${cat} ${theme} ${context.clarifyText||''}`);
+  const loveSpecific=ctx.primaryTheme==='love';
+  const workSpecific=ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career';
   if(loveSpecific){
     return sanitizeRashinVisibleText(`■ 迷いの構造
 ${displayName}さんの迷いは、相手を好きな気持ちが弱いからではなく、結婚後の生活を一緒に扱える信頼がまだ形になっていないところから来ています。安心できる時間や優しさはある一方で、生活リズムやお金の感覚の違いを話し合う場面になると、相手の答えが曖昧に見えやすい流れです。${cardVerdict||'ここで無理に気持ちだけで決めると、後から「自分だけが合わせていた」という疲れが出やすくなります。'}いま大事なのは、好きかどうかを測り直すことではなく、将来の話を出したときに二人で現実を持てるかを見ることです。
@@ -18550,6 +18658,19 @@ ${cardFlow||'関係そのものには、落ち着きや支え合いの感覚が�
 
 ■ あなたの引力
 ${displayName}さんには、関係を壊さずに大事な話を現実へ下ろす力があります。強く迫るより、何が不安なのかを生活の言葉で出すほど、相手の向き合い方が見えやすくなります。結婚の判断は、完璧な確信が出るまで待つことではありません。曖昧な返事のあとに、相手が次の会話や具体的な行動を持ってくるかを見ることです。そこに小さな一致が重なるなら、前に進む力は戻ります。逆に、話すほど${displayName}さんだけが我慢を増やすなら、その違和感は次の判断を止める大事な合図です。`);
+  }
+  if(workSpecific){
+    return sanitizeRashinVisibleText(`■ 迷いの構造
+${displayName}さんの迷いは、今の会社に残るか、転職活動へ動くか、副業を小さく試すかという二択だけではありません。今の会社には安定と積み上げた信用がありますが、評価や収入が思う形で返らず、責任だけが先に重くなっています。外の候補には可能性がありますが、給与、勤務時間、担当範囲、生活リズムがまだ十分に見えていません。止まっている理由は決断力の弱さではなく、努力の見返りと疲れを増やさない働き方を同時に見ようとしているからです。
+
+■ 今の流れ
+今は、今の場所を守る力と外の選択肢を確かめる力が同時に動いています。会社側から頼られる場面は増えていますが、それが経験・収入・成長として残るかは、まだ言葉だけでは判断できません。ここで大事なのは、上司の期待を信じるか疑うかではなく、評価条件、担当範囲、裁量、昇給の時期を具体的に出したとき、自分で納得できる現実の返答が返ってくるかを見ることです。返答が具体化するなら残る意味はあります。話が流れるなら、転職活動で外の基準を見に行くほど判断が締まります。
+
+■ 気をつけること
+一番気をつけたいのは、疲れが抜けない状態を成長の証拠として扱ってしまうことです。責任が増えても収入や裁量が動かないままだと、頑張るほど自分の時間だけが削られます。外の候補も、仕事内容への魅力だけで選ぶと生活リズムの負担が後から前に出ます。最初に見るべきなのは、今の会社で努力が返る条件が実際にあるか、外の候補で自分の経験がどう評価されるか、そして自分で納得できる材料がそろうかです。
+
+■ あなたの引力
+${displayName}さんには、理想をただ語るだけで終わらせず、仕事として形にする力があります。その力は、我慢の長さではなく、選ぶ基準をはっきりさせたときに強く出ます。残るなら評価と役割が現実に変わること、動くなら給与と生活リズムが自分で納得できる形になること。そこが分かれ目です。疲れを増やす選び方ではなく、力を出したあとに納得が残る場所を選んでください。`);
   }
   return sanitizeRashinVisibleText(`■ 迷いの構造
 ${displayName}さんの迷いは、気持ちだけでは決められない現実の違和感が残っているところから来ています。今の状況には支えになる要素もありますが、それがこの先も続く根拠として十分かどうかはまだ見えきっていません。ここで急いで白黒をつけるより、何が自分を安心させ、何が判断を鈍らせているのかを分けることが大事です。
@@ -18566,13 +18687,24 @@ ${displayName}さんには、相手や環境を責めずに大事な点を言葉
 
 function buildLocalPaidOracleRepair(name='あなた',cat='総合',theme='',context={}){
   const displayName=sanitizeRashinVisibleText(name||'あなた');
-  const loveSpecific=/恋愛|結婚|相手|交際|生活リズム|お金|曖昧|将来/.test(`${cat} ${theme} ${context.clarifyText||''}`);
+  const focus=context.focus||getFocusForContext(cat,theme,context);
+  const ctx=buildDecisionContext(focus,{...context,cat,theme});
+  const loveSpecific=ctx.primaryTheme==='love';
+  const workSpecific=ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career';
   if(loveSpecific){
     return sanitizeRashinVisibleText(`■ 光のメッセージ
 ${displayName}さんの強さは、相手に合わせながらも、心の奥ではちゃんと現実を見ようとしているところです。優しさを大事にできる人ほど、相手を責めたくなくて自分の不安を後回しにしやすくなります。でも今回の不安は、わがままではありません。結婚は気持ちだけでなく、生活リズム、お金、将来の話を二人で持てるかが関わります。そこに違和感があるなら、心が弱いのではなく、先の自分を守ろうとしている反応です。今の${displayName}さんに必要なのは、好きな気持ちを疑うことではなく、その好きが安心して続く形を持てるかを見てあげることです。
 
 ■ ${ORACLE_COMPASS_HEADING}
 迷ったときの羅針は、相手の言葉の甘さではなく、話しにくい現実を出したあとの空気にあります。結婚の時期、生活の分担、お金の使い方を出したとき、相手が黙るのか、逃げるのか、少しでも一緒に考えようとするのか。そこに本当の判断材料があります。${displayName}さんが自分を雑に扱わないためには、安心したいから信じるのではなく、信じられる行動が少しずつ積み上がるかを見ることです。待つことも伝えることも間違いではありません。ただ、待つほど自分が小さくなるなら、その待ち方は見直していいです。`);
+  }
+  if(workSpecific){
+    const axis=normalizeWorkPaidAxisText(ctx.criteriaText||'収入・評価・役割・裁量');
+    return sanitizeRashinVisibleText(`■ 光のメッセージ
+${displayName}さんの強さは、責任を投げ出さずに現実を見られるところです。いま感じている迷いは、楽をしたいから出ているものではありません。今の会社で積み上げた信用を大事にしたい気持ちと、責任に見合う評価や収入を求める気持ちの両方を見ているからこそ、簡単に決められないのです。安定を手放した後の生活負担を軽く見られない慎重さも、副業を小さく試したい現実感も、どちらも${displayName}さんの仕事への向き合い方の一部です。ここで自分を雑に扱わないとは、怖さを消すことではなく、${axis}が現実として返ってくる場所を選ぶことです。
+
+■ ${ORACLE_COMPASS_HEADING}
+迷ったときの羅針は、安定を捨てるか守るかではなく、安定の中身を見ることです。今の会社に残るなら、評価や役割が言葉だけでなく現実の扱いとして変わるかが軸になります。転職へ動くなら、仕事内容への魅力だけでなく、給与、勤務時間、担当範囲、生活リズムが暮らしを支える形で示され、自分で納得できる根拠になるかが軸です。上司の期待や外の候補への期待に引っ張られるほど、自分の本音は見えにくくなります。${displayName}さんが戻る場所は、期待に応える場所ではなく、力を出したあとに生活と納得が残る場所です。`);
   }
   return sanitizeRashinVisibleText(`■ 光のメッセージ
 ${displayName}さんの強さは、感情だけで流されず、違和感を現実の言葉に戻そうとしているところです。今の迷いは、答えがないからではなく、自分にとって何が安心で、何が負担なのかをまだ分けきれていないことから来ています。その感覚を雑に扱わないほど、判断は落ち着いていきます。
@@ -18588,7 +18720,8 @@ function buildLocalPaidIntegrationRepair(name='あなた',cat='総合',theme='',
   const cardReading=buildCardReadingContext(focus,{...context,cat,theme});
   const cardVerdict=buildCardGroundedVerdictSentence(ctx,cardReading);
   const cardFlow=buildCardGroundedFlowText(ctx,cardReading);
-  const loveSpecific=/恋愛|結婚|相手|交際|生活リズム|お金|曖昧|将来/.test(`${cat} ${theme} ${context.clarifyText||''}`);
+  const loveSpecific=ctx.primaryTheme==='love';
+  const workSpecific=ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career';
   if(loveSpecific){
     return sanitizeRashinVisibleText(`■ ${INTEGRATION_FINAL_HEADING}
 今回の答えは、結婚へ進んでよいかを今すぐ気持ちだけで決めないことです。好きな気持ちはありますが、判断軸は相手が生活リズムやお金の話を避けずに扱えるかにあります。${cardVerdict||'曖昧な返事が続くなら、前進より見極めが先です。'}
@@ -18601,6 +18734,20 @@ ${cardFlow||'今の関係は、普段の優しさで保たれていますが、�
 
 ■ ${INTEGRATION_ACTION_GUIDE_HEADING}
 羅針は、好きかどうかではなく、話しにくい生活の話を二人で持てるかです。自分の不安を責めず、言葉のあとに行動が残るかを見てください。`);
+  }
+  if(workSpecific){
+    const axis=normalizeWorkPaidAxisText(ctx.criteriaText||'収入・評価・役割・裁量');
+    return sanitizeRashinVisibleText(`■ ${INTEGRATION_FINAL_HEADING}
+今回の答えは、今すぐ辞めるか残るかを決めることではありません。判断の軸は、${axis}が現実として返ってくる場所かどうかです。今の会社で評価や役割が具体的に動くなら残る意味があります。転職先で給与、勤務時間、担当範囲が暮らしを支え、自分で納得できる根拠として見えるなら、動く意味が出てきます。
+
+■ ${INTEGRATION_CORE_HEADING}
+迷いの正体は、安定を失う怖さと、このまま同じ場所で力が伸びない怖さが同時にあることです。安定を手放した後の生活負担を軽く見られず、自分でも納得しきれない違和感が残るからこそ、収入や生活リズムの不安を丁寧に扱う必要があります。
+
+■ ${INTEGRATION_FLOW_HEADING}
+今見えている流れは、今の職場の安定と次の候補の魅力が同時に動いている状態です。ただし、どちらもまだ曖昧さを残しています。上司の評価が読みにくいままなら停滞感は強まり、転職先の条件が見えないままなら期待だけが先に進みます。具体的な働き方が見えた側に、次の道が開きます。
+
+■ ${INTEGRATION_ACTION_GUIDE_HEADING}
+羅針は、上司の期待や外の候補への期待ではなく、自分で納得できる現実があるかです。収入、評価、役割、生活、時間のどれかを我慢で埋める選び方なら、そこは一度立ち止まる合図です。${displayName}さんは、曖昧さに自分を預けるより、努力が返る場所へ時間を預ける人です。`);
   }
   return sanitizeRashinVisibleText(`■ ${INTEGRATION_FINAL_HEADING}
 今回の答えは、気持ちだけで急いで決めず、現実の反応を見て判断することです。迷っているのは弱さではなく、納得できていない点が残っているからです。
@@ -18633,6 +18780,10 @@ function renderPaidCombinedOutputs(parsed,name,cat,theme,options={}){
     setReadingBlockError('r-len-block','深掘り鑑定を停止しました','品質確認を通らない結果を有料鑑定として表示しないため、今回は出力を止めています。');
     setReadingBlockError('r-orc-block','続きの鑑定を停止しました','途中で途切れた結果やfallback文を納品しないため、時間をおいて再度お試しください。');
     setIntegrationError('チケットは使用していません',integrationDetail,retryAction);
+    LAST_OUTPUTS.dossier='';
+    LAST_OUTPUTS.dossierCard=null;
+    const dossierSection=document.getElementById('rs-dossier');
+    if(dossierSection) dossierSection.style.display='none';
     return;
   }else{
     const lenSource=parsed.len||buildRichLenFallback(name,cat);
