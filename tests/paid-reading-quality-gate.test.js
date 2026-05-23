@@ -75,4 +75,14 @@ assert.ok(
   'release helper must refresh the local ticket status after a successful release'
 );
 
+assert.ok(
+  appSource.includes('async function retryCurrentPaidReadingAfterStop()'),
+  'paid failure state must provide an in-place retry helper for an unused ticket'
+);
+
+assert.ok(
+  appSource.includes('onclick="retryCurrentPaidReadingAfterStop()"'),
+  'paid failure state must render a retry action after the ticket lock is released'
+);
+
 console.log('paid-reading-quality-gate.test.js: ok');

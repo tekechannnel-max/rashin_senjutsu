@@ -6003,6 +6003,20 @@ async function releasePaidReadingTicketLock(){
   return false;
 }
 
+async function retryCurrentPaidReadingAfterStop(){
+  if(PLAN!=='paid'||!hasUsableActivePaidReadingTicket()||!ACTIVE_PAID_SOURCE_READING_ID||!CURRENT_READING_ID){
+    showToast('同じチケットで再試行できませんでした。もう一度コードを確認してください。');
+    return false;
+  }
+  const prepared=await preparePaidReadingTicket(ACTIVE_PAID_SOURCE_READING_ID,CURRENT_READING_ID);
+  if(!prepared.ok){
+    showToast(prepared.message||'チケットの再確認に失敗しました');
+    return false;
+  }
+  await startResultGeneration();
+  return true;
+}
+
 async function openStripeCheckout(intent='start-paid'){
   if(intent==='start-paid'||intent==='upgrade-paid') return requestRashinCodePurchase(intent);
   if(CHECKOUT_OPENING) return false;
@@ -10744,12 +10758,13 @@ function buildLoadingMarkup(title,detail=''){
   return `<div class="ai-load">${buildLoadingInnerMarkup(title,detail)}</div>`;
 }
 
-function buildReadingErrorMarkup(title='鑑定を作れませんでした',detail='少し時間をおいて、もう一度お試しください。'){
+function buildReadingErrorMarkup(title='鑑定を作れませんでした',detail='少し時間をおいて、もう一度お試しください。',actionHtml=''){
   return `<div class="reading-error-state">
     <div class="reading-error-visual" aria-hidden="true"><img src="images/ui/error-state.png" alt=""></div>
     <div class="reading-error-copy">
       <div class="reading-error-title">${escapeHtml(title)}</div>
       <div class="reading-error-detail">${escapeHtml(detail)}</div>
+      ${actionHtml?`<div class="reading-error-actions">${actionHtml}</div>`:''}
     </div>
   </div>`;
 }
@@ -10762,14 +10777,14 @@ function setReadingBlockError(id,title,detail=''){
   el.innerHTML=buildReadingErrorMarkup(title,detail);
 }
 
-function setIntegrationError(title,detail=''){
+function setIntegrationError(title,detail='',actionHtml=''){
   const loadEl=document.getElementById('r-aiload');
   const textEl=document.getElementById('r-integration');
   if(loadEl) loadEl.style.display='none';
   if(!textEl) return;
   textEl.classList.remove('formatted-output');
   textEl.style.display='block';
-  textEl.innerHTML=buildReadingErrorMarkup(title,detail);
+  textEl.innerHTML=buildReadingErrorMarkup(title,detail,actionHtml);
 }
 
 function setReadingBlockLoading(id,title,detail=''){
@@ -18383,13 +18398,16 @@ function renderPaidCombinedOutputs(parsed,name,cat,theme,options={}){
     const ticketReleaseUnconfirmed=options.hadActiveTicket&&options.ticketReleaseOk===false;
     const integrationDetail=ticketReleaseUnconfirmed
       ?'鑑定文の品質確認で停止しました。チケットは消費していませんが、ロック解除を確認できませんでした。再試行できない場合は運営側で確認します。'
-      :'鑑定文の品質を確認できなかったため、有料チケットを消費せず停止しました。';
+      :'鑑定文の品質を確認できなかったため、有料チケットを消費せず停止しました。同じチケットで再試行できます。';
+    const retryAction=!ticketReleaseUnconfirmed&&hasUsableActivePaidReadingTicket()
+      ?'<button class="nav-btn nav-btn-primary" type="button" onclick="retryCurrentPaidReadingAfterStop()">同じチケットで再試行</button>'
+      :'';
     LAST_OUTPUTS.len=parsed.len||message;
     LAST_OUTPUTS.orc=parsed.orc||message;
     LAST_OUTPUTS.integration=parsed.integration||message;
     setReadingBlockError('r-len-block','深掘り鑑定を停止しました','品質確認を通らない結果を有料鑑定として表示しないため、今回は出力を止めています。');
     setReadingBlockError('r-orc-block','続きの鑑定を停止しました','途中で途切れた結果やfallback文を納品しないため、時間をおいて再度お試しください。');
-    setIntegrationError('チケットは使用していません',integrationDetail);
+    setIntegrationError('チケットは使用していません',integrationDetail,retryAction);
     return;
   }else{
     const lenSource=parsed.len||buildRichLenFallback(name,cat);
@@ -21402,6 +21420,7 @@ if(typeof window!=='undefined'){
   window.promptAndRedeemRashinPaidCode=promptAndRedeemRashinPaidCode;
   window.redeemRashinPaidCodeFromMemberModal=redeemRashinPaidCodeFromMemberModal;
   window.openStripeCheckout=openStripeCheckout;
+  window.retryCurrentPaidReadingAfterStop=retryCurrentPaidReadingAfterStop;
   window.openStripeBillingPortal=openStripeBillingPortal;
   window.comparePaidModelsForDev=comparePaidModelsForDev;
   window.openLatestHistory=openLatestHistory;

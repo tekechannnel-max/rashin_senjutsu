@@ -5837,7 +5837,7 @@ async function handlePaidReadingTicketRelease(req, res) {
   const sourceReadingId = normalizeVaultRecordId(body?.sourceReadingId || body?.source_reading_id || '');
   const paidReadingId = normalizeVaultRecordId(body?.paidReadingId || body?.paid_reading_id || '');
   const ticket = await readPaidReadingTicket(ticketId);
-  if (!ticket || ticket.sourceReadingId !== sourceReadingId || ticket.lockedReadingId !== paidReadingId) {
+  if (!ticket) {
     sendJson(res, 403, {
       error: 'PAID_TICKET_INVALID',
       message: 'The paid reading ticket lock could not be released.',
@@ -5852,10 +5852,18 @@ async function handlePaidReadingTicketRelease(req, res) {
     });
     return;
   }
+  if (sourceReadingId && ticket.sourceReadingId !== sourceReadingId) {
+    sendJson(res, 403, {
+      error: 'PAID_TICKET_INVALID',
+      message: 'The paid reading ticket lock could not be released.',
+    });
+    return;
+  }
   if (ticket.status !== 'unused') {
     sendJson(res, 200, { ok: true, ticketId: ticket.id, ticketStatus: ticket.status });
     return;
   }
+  const releasedLockedReadingId = ticket.lockedReadingId || '';
   const released = {
     ...ticket,
     lockedReadingId: '',
@@ -5866,6 +5874,8 @@ async function handlePaidReadingTicketRelease(req, res) {
     ok: true,
     ticketId: released.id,
     ticketStatus: released.status,
+    releasedLockedReadingId,
+    lockMismatch: !!(releasedLockedReadingId && paidReadingId && releasedLockedReadingId !== paidReadingId),
   });
 }
 
