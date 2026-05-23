@@ -2229,9 +2229,25 @@ async function hasPaidAccess(req, payload = null) {
 async function readGoogleUserForRequest(req) {
   const authSession = readAuthSession(req);
   const userId = normalizeUserId(authSession?.userId || '');
-  if (!userId || authSession?.source !== 'google') return null;
-  const userRecord = await readUserRecord(userId);
-  return userRecord?.userId ? userRecord : null;
+  if (userId) {
+    const userRecord = await readUserRecord(userId);
+    if (userRecord?.userId && authSession?.source === 'google') return userRecord;
+    if (
+      userRecord?.userId &&
+      DEV_ACCESS_ENABLED &&
+      isLocalRequest(req) &&
+      authSession?.source === 'developer' &&
+      userRecordHasDeveloperAccess(userRecord)
+    ) {
+      return userRecord;
+    }
+  }
+  const developerEmail = readDeveloperEmailFromHeader(req);
+  if (developerEmail) {
+    const developerRecord = await findUserRecordByEmail(developerEmail) || await ensureDeveloperUserRecord(developerEmail);
+    return userRecordHasDeveloperAccess(developerRecord) ? developerRecord : null;
+  }
+  return null;
 }
 
 async function ensureDir(dirPath) {

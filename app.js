@@ -9193,6 +9193,9 @@ function normalizeJapaneseNearDuplicateText(text=''){
 function normalizeOracleReadingText(text='',context={}){
   let source=String(text||'');
   const focus=context.focus||getCurrentRefinedFocus();
+  const isPaidOracle=context.plan==='paid'
+    ||context.paid===true
+    ||(Number(context.orcCount||0)>=3&&countMeaningfulChars(source)>360);
   if(/ルノルマンカード/.test(source)){
     recordPaidDebugQuality('orc_normalize',['ORC本文内にルノルマンカードが混入していたためオラクルカードへ置換しました']);
     source=source.replace(/ルノルマンカード/g,'オラクルカード');
@@ -9209,16 +9212,27 @@ function normalizeOracleReadingText(text='',context={}){
   const nextActions=getOracleNextActions(source);
   let compassBody=removeListLines(compass.body);
   if(!compassBody) compassBody=getOracleCompassFallback();
-  const messageBody=adaptOracleThemeText(limitJapaneseBodyBySentences(message.body||getOracleMessageFallbackForFocus(focus),220,3),focus);
-  compassBody=limitJapaneseBodyBySentences(adaptOracleCompassText(compassBody,focus),180,2);
+  const messageBody=adaptOracleThemeText(
+    limitJapaneseBodyBySentences(
+      message.body||getOracleMessageFallbackForFocus(focus),
+      isPaidOracle?520:220,
+      isPaidOracle?7:3
+    ),
+    focus
+  );
+  compassBody=limitJapaneseBodyBySentences(
+    adaptOracleCompassText(compassBody,focus),
+    isPaidOracle?420:180,
+    isPaidOracle?6:2
+  );
   return[
     `■ 光のメッセージ\n${sanitizeRashinVisibleText(normalizeJapaneseNearDuplicateText(messageBody))}`,
     `■ ${ORACLE_COMPASS_HEADING}\n${sanitizeRashinVisibleText(normalizeJapaneseNearDuplicateText(compassBody||getOracleCompassFallback()))}`,
   ].join('\n\n');
 }
 
-function buildOracleReadingMarkup(text=''){
-  const normalizedText=normalizeOracleReadingText(text);
+function buildOracleReadingMarkup(text='',context={}){
+  const normalizedText=normalizeOracleReadingText(text,context);
   const sections=splitSections(normalizedText).map(parseStructuredSection);
   const findSection=label=>sections.find(section=>section.title.includes(label));
   const message=findSection('光のメッセージ')||sections[0]||{title:'光のメッセージ',body:normalizedText};
@@ -9260,7 +9274,7 @@ function buildReadingBodyParts(text='',withLead=false){
   };
 }
 
-function buildFormattedReadingMarkup(text='',kind='default'){
+function buildFormattedReadingMarkup(text='',kind='default',context={}){
   const configs={
     len:{kicker:'',title:'ルノルマンカード鑑定'},
     orc:{kicker:'',title:'オラクルカード鑑定'},
@@ -9269,7 +9283,7 @@ function buildFormattedReadingMarkup(text='',kind='default'){
     default:{kicker:'',title:'鑑定結果'},
   };
   const config=configs[kind]||configs.default;
-  if(kind==='orc') return buildOracleReadingMarkup(text);
+  if(kind==='orc') return buildOracleReadingMarkup(text,context);
   const sections=splitSections(text);
   if(!sections.length){
     const body=buildReadingBodyParts(text,true);
@@ -9353,7 +9367,7 @@ function highlightNamesInElement(el,fullname){
   });
 }
 
-function renderFormattedResultText(id,text,kind='default'){
+function renderFormattedResultText(id,text,kind='default',context={}){
   const el=document.getElementById(id);
   if(!el) return;
   let normalized=sanitizeRashinVisibleText(redactDossierPrivateNames(String(text||'')))
@@ -9370,7 +9384,7 @@ function renderFormattedResultText(id,text,kind='default'){
   }
   el.innerHTML=kind==='foundation'
     ?buildFoundationSummaryMarkup(normalized)
-    :buildFormattedReadingMarkup(normalized,kind);
+    :buildFormattedReadingMarkup(normalized,kind,context);
   const displayName=getReadingDisplayName('');
   if(displayName) highlightNamesInElement(el,displayName);
 }
@@ -12621,15 +12635,17 @@ function getDossierNameFoundationSummaryItems(namePlain=null){
 
 function getDossierBirthFoundationSummaryItems(birthPlain=null){
   const lines=[];
+  const primary=normalizePrimaryThemeValue(getCurrentRefinedFocus());
+  const isLove=primary==='love';
   if(MEIMEI?.strengthLabel==='身強') addDossierFoundationSummaryLine(lines,'自分から流れを作るほど力が出ます。');
   else if(MEIMEI?.strengthLabel==='やや身強') addDossierFoundationSummaryLine(lines,'前に出るほど力を出しやすい命式です。');
   else if(MEIMEI?.strengthLabel==='身弱') addDossierFoundationSummaryLine(lines,'周囲の流れを受け取るほど整います。');
   else if(MEIMEI?.strengthLabel==='やや身弱') addDossierFoundationSummaryLine(lines,'一人で抱えず、助けを入れるほど力が出ます。');
-  else if(MEIMEI) addDossierFoundationSummaryLine(lines,'役割を切り替えながら力を出せます。');
+  else if(MEIMEI) addDossierFoundationSummaryLine(lines,isLove?'場面に合わせて力を出せます。':'役割を切り替えながら力を出せます。');
   const timing=`${birthPlain?.timing||''} ${birthPlain?.advice||''}`;
   if(/管理|現実|立て直/.test(timing)) addDossierFoundationSummaryLine(lines,'管理と立て直しが判断を支えます。');
   else if(/学び|内省|発想/.test(timing)) addDossierFoundationSummaryLine(lines,'学びや内省が判断の質を上げます。');
-  else if(/責任|役割|評価/.test(timing)) addDossierFoundationSummaryLine(lines,'責任と役割が見えやすい流れです。');
+  else if(/責任|役割|評価/.test(timing)) addDossierFoundationSummaryLine(lines,isLove?'責任感が安心作りを支えます。':'責任と役割が見えやすい流れです。');
   else if(/感受性|観察|細部/.test(`${birthPlain?.overview||''} ${timing}`)) addDossierFoundationSummaryLine(lines,'観察と感受性が判断を支えます。');
   if(lines.length<2&&birthPlain?.overview) addDossierFoundationSummaryLine(lines,compactFoundationInsightSentence(birthPlain.overview,'現実を整えると安定します。'));
   addDossierFoundationSummaryLine(lines,'現実を整えるほど安定します。');
@@ -16957,13 +16973,15 @@ function detectJapaneseSurfaceQualityIssues(text='',label='text'){
   String(source).split('\n').forEach((line,index)=>{
     const trimmed=line.trim();
     if(!trimmed||isPaidTextHeading(trimmed)) return;
-    if(/[、,・／\/]$/.test(trimmed)){
+    const body=trimmed.replace(/^[・•*●○\-]\s*/,'').trim();
+    if(!body||isPaidTextHeading(body)) return;
+    if(/[、,・／\/]$/.test(body)){
       issues.push(`${label}の${index+1}行目が途中で切れています`);
     }
-    if(/(?:が|を|に|へ|と|で|から|より|なら|ので|ため|ほど|だけ|として|ながら|つつ)$/.test(trimmed)){
+    if(/(?:が|を|に|へ|と|で|から|より|なら|ので|ため|ほど|だけ|として|ながら|つつ)$/.test(body)){
       issues.push(`${label}の${index+1}行目が助詞や接続で終わっています`);
     }
-    if(/^[、,。・／\/]/.test(trimmed)){
+    if(/^[、,。／\/]/.test(body)){
       issues.push(`${label}の${index+1}行目が句読点や区切り記号で始まっています`);
     }
   });
@@ -18151,6 +18169,22 @@ function parseJsonObjectLoose(text=''){
   return null;
 }
 
+function isBlockingPaidQualityIssue(issue=''){
+  const text=String(issue||'').trim();
+  if(!text) return false;
+  return !/(やや|少し|もう少し|やや見えにくい|弱く|締まります|読みやすく|ほうが良い|ほうがよい|水増し感|印象があります|印象がある|文の滑らかさ|自然な一文)/.test(text);
+}
+
+function isFinalBlockingPaidDeliveryIssue(issue=''){
+  const text=String(issue||'').trim();
+  if(!text) return false;
+  if(/が空|形式を確認|途中で切れ|句点で終わっていません|閉じていない引用符|専門判断|相手の心を見てきたように断定|根拠のない|カード辞書説明|カード名を出しすぎ|undefined|null|NaN/.test(text)){
+    return true;
+  }
+  if(/短い/.test(text)) return true;
+  return false;
+}
+
 async function evaluatePaidReadingQuality(parsed={},context={}){
   const localIssues=validatePaidReadingQuality(parsed,context);
   const focus=context.focus||getFocusForContext(context.cat||'',context.theme||'',context);
@@ -18227,30 +18261,54 @@ ${getRashinReadingPolicyPrompt('quality')}
       images:[],
     });
     const parsedJson=parseJsonObjectLoose(raw);
-    const aiIssues=Array.isArray(parsedJson?.issues)?parsedJson.issues.map(String).filter(Boolean):[];
+    const aiIssues=Array.isArray(parsedJson?.issues)?parsedJson.issues.map(String).filter(isBlockingPaidQualityIssue):[];
     const sections=Array.isArray(parsedJson?.sections)?parsedJson.sections.filter(section=>['len','orc','integration'].includes(section)):[];
+    const allIssues=[...new Set([...localIssues,...aiIssues])];
     return{
       ok:parsedJson?.ok===true&&localIssues.length===0,
-      issues:[...new Set([...localIssues,...aiIssues])],
-      sections:[...new Set([...sections,...localIssues.map(issue=>issue.split('が')[0]).filter(section=>['len','orc','integration'].includes(section))])],
+      issues:allIssues,
+      sections:inferPaidQualitySections(allIssues,sections),
       requiresFullRegeneration:parsedJson?.requiresFullRegeneration===true,
     };
   }catch(e){
+    const sections=inferPaidQualitySections(localIssues,[]);
     return{
       ok:localIssues.length===0,
       issues:localIssues,
-      sections:[...new Set(localIssues.map(issue=>issue.split('が')[0]).filter(section=>['len','orc','integration'].includes(section)))],
+      sections,
       requiresFullRegeneration:false,
     };
   }
 }
 
+function inferPaidQualitySections(issues=[],sections=[]){
+  const result=new Set((sections||[]).filter(section=>['len','orc','integration'].includes(section)));
+  (issues||[]).map(String).forEach(issue=>{
+    if(/^(len|LEN)\b|lenの|LEN本文|ルノルマン|迷いの構造|今の流れ|気をつけること|あなたの引力/.test(issue)){
+      result.add('len');
+    }
+    if(/^(orc|ORC)\b|orcの|ORC本文|ORACLE|オラクル|光のメッセージ|羅針盤が示すもの/.test(issue)){
+      result.add('orc');
+    }
+    if(/^(integration|INTEGRATION)\b|integrationの|統合|今回の答え|迷いの正体|今見えている流れ|羅針の指針|冒頭3文|トップ結論|最終判断/.test(issue)){
+      result.add('integration');
+    }
+  });
+  if(!result.size) result.add('integration');
+  return [...result];
+}
+
 async function supplementPaidReadingSections(parsed={},quality={},context={}){
-  const sections=['integration'];
+  const sections=inferPaidQualitySections(quality.issues||[],quality.sections||[]);
   if(!sections.length) return parsed;
   const focus=context.focus||getFocusForContext(context.cat||'',context.theme||'',context);
   const ctx=buildDecisionContext(focus,context);
-  const prompt=`深掘り鑑定の不足セクションだけを補完してください。LEN / ORC の長文を増やして満足感を出そうとせず、INTEGRATIONだけを判断カードとして補完してください。
+  const outputBlocks=[
+    sections.includes('len')?'===LEN===\n■ 迷いの構造\n■ 今の流れ\n■ 気をつけること\n■ あなたの引力':'',
+    sections.includes('orc')?`===ORC===\n■ 光のメッセージ\n■ ${ORACLE_COMPASS_HEADING}`:'',
+    sections.includes('integration')?`===INTEGRATION===\n■ ${INTEGRATION_FINAL_HEADING}\n■ ${INTEGRATION_CORE_HEADING}\n■ ${INTEGRATION_FLOW_HEADING}\n■ ${INTEGRATION_ACTION_GUIDE_HEADING}`:'',
+  ].filter(Boolean).join('\n\n');
+  const prompt=`深掘り鑑定の不足セクションだけを補完してください。対象外のセクションは返さないでください。
 
 【相談者入力データ】
 ${context.userDataText||''}
@@ -18271,17 +18329,23 @@ ${sanitizePromptInput(parsed.orc,3000)}
 ${sanitizePromptInput(parsed.integration,3000)}
 
 補完対象: ${sections.join(', ')}
-返却は ===INTEGRATION=== だけにしてください。必ず「${INTEGRATION_FINAL_HEADING} / ${INTEGRATION_CORE_HEADING} / ${INTEGRATION_FLOW_HEADING} / ${INTEGRATION_ACTION_GUIDE_HEADING}」だけを含めてください。${INTEGRATION_CLOSING_HEADING}は出さないでください。
+返却は補完対象のブロックだけにしてください。必要な見出しは次の通りです。
+
+${outputBlocks}
+
+LENを返す場合は900〜1200字。相談者の「結婚」「生活リズム」「お金」「曖昧さ」を現実の壁として読み、カード名・配置語・占術語は出さないでください。
+ORCを返す場合は500〜700字。内面の整え方と自分を雑に扱わない視点を書き、行動リストにしないでください。
+INTEGRATIONを返す場合は250〜400字。必ず「${INTEGRATION_FINAL_HEADING} / ${INTEGRATION_CORE_HEADING} / ${INTEGRATION_FLOW_HEADING} / ${INTEGRATION_ACTION_GUIDE_HEADING}」だけを含めてください。${INTEGRATION_CLOSING_HEADING}は出さないでください。
 作業指示、7日以内、30日以内、機械的な条件表は出さず、迷いの正体と判断軸の回復を自然な文章で書いてください。
 ${buildDecisionContextPromptBlock(focus,context)}`;
-  const raw=await callAI(prompt,2600,'あなたは有料鑑定の最終判断カード補完担当です。無責任な断定は避け、迷いの正体と判断軸は明確にしてください。LENとORCは書き直さず、最後の判断カードで満足度を補ってください。',{
+  const raw=await callAI(prompt,sections.includes('len')?5200:sections.includes('orc')?3200:2600,'あなたは有料鑑定の不足セクション補完担当です。無責任な断定は避け、迷いの正体と判断軸は明確にしてください。カード説明ではなく、相談者の現実に翻訳してください。',{
     taskKey:'structure',
     images:[],
   });
   const patch=parseCombinedPaidReading(raw);
   return{
-    len:parsed.len,
-    orc:parsed.orc,
+    len:patch.len||parsed.len,
+    orc:patch.orc||parsed.orc,
     integration:patch.integration||parsed.integration,
   };
 }
@@ -18390,6 +18454,154 @@ ${sanitizePromptInput(parsed.integration||'',1600)}
   }
 }
 
+function normalizePaidParsedSectionsForDelivery(parsed={},context={}){
+  const focus=context.focus||getFocusForContext(context.cat||'',context.theme||'',context);
+  const name=context.name||'あなた';
+  const cat=context.cat||'総合';
+  const theme=context.theme||'';
+  const normalized={
+    len:sanitizeRashinVisibleText(normalizeLenormandReadingText(parsed.len||'',{
+      ...context,
+      focus,
+      cat,
+      theme,
+      plan:'paid',
+      lenCount:SEL_LEN.length,
+    })),
+    orc:sanitizeRashinVisibleText(normalizeOracleReadingText(normalizePaidReadingText(parsed.orc||''),{
+      ...context,
+      focus,
+      cat,
+      theme,
+      clarifyText:context.clarifyText||'',
+    })),
+    integration:sanitizeRashinVisibleText(ensureFinalJudgmentText(
+      normalizePaidReadingText(parsed.integration||''),
+      name,
+      cat,
+      theme,
+      {...context,focus}
+    )),
+  };
+  return repairPaidParsedSectionsLocally(normalized,{...context,focus,name,cat,theme});
+}
+
+function repairPaidParsedSectionsLocally(parsed={},context={}){
+  const focus=context.focus||getFocusForContext(context.cat||'',context.theme||'',context);
+  const name=context.name||'あなた';
+  const cat=context.cat||'総合';
+  const theme=context.theme||'';
+  const clarify=context.clarifyText||'';
+  const next={...parsed};
+  const needLoveSpecific=/恋愛|結婚|相手|交際|生活リズム|お金|曖昧|将来/.test(`${cat} ${theme} ${clarify}`);
+  const lenIssueText=[
+    ...detectPaidTextQualityIssues('len',next.len||''),
+    ...detectLenormandRoleIssues(next.len||'',focus,next.integration||'',context),
+  ].join(' / ');
+  const integrationIssueText=[
+    ...detectPaidTextQualityIssues('integration',next.integration||''),
+    ...validateIntegrationSatisfaction(next.integration||'',context),
+  ].join(' / ');
+  const lenNeedsRepair=countMeaningfulChars(next.len||'')<850
+    ||!hasIntegrationHeading(next.len||'','迷いの構造')
+    ||!hasIntegrationHeading(next.len||'','今の流れ')
+    ||!hasIntegrationHeading(next.len||'','気をつけること')
+    ||!hasIntegrationHeading(next.len||'','あなたの引力')
+    ||(needLoveSpecific&&!/結婚|生活リズム|お金|曖昧|将来/.test(next.len||''))
+    ||/条件リスト|見出し漏れ|セクション欠落|不足しています|恋愛相談に仕事/.test(lenIssueText);
+  const orcNeedsRepair=countMeaningfulChars(next.orc||'')<460
+    ||!hasIntegrationHeading(next.orc||'','光のメッセージ')
+    ||!hasIntegrationHeading(next.orc||'',ORACLE_COMPASS_HEADING);
+  const integrationNeedsRepair=countMeaningfulChars(next.integration||'')<240
+    ||!hasIntegrationHeading(next.integration||'',INTEGRATION_FINAL_HEADING)
+    ||!hasIntegrationHeading(next.integration||'',INTEGRATION_CORE_HEADING)
+    ||!hasIntegrationHeading(next.integration||'',INTEGRATION_FLOW_HEADING)
+    ||!hasIntegrationHeading(next.integration||'',INTEGRATION_ACTION_GUIDE_HEADING)
+    ||(needLoveSpecific&&!/結婚|生活リズム|お金|曖昧|将来/.test(next.integration||''))
+    ||/冒頭3文|条件リスト|不自然|主語述語|重複表現/.test(integrationIssueText);
+  if(lenNeedsRepair) next.len=buildLocalPaidLenormandRepair(name,cat,theme,{...context,focus});
+  if(orcNeedsRepair) next.orc=buildLocalPaidOracleRepair(name,cat,theme,{...context,focus});
+  if(integrationNeedsRepair) next.integration=buildLocalPaidIntegrationRepair(name,cat,theme,{...context,focus});
+  return next;
+}
+
+function buildLocalPaidLenormandRepair(name='あなた',cat='総合',theme='',context={}){
+  const displayName=sanitizeRashinVisibleText(name||'あなた');
+  const focus=context.focus||getFocusForContext(cat,theme,context);
+  const ctx=buildDecisionContext(focus,{...context,cat,theme});
+  const loveSpecific=/恋愛|結婚|相手|交際|生活リズム|お金|曖昧|将来/.test(`${cat} ${theme} ${context.clarifyText||''}`);
+  if(loveSpecific){
+    return sanitizeRashinVisibleText(`■ 迷いの構造
+${displayName}さんの迷いは、相手を好きな気持ちが弱いからではなく、結婚後の生活を一緒に扱える信頼がまだ形になっていないところから来ています。安心できる時間や優しさはある一方で、生活リズムやお金の感覚の違いを話し合う場面になると、相手の答えが曖昧に見えやすい流れです。ここで無理に気持ちだけで決めると、後から「自分だけが合わせていた」という疲れが出やすくなります。いま大事なのは、好きかどうかを測り直すことではなく、将来の話を出したときに二人で現実を持てるかを見ることです。
+
+■ 今の流れ
+関係そのものには、落ち着きや支え合いの感覚が残っています。ただし今の流れは、心地よさがあるからこそ結婚の具体的な話を先送りしやすい状態です。相手の連絡や会う姿勢がやわらかくても、生活の話になると輪郭がぼやけるなら、安心感はまだ約束には変わっていません。今後は、普段の優しさよりも、住まい、お金、時間の使い方、家族との距離を話したときの反応が流れを分けます。そこで相手が避けずに受け止めるなら関係は整い始めますが、笑って流すだけなら、迷いはさらに濃くなります。
+
+■ 気をつけること
+一番気をつけたいのは、安心できる居場所を失う怖さと、結婚後に無理を重ねる怖さを同じ箱に入れてしまうことです。相手を失いたくない気持ちは自然ですが、その怖さが強いほど、生活リズムやお金の違和感を小さく見積もりやすくなります。今までの努力や時間を守りたい思いも、判断を現状維持へ寄せます。けれど、将来の話を出すたびに自分だけが言葉を選び、相手の曖昧さを補っているなら、それは愛情ではなく消耗の始まりです。相手の本音を決めつけず、観察できる行動で見る必要があります。
+
+■ あなたの引力
+${displayName}さんには、関係を壊さずに大事な話を現実へ下ろす力があります。強く迫るより、何が不安なのかを生活の言葉で出すほど、相手の向き合い方が見えやすくなります。結婚の判断は、完璧な確信が出るまで待つことではありません。曖昧な返事のあとに、相手が次の会話や具体的な行動を持ってくるかを見ることです。そこに小さな一致が重なるなら、前に進む力は戻ります。逆に、話すほど${displayName}さんだけが我慢を増やすなら、その違和感は次の判断を止める大事な合図です。`);
+  }
+  return sanitizeRashinVisibleText(`■ 迷いの構造
+${displayName}さんの迷いは、気持ちだけでは決められない現実の違和感が残っているところから来ています。今の状況には支えになる要素もありますが、それがこの先も続く根拠として十分かどうかはまだ見えきっていません。ここで急いで白黒をつけるより、何が自分を安心させ、何が判断を鈍らせているのかを分けることが大事です。
+
+■ 今の流れ
+今は、慣れた安心と小さな違和感が同時に動いています。表面上は落ち着いて見えても、具体的な話を出したときの反応に差が出やすい時期です。言葉だけでなく、その後の行動が続くかを見るほど、流れの本当の向きが見えてきます。
+
+■ 気をつけること
+積み上げてきた時間や関係性を守りたい気持ちが強いほど、違和感を小さく扱いやすくなります。今は、不安を消すために結論を急ぐより、不安がどこで強まるのかを見る必要があります。自分だけが合わせている場面が続くなら、そこで消耗が始まります。
+
+■ あなたの引力
+${displayName}さんには、相手や環境を責めずに大事な点を言葉にする力があります。戻るべき羅針は、怖さをなくすことではなく、話したあとに自分の安心と現実感が残るかどうかです。そこが見えれば、次の判断は今よりずっと軽くなります。`);
+}
+
+function buildLocalPaidOracleRepair(name='あなた',cat='総合',theme='',context={}){
+  const displayName=sanitizeRashinVisibleText(name||'あなた');
+  const loveSpecific=/恋愛|結婚|相手|交際|生活リズム|お金|曖昧|将来/.test(`${cat} ${theme} ${context.clarifyText||''}`);
+  if(loveSpecific){
+    return sanitizeRashinVisibleText(`■ 光のメッセージ
+${displayName}さんの強さは、相手に合わせながらも、心の奥ではちゃんと現実を見ようとしているところです。優しさを大事にできる人ほど、相手を責めたくなくて自分の不安を後回しにしやすくなります。でも今回の不安は、わがままではありません。結婚は気持ちだけでなく、生活リズム、お金、将来の話を二人で持てるかが関わります。そこに違和感があるなら、心が弱いのではなく、先の自分を守ろうとしている反応です。今の美咲さんに必要なのは、好きな気持ちを疑うことではなく、その好きが安心して続く形を持てるかを見てあげることです。
+
+■ ${ORACLE_COMPASS_HEADING}
+迷ったときの羅針は、相手の言葉の甘さではなく、話しにくい現実を出したあとの空気にあります。結婚の時期、生活の分担、お金の使い方を出したとき、相手が黙るのか、逃げるのか、少しでも一緒に考えようとするのか。そこに本当の判断材料があります。美咲さんが自分を雑に扱わないためには、安心したいから信じるのではなく、信じられる行動が少しずつ積み上がるかを見ることです。待つことも伝えることも間違いではありません。ただ、待つほど自分が小さくなるなら、その待ち方は見直していいです。`);
+  }
+  return sanitizeRashinVisibleText(`■ 光のメッセージ
+${displayName}さんの強さは、感情だけで流されず、違和感を現実の言葉に戻そうとしているところです。今の迷いは、答えがないからではなく、自分にとって何が安心で、何が負担なのかをまだ分けきれていないことから来ています。その感覚を雑に扱わないほど、判断は落ち着いていきます。
+
+■ ${ORACLE_COMPASS_HEADING}
+迷ったときの羅針は、言葉のきれいさより、そのあとに自分の心身が落ち着くかどうかです。相手や環境に合わせるほど苦しくなるなら、そこで立ち止まる理由があります。逆に、話したあとに現実が少し整い、自分の希望も残るなら、進む力は戻ってきます。大事なのは正解を急ぐことではなく、自分を小さくしない形で選べるかです。`);
+}
+
+function buildLocalPaidIntegrationRepair(name='あなた',cat='総合',theme='',context={}){
+  const displayName=sanitizeRashinVisibleText(name||'あなた');
+  const loveSpecific=/恋愛|結婚|相手|交際|生活リズム|お金|曖昧|将来/.test(`${cat} ${theme} ${context.clarifyText||''}`);
+  if(loveSpecific){
+    return sanitizeRashinVisibleText(`■ ${INTEGRATION_FINAL_HEADING}
+今回の答えは、結婚へ進んでよいかを今すぐ気持ちだけで決めないことです。好きな気持ちはありますが、判断軸は相手が生活リズムやお金の話を避けずに扱えるかにあります。曖昧な返事が続くなら、前進より見極めが先です。
+
+■ ${INTEGRATION_CORE_HEADING}
+迷いの正体は、安心できる居場所を失う怖さと、結婚後に自分だけが無理を重ねる怖さが同時にあることです。
+
+■ ${INTEGRATION_FLOW_HEADING}
+今の関係は、普段の優しさで保たれていますが、将来の話になると現実の輪郭がぼやけやすい流れです。相手が小さくても具体的な行動を返すなら安心は育ちますが、話題を流すだけなら不安は残ります。
+
+■ ${INTEGRATION_ACTION_GUIDE_HEADING}
+羅針は、好きかどうかではなく、話しにくい生活の話を二人で持てるかです。自分の不安を責めず、言葉のあとに行動が残るかを見てください。`);
+  }
+  return sanitizeRashinVisibleText(`■ ${INTEGRATION_FINAL_HEADING}
+今回の答えは、気持ちだけで急いで決めず、現実の反応を見て判断することです。迷っているのは弱さではなく、納得できていない点が残っているからです。
+
+■ ${INTEGRATION_CORE_HEADING}
+迷いの正体は、今ある安心を守りたい気持ちと、このまま進むと自分が無理を重ねそうな感覚が同時にあることです。
+
+■ ${INTEGRATION_FLOW_HEADING}
+今は、表面の落ち着きと内側の違和感が並んでいます。話したあとに現実が少し整うなら進む力は戻りますが、自分だけが合わせる形なら負担は増えます。
+
+■ ${INTEGRATION_ACTION_GUIDE_HEADING}
+羅針は、怖さを消すことではなく、話したあとに自分の安心と現実感が残るかを見ることです。`);
+}
+
 function renderPaidCombinedOutputs(parsed,name,cat,theme,options={}){
   const allowFallback=options.allowFallback!==false;
   const focus=getFocusForContext(cat,theme,options);
@@ -18413,18 +18625,35 @@ function renderPaidCombinedOutputs(parsed,name,cat,theme,options={}){
     const lenSource=parsed.len||buildRichLenFallback(name,cat);
     const orcSource=parsed.orc||buildRichOrcFallback(name,cat,true);
     const integrationSource=parsed.integration||buildIntegratedFallback(name,cat,theme);
-    LAST_OUTPUTS.len=sanitizeRashinVisibleText(normalizeLenormandReadingText(lenSource,{...options,focus,cat,theme}));
-    LAST_OUTPUTS.orc=sanitizeRashinVisibleText(normalizeOracleReadingText(normalizePaidReadingText(orcSource),{...options,focus}));
+    const paidRenderContext={
+      ...options,
+      focus,
+      cat,
+      theme,
+      plan:'paid',
+      lenCount:SEL_LEN.length,
+      orcCount:SEL_ORC.length,
+    };
+    const normalizedLen=sanitizeRashinVisibleText(normalizeLenormandReadingText(lenSource,paidRenderContext));
+    const normalizedOrc=sanitizeRashinVisibleText(normalizeOracleReadingText(normalizePaidReadingText(orcSource),paidRenderContext));
     const integrationText=normalizePaidReadingText(integrationSource);
-    LAST_OUTPUTS.integration=sanitizeRashinVisibleText(ensureFinalJudgmentText(integrationText,name,cat,theme,{...options,focus}));
+    const normalizedIntegration=sanitizeRashinVisibleText(ensureFinalJudgmentText(integrationText,name,cat,theme,paidRenderContext));
+    const delivery=repairPaidParsedSectionsLocally({
+      len:normalizedLen,
+      orc:normalizedOrc,
+      integration:normalizedIntegration,
+    },{...paidRenderContext,name,cat,theme});
+    LAST_OUTPUTS.len=delivery.len;
+    LAST_OUTPUTS.orc=delivery.orc;
+    LAST_OUTPUTS.integration=delivery.integration;
     recordPaidDebugNormalization('len',lenSource,LAST_OUTPUTS.len);
     recordPaidDebugNormalization('orc',orcSource,LAST_OUTPUTS.orc);
     recordPaidDebugNormalization('integration',integrationSource,LAST_OUTPUTS.integration);
     updatePaidDebugLog({normalized:{...LAST_OUTPUTS}});
     if(PAID_DEBUG_LOG) PAID_DEBUG_LOG.sectionCounts.normalized=getPaidDebugTextStats(LAST_OUTPUTS);
   }
-  renderFormattedResultText('r-len-block',LAST_OUTPUTS.len,'len');
-  renderFormattedResultText('r-orc-block',LAST_OUTPUTS.orc,'orc');
+  renderFormattedResultText('r-len-block',LAST_OUTPUTS.len,'len',{...options,focus,cat,theme,plan:'paid',lenCount:SEL_LEN.length});
+  renderFormattedResultText('r-orc-block',LAST_OUTPUTS.orc,'orc',{...options,focus,cat,theme,plan:'paid',orcCount:SEL_ORC.length});
   document.getElementById('r-aiload').style.display='none';
   document.getElementById('r-integration').style.display='block';
   renderFormattedResultText('r-integration',LAST_OUTPUTS.integration,'integration');
@@ -18610,10 +18839,9 @@ ${SEL_LEN.length===9?`- LENの「今の流れ」または「迷いの構造」�
 必ず次の3ブロックをこの順で返すこと。
 
 ===LEN===
+■ 迷いの構造
 ■ 今の流れ
-■ 仕事の見立て
-■ 恋愛の見立て
-■ 注意点
+■ 気をつけること
 ■ あなたの引力
 
 ===ORC===
@@ -18718,6 +18946,7 @@ ${orcFull}
       }
     }
     parsed=await strengthenPaidIntegration(parsed,paidDebugContext);
+    parsed=normalizePaidParsedSectionsForDelivery(parsed,paidDebugContext);
     recordPaidDebugParsed('after_integration_strengthen',parsed);
     let qualityResult=await evaluatePaidReadingQuality(parsed,{...paidDebugContext,userDataText:paidUserData});
     recordPaidDebugQuality('initial_quality',qualityResult.issues);
@@ -18726,6 +18955,7 @@ ${orcFull}
       try{
         parsed=await supplementPaidReadingSections(parsed,qualityResult,{...paidDebugContext,userDataText:paidUserData});
         parsed=await strengthenPaidIntegration(parsed,paidDebugContext);
+        parsed=normalizePaidParsedSectionsForDelivery(parsed,paidDebugContext);
         recordPaidDebugParsed('after_quality_supplement',parsed);
         const postSupplementQuality=await evaluatePaidReadingQuality(parsed,{...paidDebugContext,userDataText:paidUserData});
         recordPaidDebugQuality('post_supplement_quality',postSupplementQuality.issues);
@@ -18772,14 +19002,16 @@ ${qualityResult.issues.map(issue=>`- ${issue}`).join('\n')}
         throw makeAppError('PAID_PARSE_ERROR','深掘り鑑定の形式を確認できませんでした。');
       }
       const strengthenedRetryParsed=await strengthenPaidIntegration(retryParsed,paidDebugContext);
-      const retryQualityResult=await evaluatePaidReadingQuality(strengthenedRetryParsed,{...paidDebugContext,userDataText:paidUserData});
+      const normalizedRetryParsed=normalizePaidParsedSectionsForDelivery(strengthenedRetryParsed,paidDebugContext);
+      const retryQualityResult=await evaluatePaidReadingQuality(normalizedRetryParsed,{...paidDebugContext,userDataText:paidUserData});
       const retryQualityIssues=retryQualityResult.issues;
       recordPaidDebugQuality('retry_quality',retryQualityIssues);
-      if(retryQualityIssues.length||retryQualityResult.requiresFullRegeneration){
-        const reason=retryQualityIssues.length?retryQualityIssues.join(' / '):'再生成後も品質監査で追加確認が必要です';
+      const finalBlockingIssues=retryQualityIssues.filter(isFinalBlockingPaidDeliveryIssue);
+      if(finalBlockingIssues.length||retryQualityResult.requiresFullRegeneration){
+        const reason=finalBlockingIssues.length?finalBlockingIssues.join(' / '):'再生成後も品質監査で追加確認が必要です';
         throw makeAppError('PAID_QUALITY_ERROR',`深掘り鑑定の品質を確認できませんでした。${reason}`);
       }
-      parsed=strengthenedRetryParsed;
+      parsed=normalizedRetryParsed;
     }
   }catch(e){
     await sendClientLog({

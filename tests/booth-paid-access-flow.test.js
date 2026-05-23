@@ -23,6 +23,12 @@ const boothVerifierBody = sliceFromMarker(
   'function getBoothPaymentPayload'
 );
 
+const userRequestBody = sliceFromMarker(
+  serverSource,
+  'async function readGoogleUserForRequest',
+  'async function ensureDir'
+);
+
 assert.ok(
   boothVerifierBody.indexOf('boothOrderReferenceAllowlisted(orderReference)') >= 0,
   'BOOTH order verification must support the confirmed order-number hash allowlist'
@@ -32,6 +38,12 @@ assert.ok(
   boothVerifierBody.indexOf('boothOrderReferenceAllowlisted(orderReference)') <
     boothVerifierBody.indexOf('BOOTH_GMAIL_NOT_CONFIGURED'),
   'BOOTH allowlist verification must run before Gmail configuration failure'
+);
+
+assert.ok(
+  userRequestBody.includes("authSession?.source === 'developer'") &&
+    userRequestBody.includes('readDeveloperEmailFromHeader(req)'),
+  'local developer auth must be accepted by paid-code APIs so the full paid flow can be tested'
 );
 
 assert.ok(
@@ -105,12 +117,12 @@ const advertisedReusableEntry = (Array.isArray(reusableCodeConfig.hashes) ? reus
 
 assert.ok(
   advertisedReusableEntry && typeof advertisedReusableEntry === 'object',
-  'advertised reusable Rashin code must keep an explicit expiry entry'
+  'advertised reusable Rashin code must keep an explicit object entry'
 );
 
 assert.ok(
-  new Date(advertisedReusableEntry.expiresAt).getTime() >= new Date('2026-05-30T16:47:30.097+09:00').getTime(),
-  'advertised reusable Rashin code must remain valid through the compensation window'
+  !advertisedReusableEntry.expiresAt,
+  'advertised reusable Rashin code must not expire'
 );
 
 console.log('booth-paid-access-flow.test.js: ok');
