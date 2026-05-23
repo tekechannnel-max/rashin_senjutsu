@@ -4879,6 +4879,20 @@ function clearPendingRashinPaidCode(){
   try{ sessionStorage.removeItem(RASHIN_PENDING_PAID_CODE_KEY); }catch(_error){}
 }
 
+function hasUsableActivePaidReadingTicket(){
+  const ticket=ACTIVE_PAID_READING_TICKET;
+  if(!ticket?.id) return false;
+  const status=String(ticket.status||'unused').trim();
+  return status===''||status==='unused';
+}
+
+function canReuseActivePaidSourceForPendingCode(){
+  if(!hasUsableActivePaidReadingTicket()) return false;
+  if(!ACTIVE_PAID_SOURCE_READING_ID||!PENDING_PAID_READING_ID) return false;
+  const ticketSource=String(ACTIVE_PAID_READING_TICKET?.sourceReadingId||'').trim();
+  return !ticketSource||ticketSource===ACTIVE_PAID_SOURCE_READING_ID;
+}
+
 function setRashinCodeStatus(message='',state=''){
   const status=document.getElementById('rashin-code-status');
   if(!status) return;
@@ -5549,6 +5563,10 @@ async function redeemRashinPaidCodeForReading(code='',sourceReadingId=CURRENT_RE
     });
     const data=await readJsonSafe(res);
     if(!res.ok) return{ok:false,error:data?.error||'',message:getServerErrorMessage(data,'羅針コードを確認できませんでした')};
+    const ticketStatus=String(data?.ticketStatus||'unused').trim();
+    if(ticketStatus&&ticketStatus!=='unused'){
+      return{ok:false,error:'RASHIN_PAID_TICKET_NOT_USABLE',message:'この羅針コードで作成済みの鑑定券は使用済みです。もう一度羅針コードを入力して新しく開始してください'};
+    }
     return{ok:true,data};
   }catch(e){
     return{ok:false,error:'NETWORK_ERROR',message:'羅針コードの確認に失敗しました'};
@@ -5744,8 +5762,13 @@ async function requestRashinCodePurchaseBooth(intent='upgrade-paid'){
     }
     if(pendingCode){
       if(!sourceReadingId){
-        sourceReadingId=ACTIVE_PAID_SOURCE_READING_ID||createReadingId();
+        const reuseActiveSource=canReuseActivePaidSourceForPendingCode();
+        sourceReadingId=reuseActiveSource?ACTIVE_PAID_SOURCE_READING_ID:createReadingId();
         ACTIVE_PAID_SOURCE_READING_ID=sourceReadingId;
+        if(!reuseActiveSource){
+          ACTIVE_PAID_READING_TICKET=null;
+          PENDING_PAID_READING_ID='';
+        }
       }
       if(!PENDING_PAID_READING_ID) PENDING_PAID_READING_ID=createReadingId();
       const redeemed=await redeemRashinPaidCodeForReading(pendingCode,sourceReadingId);
@@ -6448,6 +6471,7 @@ async function submitDeveloperAccess(){
 
 async function ensurePaidAccess(intent=''){
   if(isMemberActive()) return true;
+  if(hasUsableActivePaidReadingTicket()) return true;
   if(canUseProxy()&&!canUsePaidTestMode()&&(!MEMBER_AUTH.checked||(!MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn))){
     await loadMemberStatus({render:true});
     if(isMemberActive()) return true;
@@ -11046,7 +11070,7 @@ async function upgradeCurrentReadingToPaid(){
 }
 
 function upgradeCurrentReadingToPaidUnlocked(){
-  if(!isMemberActive()&&!ACTIVE_PAID_READING_TICKET?.id){
+  if(!isMemberActive()&&!hasUsableActivePaidReadingTicket()){
     void ensurePaidAccess('upgrade-paid');
     return;
   }
@@ -13754,7 +13778,7 @@ function startAuthorizedPaidFlowWithTags(){
 }
 
 function startFlowUnlocked(plan,options={}){
-  if(plan==='paid'&&!isMemberActive()&&!ACTIVE_PAID_READING_TICKET?.id){
+  if(plan==='paid'&&!isMemberActive()&&!hasUsableActivePaidReadingTicket()){
     openPaidEntryGuide();
     return;
   }

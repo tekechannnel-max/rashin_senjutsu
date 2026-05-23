@@ -70,4 +70,30 @@ assert.strictEqual(
   'client must not hide the BOOTH order-number claim flow based only on health readiness'
 );
 
+assert.ok(
+  appSource.includes('function hasUsableActivePaidReadingTicket()'),
+  'client must have a single guard for whether an active paid ticket is still usable'
+);
+
+assert.ok(
+  appSource.includes("if(plan==='paid'&&!isMemberActive()&&!hasUsableActivePaidReadingTicket())"),
+  'paid start must not accept a stale or already-used paid ticket'
+);
+
+assert.ok(
+  appSource.includes("if(!isMemberActive()&&!hasUsableActivePaidReadingTicket())"),
+  'paid upgrade must not accept a stale or already-used paid ticket'
+);
+
+assert.ok(
+  appSource.includes("if(ticketStatus&&ticketStatus!=='unused')"),
+  'client must reject a redeemed Rashin-code response if the returned ticket is already used'
+);
+
+assert.ok(
+  boothClientBody.includes('const reuseActiveSource=canReuseActivePaidSourceForPendingCode();') &&
+    boothClientBody.includes('sourceReadingId=reuseActiveSource?ACTIVE_PAID_SOURCE_READING_ID:createReadingId();'),
+  'direct Rashin-code starts must create a fresh source reading after a previous ticket has been used'
+);
+
 console.log('booth-paid-access-flow.test.js: ok');
