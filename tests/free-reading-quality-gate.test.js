@@ -14,6 +14,11 @@ function sliceFromMarker(source, startMarker, endMarker) {
 }
 
 [
+  'function hasGeneralLuckScopeSignal',
+  'function isGeneralLuckFocus',
+  'function isClarifyGeneralLuck',
+  'function removeUnbalancedMarkdownBoldMarkers',
+  'function detectGeneralLuckVisibleScopeIssues',
   'function getFreeReadingQualityMinimum',
   'function detectFreeLenPairScopeIssues',
   'function validateFreeReadingSectionQuality',
@@ -74,6 +79,98 @@ assert.strictEqual(
   false,
   'free quality gate must not add a second AI audit call'
 );
+
+const focusRefiner = sliceFromMarker(
+  appSource,
+  'function refineFocusWithClarify',
+  'function isWorkLifeDirectionFocus'
+);
+
+assert.ok(
+  focusRefiner.includes("base.shortLabel='総合運'"),
+  'general luck focus must not be corrected into a love/work dual concern'
+);
+
+const clarifyContext = sliceFromMarker(
+  appSource,
+  'function buildClarifyContext',
+  'function buildClarifyCardContext'
+);
+
+assert.ok(
+  clarifyContext.includes('generalLuckScope') && clarifyContext.includes('hasMultipleThemes:!generalLuckScope'),
+  'general luck clarify flow must not ask a love/work priority question'
+);
+
+const clarifyQuestions = sliceFromMarker(
+  appSource,
+  'function buildClarifyAmbiguityQuestion',
+  'function getClarifyQuestionLimit'
+);
+
+[
+  '総合運として、生活リズム・健康・仕事・人間関係・将来の準備のうち',
+  '総合運を整えるうえで、今いちばん足を止めている現実的な引っかかり',
+  '総合運の流れで、いま一番影響が大きい環境や関わり方',
+  '総合運で、これが見えたら動き出せると思える兆し',
+  '生活を立て直したい',
+].forEach(marker => {
+  assert.ok(clarifyQuestions.includes(marker), `general luck clarify question missing: ${marker}`);
+});
+
+const paidSupplement = sliceFromMarker(
+  appSource,
+  'async function supplementPaidReadingSections',
+  'async function strengthenPaidIntegration'
+);
+
+assert.ok(
+  paidSupplement.includes('lenSupplementTarget') && !paidSupplement.includes('相談者の「結婚」「生活リズム」「お金」「曖昧さ」'),
+  'paid supplement fallback must not inject marriage-specific wording into general luck readings'
+);
+
+const paidLocalRepair = sliceFromMarker(
+  appSource,
+  "function buildLocalPaidLenormandRepair",
+  "function renderPaidCombinedOutputs"
+);
+
+[
+  'const generalLuckSpecific=isGeneralLuckFocus',
+  '生活リズム、健康、仕事、人間関係、将来の準備',
+  '生活リズムと健康の余白を最初に戻す',
+  '何を増やすかより、何を先に守るか',
+].forEach(marker => {
+  assert.ok(paidLocalRepair.includes(marker), `general luck paid local repair missing: ${marker}`);
+});
+
+const freeGeneralLuckGate = sliceFromMarker(
+  appSource,
+  'function detectGeneralLuckVisibleScopeIssues',
+  'function validateFreeReadingSectionQuality'
+);
+
+[
+  '総合運本文に単独テーマへ戻る語彙が混入しています',
+  '続ける意味と切り替えのサイン',
+  '引っかかりを消すより',
+  '生活リズム|健康|仕事|人間関係|将来',
+].forEach(marker => {
+  assert.ok(freeGeneralLuckGate.includes(marker), `general luck free gate missing: ${marker}`);
+});
+
+const integrationFlow = sliceFromMarker(
+  appSource,
+  'function ensureIntegrationPushLine',
+  'function countMeaningfulChars'
+);
+
+[
+  '先に自分の回復を予定に入れる',
+  '毎日の整い方が運の受け取り方を左右しています',
+].forEach(marker => {
+  assert.ok(integrationFlow.includes(marker), `general luck integration repair missing: ${marker}`);
+});
 
 [
   ["'len'", 'async function runLenReading()', '// ─── ③数秘オラクルリーディング'],

@@ -36,6 +36,11 @@ assert.ok(
 );
 
 assert.ok(
+  appSource.includes('総合なら、生活リズム、健康、人間関係、仕事、将来の準備の中で'),
+  'general luck readings must keep overall-life targets instead of collapsing to love/work'
+);
+
+assert.ok(
   freePairScope.includes('原因の深掘り、相手の本音の断定、細かい時系列未来、確実な行動指示は書かない。'),
   'free two-card readings must not claim deep causes, inner feelings, exact timelines, or guaranteed actions'
 );
@@ -53,6 +58,11 @@ const runLenReading = sliceFromMarker(
 assert.ok(
   runLenReading.includes("相談者が読みたいのは${isFreePair?'「2枚から今見える一点」「注意したい一点」「判断するときに戻る視点」です。'"),
   'free pair prompt must describe the narrower two-card output goal'
+);
+
+assert.ok(
+  runLenReading.includes("document.querySelector('#r-len-block .ai-load')"),
+  'free Lenormand rendering must not leave the loading placeholder after generation settles'
 );
 
 assert.ok(

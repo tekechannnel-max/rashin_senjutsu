@@ -7400,12 +7400,14 @@ function analyzeConsultationFocus(cat='',theme=''){
   const normalizedCat=normalizeConsultationCategoryTag(cat||'総合');
   const categoryPrimary=getConsultationPrimaryThemeFromCategory(normalizedCat);
   const raw=`${normalizedCat||''} ${theme||''}`;
-  const hasLove=categoryPrimary==='love'||/恋愛|結婚|彼氏|彼女|交際|相手|別れ|別れる|復縁|パートナー|夫|妻/.test(raw);
-  const workDecisionSignal=categoryPrimary==='career'||/仕事|転職|退職|辞め|職場|会社|上司|キャリア|働き方|今の仕事|仕事を続け|仕事を変え|副業|独立/.test(raw);
+  const generalLuckSignal=categoryPrimary==='general'&&hasGeneralLuckScopeSignal(raw,normalizedCat);
+  const signalRaw=generalLuckSignal?scrubGeneralScopeExamples(raw):raw;
+  const hasLove=!generalLuckSignal&&(categoryPrimary==='love'||/恋愛|結婚|彼氏|彼女|交際|相手|別れ|別れる|復縁|パートナー|夫|妻/.test(signalRaw));
+  const workDecisionSignal=!generalLuckSignal&&(categoryPrimary==='career'||/仕事|転職|退職|辞め|職場|会社|上司|キャリア|働き方|今の仕事|仕事を続け|仕事を変え|副業|独立/.test(signalRaw));
   const hasWork=workDecisionSignal;
-  const loveDecisionSignal=categoryPrimary==='love'||/恋愛|結婚|彼氏|彼女|交際|相手|別れ|別れる|復縁|パートナー|夫|妻|曖昧|あいまい|将来の話|待つべき|聞くべき/.test(raw);
-  const needsRelationshipDecision=/続けるべき|別れるべき|別れ|距離を置|交際/.test(raw);
-  const needsCareerDecision=/続けるべき|転職|辞める|退職|働き方/.test(raw)||categoryPrimary==='career';
+  const loveDecisionSignal=!generalLuckSignal&&(categoryPrimary==='love'||/恋愛|結婚|彼氏|彼女|交際|相手|別れ|別れる|復縁|パートナー|夫|妻|曖昧|あいまい|将来の話|待つべき|聞くべき/.test(signalRaw));
+  const needsRelationshipDecision=!generalLuckSignal&&/続けるべき|別れるべき|別れ|距離を置|交際/.test(signalRaw);
+  const needsCareerDecision=!generalLuckSignal&&(/続けるべき|転職|辞める|退職|働き方/.test(signalRaw)||categoryPrimary==='career');
   const needsDecision=/判断|決め|迷|選べ/.test(raw)||needsRelationshipDecision||needsCareerDecision;
   const isDualConcern=categoryPrimary==='general'&&hasLove&&hasWork&&workDecisionSignal&&loveDecisionSignal;
   const categoryShort={
@@ -7418,7 +7420,7 @@ function analyzeConsultationFocus(cat='',theme=''){
     self_understanding:'自己理解',
     general:'今の悩み',
   };
-  const shortLabel=isDualConcern?'恋愛と仕事':(categoryPrimary!=='general'?categoryShort[categoryPrimary]:hasLove?'恋愛':hasWork?'仕事':(normalizedCat||'今の悩み'));
+  const shortLabel=generalLuckSignal?'総合運':(isDualConcern?'恋愛と仕事':(categoryPrimary!=='general'?categoryShort[categoryPrimary]:hasLove?'恋愛':hasWork?'仕事':(normalizedCat||'今の悩み')));
   const loveSubtype=detectLoveSubtypeFromText(raw).key||'general';
   const workSubtype=/転職|退職|辞め|求人|面接|採用/.test(raw)
     ?'career_change'
@@ -7444,14 +7446,18 @@ function analyzeConsultationFocus(cat='',theme=''){
     money:'収入やお金の流れをどう整えるか、次に取る行動を知りたい',
     general:'今の仕事を続けるか切り替えるか、決めるための目印がほしい',
   };
-  const answerNeed=isDualConcern
+  const answerNeed=generalLuckSignal
+    ?'生活リズム、健康、人間関係、仕事、将来の優先順位を整えたい'
+    :isDualConcern
     ?'恋愛と仕事を混ぜずに、それぞれ何を見て決めればいいか整理してほしい'
     :hasLove
       ?loveAnswerNeed[loveSubtype]
       :hasWork
         ?workAnswerNeed[workSubtype]
         :'いま何を優先して整えるべきかを知りたい';
-  const dossierTitle=isDualConcern
+  const dossierTitle=generalLuckSignal
+    ?'総合運の流れを整える鑑定書'
+    :isDualConcern
     ?'恋愛と仕事の分かれ目に立つときの鑑定書'
     :hasLove
       ?(loveSubtype==='reconciliation'?'復縁の分かれ目を見極める鑑定書'
@@ -7467,7 +7473,7 @@ function analyzeConsultationFocus(cat='',theme=''){
                 :'働き方を見直すための鑑定書')
         :'いまの進路を整えるための鑑定書';
   const categoryPrimaryTheme=categoryPrimary==='career'?'career':categoryPrimary;
-  const primaryTheme=isDualConcern?'dual_love_work':categoryPrimaryTheme!=='general'?categoryPrimaryTheme:hasWork?'work':hasLove?'love':'general';
+  const primaryTheme=generalLuckSignal?'general':(isDualConcern?'dual_love_work':categoryPrimaryTheme!=='general'?categoryPrimaryTheme:hasWork?'work':hasLove?'love':'general');
   return{
     raw,
     hasLove,
@@ -7488,6 +7494,7 @@ function analyzeConsultationFocus(cat='',theme=''){
     actionReadiness:null,
     decisionCriteria:'',
     targetTiming:'',
+    generalLuckScope:generalLuckSignal,
   };
 }
 
@@ -7705,6 +7712,24 @@ function collectDecisionSource(focus={},context={}){
   return uniqueNonEmpty(parts).join(' ');
 }
 
+function scrubGeneralScopeExamples(text=''){
+  return String(text||'')
+    .replace(/(?:転職や恋愛|恋愛や転職)のような(?:一つ|ひとつ)の悩みではなく/g,'')
+    .replace(/(?:恋愛や仕事|仕事や恋愛)などを同じ重さで抱え込まないこと/g,'')
+    .replace(/(?:転職|恋愛)のような個別テーマではなく/g,'');
+}
+
+function hasGeneralLuckScopeSignal(text='',category=''){
+  const source=`${category||''} ${text||''}`;
+  if(!/総合|全般|総合運|運気|全体|生活リズム|健康|将来|優先順位|この先一年|先一年|整え/.test(source)) return false;
+  return /総合運|運気|全体|生活リズム|健康|将来|優先順位|この先一年|先一年|一つの悩みではなく|ひとつの悩みではなく|生活・仕事・人間関係/.test(source);
+}
+
+function isGeneralLuckFocus(focus={},context={}){
+  const source=collectDecisionSource(focus,context);
+  return normalizePrimaryThemeValue(focus)==='general'&&hasGeneralLuckScopeSignal(source,context.cat||'総合');
+}
+
 function extractUserProvidedTiming(source=''){
   const text=String(source||'');
   const patterns=[
@@ -7741,6 +7766,12 @@ function extractDecisionCriteriaList(source='',focus={}){
   ];
   const explicit=candidates.filter(item=>text.includes(item));
   const primary=normalizePrimaryThemeValue(focus);
+  if(primary==='general'&&hasGeneralLuckScopeSignal(text,'総合')){
+    const generalCandidates=['生活リズム','健康','仕事','人間関係','将来の準備','優先順位','気力','休息','睡眠'];
+    const generalExplicit=generalCandidates.filter(item=>text.includes(item));
+    if(generalExplicit.length) return uniqueNonEmpty(generalExplicit).slice(0,5);
+    return ['生活リズム','健康','仕事','人間関係','将来の準備'];
+  }
   if(primary==='love'){
     const recon=/復縁|元恋人|元彼|元カレ|元カノ|過去の別れ|もう一度|やり直|同じ傷|信頼再構築/.test(text);
     const loveCandidates=recon
@@ -7792,6 +7823,7 @@ function formatDecisionCriteriaChoice(criteria=[],fallback='現実に見えて�
 
 function getDecisionAxisShortPhrase(ctx={}){
   if(isReconciliationContext(ctx)) return '信頼を作り直せる手応え';
+  if(ctx.primaryTheme==='general') return '生活と健康の土台';
   if(ctx.primaryTheme==='love') return '安心の根拠';
   if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return '努力の見返り';
   if(ctx.primaryTheme==='relationship'||ctx.primaryTheme==='family') return '自分を削らない距離';
@@ -7803,6 +7835,7 @@ function getDecisionAxisShortPhrase(ctx={}){
 }
 
 function getDecisionAxisFullPhrase(ctx={}){
+  if(ctx.primaryTheme==='general') return '生活リズム・健康・仕事・人間関係・将来の準備';
   if(ctx.primaryTheme==='money') return '収支と手元に残る安心';
   return formatDecisionCriteriaChoice(ctx.decisionCriteriaList,ctx.criteriaText||getDecisionAxisShortPhrase(ctx));
 }
@@ -7872,6 +7905,9 @@ function buildDecisionContext(focus={},context={}){
 }
 
 function buildDecisionFrameFromContext(ctx){
+  if(ctx.primaryTheme==='general'){
+    return '生活リズムと健康を土台に、仕事・人間関係・将来の準備の優先順位を分けて見る';
+  }
   if(ctx.primaryTheme==='love'){
     if(isReconciliationContext(ctx)){
       return getLoveSubtypeProfile(ctx.loveSubtype)?.decisionFrame||'まだ好きかだけで決めず、信頼を作り直せる条件と区切る条件を分けて見る';
@@ -7891,6 +7927,9 @@ function buildDecisionFrameFromContext(ctx){
 
 function buildCoreInsightText(focus={},context={}){
   const ctx=buildDecisionContext(focus,context);
+  if(ctx.primaryTheme==='general'||isGeneralLuckFocus(focus,context)){
+    return `一つの悩みだけで迷っているのではありません。\n本当に止まっているのは、生活リズム、健康、仕事、人間関係、将来の準備をどの順番で整えるかがまだ混ざっているからです。\n今回の鑑定では、先に守る土台と後から動かすテーマを総合運として読みます。`;
+  }
   if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
     const surface=/辞め|転職|続け|残る|別の道|職場|仕事/.test(ctx.source)
       ?'今の環境を続けるか変えるか'
@@ -7935,6 +7974,9 @@ function buildDecisionContextPromptBlock(focus={},context={}){
     `- 時期の扱い: ${ctx.userProvidedTiming?`${ctx.userProvidedTiming}は相談者が出した目安として扱う`:'根拠のない月日や季節は作らず、短期タスクへ逃げない'}`,
     `- 表に出す見立て: ${ctx.positiveLabel} / ${ctx.negativeLabel} / ${ctx.holdLabel}`,
   ];
+  if(ctx.primaryTheme==='general'||isGeneralLuckFocus(focus,context)){
+    lines.push('- 総合運では、相談文中の「転職や恋愛」は否定例として扱う。本文は生活リズム・健康・仕事・人間関係・将来の準備へ寄せ、恋愛や転職の判断文へ戻さない。');
+  }
   if(ctx.explicitUserPriority){
     lines.push('- isDualConcern=trueでも、明示された優先テーマを主構造にする。dual concern型の汎用結論へ戻さない。');
   }else if(ctx.primaryTheme==='dual_concern'){
@@ -7969,15 +8011,17 @@ function refineFocusWithClarify(focus={},clarifyText='',paidUserData={}){
   const selectedCategory=normalizeConsultationCategoryTag(paidObject.cat||'');
   const categoryPrimary=getConsultationPrimaryThemeFromCategory(selectedCategory);
   const source=[base.raw,clarifyText,stringifyFocusSupplement(paidUserData)].join(' ');
+  const generalLuckSignal=categoryPrimary==='general'&&hasGeneralLuckScopeSignal(source,selectedCategory||'総合');
+  const signalSource=generalLuckSignal?scrubGeneralScopeExamples(source):source;
   const loveSubtypeTrace=buildLoveSubtypeTrace(source,base.loveSubtype);
-  const workSignal=/仕事|職場|転職|働|キャリア|進路|収入|評価|役割|求人|スキル|副業|独立|今後の生き方|続ける|辞める|残る条件|別の道|準備/.test(source);
-  const loveSignal=/恋愛|好き|相手|彼氏|彼女|復縁|結婚|パートナー|片思い|不安を伝え|連絡|会う/.test(source);
-  const relationshipSignal=/人間関係|友人|知人|同僚|距離感|境界線|関わり方|合わせすぎ|自己否定/.test(source);
-  const moneySignal=/金運|お金|貯金|出費|家計|契約|借金|投資|支払い|収支/.test(source);
-  const familySignal=/家族|親|子ども|子供|実家|夫婦|兄弟|姉妹|親戚/.test(source);
-  const creativeSignal=/趣味|創作|推し|学び|習い|作品|活動|表現/.test(source);
-  const selfSignal=/自己理解|自分らしさ|価値観|力の出し方|適性|本音|生き方/.test(source);
-  const lifeDirectionSignal=/今後の生き方|別の道|続けるべき|続けるか|辞めるか|残る条件|準備|将来|進路/.test(source);
+  const workSignal=!generalLuckSignal&&/仕事|職場|転職|働|キャリア|進路|収入|評価|役割|求人|スキル|副業|独立|今後の生き方|続ける|辞める|残る条件|別の道|準備/.test(signalSource);
+  const loveSignal=!generalLuckSignal&&/恋愛|好き|相手|彼氏|彼女|復縁|結婚|パートナー|片思い|不安を伝え|連絡|会う/.test(signalSource);
+  const relationshipSignal=!generalLuckSignal&&/人間関係|友人|知人|同僚|距離感|境界線|関わり方|合わせすぎ|自己否定/.test(signalSource);
+  const moneySignal=!generalLuckSignal&&/金運|お金|貯金|出費|家計|契約|借金|投資|支払い|収支/.test(signalSource);
+  const familySignal=!generalLuckSignal&&/家族|親|子ども|子供|実家|夫婦|兄弟|姉妹|親戚/.test(signalSource);
+  const creativeSignal=!generalLuckSignal&&/趣味|創作|推し|学び|習い|作品|活動|表現/.test(signalSource);
+  const selfSignal=!generalLuckSignal&&/自己理解|自分らしさ|価値観|力の出し方|適性|本音|生き方/.test(signalSource);
+  const lifeDirectionSignal=!generalLuckSignal&&/今後の生き方|別の道|続けるべき|続けるか|辞めるか|残る条件|準備|将来|進路/.test(signalSource);
   const lovePriorityPatterns=[
     /今回\s*先に\s*見たいのは\s*恋愛/,
     /主テーマは\s*恋愛/,
@@ -8054,6 +8098,13 @@ function refineFocusWithClarify(focus={},clarifyText='',paidUserData={}){
   }else if(categoryPrimary==='self_understanding'){
     applyPrimary('self_understanding','タグ選択で自己理解が指定されたため');
     base.shortLabel='自己理解';
+  }else if(generalLuckSignal&&primaryBefore==='general'){
+    base.hasLove=false;
+    base.hasWork=false;
+    base.secondaryTheme=null;
+    base.generalLuckScope=true;
+    applyPrimary('general','総合運として生活・健康・人間関係・仕事・将来の流れを横断して見るため');
+    base.shortLabel='総合運';
   }else if(workSignal&&loveSignal&&!base.explicitUserPriority){
     base.hasWork=true;
     base.hasLove=true;
@@ -8109,6 +8160,15 @@ function refineFocusWithClarify(focus={},clarifyText='',paidUserData={}){
     ?`${base.explicitUserPriority}うえで、${ctx.positiveLabel}と${ctx.negativeLabel}の分かれ目を知りたい`
     :base.answerNeed||`${ctx.positiveLabel}と${ctx.negativeLabel}の分かれ目を知りたい`);
   base.dossierTitle=subtypeProfile?.supplements?.dossierTitle||`${ctx.positiveLabel}と${ctx.negativeLabel}を見極める羅針カード`;
+  if(generalLuckSignal&&normalizePrimaryThemeValue(base)==='general'){
+    base.hasLove=false;
+    base.hasWork=false;
+    base.secondaryTheme=null;
+    base.generalLuckScope=true;
+    base.shortLabel='総合運';
+    base.answerNeed='生活リズム、健康、人間関係、仕事、将来の優先順位を整えたい';
+    base.dossierTitle='総合運の流れを整える羅針カード';
+  }
   base.focusCorrectionTrace={
     ...trace,
     finalPrimaryTheme:ctx.primaryTheme,
@@ -8989,6 +9049,16 @@ function renderInlineBold(escaped=''){
   return String(escaped||'').replace(/\*\*(.+?)\*\*/g,'<strong class="key-phrase">$1</strong>');
 }
 
+function removeUnbalancedMarkdownBoldMarkers(text=''){
+  return String(text||'')
+    .split('\n')
+    .map(line=>{
+      const markerCount=(line.match(/\*\*/g)||[]).length;
+      return markerCount%2===0?line:line.replace(/\*\*/g,'');
+    })
+    .join('\n');
+}
+
 function renderStructuredBlocksHTML(text=''){
   return splitReadingBlocks(text).map(block=>{
     if(isListBlock(block)){
@@ -9398,7 +9468,7 @@ function getFreeLenPairThemeTargets(cat='総合'){
   if(normalized==='家族') return '家族なら、家庭内の安心、責任の偏り、言い出しにくい負担の一点を読みます。';
   if(normalized==='趣味・創作') return '趣味や創作なら、続け方、見せ方、反応に引っ張られやすい一点を読みます。';
   if(normalized==='自己理解') return '自己理解なら、今の自分の扱い方、違和感の出どころ、整えたい一点を読みます。';
-  return '総合なら、今いちばん目立つ流れと、見落としやすい一点に絞って読みます。';
+  return '総合なら、生活リズム、健康、人間関係、仕事、将来の準備の中で、今いちばん目立つ流れと見落としやすい一点に絞って読みます。';
 }
 
 function buildFreeLenPairScopePrompt(cat='総合'){
@@ -9753,6 +9823,9 @@ function getConsultationBasisSummary(){
   const input=getCurrentInputSnapshot();
   const focus=getCurrentRefinedFocus(input.cat,input.theme);
   const themeText=input.theme&&input.theme!=='全般'?`「${input.theme}」`:'今回の相談';
+  if(isGeneralLuckFocus(focus,{cat:input.cat,theme:input.theme})){
+    return `${themeText}では、恋愛や転職のような単独テーマに寄せず、生活リズム、健康、人間関係、仕事、将来の優先順位をどう整えるかが判断の軸になります。`;
+  }
   if(isWorkLifeDirectionFocus(focus)){
     return '今回の迷いは、職場が悪いかどうかではなく、この場所で自分の力が育つかどうかを見極める流れです。';
   }
@@ -9770,6 +9843,9 @@ function getConsultationBasisSummary(){
 function makeFoundationSummary(type='',fullText='',context={}){
   const focus=context.focus||getCurrentRefinedFocus();
   if(type==='animal'){
+    if(isGeneralLuckFocus(focus,context)){
+      return '周囲の反応から力を得やすい一方で、生活リズムや休息が乱れると気力が落ちやすい傾向があります。今回の総合運では、仕事、人間関係、健康、将来の準備を同じ重さで抱えず、先に整える順番を見ることが鍵です。';
+    }
     if(isWorkLifeDirectionFocus(focus)){
       return '適応力と表現力があり、良い手本を取り入れて自分の形に変える力があります。今回の判断では、自分の本音を仕事の根拠として言葉にできるかが鍵です。';
     }
@@ -9782,12 +9858,18 @@ function makeFoundationSummary(type='',fullText='',context={}){
     return '周りの状況を読みながら、自分なりの形に整える力があります。今回の判断では、気持ちと現実の根拠を分けて見るほど選びやすくなります。';
   }
   if(type==='nameBirth'){
+    if(isGeneralLuckFocus(focus,context)){
+      return '名前と生まれからは、状況を観察して整える力が出ています。急に大きく変えるより、生活の土台と将来の準備を小さく並べ直すほど運気の流れが安定します。';
+    }
     if(isWorkLifeDirectionFocus(focus)){
       return '名前からは調整力と対話力、生まれからは現実を整える力が出ています。急な決断より、現実に見えている根拠を見ながら進むほど安定しやすい傾向です。';
     }
     return '名前と生まれからは、対話しながら現実を整える力が出ています。急いで白黒をつけるより、安心の根拠が見えるほど判断が安定します。';
   }
   if(type==='consultation'){
+    if(isGeneralLuckFocus(focus,context)){
+      return '今回の迷いは、何か一つを決めきれないことではなく、生活リズム、健康、仕事、人間関係、将来の準備の優先順位がまだ整っていないところから来ています。';
+    }
     if(isWorkLifeDirectionFocus(focus)){
       return '今回の迷いは、職場が悪いかどうかではなく、この場所で自分の力が育つかどうかを見極める流れです。';
     }
@@ -14604,6 +14686,7 @@ function buildClarifyContext(){
   const theme=(input.theme||'').trim();
   const baseFocus=analyzeConsultationFocus(category,theme);
   const refinedFocus=refineFocusWithClarify(baseFocus,'',input);
+  const generalLuckScope=isGeneralLuckFocus(refinedFocus,{cat:category,theme,paidUserData:input});
   const len=SEL_LEN.map((id,index)=>({
     source:'len',
     id,
@@ -14626,7 +14709,9 @@ function buildClarifyContext(){
       :null)
     ||cardByGroup('positive')
   );
-  const themeSignals=detectClarifyThemeSignals(theme);
+  const themeSignals=generalLuckScope
+    ?{love:false,work:false,relationship:false,money:false,family:false,creative:false,self:false}
+    :detectClarifyThemeSignals(theme);
   const themeSignalCount=Object.values(themeSignals).filter(Boolean).length;
   const coreCard=len.length===FREE_LEN_COUNT?(len[0]||null):(len.find(card=>card.index===4)||len.find(card=>card.index===1)||len[0]||null);
   const futureCard=len.length===FREE_LEN_COUNT?(len[1]||null):(len.find(card=>card.index===5)||len.find(card=>card.index===2)||len[len.length-1]||null);
@@ -14639,9 +14724,10 @@ function buildClarifyContext(){
     baseFocus,
     refinedFocus,
     primaryTheme:normalizePrimaryThemeValue(refinedFocus),
+    generalLuckScope,
     themeSignals,
     themeSignalCount,
-    hasMultipleThemes:category==='総合'&&themeSignalCount>=2,
+    hasMultipleThemes:!generalLuckScope&&category==='総合'&&themeSignalCount>=2,
     len,
     orc,
     coreCard,
@@ -14676,8 +14762,15 @@ function getClarifyPrimaryLabel(ctx){
   return getDecisionThemeLabel(ctx.primaryTheme||normalizePrimaryThemeValue(ctx.refinedFocus||ctx.baseFocus||{}));
 }
 
+function isClarifyGeneralLuck(ctx){
+  return !!(ctx?.generalLuckScope||isGeneralLuckFocus(ctx?.refinedFocus||ctx?.baseFocus||{},ctx||{}));
+}
+
 function getClarifyThemeKeyword(ctx){
   const theme=ctx.theme||'';
+  if(isClarifyGeneralLuck(ctx)){
+    return ['生活リズム','健康','将来','優先順位','総合運'].find(word=>theme.includes(word))||'総合運';
+  }
   const primary=ctx.primaryTheme;
   const loveWords=['復縁','元彼','元カレ','元カノ','連絡','返信','相手の気持ち','片思い','結婚','別れ','距離'];
   const workWords=['今の仕事','仕事継続','転職','退職','辞める','職場','上司','評価','収入','成長','副業','独立'];
@@ -14696,10 +14789,12 @@ function getClarifyThemeKeyword(ctx){
 }
 
 function isClarifyLove(ctx){
+  if(isClarifyGeneralLuck(ctx)) return false;
   return ctx.primaryTheme==='love'||ctx.category==='恋愛'||ctx.baseFocus?.hasLove;
 }
 
 function isClarifyWork(ctx){
+  if(isClarifyGeneralLuck(ctx)) return false;
   return ctx.primaryTheme==='career'||ctx.primaryTheme==='work_life_direction'||ctx.category==='仕事・進路'||ctx.baseFocus?.hasWork;
 }
 
@@ -14738,11 +14833,15 @@ function buildClarifyAmbiguityQuestion(ctx){
   if(!card) return null;
   const subject=getClarifyThemeKeyword(ctx);
   const anchor=buildClarifyAnchor(card,'曖昧さを示すカード');
+  const isGeneral=isClarifyGeneralLuck(ctx);
   const isLove=isClarifyLove(ctx);
   const isWork=isClarifyWork(ctx);
   let q='';
   let templates=[];
-  if(card.id===6){
+  if(isGeneral){
+    q='総合運として、生活リズム・健康・仕事・人間関係・将来の準備のうち、いま一番はっきりしていないのはどこですか？';
+    templates=['生活リズムが整わない','健康や疲れの扱い方が曖昧','仕事と人間関係の優先順位が曖昧','将来の準備に手をつけられない'];
+  }else if(card.id===6){
     q=isWork
       ?`「${subject}」でいま一番はっきりしていないのは、評価・収入・続けた先の成長・辞めた後の道のどれに近いですか？`
       :`「${subject}」でいま一番はっきりしていないのは、相手の気持ち・関係の形・自分の本音のどれに近いですか？`;
@@ -14783,11 +14882,15 @@ function buildClarifyBlockerQuestion(ctx){
   const card=ctx.blockerCard;
   if(!card) return null;
   const anchor=buildClarifyAnchor(card,'障害を示すカード');
+  const isGeneral=isClarifyGeneralLuck(ctx);
   const isLove=isClarifyLove(ctx);
   const isWork=isClarifyWork(ctx);
   let q='';
   let templates=[];
-  if(card.id===21){
+  if(isGeneral){
+    q='総合運を整えるうえで、今いちばん足を止めている現実的な引っかかりは何ですか？';
+    templates=['気力と体力が戻りきらない','朝の生活リズムが崩れている','将来準備の余白がない','人との距離感を整えられない'];
+  }else if(card.id===21){
     q=isWork
       ?'今の仕事で一番越えにくい壁は、収入・評価・体力・人間関係・次の準備のどれに近いですか？'
       :'この関係で一番越えにくい壁は、距離・タイミング・相手の態度・自分の怖さのどれに近いですか？';
@@ -14831,11 +14934,15 @@ function buildClarifyPeopleQuestion(ctx){
   const card=ctx.peopleCard;
   if(!card) return null;
   const anchor=buildClarifyAnchor(card,'人物性を示すカード');
+  const isGeneral=isClarifyGeneralLuck(ctx);
   const isLove=isClarifyLove(ctx);
   const isWork=isClarifyWork(ctx);
   let q='';
   let templates=[];
-  if((card.id===28||card.id===29)&&isLove){
+  if(isGeneral){
+    q='総合運の流れで、いま一番影響が大きい環境や関わり方はどれですか？';
+    templates=['職場の空気','近い人との距離感','周囲の期待や反応','自分自身の休み方'];
+  }else if((card.id===28||card.id===29)&&isLove){
     q='今回見たい相手について、連絡の有無・会う姿勢・気持ちの読みにくさのうち、どこが一番引っかかっていますか？';
     templates=['連絡や返信の温度感','会おうとする姿勢','気持ちが読めない理由','過去の原因への向き合い方'];
   }else if(card.id===15&&isWork){
@@ -14858,8 +14965,10 @@ function buildClarifyPeopleQuestion(ctx){
     templates=['相手本人','上司や同僚','家族や周囲','自分自身の反応'];
   }
   return makeClarifyCandidate(
-    'people','影響している相手',anchor,q,
-    '誰かの態度や距離感が強く影響しているため、どの相手の動きが流れを左右しているかを見ます。',
+    'people',isGeneral?'影響している環境':'影響している相手',anchor,q,
+    isGeneral
+      ?'環境や関わり方が強く影響しているため、どの場面が流れを左右しているかを見ます。'
+      :'誰かの態度や距離感が強く影響しているため、どの相手の動きが流れを左右しているかを見ます。',
     templates,86,'people',{card}
   );
 }
@@ -14869,11 +14978,15 @@ function buildClarifyPositiveQuestion(ctx){
   if(!card) return null;
   const subject=getClarifyThemeKeyword(ctx);
   const anchor=buildClarifyAnchor(card,'好転の手がかりカード');
+  const isGeneral=isClarifyGeneralLuck(ctx);
   const isLove=isClarifyLove(ctx);
   const isWork=isClarifyWork(ctx);
   let q='';
   let templates=[];
-  if(card.id===33){
+  if(isGeneral){
+    q='総合運で、これが見えたら動き出せると思える兆しは何ですか？';
+    templates=['朝のリズムが戻る','健康の余白が戻る','将来準備に手が伸びる','人との距離を整えられる'];
+  }else if(card.id===33){
     q=isWork
       ?'今の仕事で、これが見えたら心が決まりやすいと思える兆しは何ですか？'
       :`「${subject}」で、これが見えたら前に進めると思える相手の反応や一言は何ですか？`;
@@ -14930,11 +15043,15 @@ function buildClarifyOracleActionQuestion(ctx){
   const card=ctx.futureOrc||ctx.currentOrc;
   if(!card) return null;
   const direction=getClarifyOracleDirection(card);
+  const isGeneral=isClarifyGeneralLuck(ctx);
   const isLove=isClarifyLove(ctx);
   const isWork=isClarifyWork(ctx);
   let q='';
   let templates=[];
-  if(direction==='move'){
+  if(isGeneral){
+    q='今の向き合い方として近いのは、立て直したい・休みたい・距離を整えたい・まだ分からないのどれですか？';
+    templates=['生活を立て直したい','まず休む余白がほしい','人との距離を整えたい','まだ何から始めるか分からない'];
+  }else if(direction==='move'){
     q=isWork
       ?'仕事のことで、いちばん現実に出したい本音は何ですか？'
       :'本音を言葉にするとしたら、いちばん隠してきた気持ちは何ですか？';
@@ -14994,11 +15111,15 @@ function buildClarifyReconciliationQuestion(ctx){
 
 function buildClarifyDecisionBranchQuestion(ctx){
   const subject=getClarifyThemeKeyword(ctx);
+  const isGeneral=isClarifyGeneralLuck(ctx);
   const isLove=isClarifyLove(ctx);
   const isWork=isClarifyWork(ctx);
   let q='';
   let templates=[];
-  if(isLove&&isClarifyReunion(ctx)){
+  if(isGeneral){
+    q='総合運で、動き出す感覚と立ち止まる感覚を分けるなら、生活リズム・健康・仕事・人間関係のうち何が決め手ですか？';
+    templates=['生活リズムが決め手','健康の余白が決め手','仕事の負荷が決め手','人間関係の距離感が決め手'];
+  }else if(isLove&&isClarifyReunion(ctx)){
     q=`「${subject}」について、もう一度向き合える感覚と区切りが必要な感覚を分けるなら、相手のどんな反応が決め手ですか？`;
     templates=['連絡が続くと安心／曖昧なままだと苦しい','過去の原因を話せると安心／避けられると苦しい','会う意思が見えると安心／都合だけだと苦しい','自分が安心できると向き合える／消耗すると離れたい'];
   }else if(isLove){
@@ -16329,6 +16450,10 @@ function buildPrimaryTopVerdictText(name='あなた',focus={},theme='',context={
     if(cardVerdict) lines.push(cardVerdict);
     lines.push(`${axisFull}が戻るほど、力の出し方は自然に見えてきます。`);
     lines.push(`違和感を押し込めるほど、自分の輪郭はぼやけます。`);
+  }else if(ctx.primaryTheme==='general'||isGeneralLuckFocus(focus,context)){
+    lines.push('今回の答えは、生活リズムと健康の余白を最初に戻すことです。');
+    lines.push('仕事、人間関係、将来の準備は、気力が戻るほど優先順位が見えやすくなります。');
+    lines.push('今の停滞は失敗ではなく、抱えるものの順番を組み直す合図です。');
   }else{
     lines.push(`今回の答えは、違和感を消すより判断軸を取り戻すことです。`);
     if(cardVerdict) lines.push(cardVerdict);
@@ -16667,6 +16792,16 @@ function repairAwkwardConnectionPhrases(text=''){
     .replace(/流れがあり、流れは/g,'動きがあり、そこは')
     .replace(/流れはまだ整う余地を残しています/g,'関わり方はまだ整う余地があります')
     .replace(/流れはまだ整う余地があります/g,'関わり方はまだ整う余地があります')
+    .replace(/今回の展開に今回の相談の先に描きたい未来像が出ており/g,'将来に向けて整えたい方向は見えており')
+    .replace(/今回の展開に今回の相談の先に描きたい未来像があり/g,'将来へ向かう見通しは残っており')
+    .replace(/今回の展開に今回の相談で越えにくい現実の壁があり/g,'いまは生活と健康の土台が重くなっており')
+    .replace(/今回の相談で越えにくい現実の壁/g,'生活と健康の土台')
+    .replace(/距離感・生活・健康のどれか/g,'生活リズムと健康の余白')
+    .replace(/続ける意味と切り替えのサイン/g,'先に守る土台と後から動かすテーマ')
+    .replace(/今は、今回の相談の先に描きたい未来像が中心になり、今回の相談の答えを急ぎにくい流れです。?/g,'今は、将来像を急いで決めるより、生活と健康の土台を整える流れです。')
+    .replace(/今回の相談の先に描きたい未来像/g,'将来へ向けて整えたい方向')
+    .replace(/今回の相談を長く続ける土台と、動きを止める固定の両方/g,'今の生活を支える安定と、動きを止めている固定の両方')
+    .replace(/今回の相談の答えを急ぎにくい流れ/g,'結論を急ぎにくい流れ')
     .replace(/羅針盤が示すのは、([^。\n]{4,90})かどうかです。/g,'$1かどうかが軸です。')
     .replace(/羅針盤が示すのは、([^。\n]{4,90})ことです。/g,'$1ことが大切です。')
     .replace(/羅針盤が示すのは、([^。\n]{4,90})視点です。/g,'$1視点が大切です。')
@@ -16922,6 +17057,7 @@ function sanitizeRashinVisibleText(text=''){
   output=repairAwkwardConnectionPhrases(output);
   output=polishRashinVisibleText(output);
   output=repairJapaneseSurfaceText(output);
+  output=removeUnbalancedMarkdownBoldMarkers(output);
   return output.replace(/\n{3,}/g,'\n\n').trim();
 }
 
@@ -17372,6 +17508,9 @@ function ensureIntegrationHeadingItems(output='',heading='',focus={},cat='総合
 
 function ensureIntegrationPushLine(output='',focus={},cat='総合',theme=''){
   output=normalizeIntegrationActionGuideHeading(output);
+  if(isGeneralLuckFocus(focus,{cat,theme})){
+    return replaceHeadingBody(output,INTEGRATION_ACTION_GUIDE_HEADING,'羅針は、全部を同時に片づけることではなく、先に自分の回復を予定に入れることです。生活、健康、仕事、人間関係、将来の順に見直すほど、次の一年の流れは安定します。');
+  }
   const body=extractHeadingBody(output,INTEGRATION_ACTION_GUIDE_HEADING);
   const existing=String(body||'').split(/(?<=。)/).map(item=>stripIntegrationListMarker(item).trim()).find(Boolean);
   const supplement=getIntegrationSupplementItems(INTEGRATION_ACTION_GUIDE_HEADING,focus,cat,theme)[0];
@@ -17383,6 +17522,9 @@ function ensureIntegrationPushLine(output='',focus={},cat='総合',theme=''){
 
 function buildIntegrationFlowNarrative(focus={},cat='総合',theme='',context={}){
   const ctx=buildDecisionContext(focus,{cat,theme,...context});
+  if(ctx.primaryTheme==='general'||isGeneralLuckFocus(focus,{cat,theme,...context})){
+    return '今は、毎日の整い方が運の受け取り方を左右しています。朝のリズムが戻り、休む予定を守れるほど、仕事の負荷も人との距離も選び直しやすくなります。将来の準備は、その余白が戻ってから小さく進みます。';
+  }
   const cardFlow=buildCardGroundedFlowText(ctx,buildCardReadingFlags(focus,context));
   if(cardFlow) return cardFlow;
   if(isReconciliationContext(ctx)){
@@ -17608,6 +17750,23 @@ function detectFreeLenPairScopeIssues(text='',context={}){
   return [...new Set(issues)];
 }
 
+function detectGeneralLuckVisibleScopeIssues(text='',context={},kind=''){
+  const focus=context.focus||getFocusForContext(context.cat||'',context.theme||'',context);
+  if(!isGeneralLuckFocus(focus,context)) return [];
+  const source=String(text||'');
+  const issues=[];
+  if(/転職|恋愛|復縁|結婚|相手の気持ち|好きな気持ち|制作会社/.test(source)){
+    issues.push('総合運本文に単独テーマへ戻る語彙が混入しています');
+  }
+  if(/続ける意味と切り替えのサイン|距離感・生活・健康|今回の展開に今回の相談|今回の相談で越えにくい現実の壁|違和感を消すより判断軸|引っかかりを消すより|言葉、連絡、通知|同じ場所で我慢|結論を急ぎにくい流れ/.test(source)){
+    issues.push('総合運本文に旧式の判断軸文または不自然な接続が残っています');
+  }
+  if((kind==='orc'||kind==='integration')&&!/生活リズム|健康|仕事|人間関係|将来|優先順位|気力|休息|睡眠/.test(source)){
+    issues.push('総合運の統合判断に必要な生活・健康・将来語彙が足りません');
+  }
+  return [...new Set(issues)];
+}
+
 function validateFreeReadingSectionQuality(kind='',text='',context={}){
   const key=String(kind||'').toLowerCase();
   const source=String(text||'').trim();
@@ -17619,6 +17778,7 @@ function validateFreeReadingSectionQuality(kind='',text='',context={}){
   const focus=context.focus||getFocusForContext(context.cat||'',context.theme||'',context);
   issues.push(...detectPaidTextQualityIssues(key,source));
   issues.push(...detectThemeVocabularyDriftIssues(source,focus,key,context));
+  issues.push(...detectGeneralLuckVisibleScopeIssues(source,{...context,focus},key));
   issues.push(...detectWeakEscapeIssues(source).map(issue=>`${key}: ${issue}`));
   issues.push(...detectTruncatedSummaryIssues(source).map(issue=>`${key}: ${issue}`));
   issues.push(...detectJapanesePunctuationSpacingIssues(source,key));
@@ -18337,6 +18497,10 @@ async function supplementPaidReadingSections(parsed={},quality={},context={}){
   if(!sections.length) return parsed;
   const focus=context.focus||getFocusForContext(context.cat||'',context.theme||'',context);
   const ctx=buildDecisionContext(focus,context);
+  const isGeneralLuck=isGeneralLuckFocus(focus,context);
+  const lenSupplementTarget=isGeneralLuck
+    ?'LENを返す場合は900〜1200字。相談者の「生活リズム」「健康」「将来の準備」「人間関係」「職場の空気」「休むことを後回しにする癖」を現実の壁として読み、カード名・配置語・占術語は出さないでください。'
+    :`LENを返す場合は900〜1200字。相談者の入力語と追加質問回答を現実の壁として読み、主テーマ「${ctx.primaryLabel}」と判断軸「${ctx.criteriaText}」へ翻訳してください。カード名・配置語・占術語は出さないでください。`;
   const outputBlocks=[
     sections.includes('len')?'===LEN===\n■ 迷いの構造\n■ 今の流れ\n■ 気をつけること\n■ あなたの引力':'',
     sections.includes('orc')?`===ORC===\n■ 光のメッセージ\n■ ${ORACLE_COMPASS_HEADING}`:'',
@@ -18367,7 +18531,7 @@ ${sanitizePromptInput(parsed.integration,3000)}
 
 ${outputBlocks}
 
-LENを返す場合は900〜1200字。相談者の「結婚」「生活リズム」「お金」「曖昧さ」を現実の壁として読み、カード名・配置語・占術語は出さないでください。
+${lenSupplementTarget}
 ORCを返す場合は500〜700字。内面の整え方と自分を雑に扱わない視点を書き、行動リストにしないでください。
 INTEGRATIONを返す場合は250〜400字。必ず「${INTEGRATION_FINAL_HEADING} / ${INTEGRATION_CORE_HEADING} / ${INTEGRATION_FLOW_HEADING} / ${INTEGRATION_ACTION_GUIDE_HEADING}」だけを含めてください。${INTEGRATION_CLOSING_HEADING}は出さないでください。
 作業指示、7日以内、30日以内、機械的な条件表は出さず、迷いの正体と判断軸の回復を自然な文章で書いてください。
@@ -18597,9 +18761,11 @@ function repairPaidParsedSectionsLocally(parsed={},context={}){
   const clarify=context.clarifyText||'';
   const next={...parsed};
   const primaryTheme=normalizePrimaryThemeValue(focus);
+  const generalLuckSpecific=isGeneralLuckFocus(focus,{...context,cat,theme});
   const needLoveSpecific=primaryTheme==='love';
   const needWorkSpecific=primaryTheme==='work_life_direction'||primaryTheme==='career';
   const workIntegrationTermCount=countTextOccurrences(next.integration||'',/転職|副業|収入|評価|上司|生活リズム|給与|勤務時間|担当範囲|裁量|昇給|役割|働き方|疲れ/g);
+  const generalLuckIntegrationTermCount=countTextOccurrences(next.integration||'',/総合運|生活リズム|健康|将来|仕事|人間関係|優先順位|気力|朝|休む|職場|距離/g);
   const lenIssueText=[
     ...detectPaidTextQualityIssues('len',next.len||''),
     ...detectLenormandRoleIssues(next.len||'',focus,next.integration||'',context),
@@ -18625,7 +18791,8 @@ function repairPaidParsedSectionsLocally(parsed={},context={}){
     ||!hasIntegrationHeading(next.integration||'',INTEGRATION_ACTION_GUIDE_HEADING)
     ||(needLoveSpecific&&!/結婚|生活リズム|お金|曖昧|将来/.test(next.integration||''))
     ||(needWorkSpecific&&workIntegrationTermCount<3)
-    ||/冒頭3文|条件リスト|不自然|主語述語|重複表現/.test(integrationIssueText);
+    ||(generalLuckSpecific&&(generalLuckIntegrationTermCount<5||/距離感・信頼・生活・健康・空気|違和感を消すより判断軸|納得できる根拠を大事|今回の相談の判断/.test(next.integration||'')))
+    ||/冒頭3文|条件リスト|不自然|主語述語|重複表現|語句の羅列/.test(integrationIssueText);
   if(lenNeedsRepair) next.len=buildLocalPaidLenormandRepair(name,cat,theme,{...context,focus});
   if(orcNeedsRepair) next.orc=buildLocalPaidOracleRepair(name,cat,theme,{...context,focus});
   if(integrationNeedsRepair) next.integration=buildLocalPaidIntegrationRepair(name,cat,theme,{...context,focus});
@@ -18644,8 +18811,22 @@ function buildLocalPaidLenormandRepair(name='あなた',cat='総合',theme='',co
   const cardReading=buildCardReadingContext(focus,{...context,cat,theme});
   const cardVerdict=buildCardGroundedVerdictSentence(ctx,cardReading);
   const cardFlow=buildCardGroundedFlowText(ctx,cardReading);
+  const generalLuckSpecific=isGeneralLuckFocus(focus,{...context,cat,theme});
   const loveSpecific=ctx.primaryTheme==='love';
   const workSpecific=ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career';
+  if(generalLuckSpecific){
+    return sanitizeRashinVisibleText(`■ 迷いの構造
+${displayName}さんの迷いは、何か一つの事件が起きているからではなく、生活リズム、健康、仕事、人間関係、将来の準備が同時に少しずつ重くなっているところから来ています。大きく崩れていないからこそ、どこから手をつければよいかが見えにくく、気力が戻らないまま日々を回している状態です。仕事では信用を守ろうとし、人間関係では波風を立てないようにし、健康面では休むべきサインを後回しにしやすい流れがあります。今の停滞は怠けではなく、複数の負担を同じ力で抱え続けたことで、判断の優先順位が曇っているサインです。ここで必要なのは、一気に人生を変えることではなく、先に守るものを決めて運気の土台を戻すことです。
+
+■ 今の流れ
+今は外側の出来事よりも、毎日の整い方が運の受け取り方を左右しています。表面上は仕事も人間関係も保てていますが、朝の動き出し、睡眠の質、食事や休息の取り方が乱れるほど、将来の準備へ向かう力が削られやすくなります。周囲から頼られる場面が増える一方で、自分の回復を予定に入れないままだと、よい話が来ても受け取る余白が残りません。局面を変える鍵は、大きな決断ではなく、生活の順番を取り戻すことです。まず気力と体力の回復が戻り、次に仕事の負荷を見直し、そのあと人との距離と将来準備が整っていきます。焦って全部を直そうとすると、どれも中途半端になりやすい時期です。
+
+■ 気をつけること
+一番気をつけたいのは、問題が表に出ていないことを「まだ大丈夫」と扱い続けることです。疲れが強いままでも予定を詰められてしまう人ほど、自分の限界を後回しにして、あとから急に動けなくなります。総合運では、仕事の成果だけでなく、健康の余白、人間関係の距離、将来に向けた小さな準備が同じくらい大事です。周囲の期待に応えることばかりを優先すると、${displayName}さん自身が何を望んでいるのかが見えにくくなります。今は新しいことを増やすより、抱える量を減らし、休む余白と人との距離を取り戻すほうが運の流れは安定します。
+
+■ あなたの引力
+${displayName}さんには、周囲の状況を見ながら現実的に立て直す力があります。その力は、気合で押し切ると弱まり、順番を決めると戻ります。総合運の羅針は、生活リズムを先に整え、健康の余白を確保し、仕事と人間関係の負荷を見直したうえで、将来の準備を小さく始めることです。完璧に整ってから動く必要はありません。朝のリズムが少し戻る、休む予定を守れる、近い人への反応を急がずに済む、その小さな変化が次の一年の土台になります。${displayName}さんが自分の回復を予定の中心に置くほど、仕事も人間関係も無理なく選び直せます。`);
+  }
   if(loveSpecific){
     return sanitizeRashinVisibleText(`■ 迷いの構造
 ${displayName}さんの迷いは、相手を好きな気持ちが弱いからではなく、結婚後の生活を一緒に扱える信頼がまだ形になっていないところから来ています。安心できる時間や優しさはある一方で、生活リズムやお金の感覚の違いを話し合う場面になると、相手の答えが曖昧に見えやすい流れです。${cardVerdict||'ここで無理に気持ちだけで決めると、後から「自分だけが合わせていた」という疲れが出やすくなります。'}いま大事なのは、好きかどうかを測り直すことではなく、将来の話を出したときに二人で現実を持てるかを見ることです。
@@ -18689,8 +18870,16 @@ function buildLocalPaidOracleRepair(name='あなた',cat='総合',theme='',conte
   const displayName=sanitizeRashinVisibleText(name||'あなた');
   const focus=context.focus||getFocusForContext(cat,theme,context);
   const ctx=buildDecisionContext(focus,{...context,cat,theme});
+  const generalLuckSpecific=isGeneralLuckFocus(focus,{...context,cat,theme});
   const loveSpecific=ctx.primaryTheme==='love';
   const workSpecific=ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career';
+  if(generalLuckSpecific){
+    return sanitizeRashinVisibleText(`■ 光のメッセージ
+${displayName}さんの強さは、乱れているものを見ないふりせず、現実の順番へ戻そうとするところです。いま気力が続きにくいのは、意志が弱いからではありません。仕事、人間関係、健康、将来の準備を同時に抱え、どれも雑にしたくない気持ちがあるからです。ただ、そのまま全部を同じ重さで持つと、体と心の回復が後回しになり、よい流れが来ても受け取る余白が薄くなります。自分を大事にするとは、大きなご褒美を用意することではなく、朝の始まり、睡眠、食事、休む予定を軽く扱わないことです。そこが整うほど、判断の声は静かに戻ってきます。
+
+■ ${ORACLE_COMPASS_HEADING}
+迷ったときの羅針は、何を増やすかより、何を先に守るかです。今の${displayName}さんは、生活リズムと健康の余白を最初に守るほど、仕事の負荷も人間関係の距離も見えやすくなります。将来の準備は、一気に形にしなくて大丈夫です。まず週に一つだけ、調べる、整理する、余白を作るという小さな行動に落とすことです。周囲に合わせすぎて疲れる場面では、すぐ答えを返さず、一呼吸置いてから選んでください。自分の回復を予定に入れることが、次の一年の運を受け取る入口になります。`);
+  }
   if(loveSpecific){
     return sanitizeRashinVisibleText(`■ 光のメッセージ
 ${displayName}さんの強さは、相手に合わせながらも、心の奥ではちゃんと現実を見ようとしているところです。優しさを大事にできる人ほど、相手を責めたくなくて自分の不安を後回しにしやすくなります。でも今回の不安は、わがままではありません。結婚は気持ちだけでなく、生活リズム、お金、将来の話を二人で持てるかが関わります。そこに違和感があるなら、心が弱いのではなく、先の自分を守ろうとしている反応です。今の${displayName}さんに必要なのは、好きな気持ちを疑うことではなく、その好きが安心して続く形を持てるかを見てあげることです。
@@ -18720,8 +18909,22 @@ function buildLocalPaidIntegrationRepair(name='あなた',cat='総合',theme='',
   const cardReading=buildCardReadingContext(focus,{...context,cat,theme});
   const cardVerdict=buildCardGroundedVerdictSentence(ctx,cardReading);
   const cardFlow=buildCardGroundedFlowText(ctx,cardReading);
+  const generalLuckSpecific=isGeneralLuckFocus(focus,{...context,cat,theme});
   const loveSpecific=ctx.primaryTheme==='love';
   const workSpecific=ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career';
+  if(generalLuckSpecific){
+    return sanitizeRashinVisibleText(`■ ${INTEGRATION_FINAL_HEADING}
+今回の答えは、何か一つを急いで変えるより、生活リズムと健康の余白を最初に戻すことです。そこが整うほど、仕事、人間関係、将来の準備の優先順位が見えます。今の停滞は失敗ではなく、抱えるものの順番を組み直す合図です。
+
+■ ${INTEGRATION_CORE_HEADING}
+迷いの正体は、大きく崩れていない現状を守りたい気持ちと、このまま気力を削り続ける不安が同時にあることです。休むことを後回しにする癖が、判断の輪郭を曇らせています。
+
+■ ${INTEGRATION_FLOW_HEADING}
+今は、毎日の整い方が運の受け取り方を左右しています。朝のリズムが戻り、休む予定を守れるほど、仕事の負荷も人との距離も選び直しやすくなります。将来の準備は、その余白が戻ってから小さく進みます。
+
+■ ${INTEGRATION_ACTION_GUIDE_HEADING}
+羅針は、全部を同時に片づけることではなく、先に自分の回復を予定に入れることです。生活、健康、仕事、人間関係、将来の順に見直すほど、次の一年の流れは安定します。`);
+  }
   if(loveSpecific){
     return sanitizeRashinVisibleText(`■ ${INTEGRATION_FINAL_HEADING}
 今回の答えは、結婚へ進んでよいかを今すぐ気持ちだけで決めないことです。好きな気持ちはありますが、判断軸は相手が生活リズムやお金の話を避けずに扱えるかにあります。${cardVerdict||'曖昧な返事が続くなら、前進より見極めが先です。'}
@@ -19396,18 +19599,39 @@ ${keyCardInSpread}${ambigInfo}${personInfo}${cloudInfo}${ringInfo}
 相談者が読みたいのは${isFreePair?'「2枚から今見える一点」「注意したい一点」「判断するときに戻る視点」です。':'「背景から何が続いているか」「いま何を意識しておくべきか」「どこに判断軸を戻せばいいか」です。'}
 ${buildReadingOutputFormatGuide('len',is9,focus)}`;
 
+  const lenContext={name,focus,cat,theme,plan:PLAN,lenCount:SEL_LEN.length};
+  const safeRenderLen=(rawText,options={})=>{
+    const normalized=normalizeLenormandReadingText(rawText,lenContext);
+    LAST_OUTPUTS.len=sanitizeRashinVisibleText(applyFreeReadingQualityGate('len',normalized,{...lenContext,...options}));
+    renderFormattedResultText('r-len-block',LAST_OUTPUTS.len,'len',lenContext);
+    return LAST_OUTPUTS.len;
+  };
+  const renderEmergencyLenFallback=()=>{
+    const fallbackText=buildRichLenFallback(name,cat);
+    LAST_OUTPUTS.len=sanitizeRashinVisibleText(formatLenormandSections(fallbackText,lenContext)||fallbackText);
+    try{
+      renderFormattedResultText('r-len-block',LAST_OUTPUTS.len,'len',lenContext);
+    }catch(renderError){
+      const block=document.getElementById('r-len-block');
+      if(block) block.textContent=LAST_OUTPUTS.len;
+    }
+  };
+
   try{
     const res=await callAI(userPrompt,is9?4600:(isFreePair?1800:650),systemPrompt,{
       taskKey:PLAN==='paid'?'paid':'free',
       images:buildCardImageRefs('len',PLAN==='paid'?'paid':'free'),
     });
-    const normalized=normalizeLenormandReadingText(res,{focus,cat,theme,plan:PLAN,lenCount:SEL_LEN.length});
-    LAST_OUTPUTS.len=sanitizeRashinVisibleText(applyFreeReadingQualityGate('len',normalized,{name,focus,cat,theme,plan:PLAN,lenCount:SEL_LEN.length}));
-    renderFormattedResultText('r-len-block',LAST_OUTPUTS.len,'len');
+    safeRenderLen(res);
   }catch(e){
-    const fallback=normalizeLenormandReadingText(buildRichLenFallback(name,cat),{focus,cat,theme,plan:PLAN,lenCount:SEL_LEN.length});
-    LAST_OUTPUTS.len=sanitizeRashinVisibleText(applyFreeReadingQualityGate('len',fallback,{name,focus,cat,theme,plan:PLAN,lenCount:SEL_LEN.length,fallbackAlready:true}));
-    renderFormattedResultText('r-len-block',LAST_OUTPUTS.len,'len');
+    try{
+      safeRenderLen(buildRichLenFallback(name,cat),{fallbackAlready:true});
+    }catch(fallbackError){
+      renderEmergencyLenFallback();
+    }
+  }
+  if(isFreePair&&document.querySelector('#r-len-block .ai-load')){
+    renderEmergencyLenFallback();
   }
   await ensureStageMinimumTime('len',stageStartedAt);
   setResultStageStatus('len','done');
@@ -21371,6 +21595,7 @@ function buildRichLenFallback(name,cat){
     return buildLenormandCardReadingSentence(namePart,themePart,ctx);
   };
   if(isFreePair){
+    const generalLuck=isGeneralLuckFocus(focus,{cat,theme:input.theme||''});
     const pairHasHidden=hasLenGroup(ids,'hidden');
     const pairHasEnding=hasLenGroup(ids,'ending');
     const pairHasStability=hasLenGroup(ids,'stability');
@@ -21398,9 +21623,13 @@ function buildRichLenFallback(name,cat){
       if(ctx.primaryTheme==='relationship'){
         return '2枚から見ると、今は相手を変えようとするより、関わるほど消耗する接点と協力できる余地を分けて見る段階です。距離の取り方が整うほど、判断もしやすくなります。';
       }
+      if(generalLuck){
+        return '2枚から見ると、今は仕事、人間関係、生活リズムを同じ気力で抱え続け、回復の順番が見えにくくなっている流れです。大きく崩れていないからこそ、健康と将来の準備を後回しにしないことが焦点になります。';
+      }
       return '2枚から見ると、今は全体を深く掘るより、いちばん目立つ流れと見落としやすい一点を確認する段階です。答えを広げすぎず、今の現実で何が強く出ているかを見るほど整います。';
     };
     const warningByTheme=()=>{
+      if(generalLuck) return '注意したいのは、問題が表に出ていないことを理由に、休息や生活リズムの乱れを軽く扱うことです。仕事や人間関係で反応を拾いすぎるほど、健康のサインが後回しになりやすくなります。';
       if(pairHasPredatorPair) return '注意したいのは、消耗や損失を別の要素が強めやすい点です。誰かや状況に合わせるほど減るものがあるなら、そこを軽く扱わないほうが安全です。';
       if(pairHasBurden) return ctx.primaryTheme==='money'
         ?'注意したいのは、小さな出費や負担を気合いで流してしまうことです。金額の大きさだけでなく、続くほど手元の安心を削る流れを見落とさないでください。'
@@ -21410,6 +21639,7 @@ function buildRichLenFallback(name,cat){
       return '注意したいのは、答えを急いで2枚以上の意味を背負わせることです。今は深い原因まで断定するより、目の前で繰り返している一点を見たほうが判断しやすくなります。';
     };
     const compassByTheme=()=>{
+      if(generalLuck) return '羅針の指針は、将来の準備を急ぐ前に、気力が戻る生活リズムを先に整えることです。仕事、人間関係、健康を並べて見たとき、いちばん回復が遅れている場所が次の優先順位になります。';
       if(pairHasSupport) return '羅針の指針は、小さな好転を拾える場所を見ることです。悪い流れを探すだけでなく、支えや見通しがどこに残っているかを確認してください。';
       if(pairHasStability) return '羅針の指針は、安定と停滞を分けて見ることです。安心できる土台なのか、動けなさを固定しているだけなのかを分けると判断が整います。';
       if(pairHasChoice) return '羅針の指針は、選択肢を増やす前に判断基準を一つに絞ることです。どちらが正しいかより、何を守るために選ぶのかを見てください。';
@@ -21549,6 +21779,13 @@ function buildRichOrcFallback(name,cat,is3){
   const namePlain=buildNamePlainInsight(NAMEJUDGE);
   const reaction=REACTION_PROFILE;
   const messages=SEL_ORC.map(id=>ORACLE[id]?.msg||'').filter(Boolean);
+  if(isGeneralLuckFocus(focus,{cat,theme:input.theme||''})){
+    return sanitizeRashinVisibleText(`■ 光のメッセージ
+${name}さんは、仕事、人間関係、健康、将来の準備を同じ重さで抱えながら、何とか崩れずに進もうとしてきたはずです。いま気力が続きにくいのは、答えがないからではなく、生活リズムと休息が後回しになり、判断の土台が薄くなっているからです。場の反応から力を得やすい分、空気が冷える場面では疲れも早く出ます。
+
+■ ${ORACLE_COMPASS_HEADING}
+羅針盤が示すのは、何を増やすかより、何を先に守るかです。まず生活リズムと健康の余白を戻し、そのうえで仕事の負荷、人間関係の距離、将来の準備を順番に見てください。全部を同時に整えようとしないほど、次の一年の優先順位は自然に見えてきます。`);
+  }
   const summarizeOracleHint=(msg,mode='present')=>{
     const text=String(msg||'').trim();
     if(!text) return '';
@@ -21650,7 +21887,9 @@ function buildIntegratedFallback(name,cat,theme='',context={}){
   const actionPlan=buildThemeSpecificActionPlan(focus);
   const lines=[`■ ${INTEGRATION_FINAL_HEADING}`,''];
 
-  if(isWorkLifeDirectionFocus(focus)){
+  if(isGeneralLuckFocus(focus,{cat,theme,...context})){
+    lines.push('今回の答えは、生活リズムと健康の余白を最初に戻すことです。そこが整うほど、仕事、人間関係、将来の準備の優先順位が見えます。今の停滞は失敗ではなく、抱えるものの順番を組み直す合図です。');
+  }else if(isWorkLifeDirectionFocus(focus)){
     lines.push(buildWorkLifeTopVerdictText(name,focus,theme));
   }else if(focus.isDualConcern){
     lines.push(`${name}さんの答えは、「恋愛と仕事を同時に片づけようとしないこと」です。いまは両方を一気に決めるより、恋愛では安心感、仕事では納得感という別々の軸で見直したほうが前に進めます。`);
@@ -21666,7 +21905,9 @@ function buildIntegratedFallback(name,cat,theme='',context={}){
   if(hasSupport) lines.push('迷いの中心が言葉になるほど、流れは立て直せます。');
 
   lines.push('',`■ ${INTEGRATION_CORE_HEADING}`,'');
-  if(focus.isDualConcern){
+  if(isGeneralLuckFocus(focus,{cat,theme,...context})){
+    lines.push('迷いの正体は、大きく崩れていない現状を守りたい気持ちと、このまま気力を削り続ける不安が同時にあることです。休むことを後回しにする癖が、判断の輪郭を鈍らせています。');
+  }else if(focus.isDualConcern){
     lines.push(`迷いの正体は、恋愛では安心できる向き合い方、仕事では${formatDecisionCriteriaChoice(ctx.decisionCriteriaList)}の返り方を同じ不安で抱えていることです。`);
     lines.push(`どちらも曖昧なまま負担だけが増えるなら、自分を削ってまで守る選択ではありません。${hasValue?'損得や負担の釣り合いも、今回は見逃さないでいい部分です。':''}`);
   }else if(focus.hasLove){
@@ -21681,9 +21922,17 @@ function buildIntegratedFallback(name,cat,theme='',context={}){
   }
 
   lines.push('',`■ ${INTEGRATION_FLOW_HEADING}`,'');
-  lines.push(`${hasSupport?'支えや好転の兆しはあります。':''}${hasEnding?'一方で、先送りが続くほど流れに押されやすい状態です。':''}${hasHidden?'まだ言葉になっていない本音が残っています。':''}`||'今は、焦って答えを出すより違和感の輪郭が戻るほど判断しやすい流れです。');
+  if(isGeneralLuckFocus(focus,{cat,theme,...context})){
+    lines.push('今は、毎日の整い方が運の受け取り方を左右しています。朝のリズムが戻り、休む予定を守れるほど、仕事の負荷も人との距離も選び直しやすくなります。将来の準備は、その余白が戻ってから小さく進みます。');
+  }else{
+    lines.push(`${hasSupport?'支えや好転の兆しはあります。':''}${hasEnding?'一方で、先送りが続くほど流れに押されやすい状態です。':''}${hasHidden?'まだ言葉になっていない本音が残っています。':''}`||'今は、焦って答えを出すより違和感の輪郭が戻るほど判断しやすい流れです。');
+  }
   lines.push('',`■ ${INTEGRATION_ACTION_GUIDE_HEADING}`,'');
-  lines.push(actionPlan[0]||'違和感を消すより、違和感が教えている軸を取り戻していい。');
+  if(isGeneralLuckFocus(focus,{cat,theme,...context})){
+    lines.push('羅針は、全部を同時に片づけることではなく、先に自分の回復を予定に入れることです。生活、健康、仕事、人間関係、将来の順に見直すほど、次の一年の流れは安定します。');
+  }else{
+    lines.push(actionPlan[0]||'違和感を消すより、違和感が教えている軸を取り戻していい。');
+  }
   return lines.join('\n');
 }
 
