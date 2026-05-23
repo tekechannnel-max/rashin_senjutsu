@@ -5,10 +5,14 @@ const { chromium } = require('playwright');
 const rootDir = path.resolve(__dirname, '..', '..');
 const outDir = path.resolve(rootDir, process.env.RASHIN_VERIFY_OUTPUT_DIR || 'outputs');
 const baseUrl = process.env.RASHIN_VERIFY_BASE_URL || 'http://127.0.0.1:3128/?dev&debug=1';
-const rashinCode = process.env.RASHIN_VERIFY_CODE || '8888-8888-8888';
+const rashinCode = process.env.RASHIN_VERIFY_CODE || '';
 const developerEmail = process.env.RASHIN_VERIFY_DEV_EMAIL || 'codex-local@rashin.test';
 const headed = /^(1|true|yes)$/i.test(process.env.RASHIN_VERIFY_HEADED || '');
 const startedAt = new Date().toISOString();
+
+if (!/^\d{4}-\d{4}-\d{4}$/.test(rashinCode)) {
+  throw new Error('RASHIN_VERIFY_CODE must be set to the paid Rashin code to verify, for example 1234-5678-9012.');
+}
 
 fs.mkdirSync(outDir, { recursive: true });
 

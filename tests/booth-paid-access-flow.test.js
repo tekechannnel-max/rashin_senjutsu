@@ -111,18 +111,19 @@ assert.ok(
   'direct Rashin-code starts must create a fresh source reading after a previous ticket has been used'
 );
 
-const advertisedReusableHash = '0820a04669514cfbd7845e70a0f8b2203d46ac18af400062f96e1761f682f1fe';
-const advertisedReusableEntry = (Array.isArray(reusableCodeConfig.hashes) ? reusableCodeConfig.hashes : [])
-  .find(entry => (typeof entry === 'string' ? entry : entry?.hash) === advertisedReusableHash);
+const reusableHashes = Array.isArray(reusableCodeConfig.hashes) ? reusableCodeConfig.hashes : [];
+const revokedVerificationHash = '0820a04669514cfbd7845e70a0f8b2203d46ac18af400062f96e1761f682f1fe';
+const revokedVerificationEntry = reusableHashes
+  .find(entry => (typeof entry === 'string' ? entry : entry?.hash) === revokedVerificationHash);
 
 assert.ok(
-  advertisedReusableEntry && typeof advertisedReusableEntry === 'object',
-  'advertised reusable Rashin code must keep an explicit object entry'
+  !revokedVerificationEntry,
+  'revoked verification Rashin code must not remain reusable'
 );
 
 assert.ok(
-  !advertisedReusableEntry.expiresAt,
-  'advertised reusable Rashin code must not expire'
+  reusableCodeConfig.count === reusableHashes.length,
+  'reusable Rashin code count must match configured hashes'
 );
 
 console.log('booth-paid-access-flow.test.js: ok');
