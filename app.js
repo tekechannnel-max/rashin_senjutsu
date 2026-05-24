@@ -2799,10 +2799,11 @@ function getConsultationTagPriorityMatch(source='',tags=[]){
     const labelPattern=labels.map(escapeRegExp).join('|');
     if(!labelPattern) continue;
     const patterns=[
-      new RegExp(`(?:今回|先に|まず|主テーマ|主軸|優先)[^。！？\\n]{0,28}(?:${labelPattern})`),
-      new RegExp(`(?:${labelPattern})[^。！？\\n]{0,28}(?:先に|優先|主軸|主テーマ|中心)`),
+      new RegExp(`(?:今回|先に|まず)[^。！？\\n]{0,28}(?:${labelPattern})[^。！？\\n]{0,16}(?:見たい|読みたい|読む|確認したい|主軸|主テーマ)`),
+      new RegExp(`(?:主テーマ|主軸)[^。！？\\n]{0,16}(?:${labelPattern})`),
+      new RegExp(`(?:${labelPattern})[^。！？\\n]{0,24}(?:先に|主軸|主テーマ|中心に|優先して|優先的に)(?:見たい|読みたい|読む|確認したい|扱う|する)?`),
     ];
-    const directPriorityPattern=new RegExp(`(?:${labelPattern})[^。！？\\n]{0,18}(?:先に|主軸|主テーマ|中心)`);
+    const directPriorityPattern=new RegExp(`(?:${labelPattern})[^。！？\\n]{0,24}(?:先に|主軸|主テーマ|中心に|優先して|優先的に)(?:見たい|読みたい|読む|確認したい|扱う|する)?`);
     if(segments.some(segment=>{
       if(!labels.some(label=>segment.includes(label))) return false;
       if(/両方|どちら/.test(segment)&&!directPriorityPattern.test(segment)) return false;
@@ -7968,6 +7969,28 @@ function getDecisionThemeLabel(primaryTheme='general'){
   }[primaryTheme]||'今回の相談';
 }
 
+function getDualConcernThemeLabels(focus={},context={}){
+  const selectedTags=getConsultationSpecificTags(getConsultationCategoryTagsFromContext({
+    ...(context||{}),
+    ...(context?.paidUserData&&typeof context.paidUserData==='object'?context.paidUserData:{}),
+    ...(focus?.paidUserData&&typeof focus.paidUserData==='object'?focus.paidUserData:{}),
+    catTags:context?.catTags||context?.categoryTags||context?.selectedTags||context?.paidUserData?.catTags||focus?.catTags||focus?.selectedTags||[],
+  },context?.cat||focus?.cat||''));
+  const labels=selectedTags.map(tag=>CONSULTATION_CATEGORY_TAGS.find(item=>item.value===tag)?.label||tag);
+  const inferred=[];
+  const source=collectDecisionSource(focus,context);
+  const add=(value,pattern)=>{
+    if(pattern.test(source)&&!inferred.includes(value)) inferred.push(value);
+  };
+  add('恋愛',/恋愛|結婚|復縁|相手|彼氏|彼女|パートナー/);
+  add('仕事・進路',/仕事|職場|転職|進路|働き方|上司|評価|役割/);
+  add('人間関係',/人間関係|距離感|友人|チーム|上司|同僚|関係|空気/);
+  add('お金',/お金|収入|支出|家計|貯金|副業|月末/);
+  add('家族',/家族|家庭|夫婦|親|子ども|実家/);
+  add('自己理解',/自己理解|本音|適性|自分らしさ/);
+  return uniqueNonEmpty([...labels,...inferred]).slice(0,2);
+}
+
 function buildDecisionContext(focus={},context={}){
   const source=collectDecisionSource(focus,context);
   const primaryTheme=normalizePrimaryThemeValue(focus);
@@ -7979,6 +8002,7 @@ function buildDecisionContext(focus={},context={}){
   const criteriaText=formatDecisionCriteria(criteriaList);
   const userProvidedTiming=focus.userProvidedTiming||focus.targetTiming||extractUserProvidedTiming(source);
   const reviewTiming=userProvidedTiming||'少し先';
+  const dualThemeLabels=primaryTheme==='dual_concern'?getDualConcernThemeLabels(focus,context):[];
   return{
     source,
     primaryTheme,
@@ -7989,6 +8013,8 @@ function buildDecisionContext(focus={},context={}){
     actionReadiness:focus.actionReadiness??extractActionReadiness(source),
     decisionCriteriaList:criteriaList,
     criteriaText,
+    dualThemeLabels,
+    dualThemeText:dualThemeLabels.length>=2?`${dualThemeLabels[0]}と${dualThemeLabels[1]}`:'複数の悩み',
     userProvidedTiming,
     reviewTiming,
     primaryLabel:getDecisionThemeLabel(primaryTheme),
@@ -8075,7 +8101,7 @@ function buildDecisionContextPromptBlock(focus={},context={}){
   if(ctx.explicitUserPriority){
     lines.push('- isDualConcern=trueでも、明示された優先テーマを主構造にする。dual concern型の汎用結論へ戻さない。');
   }else if(ctx.primaryTheme==='dual_concern'){
-    lines.push('- 優先順位が明示されていない複合相談なので、恋愛と仕事などを同程度に抱えている読みを使ってよい。');
+    lines.push(`- 優先順位が明示されていない複合相談なので、${ctx.dualThemeText}を同程度に抱えている読みを使ってよい。`);
   }
   return lines.join('\n');
 }
@@ -8419,7 +8445,7 @@ function buildDecisionSupportPromptGuide(cat='',theme='',focusOverride=null){
     lines.push(`- ${ctx.secondaryTheme?`${getDecisionThemeLabel(ctx.secondaryTheme)}は副テーマまたは背景として扱い、主テーマの判断を上書きしない`:'副テーマがない場合は仕事・進路の判断軸に集中する'}`);
   }
   if(focus.isDualConcern&&!focus.explicitUserPriority){
-    lines.push('- 恋愛と仕事が同時に出てくる場合は、必ず論点を「恋愛では〜、仕事では〜」と分けて書く');
+    lines.push(`- ${ctx.dualThemeText}が同時に出てくる場合は、必ず論点をそれぞれ分けて書く`);
   }
   if(focus.needsDecision){
     lines.push('- 「何が見えないから迷っているのか」を一文で書く');
@@ -8673,7 +8699,12 @@ function getLenRealityPhrase(card={},ctx={},role=''){
     case 22:return 'どちらを選ぶかより、何を分けて考えるかが問われる分岐';
     case 23:return `${w.field}を続けるほど少しずつ削られる消耗`;
     case 24:return '気持ちの強さが、冷静な判断を追い越しやすい状態';
-    case 25:return `${w.object}を続ける意味や約束の重さ`;
+    case 25:
+      if(ctx.primaryTheme==='dual_concern'){
+        if(/職場|上司|チーム|同僚/.test(ctx.source||'')) return '職場で信頼を積む意味と仕事の負担の重なり';
+        return `${ctx.dualThemeText||'複数の悩み'}を同時に抱え続ける重さ`;
+      }
+      return `${w.object}を続ける意味や約束の重さ`;
     case 26:return 'まだ表に出ていない本音や、言葉になりきっていない事情';
     case 27:return '言葉、連絡、通知に答えの温度が出る流れ';
     case 28:return '相手側の主導権や態度';
@@ -8873,6 +8904,13 @@ function buildCardGroundedVerdictSentence(ctx={},flags={}){
     return `${getLenPositionTone(blocker,reading.total)}${getLenRealityPhrase(blocker,ctx,'blocker')}があり、平気なふりで進むほど判断は重くなります。`;
   }
   if(positive){
+    if(ctx.primaryTheme==='dual_concern'){
+      const positivePhrase=getLenRealityPhrase(positive,ctx,'positive');
+      const workplace=/職場|上司|チーム|同僚/.test(ctx.source||'');
+      return workplace
+        ?`${positivePhrase}は残っています。ただし、職場で信頼を積む距離と仕事の負担を分けて見る必要があります。`
+        :`${positivePhrase}は残っています。ただし、複数の悩みを同じ重さで抱え続けず、先に自分を削っている場所を分けて見る必要があります。`;
+    }
     return `${getLenPositionTone(positive,reading.total)}${getLenRealityPhrase(positive,ctx,'positive')}が出ており、流れは完全には閉じていません。`;
   }
   const core=simplifyLenCoreTextForVerdict(flags.coreText);
@@ -8906,12 +8944,29 @@ function buildCardGroundedFlowText(ctx={},flags={}){
   }else if(blocker){
     sentences.push(`今は、${getLenRealityPhrase(blocker,ctx,'blocker')}が前に出て、${w.base}よりも重さを感じやすい流れです。`);
   }else if(core){
-    sentences.push(`今は、${getLenRealityPhrase(core,ctx,core.roles?.[0]||'')}が中心になり、${w.field}の答えを急ぎにくい流れです。`);
+    const corePhrase=getLenRealityPhrase(core,ctx,core.roles?.[0]||'');
+    if(ctx.primaryTheme==='dual_concern'&&core.id===25&&/職場|上司|チーム|同僚/.test(ctx.source||'')){
+      sentences.push(`今は、${corePhrase}が前に出て、職場で続ける意味と距離の取り方を分けて見る流れです。`);
+    }else{
+      sentences.push(`今は、${corePhrase}が中心になり、${w.field}の答えを急ぎにくい流れです。`);
+    }
   }
-  if(positive){
+  if(positive&&(!core||positive.id!==core.id)){
     sentences.push(`${getLenPositionTone(positive,reading.total)}${getLenRealityPhrase(positive,ctx,'positive')}があり、流れはまだ整う余地を残しています。`);
-  }else if(choice){
+  }else if(positive&&core&&positive.id===core.id){
+    if(ctx.primaryTheme==='dual_concern'&&/職場|上司|チーム|同僚/.test(ctx.source||'')){
+      sentences.push('職場で信頼を積める余地はありますが、仕事の負担まで一緒に抱えると、続ける意味が見えにくくなります。');
+    }else{
+      sentences.push('流れは閉じていませんが、同じ見方のまま抱え続けるほど判断は重くなります。');
+    }
+  }else if(choice&&(!core||choice.id!==core.id)){
     sentences.push(`${getLenRealityPhrase(choice,ctx,'choice')}が見えており、同じ場所で我慢を続けるより、見方を分けるほど道筋が戻ります。`);
+  }else if(choice&&core&&choice.id===core.id){
+    if(ctx.primaryTheme==='dual_concern'&&/職場|上司|チーム|同僚/.test(ctx.source||'')){
+      sentences.push('同じ職場で我慢を続けるかどうかを決める前に、人間関係の声と仕事の負担を分けるほど道筋が戻ります。');
+    }else{
+      sentences.push('同じ場所で我慢を続けるより、見方を分けるほど道筋が戻ります。');
+    }
   }
   if(futureBlocker){
     sentences.push(`ただし、${getLenRealityPhrase(futureBlocker,ctx,'blocker')}を薄く見積もると、先へ進むほど同じ違和感が残ります。`);
@@ -8946,8 +9001,8 @@ function getLenCoreFocusText(id){
   }
 }
 
-function buildThemeSpecificActionPlan(focus){
-  const ctx=buildDecisionContext(focus);
+function buildThemeSpecificActionPlan(focus,context={}){
+  const ctx=buildDecisionContext(focus,context);
   if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
     return[
       `努力が${ctx.criteriaText}として返ってくる場所なら、まだ整う余地があります。`,
@@ -8957,7 +9012,7 @@ function buildThemeSpecificActionPlan(focus){
   }
   if(ctx.primaryTheme==='dual_concern'&&!focus.explicitUserPriority){
     return[
-      '恋愛と仕事を同じ不安で包むほど、どちらの本音も見えにくくなります。',
+      `${ctx.dualThemeText}を同じ不安で包むほど、どちらの本音も見えにくくなります。`,
       '先に苦しくなっているテーマほど、いまの羅針盤の中心です。',
       '一方の不安をもう一方で埋めようとすると、迷いが長引きます。'
     ];
@@ -9006,7 +9061,7 @@ function buildThirtyDayActionPlan(focus){
   }
   if(ctx.primaryTheme==='dual_concern'&&!focus.explicitUserPriority){
     return[
-      '恋愛と仕事を同じ不安で処理しないほど、本当の優先順位が見えてきます。',
+      `${ctx.dualThemeText}を同じ不安で処理しないほど、本当の優先順位が見えてきます。`,
       '一方を選ぶことは、もう一方を捨てることではありません。',
       '最初に軽くなるテーマが、いま戻すべき判断軸です。'
     ];
@@ -11060,6 +11115,33 @@ function setResultContentVisibility(visible){
   updateResultActionState();
 }
 
+function restoreGeneratedResultBlocksFromOutputs(context={}){
+  if(!LAST_OUTPUTS||PLAN==='reader') return;
+  if(LAST_OUTPUTS.len){
+    const block=document.getElementById('r-len-block');
+    if(block){
+      block.style.display='';
+      renderFormattedResultText('r-len-block',LAST_OUTPUTS.len,'len',context);
+    }
+  }
+  if(LAST_OUTPUTS.orc){
+    const block=document.getElementById('r-orc-block');
+    if(block){
+      block.style.display='';
+      renderFormattedResultText('r-orc-block',LAST_OUTPUTS.orc,'orc',context);
+    }
+  }
+  if(LAST_OUTPUTS.integration){
+    const loadEl=document.getElementById('r-aiload');
+    const textEl=document.getElementById('r-integration');
+    if(loadEl) loadEl.style.display='none';
+    if(textEl){
+      textEl.style.display='block';
+      renderFormattedResultText('r-integration',LAST_OUTPUTS.integration,'integration',context);
+    }
+  }
+}
+
 function updateResultActionState(){
   const deepCta=document.getElementById('result-deep-cta');
   const upgradePanel=document.getElementById('result-upgrade-panel');
@@ -11967,7 +12049,7 @@ function buildDossierLeadForDecisionContext(ctx){
   if(ctx.primaryTheme==='money') return 'お金の判断は、不安を消すことより安心が残る余白が軸です。';
   if(ctx.primaryTheme==='family') return '家族の判断は、役割より境界線が戻る距離が軸です。';
   if(ctx.primaryTheme==='self_understanding') return '今の自分は、正解探しより力を出せる感覚が軸です。';
-  return '今回の相談は、違和感を消すより判断軸を取り戻すことが中心です。';
+  return '今回の相談は、違和感の正体を分けて、判断軸を取り戻すことが中心です。';
 }
 
 function buildDossierCardKeywords(ctx={},reading={}){
@@ -12059,8 +12141,9 @@ function buildDossierClosingForDecisionContext(ctx){
   if(ctx.primaryTheme==='love') return '我慢だけが増える関係を、愛情と呼ばなくていい。';
   if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return '我慢だけが増える場所を、居場所と呼ばなくていい。';
   if(ctx.primaryTheme==='relationship') return '関係を守ることと、自分を削ることは同じではありません。';
+  if(ctx.primaryTheme==='dual_concern') return `${ctx.dualThemeText}を一度に決めず、先に自分を削っている場所へ羅針を戻してください。`;
   if(ctx.primaryTheme==='creative') return '好きな気持ちが戻る形こそ、今のあなたの羅針です。';
-  return '違和感を消すより、違和感が教えている軸を取り戻していい。';
+  return '違和感を無理に流さず、そこに残る判断軸を取り戻していい。';
 }
 
 function buildWorkLifeDossierData(focus={},context={}){
@@ -12754,7 +12837,7 @@ function buildDossierWeightedSignalFallbacks(card={},focus=getCurrentRefinedFocu
   }
   if(ctx.primaryTheme==='self_understanding'){
     return{
-      lenormand:'今の焦点は、違和感を消すより本音の置き場所を見つけることです。自分を雑に扱わない軸が戻るほど、選び方も整います。',
+      lenormand:'今の焦点は、違和感の正体を分けて本音の置き場所を見つけることです。自分を雑に扱わない軸が戻るほど、選び方も整います。',
       oracle:'向き合い方は、正しさより自分の感覚を置き去りにしないことです。',
     };
   }
@@ -16453,6 +16536,36 @@ function hasBrokenLenormandText(text='',integration='',context={}){
   return false;
 }
 
+function buildEmergencyFreeLenPairFallback(name='あなた',cat='総合',context={}){
+  const theme=context.theme||getCurrentInputSnapshot().theme||'';
+  const focus=context.focus||getFocusForContext(cat,theme,context);
+  const ctx=buildDecisionContext(focus,{...context,cat,theme});
+  const workplaceDual=ctx.primaryTheme==='dual_concern'
+    &&/職場|上司|チーム|同僚/.test([ctx.source,theme,cat].filter(Boolean).join('\n'))
+    &&/仕事|進路|働き方/.test([ctx.source,ctx.dualThemeText].filter(Boolean).join('\n'));
+  const subject=ctx.primaryTheme==='dual_concern'
+    ?`${ctx.dualThemeText}のどちらを先に見るか`
+    :`${ctx.primaryLabel}でいちばん先に見る一点`;
+  const flow=workplaceDual
+    ?`2枚から見ると、今は職場での人間関係と仕事の負担を分ける段階です。結論を急ぐより、上司との距離、チーム内の立ち位置、任される仕事量のどれが先に自分を削っているかを言葉にすると、判断の順番が戻ります。`
+    :ctx.primaryTheme==='dual_concern'
+      ?`2枚から見ると、今は${subject}を分ける段階です。結論を急ぐより、どちらの違和感が先に自分を削っているかを言葉にすると、判断の順番が戻ります。`
+    :`2枚から見ると、今は${subject}を絞る段階です。大きな結論へ急ぐより、いま強く出ている違和感と現実の反応を分けるほど、判断は落ち着きます。`;
+  const caution=workplaceDual
+    ?`注意したいのは、職場の距離感と仕事量を一つの不安として抱え続けることです。混ぜたまま動くと、人間関係の消耗なのか、役割や負担の問題なのかを取り違えやすくなります。`
+    :ctx.primaryTheme==='dual_concern'
+      ?`注意したいのは、${ctx.dualThemeText}を一つの不安として抱え続けることです。混ぜたまま動くと、仕事量なのか距離感なのか、消耗の原因を取り違えやすくなります。`
+    :`注意したいのは、気持ちの重さだけで全体を決めることです。まだ見えていない点を不安で補うほど、必要な判断軸がぼやけやすくなります。`;
+  const compass=workplaceDual
+    ?`羅針の指針は、職場で信頼を積める距離感と、無理なく続けられる仕事量が両方残るかを見ることです。今は転職か継続かを急がず、最初に軽くなる一点へ戻してください。`
+    :`羅針の指針は、${ctx.criteriaText||getDecisionAxisShortPhrase(ctx)}を手がかりに、無理なく続けられる現実が残るかを見ることです。今は答えを広げるより、最初に軽くなる一点へ戻してください。`;
+  return sanitizeRashinVisibleText([
+    `■ 2枚で見えること\n${flow}`,
+    `■ 注意したい一点\n${caution}`,
+    `■ 羅針の指針\n${compass}`,
+  ].join('\n\n'));
+}
+
 function normalizeLenormandReadingText(text='',context={}){
   const focus=context.focus||getCurrentRefinedFocus(context.cat||'',context.theme||'');
   let source=normalizeLenormandSectionHeadings(normalizePaidReadingText(text));
@@ -16487,7 +16600,13 @@ function normalizeLenormandReadingText(text='',context={}){
   if(!structured||hasBrokenLenormandText(structured,context.integration||'',context)||undrawnIssues.length){
     recordPaidDebugQuality('len_normalize',[...undrawnIssues,'ルノルマン本文の構造欠落、途中終了、または未出カード混入を検出したため、カード由来fallbackへ切り替えました'].filter(Boolean));
     const fallbackName=context.name||(typeof getFullname==='function'?getFullname():'')||'あなた';
-    const fallbackText=buildRichLenFallback(fallbackName,context.cat||'総合');
+    let fallbackText='';
+    try{
+      fallbackText=buildRichLenFallback(fallbackName,context.cat||'総合');
+    }catch(error){
+      recordPaidDebugQuality('len_normalize_fallback_failed',[error?.message||'buildRichLenFallback failed']);
+      fallbackText=buildEmergencyFreeLenPairFallback(fallbackName,context.cat||'総合',context);
+    }
     return sanitizeRashinVisibleText(formatLenormandSections(fallbackText,context)||fallbackText);
   }
   return sanitizeRashinVisibleText(ensureLenormandFlowNarrative(structured,focus,context));
@@ -16543,6 +16662,18 @@ function buildPrimaryTopVerdictExtraSentence(ctx={}){
   return '自分を雑に扱う方向へ進むほど、答えは遠ざかります。';
 }
 
+function buildDualConcernConcreteContextLine(ctx={}){
+  if(ctx.primaryTheme!=='dual_concern') return '';
+  const source=[ctx.source,ctx.cat,ctx.theme,ctx.dualThemeText].filter(Boolean).join('\n');
+  if(/職場|上司|チーム|同僚/.test(source)&&/仕事|進路|働き方/.test(source)){
+    return '職場では、上司との距離やチーム内の立ち位置と、任される仕事の負担を別々に見る必要があります。';
+  }
+  if(/家族|親|夫婦|実家/.test(source)&&/仕事|進路|働き方/.test(source)){
+    return '家庭側の役割と仕事側の負担を分けて見るほど、どこで無理をしているかが見えやすくなります。';
+  }
+  return '';
+}
+
 function buildPrimaryTopVerdictText(name='あなた',focus={},theme='',context={}){
   const ctx=buildDecisionContext(focus,{...context,theme});
   const axisFull=getDecisionAxisFullPhrase(ctx);
@@ -16550,8 +16681,10 @@ function buildPrimaryTopVerdictText(name='あなた',focus={},theme='',context={
   const cardVerdict=buildCardGroundedVerdictSentence(ctx,buildCardReadingFlags(focus,context));
   const lines=[];
   if(ctx.primaryTheme==='dual_concern'&&!focus.explicitUserPriority){
-    lines.push(`今回の答えは、恋愛と仕事などを同じ重さで同時に抱え込まないことです。`);
+    lines.push(`今回の答えは、${ctx.dualThemeText}を同じ重さで同時に抱え込まないことです。`);
     lines.push(`迷いの正体は、どちらも大事にしたい気持ちが重なり、自分がいちばん削られている場所が見えにくくなっていることです。`);
+    const concreteLine=buildDualConcernConcreteContextLine(ctx);
+    if(concreteLine) lines.push(concreteLine);
     if(cardVerdict) lines.push(cardVerdict);
   }else if(ctx.primaryTheme==='love'){
     if(isReconciliationContext(ctx)){
@@ -16598,7 +16731,7 @@ function buildPrimaryTopVerdictText(name='あなた',focus={},theme='',context={
     lines.push('仕事、人間関係、将来の準備は、気力が戻るほど優先順位が見えやすくなります。');
     lines.push('今の停滞は失敗ではなく、抱えるものの順番を組み直す合図です。');
   }else{
-    lines.push(`今回の答えは、違和感を消すより判断軸を取り戻すことです。`);
+    lines.push(`今回の答えは、違和感の正体を分けて判断軸を取り戻すことです。`);
     if(cardVerdict) lines.push(cardVerdict);
     lines.push(`${axisFull}が残る選び方なら、迷いは少しずつ薄くなります。`);
     lines.push(`自分を雑に扱う方向へ進むほど、答えは遠ざかります。`);
@@ -16935,10 +17068,12 @@ function repairAwkwardConnectionPhrases(text=''){
     .replace(/流れがあり、流れは/g,'動きがあり、そこは')
     .replace(/流れはまだ整う余地を残しています/g,'関わり方はまだ整う余地があります')
     .replace(/流れはまだ整う余地があります/g,'関わり方はまだ整う余地があります')
+    .replace(/今回の展開に今回の相談に連絡や動きが入り始める気配が出ており/g,'状況に動きが出始める気配はあり')
+    .replace(/今回の展開に今回の相談に連絡や動きが入り始める気配があり/g,'状況に動きが出始める気配があり')
     .replace(/今回の展開に今回の相談の先に描きたい未来像が出ており/g,'将来に向けて整えたい方向は見えており')
     .replace(/今回の展開に今回の相談の先に描きたい未来像があり/g,'将来へ向かう見通しは残っており')
-    .replace(/今回の展開に今回の相談で越えにくい現実の壁があり/g,'いまは生活と健康の土台が重くなっており')
-    .replace(/今回の相談で越えにくい現実の壁/g,'生活と健康の土台')
+    .replace(/今回の展開に今回の相談で越えにくい現実の壁があり/g,'いまは越えにくい現実の壁が前に出ており')
+    .replace(/今回の相談で越えにくい現実の壁/g,'現実の壁')
     .replace(/距離感・生活・健康のどれか/g,'生活リズムと健康の余白')
     .replace(/続ける意味と切り替えのサイン/g,'先に守る土台と後から動かすテーマ')
     .replace(/今は、今回の相談の先に描きたい未来像が中心になり、今回の相談の答えを急ぎにくい流れです。?/g,'今は、将来像を急いで決めるより、生活と健康の土台を整える流れです。')
@@ -17820,6 +17955,9 @@ function detectPaidTextQualityIssues(key='',text=''){
   if(!source) return [`${key}が空です`];
   issues.push(...detectRashinVisibleTextPolicyIssues(source,key));
   issues.push(...detectJapaneseSurfaceQualityIssues(source,key));
+  if(/今回の展開に今回の相談|今回の展開に迷いの中心|迷いの中心を続ける意味|続ける意味や約束の重さ|違和感を消すより、違和感が教えている軸|引っかかりを消すより/.test(source)){
+    issues.push(`${key}に旧式の汎用接続文が残っています`);
+  }
   issues.push(...detectCardExplanationSmellIssues(source).map(issue=>`${key}: ${issue}`));
   issues.push(...detectAwkwardRashinJapaneseIssues(source).map(issue=>`${key}: ${issue}`));
   issues.push(...detectRepeatedRashinPhraseIssues(source).map(issue=>`${key}: ${issue}`));
@@ -17948,8 +18086,15 @@ function buildFreeReadingQualityFallback(kind='',context={}){
   const focus=context.focus||getFocusForContext(cat,theme,context);
   const shared={...context,name,cat,theme,focus,plan:'free'};
   if(key==='len'){
+    let fallbackText='';
+    try{
+      fallbackText=buildRichLenFallback(name,cat);
+    }catch(error){
+      recordPaidDebugQuality('free_len_fallback_build_failed',[error?.message||'buildRichLenFallback failed']);
+      fallbackText=buildEmergencyFreeLenPairFallback(name,cat,shared);
+    }
     return normalizeLenormandReadingText(
-      buildRichLenFallback(name,cat),
+      fallbackText,
       {...shared,lenCount:context.lenCount||SEL_LEN.length}
     );
   }
@@ -17980,7 +18125,13 @@ function applyFreeReadingQualityGate(kind='',text='',context={}){
   if(!issues.length) return text;
   recordPaidDebugQuality(`free_${key}_quality`,issues);
   if(context.fallbackAlready) return text;
-  const fallback=buildFreeReadingQualityFallback(key,safeContext);
+  let fallback='';
+  try{
+    fallback=buildFreeReadingQualityFallback(key,safeContext);
+  }catch(error){
+    recordPaidDebugQuality(`free_${key}_fallback_failed`,[error?.message||'free fallback failed']);
+    return text;
+  }
   const fallbackIssues=validateFreeReadingSectionQuality(key,fallback,{...safeContext,fallbackAlready:true});
   if(fallbackIssues.length) recordPaidDebugQuality(`free_${key}_fallback_quality`,fallbackIssues);
   return (!fallbackIssues.length||fallbackIssues.length<=issues.length)?fallback:text;
@@ -18739,7 +18890,7 @@ ${buildDecisionContextPromptBlock(focus,context)}
 
 ${context.premiumFocusBrief||buildPremiumReadingFocusBrief(context)}
 判断軸は「${ctx.criteriaText}」を使ってください。相談者入力にない職種、年月、条件を作らないでください。
-${ctx.explicitUserPriority?'明示された優先テーマがあるため、「恋愛と仕事を同時に片づけない」は主結論にしないでください。':'優先順位が明示されていない複合相談の場合だけ、dual concern型の読みを使ってよいです。'}
+${ctx.explicitUserPriority?'明示された優先テーマがあるため、「複数テーマを同時に片づけない」は主結論にしないでください。':`優先順位が明示されていない複合相談の場合だけ、${ctx.dualThemeText||'複数テーマ'}を同時に抱えている読みを使ってよいです。`}
 作業指示で終わらせず、違和感の出どころを言葉にしてください。`;
   const prompt=`【相談者入力データ】
 ${context.paidUserData||''}
@@ -19173,9 +19324,11 @@ function renderPaidCombinedOutputs(parsed,name,cat,theme,options={}){
 async function completeResultGenerationUI(){
   await ensureResultLoadingMinimumTime();
   setResultContentVisibility(true);
+  restoreGeneratedResultBlocksFromOutputs({plan:PLAN});
   const progressCard=document.getElementById('result-progress-card');
   if(progressCard) progressCard.style.display='none';
   renderPremiumDossier(false);
+  restoreGeneratedResultBlocksFromOutputs({plan:PLAN});
   persistCurrentReading();
   renderMemberFollowupSection();
   renderReturnRitual();
@@ -19285,7 +19438,7 @@ ${premiumFocusBrief}
 - ORC: 光のメッセージ、内面の整え方、自分を雑に扱わない視点
 - INTEGRATION: ${INTEGRATION_FINAL_HEADING}、${INTEGRATION_CORE_HEADING}、${INTEGRATION_FLOW_HEADING}、${INTEGRATION_ACTION_GUIDE_HEADING}
 - 羅針カード: 判断軸を思い出せる短い言葉だけを残す
-${decisionLabels.explicitUserPriority?'- 明示された優先テーマがある場合、「恋愛と仕事を同じ重さで同時に解決しようとしている」は主構造にしない。':'- 優先順位が明示されていない複合相談では、dual concern型の読みを使ってよい。'}
+${decisionLabels.explicitUserPriority?'- 明示された優先テーマがある場合、「複数テーマを同じ重さで同時に解決しようとしている」は主構造にしない。':`- 優先順位が明示されていない複合相談では、${decisionLabels.dualThemeText||'複数テーマ'}を同時に抱えている読みを使ってよい。`}
 
 【断定方針】
 - 無根拠な未来、他人の心、医療・法律・投資などの専門判断は断定しない
@@ -19653,7 +19806,7 @@ ${PLAN==='paid'||is9?`■ 迷いの構造
 
 ■ 気をつけること
 ここがこの鑑定で一番大事な現実的な警戒点です。消耗だけに寄せず、見落とし、障害、誤判断、先送り、周囲や相手や環境の影響を正直に言い切る。「かもしれない」で逃げず「〜になりやすい」と伝える。改善の兆しや好転の余地が見えるなら、必ず「一方で〜という兆しもある」とセットで伝える。
-${focus.isDualConcern&&!isWorkLifeDirectionFocus(focus)?`恋愛と仕事が両方あるので、必要なら「恋愛では」「仕事では」と分けて整理する。`:''}
+${focus.isDualConcern&&!isWorkLifeDirectionFocus(focus)?`${decisionLabels.dualThemeText||'複数の悩み'}が両方あるので、必要ならテーマごとに分けて整理する。`:''}
 
 ■ あなたの引力
 ルノルマンカードの良メッセージとして書く。カードの中にある「良い兆しを引き込める要素」だけを取り出し、改善傾向、好機、追い風、支え、タイミング、相談者の潜在的な力を具体的に書く。カード全体がネガティブに見えるときも、必ず好転要素か潜在的な力を見つけて書く。「良い情報がない」とは書かない。
@@ -19747,19 +19900,39 @@ ${buildReadingOutputFormatGuide('len',is9,focus)}`;
 
   const lenContext={name,focus,cat,theme,plan:PLAN,lenCount:SEL_LEN.length};
   const safeRenderLen=(rawText,options={})=>{
-    const normalized=normalizeLenormandReadingText(rawText,lenContext);
-    LAST_OUTPUTS.len=sanitizeRashinVisibleText(applyFreeReadingQualityGate('len',normalized,{...lenContext,...options}));
+    let normalized='';
+    try{
+      normalized=normalizeLenormandReadingText(rawText,lenContext);
+    }catch(error){
+      recordPaidDebugQuality('free_len_normalize_failed',[error?.message||'normalizeLenormandReadingText failed']);
+      normalized=buildEmergencyFreeLenPairFallback(name,cat,lenContext);
+    }
+    try{
+      LAST_OUTPUTS.len=sanitizeRashinVisibleText(applyFreeReadingQualityGate('len',normalized,{...lenContext,...options}));
+    }catch(error){
+      recordPaidDebugQuality('free_len_quality_gate_failed',[error?.message||'applyFreeReadingQualityGate failed']);
+      LAST_OUTPUTS.len=sanitizeRashinVisibleText(normalized||buildEmergencyFreeLenPairFallback(name,cat,lenContext));
+    }
     renderFormattedResultText('r-len-block',LAST_OUTPUTS.len,'len',lenContext);
     return LAST_OUTPUTS.len;
   };
   const renderEmergencyLenFallback=()=>{
-    const fallbackText=buildRichLenFallback(name,cat);
-    LAST_OUTPUTS.len=sanitizeRashinVisibleText(formatLenormandSections(fallbackText,lenContext)||fallbackText);
+    let fallbackText='';
+    try{
+      fallbackText=buildRichLenFallback(name,cat);
+      LAST_OUTPUTS.len=sanitizeRashinVisibleText(formatLenormandSections(fallbackText,lenContext)||fallbackText);
+    }catch(error){
+      recordPaidDebugQuality('free_len_emergency_fallback_failed',[error?.message||'emergency len fallback failed']);
+      LAST_OUTPUTS.len=buildEmergencyFreeLenPairFallback(name,cat,lenContext);
+    }
     try{
       renderFormattedResultText('r-len-block',LAST_OUTPUTS.len,'len',lenContext);
     }catch(renderError){
       const block=document.getElementById('r-len-block');
-      if(block) block.textContent=LAST_OUTPUTS.len;
+      if(block){
+        block.classList.add('formatted-output');
+        block.textContent=LAST_OUTPUTS.len;
+      }
     }
   };
 
@@ -20041,9 +20214,11 @@ ${buildReadingOutputFormatGuide('integration',false,focus)}`;
   setResultStageStatus('integration','done');
   await ensureResultLoadingMinimumTime();
   setResultContentVisibility(true);
+  restoreGeneratedResultBlocksFromOutputs({plan:PLAN,focus,cat,theme,clarifyText:clarifyFull});
   const progressCard=document.getElementById('result-progress-card');
   if(progressCard) progressCard.style.display='none';
   renderPremiumDossier(false);
+  restoreGeneratedResultBlocksFromOutputs({plan:PLAN,focus,cat,theme,clarifyText:clarifyFull});
   persistCurrentReading();
   renderMemberFollowupSection();
   renderReturnRitual();
@@ -22007,7 +22182,7 @@ ${name}さんは、仕事、人間関係、健康、将来の準備を同じ重�
     const secondary=buildSecondaryThemeSentence(ctx);
     lines.push(`今の羅針盤は、今日すべてを決め切ることではありません。${ctx.criteriaText}が戻る場所かどうかを、自分を雑に扱わない視点で見直すことです。${secondary}`);
   }else if(focus.isDualConcern){
-    lines.push('恋愛と仕事を同じ不安で抱えないことが最優先です。恋愛では「安心できるか」、仕事では「続ける意味があるか」と、問いを分けるだけで頭の混乱がかなり減ります。');
+    lines.push(`${ctx.dualThemeText}を同じ不安で抱えないことが最優先です。それぞれの問いを分けるだけで、いま何に心を削られているかが見えやすくなります。`);
   }else if(focus.hasLove){
     lines.push('相手の気持ちを読むことより先に、自分がこの関係で何を我慢しすぎているのかを認めることが先です。');
   }else if(focus.hasWork){
@@ -22032,7 +22207,7 @@ function buildIntegratedFallback(name,cat,theme='',context={}){
   const hasEnding=hasLenGroup(ids,'ending');
   const hasValue=hasLenGroup(ids,'value');
   const hasSupport=hasLenGroup(ids,'support');
-  const actionPlan=buildThemeSpecificActionPlan(focus);
+  const actionPlan=buildThemeSpecificActionPlan(focus,{cat,theme,...context});
   const lines=[`■ ${INTEGRATION_FINAL_HEADING}`,''];
 
   if(isGeneralLuckFocus(focus,{cat,theme,...context})){
@@ -22040,7 +22215,7 @@ function buildIntegratedFallback(name,cat,theme='',context={}){
   }else if(isWorkLifeDirectionFocus(focus)){
     lines.push(buildWorkLifeTopVerdictText(name,focus,theme));
   }else if(focus.isDualConcern){
-    lines.push(`${name}さんの答えは、「恋愛と仕事を同時に片づけようとしないこと」です。いまは両方を一気に決めるより、恋愛では安心感、仕事では納得感という別々の軸で見直したほうが前に進めます。`);
+    lines.push(`${name}さんの答えは、「${ctx.dualThemeText}を同時に片づけようとしないこと」です。いまは両方を一気に決めるより、どちらが先に自分を削っているかを分けて見たほうが前に進めます。`);
   }else if(focus.hasLove){
     lines.push(`${name}さんの答えは、「情の強さ」ではなく「向き合える関係か」で見極めることです。`);
   }else if(focus.hasWork){
@@ -22056,7 +22231,7 @@ function buildIntegratedFallback(name,cat,theme='',context={}){
   if(isGeneralLuckFocus(focus,{cat,theme,...context})){
     lines.push('迷いの正体は、大きく崩れていない現状を守りたい気持ちと、このまま気力を削り続ける不安が同時にあることです。休むことを後回しにする癖が、判断の輪郭を鈍らせています。');
   }else if(focus.isDualConcern){
-    lines.push(`迷いの正体は、恋愛では安心できる向き合い方、仕事では${formatDecisionCriteriaChoice(ctx.decisionCriteriaList)}の返り方を同じ不安で抱えていることです。`);
+    lines.push(`迷いの正体は、${ctx.dualThemeText}を同じ不安で抱え、${formatDecisionCriteriaChoice(ctx.decisionCriteriaList)}のどれを先に見るかが曖昧になっていることです。`);
     lines.push(`どちらも曖昧なまま負担だけが増えるなら、自分を削ってまで守る選択ではありません。${hasValue?'損得や負担の釣り合いも、今回は見逃さないでいい部分です。':''}`);
   }else if(focus.hasLove){
     lines.push('迷いの正体は、気持ちの強さではなく、大事なことに相手が向き合う温度が見えきっていないことです。');
@@ -22078,8 +22253,10 @@ function buildIntegratedFallback(name,cat,theme='',context={}){
   lines.push('',`■ ${INTEGRATION_ACTION_GUIDE_HEADING}`,'');
   if(isGeneralLuckFocus(focus,{cat,theme,...context})){
     lines.push('羅針は、全部を同時に片づけることではなく、先に自分の回復を予定に入れることです。生活、健康、仕事、人間関係、将来の順に見直すほど、次の一年の流れは安定します。');
+  }else if(ctx.primaryTheme==='dual_concern'){
+    lines.push(`${ctx.dualThemeText}を一度に決めず、先に自分を削っている場所へ羅針を戻してください。`);
   }else{
-    lines.push(actionPlan[0]||'違和感を消すより、違和感が教えている軸を取り戻していい。');
+    lines.push(actionPlan[0]||'違和感を無理に流さず、そこに残る判断軸を取り戻していい。');
   }
   return lines.join('\n');
 }

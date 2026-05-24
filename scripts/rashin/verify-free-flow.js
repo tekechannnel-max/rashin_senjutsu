@@ -48,6 +48,8 @@ const persona = {
     'ここ数か月、仕事も人間関係も大きく崩れてはいないが、気力が続かず、この先一年で何を優先すればいいか迷っている。転職や恋愛のような一つの悩みではなく、生活リズム、健康、将来の準備、人との距離感を整えたい。いまの運気の流れと、注意点、動き出すタイミングを知りたい。'
   ),
 };
+persona.categoryTags = envList('RASHIN_VERIFY_CATEGORY_TAGS', [persona.category]).slice(0, 2);
+if (!persona.categoryTags.length) persona.categoryTags = [persona.category].filter(Boolean);
 
 const reactionChoices = envList('RASHIN_VERIFY_REACTION_CHOICES', [
   '雰囲気や仕事が楽しい',
@@ -56,6 +58,9 @@ const reactionChoices = envList('RASHIN_VERIFY_REACTION_CHOICES', [
 const expectedTerms = envList('RASHIN_VERIFY_EXPECT_TERMS', ['総合', '生活リズム', '健康', '将来', '仕事', '人間関係']);
 const forbiddenTerms = envList('RASHIN_VERIFY_FORBID_TERMS', ['結婚', '復縁', '好きな気持ち', '相手の気持ち', '転職先', '制作会社']);
 const requireAllExpectedTerms = /^(1|true|yes)$/i.test(process.env.RASHIN_VERIFY_REQUIRE_ALL_EXPECT_TERMS || '');
+const minLenormandChars = Number.parseInt(process.env.RASHIN_VERIFY_MIN_LEN_CHARS || '220', 10);
+const minOracleChars = Number.parseInt(process.env.RASHIN_VERIFY_MIN_ORC_CHARS || '220', 10);
+const minIntegrationChars = Number.parseInt(process.env.RASHIN_VERIFY_MIN_INTEGRATION_CHARS || '250', 10);
 
 function outputName(name) {
   return name.startsWith('verify-free-local') ? `${outputPrefix}${name.slice('verify-free-local'.length)}` : name;
@@ -105,30 +110,52 @@ async function clickByText(page, selector, text, timeout = 30000) {
 }
 
 async function selectConsultationTag(page, value) {
+  await selectConsultationTags(page, [value]);
+}
+
+async function selectConsultationTags(page, values) {
+  const requested = (Array.isArray(values) ? values : [values]).map(value => String(value || '').trim()).filter(Boolean).slice(0, 2);
+  if (!requested.length) throw new Error('consultation tags not specified');
   await page.waitForSelector('#consultation-tag-modal:not([hidden])', { timeout: 60000 });
-  const ok = await page.evaluate(tagValue => {
+  const result = await page.evaluate(tagValues => {
     const buttons = [...document.querySelectorAll('[data-consultation-tag]')];
     const normalize = value => String(value || '').replace(/\s+/g, '').trim();
-    const button = buttons.find(el => {
-      const rawValue = el.getAttribute('data-consultation-tag') || '';
-      const label = el.querySelector('span')?.textContent || '';
-      return rawValue === tagValue || normalize(rawValue) === normalize(tagValue) || normalize(label) === normalize(tagValue);
+    const selected = [];
+    const missing = [];
+    tagValues.forEach(tagValue => {
+      const button = buttons.find(el => {
+        const rawValue = el.getAttribute('data-consultation-tag') || '';
+        const label = el.querySelector('span')?.textContent || '';
+        return rawValue === tagValue || normalize(rawValue) === normalize(tagValue) || normalize(label) === normalize(tagValue);
+      });
+      if (!button) {
+        missing.push(tagValue);
+        return;
+      }
+      if (!button.classList.contains('is-selected')) button.click();
+      selected.push(button.getAttribute('data-consultation-tag') || tagValue);
     });
-    if (!button) return false;
-    button.click();
     document.querySelector('#consultation-tag-go')?.click();
-    return true;
-  }, value);
-  if (!ok) {
+    return {
+      ok: missing.length === 0,
+      selected,
+      missing,
+      available: buttons.map(el => ({
+        value: el.getAttribute('data-consultation-tag'),
+        text: el.textContent.trim(),
+      })),
+    };
+  }, requested);
+  if (!result.ok) {
     const available = await page.evaluate(() =>
       [...document.querySelectorAll('[data-consultation-tag]')].map(el => ({
         value: el.getAttribute('data-consultation-tag'),
         text: el.textContent.trim(),
       }))
     );
-    throw new Error(`consultation tag not found: ${value}; available=${JSON.stringify(available)}`);
+    throw new Error(`consultation tag not found: ${result.missing.join(', ')}; available=${JSON.stringify(available)}`);
   }
-  log('consultation-tag-selected', { value });
+  log('consultation-tags-selected', { values: result.selected });
 }
 
 async function startFreeFlow(page) {
@@ -186,6 +213,7 @@ async function fillPersona(page) {
       birthDate: `${persona.year}-${persona.month.padStart(2, '0')}-${persona.day.padStart(2, '0')}`,
       gender: persona.gender,
       category: persona.category,
+      categoryTags: persona.categoryTags,
       concernType: persona.concernType,
     },
     reactionChoices: chosen,
@@ -249,9 +277,9 @@ async function waitForResult(page) {
       progressDisplay: state.progressDisplay,
     });
     if (
-      state.integrationText.length > 250 &&
-      state.lenText.length > 350 &&
-      state.orcText.length > 220 &&
+      state.integrationText.length > minIntegrationChars &&
+      state.lenText.length > minLenormandChars &&
+      state.orcText.length > minOracleChars &&
       state.progressDisplay === 'none' &&
       !state.bodyText.includes('整理しています')
     ) {
@@ -261,7 +289,7 @@ async function waitForResult(page) {
       return {
         ok: true,
         completeButShort: true,
-        reason: state.lenText.length <= 220 ? 'lenormand section completed too short' : 'result completed short',
+        reason: state.lenText.length <= minLenormandChars ? 'lenormand section completed too short' : 'result completed short',
       };
     }
   }
@@ -285,6 +313,8 @@ async function extractResult(page) {
         if (name === 'SEL_ORC') return typeof SEL_ORC !== 'undefined' ? SEL_ORC : null;
         if (name === 'PLAN') return typeof PLAN !== 'undefined' ? PLAN : null;
         if (name === 'CURRENT_READING_ID') return typeof CURRENT_READING_ID !== 'undefined' ? CURRENT_READING_ID : null;
+        if (name === 'LAST_OUTPUTS') return typeof LAST_OUTPUTS !== 'undefined' ? JSON.parse(JSON.stringify(LAST_OUTPUTS)) : null;
+        if (name === 'PAID_DEBUG_LOG') return typeof PAID_DEBUG_LOG !== 'undefined' && PAID_DEBUG_LOG ? JSON.parse(JSON.stringify(PAID_DEBUG_LOG)) : null;
       } catch (_) {
         return window[name] || null;
       }
@@ -304,6 +334,8 @@ async function extractResult(page) {
       selectedOrc: Array.isArray(readRuntime('SEL_ORC')) ? readRuntime('SEL_ORC') : null,
       plan: readRuntime('PLAN'),
       currentReadingId: readRuntime('CURRENT_READING_ID'),
+      runtimeOutputs: readRuntime('LAST_OUTPUTS'),
+      paidDebugLog: readRuntime('PAID_DEBUG_LOG'),
       htmlSnippets: {
         len: getHtml('#r-len-block'),
         orc: getHtml('#r-orc-block'),
@@ -376,9 +408,9 @@ function evaluateContent(result) {
     freePlan: result.plan === 'free',
     hasFoundationSummary: result.foundationMini.length > 80,
     hasAnimalProfile: result.animal.length > 60,
-    hasLenormandSection: result.len.includes('ルノルマンカード鑑定') && result.len.length > 350,
-    hasOracleSection: result.orc.includes('オラクルカード鑑定') && result.orc.length > 220,
-    hasIntegrationSection: result.integration.includes('いまの答え') && result.integration.length > 250,
+    hasLenormandSection: result.len.includes('ルノルマンカード鑑定') && result.len.length > minLenormandChars,
+    hasOracleSection: result.orc.includes('オラクルカード鑑定') && result.orc.length > minOracleChars,
+    hasIntegrationSection: result.integration.includes('いまの答え') && result.integration.length > minIntegrationChars,
     usesExpectedConcernTerms: requireAllExpectedTerms
       ? missingExpectedTerms.length === 0
       : matchedExpectedTerms.length >= Math.min(3, expectedTerms.length),
@@ -450,7 +482,7 @@ async function main() {
     await page.waitForSelector('#s-top', { timeout: 60000 });
     await screenshot(page, 'verify-free-local-initial.png');
     await startFreeFlow(page);
-    await selectConsultationTag(page, persona.category);
+    await selectConsultationTags(page, persona.categoryTags);
     await fillPersona(page);
     await runCardFlow(page);
     const resultState = await waitForResult(page);
@@ -479,7 +511,13 @@ async function main() {
         birthDate: `${persona.year}-${persona.month.padStart(2, '0')}-${persona.day.padStart(2, '0')}`,
         gender: persona.gender,
         category: persona.category,
+        categoryTags: persona.categoryTags,
         concernType: persona.concernType,
+      },
+      thresholds: {
+        minLenormandChars,
+        minOracleChars,
+        minIntegrationChars,
       },
       resultState,
       evaluation,

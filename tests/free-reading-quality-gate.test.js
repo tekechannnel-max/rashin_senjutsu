@@ -20,13 +20,16 @@ function sliceFromMarker(source, startMarker, endMarker) {
   'function getConsultationCategoryTagsFromContext',
   'function getConsultationThemeSignalsFromTags',
   'function getConsultationTagPriorityMatch',
+  'function getDualConcernThemeLabels',
   'function removeUnbalancedMarkdownBoldMarkers',
   'function detectGeneralLuckVisibleScopeIssues',
   'function getFreeReadingQualityMinimum',
   'function detectFreeLenPairScopeIssues',
+  'function buildEmergencyFreeLenPairFallback',
   'function validateFreeReadingSectionQuality',
   'function buildFreeReadingQualityFallback',
   'function applyFreeReadingQualityGate',
+  'function restoreGeneratedResultBlocksFromOutputs',
 ].forEach(marker => {
   assert.ok(appSource.includes(marker), `Missing free quality gate marker: ${marker}`);
 });
@@ -53,6 +56,19 @@ const freeQualityGate = sliceFromMarker(
     freeQualityGate.includes(requiredCheck),
     `free quality gate must reuse paid-grade check: ${requiredCheck}`
   );
+});
+
+const paidTextQualityGate = sliceFromMarker(
+  appSource,
+  'function detectPaidTextQualityIssues',
+  'function getFreeReadingQualityMinimum'
+);
+
+[
+  '今回の展開に迷いの中心',
+  '迷いの中心を続ける意味',
+].forEach(marker => {
+  assert.ok(paidTextQualityGate.includes(marker), `paid/free text quality gate missing: ${marker}`);
 });
 
 const freeLenPairScope = sliceFromMarker(
@@ -101,6 +117,28 @@ assert.ok(
   'getConsultationTagPriorityMatch(clarifyText,specificTags)||getConsultationTagPriorityMatch(source,specificTags)',
 ].forEach(marker => {
   assert.ok(focusRefiner.includes(marker), `multi-tag focus refiner missing: ${marker}`);
+});
+
+const tagPriorityDetector = sliceFromMarker(
+  appSource,
+  'function getConsultationTagPriorityMatch',
+  'function getConsultationPrimaryThemeFromCategory'
+);
+
+assert.ok(
+  tagPriorityDetector.includes('優先して|優先的に'),
+  'multi-tag priority detector must require explicit priority wording'
+);
+
+[
+  '(?:今回|先に|まず|主テーマ|主軸|優先)',
+  '(?:先に|優先|主軸|主テーマ|中心)',
+].forEach(broadPattern => {
+  assert.strictEqual(
+    tagPriorityDetector.includes(broadPattern),
+    false,
+    `multi-tag priority detector must not treat generic 優先順位 text as a selected-tag priority: ${broadPattern}`
+  );
 });
 
 const clarifyContext = sliceFromMarker(
@@ -204,5 +242,100 @@ const integrationFlow = sliceFromMarker(
     `${startMarker} must pass output through applyFreeReadingQualityGate(${kind})`
   );
 });
+
+const resultBlockRestore = sliceFromMarker(
+  appSource,
+  'function restoreGeneratedResultBlocksFromOutputs',
+  'function updateResultActionState'
+);
+
+[
+  'LAST_OUTPUTS.len',
+  'LAST_OUTPUTS.orc',
+  'LAST_OUTPUTS.integration',
+  "renderFormattedResultText('r-len-block'",
+  "renderFormattedResultText('r-orc-block'",
+  "renderFormattedResultText('r-integration'",
+].forEach(marker => {
+  assert.ok(resultBlockRestore.includes(marker), `result block restore missing: ${marker}`);
+});
+
+const completeResultUi = sliceFromMarker(
+  appSource,
+  'async function completeResultGenerationUI',
+  'function completeFailedResultGenerationUI'
+);
+
+assert.ok(
+  (completeResultUi.match(/restoreGeneratedResultBlocksFromOutputs/g) || []).length >= 2,
+  'completion UI must restore generated text after final visibility and dossier renders'
+);
+
+const integrationCompletion = sliceFromMarker(
+  appSource,
+  'async function runIntegration',
+  'function buildPremiumDossierSourceContext'
+);
+
+assert.ok(
+  (integrationCompletion.match(/restoreGeneratedResultBlocksFromOutputs/g) || []).length >= 2,
+  'free integration completion must restore generated text after final visibility and dossier renders'
+);
+
+const dualConcernLabels = sliceFromMarker(
+  appSource,
+  'function getDualConcernThemeLabels',
+  'function buildDecisionContext'
+);
+
+[
+  'getConsultationCategoryTagsFromContext',
+  'context?.paidUserData?.catTags',
+  '仕事・進路',
+  '人間関係',
+].forEach(marker => {
+  assert.ok(dualConcernLabels.includes(marker), `dual concern label resolver missing: ${marker}`);
+});
+
+const primaryTopVerdict = sliceFromMarker(
+  appSource,
+  'function buildPrimaryTopVerdictText',
+  'function buildWorkLifeTopVerdictText'
+);
+
+assert.ok(
+  primaryTopVerdict.includes('ctx.dualThemeText'),
+  'dual concern top verdict must use selected tag labels instead of a fixed love/work phrase'
+);
+
+assert.strictEqual(
+  primaryTopVerdict.includes('恋愛と仕事などを同じ重さ'),
+  false,
+  'dual concern top verdict must not hard-code love/work for all multi-tag readings'
+);
+
+const lenFallbackPath = sliceFromMarker(
+  appSource,
+  'function buildEmergencyFreeLenPairFallback',
+  'function normalizeLenormandReadingText'
+);
+
+assert.ok(
+  lenFallbackPath.includes('■ 2枚で見えること') &&
+    lenFallbackPath.includes('■ 注意したい一点') &&
+    lenFallbackPath.includes('■ 羅針の指針'),
+  'emergency free Lenormand fallback must produce all free two-card sections'
+);
+
+const freeLenRunner = sliceFromMarker(
+  appSource,
+  'async function runLenReading',
+  'async function runOrcReading'
+);
+
+assert.ok(
+  (freeLenRunner.match(/buildEmergencyFreeLenPairFallback/g) || []).length >= 2,
+  'free Lenormand runner must keep a non-empty fallback even when normalization or rich fallback fails'
+);
 
 console.log('free-reading-quality-gate.test.js: ok');
