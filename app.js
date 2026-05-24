@@ -8684,7 +8684,7 @@ function getLenRealityPhrase(card={},ctx={},role=''){
       return '周囲の声や迷いが判断を散らす気配';
     case 14:
       if(ctx.primaryTheme==='money') return '不安を隠すために、焦った選び方へ寄りやすい違和感';
-      return '本音より自己防衛や利害が前に出る違和感';
+      return '本音より自己防衛や利害が混ざる違和感';
     case 15:return '力関係や守る役割';
     case 16:
       if(ctx.primaryTheme==='money') return '将来の安心へ向けた見通し';
@@ -8720,6 +8720,9 @@ function getLenRealityPhrase(card={},ctx={},role=''){
     case 35:return `${w.field}を長く続ける土台と、動きを止める固定の両方`;
     case 36:return '背負い続けた責任や、避けて通れない重さ';
     default:
+      if(ctx.primaryTheme==='dual_concern'&&/職場|上司|チーム|同僚/.test(ctx.source||'')){
+        return '上司との距離と仕事の負担を分ける視点';
+      }
       if(role==='blocker') return `${w.field}を重くしている現実の引っかかり`;
       if(role==='positive') return `${w.field}が整い直す兆し`;
       if(role==='ambiguity') return `${w.base}がまだ薄い状態`;
@@ -17955,7 +17958,7 @@ function detectPaidTextQualityIssues(key='',text=''){
   if(!source) return [`${key}が空です`];
   issues.push(...detectRashinVisibleTextPolicyIssues(source,key));
   issues.push(...detectJapaneseSurfaceQualityIssues(source,key));
-  if(/今回の展開に今回の相談|今回の展開に迷いの中心|迷いの中心を続ける意味|続ける意味や約束の重さ|違和感を消すより、違和感が教えている軸|引っかかりを消すより/.test(source)){
+  if(/今回の展開に今回の相談|今回の展開に迷いの中心|迷いの中心を続ける意味|続ける意味や約束の重さ|今回の相談の判断に関わる要素|前に出る引っかかりが前に出て|前に出る違和感が前に出て|違和感を消すより、違和感が教えている軸|引っかかりを消すより/.test(source)){
     issues.push(`${key}に旧式の汎用接続文が残っています`);
   }
   issues.push(...detectCardExplanationSmellIssues(source).map(issue=>`${key}: ${issue}`));

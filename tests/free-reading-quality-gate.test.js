@@ -67,6 +67,8 @@ const paidTextQualityGate = sliceFromMarker(
 [
   '今回の展開に迷いの中心',
   '迷いの中心を続ける意味',
+  '今回の相談の判断に関わる要素',
+  '前に出る引っかかりが前に出て',
 ].forEach(marker => {
   assert.ok(paidTextQualityGate.includes(marker), `paid/free text quality gate missing: ${marker}`);
 });
