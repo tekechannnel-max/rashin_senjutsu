@@ -11831,9 +11831,86 @@ function resolveDossierFocusFromData(data={}){
   };
 }
 
+function getCurrentDossierReadingComposition(){
+  return{
+    plan:PLAN==='paid'?'paid':(PLAN==='free'?'free':(PLAN||'free')),
+    lenCount:Array.isArray(SEL_LEN)?SEL_LEN.length:0,
+    orcCount:Array.isArray(SEL_ORC)?SEL_ORC.length:0,
+  };
+}
+
+function getDossierReadingComposition(data={},options={}){
+  const current=getCurrentDossierReadingComposition();
+  const plan=String(options.plan||data.READING_PLAN||data.readingPlan||current.plan||'free').trim()||'free';
+  const lenCount=Number.parseInt(options.lenCount??data.LEN_COUNT??data.lenCount??current.lenCount,10);
+  const orcCount=Number.parseInt(options.orcCount??data.ORC_COUNT??data.orcCount??current.orcCount,10);
+  return{
+    plan,
+    lenCount:Number.isFinite(lenCount)?lenCount:0,
+    orcCount:Number.isFinite(orcCount)?orcCount:0,
+  };
+}
+
+function isFreeDossierReadingComposition(composition=getCurrentDossierReadingComposition()){
+  return composition.plan==='free'&&composition.lenCount===FREE_LEN_COUNT&&composition.orcCount===FREE_ORC_COUNT;
+}
+
+function canBuildFreeDossierCard(){
+  return isFreeDossierReadingComposition()
+    &&!!(LAST_OUTPUTS?.integration&&LAST_OUTPUTS?.len&&LAST_OUTPUTS?.orc);
+}
+
+function getDossierGuidanceLayout(data={}){
+  const composition=getDossierReadingComposition(data);
+  if(isFreeDossierReadingComposition(composition)){
+    return{
+      isFree:true,
+      lenTarget:3,
+      lenMin:3,
+      lenMax:3,
+      lenMaxChars:28,
+      oracleTarget:1,
+      oracleMin:1,
+      oracleMax:1,
+      oracleMaxChars:30,
+      lenLineIssue:`${DOSSIER_LENORMAND_GUIDANCE_HEADING}が3行ではない`,
+      oracleLineIssue:`${DOSSIER_ORACLE_GUIDANCE_HEADING}が1行ではない`,
+    };
+  }
+  return{
+    isFree:false,
+    lenTarget:5,
+    lenMin:4,
+    lenMax:5,
+    lenMaxChars:24,
+    oracleTarget:2,
+    oracleMin:2,
+    oracleMax:2,
+    oracleMaxChars:24,
+    lenLineIssue:`${DOSSIER_LENORMAND_GUIDANCE_HEADING}が4〜5行ではない`,
+    oracleLineIssue:`${DOSSIER_ORACLE_GUIDANCE_HEADING}が2行ではない`,
+  };
+}
+
+function buildDossierCompositionPromptGuide(data={}){
+  const layout=getDossierGuidanceLayout(data);
+  if(layout.isFree){
+    return `無料枠の羅針カードは、ルノルマン2枚・数秘オラクル1枚の結果から作る。表示枠では${DOSSIER_LENORMAND_GUIDANCE_HEADING}を上、${DOSSIER_ORACLE_GUIDANCE_HEADING}を下に置く。ルノルマンは「主題」と「修飾・答え」から見えた一点判断を3行、数秘オラクルは整え方を1行にする。深掘り鑑定のような多枚数の流れ・条件表・時系列には広げない。`;
+  }
+  return `表示枠では、${DOSSIER_LENORMAND_GUIDANCE_HEADING}を上、${DOSSIER_ORACLE_GUIDANCE_HEADING}を下に置く。内容はルノルマン8割、数秘オラクル2割の要約にする。ルノルマンは4〜5行、数秘オラクルは断定寄りアドバイス2行にする。`;
+}
+
+function cacheFreeDossierCardSnapshot(){
+  if(!canBuildFreeDossierCard()) return false;
+  LAST_OUTPUTS.dossier='';
+  LAST_OUTPUTS.dossierCard=buildDossierCardSnapshot(buildFallbackDossier(),getCurrentDossierReadingComposition());
+  return true;
+}
+
 function normalizeDossierCardData(data={}){
   const fallback=buildFallbackDossier();
   const source={...fallback,...(data||{})};
+  const composition=getDossierReadingComposition(source);
   const focus=resolveDossierFocusFromData(data)||getCurrentRefinedFocus();
   const ctx=buildDecisionContext(focus);
   const themedFallback=buildWorkLifeDossierData(focus);
@@ -11907,6 +11984,9 @@ function normalizeDossierCardData(data={}){
     EXPLICIT_USER_PRIORITY:ctx.explicitUserPriority,
     DECISION_CRITERIA_LIST:ctx.decisionCriteriaList,
     DECISION_CRITERIA:ctx.criteriaText,
+    READING_PLAN:composition.plan,
+    LEN_COUNT:composition.lenCount,
+    ORC_COUNT:composition.orcCount,
     TITLE:RASHIN_READING_CARD_TITLE,
     ONE_LINE:normalizeDossierOneLine(source.ONE_LINE||source.HEADLINE||fallback.ONE_LINE,fallback.ONE_LINE),
     VERDICT:normalizeDossierParagraph(source.VERDICT||source.HEADLINE,fallback.VERDICT,180),
@@ -11988,14 +12068,18 @@ function normalizeDossierCardGuidanceText(text='',target=4,maxChars=24,reserve=[
 
 function getDossierCardGuidance(card={}){
   const safeCard=resolveDossierCardData(card);
+  const layout=getDossierGuidanceLayout(safeCard);
   const fallback=buildDossierSignalSummaries(safeCard);
   const lenormand=safeCard.GUIDANCE_LENORMAND
-    ?normalizeDossierCardGuidanceText(safeCard.GUIDANCE_LENORMAND,5,24,getDossierGuidanceLines(fallback.lenormand))
+    ?normalizeDossierCardGuidanceText(safeCard.GUIDANCE_LENORMAND,layout.lenTarget,layout.lenMaxChars,getDossierGuidanceLines(fallback.lenormand))
     :fallback.lenormand;
   const oracle=buildDossierOracleAdviceSummary([
     safeCard.GUIDANCE_ORACLE,
     fallback.oracle,
-  ],[lenormand],fallback.oracle);
+  ],[lenormand],fallback.oracle,{
+    target:layout.oracleTarget,
+    maxChars:layout.oracleMaxChars,
+  });
   return{lenormand,oracle};
 }
 
@@ -12003,8 +12087,14 @@ function getDossierCardFoundationSections(card={}){
   return normalizeDossierCardFoundationSections(card?.FOUNDATION_SECTIONS);
 }
 
-function buildDossierCardSnapshot(data={}){
-  const base=resolveDossierCardData(data);
+function buildDossierCardSnapshot(data={},compositionOptions={}){
+  const composition=getDossierReadingComposition(data,compositionOptions);
+  const base=resolveDossierCardData({
+    ...data,
+    READING_PLAN:composition.plan,
+    LEN_COUNT:composition.lenCount,
+    ORC_COUNT:composition.orcCount,
+  });
   const guidance=buildDossierSignalSummaries(base);
   // Freeze display/share-only text so later main-reading edits do not reshape the saved card.
   const snapshot={
@@ -12039,6 +12129,7 @@ function buildDossierOneLineForDecisionContext(ctx){
   if(ctx.primaryTheme==='love') return '気持ちの強さより、言葉のあとに安心が残るか。';
   if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return '努力が評価・役割・信頼として返る場所か。';
   if(ctx.primaryTheme==='relationship') return '近づくほど自然体が戻る距離か。';
+  if(ctx.primaryTheme==='money') return '増やす前に、手元に安心が残る流れか。';
   if(ctx.primaryTheme==='creative') return '好きな気持ちが義務感に飲まれていないか。';
   return `${ctx.primaryLabel}は、違和感の出どころを見るほど整います。`;
 }
@@ -12852,6 +12943,7 @@ function buildDossierWeightedSignalFallbacks(card={},focus=getCurrentRefinedFocu
 
 function buildDossierSignalSummaries(card={}){
   const safeCard=card&&card.TITLE?card:resolveDossierCardData(card);
+  const layout=getDossierGuidanceLayout(safeCard);
   const focus=resolveDossierFocusFromData(safeCard)||getCurrentRefinedFocus();
   const topLen=getDossierReadingDigest('len');
   const topOracle=getDossierReadingDigest('orc');
@@ -12865,10 +12957,10 @@ function buildDossierSignalSummaries(card={}){
     safeCard.EVIDENCE_SUMMARY,
     ...themeBullets.lenormand,
   ],[topOracle].filter(Boolean),fallback.lenormand,{
-    target:5,
-    min:5,
-    max:5,
-    maxChars:24,
+    target:layout.lenTarget,
+    min:layout.lenTarget,
+    max:layout.lenMax,
+    maxChars:layout.lenMaxChars,
     reserve:[
       ...themeBullets.lenormand,
       fallback.lenormand,
@@ -12878,18 +12970,28 @@ function buildDossierSignalSummaries(card={}){
       '焦らないほど判断の軸は戻ります。',
     ],
   });
-  const oracleRaw=buildDossierGuidanceBulletSummary([
-    topOracle,
-    getOracleSectionBodyForDossier(/羅針盤|向き合|メッセージ|光/),
-    fallback.oracle,
-    safeCard.CLOSING,
-    safeCard.ACTION7,
-    ...themeBullets.oracle,
-  ],[topLen,lenormand].filter(Boolean),fallback.oracle,{
-    target:2,
-    min:2,
-    max:2,
-    maxChars:24,
+  const oracleCandidates=layout.isFree
+    ?[
+      ...themeBullets.oracle,
+      topOracle,
+      getOracleSectionBodyForDossier(/羅針盤|向き合|メッセージ|光/),
+      fallback.oracle,
+      safeCard.CLOSING,
+      safeCard.ACTION7,
+    ]
+    :[
+      topOracle,
+      getOracleSectionBodyForDossier(/羅針盤|向き合|メッセージ|光/),
+      fallback.oracle,
+      safeCard.CLOSING,
+      safeCard.ACTION7,
+      ...themeBullets.oracle,
+    ];
+  const oracleRaw=buildDossierGuidanceBulletSummary(oracleCandidates,[topLen,lenormand].filter(Boolean),fallback.oracle,{
+    target:layout.oracleTarget,
+    min:layout.oracleTarget,
+    max:layout.oracleMax,
+    maxChars:layout.oracleMaxChars,
     reserve:[
       ...themeBullets.oracle,
       fallback.oracle,
@@ -12901,7 +13003,10 @@ function buildDossierSignalSummaries(card={}){
     oracleRaw,
     fallback.oracle,
     ...themeBullets.oracle,
-  ],[lenormand],fallback.oracle);
+  ],[lenormand],fallback.oracle,{
+    target:layout.oracleTarget,
+    maxChars:layout.oracleMaxChars,
+  });
   return{lenormand,oracle};
 }
 
@@ -13150,7 +13255,9 @@ function normalizeDossierOracleAdviceLine(text='',max=24){
   return line.length<=max&&!hasDanglingDossierGuidanceLine(line)?ensureJapaneseSentence(line):'';
 }
 
-function buildDossierOracleAdviceSummary(candidates=[],used=[],fallback=''){
+function buildDossierOracleAdviceSummary(candidates=[],used=[],fallback='',options={}){
+  const target=options.target||2;
+  const maxChars=options.maxChars||24;
   const lines=[];
   const push=raw=>{
     toDossierValueArray(raw).flatMap(value=>[
@@ -13158,20 +13265,20 @@ function buildDossierOracleAdviceSummary(candidates=[],used=[],fallback=''){
       ...splitJapaneseSentences(value),
       ...sectionLines(value),
     ]).forEach(value=>{
-      if(lines.length>=2) return;
-      const line=normalizeDossierOracleAdviceLine(value,24);
+      if(lines.length>=target) return;
+      const line=normalizeDossierOracleAdviceLine(value,maxChars);
       if(!line||isDossierSummaryDuplicate(line,used.concat(lines))) return;
       lines.push(line);
     });
   };
   candidates.forEach(push);
-  if(lines.length<2) push(fallback);
+  if(lines.length<target) push(fallback);
   [
     '自分を雑に扱わないことです。',
     '焦りで結論を急がないことです。',
     '安心できる余白を残すことです。',
   ].forEach(push);
-  return lines.slice(0,2).join('\n');
+  return lines.slice(0,target).join('\n');
 }
 
 function compactDossierGuidanceMeaningLine(clean='',max=36){
@@ -13476,6 +13583,7 @@ function detectDossierCardQualityIssues(data={},options={}){
   const displayText=[text,options.renderedText||''].join('\n');
   const conditionGroups=getDossierCardFoundationSections(card);
   const guidance=getDossierCardGuidance(card);
+  const guidanceLayout=getDossierGuidanceLayout(card);
   const readingDigestCopies=[];
   if(text.length>1000) issues.push('羅針カードが1000字を超えている');
   if(text.length>800) issues.push('羅針カードが800字を超えている');
@@ -13521,8 +13629,8 @@ function detectDossierCardQualityIssues(data={},options={}){
   if(getDossierGuidanceLines(guidance.oracle).some(hasDanglingDossierGuidanceLine)){
     issues.push(`${DOSSIER_ORACLE_GUIDANCE_HEADING}に途中で切れた行があります`);
   }
-  if(lenormandLineCount<4||lenormandLineCount>5) issues.push(`${DOSSIER_LENORMAND_GUIDANCE_HEADING}が4〜5行ではない`);
-  if(oracleLineCount!==2) issues.push(`${DOSSIER_ORACLE_GUIDANCE_HEADING}が2行ではない`);
+  if(lenormandLineCount<guidanceLayout.lenMin||lenormandLineCount>guidanceLayout.lenMax) issues.push(guidanceLayout.lenLineIssue);
+  if(oracleLineCount<guidanceLayout.oracleMin||oracleLineCount>guidanceLayout.oracleMax) issues.push(guidanceLayout.oracleLineIssue);
   if(getDossierGuidanceLines(guidance.oracle).some(line=>!/(ことです|大切です|しないでください|避けてください|戻してください)。?$/.test(line))){
     issues.push(`${DOSSIER_ORACLE_GUIDANCE_HEADING}が断定寄りアドバイスになっていません`);
   }
@@ -13553,7 +13661,8 @@ function renderPremiumDossier(loading=false){
   const shell=section.querySelector('.dossier-shell');
 
   const hasPayload=hasDossierCardPayload();
-  const shouldPrepare=PLAN==='paid'||hasPayload;
+  const canBuildFreeCard=canBuildFreeDossierCard();
+  const shouldPrepare=PLAN==='paid'||hasPayload||canBuildFreeCard;
   section.style.display='none';
   if(!shouldPrepare) return;
 
@@ -13615,7 +13724,7 @@ function renderPremiumDossier(loading=false){
 }
 
 function shouldShowDossierActions(){
-  return PLAN==='paid'||hasDossierCardPayload();
+  return PLAN==='paid'||hasDossierCardPayload()||canBuildFreeDossierCard();
 }
 
 function setDossierActionButtonsVisible(visible){
@@ -13699,6 +13808,12 @@ function closeDossierViewer(){
 async function ensureDossierReady(){
   if(hasDossierCardPayload()){
     getCurrentDossierCardData();
+    return true;
+  }
+  if(canBuildFreeDossierCard()){
+    cacheFreeDossierCardSnapshot();
+    persistCurrentReading();
+    renderPremiumDossier(false);
     return true;
   }
   if(DOSSIER_LOADING) return false;
@@ -20344,6 +20459,7 @@ ${sourceContext}`;
 function buildPremiumDossierCardSystemPrompt(todayText){
   const focus=getCurrentRefinedFocus();
   const ctx=buildDecisionContext(focus);
+  const compositionGuide=buildDossierCompositionPromptGuide();
   return `あなたは羅針占術の羅針カード編集者です。
 目的は長文鑑定書ではなく、SNSでスクショ保存したくなる短い羅針カードを作ることです。
 今日の日付は${todayText}です。根拠のない月名、季節、年末年始、来年などの時期表現は使わないでください。
@@ -20381,7 +20497,7 @@ ${getRashinReadingPolicyPrompt('dossier')}
 - VERDICTは2〜3文、最大180字
 - DECISION_AXISは内部判断用。表示枠には使わず、条件表の見出しや作業指示にしない
 - HOLD_CONDITIONSは内部判断用。表示枠には使わず、見えていない違和感を自然な文章にする
-- 表示枠では、${DOSSIER_LENORMAND_GUIDANCE_HEADING}を上、${DOSSIER_ORACLE_GUIDANCE_HEADING}を下に置く。内容はルノルマン8割、数秘オラクル2割の要約にする。ルノルマンは4〜5行、数秘オラクルは断定寄りアドバイス2行にする
+- ${compositionGuide}
 - ACTION7とCLOSINGは内部補助用。表示見出しとして「${INTEGRATION_ACTION_GUIDE_HEADING}」「${INTEGRATION_CLOSING_HEADING}」は出さない
 - キーワード欄は出力しない。表示枠には姓名判断・四柱推命・動物タイプ診断の短い箇条書きを使う
 - CLOSINGは最大60字
@@ -20398,6 +20514,7 @@ ${getRashinReadingPolicyPrompt('dossier')}
 }
 
 function buildPremiumDossierCardPrompt(source){
+  const compositionGuide=buildDossierCompositionPromptGuide();
   return `${source.contextText}
 
 上記を内部資料として使い、「長い鑑定書」ではなく短い羅針カードを作成してください。
@@ -20406,7 +20523,7 @@ function buildPremiumDossierCardPrompt(source){
 追加質問のraw回答、カード番号、配置名、履歴データは羅針カード本体に出さないでください。
 SNS投稿用のカードなので、表示名は内部資料の「呼び名」だけを使ってください。相談者の本名、姓名、姓、名、ログイン名は本文にも根拠にも出さないでください。
 機械的な条件表、7日以内、30日以内、確認する、書き出す、比較する、材料を集める、今週の一手は出さないでください。
-表示枠の「姓名判断」「四柱推命」「動物タイプ診断」はアプリ側で短い箇条書き3行に整えます。カード内の下部指針は「${DOSSIER_LENORMAND_GUIDANCE_HEADING}」を上、「${DOSSIER_ORACLE_GUIDANCE_HEADING}」を下にし、ルノルマン4〜5行・数秘オラクルは断定寄りアドバイス2行、比重はルノルマン8割・数秘オラクル2割の要約として扱います。本名や生年月日は出さないでください。
+表示枠の「姓名判断」「四柱推命」「動物タイプ診断」はアプリ側で短い箇条書き3行に整えます。カード内の下部指針は次の構成で扱います。${compositionGuide} 本名や生年月日は出さないでください。
 配列やカンマ区切りを本文に出さず、文途中で終わらせないでください。
 カード名の意味説明ではなく、相談者の現実に使える言葉へ変換してください。不自然な比喩や長すぎる接続は避けてください。
 EVIDENCE_SUMMARYだけは、根拠を見る人向けに短く残してください。`;
@@ -20882,8 +20999,9 @@ async function createDossierShareImageBlob(cardData){
   y+=answerH+Math.round(h*.018);
 
   const guidance=getDossierCardGuidance(card);
-  const lenGuidanceLines=getDossierGuidanceLines(guidance.lenormand).slice(0,5);
-  const oracleGuidanceLines=getDossierGuidanceLines(guidance.oracle).slice(0,2);
+  const guidanceLayout=getDossierGuidanceLayout(card);
+  const lenGuidanceLines=getDossierGuidanceLines(guidance.lenormand).slice(0,guidanceLayout.lenMax);
+  const oracleGuidanceLines=getDossierGuidanceLines(guidance.oracle).slice(0,guidanceLayout.oracleMax);
   const actionH=Math.min(Math.round(h*.24),detailY-y-Math.round(h*.026));
   drawCanvasPanel(ctx,textX,y,maxTextW,actionH,{fill:'rgba(4,9,24,.58)',stroke:'rgba(228,184,74,.22)'});
   ctx.fillStyle='rgba(176,226,218,.95)';
@@ -20895,7 +21013,7 @@ async function createDossierShareImageBlob(cardData){
   ctx.fillText(DOSSIER_LENORMAND_GUIDANCE_HEADING,guidanceLabelX,lenStartY);
   ctx.fillStyle='rgba(246,240,220,.92)';
   ctx.font=`700 ${w*.00816}px "Shippori Mincho", serif`;
-  drawCanvasBulletLines(ctx,lenGuidanceLines,guidanceBodyX,lenStartY,guidanceBodyW,Math.round(h*.0258),{maxLines:5,bulletSize:Math.max(3,Math.round(w*.0022))});
+  drawCanvasBulletLines(ctx,lenGuidanceLines,guidanceBodyX,lenStartY,guidanceBodyW,Math.round(h*.0258),{maxLines:guidanceLayout.lenMax,bulletSize:Math.max(3,Math.round(w*.0022))});
   ctx.strokeStyle='rgba(228,184,74,.14)';
   ctx.lineWidth=1;
   const dividerY=y+Math.round(actionH*.60);
@@ -20909,7 +21027,7 @@ async function createDossierShareImageBlob(cardData){
   ctx.fillText(DOSSIER_ORACLE_GUIDANCE_HEADING,guidanceLabelX,oracleStartY);
   ctx.fillStyle='rgba(255,232,171,.96)';
   ctx.font=`700 ${w*.00828}px "Shippori Mincho", serif`;
-  drawCanvasBulletLines(ctx,oracleGuidanceLines,guidanceBodyX,oracleStartY,guidanceBodyW,Math.round(h*.0246),{maxLines:2,bulletSize:Math.max(3,Math.round(w*.0022))});
+  drawCanvasBulletLines(ctx,oracleGuidanceLines,guidanceBodyX,oracleStartY,guidanceBodyW,Math.round(h*.0246),{maxLines:guidanceLayout.oracleMax,bulletSize:Math.max(3,Math.round(w*.0022))});
 
   const foundationSections=getDossierCardFoundationSections(card);
   const detailsX=cardLeft;
