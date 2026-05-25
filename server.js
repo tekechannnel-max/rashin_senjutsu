@@ -187,6 +187,7 @@ const AI_MODELS = {
   light: process.env.OPENAI_LIGHT_MODEL || 'gpt-5.4-mini',
   paidFallback: process.env.OPENAI_PAID_FALLBACK_MODEL || 'gpt-5.4',
   paidAbOpenai: process.env.OPENAI_PAID_AB_MODEL || 'gpt-5.5',
+  resultChat: process.env.OPENAI_RESULT_CHAT_MODEL || process.env.OPENAI_LIGHT_MODEL || 'gpt-5.4-mini',
   structure: process.env.OPENAI_STRUCTURE_MODEL || 'gpt-5.4-mini',
 };
 const MEMBER_ACCESS_CODES = new Set(
@@ -497,6 +498,7 @@ const ALLOWED_MODELS = {
     AI_MODELS.light,
     AI_MODELS.paidFallback,
     AI_MODELS.paidAbOpenai,
+    AI_MODELS.resultChat,
     AI_MODELS.structure,
   ]),
 };
@@ -782,6 +784,14 @@ function sendRateLimitExceeded(res, result, message) {
 
 function isPaidModel(model) {
   return PAID_MODELS.has(String(model || '').trim());
+}
+
+function isResultChatTask(payload = {}) {
+  return String(payload?.task_key || '').trim() === 'result_chat';
+}
+
+function requiresPaidAccess(payload = {}) {
+  return isPaidModel(payload?.model) || isResultChatTask(payload);
 }
 
 function getRequestProto(req) {
@@ -2223,6 +2233,7 @@ async function hasPaidAccess(req, payload = null) {
   const userRecord = authSession?.userId ? await readUserRecord(authSession.userId) : null;
   if (DEV_ACCESS_ENABLED && userRecordHasDeveloperAccess(userRecord)) return true;
   if (userRecord && stripeSubscriptionGrantsAccess(userRecord.stripeSubscriptionStatus)) return true;
+  if (isResultChatTask(payload)) return validatePaidResultChatAccess(req, payload);
   return validatePaidReadingTicketAccess(req, payload);
 }
 
@@ -3783,6 +3794,21 @@ async function validatePaidReadingTicketAccess(req, payload = {}) {
   return true;
 }
 
+async function validatePaidResultChatAccess(req, payload = {}) {
+  const ticketId = normalizePaidTicketId(payload?.paid_ticket_id || '');
+  const sourceReadingId = normalizeVaultRecordId(payload?.source_reading_id || '');
+  const paidReadingId = normalizeVaultRecordId(payload?.paid_reading_id || '');
+  if (!ticketId || !sourceReadingId || !paidReadingId) return false;
+  const ticket = await readPaidReadingTicket(ticketId);
+  if (!ticket || ticket.sourceReadingId !== sourceReadingId) return false;
+  if (isExpiredIso(ticket.expiresAt)) return false;
+  const owner = await resolvePurchaseOwner(req, payload?.identity);
+  if (!ownerMatchesTicket(owner, ticket)) return false;
+  if (ticket.lockedReadingId !== paidReadingId) return false;
+  if (ticket.status === 'used' && ticket.usedReadingId === paidReadingId) return true;
+  return ticket.status === 'unused';
+}
+
 function sanitizePayload(body) {
   const provider = body && body.provider === 'openai' ? 'openai' : 'anthropic';
   const model = typeof body.model === 'string' ? body.model.trim() : '';
@@ -4532,7 +4558,7 @@ async function handleAiProxy(req, res) {
     return;
   }
 
-  if (isPaidModel(payload.model) && !(await hasPaidAccess(req, payload))) {
+  if (requiresPaidAccess(payload) && !(await hasPaidAccess(req, payload))) {
     sendJson(res, 403, {
       error: isLocalRequest(req) ? 'PAID_SESSION_REQUIRED' : 'PAID_AUTH_REQUIRED',
       provider: payload.provider,

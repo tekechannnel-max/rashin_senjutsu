@@ -1746,6 +1746,7 @@ const AI_MODELS={
   light:'gpt-5.4-mini',
   paidFallback:'gpt-5.4',
   paidAbOpenai:'gpt-5.5',
+  resultChat:'gpt-5.4-mini',
   structure:'gpt-5.4-mini',
 };
 const PAID_MODEL_AB_TEST={
@@ -2006,6 +2007,13 @@ const AI_MODEL_CONFIG={
     fallbackProvider:'openai',
     fallbackModel:AI_MODELS.paidFallback,
   },
+  result_chat:{
+    provider:'openai',
+    model:AI_MODELS.resultChat,
+    reasoningEffort:'low',
+    fallbackProvider:'',
+    fallbackModel:'',
+  },
   flow_analysis:{
     provider:'anthropic',
     model:AI_MODELS.history,
@@ -2041,6 +2049,7 @@ const CARD_IMAGE_LIMIT_CONFIG={
   paid:13,
   dossier:13,
   followup:13,
+  result_chat:0,
 };
 
 let PLAN='free';
@@ -2138,8 +2147,10 @@ let RASHIN_DISCOUNT_STATUS=null;
 let RASHIN_DISCOUNT_RESULT_ID='';
 let ACTIVE_FOLLOWUP_KEY='';
 let FOLLOWUP_LOADING=false;
+let RESULT_CHAT_LOADING=false;
+let RESULT_CHAT_AUTO_OPENED_FOR_ID='';
 let DOSSIER_LOADING=false;
-let LAST_OUTPUTS={about:'',foundationDeep:'',len:'',orc:'',integration:'',dossier:'',dossierCard:null,followups:{}};
+let LAST_OUTPUTS={about:'',foundationDeep:'',len:'',orc:'',integration:'',dossier:'',dossierCard:null,followups:{},resultChat:[]};
 let PAID_DEBUG_LOG=null;
 let TOP_PAGE_VIEW_TRACKED=false;
 let LAST_DEEPEN_CTA_POSITION='unknown';
@@ -7185,11 +7196,14 @@ function isMemberActive(){
 }
 
 function resetLatestOutputs(){
-  LAST_OUTPUTS={about:'',foundationDeep:'',len:'',orc:'',integration:'',dossier:'',dossierCard:null,followups:{}};
+  LAST_OUTPUTS={about:'',foundationDeep:'',len:'',orc:'',integration:'',dossier:'',dossierCard:null,followups:{},resultChat:[]};
   PAID_DEBUG_LOG=null;
   ACTIVE_FOLLOWUP_KEY='';
   FOLLOWUP_LOADING=false;
+  RESULT_CHAT_LOADING=false;
+  RESULT_CHAT_AUTO_OPENED_FOR_ID='';
   DOSSIER_LOADING=false;
+  syncResultChatAvailability();
   setPaidDebugButtonVisible(false);
 }
 
@@ -10437,6 +10451,15 @@ function buildCurrentReadingRecord(){
     selOrc:[...SEL_ORC],
     fixedGenderCard:FIXED_GENDER_CARD,
     clarifyAnswers:CLARIFY_ANSWERS,
+    paidTicket:PLAN==='paid'&&ACTIVE_PAID_READING_TICKET?.id?{
+      id:ACTIVE_PAID_READING_TICKET.id,
+      sourceReadingId:ACTIVE_PAID_SOURCE_READING_ID||ACTIVE_PAID_READING_TICKET.sourceReadingId||'',
+      paidReadingId:CURRENT_READING_ID||ACTIVE_PAID_READING_TICKET.paidReadingId||'',
+      status:ACTIVE_PAID_READING_TICKET.status||'',
+      finalAmount:Number(ACTIVE_PAID_READING_TICKET.finalAmount??DEEP_READING_PRICE),
+      discountStonesUsed:Number(ACTIVE_PAID_READING_TICKET.discountStonesUsed||0),
+      discountType:ACTIVE_PAID_READING_TICKET.discountType||'',
+    }:null,
     outputs:JSON.parse(JSON.stringify(LAST_OUTPUTS)),
   };
 }
@@ -10992,11 +11015,28 @@ function openHistoryItem(id){
   FIXED_GENDER_CARD=record.fixedGenderCard||null;
   CLARIFY_ANSWERS=record.clarifyAnswers||{};
   CLARIFY_ACTIVE_QUESTIONS=[];
-  LAST_OUTPUTS=record.outputs||{about:'',foundationDeep:'',len:'',orc:'',integration:'',dossier:'',dossierCard:null,followups:{}};
+  LAST_OUTPUTS=record.outputs||{about:'',foundationDeep:'',len:'',orc:'',integration:'',dossier:'',dossierCard:null,followups:{},resultChat:[]};
   if(!LAST_OUTPUTS.foundationDeep) LAST_OUTPUTS.foundationDeep='';
   if(!LAST_OUTPUTS.dossier) LAST_OUTPUTS.dossier='';
   if(!LAST_OUTPUTS.dossierCard) LAST_OUTPUTS.dossierCard=null;
   if(!LAST_OUTPUTS.followups) LAST_OUTPUTS.followups={};
+  if(!Array.isArray(LAST_OUTPUTS.resultChat)) LAST_OUTPUTS.resultChat=[];
+  ACTIVE_PAID_READING_TICKET=null;
+  ACTIVE_PAID_SOURCE_READING_ID='';
+  PENDING_PAID_READING_ID='';
+  if(record.plan==='paid'&&record.paidTicket?.id){
+    ACTIVE_PAID_READING_TICKET={
+      id:record.paidTicket.id||'',
+      sourceReadingId:record.paidTicket.sourceReadingId||record.id,
+      paidReadingId:record.paidTicket.paidReadingId||record.id,
+      status:record.paidTicket.status||'used',
+      finalAmount:Number(record.paidTicket.finalAmount??DEEP_READING_PRICE),
+      discountStonesUsed:Number(record.paidTicket.discountStonesUsed||0),
+      discountType:record.paidTicket.discountType||'',
+    };
+    ACTIVE_PAID_SOURCE_READING_ID=ACTIVE_PAID_READING_TICKET.sourceReadingId;
+    PENDING_PAID_READING_ID=ACTIVE_PAID_READING_TICKET.paidReadingId;
+  }
   if(record.plan==='paid'){
     const historyClarify=buildClarifyPromptText('compact');
     const historyFocus=refineFocusWithClarify(
@@ -11311,6 +11351,7 @@ function renderStoredResult(){
   syncDossierActionButtons();
   document.getElementById('progress').style.width='100%';
   renderMemberFollowupSection();
+  syncResultChatAvailability();
   renderReturnRitual();
   renderResultUpgradePanel();
   updateResultActionState();
@@ -14235,6 +14276,8 @@ function showScreen(id,progress){
     installFormStartTracking();
   }
   if(id==='s-result') trackResultView();
+  if(id==='s-result') syncResultChatAvailability();
+  else syncResultChatAvailability({forceHide:true});
   if(id==='s-input') syncInputModeUI();
   if(typeof window.scrollTo==='function') window.scrollTo(0,0);
 }
@@ -14933,6 +14976,7 @@ function renderResult(){
     setDossierActionButtonsVisible(false);
     document.getElementById('progress').style.width='100%';
     renderMemberFollowupSection();
+    syncResultChatAvailability();
     updateResultActionState();
     trackEvent('simple_reading_complete',getCurrentInputAnalytics());
     return;
@@ -14958,6 +15002,7 @@ function renderResult(){
     },400);
     renderPremiumDossier(false);
     renderMemberFollowupSection();
+    syncResultChatAvailability();
     renderResultUpgradePanel();
     updateResultActionState();
   }else{
@@ -14981,6 +15026,7 @@ function renderResult(){
     renderPremiumDossier(PLAN==='paid');
     renderResultUpgradePanel();
     renderMemberFollowupSection();
+    syncResultChatAvailability();
     updateResultActionState();
     startResultGeneration();
   }
@@ -19848,6 +19894,8 @@ ${qualityResult.issues.map(issue=>`- ${issue}`).join('\n')}
   setResultStageStatus('integration','done');
   await completeResultGenerationUI();
   await markPaidReadingTicketUsed();
+  persistCurrentReading();
+  syncResultChatAvailability({autoOpen:true});
 }
 
 // ─── ②ルノルマンリーディング（完全版ナレッジベース使用）────────────────
@@ -20761,6 +20809,201 @@ ${preset.intro}
   }
 }
 
+const RESULT_CHAT_QUICK_ACTIONS={
+  summary:'この鑑定の要点を短くまとめて',
+  focus:'いま一番大事に見るところを教えて',
+  action:'この鑑定を読んだあと、現実で見る行動の目安を教えて',
+};
+
+function ensureResultChatMessages(){
+  if(!LAST_OUTPUTS||typeof LAST_OUTPUTS!=='object'){
+    LAST_OUTPUTS={about:'',foundationDeep:'',len:'',orc:'',integration:'',dossier:'',dossierCard:null,followups:{},resultChat:[]};
+  }
+  if(!Array.isArray(LAST_OUTPUTS.resultChat)) LAST_OUTPUTS.resultChat=[];
+  LAST_OUTPUTS.resultChat=LAST_OUTPUTS.resultChat
+    .filter(message=>message&&['user','assistant'].includes(message.role)&&String(message.text||'').trim())
+    .map(message=>({
+      role:message.role,
+      text:String(message.text||'').trim().slice(0,2200),
+      at:message.at||'',
+    }))
+    .slice(-24);
+  return LAST_OUTPUTS.resultChat;
+}
+
+function hasResultChatEntitlement(){
+  if(isMemberActive()) return true;
+  return !!(
+    ACTIVE_PAID_READING_TICKET?.id&&
+    (ACTIVE_PAID_SOURCE_READING_ID||ACTIVE_PAID_READING_TICKET.sourceReadingId)&&
+    CURRENT_READING_ID
+  );
+}
+
+function canUseResultChat(){
+  if(PLAN!=='paid'||!CURRENT_READING_ID) return false;
+  const integration=String(LAST_OUTPUTS?.integration||'').trim();
+  if(!integration||/深掘り鑑定を作れませんでした|深掘り鑑定を停止しました/.test(integration)) return false;
+  return hasResultChatEntitlement();
+}
+
+function getResultChatInputValue(value=''){
+  return String(value||'')
+    .replace(/\r/g,'\n')
+    .replace(/\n{3,}/g,'\n\n')
+    .trim()
+    .slice(0,500);
+}
+
+function formatResultChatMessageText(text=''){
+  return escapeHtml(text).replace(/\n/g,'<br>');
+}
+
+function renderResultChatMessages(){
+  const messagesEl=document.getElementById('result-chat-messages');
+  const inputEl=document.getElementById('result-chat-input');
+  const sendEl=document.getElementById('result-chat-send');
+  const quickEl=document.getElementById('result-chat-quick-actions');
+  if(!messagesEl) return;
+  const messages=ensureResultChatMessages();
+  const rows=messages.map(message=>`
+    <div class="result-chat-message ${message.role}">
+      <div class="result-chat-message-label">${message.role==='user'?'あなた':'羅針'}</div>
+      <div class="result-chat-message-text">${formatResultChatMessageText(message.text)}</div>
+    </div>
+  `);
+  if(!rows.length){
+    rows.push('<div class="result-chat-empty">鑑定の要約、気になる部分、読み返しポイントをここで聞けます。</div>');
+  }
+  if(RESULT_CHAT_LOADING){
+    rows.push('<div class="result-chat-message assistant loading"><div class="ai-load"><div class="ai-dots"><span></span><span></span><span></span></div><span>鑑定を読み返しています…</span></div></div>');
+  }
+  messagesEl.innerHTML=rows.join('');
+  if(sendEl) sendEl.disabled=RESULT_CHAT_LOADING||!canUseResultChat();
+  if(inputEl) inputEl.disabled=RESULT_CHAT_LOADING||!canUseResultChat();
+  if(quickEl) quickEl.querySelectorAll('button').forEach(button=>{button.disabled=RESULT_CHAT_LOADING||!canUseResultChat();});
+  requestAnimationFrame(()=>{messagesEl.scrollTop=messagesEl.scrollHeight;});
+}
+
+function syncResultChatAvailability(options={}){
+  const launcher=document.getElementById('result-chat-launcher');
+  const visible=!options.forceHide&&canUseResultChat();
+  if(launcher) launcher.style.display=visible?'inline-flex':'none';
+  if(!visible){
+    closeResultChatDrawer({silent:true});
+    return;
+  }
+  renderResultChatMessages();
+  if(options.autoOpen&&RESULT_CHAT_AUTO_OPENED_FOR_ID!==CURRENT_READING_ID){
+    RESULT_CHAT_AUTO_OPENED_FOR_ID=CURRENT_READING_ID;
+    setTimeout(()=>{
+      if(canUseResultChat()) openResultChatDrawer();
+    },650);
+  }
+}
+
+function openResultChatDrawer(){
+  if(!canUseResultChat()){
+    showToast('この有料鑑定で使えるチャットを準備できませんでした');
+    return;
+  }
+  renderResultChatMessages();
+  setModalOpen('result-chat-drawer',true);
+  document.body.classList.add('result-chat-open');
+  setTimeout(()=>document.getElementById('result-chat-input')?.focus(),160);
+  trackEvent('result_chat_opened',{reading_type:'paid',category:getCurrentInputSnapshot().cat||'総合'});
+}
+
+function closeResultChatDrawer(options={}){
+  const drawer=setModalOpen('result-chat-drawer',false);
+  document.body.classList.remove('result-chat-open');
+  if(!options.silent&&drawer) trackEvent('result_chat_closed',{reading_type:'paid'});
+}
+
+function buildResultChatPrompt(question=''){
+  const history=ensureResultChatMessages()
+    .slice(-8)
+    .map(message=>`${message.role==='user'?'相談者':'羅針'}: ${message.text}`)
+    .join('\n')||'なし';
+  return `${buildFollowupContext()}
+
+【これまでの羅針相談チャット】
+${history}
+
+【今回の質問】
+${question}
+
+上の有料鑑定結果を根拠に、質問へ答えてください。新しい占いを始めず、この結果の読み返し、要約、補足、判断軸の整理として返してください。`;
+}
+
+function getResultChatSystemPrompt(){
+  return `あなたは羅針占術の有料鑑定結果を読み返すための羅針相談チャットです。
+以下を必ず守ってください。
+- 前回の有料鑑定内容だけを根拠に答える
+- 新規テーマ、別人物、別鑑定を求められたら、この鑑定で扱える範囲に戻す
+- 要約、補足、読み返しポイント、判断軸の整理に答える
+- 相手の気持ちや未来を断定しない。医療、法律、投資など専門判断は断定しない
+- 400字以内。必要な場合だけ箇条書きは3点まで`;
+}
+
+async function sendResultChatMessage(value=''){
+  if(RESULT_CHAT_LOADING) return;
+  if(!canUseResultChat()){
+    showToast('この有料鑑定で使えるチャットを準備できませんでした');
+    return;
+  }
+  const inputEl=document.getElementById('result-chat-input');
+  const question=getResultChatInputValue(value||inputEl?.value||'');
+  if(!question){
+    inputEl?.focus();
+    return;
+  }
+  const messages=ensureResultChatMessages();
+  messages.push({role:'user',text:question,at:new Date().toISOString()});
+  if(inputEl) inputEl.value='';
+  RESULT_CHAT_LOADING=true;
+  renderResultChatMessages();
+  try{
+    const answer=await callAI(buildResultChatPrompt(question),900,getResultChatSystemPrompt(),{
+      taskKey:'result_chat',
+      images:[],
+      disableAbTest:true,
+    });
+    ensureResultChatMessages().push({
+      role:'assistant',
+      text:sanitizeRashinVisibleText(answer||'この鑑定の範囲では、いまの答えを十分に整理できませんでした。気になる箇所を少し絞って聞いてください。'),
+      at:new Date().toISOString(),
+    });
+    persistCurrentReading();
+    trackEvent('result_chat_sent',{reading_type:'paid',category:getCurrentInputSnapshot().cat||'総合'});
+  }catch(e){
+    ensureResultChatMessages().push({
+      role:'assistant',
+      text:'チャットの応答を作れませんでした。少し時間をおいて、もう一度聞いてください。',
+      at:new Date().toISOString(),
+    });
+    persistCurrentReading();
+    showToast(e?.userMessage||'羅針相談チャットの生成に失敗しました');
+  }finally{
+    RESULT_CHAT_LOADING=false;
+    renderResultChatMessages();
+  }
+}
+
+function sendResultChatQuick(key){
+  const question=RESULT_CHAT_QUICK_ACTIONS[key]||'この鑑定についてもう少し教えて';
+  const inputEl=document.getElementById('result-chat-input');
+  if(inputEl) inputEl.value=question;
+  void sendResultChatMessage(question);
+}
+
+function handleResultChatInputKey(event){
+  if(event.key==='Enter'&&!event.shiftKey){
+    event.preventDefault();
+    void sendResultChatMessage();
+  }
+}
+
 // ── X（Twitter）シェア ─────────────────────────────────────────────────
 function getPrimaryShareCard(){
   const orcId=(SEL_ORC||[])[0];
@@ -21661,6 +21904,7 @@ async function loadServerHealth(silent=false){
     AI_MODEL_CONFIG.dossier.fallbackModel=AI_MODELS.paidFallback;
     AI_MODEL_CONFIG.followup.model=AI_MODELS.paid;
     AI_MODEL_CONFIG.followup.fallbackModel=AI_MODELS.paidFallback;
+    AI_MODEL_CONFIG.result_chat.model=AI_MODELS.resultChat;
     AI_MODEL_CONFIG.flow_analysis.model=AI_MODELS.history;
     AI_MODEL_CONFIG.flow_analysis.fallbackModel=AI_MODELS.paidFallback;
     AI_MODEL_CONFIG.light.model=AI_MODELS.light;
@@ -22518,6 +22762,11 @@ if(typeof window!=='undefined'){
   window.runFlowAnalysis=runFlowAnalysis;
   window.openFlowAnalysisModal=openFlowAnalysisModal;
   window.closeFlowAnalysisModal=closeFlowAnalysisModal;
+  window.openResultChatDrawer=openResultChatDrawer;
+  window.closeResultChatDrawer=closeResultChatDrawer;
+  window.sendResultChatMessage=sendResultChatMessage;
+  window.sendResultChatQuick=sendResultChatQuick;
+  window.handleResultChatInputKey=handleResultChatInputKey;
   window.openDossierViewer=openDossierViewer;
   window.closeDossierViewer=closeDossierViewer;
   window.copyDossier=copyDossier;

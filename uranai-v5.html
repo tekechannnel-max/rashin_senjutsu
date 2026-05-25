@@ -2975,6 +2975,235 @@ body{
 #s-result.paid-result-mode #result-upgrade-panel{order:8;}
 #s-result.paid-result-mode #result-actions{order:9;}
 
+.result-chat-launcher{
+  position:fixed;
+  right:clamp(16px,4vw,34px);
+  bottom:clamp(16px,3vw,26px);
+  z-index:62;
+  min-height:44px;
+  max-width:min(260px,calc(100vw - 32px));
+  padding:0 14px;
+  border:1px solid rgba(228,184,74,.44);
+  background:rgba(5,9,22,.94);
+  color:rgba(255,247,216,.96);
+  box-shadow:0 16px 42px rgba(0,0,0,.44),inset 0 1px 0 rgba(255,255,255,.04);
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  font-weight:700;
+  font-size:13px;
+  letter-spacing:.06em;
+  cursor:pointer;
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+.result-chat-launcher:hover{
+  border-color:rgba(228,184,74,.72);
+  transform:translateY(-1px);
+}
+.result-chat-launcher-icon{
+  width:30px;
+  height:32px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid rgba(176,226,218,.48);
+  color:rgba(176,226,218,.98);
+  font-family:'Cinzel Decorative',serif;
+}
+.result-chat-launcher-character{
+  width:26px;
+  height:30px;
+  object-fit:contain;
+  object-position:center bottom;
+  filter:drop-shadow(0 6px 10px rgba(0,0,0,.36));
+}
+.result-chat-drawer{
+  position:fixed;
+  inset:0;
+  z-index:72;
+  pointer-events:none;
+  background:rgba(0,0,0,0);
+  transition:background .24s ease;
+}
+.result-chat-drawer.on{
+  background:rgba(0,0,0,0);
+}
+.result-chat-panel{
+  position:absolute;
+  right:clamp(16px,4vw,34px);
+  bottom:clamp(74px,8vw,92px);
+  width:min(380px,calc(100vw - 32px));
+  max-height:min(560px,calc(100vh - 120px));
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  padding:18px;
+  border:1px solid rgba(228,184,74,.34);
+  background:rgba(5,9,22,.97);
+  box-shadow:0 22px 64px rgba(0,0,0,.52),inset 0 1px 0 rgba(255,255,255,.035);
+  transform:translateY(14px) scale(.98);
+  opacity:0;
+  pointer-events:none;
+  transition:transform .2s ease,opacity .2s ease;
+}
+.result-chat-drawer.on .result-chat-panel{
+  transform:translateY(0) scale(1);
+  opacity:1;
+  pointer-events:auto;
+}
+.result-chat-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.result-chat-header-main{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:0;
+}
+.result-chat-character{
+  width:76px;
+  height:84px;
+  flex:0 0 auto;
+  object-fit:contain;
+  object-position:center bottom;
+  filter:drop-shadow(0 10px 16px rgba(0,0,0,.38));
+}
+.result-chat-heading{
+  min-width:0;
+}
+.result-chat-kicker{
+  font-size:10px;
+  letter-spacing:.18em;
+  color:rgba(176,226,218,.82);
+  margin-bottom:6px;
+}
+.result-chat-title{
+  font-family:'Shippori Mincho',serif;
+  font-size:18px;
+  line-height:1.5;
+  color:var(--gold-l);
+}
+.result-chat-subtitle{
+  font-size:12px;
+  line-height:1.75;
+  color:rgba(240,234,216,.72);
+  margin-top:8px;
+}
+.result-chat-close{
+  width:36px;
+  height:36px;
+  flex:0 0 auto;
+  border:1px solid rgba(228,184,74,.28);
+  background:rgba(255,255,255,.03);
+  color:rgba(255,247,216,.86);
+  cursor:pointer;
+  font-size:20px;
+  line-height:1;
+}
+.result-chat-close:hover{border-color:rgba(228,184,74,.58);color:#fff;}
+.result-chat-quick{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.result-chat-quick button{
+  min-height:34px;
+  padding:0 12px;
+  border:1px solid rgba(176,226,218,.24);
+  background:rgba(176,226,218,.08);
+  color:rgba(226,248,246,.9);
+  font-size:12px;
+  cursor:pointer;
+}
+.result-chat-quick button:disabled{opacity:.52;cursor:not-allowed;}
+.result-chat-messages{
+  flex:1 1 auto;
+  min-height:146px;
+  max-height:min(290px,calc(100vh - 330px));
+  overflow:auto;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  padding:2px 2px 8px;
+}
+.result-chat-empty{
+  border:1px solid rgba(228,184,74,.16);
+  background:rgba(255,255,255,.025);
+  padding:14px;
+  font-size:13px;
+  line-height:1.8;
+  color:rgba(240,234,216,.72);
+}
+.result-chat-message{
+  width:100%;
+  max-width:92%;
+  padding:12px 13px;
+  border:1px solid rgba(228,184,74,.16);
+  background:rgba(255,255,255,.035);
+  color:rgba(246,240,220,.9);
+  overflow-wrap:anywhere;
+}
+.result-chat-message.user{
+  align-self:flex-end;
+  border-color:rgba(176,226,218,.25);
+  background:rgba(176,226,218,.10);
+}
+.result-chat-message.assistant{
+  align-self:flex-start;
+  background:rgba(5,9,22,.72);
+}
+.result-chat-message.loading{
+  padding:12px;
+}
+.result-chat-message-label{
+  font-size:10px;
+  letter-spacing:.12em;
+  color:rgba(176,226,218,.78);
+  margin-bottom:6px;
+}
+.result-chat-message.user .result-chat-message-label{color:rgba(228,184,74,.82);}
+.result-chat-message-text{
+  font-size:13px;
+  line-height:1.85;
+  color:rgba(246,240,220,.92);
+}
+.result-chat-form{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 84px;
+  gap:10px;
+  align-items:end;
+  padding-top:12px;
+  border-top:1px solid rgba(228,184,74,.16);
+}
+.result-chat-form textarea{
+  width:100%;
+  min-height:72px;
+  max-height:132px;
+  resize:vertical;
+  border:1px solid rgba(228,184,74,.24);
+  background:rgba(255,255,255,.045);
+  color:rgba(255,247,216,.96);
+  padding:12px;
+  font-size:13px;
+  line-height:1.7;
+  outline:none;
+}
+.result-chat-form textarea:focus{border-color:rgba(176,226,218,.52);}
+.result-chat-form button{
+  min-height:44px;
+  border:1px solid rgba(228,184,74,.56);
+  background:rgba(201,149,42,.22);
+  color:rgba(255,247,216,.96);
+  font-weight:700;
+  font-size:13px;
+  cursor:pointer;
+}
+.result-chat-form button:disabled{opacity:.55;cursor:not-allowed;}
+
 #s-result.paid-result-mode #rs-len,
 #s-result.paid-result-mode #rs-orc{
   padding:26px clamp(18px,3vw,30px) 30px;
@@ -5420,6 +5649,25 @@ body.dossier-viewer-open{
 }
 @media (max-width:720px){
   .result-progress-card{padding:0;min-height:58vh;}
+  .result-chat-launcher{
+    left:16px;
+    right:16px;
+    bottom:14px;
+    max-width:none;
+  }
+  .result-chat-panel{
+    left:12px;
+    right:12px;
+    bottom:74px;
+    width:auto;
+    max-height:72vh;
+    padding:16px;
+    transform:translateY(14px) scale(.98);
+  }
+  .result-chat-drawer.on .result-chat-panel{transform:translateY(0) scale(1);}
+  .result-chat-messages{max-height:calc(72vh - 238px);}
+  .result-chat-form{grid-template-columns:1fr;}
+  .result-chat-form button{width:100%;}
   .result-progress-visual{min-height:100%;margin:0;}
   .reading-effect-character{opacity:.12;}
   .result-progress-visual::before{font-size:34px;letter-spacing:.24em;}
@@ -7480,6 +7728,41 @@ body.consultation-tag-open{overflow:hidden;}
 
   </div>
 
+</div>
+
+<button class="result-chat-launcher" id="result-chat-launcher" type="button" aria-controls="result-chat-drawer" onclick="openResultChatDrawer()" style="display:none">
+  <span class="result-chat-launcher-icon" aria-hidden="true">
+    <img class="result-chat-launcher-character" src="images/ui/rashin-chat-mini.png" alt="" loading="lazy" decoding="async">
+  </span>
+  <span>鑑定について聞く</span>
+</button>
+
+<div class="result-chat-drawer" id="result-chat-drawer" aria-hidden="true" inert onclick="if(event.target===this)closeResultChatDrawer()">
+  <div class="result-chat-panel" role="dialog" aria-modal="true" aria-labelledby="result-chat-title" onclick="event.stopPropagation()">
+    <div class="result-chat-header">
+      <div>
+        <div class="result-chat-header-main">
+          <img class="result-chat-character" src="images/ui/rashin-chat-mini.png" alt="" loading="lazy" decoding="async">
+          <div class="result-chat-heading">
+            <div class="result-chat-kicker">AFTER READING</div>
+            <div class="result-chat-title" id="result-chat-title">羅針相談チャット</div>
+            <div class="result-chat-subtitle">この鑑定について、要約・気になる点・読み返しポイントを聞けます。</div>
+          </div>
+        </div>
+      </div>
+      <button class="result-chat-close" type="button" onclick="closeResultChatDrawer()" aria-label="閉じる">×</button>
+    </div>
+    <div class="result-chat-quick" id="result-chat-quick-actions">
+      <button type="button" onclick="sendResultChatQuick('summary')">要約して</button>
+      <button type="button" onclick="sendResultChatQuick('focus')">大事な点</button>
+      <button type="button" onclick="sendResultChatQuick('action')">行動の目安</button>
+    </div>
+    <div class="result-chat-messages" id="result-chat-messages" aria-live="polite"></div>
+    <div class="result-chat-form">
+      <textarea id="result-chat-input" rows="3" maxlength="500" placeholder="この鑑定について聞きたいことを書く" onkeydown="handleResultChatInputKey(event)"></textarea>
+      <button id="result-chat-send" type="button" onclick="sendResultChatMessage()">送信</button>
+    </div>
+  </div>
 </div>
 
 <div class="dossier-viewer" id="dossier-viewer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="dossier-viewer-title" hidden onclick="if(event.target===this)closeDossierViewer()">

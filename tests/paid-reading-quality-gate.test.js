@@ -4,6 +4,8 @@ const path = require('path');
 
 const rootDir = path.resolve(__dirname, '..');
 const appSource = fs.readFileSync(path.join(rootDir, 'app.js'), 'utf8');
+const serverSource = fs.readFileSync(path.join(rootDir, 'server.js'), 'utf8');
+const htmlSource = fs.readFileSync(path.join(rootDir, 'uranai-v5.html'), 'utf8');
 
 function sliceFromMarker(source, startMarker, endMarker) {
   const start = source.indexOf(startMarker);
@@ -105,6 +107,58 @@ assert.strictEqual(
 assert.ok(
   appSource.includes("replace(/(この恋愛は、[^。]+。)この恋愛は/g,'$1今は')"),
   'dossier verdict normalization must collapse repeated love-subject openings'
+);
+
+assert.ok(
+  appSource.includes("result_chat:{\n    provider:'openai'"),
+  'result chat must be routed through the OpenAI-only task config'
+);
+
+assert.ok(
+  appSource.includes('model:AI_MODELS.resultChat'),
+  'result chat must use the dedicated OpenAI resultChat model'
+);
+
+assert.strictEqual(
+  appSource.includes("PAID_MODEL_AB_TEST_TASKS=new Set(['paid','dossier','followup','result_chat'])"),
+  false,
+  'result chat must not be included in paid Anthropic/OpenAI A/B routing'
+);
+
+assert.ok(
+  appSource.includes("syncResultChatAvailability({autoOpen:true})"),
+  'paid success path must auto-open the result chat after the ticket is marked used'
+);
+
+assert.ok(
+  htmlSource.includes('id="result-chat-drawer"') && htmlSource.includes('id="result-chat-launcher"'),
+  'result screen must include the result-chat popout and persistent launcher'
+);
+
+assert.ok(
+  htmlSource.includes('images/ui/rashin-chat-mini.png') && htmlSource.includes('result-chat-character'),
+  'result chat popout must show the configured mini character asset'
+);
+
+assert.strictEqual(
+  /次に見たいこと|次に見ること|次に意識すること/.test(`${appSource}\n${htmlSource}`),
+  false,
+  'result chat copy must not imply another paid next-reading prompt'
+);
+
+assert.ok(
+  serverSource.includes("resultChat: process.env.OPENAI_RESULT_CHAT_MODEL || process.env.OPENAI_LIGHT_MODEL || 'gpt-5.4-mini'"),
+  'server must expose a dedicated OpenAI mini model for result chat'
+);
+
+assert.ok(
+  serverSource.includes('function isResultChatTask') && serverSource.includes('requiresPaidAccess(payload)'),
+  'server must treat result chat as a paid-entitled task even though it uses OpenAI'
+);
+
+assert.ok(
+  serverSource.includes("ticket.status === 'used' && ticket.usedReadingId === paidReadingId"),
+  'result chat must allow the same paid result after the ticket has been used'
 );
 
 console.log('paid-reading-quality-gate.test.js: ok');
