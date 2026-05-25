@@ -148,6 +148,15 @@ function getEntryForPlatform(draft, kind, platform) {
       altText: entry.altText,
     };
   }
+  if (platform === 'instagram') {
+    return {
+      text: entry.instagramText,
+      trackedUrl: entry.instagramTrackedUrl,
+      imagePath: entry.instagramImagePath || entry.imagePath,
+      imageUrl: entry.instagramImageUrl || entry.imageUrl,
+      altText: entry.altText,
+    };
+  }
   return {
     text: entry.text,
     trackedUrl: entry.trackedUrl,

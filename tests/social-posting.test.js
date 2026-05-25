@@ -26,7 +26,7 @@ function parseDraft(date = '2026-05-18', options = {}) {
     'scripts/social/daily-oracle-post.js',
     '--dry-run',
     `--date=${date}`,
-    '--platforms=threads,bluesky,x',
+    '--platforms=threads,bluesky,x,instagram',
     '--kind=all',
   ], options);
   return JSON.parse(result.stdout);
@@ -62,18 +62,27 @@ function testDraftHasTrackingImagesAndAlt() {
   assertTracked(draft.oracle.text, draft.oracle.trackedUrl, 'threads oracle');
   assertTracked(draft.oracle.blueskyText, draft.oracle.blueskyTrackedUrl, 'bluesky oracle');
   assertTracked(draft.oracle.xText, draft.oracle.xTrackedUrl, 'x oracle');
+  assertTracked(draft.oracle.instagramText, draft.oracle.instagramTrackedUrl, 'instagram oracle');
   assertTracked(draft.midday.text, draft.midday.trackedUrl, 'threads midday');
   assertTracked(draft.midday.blueskyText, draft.midday.blueskyTrackedUrl, 'bluesky midday');
   assertTracked(draft.midday.xText, draft.midday.xTrackedUrl, 'x midday');
+  assertTracked(draft.midday.instagramText, draft.midday.instagramTrackedUrl, 'instagram midday');
   assertTracked(draft.concept.text, draft.concept.trackedUrl, 'threads concept');
   assertTracked(draft.concept.blueskyText, draft.concept.blueskyTrackedUrl, 'bluesky concept');
   assertTracked(draft.concept.xText, draft.concept.xTrackedUrl, 'x concept');
+  assertTracked(draft.concept.instagramText, draft.concept.instagramTrackedUrl, 'instagram concept');
 
   assertImageAndAlt(draft.oracle.imagePath, draft.oracle.altText, 'oracle');
   assertImageAndAlt(draft.midday.imagePath, draft.midday.altText, 'threads midday');
   assertImageAndAlt(draft.midday.blueskyImagePath, draft.midday.altText, 'bluesky midday');
   assertImageAndAlt(draft.concept.imagePath, draft.concept.altText, 'threads concept');
   assertImageAndAlt(draft.concept.blueskyImagePath, draft.concept.altText, 'bluesky concept');
+  assertImageAndAlt(draft.oracle.instagramImagePath, draft.oracle.altText, 'instagram oracle');
+  assertImageAndAlt(draft.midday.instagramImagePath, draft.midday.altText, 'instagram midday');
+  assertImageAndAlt(draft.concept.instagramImagePath, draft.concept.altText, 'instagram concept');
+  assert.match(draft.oracle.instagramImageUrl, /\.jpg$/i, 'Instagram oracle image must be JPEG');
+  assert.match(draft.midday.instagramImageUrl, /\.jpg$/i, 'Instagram midday image must be JPEG');
+  assert.match(draft.concept.instagramImageUrl, /\.jpg$/i, 'Instagram concept image must be JPEG');
   assert.ok(fs.statSync(draft.oracle.blueskyImagePath).size <= 1_000_000, 'Bluesky oracle image must be <= 1,000,000 bytes');
   assert.ok(fs.statSync(draft.midday.blueskyImagePath).size <= 1_000_000, 'Bluesky midday image must be <= 1,000,000 bytes');
   assert.ok(fs.statSync(draft.concept.blueskyImagePath).size <= 1_000_000, 'Bluesky concept image must be <= 1,000,000 bytes');
@@ -216,24 +225,25 @@ function testPostsLedgerWriteIsTraceableAndSecretSafe() {
     'scripts/social/daily-oracle-post.js',
     '--write',
     '--date=2026-05-18',
-    '--platforms=threads,bluesky',
+    '--platforms=threads,bluesky,instagram',
     '--kind=all',
   ], {
     env: {
       SOCIAL_POSTS_LEDGER_FILE: ledgerFile,
       THREADS_ACCESS_TOKEN: 'unit-test-threads-token',
       BLUESKY_APP_PASSWORD: 'unit-test-bluesky-password',
+      INSTAGRAM_ACCESS_TOKEN: 'unit-test-instagram-token',
     },
   });
 
   const csv = fs.readFileSync(ledgerFile, 'utf8');
   const rows = csv.trim().split(/\r?\n/);
-  assert.equal(rows.length, 7, 'ledger should contain header plus six draft rows');
+  assert.equal(rows.length, 10, 'ledger should contain header plus nine draft rows');
   assert.match(rows[0], /post_key,date,kind,platform,status/, 'ledger header is missing expected columns');
   assert.match(csv, /utm_content=oracle_20260518/, 'oracle tracked URL is missing from ledger');
   assert.match(csv, /utm_content=midday_20260518/, 'midday tracked URL is missing from ledger');
   assert.match(csv, /utm_content=concept_20260518/, 'concept tracked URL is missing from ledger');
-  assert.doesNotMatch(csv, /unit-test-threads-token|unit-test-bluesky-password/, 'ledger must not leak tokens');
+  assert.doesNotMatch(csv, /unit-test-threads-token|unit-test-bluesky-password|unit-test-instagram-token/, 'ledger must not leak tokens');
   assert.doesNotMatch(csv, /今日の|羅針占術|無料鑑定/, 'ledger should store hashes, URLs, and metadata, not full post copy');
 
   fs.rmSync(ledgerFile, { force: true });
@@ -293,7 +303,7 @@ function testBroadSocialAuditPasses() {
     'scripts/social/audit-social-drafts.js',
     '--from=2026-05-13',
     '--to=2026-06-30',
-    '--platforms=threads,bluesky,x',
+    '--platforms=threads,bluesky,x,instagram',
   ]);
   assert.match(result.stdout, /"errors": 0/, 'audit should report zero errors');
 }
@@ -303,7 +313,7 @@ function testRandomOracleModeBroadSocialAuditPasses() {
     'scripts/social/audit-social-drafts.js',
     '--from=2026-05-13',
     '--to=2026-06-30',
-    '--platforms=threads,bluesky,x',
+    '--platforms=threads,bluesky,x,instagram',
   ], {
     env: {
       SOCIAL_ORACLE_CARD_MODE: 'random',

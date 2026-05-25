@@ -4,6 +4,7 @@ const path = require('path');
 const readline = require('readline/promises');
 const threadsClient = require('./threads-client');
 const blueskyClient = require('./bluesky-client');
+const instagramClient = require('./instagram-client');
 const postLedger = require('./post-ledger');
 
 const ROOT = path.resolve(__dirname, '..', '..');
@@ -15,6 +16,7 @@ const DEFAULT_HASHTAG = '#羅針占術';
 const DEFAULT_THREADS_HASHTAG = '#占い鑑定';
 const DEFAULT_BLUESKY_HASHTAGS = '#羅針占術 #今日の占い #今日の運勢 #占い師';
 const THREADS_CHARACTER_LIMIT = 500;
+const INSTAGRAM_CHARACTER_LIMIT = instagramClient.INSTAGRAM_CHARACTER_LIMIT;
 const X_CHARACTER_LIMIT = 280;
 const BLUESKY_CHARACTER_LIMIT = 300;
 const X_ORACLE_HASHTAGS = [
@@ -396,6 +398,7 @@ function getSocialConfig(args) {
     primaryPlatform,
     enableX: platforms.includes('x'),
     enableBluesky: platforms.includes('bluesky'),
+    enableInstagram: platforms.includes('instagram'),
     paidCtaMode,
     releaseMode: normalizeMode(process.env.SOCIAL_RELEASE_MODE, SOCIAL_RELEASE_MODES, 'auto'),
     boothEnabled: boolFromEnv(process.env.SOCIAL_BOOTH_ENABLED) && !!boothUrl,
@@ -744,6 +747,9 @@ function validatePostText(text, options = {}) {
   if (options.platforms?.includes('bluesky') && [...value].length > BLUESKY_CHARACTER_LIMIT) {
     throw new Error(`${label} is too long for Bluesky: ${[...value].length}/${BLUESKY_CHARACTER_LIMIT}`);
   }
+  if (options.platforms?.includes('instagram') && [...value].length > INSTAGRAM_CHARACTER_LIMIT) {
+    throw new Error(`${label} is too long for Instagram: ${[...value].length}/${INSTAGRAM_CHARACTER_LIMIT}`);
+  }
   if (options.requireTrackedUrl && !hasPublicUrl(value)) {
     throw new Error(`${label} is missing a visible URL.`);
   }
@@ -810,6 +816,16 @@ function validateDraft(draft, args) {
     }
     if (!draft.oracle.altText || !draft.midday.altText || !draft.concept.altText) {
       throw new Error('Bluesky image posts require alt text.');
+    }
+  }
+  if (platforms.includes('instagram')) {
+    validatePostText(draft.oracle.instagramText, { label: 'oracle Instagram post', platforms: ['instagram'], requireTrackedUrl: true, trackedUrl: draft.oracle.instagramTrackedUrl });
+    validatePostText(draft.midday.instagramText, { label: 'midday Instagram post', platforms: ['instagram'], requireTrackedUrl: true, trackedUrl: draft.midday.instagramTrackedUrl });
+    validatePostText(draft.concept.instagramText, { label: 'concept Instagram post', platforms: ['instagram'], requireTrackedUrl: true, trackedUrl: draft.concept.instagramTrackedUrl });
+    for (const [kind, entry] of Object.entries({ oracle: draft.oracle, midday: draft.midday, concept: draft.concept })) {
+      if (!entry.instagramImageUrl) throw new Error(`${kind} Instagram post requires a public image URL.`);
+      instagramClient.ensurePublicImageUrl(entry.instagramImageUrl);
+      if (!entry.altText) throw new Error(`${kind} Instagram post requires alt text.`);
     }
   }
 }
@@ -1194,16 +1210,21 @@ async function buildDraft(args) {
   const threadsConfig = withPlatform(config, 'threads');
   const xConfig = withPlatform(config, 'x');
   const blueskyConfig = withPlatform(config, 'bluesky');
+  const instagramConfig = withPlatform(config, 'instagram');
   const calendar = getCalendarEntry(dateKey);
   const paidCta = resolvePaidCta(calendar, config);
   const conceptImage = pickConceptImage(calendar, dateKey);
   const blueskyConceptImage = pickBlueskyConceptImage(conceptImage);
   const middayImage = SOCIAL_CONCEPT_IMAGES.icon;
   const blueskyMiddayImage = pickBlueskyConceptImage(middayImage);
+  const instagramConceptImage = pickBlueskyConceptImage(conceptImage);
+  const instagramMiddayImage = pickBlueskyConceptImage(middayImage);
   const conceptImagePath = path.join(ROOT, 'images', 'ui', conceptImage.file);
   const blueskyConceptImagePath = path.join(ROOT, 'images', 'ui', blueskyConceptImage.file);
   const middayImagePath = path.join(ROOT, 'images', 'ui', middayImage.file);
   const blueskyMiddayImagePath = path.join(ROOT, 'images', 'ui', blueskyMiddayImage.file);
+  const instagramConceptImagePath = path.join(ROOT, 'images', 'ui', instagramConceptImage.file);
+  const instagramMiddayImagePath = path.join(ROOT, 'images', 'ui', instagramMiddayImage.file);
   const messages = await loadDailyOracleMessages();
   const card = await pickCard(messages, dateKey, args.write || args.post, args);
   const imageName = `${String(card.id).padStart(2, '0')}.jpg`;
@@ -1226,6 +1247,10 @@ async function buildDraft(args) {
       blueskyText: buildBlueskyOracleText(card, publicOrigin, { dateKey, config: blueskyConfig }),
       blueskyTrackedUrl: buildOracleTrackedUrl(card, publicOrigin, blueskyConfig, dateKey),
       blueskyImagePath: path.join(ROOT, 'images', 'cards', 'oracle', imageName),
+      instagramText: buildOracleText(card, publicOrigin, { dateKey, config: instagramConfig }),
+      instagramTrackedUrl: buildOracleTrackedUrl(card, publicOrigin, instagramConfig, dateKey),
+      instagramImagePath: path.join(ROOT, 'images', 'cards', 'oracle', imageName),
+      instagramImageUrl: `${publicOrigin}/images/cards/oracle/${imageName}`,
     },
     midday: {
       imagePath: middayImagePath,
@@ -1239,6 +1264,10 @@ async function buildDraft(args) {
       blueskyTrackedUrl: buildMiddayTrackedUrl(dateKey, publicOrigin, blueskyConfig),
       blueskyImagePath: blueskyMiddayImagePath,
       blueskyImageUrl: buildPublicUiImageUrl(publicOrigin, blueskyMiddayImage.file),
+      instagramText: buildMiddayText(dateKey, publicOrigin, instagramConfig),
+      instagramTrackedUrl: buildMiddayTrackedUrl(dateKey, publicOrigin, instagramConfig),
+      instagramImagePath: instagramMiddayImagePath,
+      instagramImageUrl: buildPublicUiImageUrl(publicOrigin, instagramMiddayImage.file),
     },
     concept: {
       imagePath: conceptImagePath,
@@ -1252,6 +1281,10 @@ async function buildDraft(args) {
       blueskyTrackedUrl: buildConceptTrackedUrl(dateKey, publicOrigin, blueskyConfig, paidCta),
       blueskyImagePath: blueskyConceptImagePath,
       blueskyImageUrl: buildPublicUiImageUrl(publicOrigin, blueskyConceptImage.file),
+      instagramText: buildConceptText(dateKey, publicOrigin, instagramConfig),
+      instagramTrackedUrl: buildConceptTrackedUrl(dateKey, publicOrigin, instagramConfig, paidCta),
+      instagramImagePath: instagramConceptImagePath,
+      instagramImageUrl: buildPublicUiImageUrl(publicOrigin, instagramConceptImage.file),
     },
     meta: {
       releasePhase: getReleasePhase(dateKey),
@@ -1271,6 +1304,7 @@ async function buildDraft(args) {
         stripeEnabled: config.stripeEnabled,
         campaign: config.campaign,
         enableBluesky: config.enableBluesky,
+        enableInstagram: config.enableInstagram,
       },
       calendar: calendar ? {
         morningTheme: calendar.morningTheme,
@@ -1371,6 +1405,10 @@ async function postTextToThreads(text) {
   return threadsClient.postTextToThreads({ text });
 }
 
+async function postToInstagram(text, imageUrl, altText = '') {
+  return instagramClient.postImageToInstagram({ text, imageUrl, altText });
+}
+
 function extractUtmContent(text) {
   const match = String(text || '').match(/[?&]utm_content=([^&#\s]+)/);
   return match ? decodeURIComponent(match[1]) : null;
@@ -1412,6 +1450,20 @@ async function findExistingBlueskyPost({ marker = null, text = '' } = {}) {
   const normalizedText = normalizeDuplicateText(text);
   return (recent.feed || []).map(item => item.post).find(post => {
     const postText = String(post?.record?.text || '');
+    if (marker && postText.includes(`utm_content=${marker}`)) return true;
+    return normalizedText && normalizeDuplicateText(postText) === normalizedText;
+  }) || null;
+}
+
+async function findExistingInstagramPost({ marker = null, text = '' } = {}) {
+  if (process.env.SOCIAL_ALLOW_DUPLICATE_POSTS === 'true') return null;
+  if (!marker && !text) throw new Error('Missing duplicate protection marker or text.');
+  const recent = await instagramClient.listInstagramMedia({
+    limit: Number(process.env.INSTAGRAM_DUPLICATE_LOOKBACK || 25),
+  });
+  const normalizedText = normalizeDuplicateText(text);
+  return (recent.data || []).find(post => {
+    const postText = String(post.caption || '');
     if (marker && postText.includes(`utm_content=${marker}`)) return true;
     return normalizedText && normalizeDuplicateText(postText) === normalizedText;
   }) || null;
@@ -1547,6 +1599,21 @@ async function postImageToBlueskyOnce({ text, imagePath, altText, marker }) {
   return blueskyClient.postImageToBluesky({ text, imagePath, altText });
 }
 
+async function postImageToInstagramOnce({ text, imageUrl, altText, marker }) {
+  const existing = await findExistingInstagramPost({ marker, text });
+  if (existing) {
+    return {
+      skipped: true,
+      reason: 'existing_instagram_post',
+      marker,
+      id: existing.id,
+      permalink: existing.permalink,
+      timestamp: existing.timestamp,
+    };
+  }
+  return postToInstagram(text, imageUrl, altText);
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const draft = await buildDraft(args);
@@ -1625,6 +1692,32 @@ async function main() {
           imagePath: draft.concept.blueskyImagePath,
           altText: draft.concept.altText,
           marker: extractUtmContent(draft.concept.blueskyTrackedUrl || draft.concept.blueskyText),
+        }));
+      }
+    }
+    if (args.platforms.includes('instagram')) {
+      if (shouldPostKind(args, 'oracle')) {
+        results.instagramOracle = await withSocialRetry('instagram:oracle', () => postImageToInstagramOnce({
+          text: draft.oracle.instagramText,
+          imageUrl: draft.oracle.instagramImageUrl,
+          altText: draft.oracle.altText,
+          marker: extractUtmContent(draft.oracle.instagramTrackedUrl || draft.oracle.instagramText),
+        }));
+      }
+      if (shouldPostKind(args, 'midday')) {
+        results.instagramMidday = await withSocialRetry('instagram:midday', () => postImageToInstagramOnce({
+          text: draft.midday.instagramText,
+          imageUrl: draft.midday.instagramImageUrl,
+          altText: draft.midday.altText,
+          marker: extractUtmContent(draft.midday.instagramTrackedUrl || draft.midday.instagramText),
+        }));
+      }
+      if (shouldPostKind(args, 'concept')) {
+        results.instagramConcept = await withSocialRetry('instagram:concept', () => postImageToInstagramOnce({
+          text: draft.concept.instagramText,
+          imageUrl: draft.concept.instagramImageUrl,
+          altText: draft.concept.altText,
+          marker: extractUtmContent(draft.concept.instagramTrackedUrl || draft.concept.instagramText),
         }));
       }
     }
