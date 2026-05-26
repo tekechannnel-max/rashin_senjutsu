@@ -1825,6 +1825,9 @@ const DEEP_PAID_CTA_LABEL='深掘り羅針鑑定をする(有料)';
 const SIMPLE_READING_PLAN='simple';
 const SIMPLE_READING_LABEL='ミニ羅針鑑定はこちら（カードなし）';
 const SIMPLE_READING_LABEL_HTML='ミニ羅針鑑定はこちら<br>（カードなし）';
+const RASHIN_YEAR_CALENDAR_LABEL='2026年羅針カレンダー';
+const RASHIN_YEAR_CALENDAR_BG='images/ui/rashin-calendar-bg-2026.png?v=20260526';
+const RASHIN_YEAR_CALENDAR_CHARACTER='images/ui/rashin-chat-mini.png?v=20260526';
 const FREE_LEN_COUNT=2;
 const FREE_ORC_COUNT=1;
 const LEN_FREE_POSITION_LABELS=['主題','修飾・答え'];
@@ -7158,9 +7161,125 @@ function renderTopHeroPanels(){
     <div class="top-archive-foot">読み返すほど、いま多いテーマや繰り返し出るカードが見えてきます。</div>`;
 }
 
+function ensureRashinYearCalendarStyles(){
+  if(typeof document==='undefined'||document.getElementById('rashin-year-calendar-style')) return;
+  const style=document.createElement('style');
+  style.id='rashin-year-calendar-style';
+  style.textContent=`
+    .rashin-year-calendar-entry{
+      position:relative;
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:14px;
+      align-items:center;
+      width:min(860px,100%);
+      margin:18px auto 0;
+      padding:16px 18px;
+      border:1px solid rgba(229,184,86,.62);
+      border-radius:8px;
+      background:
+        linear-gradient(135deg,rgba(7,18,34,.94),rgba(2,7,18,.86)),
+        radial-gradient(circle at 14% 0%,rgba(229,184,86,.24),transparent 34%),
+        radial-gradient(circle at 96% 100%,rgba(111,198,215,.18),transparent 34%);
+      box-shadow:0 18px 44px rgba(0,0,0,.34), inset 0 0 0 1px rgba(255,244,190,.12);
+      overflow:hidden;
+    }
+    .rashin-year-calendar-entry:before,
+    .rashin-year-calendar-entry:after{
+      content:"";
+      position:absolute;
+      pointer-events:none;
+    }
+    .rashin-year-calendar-entry:before{
+      inset:7px;
+      border:1px solid rgba(229,184,86,.24);
+      border-radius:6px;
+    }
+    .rashin-year-calendar-entry:after{
+      right:18px;
+      top:14px;
+      width:72px;
+      height:72px;
+      border:1px solid rgba(229,184,86,.34);
+      border-radius:50%;
+      background:
+        linear-gradient(90deg,transparent 49%,rgba(229,184,86,.28) 50%,transparent 51%),
+        linear-gradient(0deg,transparent 49%,rgba(229,184,86,.28) 50%,transparent 51%);
+      opacity:.42;
+    }
+    .rashin-year-calendar-main{
+      position:relative;
+      z-index:1;
+      display:grid;
+      gap:6px;
+      min-width:0;
+    }
+    .rashin-year-calendar-kicker{
+      color:#e8bc59;
+      font-size:.72rem;
+      font-weight:800;
+      letter-spacing:.14em;
+    }
+    .rashin-year-calendar-title{
+      color:#fff8dc;
+      font-family:"Shippori Mincho","Yu Mincho",serif;
+      font-size:clamp(1.15rem,2.3vw,1.72rem);
+      font-weight:800;
+      line-height:1.28;
+      text-shadow:0 0 18px rgba(232,188,89,.28);
+    }
+    .rashin-year-calendar-copy{
+      max-width:58em;
+      color:rgba(248,243,222,.88);
+      font-size:.92rem;
+      line-height:1.72;
+    }
+    .rashin-year-calendar-btn{
+      position:relative;
+      z-index:1;
+      min-width:154px;
+      min-height:46px;
+      border:1px solid rgba(255,233,158,.8);
+      border-radius:999px;
+      background:linear-gradient(135deg,#f5d777,#a97021);
+      color:#07101e;
+      font-weight:900;
+      box-shadow:0 10px 22px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.45);
+      cursor:pointer;
+    }
+    .rashin-year-calendar-btn:focus-visible{
+      outline:2px solid #fff4ba;
+      outline-offset:3px;
+    }
+    @media (max-width:680px){
+      .rashin-year-calendar-entry{
+        grid-template-columns:1fr;
+        padding:15px;
+      }
+      .rashin-year-calendar-btn{
+        width:100%;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function buildRashinYearCalendarEntryHtml(source='top_entry'){
+  return `
+    <div class="rashin-year-calendar-entry">
+      <div class="rashin-year-calendar-main">
+        <div class="rashin-year-calendar-kicker">2026 PERSONAL CALENDAR</div>
+        <div class="rashin-year-calendar-title">${RASHIN_YEAR_CALENDAR_LABEL}</div>
+        <div class="rashin-year-calendar-copy">無料鑑定・深掘り鑑定・ミニ鑑定・カード履歴をもとに、あなた専用の一年の流れを一枚画像にまとめます。</div>
+      </div>
+      <button class="rashin-year-calendar-btn" type="button" onclick="openRashinYearCalendar('${source}')">作成する</button>
+    </div>`;
+}
+
 function renderPremiumEntrySection(){
   const el=document.getElementById('premium-entry');
   if(!el) return;
+  ensureRashinYearCalendarStyles();
   const paidAction=`<a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('paid');return false;}">${DEEP_PAID_CTA_LABEL}</a>`;
   el.innerHTML=`
     <div class="paid-band-inner">
@@ -7169,6 +7288,7 @@ function renderPremiumEntrySection(){
         ${paidAction}
         <a class="today-cta today-cta-simple" href="?flow=simple" data-flow-target="simple" data-track="simple_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('simple');return false;}">${SIMPLE_READING_LABEL_HTML}</a>
       </div>
+      ${buildRashinYearCalendarEntryHtml('top_entry')}
       <div class="paid-band-note">深掘り羅針鑑定 プレリリース780円 / 通常1000円予定</div>
       <div class="checkout-disclosure">${getCheckoutDisclosureHtml()}</div>
     </div>`;
@@ -10592,6 +10712,7 @@ function renderMemberStatusFallback(){
 function renderPremiumEntryFallback(){
   const el=document.getElementById('premium-entry');
   if(!el) return;
+  ensureRashinYearCalendarStyles();
   el.innerHTML=`
     <div class="paid-band-inner">
       <div class="paid-band-actions paid-band-actions-center">
@@ -10599,6 +10720,7 @@ function renderPremiumEntryFallback(){
         <a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('paid');return false;}">${DEEP_PAID_CTA_LABEL}</a>
         <a class="today-cta today-cta-simple" href="?flow=simple" data-flow-target="simple" data-track="simple_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('simple');return false;}">${SIMPLE_READING_LABEL_HTML}</a>
       </div>
+      ${buildRashinYearCalendarEntryHtml('top_entry_fallback')}
       <div class="paid-band-note">深掘り羅針鑑定 プレリリース780円 / 通常1000円予定</div>
       <div class="checkout-disclosure">${getCheckoutDisclosureHtml()}</div>
     </div>`;
@@ -21166,6 +21288,510 @@ function canvasToPngBlob(canvas){
   return new Promise(resolve=>canvas.toBlob(blob=>resolve(blob),'image/png',.96));
 }
 
+function collectRashinCalendarTextFragments(value,fragments=[],limit=18){
+  if(fragments.length>=limit||value==null) return fragments;
+  if(typeof value==='string'){
+    const normalized=value.replace(/\s+/g,' ').trim();
+    if(normalized.length>=18) fragments.push(truncateText(normalized,150));
+    return fragments;
+  }
+  if(Array.isArray(value)){
+    value.forEach(item=>collectRashinCalendarTextFragments(item,fragments,limit));
+    return fragments;
+  }
+  if(typeof value==='object'){
+    Object.keys(value).forEach(key=>collectRashinCalendarTextFragments(value[key],fragments,limit));
+  }
+  return fragments;
+}
+
+function getRashinCalendarTopCardLabel(records=[],kind='len'){
+  const counts={};
+  const sourceKey=kind==='orc'?'selOrc':'selLen';
+  records.forEach(record=>{
+    (record?.[sourceKey]||[]).forEach(id=>{
+      const key=String(id||'').trim();
+      if(key) counts[key]=(counts[key]||0)+1;
+    });
+  });
+  const top=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
+  if(!top) return '';
+  const [id,count]=top;
+  const label=kind==='orc'?(ORACLE[id]?.name||id):(LENORMAND[id]?.name||id);
+  return count>1?`${label} ${count}回`:label;
+}
+
+function buildRashinYearCalendarSource(){
+  const history=getReadingHistory();
+  let current=null;
+  if(CURRENT_READING_ID){
+    try{ current=buildCurrentReadingRecord(); }catch(_error){ current=null; }
+  }
+  const records=[
+    ...(current?[current]:[]),
+    ...history.filter(record=>!current||record.id!==current.id),
+  ];
+  const stats=computeReadingStats(records);
+  const input=current?.input||records[0]?.input||getCurrentInputSnapshot();
+  const focus=analyzeConsultationFocus(input?.cat||'総合',input?.theme||'',{
+    catTags:input?.catTags||[],
+    reactionAnswers:input?.reactionAnswers||{},
+  });
+  const primaryTheme=normalizePrimaryThemeValue(focus);
+  const safeInput={
+    cat:input?.cat||'総合',
+    catTags:Array.isArray(input?.catTags)?input.catTags.slice(0,8):[],
+  };
+  const plans=[...new Set(records.map(record=>record.plan||'free'))];
+  const outputFragments=[
+    ...collectRashinCalendarTextFragments(LAST_OUTPUTS,[],6),
+    ...records.flatMap(record=>collectRashinCalendarTextFragments(record.outputs,[],4)),
+  ].slice(0,18);
+  const topLen=getRashinCalendarTopCardLabel(records,'len');
+  const topOrc=getRashinCalendarTopCardLabel(records,'orc');
+  const birthPlain=MEIMEI?buildBirthPlainInsight(MEIMEI):null;
+  const namePlain=NAMEJUDGE?buildNamePlainInsight(NAMEJUDGE):null;
+  const animalLabel=REACTION_PROFILE?.animal||(typeof getAnimalTypeName==='function'?getAnimalTypeName():'');
+  const seedText=JSON.stringify({
+    input:safeInput,
+    primaryTheme,
+    plans,
+    topLen,
+    topOrc,
+    stats,
+    birthPlain,
+    namePlain,
+    reaction:REACTION_PROFILE?{
+      animal:REACTION_PROFILE.animal||'',
+      stress:REACTION_PROFILE.stress||'',
+      handling:REACTION_PROFILE.handling||'',
+      power:REACTION_PROFILE.power||'',
+    }:null,
+    outputSignal:outputFragments.map(fragment=>fragment.length).join(','),
+    len:records.flatMap(record=>record.selLen||[]).join(','),
+    orc:records.flatMap(record=>record.selOrc||[]).join(','),
+  });
+  return{
+    stats,
+    input:safeInput,
+    primaryTheme,
+    plans,
+    topLen,
+    topOrc,
+    birthPlain,
+    namePlain,
+    animalLabel,
+    seed:hashStringToBucket(seedText),
+  };
+}
+
+function pickRashinCalendarItem(list=[],seed=0,offset=0){
+  if(!list.length) return '';
+  return list[Math.abs(Number(seed||0)+offset)%list.length];
+}
+
+function getRashinYearCalendarAxis(source){
+  const cat=String(source?.input?.cat||'総合');
+  const primary=source?.primaryTheme||'general';
+  if(primary==='love'||/恋愛|復縁|結婚|片思い|相手/.test(cat)){
+    return{
+      key:'love',
+      label:'心の距離と信頼',
+      theme:'焦らず、誠実な言葉で関係を育てる年。',
+      focus:['返事より温度を見る','境界線を伝える','約束を守る','不安を確認に変える','余白を作る'],
+      caution:['不安で詰めない','沈黙を決めつけない','曖昧に約束しない'],
+    };
+  }
+  if(primary==='career'||primary==='work_life_direction'||/仕事|転職|働き方|金運|副業|収入/.test(cat)){
+    return{
+      key:'work',
+      label:'仕事と収益の導線',
+      theme:'評価される場所を選び、収益につながる形へ整える年。',
+      focus:['提案を形にする','作業時間を守る','単価を見直す','成果を見せる','断る基準を決める'],
+      caution:['安売りしない','迷って案件を増やさない','忙しさを成果にしない'],
+    };
+  }
+  if(primary==='dual_concern'){
+    return{
+      key:'dual',
+      label:'恋愛と仕事の優先順位',
+      theme:'大事なものを同時に抱えず、月ごとに主軸を決める年。',
+      focus:['主軸を一つに絞る','時間を分ける','感情と予定を分ける','期限を作る','選ぶ理由を書く'],
+      caution:['全部を追わない','疲れた日に決めない','比較で急がない'],
+    };
+  }
+  return{
+      key:'general',
+      label:'選ぶ力と生活の土台',
+      theme:'広げるより、勝てる場所に集中して運を戻す年。',
+      focus:['生活リズムを整える','言葉にして選ぶ','小さく試す','数字と予定を見る','続けるものを固定'],
+      caution:['勢いで全部変えない','疲れた日に決めない','人に合わせすぎない'],
+  };
+}
+
+function buildRashinYearCalendarMonths(source){
+  const axis=getRashinYearCalendarAxis(source);
+  const seed=source?.seed||0;
+  const evidence=[
+    source?.topLen?`${source.topLen.replace(/\s+\d+回$/,'')}を見る`:'',
+    source?.topOrc?`${source.topOrc.replace(/\s+\d+回$/,'')}を合図にする`:'',
+    source?.stats?.paidCount?`深掘りを予定化`:'',
+    source?.animalLabel?`反応癖を整える`:'',
+    source?.namePlain?.advice?'言葉を整える':'',
+    source?.birthPlain?.advice?'強みを使う':'',
+  ].filter(Boolean);
+  const base=[
+    {month:1,phase:'整える',theme:'土台の再点検',focus:['生活リズムを整える','未完了をひとつ終える','使う時間を見直す'],caution:'勢いで全部変えない'},
+    {month:2,phase:'見直し',theme:'関係性の確認',focus:['距離感を整える','連絡の癖を確認する','抱えすぎを減らす'],caution:'過去を引きずりすぎない'},
+    {month:3,phase:'準備',theme:'発信の下準備',focus:['資料を整える','プロフィールを磨く','次の提案を作る'],caution:'考えすぎない'},
+    {month:4,phase:'表に出る',theme:'魅力が返ってくる',focus:['反応を見る','小さく提案する','出会う場所を選ぶ'],caution:'見せ方を盛りすぎない'},
+    {month:5,phase:'調整',theme:'習慣を戻す',focus:['睡眠と予定を守る','収支を確認する','続ける量を決める'],caution:'抱え込みすぎない'},
+    {month:6,phase:'基盤',theme:'信頼を積む',focus:['約束を守る','役割を明確にする','準備を前倒しする'],caution:'派手さを求めない'},
+    {month:7,phase:'実り',theme:'知識を形に',focus:['学びを商品化する','文章にする','実績として残す'],caution:'他人と比べない'},
+    {month:8,phase:'拡大',theme:'動いて広げる',focus:['外へ出す','声をかける','新しい導線を試す'],caution:'勢いで雑に決めない'},
+    {month:9,phase:'選択',theme:'残すものを決める',focus:['続けるものを選ぶ','切るものを決める','基準を書き出す'],caution:'情で残しすぎない'},
+    {month:10,phase:'切り替え',theme:'基準を上げる',focus:['価格と時間を見直す','関係の前提を整える','言葉を一段強くする'],caution:'迷って進めない'},
+    {month:11,phase:'自立',theme:'主導権を戻す',focus:['自分で選ぶ','先に予定を押さえる','必要な説明をする'],caution:'孤立と自立を混同しない'},
+    {month:12,phase:'総仕上げ',theme:'次の設計',focus:['来年の数字を決める','人間関係を整理する','成果を保管する'],caution:'疲れを放置しない'},
+  ];
+  return base.map((item,index)=>{
+    const focus=[
+      item.focus[0],
+      pickRashinCalendarItem(axis.focus,seed,index),
+      evidence.length?pickRashinCalendarItem(evidence,seed,index+3):item.focus[2],
+    ];
+    return{
+      ...item,
+      focus:focus.map(text=>truncateText(text,13)),
+      caution:truncateText(index%3===1?pickRashinCalendarItem(axis.caution,seed,index):item.caution,13),
+    };
+  });
+}
+
+function buildRashinYearCalendarSummaries(source){
+  const axis=getRashinYearCalendarAxis(source);
+  const topLen=source?.topLen?source.topLen.replace(/\s+\d+回$/,''):'選択';
+  const topOrc=source?.topOrc?source.topOrc.replace(/\s+\d+回$/,''):'直感';
+  const theme=truncateText(axis.label,34);
+  return[
+    {
+      title:'恋愛運',
+      accent:'#e9a6b7',
+      body:axis.key==='love'
+        ?'誠実さと一貫性が鍵。焦るほど言葉を整える。'
+        :'会う相手と時間を選ぶほど、縁の質が上がる。',
+    },
+    {
+      title:'仕事・金運',
+      accent:'#8fd0e2',
+      body:axis.key==='work'
+        ?'提案、設計、数字確認が収益に直結する。'
+        :'収支と役割を整えるほど、必要な仕事だけが残る。',
+    },
+    {
+      title:'全体運',
+      accent:'#f0c95e',
+      body:`${theme}を軸に、${topLen}と${topOrc}を合図に選び直す。`,
+    },
+    {
+      title:'羅針アドバイス',
+      accent:'#b8e6c3',
+      body:'迷ったら、広げる前に「残すもの」を決める。',
+    },
+  ];
+}
+
+function drawCanvasImageCover(ctx,img,x,y,w,h){
+  const iw=img?.width||0;
+  const ih=img?.height||0;
+  if(!iw||!ih) return false;
+  const scale=Math.max(w/iw,h/ih);
+  const sw=w/scale;
+  const sh=h/scale;
+  const sx=(iw-sw)/2;
+  const sy=(ih-sh)/2;
+  ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h);
+  return true;
+}
+
+function drawRashinYearPanel(ctx,x,y,w,h,options={}){
+  const accent=options.accent||'rgba(229,184,86,.74)';
+  ctx.save();
+  ctx.fillStyle=options.fill||'rgba(3,10,24,.76)';
+  ctx.strokeStyle=accent;
+  ctx.lineWidth=options.lineWidth||1.5;
+  if(typeof ctx.roundRect==='function'){
+    ctx.beginPath();
+    ctx.roundRect(x,y,w,h,8);
+    ctx.fill();
+    ctx.stroke();
+  }else{
+    ctx.fillRect(x,y,w,h);
+    ctx.strokeRect(x,y,w,h);
+  }
+  ctx.strokeStyle=options.innerStroke||'rgba(255,239,180,.16)';
+  ctx.lineWidth=1;
+  ctx.strokeRect(x+6,y+6,w-12,h-12);
+  const corner=14;
+  ctx.strokeStyle=accent;
+  [[x+8,y+8,1,1],[x+w-8,y+8,-1,1],[x+8,y+h-8,1,-1],[x+w-8,y+h-8,-1,-1]].forEach(([cx,cy,dx,dy])=>{
+    ctx.beginPath();
+    ctx.moveTo(cx,cy+dy*corner);
+    ctx.lineTo(cx,cy);
+    ctx.lineTo(cx+dx*corner,cy);
+    ctx.stroke();
+  });
+  ctx.restore();
+}
+
+function fillRashinYearText(ctx,text,x,y,maxWidth,lineHeight,options={}){
+  ctx.save();
+  ctx.fillStyle=options.color||'#fff8dc';
+  ctx.font=options.font||'700 20px "Shippori Mincho","Yu Mincho",serif';
+  const nextY=drawWrappedCanvasText(ctx,text,x,y,maxWidth,lineHeight,{
+    maxLines:options.maxLines||2,
+    ellipsis:options.ellipsis!==false,
+  });
+  ctx.restore();
+  return nextY;
+}
+
+async function createRashinYearCalendarImageBlob(sourceData=null){
+  const source=sourceData||buildRashinYearCalendarSource();
+  const canvas=document.createElement('canvas');
+  canvas.width=1024;
+  canvas.height=1536;
+  if(document.fonts?.ready){
+    try{ await document.fonts.ready; }catch(_error){}
+  }
+  const ctx=canvas.getContext('2d');
+  if(!ctx) return null;
+  const bg=await loadImageForCanvas(RASHIN_YEAR_CALENDAR_BG);
+  if(bg){
+    drawCanvasImageCover(ctx,bg,0,0,canvas.width,canvas.height);
+  }else{
+    const gradient=ctx.createLinearGradient(0,0,0,canvas.height);
+    gradient.addColorStop(0,'#07152a');
+    gradient.addColorStop(.55,'#020815');
+    gradient.addColorStop(1,'#06111f');
+    ctx.fillStyle=gradient;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+  }
+  const veil=ctx.createLinearGradient(0,0,0,canvas.height);
+  veil.addColorStop(0,'rgba(1,6,18,.12)');
+  veil.addColorStop(.26,'rgba(1,6,18,.52)');
+  veil.addColorStop(.72,'rgba(1,6,18,.42)');
+  veil.addColorStop(1,'rgba(1,6,18,.18)');
+  ctx.fillStyle=veil;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  const character=await loadImageForCanvas(RASHIN_YEAR_CALENDAR_CHARACTER);
+  if(character){
+    ctx.save();
+    ctx.shadowColor='rgba(0,0,0,.44)';
+    ctx.shadowBlur=22;
+    ctx.shadowOffsetY=12;
+    drawCanvasImageCover(ctx,character,792,64,142,142);
+    ctx.restore();
+  }
+
+  ctx.save();
+  ctx.textAlign='center';
+  ctx.fillStyle='#fff8dc';
+  ctx.shadowColor='rgba(232,188,89,.34)';
+  ctx.shadowBlur=18;
+  ctx.font='800 62px "Shippori Mincho","Yu Mincho",serif';
+  ctx.fillText('2026年',512,96);
+  ctx.font='800 68px "Shippori Mincho","Yu Mincho",serif';
+  ctx.fillText('羅針カレンダー',512,170);
+  ctx.shadowBlur=0;
+  ctx.fillStyle='#f0c95e';
+  ctx.font='700 23px "Shippori Mincho","Yu Mincho",serif';
+  ctx.fillText('あなたの内に眠る羅針盤が示すアドバイス',512,218);
+  ctx.restore();
+
+  const axis=getRashinYearCalendarAxis(source);
+  drawRashinYearPanel(ctx,70,252,884,102,{fill:'rgba(3,12,28,.70)',accent:'rgba(240,201,94,.72)'});
+  ctx.save();
+  ctx.textAlign='center';
+  fillRashinYearText(ctx,'2026年のテーマ',512,290,760,24,{font:'800 22px "Shippori Mincho","Yu Mincho",serif',color:'#f0c95e',maxLines:1});
+  fillRashinYearText(ctx,axis.theme,512,326,760,28,{font:'700 24px "Shippori Mincho","Yu Mincho",serif',maxLines:2});
+  ctx.restore();
+
+  const months=buildRashinYearCalendarMonths(source);
+  const startX=66;
+  const startY=382;
+  const cardW=215;
+  const cardH=245;
+  const gapX=18;
+  const gapY=20;
+  months.forEach((month,index)=>{
+    const col=index%4;
+    const row=Math.floor(index/4);
+    const x=startX+col*(cardW+gapX);
+    const y=startY+row*(cardH+gapY);
+    drawRashinYearPanel(ctx,x,y,cardW,cardH,{fill:'rgba(2,10,25,.82)',accent:'rgba(229,184,86,.66)'});
+    ctx.save();
+    ctx.fillStyle='#fff8dc';
+    ctx.font='800 31px "Shippori Mincho","Yu Mincho",serif';
+    ctx.fillText(`${month.month}月`,x+18,y+42);
+    ctx.fillStyle='#f0c95e';
+    ctx.font='800 16px "Shippori Mincho","Yu Mincho",serif';
+    ctx.fillText(month.phase,x+82,y+40);
+    ctx.strokeStyle='rgba(229,184,86,.32)';
+    ctx.beginPath();
+    ctx.moveTo(x+16,y+62);
+    ctx.lineTo(x+cardW-16,y+62);
+    ctx.stroke();
+    ctx.fillStyle='#fff8dc';
+    ctx.font='800 21px "Shippori Mincho","Yu Mincho",serif';
+    drawWrappedCanvasText(ctx,month.theme,x+18,y+96,cardW-36,24,{maxLines:2,ellipsis:true});
+    ctx.fillStyle='#f0c95e';
+    ctx.font='800 14px "Shippori Mincho","Yu Mincho",serif';
+    ctx.fillText('意識すること',x+18,y+138);
+    ctx.fillStyle='#f9f1d1';
+    ctx.font='700 15px "Shippori Mincho","Yu Mincho",serif';
+    month.focus.forEach((line,lineIndex)=>{
+      const by=y+164+(lineIndex*22);
+      ctx.fillStyle='rgba(240,201,94,.92)';
+      ctx.beginPath();
+      ctx.arc(x+24,by-6,4,0,Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle='#f9f1d1';
+      drawWrappedCanvasText(ctx,line,x+36,by,cardW-54,18,{maxLines:1,ellipsis:true});
+    });
+    ctx.fillStyle='rgba(203,80,93,.88)';
+    ctx.fillRect(x+16,y+214,cardW-32,1);
+    ctx.fillStyle='#ffd9c6';
+    ctx.font='800 14px "Shippori Mincho","Yu Mincho",serif';
+    drawWrappedCanvasText(ctx,`注意: ${month.caution}`,x+18,y+236,cardW-36,17,{maxLines:1,ellipsis:true});
+    ctx.restore();
+  });
+
+  const summaries=buildRashinYearCalendarSummaries(source);
+  const sumY=1198;
+  const sumW=210;
+  summaries.forEach((summary,index)=>{
+    const x=66+index*(sumW+18);
+    drawRashinYearPanel(ctx,x,sumY,sumW,170,{fill:'rgba(3,10,24,.84)',accent:summary.accent});
+    fillRashinYearText(ctx,summary.title,x+18,sumY+42,sumW-36,24,{font:'800 20px "Shippori Mincho","Yu Mincho",serif',color:summary.accent,maxLines:1});
+    fillRashinYearText(ctx,summary.body,x+18,sumY+78,sumW-36,23,{font:'700 18px "Shippori Mincho","Yu Mincho",serif',color:'#fff8dc',maxLines:4});
+  });
+
+  ctx.save();
+  ctx.textAlign='center';
+  ctx.fillStyle='rgba(2,8,20,.72)';
+  ctx.strokeStyle='rgba(240,201,94,.62)';
+  ctx.lineWidth=1.6;
+  if(typeof ctx.roundRect==='function'){
+    ctx.beginPath();
+    ctx.roundRect(354,1400,316,72,36);
+    ctx.fill();
+    ctx.stroke();
+  }else{
+    ctx.fillRect(354,1400,316,72);
+    ctx.strokeRect(354,1400,316,72);
+  }
+  ctx.shadowColor='rgba(0,0,0,.82)';
+  ctx.shadowBlur=14;
+  ctx.lineWidth=5;
+  ctx.strokeStyle='rgba(2,7,18,.96)';
+  ctx.font='800 42px "Shippori Mincho","Yu Mincho",serif';
+  ctx.strokeText('羅針占術',512,1449);
+  ctx.fillStyle='#fff8dc';
+  ctx.fillText('羅針占術',512,1449);
+  ctx.restore();
+
+  return canvasToPngBlob(canvas);
+}
+
+function getRashinYearCalendarPopupHtml(contentHtml=''){
+  return`<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${RASHIN_YEAR_CALENDAR_LABEL}</title>
+<style>
+  html,body{margin:0;min-height:100%;background:#030817;color:#fff8dc;font-family:"Shippori Mincho","Yu Mincho",serif;}
+  body{display:grid;place-items:center;padding:22px;box-sizing:border-box;}
+  .calendar-popup{width:min(100%,880px);display:grid;gap:14px;}
+  .calendar-popup-head{display:flex;justify-content:space-between;align-items:center;gap:12px;}
+  .calendar-popup-title{font-size:22px;font-weight:800;color:#f0c95e;}
+  .calendar-popup-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;}
+  .calendar-popup-btn{border:1px solid rgba(240,201,94,.74);border-radius:999px;background:rgba(4,13,30,.92);color:#fff8dc;padding:10px 14px;text-decoration:none;font-weight:800;cursor:pointer;}
+  .calendar-popup-img{width:100%;height:auto;border:1px solid rgba(240,201,94,.52);box-shadow:0 18px 60px rgba(0,0,0,.45);}
+  .calendar-popup-loading{min-height:360px;display:grid;place-items:center;border:1px solid rgba(240,201,94,.34);background:rgba(4,13,30,.88);text-align:center;padding:28px;line-height:1.8;}
+  @media (max-width:640px){body{padding:12px}.calendar-popup-head{align-items:flex-start;flex-direction:column}.calendar-popup-actions{justify-content:flex-start}}
+</style>
+</head>
+<body>
+${contentHtml}
+</body>
+</html>`;
+}
+
+async function openRashinYearCalendar(source='top_entry'){
+  trackEvent('rashin_year_calendar_open',{source});
+  const popup=window.open('','rashinYearCalendar2026','popup,width=900,height=980,scrollbars=yes,resizable=yes');
+  const loadingHtml=getRashinYearCalendarPopupHtml(`
+    <div class="calendar-popup">
+      <div class="calendar-popup-head">
+        <div class="calendar-popup-title">${RASHIN_YEAR_CALENDAR_LABEL}</div>
+        <div class="calendar-popup-actions"><button class="calendar-popup-btn" type="button" onclick="window.close()">閉じる</button></div>
+      </div>
+      <div class="calendar-popup-loading">鑑定履歴とカードの流れを集計しています。<br>画像の生成が終わるまで、この小窓を開いたままにしてください。</div>
+    </div>`);
+  if(popup){
+    popup.document.open();
+    popup.document.write(loadingHtml);
+    popup.document.close();
+    popup.focus();
+  }else{
+    showToast('ポップアップが開けませんでした。PNGを直接作成します');
+  }
+  try{
+    const sourceData=buildRashinYearCalendarSource();
+    const blob=await createRashinYearCalendarImageBlob(sourceData);
+    if(!blob) throw new Error('calendar_blob_empty');
+    const url=URL.createObjectURL(blob);
+    const filename='rashin-calendar-2026.png';
+    if(!popup){
+      downloadBlobFile(blob,filename);
+      return;
+    }
+    popup.document.open();
+    popup.document.write(getRashinYearCalendarPopupHtml(`
+      <div class="calendar-popup">
+        <div class="calendar-popup-head">
+          <div class="calendar-popup-title">${RASHIN_YEAR_CALENDAR_LABEL}</div>
+          <div class="calendar-popup-actions">
+            <a class="calendar-popup-btn" href="${url}" download="${filename}">PNG保存</a>
+            <button class="calendar-popup-btn" type="button" onclick="window.close()">閉じる</button>
+          </div>
+        </div>
+        <img class="calendar-popup-img" alt="${RASHIN_YEAR_CALENDAR_LABEL}" src="${url}">
+      </div>`));
+    popup.document.close();
+    popup.focus();
+  }catch(error){
+    console.error('rashin year calendar failed',error);
+    if(popup){
+      popup.document.open();
+      popup.document.write(getRashinYearCalendarPopupHtml(`
+        <div class="calendar-popup">
+          <div class="calendar-popup-head">
+            <div class="calendar-popup-title">${RASHIN_YEAR_CALENDAR_LABEL}</div>
+            <div class="calendar-popup-actions"><button class="calendar-popup-btn" type="button" onclick="window.close()">閉じる</button></div>
+          </div>
+          <div class="calendar-popup-loading">羅針カレンダーを作成できませんでした。ページを更新して、もう一度作成してください。</div>
+        </div>`));
+      popup.document.close();
+    }
+    showToast('羅針カレンダーを作成できませんでした');
+  }
+}
+
 async function createDossierShareImageBlob(cardData){
   const card=resolveDossierCardData(cardData);
   const canvas=document.createElement('canvas');
@@ -22762,6 +23388,7 @@ if(typeof window!=='undefined'){
   window.runFlowAnalysis=runFlowAnalysis;
   window.openFlowAnalysisModal=openFlowAnalysisModal;
   window.closeFlowAnalysisModal=closeFlowAnalysisModal;
+  window.openRashinYearCalendar=openRashinYearCalendar;
   window.openResultChatDrawer=openResultChatDrawer;
   window.closeResultChatDrawer=closeResultChatDrawer;
   window.sendResultChatMessage=sendResultChatMessage;
