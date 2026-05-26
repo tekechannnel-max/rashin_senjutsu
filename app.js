@@ -18402,15 +18402,35 @@ function buildFreeReadingQualityFallback(kind='',context={}){
   return String(context.fallbackText||'').trim();
 }
 
+function polishFreeReadingSurfaceText(text='',context={}){
+  let output=String(text||'');
+  if((context.plan||PLAN)!=='free') return output;
+  const replacements=[
+    ['信頼を作り直せる',['安心が戻る','向き合い直せる']],
+    ['信頼をもう一度作れる',['安心を戻せる','向き合い直せる']],
+    ['信頼を作り直す',['安心を戻す','向き合い直す']],
+    ['過去の原因',['別れた理由','向き合うべき点']],
+    ['復縁を続けるほど少しずつ削られる消耗',['待つ側に寄った負担','自分だけが削られる感覚']],
+    ['安心して向き合える関係',['無理なく続けられる関係','落ち着いて話せる関係']],
+    ['相手の温度',['相手の反応','言葉の後の行動']],
+    ['自分を雑に扱わない',['自分を削らない','自分の本音を置き去りにしない']],
+  ];
+  replacements.forEach(([phrase,alternatives])=>{
+    output=replaceRepeatedPhraseAfterFirst(output,phrase,alternatives);
+  });
+  return output;
+}
+
 function applyFreeReadingQualityGate(kind='',text='',context={}){
   const plan=context.plan||PLAN;
   if(plan!=='free') return text;
   const key=String(kind||'').toLowerCase();
   const safeContext={...context,plan:'free'};
-  const issues=validateFreeReadingSectionQuality(key,text,safeContext);
-  if(!issues.length) return text;
+  const polished=polishFreeReadingSurfaceText(text,safeContext);
+  const issues=validateFreeReadingSectionQuality(key,polished,safeContext);
+  if(!issues.length) return polished;
   recordPaidDebugQuality(`free_${key}_quality`,issues);
-  if(context.fallbackAlready) return text;
+  if(context.fallbackAlready) return polished;
   let fallback='';
   try{
     fallback=buildFreeReadingQualityFallback(key,safeContext);
@@ -18418,9 +18438,10 @@ function applyFreeReadingQualityGate(kind='',text='',context={}){
     recordPaidDebugQuality(`free_${key}_fallback_failed`,[error?.message||'free fallback failed']);
     return text;
   }
+  fallback=polishFreeReadingSurfaceText(fallback,{...safeContext,fallbackAlready:true});
   const fallbackIssues=validateFreeReadingSectionQuality(key,fallback,{...safeContext,fallbackAlready:true});
   if(fallbackIssues.length) recordPaidDebugQuality(`free_${key}_fallback_quality`,fallbackIssues);
-  return (!fallbackIssues.length||fallbackIssues.length<=issues.length)?fallback:text;
+  return (!fallbackIssues.length||fallbackIssues.length<=issues.length)?fallback:polished;
 }
 
 function detectRepeatedAdviceIssues(text=''){
@@ -21390,6 +21411,115 @@ function pickRashinCalendarItem(list=[],seed=0,offset=0){
   return list[Math.abs(Number(seed||0)+offset)%list.length];
 }
 
+const RASHIN_YEAR_LENORMAND_SIGNALS={
+  騎士:'知らせを受け取る',
+  クローバー:'小さな好機を拾う',
+  船:'遠い選択肢を試す',
+  家:'安心の土台を整える',
+  樹木:'長い目で育てる',
+  雲:'曖昧さを分ける',
+  蛇:'複雑さを見抜く',
+  棺:'終えるものを決める',
+  花束:'感謝を受け取る',
+  鎌:'切る基準を持つ',
+  鞭:'繰り返しを止める',
+  鳥:'言葉を整える',
+  子ども:'小さく始める',
+  キツネ:'違和感を見逃さない',
+  熊:'力の使い方を選ぶ',
+  星:'目標を見失わない',
+  コウノトリ:'変化を受け入れる',
+  犬:'誠実さを確かめる',
+  塔:'一人の時間を守る',
+  庭園:'人の流れを広げる',
+  山:'越える壁を決める',
+  道:'選ぶ理由を言葉にする',
+  ネズミ:'消耗を止める',
+  ハート:'本音を大事にする',
+  指輪:'約束の重さを見る',
+  本:'知らない部分を急がない',
+  手紙:'連絡の質を見る',
+  紳士:'相手の姿勢を見る',
+  淑女:'自分の姿勢を見る',
+  百合:'穏やかな距離を保つ',
+  太陽:'明るい材料を活かす',
+  月:'感情の揺れを読む',
+  鍵:'答えの入口を開く',
+  魚:'流れと収支を整える',
+  錨:'続ける理由を固める',
+  十字架:'背負うものを減らす',
+};
+
+const RASHIN_YEAR_ORACLE_SIGNAL_OVERRIDES={
+  'The Collaborator':'協力の形を整える',
+  'The Supporter':'支え方を選ぶ',
+  'The Harmonizer':'間に余白を作る',
+  'The Resonator':'響き合う場を選ぶ',
+  'The Flowrider':'流れを読み替える',
+  'The Unwavering One':'自分の基準を守る',
+  'The Completer':'美しく終える',
+  'The Awakened':'自分の灯を守る',
+  'The Guide':'最初の火を灯す',
+  'The Diligent':'足元を締める',
+  'The Architect':'設計図を引く',
+};
+
+function cleanRashinYearCalendarCardLabel(label=''){
+  return String(label||'')
+    .split('/')
+    .map(item=>item.replace(/\s*\d+回/g,'').replace(/No\.\s*\d+/gi,'').trim())
+    .filter(Boolean)[0]||'';
+}
+
+function getRashinYearCalendarCardSignal(label='',type=''){
+  const clean=cleanRashinYearCalendarCardLabel(label);
+  if(!clean) return '';
+  if(type==='len'&&RASHIN_YEAR_LENORMAND_SIGNALS[clean]) return RASHIN_YEAR_LENORMAND_SIGNALS[clean];
+  if(RASHIN_YEAR_ORACLE_SIGNAL_OVERRIDES[clean]) return RASHIN_YEAR_ORACLE_SIGNAL_OVERRIDES[clean];
+  const oracle=Object.values(ORACLE||{}).find(card=>card?.name===clean);
+  const daily=Array.isArray(DAILY_ORACLE_MESSAGES)
+    ?DAILY_ORACLE_MESSAGES.find(item=>item?.name===clean)
+    :null;
+  if(daily?.title) return sanitizeRashinYearCalendarLine(String(daily.title).replace(/日$/,''),12);
+  if(oracle?.essence){
+    const essence=String(oracle.essence).split(/[・,，、]/).map(item=>item.trim()).filter(Boolean)[0]||'';
+    if(essence) return `${essence}を整える`;
+  }
+  if(RASHIN_YEAR_LENORMAND_SIGNALS[clean]) return RASHIN_YEAR_LENORMAND_SIGNALS[clean];
+  if(/^[A-Za-z][A-Za-z\s'-]+$/.test(clean)) return '';
+  return `${truncateText(clean,8)}を整える`;
+}
+
+function sanitizeRashinYearCalendarLine(text='',max=12){
+  return truncateText(
+    String(text||'')
+      .replace(/\bThe\s+[A-Za-z][A-Za-z\s'-]*/g,'協力の形')
+      .replace(/…+/g,'')
+      .trim(),
+    max
+  );
+}
+
+function getRashinYearCalendarSignalItems(source={}){
+  return uniqueNonEmpty([
+    getRashinYearCalendarCardSignal(source?.topLen,'len'),
+    getRashinYearCalendarCardSignal(source?.topOrc,'orc'),
+  ]).slice(0,2);
+}
+
+function getRashinYearCalendarSignalNoun(text=''){
+  return String(text||'')
+    .replace(/を(?:整える|確かめる|選ぶ|保つ|決める|活かす|見直す|残す|育てる|守る|結ぶ|言葉にする|手放す|受け取る|開く|切る|越える|広げる|磨く|締める|試す|分ける|止める|読む|拾う|灯す|減らす|持つ)$/,'')
+    .trim();
+}
+
+function getRashinYearCalendarSignalGuideText(text=''){
+  const noun=getRashinYearCalendarSignalNoun(text);
+  if(noun==='消耗') return `${text}こと`;
+  if(noun&&noun!==text) return noun;
+  return text?`${text}こと`:'';
+}
+
 function getRashinYearCalendarAxis(source){
   const cat=String(source?.input?.cat||'総合');
   const primary=source?.primaryTheme||'general';
@@ -21432,9 +21562,9 @@ function getRashinYearCalendarAxis(source){
 function buildRashinYearCalendarMonths(source){
   const axis=getRashinYearCalendarAxis(source);
   const seed=source?.seed||0;
+  const signalItems=getRashinYearCalendarSignalItems(source);
   const evidence=[
-    source?.topLen?`${source.topLen.replace(/\s+\d+回$/,'')}を見る`:'',
-    source?.topOrc?`${source.topOrc.replace(/\s+\d+回$/,'')}を合図にする`:'',
+    ...signalItems,
     source?.stats?.paidCount?`深掘りを予定化`:'',
     source?.animalLabel?`反応癖を整える`:'',
     source?.namePlain?.advice?'言葉を整える':'',
@@ -21462,17 +21592,20 @@ function buildRashinYearCalendarMonths(source){
     ];
     return{
       ...item,
-      focus:focus.map(text=>truncateText(text,13)),
-      caution:truncateText(index%3===1?pickRashinCalendarItem(axis.caution,seed,index):item.caution,13),
+      focus:focus.map(text=>sanitizeRashinYearCalendarLine(text,12)),
+      caution:sanitizeRashinYearCalendarLine(index%3===1?pickRashinCalendarItem(axis.caution,seed,index):item.caution,13),
     };
   });
 }
 
 function buildRashinYearCalendarSummaries(source){
   const axis=getRashinYearCalendarAxis(source);
-  const topLen=source?.topLen?source.topLen.replace(/\s+\d+回$/,''):'選択';
-  const topOrc=source?.topOrc?source.topOrc.replace(/\s+\d+回$/,''):'直感';
   const theme=truncateText(axis.label,34);
+  const signalText=getRashinYearCalendarSignalItems(source)
+    .map(getRashinYearCalendarSignalGuideText)
+    .filter(Boolean)
+    .slice(0,2)
+    .join('と')||'残すもの';
   return[
     {
       title:'恋愛運',
@@ -21491,7 +21624,7 @@ function buildRashinYearCalendarSummaries(source){
     {
       title:'全体運',
       accent:'#f0c95e',
-      body:`${theme}を軸に、${topLen}と${topOrc}を合図に選び直す。`,
+      body:`${theme}を軸に、${signalText}を手がかりに選び直す。`,
     },
     {
       title:'羅針アドバイス',
@@ -21660,11 +21793,19 @@ async function createRashinYearCalendarImageBlob(sourceData=null){
       ctx.fillStyle='#f9f1d1';
       drawWrappedCanvasText(ctx,line,x+36,by,cardW-54,18,{maxLines:1,ellipsis:true});
     });
-    ctx.fillStyle='rgba(203,80,93,.88)';
-    ctx.fillRect(x+16,y+214,cardW-32,1);
+    const cautionY=y+211;
+    drawRashinYearPanel(ctx,x+16,cautionY,cardW-32,26,{
+      fill:'rgba(72,18,30,.78)',
+      accent:'rgba(255,166,140,.70)',
+      innerStroke:'rgba(255,224,190,.10)',
+      lineWidth:1,
+    });
     ctx.fillStyle='#ffd9c6';
-    ctx.font='800 14px "Shippori Mincho","Yu Mincho",serif';
-    drawWrappedCanvasText(ctx,`注意: ${month.caution}`,x+18,y+236,cardW-36,17,{maxLines:1,ellipsis:true});
+    ctx.font='800 13px "Shippori Mincho","Yu Mincho",serif';
+    ctx.fillText('注意',x+26,cautionY+18);
+    ctx.fillStyle='#fff3de';
+    ctx.font='800 13px "Shippori Mincho","Yu Mincho",serif';
+    drawWrappedCanvasText(ctx,month.caution,x+66,cautionY+18,cardW-86,16,{maxLines:1,ellipsis:true});
     ctx.restore();
   });
 
@@ -21816,11 +21957,11 @@ async function createDossierShareImageBlob(cardData){
     ctx.fillRect(0,0,w,h);
   }
   const leftOverlay=ctx.createLinearGradient(0,0,w,0);
-  leftOverlay.addColorStop(0,'rgba(2,8,28,.82)');
-  leftOverlay.addColorStop(.43,'rgba(2,8,28,.60)');
-  leftOverlay.addColorStop(.54,'rgba(2,8,28,.20)');
-  leftOverlay.addColorStop(.64,'rgba(2,8,28,.04)');
-  leftOverlay.addColorStop(.76,'rgba(2,8,28,0)');
+  leftOverlay.addColorStop(0,'rgba(2,8,28,.86)');
+  leftOverlay.addColorStop(.46,'rgba(2,8,28,.68)');
+  leftOverlay.addColorStop(.58,'rgba(2,8,28,.28)');
+  leftOverlay.addColorStop(.70,'rgba(2,8,28,.06)');
+  leftOverlay.addColorStop(.82,'rgba(2,8,28,0)');
   ctx.fillStyle=leftOverlay;
   ctx.fillRect(0,0,w,h);
   const bottomOverlay=ctx.createLinearGradient(0,0,0,h);
@@ -21835,7 +21976,7 @@ async function createDossierShareImageBlob(cardData){
   ctx.strokeRect(.5,.5,w-1,h-1);
 
   const cardLeft=Math.round(w*.045);
-  const cardTextW=Math.round(w*.438);
+  const cardTextW=Math.round(w*.47);
   const topY=Math.round(h*.06);
   const detailH=Math.round(h*.22);
   const detailY=h-Math.round(h*.022)-detailH;
@@ -21912,19 +22053,19 @@ async function createDossierShareImageBlob(cardData){
   const itemH=detailH-(detailsPadY*2);
   foundationSections.slice(0,3).forEach((section,index)=>{
     const itemX=innerX+(itemW+gap)*index;
-    drawCanvasPanel(ctx,itemX,innerY,itemW,itemH,{fill:'rgba(3,8,24,.50)',stroke:'rgba(228,184,74,.20)',lineWidth:1});
+    drawCanvasPanel(ctx,itemX,innerY,itemW,itemH,{fill:'rgba(3,8,24,.58)',stroke:'rgba(228,184,74,.26)',lineWidth:1});
     drawDossierShareSectionHeading(ctx,section.label,itemX+Math.round(w*.008),innerY+Math.round(h*.034),{
-      font:`700 ${w*.00912}px "Shippori Mincho", serif`,
+      font:`700 ${w*.00972}px "Shippori Mincho", serif`,
     });
     ctx.fillStyle='rgba(246,240,220,.9)';
-    ctx.font=`600 ${w*.00684}px "Shippori Mincho", serif`;
+    ctx.font=`650 ${w*.00772}px "Shippori Mincho", serif`;
     drawCanvasBulletLines(
       ctx,
       (section.items||[]).slice(0,3),
       itemX+Math.round(w*.008),
-      innerY+Math.round(h*.065),
+      innerY+Math.round(h*.068),
       itemW-Math.round(w*.016),
-      Math.round(h*.0258),
+      Math.round(h*.027),
       {maxLines:3,bulletSize:Math.max(3,Math.round(w*.0022))}
     );
   });

@@ -66,6 +66,32 @@ const sourceBuilder = sliceFromMarker(
   assert.ok(sourceBuilder.includes(marker), `calendar source must sanitize personal data before image generation: ${marker}`);
 });
 
+const monthBuilder = sliceFromMarker(
+  appSource,
+  'function buildRashinYearCalendarMonths(source)',
+  'function buildRashinYearCalendarSummaries(source)'
+);
+
+[
+  'getRashinYearCalendarSignalItems(source)',
+  'sanitizeRashinYearCalendarLine(text,12)',
+].forEach(marker => {
+  assert.ok(monthBuilder.includes(marker), `calendar month copy must use polished signal text: ${marker}`);
+});
+
+[
+  'source.topLen.replace',
+  'source.topOrc.replace',
+  'を見る`',
+  'を合図にする',
+].forEach(marker => {
+  assert.strictEqual(
+    monthBuilder.includes(marker),
+    false,
+    `calendar months must not expose raw card names or internal labels: ${marker}`
+  );
+});
+
 [
   'input,',
   'outputs:outputFragments',
@@ -95,7 +121,7 @@ const imageBuilder = sliceFromMarker(
   'あなたの内に眠る羅針盤が示すアドバイス',
   '2026年のテーマ',
   '意識すること',
-  '注意:',
+  "ctx.fillText('注意'",
   '羅針占術',
 ].forEach(marker => {
   assert.ok(imageBuilder.includes(marker), `calendar image must preserve approved layout copy: ${marker}`);
@@ -151,8 +177,22 @@ assert.strictEqual(
   '仕事・金運',
   '全体運',
   '羅針アドバイス',
+  'getRashinYearCalendarSignalGuideText',
+  '手がかりに選び直す',
 ].forEach(marker => {
   assert.ok(summaryBuilder.includes(marker), `calendar summary must preserve approved layout copy: ${marker}`);
+});
+
+[
+  'source.topLen.replace',
+  'source.topOrc.replace',
+  '合図に選び直す',
+].forEach(marker => {
+  assert.strictEqual(
+    summaryBuilder.includes(marker),
+    false,
+    `calendar summary must not render raw card names or old signal wording: ${marker}`
+  );
 });
 
 console.log('rashin-year-calendar.test.js: ok');

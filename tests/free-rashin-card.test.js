@@ -66,4 +66,33 @@ assert.ok(
   'free Rashin card readiness must cache a local snapshot without requiring paid dossier generation'
 );
 
+const freeQualityGate = sliceFromMarker(
+  appSource,
+  'function polishFreeReadingSurfaceText',
+  'function detectRepeatedAdviceIssues'
+);
+
+[
+  'replaceRepeatedPhraseAfterFirst',
+  '信頼を作り直せる',
+  '安心が戻る',
+  'polishFreeReadingSurfaceText(fallback',
+].forEach(marker => {
+  assert.ok(freeQualityGate.includes(marker), `free reading copy polishing must keep repeated advice under control: ${marker}`);
+});
+
+const shareImageBuilder = sliceFromMarker(
+  appSource,
+  'async function createDossierShareImageBlob(cardData)',
+  'async function buildDossierShareImageFile()'
+);
+
+[
+  'const cardTextW=Math.round(w*.47)',
+  'rgba(2,8,28,.68)',
+  '650 ${w*.00772}px',
+].forEach(marker => {
+  assert.ok(shareImageBuilder.includes(marker), `Rashin card share image must preserve improved text readability: ${marker}`);
+});
+
 console.log('free-rashin-card.test.js: ok');
