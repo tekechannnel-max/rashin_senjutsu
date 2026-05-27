@@ -10,7 +10,9 @@ const WIDTH = 1080;
 const HEIGHT = 1350;
 const DEFAULT_QUALITY = 88;
 const OUT_ROOT = path.join(ROOT, 'images', 'social', 'instagram');
-const CHARACTER_IMAGE = path.join(OUT_ROOT, 'rashin-host-inspired-v1.png');
+const V_MODEL_ROOT = path.join(ROOT, '占い素材');
+const CHARACTER_IMAGE = path.join(V_MODEL_ROOT, '通常背景無し.png');
+const CHIBI_CHARACTER_IMAGE = path.join(V_MODEL_ROOT, 'ミニキャラ.png');
 
 function parseArgs(argv) {
   const args = {
@@ -469,19 +471,24 @@ function baseStyles() {
     .footer {
       position: absolute;
       left: 64px;
-      bottom: 36px;
+      right: 64px;
+      bottom: 58px;
       color: rgba(248,250,252,.76);
       font-size: 23px;
+      line-height: 1.25;
       font-weight: 700;
       z-index: 10;
     }
     .url {
       position: absolute;
+      left: 64px;
       right: 64px;
-      bottom: 36px;
+      bottom: 28px;
       color: rgba(186,230,253,.84);
       font-size: 22px;
+      line-height: 1.2;
       font-weight: 700;
+      text-align: right;
       z-index: 10;
     }
     .character-frame {
@@ -490,20 +497,17 @@ function baseStyles() {
       bottom: 106px;
       width: 330px;
       height: 500px;
-      overflow: hidden;
-      background: linear-gradient(180deg, #fffaf0 0%, #eef8ff 100%);
-      border: 1px solid rgba(255,255,255,.70);
-      border-radius: 190px 190px 34px 34px;
-      box-shadow: 0 30px 56px rgba(0,0,0,.38);
+      overflow: visible;
       z-index: 4;
     }
     .character {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      object-position: center 18%;
+      object-position: center bottom;
       display: block;
-      transform: scale(1.05);
+      transform: scale(1.06);
+      filter: drop-shadow(0 26px 34px rgba(0,0,0,.46));
     }
   `;
 }
@@ -662,19 +666,16 @@ function staticDifferenceHtml() {
           bottom: 92px;
           width: 330px;
           height: 560px;
-          overflow: hidden;
-          background: linear-gradient(180deg, #ffffff 0%, #edf8ff 100%);
-          border: 1px solid rgba(255,255,255,.72);
-          border-radius: 180px 180px 34px 34px;
-          box-shadow: 0 30px 52px rgba(0,0,0,.34);
+          overflow: visible;
         }
         .static-character {
           width: 100%;
           height: 100%;
           object-fit: cover;
-          object-position: center 16%;
+          object-position: center bottom;
           display: block;
-          transform: scale(1.05);
+          transform: scale(1.02);
+          filter: drop-shadow(0 28px 34px rgba(0,0,0,.40));
         }
       </style>
     </head>
@@ -682,7 +683,7 @@ function staticDifferenceHtml() {
       <main class="post">
         <img class="bg" src="${fileUrl(imagePath)}" alt="">
         <div class="wash"></div>
-        <div class="static-character-frame"><img class="static-character" src="${fileUrl(CHARACTER_IMAGE)}" alt=""></div>
+        <div class="static-character-frame"><img class="static-character" src="${fileUrl(CHIBI_CHARACTER_IMAGE)}" alt=""></div>
         <div class="brand"><span class="brand-mark">R</span><span>羅針占術</span></div>
         <h1 class="static-title">占い結果で<br>終わらせない<span class="static-sub">悩みをそのまま書いて、次に動ける形へ。</span></h1>
         <section class="feature-list">
@@ -807,19 +808,16 @@ function staticFreePaidHtml() {
           top: 86px;
           width: 248px;
           height: 306px;
-          overflow: hidden;
-          background: linear-gradient(180deg, #ffffff 0%, #edf8ff 100%);
-          border: 1px solid rgba(255,255,255,.72);
-          border-radius: 150px 150px 26px 26px;
-          box-shadow: 0 26px 40px rgba(0,0,0,.32);
+          overflow: visible;
         }
         .compare-character {
           width: 100%;
           height: 100%;
           object-fit: cover;
-          object-position: center 12%;
+          object-position: center bottom;
           display: block;
-          transform: scale(1.06);
+          transform: scale(1.02);
+          filter: drop-shadow(0 24px 28px rgba(0,0,0,.38));
         }
       </style>
     </head>
@@ -827,7 +825,7 @@ function staticFreePaidHtml() {
       <main class="post">
         <img class="bg" src="${fileUrl(imagePath)}" alt="">
         <div class="wash"></div>
-        <div class="compare-character-frame"><img class="compare-character" src="${fileUrl(CHARACTER_IMAGE)}" alt=""></div>
+        <div class="compare-character-frame"><img class="compare-character" src="${fileUrl(CHIBI_CHARACTER_IMAGE)}" alt=""></div>
         <div class="brand"><span class="brand-mark">R</span><span>羅針占術</span></div>
         <h1 class="compare-title">無料で入口。<br>有料で深掘り。<span>必要な人だけ、もう一段具体的に見る設計です。</span></h1>
         <section class="columns">
