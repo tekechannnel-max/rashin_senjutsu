@@ -7,6 +7,9 @@
 - `daily-oracle-post.js`: Threads/Bluesky/X向けの当日投稿文、画像、alt textを作る
 - `run-scheduled-posts.js`: JSTの予定時刻に来た投稿だけThreads/Blueskyへ送る
 - `export-x-drafts.js`: X手動投稿用の下書きを出す
+- `content/lenormand-empathy-posts.js`: `empathy` 用の36枚ルノルマン投稿素材
+- `content/difference-posts.js`: `difference` 用のローテーション投稿素材
+- `content/free-paid-compare-posts.js`: `free_paid_compare` 用のローテーション投稿素材
 - `threads-tool.js`: Threads token確認、OAuth、手動投稿テストを行う
 - `bluesky-tool.js`: Blueskyアプリパスワード確認、画像付き手動投稿テストを行う
 - `audit-social-drafts.js`: 文字数、タグ、CTA、禁止表現を機械検査する
@@ -46,6 +49,15 @@ Render schedule:
 0 3,11,22 * * *
 ```
 
+JSTでは次だけ投稿対象にする。指定外の曜日・時刻では `run-scheduled-posts.js` が投稿しない。
+
+```text
+07:00: oracle
+月・水・金 12:00: empathy
+火 20:00: difference
+土 20:00: free_paid_compare
+```
+
 5分おき実行は使わない。Render Cronでは状態ファイルが永続化されないため、広い猶予で複数回起動すると同じ投稿が再送される。
 
 ローカルWindowsのTask Scheduler、可視PowerShell、daemonは使わない。
@@ -53,7 +65,7 @@ Render schedule:
 ## X下書き
 
 Xは現在、自動投稿しない。下書きだけ生成する。
-GitHub Actionsの `SNS automation` が、JSTの予定時刻に手動投稿用の下書きをArtifactとStep Summaryへ出す。
+GitHub Actionsの `X social drafts` が、07:03 JST、月・水・金12:03 JST、火20:03 JST、土20:03 JSTに手動投稿用の下書きをArtifactとStep Summaryへ出す。
 朝オラクルのX下書きは、数秘オラクル1〜33から日付ごとにランダム選択し、Xの280文字制限では切り詰めない。
 
 ```powershell
@@ -84,16 +96,18 @@ npm run social:run-due
 
 ```powershell
 node scripts/social/run-scheduled-posts.js --once --only-kind=oracle
-node scripts/social/run-scheduled-posts.js --once --only-kind=midday
-node scripts/social/run-scheduled-posts.js --once --only-kind=concept
+node scripts/social/run-scheduled-posts.js --once --only-kind=empathy
+node scripts/social/run-scheduled-posts.js --once --only-kind=difference
+node scripts/social/run-scheduled-posts.js --once --only-kind=free_paid_compare
 ```
 
 強制投稿は通常禁止。使う前に対象日、対象kind、既存投稿、本文を確認する。
 
 ```powershell
 node scripts/social/run-scheduled-posts.js --force-kind=oracle
-node scripts/social/run-scheduled-posts.js --force-kind=midday
-node scripts/social/run-scheduled-posts.js --force-kind=concept
+node scripts/social/run-scheduled-posts.js --force-kind=empathy
+node scripts/social/run-scheduled-posts.js --force-kind=difference
+node scripts/social/run-scheduled-posts.js --force-kind=free_paid_compare
 ```
 
 ## Threads token
@@ -126,11 +140,11 @@ npm run social:draft -- --date=2026-05-18 --platforms=threads,bluesky
 - `post-ledger.js` は `data/social-posts/posts.csv` に投稿台帳を保存する。本文とalt textはSHA-256ハッシュだけを保存し、APIキー、トークン、投稿全文、個人情報は保存しない。
 - `audit-social-drafts.js` は文字数、UTM、画像、alt text、重複本文、禁止表現を検査する。
 - `run-scheduled-posts.js` はRender Cron用。JSTの投稿対象時間だけ `daily-oracle-post.js --write --post --yes` 相当を実行する。
-- 朝07:00の `oracle` はカード1〜33の投稿文をThreads / Blueskyで同じ本文にする。本文URLは短い `rashin-senjutsu.onrender.com` にし、UTM付きURLは `posts.csv` の分析用URLとして保存する。カード名の次行に `テーマ：...` を出し、`カードメッセージ` と「今日の一手」を入れ、具体行動の押しつけにならない表現で250〜300文字、平均270文字前後にする。
-- 昼12:00の `midday` は悩みジャンルや具体状況を前面に出さず、迷いの整理、気持ちと現実、今の流れ、本音の輪郭などの一般的な整理文をローテーションする。Threads / BlueskyはURLプロトコル差とハッシュタグ差を除いて同じ本文、画像、alt textを使い、UTM付きURLは `posts.csv` の分析用URLとして保存する。
+- 朝07:00の `oracle` はカード1〜33の投稿文をThreads / Blueskyで同じ本文にする。本文URLは短い `rashin-senjutsu.onrender.com` にし、UTM付きURLは `posts.csv` の分析用URLとして保存する。カード名の次行に `テーマ：...` を出し、`カードメッセージ` と「今日の一手」を入れ、締め文は必ず「あなたも今日の1枚を引かない？」にする。
+- 月・水・金12:00の `empathy` は、悩み共感の一文、ルノルマンカード名、見立て文、自由記載深掘りへの軽いCTAで構成する。36枚の既存ルノルマンJPGを日付seedのランダムローテーションで使い、初回36投稿で重複させない。
 - Threadsのハッシュタグは `#占い鑑定` だけにし、`#羅針占術` は使わない。Blueskyは `#羅針占術 #今日の占い #今日の運勢 #占い師` を使い、300文字を超えたら投稿しない。
-- 夜20:00の `concept` はThreads / Blueskyで同じ本文にする。URLの `utm_source` とBluesky用の軽量画像だけは媒体別に変える。
-- 夜20:00の本文は、羅針占術が他のAI占いと違う点と、何を整理できる占いなのかを短く伝える。
+- 火20:00の `difference` は、羅針占術が他のAI占いと違う点、自由記載、複数占術統合、占い師兼エンジニア設計をローテーションで伝える。画像は `images/ui/social-difference-rashin-no-model.jpg` を使う。
+- 土20:00の `free_paid_compare` は、無料版と有料版の違い、カード枚数差、鑑定履歴解析の価値を、強すぎない有料導線として伝える。画像は `images/ui/social-free-paid-compare-no-model.jpg` を使う。
 
 ## 手動投稿とプレビュー
 
@@ -161,7 +175,10 @@ SOCIAL_AUTOMATED_POSTING_ENABLED=true
 SOCIAL_PLATFORMS=threads,bluesky
 SOCIAL_THREADS_HASHTAG=#占い鑑定
 SOCIAL_BLUESKY_HASHTAGS=#羅針占術 #今日の占い #今日の運勢 #占い師
-SOCIAL_MIDDAY_TIME=12:00
+SOCIAL_EMPATHY_TIME=12:00
+SOCIAL_DIFFERENCE_TIME=20:00
+SOCIAL_FREE_PAID_COMPARE_TIME=20:00
+SOCIAL_EXPANSION_START_DATE=2026-05-27
 SOCIAL_POSTS_LEDGER_FILE=data/social-posts/posts.csv
 SOCIAL_API_RETRY_ATTEMPTS=3
 SOCIAL_API_RETRY_BASE_MS=1500
@@ -179,4 +196,4 @@ SOCIAL_UTM_CAMPAIGN=202605_prerelease
 - 重複投稿が疑わしい: `data/social-posts/posts.csv` の `post_key`、SNS側の既存投稿検索、Renderログの `existing_threads_post` / `existing_bluesky_post` を確認する。
 - API失敗: 一時的な5xx/429/タイムアウトは `SOCIAL_API_RETRY_ATTEMPTS` 回まで待って再試行する。認証不備、expected handle不一致、画像サイズ超過は再試行せず止める。
 - UTMがない: `npm run social:audit -- --from=<開始日> --to=<終了日> --platforms=threads,bluesky,x` を実行し、`missing_utm` を直すまで投稿しない。
-- Bluesky画像で失敗: 画像は1,000,000 bytes以下にする。`audit-social-drafts.js` と `tests/social-posting.test.js` がこの条件を検査する。
+- Bluesky画像で失敗: 画像は1,000,000 bytes以下にする。`images/ui/social-difference-rashin-no-model.jpg`、`images/ui/social-free-paid-compare-no-model.jpg`、既存ルノルマンJPGを含めて、`audit-social-drafts.js` と `tests/social-posting.test.js` がこの条件を検査する。

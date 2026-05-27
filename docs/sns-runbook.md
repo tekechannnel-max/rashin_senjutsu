@@ -8,13 +8,13 @@
 - 実投稿は通常端末ではプレビュー表示後に `yes` 入力が必要。Render Cronだけ `SOCIAL_SCHEDULED_RUN=true` の内部フラグで確認を省略する。
 - Threads / Blueskyは投稿前に既存投稿を検索し、UTMの `utm_content` を重複判定用markerとして使う。
 - APIの一時失敗は `SOCIAL_API_RETRY_ATTEMPTS` と `SOCIAL_API_RETRY_BASE_MS` に従って再試行する。認証失敗、アカウント不一致、画像サイズ超過などは再試行しない。
-- すべての投稿には `utm_source`、`utm_medium=social`、`utm_campaign`、`utm_content` 付きの分析用URLを生成し、`posts.csv` に保存する。朝オラクルの本文には短い `rashin-senjutsu.onrender.com` だけを出す。
-- 昼12:00のmidday投稿は、Threads / Blueskyで同じ本文にする。悩みジャンルや具体状況に寄せすぎず、迷いの整理・気持ちと現実・今の流れくらいの抽象度にする。本文URLはThreadsでは短い `rashin-senjutsu.onrender.com`、Blueskyではクリック可能な `https://rashin-senjutsu.onrender.com` にし、分析用URLは `utm_content=midday_YYYYMMDD` として `posts.csv` に残す。
-- 夜20:00のconcept投稿は、Threads / Blueskyで同じ本文にする。違うのは分析用URLの `utm_source` と、Bluesky用の軽量画像ファイルだけ。
-- 夜20:00の本文は、羅針占術が他のAI占いと違う点と、恋愛・仕事・人間関係などの迷いをどう整理できるかを端的に伝える。
+- すべての投稿には `utm_source`、`utm_medium=social`、`utm_campaign`、`utm_content` 付きの分析用URLを生成し、`posts.csv` に保存する。本文には短い `rashin-senjutsu.onrender.com` だけを出す。
+- 月・水・金12:00の `empathy` 投稿は、悩み共感 × ルノルマンカード。36枚を日付seedのランダムローテーションで使い、初回36投稿で重複させない。UTMは `empathy_YYYYMMDD_cardNN`。
+- 火20:00の `difference` 投稿は、羅針占術が他のAI占いと違う点を伝える。自由記載、四柱推命＋姓名判断＋動物タイプ診断＋カード占いの統合、占い師兼エンジニア設計をローテーションで扱う。UTMは `difference_YYYYMMDD_vNN`。
+- 土20:00の `free_paid_compare` 投稿は、無料版と有料版の違いを整理する。有料導線だが、不安を煽らず「必要な人だけ深掘り」の温度にする。UTMは `freepaid_YYYYMMDD_vNN`。
 - `data/social-posts/posts.csv` は投稿台帳。本文とalt textはSHA-256ハッシュだけを保存し、`tracked_url` と `utm_content` でBOOTH側の流入分析と突き合わせる。
 - 投稿文は `audit-social-drafts.js` で日跨ぎの重複を検査する。公開後のカレンダー外投稿には日別の視点行を入れる。
-- Threads / Blueskyのoracle/midday/concept投稿はいずれも画像とalt textを持つ。Bluesky用画像は1,000,000 bytes以下にする。
+- Threads / Blueskyの `oracle` / `empathy` / `difference` / `free_paid_compare` 投稿はいずれも画像とalt textを持つ。`empathy` は既存の `images/cards/lenormand/NN.jpg` を使い、`difference` と `free_paid_compare` は人物なしの `images/ui/social-*-no-model.jpg` を使う。Bluesky用画像は1,000,000 bytes以下にする。
 
 本番前に必ず実行する。
 
@@ -33,7 +33,7 @@ SOCIAL_API_RETRY_ATTEMPTS=3
 SOCIAL_API_RETRY_BASE_MS=1500
 ```
 
-BOOTH購入分析では、アクセス解析またはBOOTH側で確認できる流入URLの `utm_content` を `posts.csv` の `utm_content` / `tracked_url` と照合する。`utm_source=threads` と `utm_source=bluesky` で媒体別、`utm_content=oracle_YYYYMMDD` / `midday_YYYYMMDD` / `concept_YYYYMMDD` で投稿別に見る。
+BOOTH購入分析では、アクセス解析またはBOOTH側で確認できる流入URLの `utm_content` を `posts.csv` の `utm_content` / `tracked_url` と照合する。`utm_source=threads` と `utm_source=bluesky` で媒体別、`utm_content=oracle_YYYYMMDD` / `empathy_YYYYMMDD_cardNN` / `difference_YYYYMMDD_vNN` / `freepaid_YYYYMMDD_vNN` で投稿別に見る。
 
 トラブル時:
 
@@ -41,7 +41,7 @@ BOOTH購入分析では、アクセス解析またはBOOTH側で確認できる�
 - `Real posting requires explicit yes`: 手動実投稿はプレビュー確認後に `yes` を入力するか、確認済みのCI/Renderで `--yes` を使う。
 - `existing_threads_post` / `existing_bluesky_post`: 既に同じmarkerの投稿があるため、重複投稿を避けて終了している。
 - `Missing THREADS_ACCESS_TOKEN` / `Missing BLUESKY_APP_PASSWORD`: Render環境変数だけを修正する。値をファイルやチャットへ貼らない。
-- Bluesky画像サイズエラー: `images/ui/oracle-card-cover-social.jpg`、`images/ui/lenormand-card-cover-social.jpg`、`images/ui/app-promo-vertical-social.jpg` などBluesky用の圧縮済み画像を使い、1,000,000 bytes以下にする。
+- Bluesky画像サイズエラー: `images/ui/oracle-card-cover-social.jpg`、既存ルノルマンJPG、`images/ui/social-difference-rashin-no-model.jpg`、`images/ui/social-free-paid-compare-no-model.jpg` など、1,000,000 bytes以下の画像を使う。
 
 この1枚をSNS運用の正本にする。古いGitHub Actions前提やローカルWindows常駐前提の手順は使わない。
 
@@ -49,7 +49,7 @@ BOOTH購入分析では、アクセス解析またはBOOTH側で確認できる�
 
 - Threads自動投稿: Render Cron Job `rashin-threads-scheduler`
 - Bluesky自動投稿: Render Cron Job `rashin-threads-scheduler` で `SOCIAL_PLATFORMS=threads,bluesky` にした場合だけThreadsと同じ予定時刻で投稿する
-- X: 自動投稿しない。GitHub Actions `X social drafts` が 07:03 / 12:03 / 20:03 JST に下書きartifactを作り、人間がX画面で確認して投稿する
+- X: 自動投稿しない。GitHub Actions `X social drafts` が 07:03 JST、月水金12:03 JST、火20:03 JST、土20:03 JSTに下書きartifactを作り、人間がX画面で確認して投稿する
 - ローカルWindows: Task Scheduler、可視PowerShell、ローカルdaemonを使わない
 - 対象Threads: `https://www.threads.com/@sensai_teke`
 - 対象Bluesky: `https://bsky.app/profile/tekesensai.bsky.social`
@@ -71,8 +71,9 @@ RenderのcronはUTC。上のscheduleはJSTで次の時刻に1回ずつ動く。
 
 ```text
 07:00 JST: oracle
-12:00 JST: midday
-20:00 JST: concept
+月・水・金 12:00 JST: empathy
+火 20:00 JST: difference
+土 20:00 JST: free_paid_compare
 ```
 
 5分おきのCronは使わない。Render CronはGit管理の `scheduled-post-state.json` を永続状態として使えないため、広い投稿猶予と複数回起動を組み合わせると同じ投稿が再送される。
@@ -91,7 +92,10 @@ SOCIAL_AUTOMATED_POSTING_ENABLED=true
 SOCIAL_PLATFORMS=threads,bluesky
 SOCIAL_THREADS_HASHTAG=#占い鑑定
 SOCIAL_BLUESKY_HASHTAGS=#羅針占術 #今日の占い #今日の運勢 #占い師
-SOCIAL_MIDDAY_TIME=12:00
+SOCIAL_EMPATHY_TIME=12:00
+SOCIAL_DIFFERENCE_TIME=20:00
+SOCIAL_FREE_PAID_COMPARE_TIME=20:00
+SOCIAL_EXPANSION_START_DATE=2026-05-27
 SOCIAL_PAID_CTA_MODE=soft
 SOCIAL_BOOTH_ENABLED=false
 SOCIAL_UTM_CAMPAIGN=202605_prerelease
@@ -106,9 +110,10 @@ THREADS_POST_VERIFY_TIMEOUT_MS=120000
 
 ## 投稿内容のルール
 
-- 07:00: 数秘オラクル。カード1〜33の投稿はThreads / Blueskyで同じ本文にし、短いURL、カード画像、alt text、`カードメッセージ`、具体指示に寄せすぎない「今日の一手」を入れる。カード名の次行に `テーマ：...` を出し、Bluesky向けに250〜300文字、平均270文字前後を目安にする
-- 12:00: midday。悩みジャンルや具体状況を前面に出さず、迷いの整理、気持ちと現実、今の流れ、本音の輪郭などの一般的な整理文をローテーションする。Threads / BlueskyはURLプロトコル差とハッシュタグ差を除いて同じ本文、画像、alt textを使い、UTM付きURLは `posts.csv` に保存する
-- 20:00: 信頼形成の短文。売り込みより、自己理解、非依存、次の行動を優先する
+- 07:00: `oracle`。数秘オラクル1〜33の投稿はThreads / Blueskyで同じ本文にし、短いURL、カード画像、alt text、`カードメッセージ`、具体指示に寄せすぎない「今日の一手」を入れる。締め文は必ず「あなたも今日の1枚を引かない？」にする
+- 月・水・金12:00: `empathy`。悩み共感の一文、ルノルマンカード名、見立て文、自由記載深掘りへの軽いCTAで構成する。画像は該当カードの既存JPGを使う
+- 火20:00: `difference`。他のAI占いとの差、自由記載、複数占術統合、占い師兼エンジニア設計をローテーションで伝える
+- 土20:00: `free_paid_compare`。無料版でできること、有料版で深掘りできること、カード枚数差、鑑定履歴解析の価値を、強すぎない有料導線として伝える
 - Threadsは500文字以内、ハッシュタグは `#占い鑑定` だけにする。`#羅針占術` はThreadsでは使わない
 - Blueskyは300文字以内、ハッシュタグは `#羅針占術 #今日の占い #今日の運勢 #占い師` を使う。画像1枚とalt textを付ける。運用上の画像上限は1,000,000 bytesなので、告知画像は小さい既存JPEGを使う
 - XはThreads本文の丸写しにしない。今は下書きのみ
@@ -163,13 +168,19 @@ node scripts/social/run-scheduled-posts.js --once --only-kind=all
 または:
 
 ```json
-"due": ["midday"]
+"due": ["empathy"]
 ```
 
 または:
 
 ```json
-"due": ["concept"]
+"due": ["difference"]
+```
+
+または:
+
+```json
+"due": ["free_paid_compare"]
 ```
 
 投稿成功は、`posted`、`existing_threads_post`、`existing_bluesky_post` と、対象SNS側の検証結果で判断する。`due: []` は投稿成功ではなく、時間外の正常終了。

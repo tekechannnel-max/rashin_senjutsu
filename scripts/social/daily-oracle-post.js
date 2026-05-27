@@ -6,6 +6,9 @@ const threadsClient = require('./threads-client');
 const blueskyClient = require('./bluesky-client');
 const instagramClient = require('./instagram-client');
 const postLedger = require('./post-ledger');
+const { LENORMAND_EMPATHY_POSTS } = require('./content/lenormand-empathy-posts');
+const { DIFFERENCE_POSTS } = require('./content/difference-posts');
+const { FREE_PAID_COMPARE_POSTS } = require('./content/free-paid-compare-posts');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const APP_JS = path.join(ROOT, 'app.js');
@@ -33,10 +36,25 @@ const FIX_PERIOD_END_DATE = '2026-06-05';
 const FULL_RELEASE_DATE = '2026-06-06';
 const RELEASE_DATE = PRERELEASE_START_DATE;
 const CARD_CYCLE_START_DATE = '2026-05-12';
+const SOCIAL_EXPANSION_START_DATE = process.env.SOCIAL_EXPANSION_START_DATE || '2026-05-27';
+const CONTENT_CYCLE_START_DATE = process.env.SOCIAL_CONTENT_CYCLE_START_DATE || SOCIAL_EXPANSION_START_DATE;
 const ORACLE_CARD_CYCLE_LENGTH = 33;
 const SOCIAL_PAID_CTA_MODES = new Set(['off', 'soft', 'active']);
 const SOCIAL_RELEASE_MODES = new Set(['auto', 'prelaunch', 'prerelease', 'fix', 'release', 'launch', 'postrelease']);
-const SOCIAL_POST_KINDS = ['oracle', 'midday', 'concept'];
+const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
+const LEGACY_SOCIAL_POST_KINDS = ['midday', 'concept'];
+const DRAFT_POST_KINDS = [...SOCIAL_POST_KINDS, ...LEGACY_SOCIAL_POST_KINDS];
+const RESULT_SUFFIX_BY_KIND = {
+  oracle: 'Oracle',
+  empathy: 'Empathy',
+  difference: 'Difference',
+  free_paid_compare: 'FreePaidCompare',
+  midday: 'Midday',
+  concept: 'Concept',
+};
+const EMPATHY_WEEKDAYS = [1, 3, 5];
+const DIFFERENCE_WEEKDAYS = [2];
+const FREE_PAID_COMPARE_WEEKDAYS = [6];
 const CARD_OVERRIDES_BY_DATE = {
   '2026-05-12': 8,
   '2026-05-13': 8,
@@ -57,6 +75,19 @@ const SOCIAL_CONCEPT_IMAGES = {
     file: 'オラクルカード表紙デザイン2.png',
     blueskyFile: 'oracle-card-cover-social.jpg',
     altText: '星空を背景に、青い衣装の人物が描かれたオラクルカード表紙デザイン。',
+  },
+};
+
+const SOCIAL_CONTENT_IMAGES = {
+  difference: {
+    file: 'social-difference-rashin-no-model.jpg',
+    blueskyFile: 'social-difference-rashin-no-model.jpg',
+    altText: '羅針占術の違い紹介画像。自由記載、複数占術、鑑定履歴という3つの特徴を人物なしの抽象背景で示している。',
+  },
+  free_paid_compare: {
+    file: 'social-free-paid-compare-no-model.jpg',
+    blueskyFile: 'social-free-paid-compare-no-model.jpg',
+    altText: '羅針占術の無料版と有料版の比較画像。無料版の入口と有料版の深掘り内容を人物なしの抽象背景で並べて示している。',
   },
 };
 
@@ -371,6 +402,9 @@ function parseArgs(argv) {
     else if (arg === '--oracle-card-mode') args.oracleCardMode = argv[++i];
     else if (arg.startsWith('--oracle-card-mode=')) args.oracleCardMode = arg.split('=')[1];
   }
+  if (!['all', ...DRAFT_POST_KINDS].includes(args.kind)) {
+    throw new Error(`Invalid --kind: ${args.kind}`);
+  }
   if (!args.write && !args.post) args.dryRun = true;
   return args;
 }
@@ -675,6 +709,30 @@ function buildMiddayTrackedUrl(dateKey, publicOrigin, config) {
   return buildTrackedUrl(publicOrigin, '/', buildUtmParams(config, `midday_${dateKey.replace(/-/g, '')}`));
 }
 
+function buildEmpathyUtmContent(item, dateKey) {
+  return `empathy_${compactDate(dateKey)}_card${pad2(item.cardNumber)}`;
+}
+
+function buildDifferenceUtmContent(item, dateKey) {
+  return `difference_${compactDate(dateKey)}_v${pad2(item.version)}`;
+}
+
+function buildFreePaidCompareUtmContent(item, dateKey) {
+  return `freepaid_${compactDate(dateKey)}_v${pad2(item.version)}`;
+}
+
+function buildEmpathyTrackedUrl(item, dateKey, publicOrigin, config) {
+  return buildTrackedUrl(publicOrigin, '/', buildUtmParams(config, buildEmpathyUtmContent(item, dateKey)));
+}
+
+function buildDifferenceTrackedUrl(item, dateKey, publicOrigin, config) {
+  return buildTrackedUrl(publicOrigin, '/', buildUtmParams(config, buildDifferenceUtmContent(item, dateKey)));
+}
+
+function buildFreePaidCompareTrackedUrl(item, dateKey, publicOrigin, config) {
+  return buildTrackedUrl(publicOrigin, '/', buildUtmParams(config, buildFreePaidCompareUtmContent(item, dateKey)));
+}
+
 function countHashtags(text) {
   return (String(text || '').match(/(^|\s)#[^\s#]+/g) || []).length;
 }
@@ -758,71 +816,70 @@ function validatePostText(text, options = {}) {
   }
 }
 
+function getEntryTextForPlatform(entry, platform) {
+  if (platform === 'x') return entry.xText;
+  if (platform === 'bluesky') return entry.blueskyText;
+  if (platform === 'instagram') return entry.instagramText;
+  return entry.text;
+}
+
+function getTrackedUrlForPlatform(entry, platform) {
+  if (platform === 'x') return entry.xTrackedUrl;
+  if (platform === 'bluesky') return entry.blueskyTrackedUrl;
+  if (platform === 'instagram') return entry.instagramTrackedUrl;
+  return entry.trackedUrl;
+}
+
 function validateDraft(draft, args) {
   const platforms = Array.isArray(args.platforms) ? args.platforms : ['threads'];
+  const kinds = selectedKindsFromArgs(args);
   if (platforms.includes('threads')) {
-    validatePostText(draft.oracle.text, { label: 'oracle Threads post', platforms: ['threads'], requireTrackedUrl: true, trackedUrl: draft.oracle.trackedUrl });
-    validatePostText(draft.midday.text, { label: 'midday Threads post', platforms: ['threads'], requireTrackedUrl: true, trackedUrl: draft.midday.trackedUrl });
-    validatePostText(draft.concept.text, { label: 'concept Threads post', platforms: ['threads'], requireTrackedUrl: true, trackedUrl: draft.concept.trackedUrl });
     const requiredHashtag = draft.meta?.policy?.threadsHashtag || DEFAULT_THREADS_HASHTAG;
     const preRelease = isPreReleasePosting(draft.date, draft.meta?.socialConfig || {});
-    if (!draft.oracle.text.includes(requiredHashtag)) throw new Error('oracle Threads post is missing the required hashtag.');
-    if (!draft.midday.text.includes(requiredHashtag)) throw new Error('midday Threads post is missing the required hashtag.');
-    if (!draft.concept.text.includes(requiredHashtag)) throw new Error('concept Threads post is missing the required hashtag.');
-    if (draft.oracle.text.includes(DEFAULT_HASHTAG) || draft.midday.text.includes(DEFAULT_HASHTAG) || draft.concept.text.includes(DEFAULT_HASHTAG)) {
-      throw new Error('Threads posts must not use the brand hashtag.');
+    for (const kind of kinds) {
+      const entry = draft[kind];
+      validatePostText(entry.text, { label: `${kind} Threads post`, platforms: ['threads'], requireTrackedUrl: true, trackedUrl: entry.trackedUrl });
+      if (!entry.text.includes(requiredHashtag)) throw new Error(`${kind} Threads post is missing the required hashtag.`);
+      if (entry.text.includes(DEFAULT_HASHTAG)) throw new Error(`${kind} Threads post must not use the brand hashtag.`);
+      if (!extractUtmContent(entry.trackedUrl || entry.text)) throw new Error(`${kind} Threads post is missing utm_content.`);
     }
     if (preRelease) {
       if (draft.oracle.text.includes('あなたも今日の1枚を引かない？')) {
         throw new Error('pre-release oracle Threads post must not use the live oracle closing line.');
       }
-    } else {
-      if (!extractUtmContent(draft.oracle.trackedUrl || draft.oracle.text)) throw new Error('oracle Threads post is missing utm_content.');
-      if (!extractUtmContent(draft.midday.trackedUrl || draft.midday.text)) throw new Error('midday Threads post is missing utm_content.');
-      if (!extractUtmContent(draft.concept.text)) throw new Error('concept Threads post is missing utm_content.');
-      if (!draft.oracle.text.trim().endsWith('あなたも今日の1枚を引かない？')) {
-        throw new Error('oracle Threads post must end with the required closing line.');
-      }
+    } else if (kinds.includes('oracle') && !draft.oracle.text.trim().endsWith('あなたも今日の1枚を引かない？')) {
+      throw new Error('oracle Threads post must end with the required closing line.');
     }
   }
   if (platforms.includes('x')) {
-    validatePostText(draft.oracle.xText, { label: 'oracle X post', platforms: ['x'], requireTrackedUrl: true, trackedUrl: draft.oracle.xTrackedUrl });
-    validatePostText(draft.midday.xText, { label: 'midday X post', platforms: ['x'], requireTrackedUrl: true, trackedUrl: draft.midday.xTrackedUrl });
-    validatePostText(draft.concept.xText, { label: 'concept X post', platforms: ['x'], requireTrackedUrl: true, trackedUrl: draft.concept.xTrackedUrl });
-    if (draft.oracle.xText === draft.oracle.text || draft.midday.xText === draft.midday.text || draft.concept.xText === draft.concept.text) {
-      throw new Error('X posts must not be identical to Threads posts.');
+    for (const kind of kinds) {
+      const entry = draft[kind];
+      validatePostText(entry.xText, { label: `${kind} X post`, platforms: ['x'], requireTrackedUrl: true, trackedUrl: entry.xTrackedUrl });
+      if (entry.xText === entry.text) throw new Error(`${kind} X post must not be identical to the Threads post.`);
     }
   }
   if (platforms.includes('bluesky')) {
-    validatePostText(draft.oracle.blueskyText, { label: 'oracle Bluesky post', platforms: ['bluesky'], requireTrackedUrl: true, trackedUrl: draft.oracle.blueskyTrackedUrl });
-    validatePostText(draft.midday.blueskyText, { label: 'midday Bluesky post', platforms: ['bluesky'], requireTrackedUrl: true, trackedUrl: draft.midday.blueskyTrackedUrl });
-    validatePostText(draft.concept.blueskyText, { label: 'concept Bluesky post', platforms: ['bluesky'], requireTrackedUrl: true, trackedUrl: draft.concept.blueskyTrackedUrl });
     const requiredHashtags = String(draft.meta?.policy?.blueskyHashtags || getBlueskyHashtagLine()).match(/#[^\s#]+/g) || [];
-    for (const requiredHashtag of requiredHashtags) {
-      if (!draft.oracle.blueskyText.includes(requiredHashtag)) throw new Error(`oracle Bluesky post is missing the required hashtag: ${requiredHashtag}`);
-      if (!draft.midday.blueskyText.includes(requiredHashtag)) throw new Error(`midday Bluesky post is missing the required hashtag: ${requiredHashtag}`);
-      if (!draft.concept.blueskyText.includes(requiredHashtag)) throw new Error(`concept Bluesky post is missing the required hashtag: ${requiredHashtag}`);
+    for (const kind of kinds) {
+      const entry = draft[kind];
+      validatePostText(entry.blueskyText, { label: `${kind} Bluesky post`, platforms: ['bluesky'], requireTrackedUrl: true, trackedUrl: entry.blueskyTrackedUrl });
+      for (const requiredHashtag of requiredHashtags) {
+        if (!entry.blueskyText.includes(requiredHashtag)) throw new Error(`${kind} Bluesky post is missing the required hashtag: ${requiredHashtag}`);
+      }
+      if (!/https:\/\/rashin-senjutsu\.onrender\.com\b/i.test(entry.blueskyText)) {
+        throw new Error(`${kind} Bluesky post must use a clickable https://rashin-senjutsu.onrender.com URL.`);
+      }
+      if (!entry.blueskyImagePath) throw new Error(`${kind} Bluesky post requires a local image path.`);
+      if (!entry.altText) throw new Error(`${kind} Bluesky image post requires alt text.`);
     }
-    if (!/https:\/\/rashin-senjutsu\.onrender\.com\b/i.test(draft.oracle.blueskyText)
-      || !/https:\/\/rashin-senjutsu\.onrender\.com\b/i.test(draft.midday.blueskyText)
-      || !/https:\/\/rashin-senjutsu\.onrender\.com\b/i.test(draft.concept.blueskyText)) {
-      throw new Error('Bluesky posts must use clickable https://rashin-senjutsu.onrender.com URLs.');
-    }
-    if (normalizeSharedThreadsBlueskyText(draft.midday.text) !== normalizeSharedThreadsBlueskyText(draft.midday.blueskyText)) {
+    if (kinds.includes('midday') && normalizeSharedThreadsBlueskyText(draft.midday.text) !== normalizeSharedThreadsBlueskyText(draft.midday.blueskyText)) {
       throw new Error('midday Threads and Bluesky posts must use matching copy except the Bluesky URL protocol.');
-    }
-    if (!draft.oracle.blueskyImagePath || !draft.midday.blueskyImagePath || !draft.concept.blueskyImagePath) {
-      throw new Error('Bluesky posts require local image paths.');
-    }
-    if (!draft.oracle.altText || !draft.midday.altText || !draft.concept.altText) {
-      throw new Error('Bluesky image posts require alt text.');
     }
   }
   if (platforms.includes('instagram')) {
-    validatePostText(draft.oracle.instagramText, { label: 'oracle Instagram post', platforms: ['instagram'], requireTrackedUrl: true, trackedUrl: draft.oracle.instagramTrackedUrl });
-    validatePostText(draft.midday.instagramText, { label: 'midday Instagram post', platforms: ['instagram'], requireTrackedUrl: true, trackedUrl: draft.midday.instagramTrackedUrl });
-    validatePostText(draft.concept.instagramText, { label: 'concept Instagram post', platforms: ['instagram'], requireTrackedUrl: true, trackedUrl: draft.concept.instagramTrackedUrl });
-    for (const [kind, entry] of Object.entries({ oracle: draft.oracle, midday: draft.midday, concept: draft.concept })) {
+    for (const kind of kinds) {
+      const entry = draft[kind];
+      validatePostText(entry.instagramText, { label: `${kind} Instagram post`, platforms: ['instagram'], requireTrackedUrl: true, trackedUrl: entry.instagramTrackedUrl });
       if (!entry.instagramImageUrl) throw new Error(`${kind} Instagram post requires a public image URL.`);
       instagramClient.ensurePublicImageUrl(entry.instagramImageUrl);
       if (!entry.altText) throw new Error(`${kind} Instagram post requires alt text.`);
@@ -902,6 +959,63 @@ function dateToUtcDay(dateKey) {
   const [year, month, day] = String(dateKey || '').split('-').map(Number);
   if (!year || !month || !day) return 0;
   return Math.floor(Date.UTC(year, month - 1, day) / 86400000);
+}
+
+function utcDayToWeekday(utcDay) {
+  return new Date(utcDay * 86400000).getUTCDay();
+}
+
+function getScheduledOccurrenceIndex(dateKey, weekdays, startDate = CONTENT_CYCLE_START_DATE) {
+  const startDay = dateToUtcDay(startDate);
+  const targetDay = dateToUtcDay(dateKey);
+  if (!Number.isFinite(startDay) || !Number.isFinite(targetDay)) return 0;
+  const normalizedWeekdays = new Set(weekdays);
+  if (targetDay < startDay) {
+    const distance = Math.abs(targetDay - startDay);
+    return distance % Math.max(1, normalizedWeekdays.size);
+  }
+  let count = 0;
+  for (let day = startDay; day <= targetDay; day += 1) {
+    if (normalizedWeekdays.has(utcDayToWeekday(day))) count += 1;
+  }
+  return Math.max(0, count - 1);
+}
+
+function pickScheduledContent(items, dateKey, weekdays, namespace = 'social-content') {
+  if (!Array.isArray(items) || !items.length) throw new Error('Missing social content items.');
+  const index = getScheduledOccurrenceIndex(dateKey, weekdays);
+  const cycle = Math.floor(index / items.length);
+  const seed = process.env.SOCIAL_CONTENT_SEED || process.env.SOCIAL_UTM_CAMPAIGN || DEFAULT_SOCIAL_CAMPAIGN;
+  const order = seededShuffle(items.map((_item, itemIndex) => itemIndex), `${namespace}:${seed}:${cycle}`);
+  return items[order[index % items.length]];
+}
+
+function pad2(value) {
+  return String(value).padStart(2, '0');
+}
+
+function compactDate(dateKey) {
+  return String(dateKey || '').replace(/-/g, '');
+}
+
+function lenormandImageName(cardNumber) {
+  return `${String(cardNumber).padStart(2, '0')}.jpg`;
+}
+
+function lenormandImagePath(cardNumber) {
+  return path.join(ROOT, 'images', 'cards', 'lenormand', lenormandImageName(cardNumber));
+}
+
+function lenormandImageUrl(publicOrigin, cardNumber) {
+  return `${publicOrigin}/images/cards/lenormand/${lenormandImageName(cardNumber)}`;
+}
+
+function instagramSocialImagePath(...segments) {
+  return path.join(ROOT, 'images', 'social', 'instagram', ...segments);
+}
+
+function instagramSocialImageUrl(publicOrigin, ...segments) {
+  return `${publicOrigin}/images/social/instagram/${segments.map(segment => encodeURIComponent(segment)).join('/')}`;
 }
 
 function deterministicCardId(ids, dateKey) {
@@ -1203,6 +1317,132 @@ function buildBlueskyMiddayText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, c
   return buildMiddayText(dateKey, publicOrigin, config);
 }
 
+function getPostLimitForConfig(config) {
+  if (config?.primaryPlatform === 'bluesky') return BLUESKY_CHARACTER_LIMIT;
+  if (config?.primaryPlatform === 'instagram') return INSTAGRAM_CHARACTER_LIMIT;
+  return THREADS_CHARACTER_LIMIT;
+}
+
+function buildScheduledCycleNote(dateKey, weekdays, cycleLength, noun) {
+  const index = getScheduledOccurrenceIndex(dateKey, weekdays);
+  const cycle = Math.floor(index / cycleLength) + 1;
+  if (cycle <= 1) return '';
+  return `${cycle}巡目の${noun}：同じテーマでも、今日の状況に合わせて読み直します。`;
+}
+
+function buildGenericSocialText(parts, dateKey, publicOrigin, config, options = {}) {
+  const limit = options.limit || getPostLimitForConfig(config);
+  return fitPostText([
+    ...parts,
+    options.cycleNote || '',
+    buildDisplayUrlForPlatform(publicOrigin, config),
+    config.defaultHashtag || DEFAULT_HASHTAG,
+  ], limit);
+}
+
+function buildXGenericSocialText(parts, publicOrigin, config, options = {}) {
+  return fitPostText([
+    ...parts,
+    options.cycleNote || '',
+    buildDisplayUrl(publicOrigin),
+    getXHashtagLine(config),
+  ], options.limit || THREADS_CHARACTER_LIMIT);
+}
+
+function pickEmpathyPost(dateKey) {
+  return pickScheduledContent(LENORMAND_EMPATHY_POSTS, dateKey, EMPATHY_WEEKDAYS, 'empathy-lenormand');
+}
+
+function pickDifferencePost(dateKey) {
+  return pickScheduledContent(DIFFERENCE_POSTS, dateKey, DIFFERENCE_WEEKDAYS, 'difference');
+}
+
+function pickFreePaidComparePost(dateKey) {
+  return pickScheduledContent(FREE_PAID_COMPARE_POSTS, dateKey, FREE_PAID_COMPARE_WEEKDAYS, 'free-paid-compare');
+}
+
+function stripLenormandLead(body, cardName) {
+  return String(body || '').replace(new RegExp(`^ルノルマンカード「${cardName}」。?`), '').trim();
+}
+
+function buildEmpathyText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['threads'] })) {
+  const cardLine = `ルノルマンカード「${item.cardName}」`;
+  const reading = stripLenormandLead(item.body, item.cardName);
+  return buildGenericSocialText([
+    item.hook,
+    cardLine,
+    reading,
+    item.cta,
+  ], dateKey, publicOrigin, config, {
+    cycleNote: buildScheduledCycleNote(dateKey, EMPATHY_WEEKDAYS, LENORMAND_EMPATHY_POSTS.length, 'カード'),
+  });
+}
+
+function buildXEmpathyText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['x'] })) {
+  const cardLine = `ルノルマンカード「${item.cardName}」`;
+  const reading = stripLenormandLead(item.body, item.cardName);
+  return buildXGenericSocialText([
+    item.hook,
+    cardLine,
+    reading,
+    item.cta,
+  ], publicOrigin, config, {
+    cycleNote: buildScheduledCycleNote(dateKey, EMPATHY_WEEKDAYS, LENORMAND_EMPATHY_POSTS.length, 'カード'),
+  });
+}
+
+function buildDifferenceText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['threads'] })) {
+  return buildGenericSocialText([
+    item.title,
+    item.body,
+    item.cta,
+  ], dateKey, publicOrigin, config, {
+    cycleNote: buildScheduledCycleNote(dateKey, DIFFERENCE_WEEKDAYS, DIFFERENCE_POSTS.length, '違い紹介'),
+  });
+}
+
+function buildXDifferenceText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['x'] })) {
+  return buildXGenericSocialText([
+    item.title,
+    item.body,
+    item.cta,
+  ], publicOrigin, config, {
+    cycleNote: buildScheduledCycleNote(dateKey, DIFFERENCE_WEEKDAYS, DIFFERENCE_POSTS.length, '違い紹介'),
+  });
+}
+
+function buildFreePaidCompareText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['threads'] })) {
+  return buildGenericSocialText([
+    item.title,
+    item.body,
+    item.cta,
+  ], dateKey, publicOrigin, config, {
+    cycleNote: buildScheduledCycleNote(dateKey, FREE_PAID_COMPARE_WEEKDAYS, FREE_PAID_COMPARE_POSTS.length, '比較'),
+  });
+}
+
+function buildXFreePaidCompareText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['x'] })) {
+  return buildXGenericSocialText([
+    item.title,
+    item.body,
+    item.cta,
+  ], publicOrigin, config, {
+    cycleNote: buildScheduledCycleNote(dateKey, FREE_PAID_COMPARE_WEEKDAYS, FREE_PAID_COMPARE_POSTS.length, '比較'),
+  });
+}
+
+function buildEmpathyAltText(item) {
+  return `ルノルマンカード No.${item.cardNumber}「${item.cardName}」。悩み共感投稿で使うカード画像。`;
+}
+
+function buildDifferenceAltText(item) {
+  return `羅針占術の違い紹介「${item.title}」の投稿画像。自由記載と複数占術の統合を伝える内容。`;
+}
+
+function buildFreePaidCompareAltText(item) {
+  return `羅針占術の無料版と有料版の比較「${item.title}」の投稿画像。`;
+}
+
 async function buildDraft(args) {
   const dateKey = args.date || getJstDateString();
   const publicOrigin = (process.env.PUBLIC_ORIGIN || DEFAULT_PUBLIC_ORIGIN).replace(/\/$/, '');
@@ -1214,24 +1454,49 @@ async function buildDraft(args) {
   const calendar = getCalendarEntry(dateKey);
   const paidCta = resolvePaidCta(calendar, config);
   const conceptImage = pickConceptImage(calendar, dateKey);
+  const empathyPost = pickEmpathyPost(dateKey);
+  const differencePost = pickDifferencePost(dateKey);
+  const freePaidComparePost = pickFreePaidComparePost(dateKey);
+  const differenceImage = SOCIAL_CONTENT_IMAGES.difference;
+  const freePaidCompareImage = SOCIAL_CONTENT_IMAGES.free_paid_compare;
   const blueskyConceptImage = pickBlueskyConceptImage(conceptImage);
   const middayImage = SOCIAL_CONCEPT_IMAGES.icon;
   const blueskyMiddayImage = pickBlueskyConceptImage(middayImage);
+  const blueskyDifferenceImage = pickBlueskyConceptImage(differenceImage);
+  const blueskyFreePaidCompareImage = pickBlueskyConceptImage(freePaidCompareImage);
   const instagramConceptImage = pickBlueskyConceptImage(conceptImage);
   const instagramMiddayImage = pickBlueskyConceptImage(middayImage);
   const conceptImagePath = path.join(ROOT, 'images', 'ui', conceptImage.file);
   const blueskyConceptImagePath = path.join(ROOT, 'images', 'ui', blueskyConceptImage.file);
   const middayImagePath = path.join(ROOT, 'images', 'ui', middayImage.file);
   const blueskyMiddayImagePath = path.join(ROOT, 'images', 'ui', blueskyMiddayImage.file);
+  const empathyImagePath = lenormandImagePath(empathyPost.cardNumber);
+  const empathyImageUrl = lenormandImageUrl(publicOrigin, empathyPost.cardNumber);
+  const differenceImagePath = path.join(ROOT, 'images', 'ui', differenceImage.file);
+  const blueskyDifferenceImagePath = path.join(ROOT, 'images', 'ui', blueskyDifferenceImage.file);
+  const freePaidCompareImagePath = path.join(ROOT, 'images', 'ui', freePaidCompareImage.file);
+  const blueskyFreePaidCompareImagePath = path.join(ROOT, 'images', 'ui', blueskyFreePaidCompareImage.file);
   const instagramConceptImagePath = path.join(ROOT, 'images', 'ui', instagramConceptImage.file);
   const instagramMiddayImagePath = path.join(ROOT, 'images', 'ui', instagramMiddayImage.file);
   const messages = await loadDailyOracleMessages();
   const card = await pickCard(messages, dateKey, args.write || args.post, args);
   const imageName = `${String(card.id).padStart(2, '0')}.jpg`;
+  const oracleInstagramImagePath = instagramSocialImagePath('oracle', imageName);
+  const oracleInstagramImageUrl = instagramSocialImageUrl(publicOrigin, 'oracle', imageName);
+  const empathyInstagramImageName = lenormandImageName(empathyPost.cardNumber);
+  const empathyInstagramImagePath = instagramSocialImagePath('lenormand-empathy', empathyInstagramImageName);
+  const empathyInstagramImageUrl = instagramSocialImageUrl(publicOrigin, 'lenormand-empathy', empathyInstagramImageName);
+  const differenceInstagramImagePath = instagramSocialImagePath('difference.jpg');
+  const differenceInstagramImageUrl = instagramSocialImageUrl(publicOrigin, 'difference.jpg');
+  const freePaidCompareInstagramImagePath = instagramSocialImagePath('free-paid-compare.jpg');
+  const freePaidCompareInstagramImageUrl = instagramSocialImageUrl(publicOrigin, 'free-paid-compare.jpg');
   const draft = {
     date: dateKey,
     schedule: {
       oracle: `${process.env.SOCIAL_ORACLE_TIME || '07:00'} Asia/Tokyo`,
+      empathy: `${process.env.SOCIAL_EMPATHY_TIME || '12:00'} Asia/Tokyo Mon/Wed/Fri`,
+      difference: `${process.env.SOCIAL_DIFFERENCE_TIME || '20:00'} Asia/Tokyo Tue`,
+      free_paid_compare: `${process.env.SOCIAL_FREE_PAID_COMPARE_TIME || '20:00'} Asia/Tokyo Sat`,
       midday: `${process.env.SOCIAL_MIDDAY_TIME || '12:00'} Asia/Tokyo`,
       concept: `${process.env.SOCIAL_CONCEPT_TIME || '20:00'} Asia/Tokyo`,
     },
@@ -1249,8 +1514,71 @@ async function buildDraft(args) {
       blueskyImagePath: path.join(ROOT, 'images', 'cards', 'oracle', imageName),
       instagramText: buildOracleText(card, publicOrigin, { dateKey, config: instagramConfig }),
       instagramTrackedUrl: buildOracleTrackedUrl(card, publicOrigin, instagramConfig, dateKey),
-      instagramImagePath: path.join(ROOT, 'images', 'cards', 'oracle', imageName),
-      instagramImageUrl: `${publicOrigin}/images/cards/oracle/${imageName}`,
+      instagramImagePath: oracleInstagramImagePath,
+      instagramImageUrl: oracleInstagramImageUrl,
+    },
+    empathy: {
+      card: {
+        cardNumber: empathyPost.cardNumber,
+        cardName: empathyPost.cardName,
+      },
+      imagePath: empathyImagePath,
+      imageUrl: empathyImageUrl,
+      altText: buildEmpathyAltText(empathyPost),
+      text: buildEmpathyText(empathyPost, dateKey, publicOrigin, threadsConfig),
+      trackedUrl: buildEmpathyTrackedUrl(empathyPost, dateKey, publicOrigin, threadsConfig),
+      xText: buildXEmpathyText(empathyPost, dateKey, publicOrigin, xConfig),
+      xTrackedUrl: buildEmpathyTrackedUrl(empathyPost, dateKey, publicOrigin, xConfig),
+      blueskyText: buildEmpathyText(empathyPost, dateKey, publicOrigin, blueskyConfig),
+      blueskyTrackedUrl: buildEmpathyTrackedUrl(empathyPost, dateKey, publicOrigin, blueskyConfig),
+      blueskyImagePath: empathyImagePath,
+      blueskyImageUrl: empathyImageUrl,
+      instagramText: buildEmpathyText(empathyPost, dateKey, publicOrigin, instagramConfig),
+      instagramTrackedUrl: buildEmpathyTrackedUrl(empathyPost, dateKey, publicOrigin, instagramConfig),
+      instagramImagePath: empathyInstagramImagePath,
+      instagramImageUrl: empathyInstagramImageUrl,
+    },
+    difference: {
+      content: {
+        version: differencePost.version,
+        title: differencePost.title,
+      },
+      imagePath: differenceImagePath,
+      imageUrl: buildPublicUiImageUrl(publicOrigin, differenceImage.file),
+      altText: buildDifferenceAltText(differencePost),
+      text: buildDifferenceText(differencePost, dateKey, publicOrigin, threadsConfig),
+      trackedUrl: buildDifferenceTrackedUrl(differencePost, dateKey, publicOrigin, threadsConfig),
+      xText: buildXDifferenceText(differencePost, dateKey, publicOrigin, xConfig),
+      xTrackedUrl: buildDifferenceTrackedUrl(differencePost, dateKey, publicOrigin, xConfig),
+      blueskyText: buildDifferenceText(differencePost, dateKey, publicOrigin, blueskyConfig),
+      blueskyTrackedUrl: buildDifferenceTrackedUrl(differencePost, dateKey, publicOrigin, blueskyConfig),
+      blueskyImagePath: blueskyDifferenceImagePath,
+      blueskyImageUrl: buildPublicUiImageUrl(publicOrigin, blueskyDifferenceImage.file),
+      instagramText: buildDifferenceText(differencePost, dateKey, publicOrigin, instagramConfig),
+      instagramTrackedUrl: buildDifferenceTrackedUrl(differencePost, dateKey, publicOrigin, instagramConfig),
+      instagramImagePath: differenceInstagramImagePath,
+      instagramImageUrl: differenceInstagramImageUrl,
+    },
+    free_paid_compare: {
+      content: {
+        version: freePaidComparePost.version,
+        title: freePaidComparePost.title,
+      },
+      imagePath: freePaidCompareImagePath,
+      imageUrl: buildPublicUiImageUrl(publicOrigin, freePaidCompareImage.file),
+      altText: buildFreePaidCompareAltText(freePaidComparePost),
+      text: buildFreePaidCompareText(freePaidComparePost, dateKey, publicOrigin, threadsConfig),
+      trackedUrl: buildFreePaidCompareTrackedUrl(freePaidComparePost, dateKey, publicOrigin, threadsConfig),
+      xText: buildXFreePaidCompareText(freePaidComparePost, dateKey, publicOrigin, xConfig),
+      xTrackedUrl: buildFreePaidCompareTrackedUrl(freePaidComparePost, dateKey, publicOrigin, xConfig),
+      blueskyText: buildFreePaidCompareText(freePaidComparePost, dateKey, publicOrigin, blueskyConfig),
+      blueskyTrackedUrl: buildFreePaidCompareTrackedUrl(freePaidComparePost, dateKey, publicOrigin, blueskyConfig),
+      blueskyImagePath: blueskyFreePaidCompareImagePath,
+      blueskyImageUrl: buildPublicUiImageUrl(publicOrigin, blueskyFreePaidCompareImage.file),
+      instagramText: buildFreePaidCompareText(freePaidComparePost, dateKey, publicOrigin, instagramConfig),
+      instagramTrackedUrl: buildFreePaidCompareTrackedUrl(freePaidComparePost, dateKey, publicOrigin, instagramConfig),
+      instagramImagePath: freePaidCompareInstagramImagePath,
+      instagramImageUrl: freePaidCompareInstagramImageUrl,
     },
     midday: {
       imagePath: middayImagePath,
@@ -1305,6 +1633,21 @@ async function buildDraft(args) {
         campaign: config.campaign,
         enableBluesky: config.enableBluesky,
         enableInstagram: config.enableInstagram,
+        expansionStartDate: SOCIAL_EXPANSION_START_DATE,
+      },
+      content: {
+        empathy: {
+          cardNumber: empathyPost.cardNumber,
+          cardName: empathyPost.cardName,
+        },
+        difference: {
+          version: differencePost.version,
+          title: differencePost.title,
+        },
+        freePaidCompare: {
+          version: freePaidComparePost.version,
+          title: freePaidComparePost.title,
+        },
       },
       calendar: calendar ? {
         morningTheme: calendar.morningTheme,
@@ -1471,11 +1814,16 @@ async function findExistingInstagramPost({ marker = null, text = '' } = {}) {
 
 function selectedKindsFromArgs(args) {
   if (args.kind === 'all') return SOCIAL_POST_KINDS;
-  return SOCIAL_POST_KINDS.includes(args.kind) ? [args.kind] : SOCIAL_POST_KINDS;
+  if (DRAFT_POST_KINDS.includes(args.kind)) return [args.kind];
+  return SOCIAL_POST_KINDS;
 }
 
 function shouldPostKind(args, kind) {
   return args.kind === 'all' || args.kind === kind;
+}
+
+function resultKeyFor(platform, kind) {
+  return `${platform}${RESULT_SUFFIX_BY_KIND[kind] || kind.charAt(0).toUpperCase() + kind.slice(1)}`;
 }
 
 function isScheduledPostingRun() {
@@ -1628,96 +1976,47 @@ async function main() {
   if (!args.post) return;
   await confirmPostingIfNeeded(args);
   const results = {};
+  const kindsToPost = selectedKindsFromArgs(args);
   try {
     if (args.platforms.includes('x')) {
       if (process.env.SOCIAL_X_API_POSTING_ENABLED !== 'true') {
         throw new Error('X API posting is disabled. Generate X drafts with npm run social:x:drafts and post manually, or set SOCIAL_X_API_POSTING_ENABLED=true when official X API credentials are intentionally configured.');
       }
-      if (shouldPostKind(args, 'oracle')) {
-        results.xOracle = await withSocialRetry('x:oracle', () => postToX(draft.oracle.xText, draft.oracle.imagePath));
-      }
-      if (shouldPostKind(args, 'midday')) {
-        results.xMidday = await withSocialRetry('x:midday', () => postToX(draft.midday.xText, draft.midday.imagePath));
-      }
-      if (shouldPostKind(args, 'concept')) {
-        results.xConcept = await withSocialRetry('x:concept', () => postToX(draft.concept.xText, draft.concept.imagePath));
+      for (const kind of kindsToPost) {
+        const entry = draft[kind];
+        results[resultKeyFor('x', kind)] = await withSocialRetry(`x:${kind}`, () => postToX(entry.xText, entry.imagePath));
       }
     }
     if (args.platforms.includes('threads')) {
-      if (shouldPostKind(args, 'oracle')) {
-        results.threadsOracle = await withSocialRetry('threads:oracle', () => postImageToThreadsOnce({
-          text: draft.oracle.text,
-          imageUrl: draft.oracle.imageUrl,
-          altText: draft.oracle.altText,
-          marker: extractUtmContent(draft.oracle.trackedUrl || draft.oracle.text),
-        }));
-      }
-      if (shouldPostKind(args, 'midday')) {
-        results.threadsMidday = await withSocialRetry('threads:midday', () => postImageToThreadsOnce({
-          text: draft.midday.text,
-          imageUrl: draft.midday.imageUrl,
-          altText: draft.midday.altText,
-          marker: extractUtmContent(draft.midday.trackedUrl || draft.midday.text),
-        }));
-      }
-      if (shouldPostKind(args, 'concept')) {
-        results.threadsConcept = await withSocialRetry('threads:concept', () => postImageToThreadsOnce({
-          text: draft.concept.text,
-          imageUrl: draft.concept.imageUrl,
-          altText: draft.concept.altText,
-          marker: extractUtmContent(draft.concept.trackedUrl || draft.concept.text),
+      for (const kind of kindsToPost) {
+        const entry = draft[kind];
+        results[resultKeyFor('threads', kind)] = await withSocialRetry(`threads:${kind}`, () => postImageToThreadsOnce({
+          text: entry.text,
+          imageUrl: entry.imageUrl,
+          altText: entry.altText,
+          marker: extractUtmContent(entry.trackedUrl || entry.text),
         }));
       }
     }
     if (args.platforms.includes('bluesky')) {
-      if (shouldPostKind(args, 'oracle')) {
-        results.blueskyOracle = await withSocialRetry('bluesky:oracle', () => postImageToBlueskyOnce({
-          text: draft.oracle.blueskyText,
-          imagePath: draft.oracle.blueskyImagePath,
-          altText: draft.oracle.altText,
-          marker: extractUtmContent(draft.oracle.blueskyTrackedUrl || draft.oracle.blueskyText),
-        }));
-      }
-      if (shouldPostKind(args, 'midday')) {
-        results.blueskyMidday = await withSocialRetry('bluesky:midday', () => postImageToBlueskyOnce({
-          text: draft.midday.blueskyText,
-          imagePath: draft.midday.blueskyImagePath,
-          altText: draft.midday.altText,
-          marker: extractUtmContent(draft.midday.blueskyTrackedUrl || draft.midday.blueskyText),
-        }));
-      }
-      if (shouldPostKind(args, 'concept')) {
-        results.blueskyConcept = await withSocialRetry('bluesky:concept', () => postImageToBlueskyOnce({
-          text: draft.concept.blueskyText,
-          imagePath: draft.concept.blueskyImagePath,
-          altText: draft.concept.altText,
-          marker: extractUtmContent(draft.concept.blueskyTrackedUrl || draft.concept.blueskyText),
+      for (const kind of kindsToPost) {
+        const entry = draft[kind];
+        results[resultKeyFor('bluesky', kind)] = await withSocialRetry(`bluesky:${kind}`, () => postImageToBlueskyOnce({
+          text: entry.blueskyText,
+          imagePath: entry.blueskyImagePath,
+          altText: entry.altText,
+          marker: extractUtmContent(entry.blueskyTrackedUrl || entry.blueskyText),
         }));
       }
     }
     if (args.platforms.includes('instagram')) {
-      if (shouldPostKind(args, 'oracle')) {
-        results.instagramOracle = await withSocialRetry('instagram:oracle', () => postImageToInstagramOnce({
-          text: draft.oracle.instagramText,
-          imageUrl: draft.oracle.instagramImageUrl,
-          altText: draft.oracle.altText,
-          marker: extractUtmContent(draft.oracle.instagramTrackedUrl || draft.oracle.instagramText),
-        }));
-      }
-      if (shouldPostKind(args, 'midday')) {
-        results.instagramMidday = await withSocialRetry('instagram:midday', () => postImageToInstagramOnce({
-          text: draft.midday.instagramText,
-          imageUrl: draft.midday.instagramImageUrl,
-          altText: draft.midday.altText,
-          marker: extractUtmContent(draft.midday.instagramTrackedUrl || draft.midday.instagramText),
-        }));
-      }
-      if (shouldPostKind(args, 'concept')) {
-        results.instagramConcept = await withSocialRetry('instagram:concept', () => postImageToInstagramOnce({
-          text: draft.concept.instagramText,
-          imageUrl: draft.concept.instagramImageUrl,
-          altText: draft.concept.altText,
-          marker: extractUtmContent(draft.concept.instagramTrackedUrl || draft.concept.instagramText),
+      for (const kind of kindsToPost) {
+        const entry = draft[kind];
+        results[resultKeyFor('instagram', kind)] = await withSocialRetry(`instagram:${kind}`, () => postImageToInstagramOnce({
+          text: entry.instagramText,
+          imageUrl: entry.instagramImageUrl,
+          altText: entry.altText,
+          marker: extractUtmContent(entry.instagramTrackedUrl || entry.instagramText),
         }));
       }
     }

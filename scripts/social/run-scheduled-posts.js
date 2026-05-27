@@ -9,7 +9,8 @@ const DEFAULT_STATE_FILE = path.join(OUT_DIR, 'scheduled-post-state.json');
 const DAILY_SCRIPT = path.join(__dirname, 'daily-oracle-post.js');
 const DEFAULT_POST_GRACE_MINUTES = 2;
 const MAX_STATELESS_POST_GRACE_MINUTES = 2;
-const SOCIAL_POST_KINDS = ['oracle', 'midday', 'concept'];
+const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
+const SOCIAL_EXPANSION_START_DATE = process.env.SOCIAL_EXPANSION_START_DATE || '2026-05-27';
 
 function parseArgs(argv) {
   const args = { once: false, dryRun: false, forceKind: '', onlyKind: '' };
@@ -84,6 +85,10 @@ function getJstDateKey(date = new Date()) {
   return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
+function getJstWeekday(date = new Date()) {
+  return new Date(`${getJstDateKey(date)}T00:00:00.000Z`).getUTCDay();
+}
+
 function getJstMinutes(date = new Date()) {
   const parts = getJstParts(date);
   return Number(parts.hour) * 60 + Number(parts.minute);
@@ -105,16 +110,25 @@ function getSchedule() {
       kind: 'oracle',
       time: process.env.SOCIAL_ORACLE_TIME || '07:00',
       minute: parseTimeToMinutes(process.env.SOCIAL_ORACLE_TIME, '07:00'),
+      days: null,
     },
     {
-      kind: 'midday',
-      time: process.env.SOCIAL_MIDDAY_TIME || '12:00',
-      minute: parseTimeToMinutes(process.env.SOCIAL_MIDDAY_TIME, '12:00'),
+      kind: 'empathy',
+      time: process.env.SOCIAL_EMPATHY_TIME || '12:00',
+      minute: parseTimeToMinutes(process.env.SOCIAL_EMPATHY_TIME, '12:00'),
+      days: [1, 3, 5],
     },
     {
-      kind: 'concept',
-      time: process.env.SOCIAL_CONCEPT_TIME || '20:00',
-      minute: parseTimeToMinutes(process.env.SOCIAL_CONCEPT_TIME, '20:00'),
+      kind: 'difference',
+      time: process.env.SOCIAL_DIFFERENCE_TIME || '20:00',
+      minute: parseTimeToMinutes(process.env.SOCIAL_DIFFERENCE_TIME, '20:00'),
+      days: [2],
+    },
+    {
+      kind: 'free_paid_compare',
+      time: process.env.SOCIAL_FREE_PAID_COMPARE_TIME || '20:00',
+      minute: parseTimeToMinutes(process.env.SOCIAL_FREE_PAID_COMPARE_TIME, '20:00'),
+      days: [6],
     },
   ];
 }
@@ -135,6 +149,11 @@ function isSkippedByEnv(kind, dateKey) {
   const specific = process.env[`SOCIAL_SKIP_${kind.toUpperCase()}_DATES`];
   const all = process.env.SOCIAL_SKIP_DATES;
   return splitCsv(specific).includes(dateKey) || splitCsv(all).includes(dateKey);
+}
+
+function isScheduledForDate(item, dateKey, weekday) {
+  if (item.kind !== 'oracle' && dateKey < SOCIAL_EXPANSION_START_DATE) return false;
+  return !Array.isArray(item.days) || item.days.includes(weekday);
 }
 
 async function readJson(file, fallback) {
@@ -184,6 +203,7 @@ function runPost(kind, dateKey) {
 async function runDue(args) {
   const now = getNow();
   const dateKey = getJstDateKey(now);
+  const weekday = getJstWeekday(now);
   const nowMinute = getJstMinutes(now);
   const gracePolicy = getPostGracePolicy();
   const graceMinutes = gracePolicy.effectiveMinutes;
@@ -192,24 +212,27 @@ async function runDue(args) {
   const state = await readJson(stateFile, {});
   state[dateKey] = state[dateKey] || {};
 
+  const scheduledToday = schedule.filter(item => isScheduledForDate(item, dateKey, weekday));
   const due = args.forceKind
-    ? schedule.filter(item => args.forceKind === 'all' || item.kind === args.forceKind)
-    : schedule.filter(item => {
+    ? scheduledToday.filter(item => args.forceKind === 'all' || item.kind === args.forceKind)
+    : scheduledToday.filter(item => {
       const lateByMinutes = nowMinute - item.minute;
       return lateByMinutes >= 0 && lateByMinutes <= graceMinutes && !state[dateKey][item.kind];
     });
   const dueAfterSkips = due.filter(item => !isSkippedByEnv(item.kind, dateKey));
-  const expired = args.forceKind ? [] : schedule
+  const expired = args.forceKind ? [] : scheduledToday
     .filter(item => nowMinute - item.minute > graceMinutes && !state[dateKey][item.kind])
     .map(item => item.kind);
 
   const report = {
     date: dateKey,
+    weekday,
     nowMinute,
     graceMinutes,
     configuredGraceMinutes: gracePolicy.configuredMinutes,
     graceCappedForStateless: gracePolicy.cappedForStateless,
-    schedule: schedule.map(item => ({ kind: item.kind, time: item.time })),
+    schedule: schedule.map(item => ({ kind: item.kind, time: item.time, days: item.days })),
+    scheduledToday: scheduledToday.map(item => item.kind),
     onlyKind: args.onlyKind || null,
     due: dueAfterSkips.map(item => item.kind),
     expired,

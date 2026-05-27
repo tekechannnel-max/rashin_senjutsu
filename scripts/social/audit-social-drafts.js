@@ -11,12 +11,19 @@ const RELEASE_DATE = PRERELEASE_START_DATE;
 const THREADS_LIMIT = 500;
 const BLUESKY_LIMIT = 300;
 const BLUESKY_IMAGE_LIMIT_BYTES = 1_000_000;
+const SOCIAL_EXPANSION_START_DATE = process.env.SOCIAL_EXPANSION_START_DATE || '2026-05-27';
 const REQUIRED_HASHTAGS_BY_PLATFORM = {
   threads: ['#占い鑑定'],
   x: ['#羅針占術'],
   bluesky: ['#羅針占術', '#今日の占い', '#今日の運勢', '#占い師'],
 };
-const SOCIAL_POST_KINDS = ['oracle', 'midday', 'concept'];
+const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
+const WEEKDAYS_BY_KIND = {
+  oracle: null,
+  empathy: [1, 3, 5],
+  difference: [2],
+  free_paid_compare: [6],
+};
 
 const HARD_NG_PATTERNS = [
   ['断定的な的中表現', /絶対当たる|100%当たる|必ず当たる/],
@@ -46,7 +53,7 @@ const MIDDAY_TOO_SPECIFIC_PATTERN = /恋愛|仕事|進路|お金|人間関係|�
 
 function parseArgs(argv) {
   const args = {
-    from: process.env.SOCIAL_AUDIT_FROM || '2026-05-12',
+    from: process.env.SOCIAL_AUDIT_FROM || '2026-05-13',
     to: process.env.SOCIAL_AUDIT_TO || '2026-05-29',
     platforms: process.env.SOCIAL_PLATFORMS || 'threads',
     releaseMode: process.env.SOCIAL_RELEASE_MODE || 'auto',
@@ -116,6 +123,16 @@ function getReleasePhase(dateKey) {
   if (dateKey <= PRERELEASE_END_DATE) return 'prerelease';
   if (dateKey <= FIX_PERIOD_END_DATE) return 'fix';
   return 'release';
+}
+
+function getWeekday(dateKey) {
+  return new Date(`${dateKey}T00:00:00.000Z`).getUTCDay();
+}
+
+function isScheduledKindForDate(kind, dateKey) {
+  if (kind !== 'oracle' && dateKey < SOCIAL_EXPANSION_START_DATE) return false;
+  const weekdays = WEEKDAYS_BY_KIND[kind];
+  return !Array.isArray(weekdays) || weekdays.includes(getWeekday(dateKey));
 }
 
 function isPrelaunchDate(dateKey) {
@@ -200,14 +217,17 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
   if (kind === 'oracle' && !/今日の1枚|テーマ|一手/.test(value)) {
     addIssue(issues, 'warn', 'oracle_structure', '朝オラクルとしてカード、テーマ、一手のどれかが弱いです。');
   }
-  if (kind === 'midday' && MIDDAY_TOO_SPECIFIC_PATTERN.test(value)) {
-    addIssue(issues, 'error', 'midday_too_specific', '12時投稿は悩みジャンルや具体状況に寄せすぎない文面にします。');
+  if (kind === 'empathy' && !/ルノルマンカード「.+」/.test(value)) {
+    addIssue(issues, 'error', 'empathy_card_missing', 'empathy投稿にはルノルマンカード名が必要です。');
   }
-  if (kind === 'midday' && !/昼の羅針|無料鑑定|羅針占術|迷い|整理|流れ|気持ち|現実|本音|焦点/.test(value)) {
-    addIssue(issues, 'warn', 'midday_axis', '12時投稿として迷いの整理や羅針占術の価値が弱い可能性があります。');
+  if (kind === 'empathy' && !/自由記載|深掘り/.test(value)) {
+    addIssue(issues, 'warn', 'empathy_cta', 'empathy投稿の羅針占術CTAが弱い可能性があります。');
   }
-  if (kind === 'concept' && !/未来を断定|整理|次の一手|本質|本音|現実|迷|流れ|占い|鑑定|確認|カード|オラクル|行動/.test(value)) {
-    addIssue(issues, 'warn', 'concept_axis', '羅針占術の思想軸が弱い可能性があります。');
+  if (kind === 'difference' && !/AI占い|自由記載|四柱推命|姓名判断|動物タイプ|エンジニア|本質|本音|カード/.test(value)) {
+    addIssue(issues, 'warn', 'difference_axis', '羅針占術の違い紹介としての軸が弱い可能性があります。');
+  }
+  if (kind === 'free_paid_compare' && !/無料版|有料版|ルノルマン|数秘オラクル|鑑定履歴|深掘り/.test(value)) {
+    addIssue(issues, 'warn', 'free_paid_axis', '無料版/有料版比較としての軸が弱い可能性があります。');
   }
 
   return { length, issues };
@@ -284,7 +304,7 @@ function main() {
 
   for (const dateKey of result.dates) {
     const draft = generateDraft(dateKey, args);
-    for (const kind of SOCIAL_POST_KINDS) {
+    for (const kind of SOCIAL_POST_KINDS.filter(item => isScheduledKindForDate(item, dateKey))) {
       for (const platform of platforms) {
         const text = platform === 'x'
           ? draft[kind].xText

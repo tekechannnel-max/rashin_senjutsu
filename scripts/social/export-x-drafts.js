@@ -10,11 +10,13 @@ const PRERELEASE_END_DATE = '2026-05-29';
 const FIX_PERIOD_END_DATE = '2026-06-05';
 const FULL_RELEASE_DATE = '2026-06-06';
 const DEFAULT_X_DRAFT_GRACE_MINUTES = 60;
-const SOCIAL_POST_KINDS = ['oracle', 'midday', 'concept'];
+const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
+const SOCIAL_EXPANSION_START_DATE = process.env.SOCIAL_EXPANSION_START_DATE || '2026-05-27';
 const SCHEDULED_TIME_BY_KIND = {
   oracle: '07:00 Asia/Tokyo',
-  midday: '12:00 Asia/Tokyo',
-  concept: '20:00 Asia/Tokyo',
+  empathy: '12:00 Asia/Tokyo Mon/Wed/Fri',
+  difference: '20:00 Asia/Tokyo Tue',
+  free_paid_compare: '20:00 Asia/Tokyo Sat',
 };
 
 function parseArgs(argv) {
@@ -82,6 +84,10 @@ function getJstMinutes(date = getNow()) {
   return Number(parts.hour) * 60 + Number(parts.minute);
 }
 
+function getJstWeekday(date = getNow()) {
+  return new Date(`${getJstDateString(date)}T00:00:00.000Z`).getUTCDay();
+}
+
 function getDraftGraceMinutes() {
   const raw = String(process.env.SOCIAL_X_DRAFT_GRACE_MINUTES || DEFAULT_X_DRAFT_GRACE_MINUTES).trim();
   const value = Number(raw);
@@ -115,16 +121,21 @@ function getDateRange(args) {
 
 function getSchedule() {
   return [
-    { kind: 'oracle', time: '07:00', minute: 7 * 60 },
-    { kind: 'midday', time: '12:00', minute: 12 * 60 },
-    { kind: 'concept', time: '20:00', minute: 20 * 60 },
+    { kind: 'oracle', time: '07:00', minute: 7 * 60, days: null },
+    { kind: 'empathy', time: '12:00', minute: 12 * 60, days: [1, 3, 5] },
+    { kind: 'difference', time: '20:00', minute: 20 * 60, days: [2] },
+    { kind: 'free_paid_compare', time: '20:00', minute: 20 * 60, days: [6] },
   ];
 }
 
 function getDueKinds() {
+  const dateKey = getJstDateString();
+  const weekday = getJstWeekday();
   const minutes = getJstMinutes();
   const graceMinutes = getDraftGraceMinutes();
   return getSchedule()
+    .filter(item => item.kind === 'oracle' || dateKey >= SOCIAL_EXPANSION_START_DATE)
+    .filter(item => !Array.isArray(item.days) || item.days.includes(weekday))
     .filter(item => {
       const lateByMinutes = minutes - item.minute;
       return lateByMinutes >= 0 && lateByMinutes <= graceMinutes;

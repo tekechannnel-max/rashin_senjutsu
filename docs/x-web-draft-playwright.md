@@ -5,7 +5,7 @@
 ## できること
 
 - GitHub Actionsで実行するため、ローカルPCの起動は不要。
-- `07:03 JST` は `oracle`、`12:03 JST` は `midday`、`20:03 JST` は `concept` を作る。
+- `07:03 JST` は `oracle`、月・水・金 `12:03 JST` は `empathy`、火 `20:03 JST` は `difference`、土 `20:03 JST` は `free_paid_compare` を作る。
 - X APIの投稿エンドポイントは使わない。
 - Playwrightで `https://x.com/compose/post` を開き、本文と画像を入れて、閉じる操作から `Save` / `保存` を押す。
 - 誤投稿防止として、`CreateTweet` / `/2/tweets` / `statuses/update` への投稿リクエストを検出したら止める。
@@ -55,7 +55,7 @@ GitHub上で:
 
 ```text
 Actions -> X social drafts -> Run workflow
-kind: oracle / midday / concept / all
+kind: oracle / empathy / difference / free_paid_compare / all
 ```
 
 ローカル確認だけなら:
