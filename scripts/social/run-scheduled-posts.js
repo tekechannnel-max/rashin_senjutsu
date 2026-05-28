@@ -9,7 +9,7 @@ const DEFAULT_STATE_FILE = path.join(OUT_DIR, 'scheduled-post-state.json');
 const DAILY_SCRIPT = path.join(__dirname, 'daily-oracle-post.js');
 const DEFAULT_POST_GRACE_MINUTES = 2;
 const MAX_STATELESS_POST_GRACE_MINUTES = 2;
-const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
+const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'question', 'difference', 'free_paid_compare'];
 const SOCIAL_EXPANSION_START_DATE = process.env.SOCIAL_EXPANSION_START_DATE || '2026-05-27';
 
 function parseArgs(argv) {
@@ -117,6 +117,12 @@ function getSchedule() {
       time: process.env.SOCIAL_EMPATHY_TIME || '12:00',
       minute: parseTimeToMinutes(process.env.SOCIAL_EMPATHY_TIME, '12:00'),
       days: [1, 3, 5],
+    },
+    {
+      kind: 'question',
+      time: process.env.SOCIAL_QUESTION_TIME || '12:00',
+      minute: parseTimeToMinutes(process.env.SOCIAL_QUESTION_TIME, '12:00'),
+      days: [2, 4],
     },
     {
       kind: 'difference',

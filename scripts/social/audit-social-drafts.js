@@ -20,10 +20,11 @@ const REQUIRED_HASHTAGS_BY_PLATFORM = {
   bluesky: ['#羅針占術', '#今日の占い', '#今日の運勢', '#占い師'],
   instagram: ['#羅針占術'],
 };
-const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
+const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'question', 'difference', 'free_paid_compare'];
 const WEEKDAYS_BY_KIND = {
   oracle: null,
   empathy: [1, 3, 5],
+  question: [2, 4],
   difference: [2],
   free_paid_compare: [6],
 };
@@ -171,8 +172,8 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
 
   if (!value.trim()) addIssue(issues, 'error', 'empty', '投稿文が空です。');
   if (length > limit) addIssue(issues, 'error', 'length', `${platform}の文字数上限を超えています: ${length}/${limit}`);
-  if (!hasPublicUrl(value)) addIssue(issues, 'error', 'visible_url_missing', `${platform}投稿には表示用URLが必要です。`);
-  if (platform === 'bluesky' && !hasClickableRashinUrl(value)) {
+  if (kind !== 'question' && !hasPublicUrl(value)) addIssue(issues, 'error', 'visible_url_missing', `${platform}投稿には表示用URLが必要です。`);
+  if (platform === 'bluesky' && kind !== 'question' && !hasClickableRashinUrl(value)) {
     addIssue(issues, 'error', 'bluesky_clickable_url', 'Bluesky投稿の羅針占術URLは https:// 付きにします。');
   }
   if (!hasUtm(value) && !hasUtm(tracking)) addIssue(issues, 'error', 'utm_missing', `${platform}投稿には台帳用utm_contentが必要です。`);
@@ -239,6 +240,12 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
   }
   if (kind === 'empathy' && !/自由記載|深掘り|現実の流れ/.test(value)) {
     addIssue(issues, 'warn', 'empathy_cta', 'empathy投稿の羅針占術CTAが弱い可能性があります。');
+  }
+  if (kind === 'question' && !/A:\s*[\s\S]+B:\s*.+/.test(value)) {
+    addIssue(issues, 'error', 'question_options', 'question投稿にはA/Bで返信しやすい選択肢が必要です。');
+  }
+  if (kind === 'question' && hasPublicUrl(value)) {
+    addIssue(issues, 'warn', 'question_visible_url', 'question投稿は返信誘発用なので、本文URLなしを基本にします。');
   }
   if (kind === 'difference' && !/AI占い|自由記載|四柱推命|姓名判断|動物タイプ|命・卜・相|総合占術|エンジニア|本質|本音|カード|断定|整理|次に動ける/.test(value)) {
     addIssue(issues, 'warn', 'difference_axis', '羅針占術の違い紹介としての軸が弱い可能性があります。');

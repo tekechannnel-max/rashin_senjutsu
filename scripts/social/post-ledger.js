@@ -4,10 +4,11 @@ const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const DEFAULT_LEDGER_FILE = path.join(ROOT, 'data', 'social-posts', 'posts.csv');
-const DEFAULT_KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
+const DEFAULT_KINDS = ['oracle', 'empathy', 'question', 'difference', 'free_paid_compare'];
 const RESULT_SUFFIX_BY_KIND = {
   oracle: 'Oracle',
   empathy: 'Empathy',
+  question: 'Question',
   difference: 'Difference',
   free_paid_compare: 'FreePaidCompare',
   midday: 'Midday',

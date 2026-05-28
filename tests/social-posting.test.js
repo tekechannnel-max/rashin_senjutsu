@@ -5,7 +5,7 @@ const { spawnSync } = require('node:child_process');
 
 const ROOT = path.resolve(__dirname, '..');
 const NODE = process.execPath;
-const ACTIVE_KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
+const ACTIVE_KINDS = ['oracle', 'empathy', 'question', 'difference', 'free_paid_compare'];
 
 function runNode(args, options = {}) {
   const result = spawnSync(NODE, args, {
@@ -47,8 +47,12 @@ function scheduledDates(from, weekdays, count) {
   return dates;
 }
 
-function assertTracked(text, trackedUrl, label) {
-  assert.match(String(text || ''), /rashin-senjutsu\.onrender\.com/, `${label} needs visible app URL`);
+function assertTracked(text, trackedUrl, label, options = {}) {
+  if (options.visibleUrl === false) {
+    assert.doesNotMatch(String(text || ''), /rashin-senjutsu\.onrender\.com/, `${label} should keep visible URL out of the reply-focused copy`);
+  } else {
+    assert.match(String(text || ''), /rashin-senjutsu\.onrender\.com/, `${label} needs visible app URL`);
+  }
   assert.match(trackedUrl, /https:\/\/rashin-senjutsu\.onrender\.com\/\S*utm_source=/, `${label} needs tracked URL`);
   assert.match(trackedUrl, /[?&]utm_medium=social\b/, `${label} needs utm_medium`);
   assert.match(trackedUrl, /[?&]utm_campaign=/, `${label} needs utm_campaign`);
@@ -75,10 +79,11 @@ function countHashtags(text) {
 function testDraftHasTrackingImagesAndAlt() {
   const draft = parseDraft();
   for (const kind of ACTIVE_KINDS) {
-    assertTracked(draft[kind].text, draft[kind].trackedUrl, `threads ${kind}`);
-    assertTracked(draft[kind].blueskyText, draft[kind].blueskyTrackedUrl, `bluesky ${kind}`);
-    assertTracked(draft[kind].xText, draft[kind].xTrackedUrl, `x ${kind}`);
-    assertTracked(draft[kind].instagramText, draft[kind].instagramTrackedUrl, `instagram ${kind}`);
+    const visibleUrl = kind !== 'question';
+    assertTracked(draft[kind].text, draft[kind].trackedUrl, `threads ${kind}`, { visibleUrl });
+    assertTracked(draft[kind].blueskyText, draft[kind].blueskyTrackedUrl, `bluesky ${kind}`, { visibleUrl });
+    assertTracked(draft[kind].xText, draft[kind].xTrackedUrl, `x ${kind}`, { visibleUrl });
+    assertTracked(draft[kind].instagramText, draft[kind].instagramTrackedUrl, `instagram ${kind}`, { visibleUrl });
     assertImageAndAlt(draft[kind].imagePath, draft[kind].altText, `threads ${kind}`);
     assertImageAndAlt(draft[kind].blueskyImagePath, draft[kind].altText, `bluesky ${kind}`);
     assertImageAndAlt(draft[kind].instagramImagePath, draft[kind].altText, `instagram ${kind}`);
@@ -93,6 +98,10 @@ function testDraftHasTrackingImagesAndAlt() {
       assert.match(draft[kind].imageUrl, /\/images\/social\/instagram\/lenormand-empathy\/\d{2}\.jpg$/, 'empathy Threads URL should use the generated image');
       assert.match(draft[kind].instagramImagePath, /images[\\/]social[\\/]instagram[\\/]lenormand-empathy[\\/]\d{2}\.jpg$/, 'empathy Instagram should use the text-added generated image');
       assert.match(draft[kind].instagramImageUrl, /\/images\/social\/instagram\/lenormand-empathy\/\d{2}\.jpg$/, 'empathy Instagram URL should use the generated image');
+    } else if (kind === 'question') {
+      assert.match(draft[kind].imagePath, /images[\\/]ui[\\/]app-promo-vertical-social\.jpg$/, 'question Threads should use the app promo social image');
+      assert.match(draft[kind].imageUrl, /\/images\/ui\/app-promo-vertical-social\.jpg$/, 'question Threads URL should use the public app promo social image');
+      assert.match(draft[kind].instagramImagePath, /images[\\/]ui[\\/]app-promo-vertical-social\.jpg$/, 'question Instagram should use the app promo social image');
     } else if (kind === 'difference') {
       assert.match(draft[kind].instagramImagePath, /images[\\/]social[\\/]instagram[\\/]difference\.jpg$/, 'difference Instagram should use the dedicated Instagram image');
     } else if (kind === 'free_paid_compare') {
@@ -114,6 +123,7 @@ function testPlatformHashtagPolicy() {
   const instagramKindTags = {
     oracle: ['#今日の占い', '#オラクルカード'],
     empathy: ['#ルノルマンカード', '#悩み相談'],
+    question: ['#悩み相談', '#今日の占い'],
     difference: ['#AI占い', '#無料占い'],
     free_paid_compare: ['#無料占い', '#ルノルマンカード'],
   };
@@ -146,6 +156,19 @@ function testPlatformHashtagPolicy() {
     assert.equal(countHashtags(customInstagramDraft[kind].instagramText), 5, `${kind} custom Instagram hashtags should be capped at five`);
     assert.doesNotMatch(customInstagramDraft[kind].instagramText, /#six/, `${kind} custom Instagram hashtags should drop tags after the fifth`);
   }
+}
+
+function testQuestionLaneIsReplyFocusedAndTracked() {
+  const draft = parseDraft('2026-06-02').question;
+  assert.match(draft.text, /A:\s*[\s\S]+B:\s*/, 'question Threads post should include A/B reply options');
+  assert.doesNotMatch(draft.text, /rashin-senjutsu\.onrender\.com/, 'question Threads post should avoid a visible URL');
+  assert.match(draft.trackedUrl, /utm_content=question_20260602_v\d{2}/, 'question tracked URL should keep a versioned utm_content for KPI review');
+  assert.equal(
+    normalizePlatformOnlyUrl(draft.blueskyText),
+    normalizePlatformOnlyUrl(draft.text),
+    'question Bluesky copy should match Threads copy except hashtags'
+  );
+  assert.match(draft.instagramText, /コメントではA\/Bだけでも大丈夫です。/, 'question Instagram copy should use an Instagram-specific comment cue');
 }
 
 function testAutomationDocsEnableBlueskyWithThreadsAndInstagram() {
@@ -223,10 +246,11 @@ function testPostsLedgerWriteIsTraceableAndSecretSafe() {
 
   const csv = fs.readFileSync(ledgerFile, 'utf8');
   const rows = csv.trim().split(/\r?\n/);
-  assert.equal(rows.length, 13, 'ledger should contain header plus twelve draft rows');
+  assert.equal(rows.length, 16, 'ledger should contain header plus fifteen draft rows');
   assert.match(rows[0], /post_key,date,kind,platform,status/, 'ledger header is missing expected columns');
   assert.match(csv, /utm_content=oracle_20260527/, 'oracle tracked URL is missing from ledger');
   assert.match(csv, /utm_content=empathy_20260527_card\d{2}/, 'empathy tracked URL is missing from ledger');
+  assert.match(csv, /utm_content=question_20260527_v\d{2}/, 'question tracked URL is missing from ledger');
   assert.match(csv, /utm_content=difference_20260527_v\d{2}/, 'difference tracked URL is missing from ledger');
   assert.match(csv, /utm_content=freepaid_20260527_v\d{2}/, 'free_paid_compare tracked URL is missing from ledger');
   assert.doesNotMatch(csv, /unit-test-threads-token|unit-test-bluesky-password|unit-test-instagram-token/, 'ledger must not leak tokens');
@@ -279,10 +303,48 @@ function scheduleReport(nowIso, onlyKind = 'all') {
 
 function testScheduledPostsRespectJstWeekdays() {
   assert.deepEqual(scheduleReport('2026-05-27T03:01:00.000Z').due, ['empathy'], 'Wed 12:01 JST should post empathy');
+  assert.deepEqual(scheduleReport('2026-06-02T03:01:00.000Z').due, ['question'], 'Tue 12:01 JST should post question');
+  assert.deepEqual(scheduleReport('2026-06-04T03:01:00.000Z').due, ['question'], 'Thu 12:01 JST should post question');
   assert.deepEqual(scheduleReport('2026-06-02T11:01:00.000Z').due, ['difference'], 'Tue 20:01 JST should post difference');
   assert.deepEqual(scheduleReport('2026-05-30T11:01:00.000Z').due, ['free_paid_compare'], 'Sat 20:01 JST should post free_paid_compare');
-  assert.deepEqual(scheduleReport('2026-06-02T03:01:00.000Z').due, [], 'Tue 12:01 JST should not post empathy');
   assert.deepEqual(scheduleReport('2026-05-29T11:01:00.000Z').due, [], 'Fri 20:01 JST should not post difference/free_paid_compare');
+}
+
+function testKpiReviewTemplatePreservesManualMetrics() {
+  const outFile = path.join(ROOT, '.tmp-social-kpi-review.csv');
+  fs.rmSync(outFile, { force: true });
+  runNode([
+    'scripts/social/prepare-kpi-review.js',
+    '--from=2026-06-02',
+    '--to=2026-06-04',
+    '--platforms=threads,bluesky,instagram',
+    `--out=${path.basename(outFile)}`,
+  ]);
+  let csv = fs.readFileSync(outFile, 'utf8');
+  assert.match(csv, /question_20260602_v\d{2}/, 'KPI template should include the Tuesday question lane');
+  assert.match(csv, /question_20260604_v\d{2}/, 'KPI template should include the Thursday question lane');
+  assert.match(csv, /paid_deep_reading_starts/, 'KPI template should include paid funnel columns');
+  const lines = csv.trim().split(/\r?\n/);
+  const header = lines[0].split(',');
+  const repliesIndex = header.indexOf('replies');
+  const rowIndex = lines.findIndex(line => /^2026-06-02:question:threads:/.test(line));
+  assert.ok(rowIndex > 0, 'KPI template should contain the Threads question row');
+  const cells = lines[rowIndex].split(',');
+  cells[repliesIndex] = '12';
+  lines[rowIndex] = cells.join(',');
+  fs.writeFileSync(outFile, `${lines.join('\n')}\n`);
+  runNode([
+    'scripts/social/prepare-kpi-review.js',
+    '--from=2026-06-02',
+    '--to=2026-06-04',
+    '--platforms=threads,bluesky,instagram',
+    `--out=${path.basename(outFile)}`,
+  ]);
+  const preserved = fs.readFileSync(outFile, 'utf8');
+  const preservedLines = preserved.trim().split(/\r?\n/);
+  const preservedRow = preservedLines.find(line => /^2026-06-02:question:threads:/.test(line));
+  assert.equal(preservedRow.split(',')[repliesIndex], '12', 'KPI template should preserve manually filled reply counts');
+  fs.rmSync(outFile, { force: true });
 }
 
 function testStatelessScheduleCapsWideGraceWindow() {
@@ -332,6 +394,7 @@ function testXDraftDueWindowsCreateScheduledDrafts() {
   const cases = [
     { kind: 'oracle', date: '2026-05-28', now: '2026-05-27T22:03:00.000Z' },
     { kind: 'empathy', date: '2026-05-27', now: '2026-05-27T03:03:00.000Z' },
+    { kind: 'question', date: '2026-06-02', now: '2026-06-02T03:03:00.000Z' },
     { kind: 'difference', date: '2026-06-02', now: '2026-06-02T11:03:00.000Z' },
     { kind: 'free_paid_compare', date: '2026-05-30', now: '2026-05-30T11:03:00.000Z' },
   ];
@@ -361,11 +424,13 @@ function testXSocialDraftWorkflowCreatesVisibleDrafts() {
   const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'x-social-drafts.yml'), 'utf8');
   assert.match(workflow, /cron: '3 22 \* \* \*'/, 'X draft workflow should run at the JST morning slot');
   assert.match(workflow, /cron: '3 3 \* \* 1,3,5'/, 'X draft workflow should run at the JST empathy slot');
+  assert.match(workflow, /cron: '3 3 \* \* 2,4'/, 'X draft workflow should run at the JST question slot');
   assert.match(workflow, /cron: '3 11 \* \* 2'/, 'X draft workflow should run at the JST difference slot');
   assert.match(workflow, /cron: '3 11 \* \* 6'/, 'X draft workflow should run at the JST free/paid slot');
   assert.match(workflow, /default: 'oracle'/, 'manual X draft dispatch should default to the oracle draft');
   assert.match(workflow, /"3 22 \* \* \*"\) kind="oracle"/, 'morning schedule should explicitly export the oracle draft');
   assert.match(workflow, /"3 3 \* \* 1,3,5"\) kind="empathy"/, 'MWF noon schedule should explicitly export the empathy draft');
+  assert.match(workflow, /"3 3 \* \* 2,4"\) kind="question"/, 'Tue/Thu noon schedule should explicitly export the question draft');
   assert.match(workflow, /"3 11 \* \* 2"\) kind="difference"/, 'Tuesday evening schedule should explicitly export the difference draft');
   assert.match(workflow, /"3 11 \* \* 6"\) kind="free_paid_compare"/, 'Saturday evening schedule should explicitly export the free/paid draft');
   assert.match(workflow, /\$status" != "x_drafts_written"/, 'empty X draft runs should not pass as success');
@@ -389,12 +454,14 @@ testPlatformHashtagPolicy();
 testAutomationDocsEnableBlueskyWithThreadsAndInstagram();
 testMorningOracleCopyStillKeepsRequiredClosing();
 testEmpathyUsesRandomLenormandRotation();
+testQuestionLaneIsReplyFocusedAndTracked();
 testDifferenceAndFreePaidCompareAxes();
 testPostsLedgerWriteIsTraceableAndSecretSafe();
 testRealPostingRequiresExplicitYesOutsideScheduler();
 testScheduledPostsRespectJstWeekdays();
 testStatelessScheduleCapsWideGraceWindow();
 testBroadSocialAuditPasses();
+testKpiReviewTemplatePreservesManualMetrics();
 testXDraftExportUsesRandomOracleAndNoLengthLimit();
 testXDraftDueWindowsCreateScheduledDrafts();
 testXSocialDraftWorkflowCreatesVisibleDrafts();

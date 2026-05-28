@@ -1,0 +1,68 @@
+const THREAD_QUESTION_POSTS = Object.freeze([
+  {
+    version: 1,
+    title: '相手か、自分か',
+    prompt: '今の迷い、先に見たいのはどちらですか。',
+    optionA: 'A: 相手の気持ち',
+    optionB: 'B: 自分の次の行動',
+    followup: 'A/Bだけで答えられる問いにすると、迷いの焦点が少し見えます。',
+  },
+  {
+    version: 2,
+    title: '進むか、待つか',
+    prompt: '今の状況で知りたいのはどちらですか。',
+    optionA: 'A: 進めるタイミング',
+    optionB: 'B: 待つ理由',
+    followup: 'すぐ決める前に、どちらを確認したいのかだけ分けてみてください。',
+  },
+  {
+    version: 3,
+    title: '本音か、現実か',
+    prompt: 'いま整理したいのはどちらですか。',
+    optionA: 'A: 自分の本音',
+    optionB: 'B: 目の前の現実',
+    followup: '本音と現実を分けるだけで、次の一手は少し考えやすくなります。',
+  },
+  {
+    version: 4,
+    title: '関係か、距離感か',
+    prompt: '人間関係で先に見たいのはどちらですか。',
+    optionA: 'A: 関係の流れ',
+    optionB: 'B: ちょうどいい距離感',
+    followup: '答えを急ぐより、どこで疲れているかを見るほうが役に立つ日もあります。',
+  },
+  {
+    version: 5,
+    title: '仕事か、気持ちか',
+    prompt: '今日の占いで先に見たいのはどちらですか。',
+    optionA: 'A: 仕事や役割の流れ',
+    optionB: 'B: 気持ちの整え方',
+    followup: '選んだほうから見ると、今の優先順位が言葉になりやすくなります。',
+  },
+  {
+    version: 6,
+    title: '原因か、次の一手か',
+    prompt: '悩みを整理するとき、先にほしいのはどちらですか。',
+    optionA: 'A: つまずきの原因',
+    optionB: 'B: 今日できる一手',
+    followup: '原因だけでも、一手だけでも足りない時は、両方を分けて見ると楽になります。',
+  },
+  {
+    version: 7,
+    title: '恋愛か、仕事か',
+    prompt: '今の自分に近いテーマはどちらですか。',
+    optionA: 'A: 恋愛や対人関係',
+    optionB: 'B: 仕事や進路',
+    followup: 'テーマをひとつに絞るだけで、占い結果の受け取り方は変わります。',
+  },
+  {
+    version: 8,
+    title: '保存か、相談か',
+    prompt: '占い結果を見たあと、しやすいのはどちらですか。',
+    optionA: 'A: 保存してあとで見返す',
+    optionB: 'B: 誰かに話して整理する',
+    followup: '見返す派か、話す派かで、必要な言葉の形も少し違います。',
+  },
+]);
+
+module.exports = { THREAD_QUESTION_POSTS };

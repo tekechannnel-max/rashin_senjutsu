@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 const ROOT = path.resolve(__dirname, '..', '..');
 const EXPORT_SCRIPT = path.join(__dirname, 'export-x-drafts.js');
 const DEFAULT_OUT_DIR = path.join(ROOT, '.tmp-x-web-drafts');
-const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
+const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'question', 'difference', 'free_paid_compare'];
 
 function parseArgs(argv) {
   const args = {

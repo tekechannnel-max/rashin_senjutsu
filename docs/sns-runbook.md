@@ -8,13 +8,14 @@
 - 実投稿は通常端末ではプレビュー表示後に `yes` 入力が必要。Render Cronだけ `SOCIAL_SCHEDULED_RUN=true` の内部フラグで確認を省略する。
 - Threads / Bluesky / Instagramは投稿前に既存投稿を検索し、UTMの `utm_content` を重複判定用markerとして使う。
 - APIの一時失敗は `SOCIAL_API_RETRY_ATTEMPTS` と `SOCIAL_API_RETRY_BASE_MS` に従って再試行する。認証失敗、アカウント不一致、画像サイズ超過などは再試行しない。
-- すべての投稿には `utm_source`、`utm_medium=social`、`utm_campaign`、`utm_content` 付きの分析用URLを生成し、`posts.csv` に保存する。本文には短い `rashin-senjutsu.onrender.com` だけを出す。
+- すべての投稿には `utm_source`、`utm_medium=social`、`utm_campaign`、`utm_content` 付きの分析用URLを生成し、`posts.csv` に保存する。通常投稿の本文には短い `rashin-senjutsu.onrender.com` だけを出し、返信誘発用の `question` は本文URLなしにする。
 - 月・水・金12:00の `empathy` 投稿は、悩み共感 × ルノルマンカード。36枚を日付seedのランダムローテーションで使い、初回36投稿で重複させない。UTMは `empathy_YYYYMMDD_cardNN`。
+- 火・木12:00の `question` 投稿は、A/Bで返信しやすい質問を出す。返信誘発用なので本文URLは出さず、UTM付きURLは台帳とKPIレビュー用にだけ保存する。UTMは `question_YYYYMMDD_vNN`。
 - 火20:00の `difference` 投稿は、羅針占術が他のAI占いと違う点を伝える。自由記載、命・卜・相の総合占術、鑑定履歴、占い師兼エンジニア設計をローテーションで扱う。UTMは `difference_YYYYMMDD_vNN`。
 - 土20:00の `free_paid_compare` 投稿は、無料版と有料版の違いを整理する。有料導線だが、不安を煽らず「必要な人だけ深掘り」の温度にする。UTMは `freepaid_YYYYMMDD_vNN`。
 - `data/social-posts/posts.csv` は投稿台帳。本文とalt textはSHA-256ハッシュだけを保存し、`tracked_url` と `utm_content` でBOOTH側の流入分析と突き合わせる。
 - 投稿文は `audit-social-drafts.js` で日跨ぎの重複を検査する。公開後のカレンダー外投稿には日別の視点行を入れる。
-- Threads / Bluesky / Instagramの `oracle` / `empathy` / `difference` / `free_paid_compare` 投稿はいずれも画像とalt textを持つ。`oracle` は `images/social/instagram/oracle/NN.jpg`、`empathy` は `images/social/instagram/lenormand-empathy/NN.jpg`、`difference` は `images/social/instagram/difference.jpg`、`free_paid_compare` は `images/social/instagram/free-paid-compare.jpg` を使う。Blueskyの画像は1,000,000 bytes以下のローカル画像を使う。
+- Threads / Bluesky / Instagramの `oracle` / `empathy` / `question` / `difference` / `free_paid_compare` 投稿はいずれも画像とalt textを持つ。`oracle` は `images/social/instagram/oracle/NN.jpg`、`empathy` は `images/social/instagram/lenormand-empathy/NN.jpg`、`question` は `images/ui/app-promo-vertical-social.jpg`、`difference` は `images/social/instagram/difference.jpg`、`free_paid_compare` は `images/social/instagram/free-paid-compare.jpg` を使う。Blueskyの画像は1,000,000 bytes以下のローカル画像を使う。
 
 本番前に必ず実行する。
 
@@ -33,7 +34,15 @@ SOCIAL_API_RETRY_ATTEMPTS=3
 SOCIAL_API_RETRY_BASE_MS=1500
 ```
 
-BOOTH購入分析では、アクセス解析またはBOOTH側で確認できる流入URLの `utm_content` を `posts.csv` の `utm_content` / `tracked_url` と照合する。`utm_source=threads` と `utm_source=bluesky` で媒体別、`utm_content=oracle_YYYYMMDD` / `empathy_YYYYMMDD_cardNN` / `difference_YYYYMMDD_vNN` / `freepaid_YYYYMMDD_vNN` で投稿別に見る。
+BOOTH購入分析では、アクセス解析またはBOOTH側で確認できる流入URLの `utm_content` を `posts.csv` の `utm_content` / `tracked_url` と照合する。`utm_source=threads` と `utm_source=bluesky` で媒体別、`utm_content=oracle_YYYYMMDD` / `empathy_YYYYMMDD_cardNN` / `question_YYYYMMDD_vNN` / `difference_YYYYMMDD_vNN` / `freepaid_YYYYMMDD_vNN` で投稿別に見る。
+
+週次KPIレビュー用の空台帳は次で作る。数値入力は人間が各SNSとアクセス解析から入れるが、行、UTM、投稿種別、追跡URLはスクリプトで生成する。
+
+```powershell
+npm run social:kpi-template -- --from=2026-06-01 --to=2026-06-07 --platforms=threads,bluesky,instagram
+```
+
+見る順番は `views`、`replies`、`saves`、`profile_visits`、`link_clicks`、`free_reading_starts`、`paid_deep_reading_starts`、`paid_completions`。`question` は返信数、`oracle` はリンククリック、`empathy` は保存と無料鑑定開始、`free_paid_compare` は有料開始と有料完了を主指標にする。週次レビュー後、次週の投稿増減は `next_action` に残す。
 
 トラブル時:
 
@@ -48,7 +57,7 @@ BOOTH購入分析では、アクセス解析またはBOOTH側で確認できる�
 ## 現在の運用
 
 - Threads / Bluesky / Instagram自動投稿: Render Cron Job `rashin-threads-scheduler`
-- X: 自動投稿しない。GitHub Actions `X social drafts` が 07:03 JST、月水金12:03 JST、火20:03 JST、土20:03 JSTに下書きartifactを作り、人間がX画面で確認して投稿する
+- X: 自動投稿しない。GitHub Actions `X social drafts` が 07:03 JST、月水金12:03 JST、火木12:03 JST、火20:03 JST、土20:03 JSTに下書きartifactを作り、人間がX画面で確認して投稿する
 - ローカルWindows: Task Scheduler、可視PowerShell、ローカルdaemonを使わない
 - 対象Threads: `https://www.threads.com/@sensai_teke`
 - 対象Bluesky: `https://bsky.app/profile/tekesensai.bsky.social`
@@ -71,6 +80,7 @@ RenderのcronはUTC。上のscheduleはJSTで次の時刻に1回ずつ動く。
 ```text
 07:00 JST: oracle
 月・水・金 12:00 JST: empathy
+火・木 12:00 JST: question
 火 20:00 JST: difference
 土 20:00 JST: free_paid_compare
 ```
@@ -97,10 +107,12 @@ SOCIAL_PLATFORMS=threads,bluesky,instagram
 SOCIAL_THREADS_HASHTAG=#占い師のつぶやき
 SOCIAL_INSTAGRAM_ORACLE_HASHTAGS=#羅針占術 #今日の占い #オラクルカード #占い好きな人と繋がりたい #AI占い
 SOCIAL_INSTAGRAM_EMPATHY_HASHTAGS=#羅針占術 #ルノルマンカード #悩み相談 #占い好きな人と繋がりたい #AI占い
+SOCIAL_INSTAGRAM_QUESTION_HASHTAGS=#羅針占術 #悩み相談 #占い好きな人と繋がりたい #今日の占い #AI占い
 SOCIAL_INSTAGRAM_DIFFERENCE_HASHTAGS=#羅針占術 #AI占い #無料占い #占い師のつぶやき #悩み相談
 SOCIAL_INSTAGRAM_FREE_PAID_COMPARE_HASHTAGS=#羅針占術 #無料占い #占い師のつぶやき #ルノルマンカード #AI占い
 SOCIAL_BLUESKY_HASHTAGS=#羅針占術 #今日の占い #今日の運勢 #占い師
 SOCIAL_EMPATHY_TIME=12:00
+SOCIAL_QUESTION_TIME=12:00
 SOCIAL_DIFFERENCE_TIME=20:00
 SOCIAL_FREE_PAID_COMPARE_TIME=20:00
 SOCIAL_EXPANSION_START_DATE=2026-05-27
@@ -120,11 +132,12 @@ THREADS_POST_VERIFY_TIMEOUT_MS=120000
 
 - 07:00: `oracle`。数秘オラクル1〜33の投稿はThreads / Bluesky / Instagram向けにし、短いURL、`images/social/instagram/oracle/NN.jpg`、alt text、カードメッセージ、今日の一手を入れる。締め文は必ず「今日の1枚はこちら」にする
 - 月・水・金12:00: `empathy`。悩み共感の一文、ルノルマンカード名、見立て文、自由記載深掘りへの軽いCTAで構成する。画像は `images/social/instagram/lenormand-empathy/NN.jpg` を使う
+- 火・木12:00: `question`。A/Bで返せる質問で返信の入口を作る。本文URLは出さず、台帳用の `tracked_url` だけを保存する。画像は `images/ui/app-promo-vertical-social.jpg` を使う
 - 火20:00: `difference`。他のAI占いとの差、自由記載、命・卜・相の総合占術、鑑定履歴、占い師兼エンジニア設計をローテーションで伝える
 - 土20:00: `free_paid_compare`。無料版でできること、有料版で深掘りできること、カード枚数差、鑑定履歴解析の価値を、強すぎない有料導線として伝える
 - Threadsは500文字以内、ハッシュタグは `#占い師のつぶやき` だけにする。`#羅針占術` はThreadsでは使わない
-- Instagramは2,200文字以内。ハッシュタグは投稿種別ごとに最大5個だけ付ける。大量タグではなく、`oracle` はオラクル、`empathy` はルノルマン、`difference` はAI占いの違い、`free_paid_compare` は無料版/有料版に寄せる
-- Blueskyは300文字以内、クリック可能な `https://rashin-senjutsu.onrender.com` URL、`#羅針占術 #今日の占い #今日の運勢 #占い師`、画像1枚、alt textを付ける。Threads本文との差分はURLの `https://` とハッシュタグだけにする
+- Instagramは2,200文字以内。ハッシュタグは投稿種別ごとに最大5個だけ付ける。大量タグではなく、`oracle` はオラクル、`empathy` はルノルマン、`question` はコメントしやすさ、`difference` はAI占いの違い、`free_paid_compare` は無料版/有料版に寄せる。`empathy` / `difference` / `free_paid_compare` はThreads本文をそのまま使わず、保存用メモとして見返しやすい文にする
+- Blueskyは300文字以内、クリック可能な `https://rashin-senjutsu.onrender.com` URL、`#羅針占術 #今日の占い #今日の運勢 #占い師`、画像1枚、alt textを付ける。Threads本文との差分はURLの `https://` とハッシュタグだけにする。`question` はThreadsと同じく本文URLなしで、差分はハッシュタグだけにする
 - XはThreads本文の丸写しにしない。今は下書きのみ
 - 不安を煽る、未来を断定する、医療/法律/投資判断の代替に見える表現は禁止
 - BOOTHの購入導線が本番確認済みになるまで、強い有料CTAにしない
@@ -178,6 +191,12 @@ node scripts/social/run-scheduled-posts.js --once --only-kind=all
 
 ```json
 "due": ["empathy"]
+```
+
+または:
+
+```json
+"due": ["question"]
 ```
 
 または:

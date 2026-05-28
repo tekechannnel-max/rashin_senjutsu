@@ -9,6 +9,7 @@ const postLedger = require('./post-ledger');
 const { LENORMAND_EMPATHY_POSTS } = require('./content/lenormand-empathy-posts');
 const { DIFFERENCE_POSTS } = require('./content/difference-posts');
 const { FREE_PAID_COMPARE_POSTS } = require('./content/free-paid-compare-posts');
+const { THREAD_QUESTION_POSTS } = require('./content/thread-question-posts');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const APP_JS = path.join(ROOT, 'app.js');
@@ -22,6 +23,7 @@ const INSTAGRAM_HASHTAG_LIMIT = 5;
 const DEFAULT_INSTAGRAM_HASHTAGS_BY_KIND = Object.freeze({
   oracle: ['#羅針占術', '#今日の占い', '#オラクルカード', '#占い好きな人と繋がりたい', '#AI占い'],
   empathy: ['#羅針占術', '#ルノルマンカード', '#悩み相談', '#占い好きな人と繋がりたい', '#AI占い'],
+  question: ['#羅針占術', '#悩み相談', '#占い好きな人と繋がりたい', '#今日の占い', '#AI占い'],
   difference: ['#羅針占術', '#AI占い', '#無料占い', '#占い師のつぶやき', '#悩み相談'],
   free_paid_compare: ['#羅針占術', '#無料占い', '#占い師のつぶやき', '#ルノルマンカード', '#AI占い'],
   midday: ['#羅針占術', '#AI占い', '#無料占い', '#悩み相談', '#占い好きな人と繋がりたい'],
@@ -50,18 +52,20 @@ const CONTENT_CYCLE_START_DATE = process.env.SOCIAL_CONTENT_CYCLE_START_DATE || 
 const ORACLE_CARD_CYCLE_LENGTH = 33;
 const SOCIAL_PAID_CTA_MODES = new Set(['off', 'soft', 'active']);
 const SOCIAL_RELEASE_MODES = new Set(['auto', 'prelaunch', 'prerelease', 'fix', 'release', 'launch', 'postrelease']);
-const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
+const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'question', 'difference', 'free_paid_compare'];
 const LEGACY_SOCIAL_POST_KINDS = ['midday', 'concept'];
 const DRAFT_POST_KINDS = [...SOCIAL_POST_KINDS, ...LEGACY_SOCIAL_POST_KINDS];
 const RESULT_SUFFIX_BY_KIND = {
   oracle: 'Oracle',
   empathy: 'Empathy',
+  question: 'Question',
   difference: 'Difference',
   free_paid_compare: 'FreePaidCompare',
   midday: 'Midday',
   concept: 'Concept',
 };
 const EMPATHY_WEEKDAYS = [1, 3, 5];
+const QUESTION_WEEKDAYS = [2, 4];
 const DIFFERENCE_WEEKDAYS = [2];
 const FREE_PAID_COMPARE_WEEKDAYS = [6];
 const CARD_OVERRIDES_BY_DATE = {
@@ -771,6 +775,10 @@ function buildEmpathyUtmContent(item, dateKey) {
   return `empathy_${compactDate(dateKey)}_card${pad2(item.cardNumber)}`;
 }
 
+function buildQuestionUtmContent(item, dateKey) {
+  return `question_${compactDate(dateKey)}_v${pad2(item.version)}`;
+}
+
 function buildDifferenceUtmContent(item, dateKey) {
   return `difference_${compactDate(dateKey)}_v${pad2(item.version)}`;
 }
@@ -781,6 +789,10 @@ function buildFreePaidCompareUtmContent(item, dateKey) {
 
 function buildEmpathyTrackedUrl(item, dateKey, publicOrigin, config) {
   return buildTrackedUrl(publicOrigin, '/', buildUtmParams(config, buildEmpathyUtmContent(item, dateKey)));
+}
+
+function buildQuestionTrackedUrl(item, dateKey, publicOrigin, config) {
+  return buildTrackedUrl(publicOrigin, '/', buildUtmParams(config, buildQuestionUtmContent(item, dateKey)));
 }
 
 function buildDifferenceTrackedUrl(item, dateKey, publicOrigin, config) {
@@ -869,7 +881,7 @@ function validatePostText(text, options = {}) {
   if (options.platforms?.includes('instagram') && [...value].length > INSTAGRAM_CHARACTER_LIMIT) {
     throw new Error(`${label} is too long for Instagram: ${[...value].length}/${INSTAGRAM_CHARACTER_LIMIT}`);
   }
-  if (options.requireTrackedUrl && !hasPublicUrl(value)) {
+  if (options.requireTrackedUrl && options.requireVisibleUrl !== false && !hasPublicUrl(value)) {
     throw new Error(`${label} is missing a visible URL.`);
   }
   if (options.requireTrackedUrl && !extractUtmContent(value) && !extractUtmContent(options.trackedUrl)) {
@@ -894,12 +906,13 @@ function getTrackedUrlForPlatform(entry, platform) {
 function validateDraft(draft, args) {
   const platforms = Array.isArray(args.platforms) ? args.platforms : ['threads'];
   const kinds = selectedKindsFromArgs(args);
+  const requiresVisibleUrl = kind => kind !== 'question';
   if (platforms.includes('threads')) {
     const requiredHashtag = draft.meta?.policy?.threadsHashtag || DEFAULT_THREADS_HASHTAG;
     const preRelease = isPreReleasePosting(draft.date, draft.meta?.socialConfig || {});
     for (const kind of kinds) {
       const entry = draft[kind];
-      validatePostText(entry.text, { label: `${kind} Threads post`, platforms: ['threads'], requireTrackedUrl: true, trackedUrl: entry.trackedUrl });
+      validatePostText(entry.text, { label: `${kind} Threads post`, platforms: ['threads'], requireTrackedUrl: true, requireVisibleUrl: requiresVisibleUrl(kind), trackedUrl: entry.trackedUrl });
       if (!entry.text.includes(requiredHashtag)) throw new Error(`${kind} Threads post is missing the required hashtag.`);
       if (entry.text.includes(DEFAULT_HASHTAG)) throw new Error(`${kind} Threads post must not use the brand hashtag.`);
       if (!extractUtmContent(entry.trackedUrl || entry.text)) throw new Error(`${kind} Threads post is missing utm_content.`);
@@ -915,7 +928,7 @@ function validateDraft(draft, args) {
   if (platforms.includes('x')) {
     for (const kind of kinds) {
       const entry = draft[kind];
-      validatePostText(entry.xText, { label: `${kind} X post`, platforms: ['x'], requireTrackedUrl: true, trackedUrl: entry.xTrackedUrl });
+      validatePostText(entry.xText, { label: `${kind} X post`, platforms: ['x'], requireTrackedUrl: true, requireVisibleUrl: requiresVisibleUrl(kind), trackedUrl: entry.xTrackedUrl });
       if (entry.xText === entry.text) throw new Error(`${kind} X post must not be identical to the Threads post.`);
     }
   }
@@ -923,11 +936,11 @@ function validateDraft(draft, args) {
     const requiredHashtags = String(draft.meta?.policy?.blueskyHashtags || getBlueskyHashtagLine()).match(/#[^\s#]+/g) || [];
     for (const kind of kinds) {
       const entry = draft[kind];
-      validatePostText(entry.blueskyText, { label: `${kind} Bluesky post`, platforms: ['bluesky'], requireTrackedUrl: true, trackedUrl: entry.blueskyTrackedUrl });
+      validatePostText(entry.blueskyText, { label: `${kind} Bluesky post`, platforms: ['bluesky'], requireTrackedUrl: true, requireVisibleUrl: requiresVisibleUrl(kind), trackedUrl: entry.blueskyTrackedUrl });
       for (const requiredHashtag of requiredHashtags) {
         if (!entry.blueskyText.includes(requiredHashtag)) throw new Error(`${kind} Bluesky post is missing the required hashtag: ${requiredHashtag}`);
       }
-      if (!/https:\/\/rashin-senjutsu\.onrender\.com\b/i.test(entry.blueskyText)) {
+      if (requiresVisibleUrl(kind) && !/https:\/\/rashin-senjutsu\.onrender\.com\b/i.test(entry.blueskyText)) {
         throw new Error(`${kind} Bluesky post must use a clickable https://rashin-senjutsu.onrender.com URL.`);
       }
       if (!entry.blueskyImagePath) throw new Error(`${kind} Bluesky post requires a local image path.`);
@@ -940,7 +953,7 @@ function validateDraft(draft, args) {
   if (platforms.includes('instagram')) {
     for (const kind of kinds) {
       const entry = draft[kind];
-      validatePostText(entry.instagramText, { label: `${kind} Instagram post`, platforms: ['instagram'], requireTrackedUrl: true, trackedUrl: entry.instagramTrackedUrl });
+      validatePostText(entry.instagramText, { label: `${kind} Instagram post`, platforms: ['instagram'], requireTrackedUrl: true, requireVisibleUrl: requiresVisibleUrl(kind), trackedUrl: entry.instagramTrackedUrl });
       if (!entry.instagramImageUrl) throw new Error(`${kind} Instagram post requires a public image URL.`);
       instagramClient.ensurePublicImageUrl(entry.instagramImageUrl);
       if (!entry.altText) throw new Error(`${kind} Instagram post requires alt text.`);
@@ -1411,8 +1424,37 @@ function buildXGenericSocialText(parts, publicOrigin, config, options = {}) {
   ], options.limit || THREADS_CHARACTER_LIMIT);
 }
 
+function buildInstagramSocialText(parts, dateKey, publicOrigin, config, options = {}) {
+  const heading = options.heading || '保存用メモ';
+  const note = options.note || '画像とあわせて、後で見返しやすい形にまとめています。';
+  return buildGenericSocialText([
+    heading,
+    ...parts,
+    note,
+  ], dateKey, publicOrigin, config, {
+    cycleNote: options.cycleNote || '',
+  });
+}
+
+function buildQuestionSocialText(item, dateKey, config, options = {}) {
+  const limit = options.limit || getPostLimitForConfig(config);
+  return fitPostText([
+    item.prompt,
+    item.optionA,
+    item.optionB,
+    item.followup,
+    options.cycleNote || '',
+    options.extraLine || '',
+    config.defaultHashtag || DEFAULT_HASHTAG,
+  ], limit);
+}
+
 function pickEmpathyPost(dateKey) {
   return pickScheduledContent(LENORMAND_EMPATHY_POSTS, dateKey, EMPATHY_WEEKDAYS, 'empathy-lenormand');
+}
+
+function pickQuestionPost(dateKey) {
+  return pickScheduledContent(THREAD_QUESTION_POSTS, dateKey, QUESTION_WEEKDAYS, 'thread-question');
 }
 
 function pickDifferencePost(dateKey) {
@@ -1453,6 +1495,41 @@ function buildXEmpathyText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, 
   });
 }
 
+function buildInstagramEmpathyText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['instagram'] })) {
+  const cardLine = `ルノルマンカード「${item.cardName}」`;
+  const reading = stripLenormandLead(item.body, item.cardName);
+  return buildInstagramSocialText([
+    item.hook,
+    cardLine,
+    reading,
+    item.cta,
+  ], dateKey, publicOrigin, config, {
+    heading: '保存用メモ',
+    note: '画像のカード名と一緒に、あとで今の迷いを見返せます。',
+    cycleNote: buildScheduledCycleNote(dateKey, EMPATHY_WEEKDAYS, LENORMAND_EMPATHY_POSTS.length, 'カード'),
+  });
+}
+
+function buildQuestionText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['threads'] })) {
+  return buildQuestionSocialText(item, dateKey, config, {
+    cycleNote: buildScheduledCycleNote(dateKey, QUESTION_WEEKDAYS, THREAD_QUESTION_POSTS.length, '質問'),
+  });
+}
+
+function buildXQuestionText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['x'] })) {
+  return buildQuestionSocialText(item, dateKey, config, {
+    cycleNote: buildScheduledCycleNote(dateKey, QUESTION_WEEKDAYS, THREAD_QUESTION_POSTS.length, '質問'),
+    extraLine: '返信しやすいほうを一文字で残せます。',
+  });
+}
+
+function buildInstagramQuestionText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['instagram'] })) {
+  return buildQuestionSocialText(item, dateKey, config, {
+    cycleNote: buildScheduledCycleNote(dateKey, QUESTION_WEEKDAYS, THREAD_QUESTION_POSTS.length, '質問'),
+    extraLine: 'コメントではA/Bだけでも大丈夫です。保存して後で見返す用にも使えます。',
+  });
+}
+
 function buildDifferenceText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['threads'] })) {
   return buildGenericSocialText([
     item.title,
@@ -1469,6 +1546,18 @@ function buildXDifferenceText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGI
     item.body,
     item.cta,
   ], publicOrigin, config, {
+    cycleNote: buildScheduledCycleNote(dateKey, DIFFERENCE_WEEKDAYS, DIFFERENCE_POSTS.length, '違い紹介'),
+  });
+}
+
+function buildInstagramDifferenceText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['instagram'] })) {
+  return buildInstagramSocialText([
+    item.title,
+    item.body,
+    item.cta,
+  ], dateKey, publicOrigin, config, {
+    heading: '画像で見る違い',
+    note: 'スワイプ前提ではなく、1枚画像でも要点が残るようにしています。',
     cycleNote: buildScheduledCycleNote(dateKey, DIFFERENCE_WEEKDAYS, DIFFERENCE_POSTS.length, '違い紹介'),
   });
 }
@@ -1493,8 +1582,24 @@ function buildXFreePaidCompareText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_
   });
 }
 
+function buildInstagramFreePaidCompareText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['instagram'] })) {
+  return buildInstagramSocialText([
+    item.title,
+    item.body,
+    item.cta,
+  ], dateKey, publicOrigin, config, {
+    heading: '無料版と有料版の見分け方',
+    note: '必要な人だけ深掘りへ進めるように、違いを保存用にまとめています。',
+    cycleNote: buildScheduledCycleNote(dateKey, FREE_PAID_COMPARE_WEEKDAYS, FREE_PAID_COMPARE_POSTS.length, '比較'),
+  });
+}
+
 function buildEmpathyAltText(item) {
   return `ルノルマンカード No.${item.cardNumber}「${item.cardName}」。悩み共感投稿で使うカード画像。`;
+}
+
+function buildQuestionAltText(item) {
+  return `羅針占術のA/B質問投稿。テーマは「${item.title}」。`;
 }
 
 function buildDifferenceAltText(item) {
@@ -1514,6 +1619,7 @@ async function buildDraft(args) {
   const blueskyConfig = withPlatform(config, 'bluesky');
   const instagramOracleConfig = withInstagramKind(config, 'oracle');
   const instagramEmpathyConfig = withInstagramKind(config, 'empathy');
+  const instagramQuestionConfig = withInstagramKind(config, 'question');
   const instagramDifferenceConfig = withInstagramKind(config, 'difference');
   const instagramFreePaidCompareConfig = withInstagramKind(config, 'free_paid_compare');
   const instagramMiddayConfig = withInstagramKind(config, 'midday');
@@ -1522,13 +1628,16 @@ async function buildDraft(args) {
   const paidCta = resolvePaidCta(calendar, config);
   const conceptImage = pickConceptImage(calendar, dateKey);
   const empathyPost = pickEmpathyPost(dateKey);
+  const questionPost = pickQuestionPost(dateKey);
   const differencePost = pickDifferencePost(dateKey);
   const freePaidComparePost = pickFreePaidComparePost(dateKey);
   const differenceImage = SOCIAL_CONTENT_IMAGES.difference;
   const freePaidCompareImage = SOCIAL_CONTENT_IMAGES.free_paid_compare;
   const blueskyConceptImage = pickBlueskyConceptImage(conceptImage);
   const middayImage = SOCIAL_CONCEPT_IMAGES.icon;
+  const questionImage = SOCIAL_CONCEPT_IMAGES.vertical;
   const blueskyMiddayImage = pickBlueskyConceptImage(middayImage);
+  const blueskyQuestionImage = pickBlueskyConceptImage(questionImage);
   const blueskyDifferenceImage = pickBlueskyConceptImage(differenceImage);
   const blueskyFreePaidCompareImage = pickBlueskyConceptImage(freePaidCompareImage);
   const instagramConceptImage = pickBlueskyConceptImage(conceptImage);
@@ -1536,7 +1645,9 @@ async function buildDraft(args) {
   const conceptImagePath = path.join(ROOT, 'images', 'ui', conceptImage.file);
   const blueskyConceptImagePath = path.join(ROOT, 'images', 'ui', blueskyConceptImage.file);
   const middayImagePath = path.join(ROOT, 'images', 'ui', middayImage.file);
+  const questionImagePath = path.join(ROOT, 'images', 'ui', questionImage.blueskyFile || questionImage.file);
   const blueskyMiddayImagePath = path.join(ROOT, 'images', 'ui', blueskyMiddayImage.file);
+  const blueskyQuestionImagePath = path.join(ROOT, 'images', 'ui', blueskyQuestionImage.file);
   const empathyImagePath = lenormandImagePath(empathyPost.cardNumber);
   const empathyImageUrl = lenormandImageUrl(publicOrigin, empathyPost.cardNumber);
   const differenceImagePath = instagramSocialImagePath(differenceImage.file);
@@ -1545,6 +1656,7 @@ async function buildDraft(args) {
   const blueskyFreePaidCompareImagePath = instagramSocialImagePath(blueskyFreePaidCompareImage.file);
   const instagramConceptImagePath = path.join(ROOT, 'images', 'ui', instagramConceptImage.file);
   const instagramMiddayImagePath = path.join(ROOT, 'images', 'ui', instagramMiddayImage.file);
+  const questionImageUrl = buildPublicUiImageUrl(publicOrigin, questionImage.blueskyFile || questionImage.file);
   const messages = await loadDailyOracleMessages();
   const card = await pickCard(messages, dateKey, args.write || args.post, args);
   const imageName = `${String(card.id).padStart(2, '0')}.jpg`;
@@ -1562,6 +1674,7 @@ async function buildDraft(args) {
     schedule: {
       oracle: `${process.env.SOCIAL_ORACLE_TIME || '07:00'} Asia/Tokyo`,
       empathy: `${process.env.SOCIAL_EMPATHY_TIME || '12:00'} Asia/Tokyo Mon/Wed/Fri`,
+      question: `${process.env.SOCIAL_QUESTION_TIME || '12:00'} Asia/Tokyo Tue/Thu`,
       difference: `${process.env.SOCIAL_DIFFERENCE_TIME || '20:00'} Asia/Tokyo Tue`,
       free_paid_compare: `${process.env.SOCIAL_FREE_PAID_COMPARE_TIME || '20:00'} Asia/Tokyo Sat`,
       midday: `${process.env.SOCIAL_MIDDAY_TIME || '12:00'} Asia/Tokyo`,
@@ -1600,10 +1713,31 @@ async function buildDraft(args) {
       blueskyTrackedUrl: buildEmpathyTrackedUrl(empathyPost, dateKey, publicOrigin, blueskyConfig),
       blueskyImagePath: empathyImagePath,
       blueskyImageUrl: empathyImageUrl,
-      instagramText: buildEmpathyText(empathyPost, dateKey, publicOrigin, instagramEmpathyConfig),
+      instagramText: buildInstagramEmpathyText(empathyPost, dateKey, publicOrigin, instagramEmpathyConfig),
       instagramTrackedUrl: buildEmpathyTrackedUrl(empathyPost, dateKey, publicOrigin, instagramEmpathyConfig),
       instagramImagePath: empathyInstagramImagePath,
       instagramImageUrl: empathyInstagramImageUrl,
+    },
+    question: {
+      content: {
+        version: questionPost.version,
+        title: questionPost.title,
+      },
+      imagePath: questionImagePath,
+      imageUrl: questionImageUrl,
+      altText: buildQuestionAltText(questionPost),
+      text: buildQuestionText(questionPost, dateKey, publicOrigin, threadsConfig),
+      trackedUrl: buildQuestionTrackedUrl(questionPost, dateKey, publicOrigin, threadsConfig),
+      xText: buildXQuestionText(questionPost, dateKey, publicOrigin, xConfig),
+      xTrackedUrl: buildQuestionTrackedUrl(questionPost, dateKey, publicOrigin, xConfig),
+      blueskyText: buildQuestionText(questionPost, dateKey, publicOrigin, blueskyConfig),
+      blueskyTrackedUrl: buildQuestionTrackedUrl(questionPost, dateKey, publicOrigin, blueskyConfig),
+      blueskyImagePath: blueskyQuestionImagePath,
+      blueskyImageUrl: buildPublicUiImageUrl(publicOrigin, blueskyQuestionImage.file),
+      instagramText: buildInstagramQuestionText(questionPost, dateKey, publicOrigin, instagramQuestionConfig),
+      instagramTrackedUrl: buildQuestionTrackedUrl(questionPost, dateKey, publicOrigin, instagramQuestionConfig),
+      instagramImagePath: questionImagePath,
+      instagramImageUrl: questionImageUrl,
     },
     difference: {
       content: {
@@ -1621,7 +1755,7 @@ async function buildDraft(args) {
       blueskyTrackedUrl: buildDifferenceTrackedUrl(differencePost, dateKey, publicOrigin, blueskyConfig),
       blueskyImagePath: blueskyDifferenceImagePath,
       blueskyImageUrl: instagramSocialImageUrl(publicOrigin, blueskyDifferenceImage.file),
-      instagramText: buildDifferenceText(differencePost, dateKey, publicOrigin, instagramDifferenceConfig),
+      instagramText: buildInstagramDifferenceText(differencePost, dateKey, publicOrigin, instagramDifferenceConfig),
       instagramTrackedUrl: buildDifferenceTrackedUrl(differencePost, dateKey, publicOrigin, instagramDifferenceConfig),
       instagramImagePath: differenceInstagramImagePath,
       instagramImageUrl: differenceInstagramImageUrl,
@@ -1642,7 +1776,7 @@ async function buildDraft(args) {
       blueskyTrackedUrl: buildFreePaidCompareTrackedUrl(freePaidComparePost, dateKey, publicOrigin, blueskyConfig),
       blueskyImagePath: blueskyFreePaidCompareImagePath,
       blueskyImageUrl: instagramSocialImageUrl(publicOrigin, blueskyFreePaidCompareImage.file),
-      instagramText: buildFreePaidCompareText(freePaidComparePost, dateKey, publicOrigin, instagramFreePaidCompareConfig),
+      instagramText: buildInstagramFreePaidCompareText(freePaidComparePost, dateKey, publicOrigin, instagramFreePaidCompareConfig),
       instagramTrackedUrl: buildFreePaidCompareTrackedUrl(freePaidComparePost, dateKey, publicOrigin, instagramFreePaidCompareConfig),
       instagramImagePath: freePaidCompareInstagramImagePath,
       instagramImageUrl: freePaidCompareInstagramImageUrl,
@@ -1706,6 +1840,10 @@ async function buildDraft(args) {
         empathy: {
           cardNumber: empathyPost.cardNumber,
           cardName: empathyPost.cardName,
+        },
+        question: {
+          version: questionPost.version,
+          title: questionPost.title,
         },
         difference: {
           version: differencePost.version,

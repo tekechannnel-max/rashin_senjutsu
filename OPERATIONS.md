@@ -14,6 +14,8 @@ SNS operation is documented in `docs/sns-runbook.md`.
 Current summary:
 
 - Threads / Bluesky / Instagram scheduled posting runs on Render Cron Job `rashin-threads-scheduler`.
+- Scheduled SNS kinds are `oracle`, `empathy`, `question`, `difference`, and `free_paid_compare`; `question` is the A/B reply-focused lane.
+- Weekly KPI review rows are generated with `npm run social:kpi-template`; only the actual SNS/analytics numbers are manual.
 - X is draft-only until official X API posting is explicitly enabled.
 - Local Windows Task Scheduler, visible PowerShell launches, and local daemon processes are not allowed for SNS operation.
 - Posting scripts live under `scripts/social/`.

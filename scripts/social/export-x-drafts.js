@@ -10,11 +10,12 @@ const PRERELEASE_END_DATE = '2026-05-29';
 const FIX_PERIOD_END_DATE = '2026-06-05';
 const FULL_RELEASE_DATE = '2026-06-06';
 const DEFAULT_X_DRAFT_GRACE_MINUTES = 60;
-const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
+const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'question', 'difference', 'free_paid_compare'];
 const SOCIAL_EXPANSION_START_DATE = process.env.SOCIAL_EXPANSION_START_DATE || '2026-05-27';
 const SCHEDULED_TIME_BY_KIND = {
   oracle: '07:00 Asia/Tokyo',
   empathy: '12:00 Asia/Tokyo Mon/Wed/Fri',
+  question: '12:00 Asia/Tokyo Tue/Thu',
   difference: '20:00 Asia/Tokyo Tue',
   free_paid_compare: '20:00 Asia/Tokyo Sat',
 };
@@ -123,6 +124,7 @@ function getSchedule() {
   return [
     { kind: 'oracle', time: '07:00', minute: 7 * 60, days: null },
     { kind: 'empathy', time: '12:00', minute: 12 * 60, days: [1, 3, 5] },
+    { kind: 'question', time: '12:00', minute: 12 * 60, days: [2, 4] },
     { kind: 'difference', time: '20:00', minute: 20 * 60, days: [2] },
     { kind: 'free_paid_compare', time: '20:00', minute: 20 * 60, days: [6] },
   ];
