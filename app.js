@@ -76,39 +76,39 @@ const ORACLE={
 };
 
 const DAILY_ORACLE_MESSAGES=[
-  {id:1,name:"The Guide",title:"最初の火を灯す日",message:"今日は、誰かの正解より、あなたの中でまだ消えていない願いが道しるべになります。",action:"迷いを1つ選び、「本当はどうしたいか」を一文で書いてから動きましょう。",share:"今日は、自分の中の道しるべを信じる日。"},
-  {id:2,name:"The Supporter",title:"静かに支える日",message:"今日は、前に出るより必要な場所に手を添えることで流れが整います。ただし、自分を薄くする必要はありません。",action:"手伝うことと引き受けすぎることの境目を、ひとつ決めておきましょう。",share:"今日は、無理なく支える日。"},
-  {id:3,name:"The Innocent",title:"軽さを取り戻す日",message:"今日は、深刻さを少し降ろすほど、本音が明るい形で戻ってきます。",action:"気が重い予定や作業を、少し楽しくできる形に変えてみましょう。",share:"今日は、軽さが本音を連れてくる日。"},
-  {id:4,name:"The Diligent",title:"土台を締める日",message:"今日は、大きく変えるより、足元の一か所を整えることで安心が戻ります。",action:"後回しにしていた用事を1つだけ終わらせ、見える場所を整えましょう。",share:"今日は、足元を整える日。"},
-  {id:5,name:"The Adventurer",title:"小さく冒険する日",message:"今日は、予定調和を少し外すと、止まっていた感覚に風が入ります。",action:"いつもの選び方を1つ変えて、知らない道・店・方法を試しましょう。",share:"今日は、小さな冒険が流れを動かす日。"},
-  {id:6,name:"The Caregiver",title:"優しさの向きを整える日",message:"誰かを思う気持ちは尊いものです。ただ今日は、自分を置き去りにしない優しさを選んでください。",action:"人のために動く前に、水分・休憩・本音のどれかを先に満たしましょう。",share:"今日は、自分も優しさの輪に入れる日。"},
-  {id:7,name:"The Artisan",title:"深く磨く日",message:"今日は、多くをこなすより、一つの感覚を深く磨くことで、あなたらしい質が立ち上がります。",action:"ひとつの作業を選び、最後の5分だけ普段より丁寧に仕上げましょう。",share:"今日は、自分の質を磨く日。"},
-  {id:8,name:"The Warrior",title:"力の使い道を決める日",message:"今日は、覚悟が現実を動かします。押し切る力ではなく、守りたいもののために使う力です。",action:"迷っていることに、今日できる範囲の小さな決定を1つ下しましょう。",share:"今日は、力の使い道を決める日。"},
-  {id:9,name:"The Sage",title:"手放して見晴らす日",message:"これまでの経験が、今のあなたに静かな答えを渡しています。抱えすぎているものを一つ軽くしましょう。",action:"もう役目を終えた考え・物・予定を1つだけ手放しましょう。",share:"今日は、手放すほど見えてくる日。"},
-  {id:10,name:"The Great Power",title:"再起動の合図を受け取る日",message:"終わったように見えたことの中に、新しい入口が隠れています。今日の一歩は小さくてかまいません。",action:"止まっていたことを、再開ではなく再設計として5分だけ触りましょう。",share:"今日は、新しい入口を見つける日。"},
-  {id:11,name:"The Inspired One",title:"ひらめきを地上に降ろす日",message:"ふと浮かぶ言葉や違和感は、偶然ではなく、まだ形になる前の答えです。",action:"気になった言葉・数字・夢・違和感を、判断せずに3つメモしましょう。",share:"今日は、ひらめきを形にする日。"},
-  {id:12,name:"The Harmonizer",title:"間に余白を作る日",message:"今日は、対立をすぐ裁かず、互いの事情が置ける余白を作ると固まった空気が緩みます。",action:"どちらかを責める前に、「相手にも事情があるなら、それは何か」を一度だけ考えましょう。",share:"今日は、間に余白を作る日。"},
-  {id:13,name:"The Wise King",title:"古い型を改める日",message:"守ってきたものを否定せず、今の自分に合わなくなったやり方だけを更新しましょう。",action:"続けるもの・変えるもの・やめるものを1つずつ書き分けましょう。",share:"今日は、古い型を更新する日。"},
-  {id:14,name:"The Transformer",title:"混ぜ直して整える日",message:"今日は、極端な決断より、少しずつ配合を変えることが変化を長持ちさせます。",action:"やりすぎていることを少し減らし、足りないことを少し足しましょう。",share:"今日は、ちょうどいい配合を探す日。"},
-  {id:15,name:"The Servant",title:"動機を澄ませる日",message:"人の役に立つほど、自分の本心も見えやすい日です。見返りではなく、納得で選びましょう。",action:"頼まれごとを受ける前に、「これは気持ちよくできるか」に一度目を向けましょう。",share:"今日は、動機を澄ませる日。"},
-  {id:16,name:"The Perceptive One",title:"違和感を尊重する日",message:"小さなひっかかりは、あなたを責める声ではなく、見直す場所を知らせる合図です。",action:"気になることを放置せず、事実・感情・思い込みに分けて書きましょう。",share:"今日は、違和感を見過ごさない日。"},
-  {id:17,name:"The Benefactor",title:"希望を渡す日",message:"大きなことをしなくても、あなたの一言や小さな手助けが、誰かの視界を少し明るくします。",action:"励ましたい人に、助言ではなく「見ているよ」と伝わる言葉を送りましょう。",share:"今日は、小さな希望を渡す日。"},
-  {id:18,name:"The Seeker",title:"霧の中を確かめる日",message:"不安の中で急いで決めるより、見えている事実を一つ増やすことで霧は薄くなります。",action:"不安を増やす想像から離れ、今ある事実を一つだけ拾い直しましょう。",share:"今日は、霧の中で事実を拾う日。"},
-  {id:19,name:"The Unwavering One",title:"光を曲げない日",message:"周りの反応に合わせすぎると、あなたの基準がぼやけます。今日は納得できる方を選びましょう。",action:"断りたいこと、守りたい条件、譲れない基準を1つ言葉にしましょう。",share:"今日は、自分の光を曲げない日。"},
-  {id:20,name:"The Unifier",title:"呼び戻される声を聞く日",message:"今日は、過去の後悔ではなく、そこから学んだことが今の選択を呼び直しています。",action:"昔の失敗から得た教訓を1つ、今日の判断に使いましょう。",share:"今日は、過去の学びを今に戻す日。"},
-  {id:21,name:"The Completer",title:"美しく終える日",message:"最後まで完璧にするより、終わらせることで次の流れが入ってきます。",action:"途中のまま気になっていることに、今日の区切りをつけましょう。",share:"今日は、美しく終える日。"},
-  {id:22,name:"The Charism",title:"大きな器を小さく築く日",message:"あなたの影響力は、派手な言葉より、今日の誠実な一手に宿ります。",action:"大きな理想を、今日できる小さな約束や段取りに落としましょう。",share:"今日は、誠実な一手が影響力になる日。"},
-  {id:23,name:"The Flowrider",title:"流れを読み替える日",message:"予定外の出来事は、邪魔ではなく別ルートの知らせかもしれません。固執を緩めるほど進みます。",action:"思い通りにいかないことを、別案Aとして一度組み直しましょう。",share:"今日は、予定外の流れを味方にする日。"},
-  {id:24,name:"The Gracebearer",title:"品よく伝える日",message:"言い方を整えるだけで、同じ本音でも届き方が変わります。今日は柔らかさが力になります。",action:"大事な話ほど、最初の一文を少し優しく言い換えましょう。",share:"今日は、柔らかさが力になる日。"},
-  {id:25,name:"The Wayfarer",title:"自分の歩幅に戻る日",message:"急がされるほど、あなたの内側の速度を思い出してください。遅さではなく、確かさを選ぶ日です。",action:"即答しそうなことに一呼吸置き、「少し考えます」と言える余白を作りましょう。",share:"今日は、自分の歩幅に戻る日。"},
-  {id:26,name:"The Trailblazer",title:"未舗装の道を試す日",message:"まだ形になっていない案でも、小さく試せば道になります。成功より、着手が扉を開きます。",action:"温めていた案を、失敗しても困らない小さな実験にして始めましょう。",share:"今日は、未舗装の道を試す日。"},
-  {id:27,name:"The Gatewalker",title:"次の扉の前で整える日",message:"終えるものと持っていくものを分けるほど、新しい段階に軽く入れます。",action:"続けたいもの、手放したいもの、保留にするものを1つずつ分けましょう。",share:"今日は、次の扉の前で整える日。"},
-  {id:28,name:"The Resonator",title:"響き合う場を選ぶ日",message:"今日は、あなたを縮こまらせる場所より、呼吸が深くなる人や環境を選んでください。",action:"気を使いすぎる相手や場から、少しだけ距離を取る選択をしましょう。",share:"今日は、響き合う場を選ぶ日。"},
-  {id:29,name:"The Visionweaver",title:"理想を手に届かせる日",message:"遠い理想は、今日の一手に編み込んだ瞬間から現実に近づきます。",action:"理想を1つ選び、今日15分でできる行動にまで小さくしましょう。",share:"今日は、理想を一手に編み込む日。"},
-  {id:30,name:"The Creator",title:"形にして残す日",message:"頭の中にあるうちは消えやすいひらめきも、外に出せば育ちはじめます。",action:"アイデアをメモ、下書き、音声、写真のどれかで残しましょう。",share:"今日は、ひらめきを形にして残す日。"},
-  {id:31,name:"The Architect",title:"設計図を引く日",message:"勢いだけで進めるより、順番を決めることで創造性が現実に着地します。",action:"やりたいことを3手順に分け、最初の1手だけ今日進めましょう。",share:"今日は、設計図を引く日。"},
-  {id:32,name:"The Collaborator",title:"共に動かす日",message:"一人で抱えるほど重くなるものも、信頼できる相手に渡す言葉で動き始めます。",action:"相談・共有・依頼のどれかを、短い一言で早めに出しましょう。",share:"今日は、ひとりで抱えず共に動かす日。"},
-  {id:33,name:"The Awakened",title:"満たしてから与える日",message:"人を照らす力は、あなた自身の灯が守られているときにいちばん澄んで届きます。",action:"助ける前に、自分の余裕を10点満点で確かめ、無理のない範囲だけ関わりましょう。",share:"今日は、自分の灯を守ってから照らす日。"},
+  {id:1,name:"The Guide",title:"内側の灯が戻る日",message:"今日は、誰かの正解より、あなたの中でまだ消えていない願いが道しるべになります。急がなくても、その灯は残っています。",action:"自分の灯は、まだ消えていない。",share:"今日は、内側の灯が道しるべになる日。"},
+  {id:2,name:"The Supporter",title:"支えすぎなくていい日",message:"誰かを支える力は、あなたの優しさです。ただ今日は、自分を薄くしてまで抱えなくていい流れです。",action:"支えすぎなくていい。",share:"今日は、優しさの中に自分も入れていい日。"},
+  {id:3,name:"The Innocent",title:"軽さが戻る日",message:"深刻さを少し降ろすほど、本音は明るい形で戻ってきます。軽さは逃げではなく、心の呼吸です。",action:"軽さは逃げではない。",share:"今日は、軽さが本音を連れてくる日。"},
+  {id:4,name:"The Diligent",title:"足元が戻る日",message:"大きく変わらなくても、足元に安心が戻るだけで心は静かに強くなります。今日は派手さより土台の流れです。",action:"足元が戻れば、心も戻る。",share:"今日は、足元の安心が戻る日。"},
+  {id:5,name:"The Adventurer",title:"風が入る日",message:"予定通りに進まない感覚の中にも、新しい風が入っています。いつもの外側に、まだ知らない余白があります。",action:"少し外側の風を入れていい。",share:"今日は、小さな風が流れを変える日。"},
+  {id:6,name:"The Caregiver",title:"優しさに戻る日",message:"誰かを思う気持ちは尊いものです。ただ、その優しさの中にあなた自身がいないなら、少し重くなりすぎています。",action:"優しさに、自分も入れていい。",share:"今日は、自分も優しさの輪に入れていい日。"},
+  {id:7,name:"The Artisan",title:"深さが光る日",message:"多くをこなさなくても、ひとつの感覚が深まるだけで、あなたらしい質は静かに立ち上がります。",action:"深めるだけで十分な日。",share:"今日は、深さがあなたらしさになる日。"},
+  {id:8,name:"The Warrior",title:"守る力の日",message:"強さは、押し切るためだけのものではありません。今日は、大切なものを守るための静かな力が戻ります。",action:"強さは守るために使っていい。",share:"今日は、守る力が戻る日。"},
+  {id:9,name:"The Sage",title:"重さがほどける日",message:"これまでの経験は、あなたを責めるためではなく、少し楽にする知恵として残っています。もう全部を抱えなくていい日です。",action:"もう重くなくていい。",share:"今日は、抱えすぎたものが少しほどける日。"},
+  {id:10,name:"The Great Power",title:"入口が戻る日",message:"終わったように見えたことの中にも、新しい入口が残っています。元通りではなく、今のあなたに合う形で十分です。",action:"元通りでなくていい。",share:"今日は、新しい入口が戻る日。"},
+  {id:11,name:"The Inspired One",title:"ひらめきが届く日",message:"ふと浮かぶ言葉や違和感は、まだ形になる前の答えかもしれません。急がなくても、感覚は消えません。",action:"ひらめきは急がせない。",share:"今日は、ひらめきが静かに届く日。"},
+  {id:12,name:"The Harmonizer",title:"余白がほどく日",message:"白黒を急がない余白が、固くなった空気を少しゆるめます。どちらかだけを責めなくてもいい日です。",action:"余白があるほど、関係はほどける。",share:"今日は、間の余白が流れをやわらげる日。"},
+  {id:13,name:"The Wise King",title:"古い型がゆるむ日",message:"守ってきたものを否定しなくても、今のあなたに合わない型は静かにゆるんでいきます。",action:"古い型に戻らなくていい。",share:"今日は、古い型から少し自由になる日。"},
+  {id:14,name:"The Transformer",title:"ちょうどよさへ戻る日",message:"極端に変えなくても、心が楽になる配合はあります。今日は、無理のないちょうどよさへ戻る流れです。",action:"ちょうどよさへ戻っていい。",share:"今日は、ちょうどよさが戻る日。"},
+  {id:15,name:"The Servant",title:"納得が澄む日",message:"人の役に立つことと、自分をすり減らすことは同じではありません。納得できる優しさだけが長く残ります。",action:"納得できない優しさは重い。",share:"今日は、納得のある優しさに戻る日。"},
+  {id:16,name:"The Perceptive One",title:"違和感が守る日",message:"小さなひっかかりは、あなたを責める声ではなく、あなたを守ろうとする感覚です。悪者にしなくていい日です。",action:"違和感は敵ではない。",share:"今日は、違和感が自分を守ってくれる日。"},
+  {id:17,name:"The Benefactor",title:"希望が残る日",message:"大きなことができなくても、心の中に小さな希望が残っていれば十分です。その光は、必要な場所へ静かに届きます。",action:"小さな希望で十分。",share:"今日は、小さな希望が残る日。"},
+  {id:18,name:"The Seeker",title:"霧が薄まる日",message:"見えない日には、急いで答えを出さなくて大丈夫です。霧の中でも、心が疲れない距離は残っています。",action:"見えない日は、急がなくていい。",share:"今日は、霧の中でも急がなくていい日。"},
+  {id:19,name:"The Unwavering One",title:"光を曲げない日",message:"周りの反応に合わせすぎると、あなたの基準がぼやけます。今日は、内側の光を曲げなくていい日です。",action:"譲れない基準は、静かでいい。",share:"今日は、自分の光を曲げなくていい日。"},
+  {id:20,name:"The Unifier",title:"過去がやわらぐ日",message:"過去は、あなたを責めるために戻ってくるのではありません。今のあなたを少し守る知恵として、静かに戻ります。",action:"過去は責めるために戻らない。",share:"今日は、過去が少しやわらぐ日。"},
+  {id:21,name:"The Completer",title:"区切りが開く日",message:"終わりは負けではなく、次の余白が入る場所です。完璧でなくても、流れはちゃんと次へ向かえます。",action:"終わりは、次の余白になる。",share:"今日は、区切りが次の余白になる日。"},
+  {id:22,name:"The Charism",title:"誠実さが残る日",message:"派手な言葉より、小さな誠実さが人の心に残ります。あなたの影響力は、静かな確かさの中にあります。",action:"小さな誠実さが残る。",share:"今日は、小さな誠実さが力になる日。"},
+  {id:23,name:"The Flowrider",title:"別ルートが見える日",message:"予定外の出来事は、邪魔ではなく別ルートの知らせかもしれません。思い通りでなくても、道は消えていません。",action:"予定外にも道はある。",share:"今日は、予定外の流れにも道がある日。"},
+  {id:24,name:"The Gracebearer",title:"柔らかさが力の日",message:"同じ本音でも、柔らかさをまとえば届き方が変わります。今日は、弱さではない優しい強さが戻ります。",action:"柔らかさは弱さではない。",share:"今日は、柔らかさが力になる日。"},
+  {id:25,name:"The Wayfarer",title:"歩幅が戻る日",message:"急がされるほど、あなたの内側の速度を忘れやすくなります。遅さではなく、確かさへ戻っていい日です。",action:"自分の歩幅でいい。",share:"今日は、自分の歩幅へ戻る日。"},
+  {id:26,name:"The Trailblazer",title:"小さな入口の日",message:"まだ形になっていないものにも、入口はあります。大きな成功より、小さく開く気配が今日は十分です。",action:"小さな入口で十分。",share:"今日は、小さな入口が開く日。"},
+  {id:27,name:"The Gatewalker",title:"扉の前にいる日",message:"次の扉の前では、すぐ進めなくても大丈夫です。心が追いつくまで、まだ余白があります。",action:"次の扉は、急がなくていい。",share:"今日は、次の扉の前で急がなくていい日。"},
+  {id:28,name:"The Resonator",title:"呼吸が深くなる日",message:"あなたを縮こまらせる場所だけが、居場所ではありません。呼吸が深くなる感覚は、静かな羅針盤になります。",action:"呼吸が深くなる場所でいい。",share:"今日は、呼吸が深くなる場所へ心が向く日。"},
+  {id:29,name:"The Visionweaver",title:"理想が近づく日",message:"遠く見える理想も、今のあなたを否定するためにあるのではありません。心の灯として近くに置いていいものです。",action:"理想は遠くなくていい。",share:"今日は、理想が少し近くなる日。"},
+  {id:30,name:"The Creator",title:"灯が残る日",message:"まだ形にならないひらめきにも、ちゃんと熱があります。完成していなくても、内側の灯は消えていません。",action:"形にならなくても、灯は残る。",share:"今日は、形になる前の灯が残る日。"},
+  {id:31,name:"The Architect",title:"心が戻る日",message:"順番が見えないときは、心が追いついていないだけかもしれません。焦らなくても、必要な形は後から整います。",action:"順番は、心が戻ってからでいい。",share:"今日は、心が戻ってから形になる日。"},
+  {id:32,name:"The Collaborator",title:"抱えなくていい日",message:"一人で抱えるほど重くなるものもあります。全部を説明できなくても、ひとりで背負わなくていい流れです。",action:"ひとりで抱えなくていい。",share:"今日は、ひとりで抱えなくていい日。"},
+  {id:33,name:"The Awakened",title:"満ちてから照らす日",message:"人を照らす力は、あなた自身の灯が守られているときに澄んで届きます。空っぽのまま与えなくていい日です。",action:"与える前に満ちていていい。",share:"今日は、満ちてから照らしていい日。"},
 ];
 
 // ══════════════════════════════════════════════════
@@ -2268,7 +2268,7 @@ const BRAND_PROFILE={
     member:{
       badge:'深掘り',
       title:'深掘り鑑定で、進路を自分で選べるようになる',
-      price:'深掘り鑑定 プレリリース780円',
+      price:'深掘り鑑定 最安1000円',
       items:[
         '具体的な悩みの構造と本音を整理できる',
         '次にどちらへ進むかが現実レベルで具体的に残る',
@@ -2279,7 +2279,7 @@ const BRAND_PROFILE={
 };
 
 const MEMBERSHIP_PLAN={
-  price:'深掘り鑑定 プレリリース780円',
+  price:'深掘り鑑定 最安1000円',
   status:'読み返しと記録は準備中',
   promise:'無料で見えたことを、次にすることまで深く読む鑑定です',
   description:'無料で見えた「今の状態」をもとに、ここからは悩みをもっと深く読みます。現実を見ながら、次にどう動くかまで残せます。',
@@ -2323,7 +2323,7 @@ const MEMBERSHIP_PLAN={
     },
   ],
 };
-const BOOTH_RASHIN_GUIDE_HTML=`深掘り羅針鑑定は、BOOTH購入後に注文番号を入力して利用できる有料鑑定です。${BOOTH_ANY_GOODS_NOTE} 購入はこちら：<a href="${BOOTH_RASHIN_SHOP_URL}" target="_blank" rel="noopener">${BOOTH_RASHIN_SHOP_URL}</a> 料金はプレリリース価格780円、正式リリース後は1000円予定です。無料鑑定を先に作成する必要はありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。`;
+const BOOTH_RASHIN_GUIDE_HTML=`深掘り羅針鑑定は、BOOTH購入後に注文番号を入力して利用できる有料鑑定です。${BOOTH_ANY_GOODS_NOTE} 購入はこちら：<a href="${BOOTH_RASHIN_SHOP_URL}" target="_blank" rel="noopener">${BOOTH_RASHIN_SHOP_URL}</a> 料金は対象グッズの価格に準じます。目安は最安1000円です。無料鑑定を先に作成する必要はありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。`;
 const CHECKOUT_DISCLOSURE_HTML=BOOTH_RASHIN_GUIDE_HTML;
 const RESULT_CHECKOUT_DISCLOSURE_HTML=`深掘り鑑定はBOOTH購入後に注文番号を入力して利用できます。${BOOTH_ANY_GOODS_NOTE} 購入はこちら：<a href="${BOOTH_RASHIN_SHOP_URL}" target="_blank" rel="noopener">${BOOTH_RASHIN_SHOP_URL}</a> 無料で引いたカードの続きから追加カードを展開することも、直接有料鑑定から始めることもできます。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。`;
 const RASHIN_PAID_CODE_GUIDE_HTML=`深掘り羅針鑑定は、運営者から受け取った羅針コードで利用できる有料鑑定です。羅針コードを入力し、Googleログイン後に利用状態を確認します。無料鑑定を先に作成する必要はありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。`;
@@ -4819,7 +4819,7 @@ function getMemberStatusMeta(){
     return{
       cls:'inactive',
       label:'深掘り鑑定',
-      copy:'深掘り羅針鑑定は、プレリリース価格780円、正式リリース後は1000円予定です。無料鑑定から続きのカードを引くことも、直接有料鑑定から始めることもできます。',
+      copy:'深掘り羅針鑑定は、目安として最安1000円です。無料鑑定から続きのカードを引くことも、直接有料鑑定から始めることもできます。',
       action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">${getPaidEntryActionLabel()}</button>`,
     };
   }
@@ -4827,7 +4827,7 @@ function getMemberStatusMeta(){
     return{
       cls:'inactive',
       label:'深掘り鑑定',
-      copy:'深掘り羅針鑑定は、プレリリース価格780円、正式リリース後は1000円予定です。無料鑑定から続きのカードを引くことも、直接有料鑑定から始めることもできます。',
+      copy:'深掘り羅針鑑定は、目安として最安1000円です。無料鑑定から続きのカードを引くことも、直接有料鑑定から始めることもできます。',
       action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">${getPaidEntryActionLabel()}</button>`,
     };
   }
@@ -4837,8 +4837,8 @@ function getMemberStatusMeta(){
     copy:canUseAccessCode()
       ?'前回の鑑定をもとに、続きの悩みを読み解けます。確認コードを入力すると深掘り鑑定の利用状態を確認できます。'
       :(RASHIN_BOOTH_PURCHASE_ENABLED
-        ?'深掘り羅針鑑定は、BOOTH購入後に注文番号を入力すると利用できます。プレリリース価格780円、正式リリース後は1000円予定です。'
-        :'深掘り羅針鑑定は、羅針のかけら30個または羅針コードで利用できます。プレリリース価格780円、正式リリース後は1000円予定です。'),
+        ?'深掘り羅針鑑定は、BOOTH購入後に注文番号を入力すると利用できます。料金は対象グッズの価格に準じます。目安は最安1000円です。'
+        :'深掘り羅針鑑定は、羅針のかけら30個または羅針コードで利用できます。目安は最安1000円です。'),
     action:canUseAccessCode()
       ?`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openMemberAccessModal('start-paid')">確認コードを入力</button>`
       :`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">${getPaidEntryActionLabel()}</button>`,
@@ -6826,13 +6826,13 @@ function repairStaticCopy(){
   }
   if(planCards[1]){
     setWithin(planCards[1],'.plan-compare-title','深掘り鑑定');
-  setWithin(planCards[1],'.plan-compare-price','プレリリース780円 / 通常1000円予定');
+  setWithin(planCards[1],'.plan-compare-price','最安1000円');
     setWithin(planCards[1],'.plan-compare-trial','今は単発のみ');
     setWithin(planCards[1],'.plan-compare-badge','プレリリース価格');
     const deepItems=planCards[1].querySelectorAll('.plan-compare-list li');
     [
-      'プレリリース780円：まず1回だけ、いまの悩みを深く読む',
-      '正式リリース後は1000円予定',
+      '最安1000円：まず1回だけ、いまの悩みを深く読む',
+      'BOOTHグッズは価格が異なる場合があります',
       '今は単発のみ',
       '追加質問で悩みの前提を具体化',
       '鑑定履歴がある場合は、前回からの変化も読む'
@@ -6853,7 +6853,7 @@ function repairStaticCopy(){
     }
   }
   document.querySelectorAll('.paid-band-note').forEach(el=>{
-  el.textContent='深掘り羅針鑑定 プレリリース780円 / 通常1000円予定';
+  el.textContent='深掘り羅針鑑定 最安1000円';
   });
   document.querySelectorAll('.checkout-disclosure').forEach(el=>{
     if(el.closest('#member-access-modal')) return;
@@ -6866,7 +6866,7 @@ function repairStaticCopy(){
     ['数秘オラクルカードって何ですか？','誕生日などの数字の意味と、直感で選ぶカードを合わせて読むアドバイスカードです。<br>あなたの強み、今の向き合い方、羅針の指針を示します。'],
     ['AIがどうやって占うのですか？','相談内容・名前・生年月日・カード結果をもとに、設計された占術ロジックに沿って鑑定文を生成します。<br>同じカードでも、相談内容やこれまでの流れによって読み方が変わります。'],
     ['無料鑑定では何ができますか？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。<br>ルノルマン2枚では、金運ならお金の流れ、恋愛なら距離感、仕事なら案件や評価など、相談テーマに合わせて「今見える流れ」と「注意したい一点」を確認できます。'],
-    ['無料鑑定と深掘り鑑定の違いは？','無料鑑定では、ルノルマンカード2枚で相談テーマに対する一点判断を行います。無料鑑定とミニ鑑定はあわせて1日5回までです。<br>深掘り鑑定では、同じ相談内容を前提に続きの追加カードを引くことも、直接有料鑑定から始めることもできます。ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>料金はプレリリース価格780円、正式リリース後は1000円予定です。有料課金ごとに無料鑑定枠が1回分回復します。'],
+    ['無料鑑定と深掘り鑑定の違いは？','無料鑑定では、ルノルマンカード2枚で相談テーマに対する一点判断を行います。無料鑑定とミニ鑑定はあわせて1日5回までです。<br>深掘り鑑定では、同じ相談内容を前提に続きの追加カードを引くことも、直接有料鑑定から始めることもできます。ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>料金の目安は最安1000円です。BOOTHグッズは価格が異なる場合があります。有料課金ごとに無料鑑定枠が1回分回復します。'],
     ['過去の鑑定は読み返せますか？','はい。これまでの鑑定は「過去の占いを読み返す」から確認できます。<br>前回のテーマやカードの流れを見返すことで、同じ悩みの続きや変化を確認しやすくなります。'],
     ['「鑑定履歴の流れを読み解く」って何ですか？','これまでの鑑定をまとめて、よく出るカード、相談テーマの変化、くり返し向き合っている悩みを時系列で読み解く機能です。<br>鑑定履歴があるほど、変化の流れが見えやすくなります。']
   ];
@@ -7289,7 +7289,7 @@ function renderPremiumEntrySection(){
         <a class="today-cta today-cta-simple" href="?flow=simple" data-flow-target="simple" data-track="simple_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('simple');return false;}">${SIMPLE_READING_LABEL_HTML}</a>
       </div>
       ${buildRashinYearCalendarEntryHtml('top_entry')}
-      <div class="paid-band-note">深掘り羅針鑑定 プレリリース780円 / 通常1000円予定</div>
+      <div class="paid-band-note">深掘り羅針鑑定 最安1000円</div>
       <div class="checkout-disclosure">${getCheckoutDisclosureHtml()}</div>
     </div>`;
 }
@@ -10721,7 +10721,7 @@ function renderPremiumEntryFallback(){
         <a class="today-cta today-cta-simple" href="?flow=simple" data-flow-target="simple" data-track="simple_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('simple');return false;}">${SIMPLE_READING_LABEL_HTML}</a>
       </div>
       ${buildRashinYearCalendarEntryHtml('top_entry_fallback')}
-      <div class="paid-band-note">深掘り羅針鑑定 プレリリース780円 / 通常1000円予定</div>
+      <div class="paid-band-note">深掘り羅針鑑定 最安1000円</div>
       <div class="checkout-disclosure">${getCheckoutDisclosureHtml()}</div>
     </div>`;
 }
@@ -11338,8 +11338,8 @@ function syncResultModeClass(){
 function getResultProgressSummary(){
   if(RESULT_STAGE_STATE.integration==='working'){
     return{
-      title:'カードを統合して結論を整えています',
-      copy:'ルノルマン、オラクル、土台情報を重ねて、いま優先する行動まで絞り込んでいます。'
+      title:'命・卜・相を総合して結論を整えています',
+      copy:'カード、数秘、土台情報を重ねて、いま優先する行動まで絞り込んでいます。'
     };
   }
   const parallelKeys=['basic','len','orc'];
@@ -11510,10 +11510,10 @@ function renderResultUpgradePanel(){
         <div class="upgrade-meta">
           <div class="upgrade-price">
             <div class="upgrade-price-label">料金</div>
-          <div class="upgrade-price-value" id="upgrade-price-value">プレリリース 780円</div>
+          <div class="upgrade-price-value" id="upgrade-price-value">最安 1000円</div>
             <div class="upgrade-bonus-note" id="upgrade-bonus-note"></div>
           </div>
-          <div class="upgrade-note">正式リリース後は1000円予定</div>
+          <div class="upgrade-note">BOOTHグッズは価格が異なる場合があります</div>
         </div>
       </div>
       <div class="upgrade-actions">
@@ -20859,9 +20859,9 @@ function renderMemberFollowupSection(){
     noteEl.textContent=canUsePaidTestMode()
       ?'深掘り鑑定では、追加カードで作成した有料鑑定に追加質問を使えます。'
       :((MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn)
-    ?'追加カードで有料鑑定を作る場合は、プレリリース価格780円の深掘り鑑定へ進んでください。'
+    ?'追加カードで有料鑑定を作る場合は、最安1000円の深掘り鑑定へ進んでください。'
         :((MEMBER_AUTH.authLoggedIn)
-    ?'追加カードで有料鑑定を作る場合は、プレリリース価格780円の深掘り鑑定へ進んでください。'
+    ?'追加カードで有料鑑定を作る場合は、最安1000円の深掘り鑑定へ進んでください。'
           :(canUseAccessCode()
             ?'確認コードがある場合は入力して利用状態を確認できます。'
             :'現在はまだ使えません。')));

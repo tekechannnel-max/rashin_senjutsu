@@ -59,7 +59,7 @@ function openMemberAccessModal() { throw new Error('login modal must not open in
 function canContinueCurrentReadingToPaid() { return true; }
 function buildCurrentReadingRecord() { return {}; }
 async function saveHistoryRecordToVault() {}
-function readPendingRashinPaidCode() { return '888888888888'; }
+function readPendingRashinPaidCode() { return 'TESTCODE0001'; }
 async function promptForPendingRashinPaidCode() { throw new Error('pending code must be used without prompting'); }
 function createReadingId() { return nextIds.shift() || 'unexpected-extra-id'; }
 async function redeemRashinPaidCodeForReading(code, sourceReadingId) {
