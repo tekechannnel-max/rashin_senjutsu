@@ -13,7 +13,7 @@ SNS operation is documented in `docs/sns-runbook.md`.
 
 Current summary:
 
-- Threads scheduled posting runs on Render Cron Job `rashin-threads-scheduler`.
+- Threads / Bluesky / Instagram scheduled posting runs on Render Cron Job `rashin-threads-scheduler`.
 - X is draft-only until official X API posting is explicitly enabled.
 - Local Windows Task Scheduler, visible PowerShell launches, and local daemon processes are not allowed for SNS operation.
 - Posting scripts live under `scripts/social/`.

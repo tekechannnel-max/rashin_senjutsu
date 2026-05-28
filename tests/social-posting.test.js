@@ -128,6 +128,11 @@ function testPlatformHashtagPolicy() {
       assert.ok(draft[kind].blueskyText.includes(tag), `${kind} Bluesky post should include ${tag}`);
     }
     assert.equal(countHashtags(draft[kind].blueskyText), blueskyTags.length, `${kind} Bluesky post should use configured hashtags`);
+    assert.equal(
+      normalizePlatformOnlyUrl(draft[kind].blueskyText),
+      normalizePlatformOnlyUrl(draft[kind].text),
+      `${kind} Bluesky copy should match Threads copy except URL protocol and hashtags`
+    );
 
     assert.match(draft[kind].xText, /#羅針占術/, `${kind} X draft should keep the brand tag`);
     assert.doesNotMatch(draft[kind].xText, /#占い師のつぶやき/, `${kind} X draft should not use the Threads tag`);
@@ -140,6 +145,22 @@ function testPlatformHashtagPolicy() {
     assert.doesNotMatch(draft[kind].instagramText, /#占い鑑定/, `${kind} Instagram post should not use the legacy Threads tag`);
     assert.equal(countHashtags(customInstagramDraft[kind].instagramText), 5, `${kind} custom Instagram hashtags should be capped at five`);
     assert.doesNotMatch(customInstagramDraft[kind].instagramText, /#six/, `${kind} custom Instagram hashtags should drop tags after the fifth`);
+  }
+}
+
+function testAutomationDocsEnableBlueskyWithThreadsAndInstagram() {
+  const expectedPlatforms = 'SOCIAL_PLATFORMS=threads,bluesky,instagram';
+  for (const relativeFile of ['.env.example', '.env.example.txt', path.join('docs', 'sns-runbook.md'), path.join('scripts', 'social', 'README.md')]) {
+    const source = fs.readFileSync(path.join(ROOT, relativeFile), 'utf8');
+    assert.match(source, new RegExp(expectedPlatforms), `${relativeFile} should configure Bluesky with Threads and Instagram`);
+  }
+  const runbook = fs.readFileSync(path.join(ROOT, 'docs', 'sns-runbook.md'), 'utf8');
+  const disabledBlueskyPhrases = [
+    ['Blueskyは現運用では', '自動投稿しない'].join(''),
+    ['Bluesky', '再開時だけ'].join(''),
+  ];
+  for (const phrase of disabledBlueskyPhrases) {
+    assert.ok(!runbook.includes(phrase), 'runbook should not describe Bluesky as disabled');
   }
 }
 
@@ -365,6 +386,7 @@ function testXWebDraftWorkflowUsesPlaywrightAndSecrets() {
 
 testDraftHasTrackingImagesAndAlt();
 testPlatformHashtagPolicy();
+testAutomationDocsEnableBlueskyWithThreadsAndInstagram();
 testMorningOracleCopyStillKeepsRequiredClosing();
 testEmpathyUsesRandomLenormandRotation();
 testDifferenceAndFreePaidCompareAxes();
