@@ -16,8 +16,17 @@ const OUT_DIR = path.join(ROOT, 'data', 'social-posts');
 const STATE_FILE = path.join(OUT_DIR, 'daily-oracle-state.json');
 const DEFAULT_PUBLIC_ORIGIN = 'https://rashin-senjutsu.onrender.com';
 const DEFAULT_HASHTAG = '#羅針占術';
-const DEFAULT_THREADS_HASHTAG = '#占い鑑定';
+const DEFAULT_THREADS_HASHTAG = '#占い師のつぶやき';
 const DEFAULT_BLUESKY_HASHTAGS = '#羅針占術 #今日の占い #今日の運勢 #占い師';
+const INSTAGRAM_HASHTAG_LIMIT = 5;
+const DEFAULT_INSTAGRAM_HASHTAGS_BY_KIND = Object.freeze({
+  oracle: ['#羅針占術', '#今日の占い', '#オラクルカード', '#占い好きな人と繋がりたい', '#AI占い'],
+  empathy: ['#羅針占術', '#ルノルマンカード', '#悩み相談', '#占い好きな人と繋がりたい', '#AI占い'],
+  difference: ['#羅針占術', '#AI占い', '#無料占い', '#占い師のつぶやき', '#悩み相談'],
+  free_paid_compare: ['#羅針占術', '#無料占い', '#占い師のつぶやき', '#ルノルマンカード', '#AI占い'],
+  midday: ['#羅針占術', '#AI占い', '#無料占い', '#悩み相談', '#占い好きな人と繋がりたい'],
+  concept: ['#羅針占術', '#AI占い', '#無料占い', '#占い師のつぶやき', '#悩み相談'],
+});
 const THREADS_CHARACTER_LIMIT = 500;
 const INSTAGRAM_CHARACTER_LIMIT = instagramClient.INSTAGRAM_CHARACTER_LIMIT;
 const X_CHARACTER_LIMIT = 280;
@@ -80,14 +89,14 @@ const SOCIAL_CONCEPT_IMAGES = {
 
 const SOCIAL_CONTENT_IMAGES = {
   difference: {
-    file: 'social-difference-rashin-no-model.jpg',
-    blueskyFile: 'social-difference-rashin-no-model.jpg',
-    altText: '羅針占術の違い紹介画像。自由記載、複数占術、鑑定履歴という3つの特徴を人物なしの抽象背景で示している。',
+    file: 'difference.jpg',
+    blueskyFile: 'difference.jpg',
+    altText: '羅針占術とほかのAI占いの違いを比較する縦長画像。自由記載、命・卜・相の総合占術、履歴から変化を見る特徴を表で示している。',
   },
   free_paid_compare: {
-    file: 'social-free-paid-compare-no-model.jpg',
-    blueskyFile: 'social-free-paid-compare-no-model.jpg',
-    altText: '羅針占術の無料版と有料版の比較画像。無料版の入口と有料版の深掘り内容を人物なしの抽象背景で並べて示している。',
+    file: 'free-paid-compare.jpg',
+    blueskyFile: 'free-paid-compare.jpg',
+    altText: '羅針占術の無料鑑定と深掘り鑑定の比較画像。無料は0円、有料は最安1000円で、カード枚数や追加質問、履歴解析の違いを表で示している。',
   },
 };
 
@@ -216,7 +225,7 @@ const CONCEPT_POSTS = [
 
 const NIGHT_CONCEPT_POSTS = [
   '占い結果を渡して終わり、ではありません。\n羅針占術は、姓名判断・四柱推命・動物タイプ診断で土台を見て、ルノルマンカードで現実を解析し、数秘オラクルで打開点を探します。\n答えより、次に動ける一手を。',
-  'AI占いにほしいのは、派手な断言より「今どう動くか」。\n羅針占術は、命術とカードを重ねて、恋愛・仕事・人間関係の迷いを次の一手まで落とし込みます。',
+  'AI占いにほしいのは、派手な断言より「今どう動くか」。\n羅針占術は、命・卜・相の総合占術として、恋愛・仕事・人間関係の迷いを次の一手まで落とし込みます。',
   'カードだけで未来を決めつけない。\n羅針占術は、名前・生まれ持つ傾向・動物タイプに加えて、ルノルマンで現実を読み、数秘オラクルで打開点を探すAI占いです。',
   '「当たった」で終わる占いではなく、「だから何をするか」まで見る占い。\n羅針占術は、本質・本音・現実・次の一手を分けて、悩みを動かせる形にします。',
   '恋愛で苦しい時ほど、相手の気持ちだけを追うと迷いやすい。\n羅針占術は、自分の本音・相手との距離・今できる一手を分けて整理します。',
@@ -224,12 +233,12 @@ const NIGHT_CONCEPT_POSTS = [
   '人間関係の悩みは、正解探しより「どこで苦しくなっているか」を見る方が早い。\n羅針占術は、相手より先に自分の軸を整えるためのAI占いです。',
   '羅針占術は、怖がらせるための占いではありません。\n曖昧な不安を、本質・本音・現実・次の一手に分けて、今日できることまで小さくします。',
   '未来を断定されるより、今の状況を整理したい人へ。\n羅針占術は、姓名判断・四柱推命・カードを組み合わせて、迷いの輪郭を言葉にします。',
-  '占いに依存するためではなく、自分で選び直すために。\n羅針占術は、命術で土台を見て、カードで今の流れを読み、最後に一手を決めます。',
+  '占いに依存するためではなく、自分で選び直すために。\n羅針占術は、命・卜・相を重ねて土台と流れを読み、最後に一手を決めます。',
   '「進む」「止まる」「様子を見る」。\n羅針占術は、その選択を感情だけで決めないために、性質・状況・カードの流れを重ねて整理します。',
   '相手の反応が気になる時ほど、自分の本音が置き去りになります。\n羅針占術は、相手を見る前に、自分が何を望んでいるかを整理します。',
   '悩みが大きい時は、答えより分解が先です。\n羅針占術は、恋愛・仕事・人間関係の不安を小さく分けて、次にできる行動まで落とします。',
   '羅針占術が見るのは、運命の一言ではなく「迷いの地図」です。\n自分の性質、今の流れ、カードの示す注意点を重ねて、進み方を探します。',
-  '普通のAI占いで物足りない人へ。\n羅針占術は、命術・カード・動物タイプを重ねて、悩みを一問一答ではなく流れとして読みます。',
+  '普通のAI占いで物足りない人へ。\n羅針占術は、命・卜・相を重ねて、悩みを一問一答ではなく流れとして読みます。',
   '「たぶん大丈夫」ではなく、何が不安なのかを見たい。\n羅針占術は、気持ち・現実・次の確認点を分けて、判断しやすい形にします。',
   'カードは答えを押しつけるものではなく、今の状態を映す鏡です。\n羅針占術は、ルノルマンで現実を見て、数秘オラクルで次の突破口を探します。',
   '恋愛も仕事も、人間関係も、悩みの根はひとつとは限りません。\n羅針占術は、複数の占術で見る角度を増やし、迷いの芯を探します。',
@@ -308,75 +317,75 @@ const MIDDAY_FOCUS_LINES = [
 ];
 
 const ORACLE_SOFT_ACTIONS = {
-  1: '本音に近い方向を、ひとつだけ見失わない。',
-  2: '支える前に、自分の負担も同じだけ見る。',
-  3: '重さを少しゆるめる選び方を探す。',
-  4: '足元を整える意識をひとつ持つ。',
-  5: 'いつもの外側に、小さな余白を見る。',
-  6: '優しさの向きが自分を削っていないか確かめる。',
-  7: 'ひとつを丁寧に扱う意識を持つ。',
-  8: '力を向ける先を、感情だけで決めない。',
-  9: 'もう役目を終えたものに気づく。',
-  10: '再開より、組み直しの視点で見る。',
-  11: 'ひらめきを急いで結論にしない。',
-  12: 'どちらかを責める前に、余白を置く。',
-  13: '続けるものと変えるものを分けて見る。',
-  14: '足しすぎ、減らしすぎの偏りを見る。',
-  15: '引き受ける前に、動機の濁りを見る。',
-  16: '違和感を流さず、事実と感情を分ける。',
-  17: '助言より、希望が残る言葉を選ぶ。',
-  18: '不安より、今ある事実に戻る。',
-  19: '守りたい基準を静かに確認する。',
-  20: '過去の教訓を、今の判断に戻す。',
-  21: '終わらせ方を少し美しくする。',
-  22: '大きな理想を、小さな約束として見る。',
-  23: '流れが変わった前提で、別の見方を探す。',
-  24: '伝え方の品位をひとつ整える。',
-  25: '即答せず、自分の歩幅を取り戻す。',
-  26: '失敗しても崩れない小ささで見る。',
-  27: '進む前に、残すものと手放すものを分ける。',
-  28: '響き合う場所かどうかを感じ直す。',
-  29: '理想を遠くに置かず、今の視点へ近づける。',
-  30: '浮かんだものを形にする意識を持つ。',
-  31: '勢いより、順番を見る。',
-  32: 'ひとりで抱えず、共有の余地を見る。',
-  33: '与える前に、自分の余白を確かめる。',
+  1: '自分の灯は、まだ消えていない。',
+  2: '支えすぎなくていい。',
+  3: '軽さは逃げではない。',
+  4: '足元が戻れば、心も戻る。',
+  5: '少し外側の風を入れていい。',
+  6: '優しさに、自分も入れていい。',
+  7: '深めるだけで十分な日。',
+  8: '強さは守るために使っていい。',
+  9: 'もう重くなくていい。',
+  10: '元通りでなくていい。',
+  11: 'ひらめきは急がせない。',
+  12: '余白があるほど、関係はほどける。',
+  13: '古い型に戻らなくていい。',
+  14: 'ちょうどよさへ戻っていい。',
+  15: '納得できない優しさは重い。',
+  16: '違和感は敵ではない。',
+  17: '小さな希望で十分。',
+  18: '見えない日は、急がなくていい。',
+  19: '譲れない基準は、静かでいい。',
+  20: '過去は責めるために戻らない。',
+  21: '終わりは、次の余白になる。',
+  22: '小さな誠実さが残る。',
+  23: '予定外にも道はある。',
+  24: '柔らかさは弱さではない。',
+  25: '自分の歩幅でいい。',
+  26: '小さな入口で十分。',
+  27: '次の扉は、急がなくていい。',
+  28: '呼吸が深くなる場所でいい。',
+  29: '理想は遠くなくていい。',
+  30: '形にならなくても、灯は残る。',
+  31: '順番は、心が戻ってからでいい。',
+  32: 'ひとりで抱えなくていい。',
+  33: '与える前に満ちていていい。',
 };
 
 const ORACLE_SOCIAL_READINGS = {
-  1: '誰かの正解を探すほど、自分の中に残っている小さな願いが見えにくくなります。始まりの火は、外から与えられるものではなく、まだ消えていない本音に宿ります。',
-  2: '静かに支える力は、目立たなくても流れを整えます。ただ、相手のために動くほど自分の輪郭が薄くなりやすい日でもあります。優しさと負担を同じ場所に置いて見てください。',
-  3: '深刻に考えるほど、心の動きが固くなることがあります。軽さは逃げではなく、本音を取り戻すための余白です。少しやわらかく見ることで、選べる道が戻ってきます。',
-  4: '大きな変化を求めるより、足元を締めることで安心が戻るカードです。乱れている場所を責めるのではなく、今の自分を支える土台がどこにあるかを見直す流れです。',
-  5: '同じ選び方を続けていると、可能性まで同じ形に見えてしまいます。冒険は大きな飛躍ではなく、いつもの外側に少しだけ視線を向けることから始まります。',
-  6: '誰かを思う気持ちが強いほど、自分の疲れや本音を後回しにしやすくなります。優しさは自己犠牲と同じではありません。向ける先と量を整えるカードです。',
-  7: '数をこなすより、ひとつの感覚を深く見ることで質が立ち上がる日です。焦って広げるより、今すでに手の中にあるものを磨くほど、自分らしさが見えます。',
-  8: '力がある日ほど、勢いだけで押し切ると大切なものを見落とします。このカードは強さを否定せず、何を守るために力を使うのかを問い直す流れです。',
-  9: '経験が増えるほど、抱えたままの考えや役割も増えていきます。今日は積み上げるより、手放せる余地を見つけることで視界が広がるカードです。',
-  10: '終わったように見えることの中に、別の入口が残っているかもしれません。無理に元通りへ戻すより、いまの自分に合う形へ組み直す視点が鍵になります。',
-  11: 'ひらめきや違和感は、まだ言葉になる前の答えとして届くことがあります。すぐ結論にせず、浮かんだ感覚を雑に扱わないことで、次の形が見えやすくなります。',
-  12: '白黒をつけたい場面ほど、間に置ける余白が流れを変えます。どちらが正しいかを急ぐより、互いの事情が置ける場所を作ることで固さがゆるみます。',
-  13: '守ってきたものを否定する必要はありません。ただ、今の自分に合わなくなった型まで抱え続けると重くなります。残す型と更新する型を見分けるカードです。',
-  14: '変化は一気に別人になることではなく、配合を少し変えることでも起こります。足りないもの、過剰なもの、混ざりすぎたものを見直すことで流れが整います。',
-  15: '人の役に立つことと、自分をすり減らすことは別です。頼まれたから、期待されたからだけで動く前に、その選択に納得があるかを見るカードです。',
-  16: '小さな違和感は、あなたを止めるためではなく、見直す場所を知らせる合図です。不安や思い込みと混ぜず、起きていることと心の反応を分けるほど輪郭が見えてきます。',
-  17: '大きな助けではなくても、残る言葉や小さな姿勢が誰かの希望になります。ただし助言を急ぐより、相手の中に光が残る伝え方を選ぶ流れです。',
-  18: '霧の中では、想像が先に走りやすくなります。急いで答えを決めるより、今見えている事実に戻ることで、恐れと現実の境目が少しずつ分かれていきます。',
-  19: '周りの反応に合わせ続けると、自分の基準が見えにくくなります。このカードは強く押し返すより、内側で守りたい線を静かに思い出す流れです。',
-  20: '過去は責めるためではなく、今の判断に戻せる教訓として現れます。同じ後悔を繰り返さないために、何を学びとして持っていくかを見るカードです。',
-  21: '終えることは負けではなく、次の流れを入れるための区切りです。完璧に仕上げるより、今の自分にとって美しい終わらせ方を選ぶ意識が出ています。',
-  22: '大きな理想や影響力は、派手な言葉より小さな約束の積み重ねに宿ります。遠くを見る力を持ちながら、今日の現実に置ける形へ下ろすカードです。',
-  23: '予定外の流れは、邪魔ではなく別ルートの知らせかもしれません。思い通りに進まないときほど、固執をゆるめて見方を変える余地が生まれます。',
-  24: '同じ本音でも、伝え方が変わると届き方が変わります。強く言うことだけが誠実さではありません。品位と柔らかさが、関係を守る力になります。',
-  25: '急がされるほど、自分の内側の速度を見失いやすくなります。遅さではなく確かさを選ぶカードです。周りの速度に飲まれず、内側のリズムへ戻る流れが出ています。',
-  26: 'まだ形になっていない案でも、小さく試せば道になります。成功を証明するより、崩れない大きさで触れてみることが、次の可能性を開きます。',
-  27: '新しい扉の前では、何を持っていくかだけでなく、何を置いていくかも大切になります。進む前の整理が、次の段階を軽くするカードです。',
-  28: '人や場所との響き合いは、理屈だけでは測れません。縮こまる場所に合わせ続けるより、呼吸が深くなる関係や環境を感じ直す流れです。',
-  29: '理想が遠すぎると、今の自分とは無関係に見えてしまいます。このカードは夢を小さくするのではなく、今の場所から触れられる形へ寄せるために出ています。',
-  30: '頭の中にあるものは、外に出した瞬間から育ちはじめます。完成度を気にしすぎるより、消えやすいひらめきを形として残す意識が流れを作ります。',
-  31: '勢いは悪いものではありません。ただ、順番を見失うと大事なものまで散らばります。何を先に見て、何を後に回すかを整理すると静かに動きます。',
-  32: '一人で抱えるほど、動かないものは重くなります。すべてを任せる必要はありませんが、共有できる余地を見ることで流れが変わるカードです。',
-  33: '誰かを照らす力は、自分の灯が守られているときにいちばん澄んで届きます。与える前に余白を確かめることは、冷たさではなく持続する優しさです。',
+  1: '始まりの火は、外から与えられるものではなく、まだ消えていない本音に宿ります。今日は、その小さな灯が道しるべになります。',
+  2: '静かに支える力は、目立たなくても流れを整えます。ただ、支える人の輪郭が薄くなる必要はありません。',
+  3: '軽さは逃げではなく、本音が戻るための余白です。心が少しやわらぐだけで、見える景色も変わります。',
+  4: '大きな変化より、足元の安心が効く日です。土台が戻ると、気持ちも現実も少し落ち着きます。',
+  5: 'いつもの外側に、まだ知らない風があります。大きく変わらなくても、流れは少しずつ動きます。',
+  6: '優しさは自己犠牲と同じではありません。自分もその輪の中に入るほど、思いやりは長く続きます。',
+  7: '数より深さが光る日です。ひとつの感覚が深まるだけで、あなたらしい質は静かに立ち上がります。',
+  8: '強さは押し切るためだけのものではありません。大切なものを守るための力として、今日は静かに戻ります。',
+  9: '経験は、抱え続けるためではなく、少し軽くなるための知恵にもなります。重さがほどける余白があります。',
+  10: '終わったように見えたことにも、新しい入口が残っています。元通りでなく、今の形で十分です。',
+  11: 'ひらめきや違和感は、まだ言葉になる前の答えとして届くことがあります。急がなくても、感覚は残ります。',
+  12: '白黒の間に置ける余白が、固くなった空気をゆるめます。関係は急がないほど、ほどけることがあります。',
+  13: '守ってきたものを否定しなくても、古い型からは少し自由になれます。今のあなたに合う形が残ります。',
+  14: '変化は一気に別人になることだけではありません。無理のない配合へ戻るだけで、流れはやわらぎます。',
+  15: '人の役に立つことと、自分をすり減らすことは別です。納得のある優しさだけが、心に澄んで残ります。',
+  16: '小さな違和感は、あなたを責める声ではなく守る感覚です。敵にしなくていいものです。',
+  17: '大きな助けでなくても、心に残る希望はあります。小さな光が残るだけで、視界は少し変わります。',
+  18: '霧の中では、急いだ答えほど重くなります。見えない日にも、心が疲れない距離は残っています。',
+  19: '周りの反応に合わせ続けると、自分の基準がぼやけます。静かな基準ほど、内側の光を守ります。',
+  20: '過去は責めるためではなく、今のあなたを守る知恵として戻ります。痛みだけで終わらない流れです。',
+  21: '終えることは負けではなく、次の余白が入る場所です。完璧でなくても、流れは次へ向かえます。',
+  22: '派手な言葉より、小さな誠実さが心に残ります。静かな確かさの中に、あなたの影響力があります。',
+  23: '予定外の流れは、邪魔ではなく別ルートの知らせかもしれません。思い通りでなくても、道は消えていません。',
+  24: '柔らかさは弱さではありません。同じ本音でも、やわらかな強さをまとえば届き方が変わります。',
+  25: '急がされるほど、自分の内側の速度は見えにくくなります。遅さではなく、確かさへ戻る日です。',
+  26: '小さな入口は、完璧な準備がなくても開くことがあります。今日は、大きさよりも心が壊れない軽さが支えになります。',
+  27: '次の扉の前では、すぐ進めなくても大丈夫です。心が追いつくための余白が残っています。',
+  28: '呼吸が深くなる感覚は、静かな羅針盤です。縮こまる場所だけが居場所ではありません。',
+  29: '遠く見える理想も、今のあなたを否定するためにあるのではありません。心の灯として近くに置けるものです。',
+  30: '形になる前のひらめきにも、ちゃんと熱があります。完成していなくても、内側の灯は消えていません。',
+  31: '順番が見えないときは、心が追いついていないだけかもしれません。必要な形は、心が戻ってから整います。',
+  32: '一人で抱えるほど重くなるものがあります。全部を説明できなくても、ひとりで背負わなくていい流れです。',
+  33: '誰かを照らす力は、自分の灯が守られているときに澄んで届きます。空っぽのまま与えなくていい日です。',
 };
 
 function parseArgs(argv) {
@@ -418,6 +427,47 @@ function boolFromEnv(value) {
   return String(value || '').trim().toLowerCase() === 'true';
 }
 
+function normalizeThreadsHashtag(value) {
+  const trimmed = String(value || '').trim();
+  if (!trimmed || trimmed === '#占い鑑定') return DEFAULT_THREADS_HASHTAG;
+  return trimmed;
+}
+
+function normalizeHashtagToken(token) {
+  const value = String(token || '').trim().replace(/^＃/, '#').replace(/^#+/, '');
+  if (!value) return '';
+  return `#${value.replace(/[\s#＃]+/g, '')}`;
+}
+
+function uniqueHashtags(tags) {
+  const seen = new Set();
+  const result = [];
+  for (const tag of tags) {
+    const normalized = normalizeHashtagToken(tag);
+    if (!normalized || seen.has(normalized)) continue;
+    seen.add(normalized);
+    result.push(normalized);
+  }
+  return result;
+}
+
+function parseHashtagList(value) {
+  return uniqueHashtags(String(value || '').split(/[\s,、;；]+/u));
+}
+
+function instagramHashtagEnvName(kind) {
+  return `SOCIAL_INSTAGRAM_${String(kind || '').toUpperCase()}_HASHTAGS`;
+}
+
+function getInstagramHashtagLine(kind) {
+  const key = String(kind || 'concept');
+  const configured = String(process.env[instagramHashtagEnvName(key)] || process.env.SOCIAL_INSTAGRAM_HASHTAGS || '').trim();
+  const tags = configured
+    ? parseHashtagList(configured)
+    : uniqueHashtags(DEFAULT_INSTAGRAM_HASHTAGS_BY_KIND[key] || DEFAULT_INSTAGRAM_HASHTAGS_BY_KIND.concept);
+  return tags.slice(0, INSTAGRAM_HASHTAG_LIMIT).join(' ');
+}
+
 function getSocialConfig(args) {
   const platforms = Array.isArray(args.platforms) && args.platforms.length ? args.platforms : ['threads'];
   const primaryPlatform = platforms.includes('threads')
@@ -439,7 +489,7 @@ function getSocialConfig(args) {
     stripeEnabled: false,
     campaign: String(process.env.SOCIAL_UTM_CAMPAIGN || DEFAULT_SOCIAL_CAMPAIGN).trim() || DEFAULT_SOCIAL_CAMPAIGN,
     defaultHashtag: DEFAULT_HASHTAG,
-    threadsHashtag: String(process.env.SOCIAL_THREADS_HASHTAG || DEFAULT_THREADS_HASHTAG).trim() || DEFAULT_THREADS_HASHTAG,
+    threadsHashtag: normalizeThreadsHashtag(process.env.SOCIAL_THREADS_HASHTAG || DEFAULT_THREADS_HASHTAG),
     blueskyHashtags: String(process.env.SOCIAL_BLUESKY_HASHTAGS || DEFAULT_BLUESKY_HASHTAGS).trim() || DEFAULT_BLUESKY_HASHTAGS,
   };
 }
@@ -452,6 +502,14 @@ function withPlatform(config, primaryPlatform) {
   if (primaryPlatform === 'threads') next.defaultHashtag = getThreadsHashtagLine(next);
   if (primaryPlatform === 'bluesky') next.defaultHashtag = getBlueskyHashtagLine(next);
   return next;
+}
+
+function withInstagramKind(config, kind) {
+  return {
+    ...withPlatform(config, 'instagram'),
+    defaultHashtag: getInstagramHashtagLine(kind),
+    instagramHashtagKind: kind,
+  };
 }
 
 function truncateText(text, maxChars) {
@@ -485,13 +543,13 @@ function fitPostText(parts, maxChars) {
 
 function getDailyConceptAngle(dateKey) {
   const angles = [
-    '今日の視点：迷いを一段だけ小さくする。',
-    '今日の視点：相手より先に、自分の本音を整理する。',
-    '今日の視点：結論より、次の確認を決める。',
-    '今日の視点：焦って選ばず、止まる理由を読む。',
-    '今日の視点：感情と事実を分けて眺める。',
-    '今日の視点：いま動かす一手だけに絞る。',
-    '今日の視点：期待ではなく、反応の変化を見る。',
+    '今日の視点：迷いは小さくなっていい。',
+    '今日の視点：本音は急がなくても残る。',
+    '今日の視点：結論より、心が戻る余白。',
+    '今日の視点：止まる理由にも意味がある。',
+    '今日の視点：感情も現実も、どちらも大切。',
+    '今日の視点：急がない日にも流れはある。',
+    '今日の視点：期待より、静かな変化の気配。',
   ];
   const hash = crypto.createHash('sha256').update(`angle:${dateKey}`).digest()[0];
   const serial = dateKey.replace(/^\d{4}-(\d{2})-(\d{2})$/, '$1$2');
@@ -502,7 +560,7 @@ function buildRepeatCycleNote(dateKey, cycleLength) {
   const offset = dateToUtcDay(dateKey) - dateToUtcDay(CARD_CYCLE_START_DATE);
   if (!Number.isFinite(offset) || !cycleLength || offset < cycleLength) return '';
   const cycle = Math.floor(offset / cycleLength) + 1;
-  return `${cycle}巡目の視点：同じテーマでも、今日の状況に合わせて読み直す。`;
+  return `${cycle}巡目の視点：同じテーマでも、今日の景色は少し違います。`;
 }
 
 function normalizeForDuplicateCheck(text) {
@@ -529,19 +587,19 @@ function buildOracleLeadLine(card) {
     if (!normalizedTitle || !normalizedShare.includes(normalizedTitle)) return softenOracleSocialWording(share);
   }
 
-  return 'このカードが示すテーマを、今日の行動に少しだけ移してみてください。';
+  return 'このカードが示すテーマは、今日の心に静かに重ねられます。';
 }
 
 function buildOracleActionLine(card) {
   const id = Number(card?.id);
-  const action = ORACLE_SOFT_ACTIONS[id] || 'このテーマを、今の迷いに重ねて見る。';
-  return `今日の一手：${action}`;
+  const action = ORACLE_SOFT_ACTIONS[id] || '今日は、そのテーマを静かに持っていていい。';
+  return `今日のよりどころ：${action}`;
 }
 
 function buildOracleReadingLine(card) {
   const id = Number(card?.id);
-  const reading = ORACLE_SOCIAL_READINGS[id] || 'このカードは、結論を急ぐより今の状態を見つめ直すための視点を示しています。';
-  return `カードメッセージ：${reading}結論を急がず、気持ちと現実の接点を少し静かに見てください。`;
+  const reading = ORACLE_SOCIAL_READINGS[id] || 'このカードは、結論を急がない日に残る静かな視点を示しています。';
+  return `カードメッセージ：${reading}`;
 }
 
 function getJstDateString(date = new Date()) {
@@ -592,15 +650,15 @@ function isPreReleasePosting(dateKey, config) {
 function buildThreadsCtaLine(paidCta, dateKey, config) {
   if (isPreReleasePosting(dateKey, config)) {
     if (paidCta === 'free') {
-      return '気になる方は保存して、5/16に見返してください。';
+      return '公開日にまた届きます。';
     }
     if (paidCta === 'soft_paid' || paidCta === 'active_paid') {
-      return '明日の公開を見逃さないよう、フォローして待っていてください。深掘り鑑定は公開後、必要な方だけ案内します。';
+      return '公開後、必要な方だけ深掘り鑑定の案内があります。';
     }
-    return '気になる方はフォローして、5/16の公開を待っていてください。';
+    return '公開日にまた届きます。';
   }
   if (paidCta === 'free') {
-    return '今日のオラクルや無料鑑定で、今の状態を見てみてください。';
+    return '今日のオラクルと無料鑑定があります。';
   }
   if (paidCta === 'active_paid') {
     return '深く整理したい方は、アプリ内の案内から深掘り鑑定へ進めます。';
@@ -608,7 +666,7 @@ function buildThreadsCtaLine(paidCta, dateKey, config) {
   if (paidCta === 'soft_paid') {
     return '必要な方だけ、無料鑑定のあとに深掘り鑑定を検討できる形にしています。';
   }
-  return '迷いを、次の一手に変える占い。';
+  return '迷いに、静かな羅針を置く占い。';
 }
 
 function buildXCtaLine(paidCta, dateKey, config) {
@@ -637,7 +695,7 @@ function pickNightConceptBody(dateKey) {
 
 function buildNightConceptCtaLine(paidCta, dateKey, config) {
   if (isPreReleasePosting(dateKey, config)) {
-    return '5/16公開。気になる方は保存して、公開日に見返してください。';
+    return '5/16公開。公開日にまた届きます。';
   }
   if (paidCta === 'active_paid') {
     return '無料で整理して、必要な方だけ深掘り鑑定へ。';
@@ -738,7 +796,7 @@ function countHashtags(text) {
 }
 
 function stripLineRolePrefix(text) {
-  return String(text || '').replace(/^(今日の1枚|先行版 今日の1枚|今日の数秘オラクル|テーマ|今日の一手|このカードからの一手|ヒント)[:：]\s*/, '');
+  return String(text || '').replace(/^(今日の1枚|先行版 今日の1枚|今日の数秘オラクル|テーマ|今日の一手|今日のよりどころ|このカードからの一手|ヒント)[:：]\s*/, '');
 }
 
 function findAdjacentRepeatedLine(text) {
@@ -765,7 +823,7 @@ function getXHashtagLine(config = {}) {
 
 function getThreadsHashtagLine(config = {}) {
   const configured = String(process.env.SOCIAL_THREADS_HASHTAG || '').trim();
-  return configured || config.threadsHashtag || DEFAULT_THREADS_HASHTAG;
+  return normalizeThreadsHashtag(configured || config.threadsHashtag || DEFAULT_THREADS_HASHTAG);
 }
 
 function getBlueskyHashtagLine(config = {}) {
@@ -796,6 +854,9 @@ function validatePostText(text, options = {}) {
   }
   if (options.platforms?.includes('bluesky') && hashtagCount !== countHashtags(getBlueskyHashtagLine())) {
     throw new Error(`${label} must use the configured Bluesky hashtags: ${hashtagCount}/${countHashtags(getBlueskyHashtagLine())}.`);
+  }
+  if (options.platforms?.includes('instagram') && hashtagCount > INSTAGRAM_HASHTAG_LIMIT) {
+    throw new Error(`${label} uses too many Instagram hashtags: ${hashtagCount}/${INSTAGRAM_HASHTAG_LIMIT}.`);
   }
   if (options.platforms?.includes('threads') && [...value].length > THREADS_CHARACTER_LIMIT) {
     throw new Error(`${label} is too long for Threads: ${[...value].length}/${THREADS_CHARACTER_LIMIT}`);
@@ -844,10 +905,10 @@ function validateDraft(draft, args) {
       if (!extractUtmContent(entry.trackedUrl || entry.text)) throw new Error(`${kind} Threads post is missing utm_content.`);
     }
     if (preRelease) {
-      if (draft.oracle.text.includes('あなたも今日の1枚を引かない？')) {
+      if (draft.oracle.text.includes('今日の1枚はこちら')) {
         throw new Error('pre-release oracle Threads post must not use the live oracle closing line.');
       }
-    } else if (kinds.includes('oracle') && !draft.oracle.text.trim().endsWith('あなたも今日の1枚を引かない？')) {
+    } else if (kinds.includes('oracle') && !draft.oracle.text.trim().endsWith('今日の1枚はこちら')) {
       throw new Error('oracle Threads post must end with the required closing line.');
     }
   }
@@ -1082,6 +1143,7 @@ function buildOracleText(card, publicOrigin, options = {}) {
   const config = options.config || getSocialConfig({ platforms: ['threads'] });
   const hashtag = config.defaultHashtag || DEFAULT_HASHTAG;
   const displayUrl = buildDisplayUrlForPlatform(publicOrigin, config);
+  const limit = getPostLimitForConfig(config);
   if (isPreReleasePosting(dateKey, config)) {
     return fitPostText([
       '先行 数秘オラクル',
@@ -1093,8 +1155,8 @@ function buildOracleText(card, publicOrigin, options = {}) {
       buildRepeatCycleNote(dateKey, ORACLE_CARD_CYCLE_LENGTH),
       displayUrl,
       hashtag,
-      '保存して公開日に見返してね',
-    ], BLUESKY_CHARACTER_LIMIT);
+    '公開日にまた届きます',
+    ], limit);
   }
   return fitPostText([
     '今日の数秘オラクル',
@@ -1106,8 +1168,8 @@ function buildOracleText(card, publicOrigin, options = {}) {
     buildRepeatCycleNote(dateKey, ORACLE_CARD_CYCLE_LENGTH),
     displayUrl,
     hashtag,
-    'あなたも今日の1枚を引かない？',
-  ], BLUESKY_CHARACTER_LIMIT);
+    '今日の1枚はこちら',
+  ], limit);
 }
 
 function buildXOracleText(card, publicOrigin, options = {}) {
@@ -1120,7 +1182,7 @@ function buildXOracleText(card, publicOrigin, options = {}) {
       `先行オラクル：${card.name} / ${card.title}`,
       buildOracleActionLine(card),
       buildRepeatCycleNote(dateKey, ORACLE_CARD_CYCLE_LENGTH),
-      '保存して公開日に見返してね',
+      '公開日にまた届きます',
       displayUrl,
       hashtags,
     ], X_CHARACTER_LIMIT);
@@ -1164,11 +1226,11 @@ function buildXOracleManualDraftText(card, publicOrigin, options = {}) {
     'カードメッセージ：',
     ...readingLines,
     '',
-    '今日の一手：',
+    '今日のよりどころ：',
     action,
     cycleNote || null,
     '',
-    '今日の１枚ここから引けるで👇😌',
+    '今日の１枚はこちら👇😌',
     publicUrl,
     '',
     ...X_ORACLE_HASHTAGS,
@@ -1327,7 +1389,7 @@ function buildScheduledCycleNote(dateKey, weekdays, cycleLength, noun) {
   const index = getScheduledOccurrenceIndex(dateKey, weekdays);
   const cycle = Math.floor(index / cycleLength) + 1;
   if (cycle <= 1) return '';
-  return `${cycle}巡目の${noun}：同じテーマでも、今日の状況に合わせて読み直します。`;
+  return `${cycle}巡目の${noun}：同じテーマでも、今日の景色は少し違います。`;
 }
 
 function buildGenericSocialText(parts, dateKey, publicOrigin, config, options = {}) {
@@ -1436,11 +1498,11 @@ function buildEmpathyAltText(item) {
 }
 
 function buildDifferenceAltText(item) {
-  return `羅針占術の違い紹介「${item.title}」の投稿画像。自由記載と複数占術の統合を伝える内容。`;
+  return `${SOCIAL_CONTENT_IMAGES.difference.altText} 投稿テーマは「${item.title}」。`;
 }
 
 function buildFreePaidCompareAltText(item) {
-  return `羅針占術の無料版と有料版の比較「${item.title}」の投稿画像。`;
+  return `${SOCIAL_CONTENT_IMAGES.free_paid_compare.altText} 投稿テーマは「${item.title}」。`;
 }
 
 async function buildDraft(args) {
@@ -1450,7 +1512,12 @@ async function buildDraft(args) {
   const threadsConfig = withPlatform(config, 'threads');
   const xConfig = withPlatform(config, 'x');
   const blueskyConfig = withPlatform(config, 'bluesky');
-  const instagramConfig = withPlatform(config, 'instagram');
+  const instagramOracleConfig = withInstagramKind(config, 'oracle');
+  const instagramEmpathyConfig = withInstagramKind(config, 'empathy');
+  const instagramDifferenceConfig = withInstagramKind(config, 'difference');
+  const instagramFreePaidCompareConfig = withInstagramKind(config, 'free_paid_compare');
+  const instagramMiddayConfig = withInstagramKind(config, 'midday');
+  const instagramConceptConfig = withInstagramKind(config, 'concept');
   const calendar = getCalendarEntry(dateKey);
   const paidCta = resolvePaidCta(calendar, config);
   const conceptImage = pickConceptImage(calendar, dateKey);
@@ -1472,10 +1539,10 @@ async function buildDraft(args) {
   const blueskyMiddayImagePath = path.join(ROOT, 'images', 'ui', blueskyMiddayImage.file);
   const empathyImagePath = lenormandImagePath(empathyPost.cardNumber);
   const empathyImageUrl = lenormandImageUrl(publicOrigin, empathyPost.cardNumber);
-  const differenceImagePath = path.join(ROOT, 'images', 'ui', differenceImage.file);
-  const blueskyDifferenceImagePath = path.join(ROOT, 'images', 'ui', blueskyDifferenceImage.file);
-  const freePaidCompareImagePath = path.join(ROOT, 'images', 'ui', freePaidCompareImage.file);
-  const blueskyFreePaidCompareImagePath = path.join(ROOT, 'images', 'ui', blueskyFreePaidCompareImage.file);
+  const differenceImagePath = instagramSocialImagePath(differenceImage.file);
+  const blueskyDifferenceImagePath = instagramSocialImagePath(blueskyDifferenceImage.file);
+  const freePaidCompareImagePath = instagramSocialImagePath(freePaidCompareImage.file);
+  const blueskyFreePaidCompareImagePath = instagramSocialImagePath(blueskyFreePaidCompareImage.file);
   const instagramConceptImagePath = path.join(ROOT, 'images', 'ui', instagramConceptImage.file);
   const instagramMiddayImagePath = path.join(ROOT, 'images', 'ui', instagramMiddayImage.file);
   const messages = await loadDailyOracleMessages();
@@ -1502,8 +1569,8 @@ async function buildDraft(args) {
     },
     oracle: {
       card,
-      imagePath: path.join(ROOT, 'images', 'cards', 'oracle', imageName),
-      imageUrl: `${publicOrigin}/images/cards/oracle/${imageName}`,
+      imagePath: oracleInstagramImagePath,
+      imageUrl: oracleInstagramImageUrl,
       altText: buildOracleAltText(card),
       text: buildOracleText(card, publicOrigin, { dateKey, config: threadsConfig }),
       trackedUrl: buildOracleTrackedUrl(card, publicOrigin, threadsConfig, dateKey),
@@ -1512,8 +1579,8 @@ async function buildDraft(args) {
       blueskyText: buildBlueskyOracleText(card, publicOrigin, { dateKey, config: blueskyConfig }),
       blueskyTrackedUrl: buildOracleTrackedUrl(card, publicOrigin, blueskyConfig, dateKey),
       blueskyImagePath: path.join(ROOT, 'images', 'cards', 'oracle', imageName),
-      instagramText: buildOracleText(card, publicOrigin, { dateKey, config: instagramConfig }),
-      instagramTrackedUrl: buildOracleTrackedUrl(card, publicOrigin, instagramConfig, dateKey),
+      instagramText: buildOracleText(card, publicOrigin, { dateKey, config: instagramOracleConfig }),
+      instagramTrackedUrl: buildOracleTrackedUrl(card, publicOrigin, instagramOracleConfig, dateKey),
       instagramImagePath: oracleInstagramImagePath,
       instagramImageUrl: oracleInstagramImageUrl,
     },
@@ -1522,8 +1589,8 @@ async function buildDraft(args) {
         cardNumber: empathyPost.cardNumber,
         cardName: empathyPost.cardName,
       },
-      imagePath: empathyImagePath,
-      imageUrl: empathyImageUrl,
+      imagePath: empathyInstagramImagePath,
+      imageUrl: empathyInstagramImageUrl,
       altText: buildEmpathyAltText(empathyPost),
       text: buildEmpathyText(empathyPost, dateKey, publicOrigin, threadsConfig),
       trackedUrl: buildEmpathyTrackedUrl(empathyPost, dateKey, publicOrigin, threadsConfig),
@@ -1533,8 +1600,8 @@ async function buildDraft(args) {
       blueskyTrackedUrl: buildEmpathyTrackedUrl(empathyPost, dateKey, publicOrigin, blueskyConfig),
       blueskyImagePath: empathyImagePath,
       blueskyImageUrl: empathyImageUrl,
-      instagramText: buildEmpathyText(empathyPost, dateKey, publicOrigin, instagramConfig),
-      instagramTrackedUrl: buildEmpathyTrackedUrl(empathyPost, dateKey, publicOrigin, instagramConfig),
+      instagramText: buildEmpathyText(empathyPost, dateKey, publicOrigin, instagramEmpathyConfig),
+      instagramTrackedUrl: buildEmpathyTrackedUrl(empathyPost, dateKey, publicOrigin, instagramEmpathyConfig),
       instagramImagePath: empathyInstagramImagePath,
       instagramImageUrl: empathyInstagramImageUrl,
     },
@@ -1544,7 +1611,7 @@ async function buildDraft(args) {
         title: differencePost.title,
       },
       imagePath: differenceImagePath,
-      imageUrl: buildPublicUiImageUrl(publicOrigin, differenceImage.file),
+      imageUrl: instagramSocialImageUrl(publicOrigin, differenceImage.file),
       altText: buildDifferenceAltText(differencePost),
       text: buildDifferenceText(differencePost, dateKey, publicOrigin, threadsConfig),
       trackedUrl: buildDifferenceTrackedUrl(differencePost, dateKey, publicOrigin, threadsConfig),
@@ -1553,9 +1620,9 @@ async function buildDraft(args) {
       blueskyText: buildDifferenceText(differencePost, dateKey, publicOrigin, blueskyConfig),
       blueskyTrackedUrl: buildDifferenceTrackedUrl(differencePost, dateKey, publicOrigin, blueskyConfig),
       blueskyImagePath: blueskyDifferenceImagePath,
-      blueskyImageUrl: buildPublicUiImageUrl(publicOrigin, blueskyDifferenceImage.file),
-      instagramText: buildDifferenceText(differencePost, dateKey, publicOrigin, instagramConfig),
-      instagramTrackedUrl: buildDifferenceTrackedUrl(differencePost, dateKey, publicOrigin, instagramConfig),
+      blueskyImageUrl: instagramSocialImageUrl(publicOrigin, blueskyDifferenceImage.file),
+      instagramText: buildDifferenceText(differencePost, dateKey, publicOrigin, instagramDifferenceConfig),
+      instagramTrackedUrl: buildDifferenceTrackedUrl(differencePost, dateKey, publicOrigin, instagramDifferenceConfig),
       instagramImagePath: differenceInstagramImagePath,
       instagramImageUrl: differenceInstagramImageUrl,
     },
@@ -1565,7 +1632,7 @@ async function buildDraft(args) {
         title: freePaidComparePost.title,
       },
       imagePath: freePaidCompareImagePath,
-      imageUrl: buildPublicUiImageUrl(publicOrigin, freePaidCompareImage.file),
+      imageUrl: instagramSocialImageUrl(publicOrigin, freePaidCompareImage.file),
       altText: buildFreePaidCompareAltText(freePaidComparePost),
       text: buildFreePaidCompareText(freePaidComparePost, dateKey, publicOrigin, threadsConfig),
       trackedUrl: buildFreePaidCompareTrackedUrl(freePaidComparePost, dateKey, publicOrigin, threadsConfig),
@@ -1574,9 +1641,9 @@ async function buildDraft(args) {
       blueskyText: buildFreePaidCompareText(freePaidComparePost, dateKey, publicOrigin, blueskyConfig),
       blueskyTrackedUrl: buildFreePaidCompareTrackedUrl(freePaidComparePost, dateKey, publicOrigin, blueskyConfig),
       blueskyImagePath: blueskyFreePaidCompareImagePath,
-      blueskyImageUrl: buildPublicUiImageUrl(publicOrigin, blueskyFreePaidCompareImage.file),
-      instagramText: buildFreePaidCompareText(freePaidComparePost, dateKey, publicOrigin, instagramConfig),
-      instagramTrackedUrl: buildFreePaidCompareTrackedUrl(freePaidComparePost, dateKey, publicOrigin, instagramConfig),
+      blueskyImageUrl: instagramSocialImageUrl(publicOrigin, blueskyFreePaidCompareImage.file),
+      instagramText: buildFreePaidCompareText(freePaidComparePost, dateKey, publicOrigin, instagramFreePaidCompareConfig),
+      instagramTrackedUrl: buildFreePaidCompareTrackedUrl(freePaidComparePost, dateKey, publicOrigin, instagramFreePaidCompareConfig),
       instagramImagePath: freePaidCompareInstagramImagePath,
       instagramImageUrl: freePaidCompareInstagramImageUrl,
     },
@@ -1592,8 +1659,8 @@ async function buildDraft(args) {
       blueskyTrackedUrl: buildMiddayTrackedUrl(dateKey, publicOrigin, blueskyConfig),
       blueskyImagePath: blueskyMiddayImagePath,
       blueskyImageUrl: buildPublicUiImageUrl(publicOrigin, blueskyMiddayImage.file),
-      instagramText: buildMiddayText(dateKey, publicOrigin, instagramConfig),
-      instagramTrackedUrl: buildMiddayTrackedUrl(dateKey, publicOrigin, instagramConfig),
+      instagramText: buildMiddayText(dateKey, publicOrigin, instagramMiddayConfig),
+      instagramTrackedUrl: buildMiddayTrackedUrl(dateKey, publicOrigin, instagramMiddayConfig),
       instagramImagePath: instagramMiddayImagePath,
       instagramImageUrl: buildPublicUiImageUrl(publicOrigin, instagramMiddayImage.file),
     },
@@ -1609,8 +1676,8 @@ async function buildDraft(args) {
       blueskyTrackedUrl: buildConceptTrackedUrl(dateKey, publicOrigin, blueskyConfig, paidCta),
       blueskyImagePath: blueskyConceptImagePath,
       blueskyImageUrl: buildPublicUiImageUrl(publicOrigin, blueskyConceptImage.file),
-      instagramText: buildConceptText(dateKey, publicOrigin, instagramConfig),
-      instagramTrackedUrl: buildConceptTrackedUrl(dateKey, publicOrigin, instagramConfig, paidCta),
+      instagramText: buildConceptText(dateKey, publicOrigin, instagramConceptConfig),
+      instagramTrackedUrl: buildConceptTrackedUrl(dateKey, publicOrigin, instagramConceptConfig, paidCta),
       instagramImagePath: instagramConceptImagePath,
       instagramImageUrl: buildPublicUiImageUrl(publicOrigin, instagramConceptImage.file),
     },

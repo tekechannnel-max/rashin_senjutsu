@@ -10,12 +10,15 @@ const FIX_PERIOD_END_DATE = '2026-06-05';
 const RELEASE_DATE = PRERELEASE_START_DATE;
 const THREADS_LIMIT = 500;
 const BLUESKY_LIMIT = 300;
+const INSTAGRAM_LIMIT = 2200;
+const INSTAGRAM_HASHTAG_LIMIT = 5;
 const BLUESKY_IMAGE_LIMIT_BYTES = 1_000_000;
 const SOCIAL_EXPANSION_START_DATE = process.env.SOCIAL_EXPANSION_START_DATE || '2026-05-27';
 const REQUIRED_HASHTAGS_BY_PLATFORM = {
-  threads: ['#占い鑑定'],
+  threads: ['#占い師のつぶやき'],
   x: ['#羅針占術'],
   bluesky: ['#羅針占術', '#今日の占い', '#今日の運勢', '#占い師'],
+  instagram: ['#羅針占術'],
 };
 const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
 const WEEKDAYS_BY_KIND = {
@@ -33,7 +36,7 @@ const HARD_NG_PATTERNS = [
 ];
 
 const PRELAUNCH_LIVE_CTA_PATTERNS = [
-  /あなたも今日の1枚を引かない？/,
+  /今日の1枚はこちら/,
   /今すぐ.*(引|使|試)/,
   /無料鑑定へ/,
   /アプリで試して/,
@@ -144,7 +147,7 @@ function hasPrelaunchAnchor(text) {
 }
 
 function hasPrelaunchWaitCta(text) {
-  return /フォロー|保存|見返|待って|公開を待/.test(String(text || ''));
+  return /フォロー|保存|見返|待って|公開を待|公開日にまた届きます/.test(String(text || ''));
 }
 
 function addIssue(issues, severity, code, message) {
@@ -158,7 +161,13 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
   const length = textLength(value);
   const prelaunch = isPrelaunchDate(dateKey);
   const releasePhase = getReleasePhase(dateKey);
-  const limit = platform === 'x' ? Infinity : platform === 'bluesky' ? BLUESKY_LIMIT : THREADS_LIMIT;
+  const limit = platform === 'x'
+    ? Infinity
+    : platform === 'bluesky'
+      ? BLUESKY_LIMIT
+      : platform === 'instagram'
+        ? INSTAGRAM_LIMIT
+        : THREADS_LIMIT;
 
   if (!value.trim()) addIssue(issues, 'error', 'empty', '投稿文が空です。');
   if (length > limit) addIssue(issues, 'error', 'length', `${platform}の文字数上限を超えています: ${length}/${limit}`);
@@ -167,12 +176,12 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
     addIssue(issues, 'error', 'bluesky_clickable_url', 'Bluesky投稿の羅針占術URLは https:// 付きにします。');
   }
   if (!hasUtm(value) && !hasUtm(tracking)) addIssue(issues, 'error', 'utm_missing', `${platform}投稿には台帳用utm_contentが必要です。`);
-  const requiredHashtags = REQUIRED_HASHTAGS_BY_PLATFORM[platform] || REQUIRED_HASHTAGS_BY_PLATFORM.threads;
+  const requiredHashtags = REQUIRED_HASHTAGS_BY_PLATFORM[platform] || [];
   requiredHashtags.forEach(requiredHashtag => {
     if (!value.includes(requiredHashtag)) addIssue(issues, 'error', 'hashtag_missing', `${requiredHashtag} がありません。`);
   });
   if (platform === 'threads' && value.includes('#羅針占術')) {
-    addIssue(issues, 'error', 'threads_brand_hashtag', 'Threads投稿では #羅針占術 を使わず #占い鑑定 のみにします。');
+    addIssue(issues, 'error', 'threads_brand_hashtag', 'Threads投稿では #羅針占術 を使わず #占い師のつぶやき のみにします。');
   }
   const hashtagCount = countHashtags(value);
   if (platform === 'threads' && hashtagCount !== requiredHashtags.length) {
@@ -183,6 +192,14 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
   }
   if (platform === 'bluesky' && hashtagCount !== requiredHashtags.length) {
     addIssue(issues, 'error', 'hashtag_count', `Blueskyのハッシュタグは${requiredHashtags.length}個にします: ${hashtagCount}`);
+  }
+  if (platform === 'instagram') {
+    if (hashtagCount > INSTAGRAM_HASHTAG_LIMIT) {
+      addIssue(issues, 'error', 'instagram_hashtag_count', `Instagramのハッシュタグは${INSTAGRAM_HASHTAG_LIMIT}個までにします: ${hashtagCount}`);
+    }
+    if (hashtagCount < 3) {
+      addIssue(issues, 'warn', 'instagram_hashtag_too_few', `Instagramのハッシュタグが少なすぎます: ${hashtagCount}`);
+    }
   }
 
   for (const [label, pattern] of HARD_NG_PATTERNS) {
@@ -202,7 +219,7 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
       addIssue(issues, 'warn', 'early_deep_cta', '公開3日前以前の深掘り言及は弱めに抑えてください。');
     }
   } else if (platform === 'threads') {
-    if (kind === 'oracle' && !value.trim().endsWith('あなたも今日の1枚を引かない？')) {
+    if (kind === 'oracle' && !value.trim().endsWith('今日の1枚はこちら')) {
       addIssue(issues, 'error', 'oracle_closing', '公開後の朝オラクルは指定の締めで終える必要があります。');
     }
   }
@@ -214,16 +231,16 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
     addIssue(issues, 'error', 'fix_false_release', '修正期間中に正式リリース済みのような表現があります。');
   }
 
-  if (kind === 'oracle' && !/今日の1枚|テーマ|一手/.test(value)) {
-    addIssue(issues, 'warn', 'oracle_structure', '朝オラクルとしてカード、テーマ、一手のどれかが弱いです。');
+  if (kind === 'oracle' && !/今日の1枚|テーマ|よりどころ/.test(value)) {
+    addIssue(issues, 'warn', 'oracle_structure', '朝オラクルとしてカード、テーマ、よりどころのどれかが弱いです。');
   }
   if (kind === 'empathy' && !/ルノルマンカード「.+」/.test(value)) {
     addIssue(issues, 'error', 'empathy_card_missing', 'empathy投稿にはルノルマンカード名が必要です。');
   }
-  if (kind === 'empathy' && !/自由記載|深掘り/.test(value)) {
+  if (kind === 'empathy' && !/自由記載|深掘り|現実の流れ/.test(value)) {
     addIssue(issues, 'warn', 'empathy_cta', 'empathy投稿の羅針占術CTAが弱い可能性があります。');
   }
-  if (kind === 'difference' && !/AI占い|自由記載|四柱推命|姓名判断|動物タイプ|エンジニア|本質|本音|カード/.test(value)) {
+  if (kind === 'difference' && !/AI占い|自由記載|四柱推命|姓名判断|動物タイプ|命・卜・相|総合占術|エンジニア|本質|本音|カード|断定|整理|次に動ける/.test(value)) {
     addIssue(issues, 'warn', 'difference_axis', '羅針占術の違い紹介としての軸が弱い可能性があります。');
   }
   if (kind === 'free_paid_compare' && !/無料版|有料版|ルノルマン|数秘オラクル|鑑定履歴|深掘り/.test(value)) {
@@ -235,14 +252,20 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
 
 function auditImage({ draft, kind, platform }) {
   const issues = [];
-  if (!['threads', 'x', 'bluesky'].includes(platform)) return issues;
+  if (!['threads', 'x', 'bluesky', 'instagram'].includes(platform)) return issues;
   const entry = draft[kind] || {};
-  const imagePath = platform === 'bluesky' ? entry.blueskyImagePath : entry.imagePath;
+  const imagePath = platform === 'bluesky'
+    ? entry.blueskyImagePath
+    : platform === 'instagram'
+      ? entry.instagramImagePath
+      : entry.imagePath;
   const altText = entry.altText;
   if (!imagePath) {
     addIssue(issues, 'error', `${platform}_image_missing`, `${platform}用投稿に画像パスがありません。`);
   } else if (!fs.existsSync(imagePath)) {
     addIssue(issues, 'error', `${platform}_image_not_found`, `${platform}用画像が見つかりません: ${imagePath}`);
+  } else if (platform === 'instagram' && !/\.jpe?g$/i.test(imagePath)) {
+    addIssue(issues, 'error', 'instagram_image_not_jpeg', `Instagram用画像はJPEGにします: ${imagePath}`);
   } else if (platform === 'bluesky') {
     const size = fs.statSync(imagePath).size;
     if (size > BLUESKY_IMAGE_LIMIT_BYTES) {
@@ -310,12 +333,16 @@ function main() {
           ? draft[kind].xText
           : platform === 'bluesky'
             ? draft[kind].blueskyText
-            : draft[kind].text;
+            : platform === 'instagram'
+              ? draft[kind].instagramText
+              : draft[kind].text;
         const trackedUrl = platform === 'x'
           ? draft[kind].xTrackedUrl
           : platform === 'bluesky'
             ? draft[kind].blueskyTrackedUrl
-            : draft[kind].trackedUrl;
+            : platform === 'instagram'
+              ? draft[kind].instagramTrackedUrl
+              : draft[kind].trackedUrl;
         const audit = auditText({ text, trackedUrl, dateKey, kind, platform, releaseMode: args.releaseMode });
         const imageIssues = auditImage({ draft, kind, platform });
         const repeatKey = `${kind}:${platform}:${normalizeForRepeat(text)}`;

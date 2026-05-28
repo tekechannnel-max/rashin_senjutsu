@@ -84,9 +84,13 @@ function testDraftHasTrackingImagesAndAlt() {
     assertImageAndAlt(draft[kind].instagramImagePath, draft[kind].altText, `instagram ${kind}`);
     assert.match(draft[kind].instagramImageUrl, /\.jpg$/i, `${kind} Instagram image must be JPEG`);
     if (kind === 'oracle') {
+      assert.match(draft[kind].imagePath, /images[\\/]social[\\/]instagram[\\/]oracle[\\/]\d{2}\.jpg$/, 'oracle Threads should use the text-added generated image');
+      assert.match(draft[kind].imageUrl, /\/images\/social\/instagram\/oracle\/\d{2}\.jpg$/, 'oracle Threads URL should use the generated image');
       assert.match(draft[kind].instagramImagePath, /images[\\/]social[\\/]instagram[\\/]oracle[\\/]\d{2}\.jpg$/, 'oracle Instagram should use the text-added generated image');
       assert.match(draft[kind].instagramImageUrl, /\/images\/social\/instagram\/oracle\/\d{2}\.jpg$/, 'oracle Instagram URL should use the generated image');
     } else if (kind === 'empathy') {
+      assert.match(draft[kind].imagePath, /images[\\/]social[\\/]instagram[\\/]lenormand-empathy[\\/]\d{2}\.jpg$/, 'empathy Threads should use the text-added generated image');
+      assert.match(draft[kind].imageUrl, /\/images\/social\/instagram\/lenormand-empathy\/\d{2}\.jpg$/, 'empathy Threads URL should use the generated image');
       assert.match(draft[kind].instagramImagePath, /images[\\/]social[\\/]instagram[\\/]lenormand-empathy[\\/]\d{2}\.jpg$/, 'empathy Instagram should use the text-added generated image');
       assert.match(draft[kind].instagramImageUrl, /\/images\/social\/instagram\/lenormand-empathy\/\d{2}\.jpg$/, 'empathy Instagram URL should use the generated image');
     } else if (kind === 'difference') {
@@ -100,11 +104,25 @@ function testDraftHasTrackingImagesAndAlt() {
 
 function testPlatformHashtagPolicy() {
   const draft = parseDraft('2026-06-06');
+  const legacyEnvDraft = parseDraft('2026-06-06', {
+    env: { SOCIAL_THREADS_HASHTAG: '#占い鑑定' },
+  });
+  const customInstagramDraft = parseDraft('2026-06-06', {
+    env: { SOCIAL_INSTAGRAM_HASHTAGS: '#one #two #three #four #five #six' },
+  });
   const blueskyTags = ['#羅針占術', '#今日の占い', '#今日の運勢', '#占い師'];
+  const instagramKindTags = {
+    oracle: ['#今日の占い', '#オラクルカード'],
+    empathy: ['#ルノルマンカード', '#悩み相談'],
+    difference: ['#AI占い', '#無料占い'],
+    free_paid_compare: ['#無料占い', '#ルノルマンカード'],
+  };
   for (const kind of ACTIVE_KINDS) {
-    assert.match(draft[kind].text, /#占い鑑定/, `${kind} Threads post should use #占い鑑定`);
+    assert.match(draft[kind].text, /#占い師のつぶやき/, `${kind} Threads post should use #占い師のつぶやき`);
     assert.doesNotMatch(draft[kind].text, /#羅針占術/, `${kind} Threads post should not use #羅針占術`);
     assert.equal(countHashtags(draft[kind].text), 1, `${kind} Threads post should keep one hashtag`);
+    assert.match(legacyEnvDraft[kind].text, /#占い師のつぶやき/, `${kind} legacy Threads hashtag env should normalize to #占い師のつぶやき`);
+    assert.doesNotMatch(legacyEnvDraft[kind].text, /#占い鑑定/, `${kind} legacy Threads hashtag env should not leak #占い鑑定`);
 
     for (const tag of blueskyTags) {
       assert.ok(draft[kind].blueskyText.includes(tag), `${kind} Bluesky post should include ${tag}`);
@@ -112,14 +130,23 @@ function testPlatformHashtagPolicy() {
     assert.equal(countHashtags(draft[kind].blueskyText), blueskyTags.length, `${kind} Bluesky post should use configured hashtags`);
 
     assert.match(draft[kind].xText, /#羅針占術/, `${kind} X draft should keep the brand tag`);
-    assert.doesNotMatch(draft[kind].xText, /#占い鑑定/, `${kind} X draft should not use the Threads tag`);
+    assert.doesNotMatch(draft[kind].xText, /#占い師のつぶやき/, `${kind} X draft should not use the Threads tag`);
+
+    assert.match(draft[kind].instagramText, /#羅針占術/, `${kind} Instagram post should keep the brand tag`);
+    assert.equal(countHashtags(draft[kind].instagramText), 5, `${kind} Instagram post should use five focused hashtags`);
+    for (const tag of instagramKindTags[kind]) {
+      assert.ok(draft[kind].instagramText.includes(tag), `${kind} Instagram post should include ${tag}`);
+    }
+    assert.doesNotMatch(draft[kind].instagramText, /#占い鑑定/, `${kind} Instagram post should not use the legacy Threads tag`);
+    assert.equal(countHashtags(customInstagramDraft[kind].instagramText), 5, `${kind} custom Instagram hashtags should be capped at five`);
+    assert.doesNotMatch(customInstagramDraft[kind].instagramText, /#six/, `${kind} custom Instagram hashtags should drop tags after the fifth`);
   }
 }
 
 function testMorningOracleCopyStillKeepsRequiredClosing() {
   const draft = parseDraft('2026-05-27');
   assert.match(draft.oracle.text, /今日の数秘オラクル/, 'morning oracle post should keep the oracle label');
-  assert.ok(draft.oracle.text.trim().endsWith('あなたも今日の1枚を引かない？'), 'oracle Threads post must keep the required closing line');
+  assert.ok(draft.oracle.text.trim().endsWith('今日の1枚はこちら'), 'oracle Threads post must keep the required closing line');
   assert.doesNotMatch(draft.oracle.text, /utm_source=|utm_content=|\/share\/card/, 'oracle visible text should not include long tracking URL');
   assert.match(draft.oracle.trackedUrl, /utm_content=oracle_20260527/, 'oracle tracked URL should keep the oracle utm_content');
 }
@@ -131,24 +158,27 @@ function testEmpathyUsesRandomLenormandRotation() {
     const cardNumber = draft.empathy.card.cardNumber;
     seen.add(cardNumber);
     assert.match(draft.empathy.text, /ルノルマンカード「.+」/, `${dateKey} empathy post should show card name`);
-    assert.match(draft.empathy.text, /自由記載から深掘りできます。/, `${dateKey} empathy post should keep soft CTA`);
+    assert.match(draft.empathy.text, /迷いを現実の流れとして読みます。/, `${dateKey} empathy post should keep soft CTA`);
     assert.match(draft.empathy.trackedUrl, new RegExp(`utm_content=empathy_${dateKey.replace(/-/g, '')}_card\\d{2}`), `${dateKey} empathy utm_content should include card number`);
-    assert.match(draft.empathy.imagePath, new RegExp(`images\\\\cards\\\\lenormand\\\\${String(cardNumber).padStart(2, '0')}\\.jpg$`), `${dateKey} empathy should use the matching Lenormand image`);
+    assert.match(draft.empathy.imagePath, new RegExp(`images[\\\\/]social[\\\\/]instagram[\\\\/]lenormand-empathy[\\\\/]${String(cardNumber).padStart(2, '0')}\\.jpg$`), `${dateKey} empathy should use the matching text-added Lenormand image`);
+    assert.match(draft.empathy.imageUrl, new RegExp(`/images/social/instagram/lenormand-empathy/${String(cardNumber).padStart(2, '0')}\\.jpg$`), `${dateKey} empathy URL should use the matching text-added Lenormand image`);
   }
   assert.equal(seen.size, 36, 'first empathy rotation cycle should use all 36 Lenormand cards without repeats');
 }
 
 function testDifferenceAndFreePaidCompareAxes() {
   const difference = parseDraft('2026-06-02').difference;
-  assert.match(difference.text, /AI占い|自由記載|四柱推命|姓名判断|動物タイプ|エンジニア|本質|本音|カード/, 'difference post should explain the Rashin distinction');
+  assert.match(difference.text, /AI占い|自由記載|四柱推命|姓名判断|動物タイプ|命・卜・相|総合占術|エンジニア|本質|本音|カード|断定|整理|次に動ける/, 'difference post should explain the Rashin distinction');
   assert.match(difference.trackedUrl, /utm_content=difference_20260602_v\d{2}/, 'difference tracked URL should use versioned utm_content');
-  assert.match(difference.imagePath, /social-difference-rashin-no-model\.jpg$/, 'difference should use the generated no-model image');
+  assert.match(difference.imagePath, /images[\\/]social[\\/]instagram[\\/]difference\.jpg$/, 'difference Threads should use the dedicated comparison image');
+  assert.match(difference.imageUrl, /\/images\/social\/instagram\/difference\.jpg$/, 'difference Threads image URL should use the public Instagram asset path');
 
   const compare = parseDraft('2026-05-30').free_paid_compare;
   assert.match(compare.text, /無料版|有料版/, 'free_paid_compare should compare free and paid versions');
   assert.match(compare.text, /ルノルマン|数秘オラクル|鑑定履歴|深掘り|解像度/, 'free_paid_compare should explain the paid value without hard selling');
   assert.match(compare.trackedUrl, /utm_content=freepaid_20260530_v\d{2}/, 'free_paid_compare tracked URL should use versioned utm_content');
-  assert.match(compare.imagePath, /social-free-paid-compare-no-model\.jpg$/, 'free_paid_compare should use the generated no-model image');
+  assert.match(compare.imagePath, /images[\\/]social[\\/]instagram[\\/]free-paid-compare\.jpg$/, 'free_paid_compare Threads should use the dedicated comparison image');
+  assert.match(compare.imageUrl, /\/images\/social\/instagram\/free-paid-compare\.jpg$/, 'free_paid_compare Threads image URL should use the public Instagram asset path');
 }
 
 function testPostsLedgerWriteIsTraceableAndSecretSafe() {
@@ -264,6 +294,7 @@ function testXDraftExportUsesRandomOracleAndNoLengthLimit() {
   ], {
     env: {
       SOCIAL_ORACLE_CARD_MODE: 'random',
+      SOCIAL_ORACLE_CARD_ID: '1',
     },
   });
   assert.match(result.stdout, /"status": "x_drafts_written"/, 'X draft export should write artifacts');

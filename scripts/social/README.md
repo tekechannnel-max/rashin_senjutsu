@@ -5,7 +5,7 @@
 ## 役割
 
 - `daily-oracle-post.js`: Threads/Bluesky/X向けの当日投稿文、画像、alt textを作る
-- `run-scheduled-posts.js`: JSTの予定時刻に来た投稿だけThreads/Blueskyへ送る
+- `run-scheduled-posts.js`: JSTの予定時刻に来た投稿だけ、設定されたSNSへ送る。現運用はThreads / Instagram
 - `export-x-drafts.js`: X手動投稿用の下書きを出す
 - `content/lenormand-empathy-posts.js`: `empathy` 用の36枚ルノルマン投稿素材
 - `content/difference-posts.js`: `difference` 用のローテーション投稿素材
@@ -36,8 +36,8 @@ npm run social:write
 
 ## Render本番
 
-Threads本番投稿はRender Cron Job `rashin-threads-scheduler` が実行する。
-Bluesky本番投稿も `SOCIAL_PLATFORMS=threads,bluesky` のとき同じRender Cron Jobが実行する。
+Threads / Instagram本番投稿はRender Cron Job `rashin-threads-scheduler` が実行する。
+Bluesky本番投稿は現運用では動かさない。再開する場合だけ `SOCIAL_PLATFORMS` に追加する。
 
 ```text
 node scripts/social/run-scheduled-posts.js --once --only-kind=all
@@ -132,33 +132,34 @@ node scripts/social/threads-tool.js save-token --token="<token-from-user-token-g
 
 ```powershell
 npm run check
-npm run social:audit -- --from=2026-05-13 --to=2026-06-06 --platforms=threads,bluesky,x
-npm run social:draft -- --date=2026-05-18 --platforms=threads,bluesky
+npm run social:audit -- --from=2026-05-13 --to=2026-06-06 --platforms=threads,instagram,x
+npm run social:draft -- --date=2026-05-18 --platforms=threads,instagram
 ```
 
 - `daily-oracle-post.js` は投稿文、UTM付きURL、画像、alt textを生成する。
 - `post-ledger.js` は `data/social-posts/posts.csv` に投稿台帳を保存する。本文とalt textはSHA-256ハッシュだけを保存し、APIキー、トークン、投稿全文、個人情報は保存しない。
 - `audit-social-drafts.js` は文字数、UTM、画像、alt text、重複本文、禁止表現を検査する。
 - `run-scheduled-posts.js` はRender Cron用。JSTの投稿対象時間だけ `daily-oracle-post.js --write --post --yes` 相当を実行する。
-- 朝07:00の `oracle` はカード1〜33の投稿文をThreads / Blueskyで同じ本文にする。本文URLは短い `rashin-senjutsu.onrender.com` にし、UTM付きURLは `posts.csv` の分析用URLとして保存する。カード名の次行に `テーマ：...` を出し、`カードメッセージ` と「今日の一手」を入れ、締め文は必ず「あなたも今日の1枚を引かない？」にする。
-- 月・水・金12:00の `empathy` は、悩み共感の一文、ルノルマンカード名、見立て文、自由記載深掘りへの軽いCTAで構成する。36枚の既存ルノルマンJPGを日付seedのランダムローテーションで使い、初回36投稿で重複させない。
-- Threadsのハッシュタグは `#占い鑑定` だけにし、`#羅針占術` は使わない。Blueskyは `#羅針占術 #今日の占い #今日の運勢 #占い師` を使い、300文字を超えたら投稿しない。
-- 火20:00の `difference` は、羅針占術が他のAI占いと違う点、自由記載、複数占術統合、占い師兼エンジニア設計をローテーションで伝える。画像は `images/ui/social-difference-rashin-no-model.jpg` を使う。
-- 土20:00の `free_paid_compare` は、無料版と有料版の違い、カード枚数差、鑑定履歴解析の価値を、強すぎない有料導線として伝える。画像は `images/ui/social-free-paid-compare-no-model.jpg` を使う。
+- 朝07:00の `oracle` はカード1〜33の投稿文をThreads / Instagram向けに出す。本文URLは短い `rashin-senjutsu.onrender.com` にし、UTM付きURLは `posts.csv` の分析用URLとして保存する。画像は `images/social/instagram/oracle/NN.jpg` を使い、締め文は必ず「今日の1枚はこちら」にする。
+- 月・水・金12:00の `empathy` は、悩み共感の一文、ルノルマンカード名、見立て文、自由記載深掘りへの軽いCTAで構成する。画像は `images/social/instagram/lenormand-empathy/NN.jpg` を使い、初回36投稿で重複させない。
+- Threadsのハッシュタグは `#占い師のつぶやき` だけにし、`#羅針占術` は使わない。Blueskyは再開時だけ `#羅針占術 #今日の占い #今日の運勢 #占い師` を使い、300文字を超えたら投稿しない。
+- Instagramのハッシュタグは投稿種別ごとに最大5個だけ付ける。大量タグではなく、内容に合うタグを `SOCIAL_INSTAGRAM_*_HASHTAGS` で管理する。
+- 火20:00の `difference` は、羅針占術が他のAI占いと違う点、自由記載、命・卜・相の総合占術、鑑定履歴をローテーションで伝える。画像は `images/social/instagram/difference.jpg` をThreadsにも使う。
+- 土20:00の `free_paid_compare` は、無料版と有料版の違い、カード枚数差、鑑定履歴解析の価値を、強すぎない有料導線として伝える。画像は `images/social/instagram/free-paid-compare.jpg` をThreadsにも使う。
 
 ## 手動投稿とプレビュー
 
 実投稿は、通常の端末ではプレビュー後に `yes` を入力しない限り進まない。
 
 ```powershell
-npm run social:draft -- --date=2026-05-18 --platforms=threads,bluesky
-npm run social:post -- --date=2026-05-18 --platforms=threads,bluesky
+npm run social:draft -- --date=2026-05-18 --platforms=threads,instagram
+npm run social:post -- --date=2026-05-18 --platforms=threads,instagram
 ```
 
 CI、Render Cron、確認済みの手動実行だけ `--yes` を使う。
 
 ```powershell
-node scripts/social/daily-oracle-post.js --write --post --yes --date=2026-05-18 --platforms=threads,bluesky --kind=oracle
+node scripts/social/daily-oracle-post.js --write --post --yes --date=2026-05-18 --platforms=threads,instagram --kind=oracle
 ```
 
 ## 環境変数
@@ -168,12 +169,21 @@ PUBLIC_ORIGIN=https://rashin-senjutsu.onrender.com
 THREADS_USER_ID=<Renderに保存>
 THREADS_ACCESS_TOKEN=<Renderに保存>
 THREADS_EXPECTED_USERNAME=sensai_teke
+INSTAGRAM_ENABLED=true
+INSTAGRAM_USER_ID=<Renderに保存>
+INSTAGRAM_ACCESS_TOKEN=<Renderに保存>
+INSTAGRAM_EXPECTED_USERNAME=sensai_teke
+INSTAGRAM_API_VERSION=v23.0
 BLUESKY_IDENTIFIER=tekesensai.bsky.social
 BLUESKY_APP_PASSWORD=<Renderに保存>
 BLUESKY_EXPECTED_HANDLE=tekesensai.bsky.social
 SOCIAL_AUTOMATED_POSTING_ENABLED=true
-SOCIAL_PLATFORMS=threads,bluesky
-SOCIAL_THREADS_HASHTAG=#占い鑑定
+SOCIAL_PLATFORMS=threads,instagram
+SOCIAL_THREADS_HASHTAG=#占い師のつぶやき
+SOCIAL_INSTAGRAM_ORACLE_HASHTAGS=#羅針占術 #今日の占い #オラクルカード #占い好きな人と繋がりたい #AI占い
+SOCIAL_INSTAGRAM_EMPATHY_HASHTAGS=#羅針占術 #ルノルマンカード #悩み相談 #占い好きな人と繋がりたい #AI占い
+SOCIAL_INSTAGRAM_DIFFERENCE_HASHTAGS=#羅針占術 #AI占い #無料占い #占い師のつぶやき #悩み相談
+SOCIAL_INSTAGRAM_FREE_PAID_COMPARE_HASHTAGS=#羅針占術 #無料占い #占い師のつぶやき #ルノルマンカード #AI占い
 SOCIAL_BLUESKY_HASHTAGS=#羅針占術 #今日の占い #今日の運勢 #占い師
 SOCIAL_EMPATHY_TIME=12:00
 SOCIAL_DIFFERENCE_TIME=20:00
@@ -185,7 +195,7 @@ SOCIAL_API_RETRY_BASE_MS=1500
 SOCIAL_UTM_CAMPAIGN=202605_prerelease
 ```
 
-`THREADS_ACCESS_TOKEN` と `BLUESKY_APP_PASSWORD` はGit、README、チャット、ログに書かない。Renderの環境変数だけに保存する。
+`THREADS_ACCESS_TOKEN`、`INSTAGRAM_ACCESS_TOKEN`、`BLUESKY_APP_PASSWORD` はGit、README、チャット、ログに書かない。Renderの環境変数だけに保存する。
 
 ## BOOTH分析
 
@@ -193,7 +203,7 @@ SOCIAL_UTM_CAMPAIGN=202605_prerelease
 
 ## トラブル対応
 
-- 重複投稿が疑わしい: `data/social-posts/posts.csv` の `post_key`、SNS側の既存投稿検索、Renderログの `existing_threads_post` / `existing_bluesky_post` を確認する。
+- 重複投稿が疑わしい: `data/social-posts/posts.csv` の `post_key`、SNS側の既存投稿検索、Renderログの `existing_threads_post` / `existing_instagram_post` / `existing_bluesky_post` を確認する。
 - API失敗: 一時的な5xx/429/タイムアウトは `SOCIAL_API_RETRY_ATTEMPTS` 回まで待って再試行する。認証不備、expected handle不一致、画像サイズ超過は再試行せず止める。
 - UTMがない: `npm run social:audit -- --from=<開始日> --to=<終了日> --platforms=threads,bluesky,x` を実行し、`missing_utm` を直すまで投稿しない。
-- Bluesky画像で失敗: 画像は1,000,000 bytes以下にする。`images/ui/social-difference-rashin-no-model.jpg`、`images/ui/social-free-paid-compare-no-model.jpg`、既存ルノルマンJPGを含めて、`audit-social-drafts.js` と `tests/social-posting.test.js` がこの条件を検査する。
+- Bluesky画像で失敗: 画像は1,000,000 bytes以下にする。`images/social/instagram/difference.jpg`、`images/social/instagram/free-paid-compare.jpg`、既存ルノルマンJPGを含めて、`audit-social-drafts.js` と `tests/social-posting.test.js` がこの条件を検査する。

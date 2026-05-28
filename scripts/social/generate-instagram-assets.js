@@ -10,6 +10,7 @@ const WIDTH = 1080;
 const HEIGHT = 1350;
 const DEFAULT_QUALITY = 88;
 const OUT_ROOT = path.join(ROOT, 'images', 'social', 'instagram');
+const GENERATED_PLATE_ROOT = path.join(OUT_ROOT, 'generated-plates');
 const V_MODEL_ROOT = path.join(ROOT, '占い素材');
 const CHARACTER_IMAGE = path.join(V_MODEL_ROOT, '通常背景無し.png');
 const CHIBI_CHARACTER_IMAGE = path.join(V_MODEL_ROOT, 'ミニキャラ.png');
@@ -85,6 +86,16 @@ function fileUrl(filePath) {
   const ext = path.extname(resolved).toLowerCase();
   const mime = ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'image/png';
   return `data:${mime};base64,${fsSync.readFileSync(resolved).toString('base64')}`;
+}
+
+function generatedPlatePath(kind, id) {
+  return path.join(GENERATED_PLATE_ROOT, kind, `${pad2(id)}.jpg`);
+}
+
+function visualBackdrop(kind, id, fallbackPath) {
+  const platePath = generatedPlatePath(kind, id);
+  if (fsSync.existsSync(platePath)) return { path: platePath, generated: true };
+  return { path: fallbackPath, generated: false };
 }
 
 function pad2(value) {
@@ -324,6 +335,14 @@ function baseStyles() {
       filter: blur(18px) saturate(1.16);
       transform: scale(1.06);
     }
+    .bg-generated {
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 1;
+      filter: none;
+      transform: none;
+    }
     .wash {
       position: absolute;
       inset: 0;
@@ -332,6 +351,50 @@ function baseStyles() {
         linear-gradient(90deg, rgba(4, 10, 18, .18), transparent 38%, rgba(4, 10, 18, .25)),
         repeating-linear-gradient(90deg, rgba(255,255,255,.04) 0 1px, transparent 1px 120px);
       opacity: .98;
+    }
+    .generated-plate .wash {
+      background:
+        linear-gradient(180deg, rgba(4, 10, 18, .24), rgba(4, 10, 18, .76)),
+        linear-gradient(90deg, rgba(4, 10, 18, .10), rgba(4, 10, 18, .34) 42%, rgba(4, 10, 18, .72)),
+        radial-gradient(circle at 74% 58%, rgba(4,10,18,.18), rgba(4,10,18,.72) 56%, rgba(4,10,18,.86));
+      opacity: .95;
+    }
+    .generated-plate .card-art {
+      left: 62px;
+      top: 160px;
+      width: 312px;
+      height: 468px;
+      transform: rotate(-1.2deg);
+      z-index: 5;
+    }
+    .generated-plate .hero-copy {
+      left: 430px;
+      right: 70px;
+      top: 166px;
+      height: 390px;
+      z-index: 6;
+    }
+    .generated-plate .panel {
+      left: 430px;
+      right: 70px;
+      bottom: 116px;
+      min-height: 440px;
+      background: rgba(7, 15, 26, .78);
+      border-color: rgba(255,255,255,.28);
+      z-index: 7;
+    }
+    .generated-plate .character-frame {
+      display: none;
+    }
+    .generated-plate .footer {
+      left: 64px;
+      right: 64px;
+      bottom: 58px;
+    }
+    .generated-plate .url {
+      left: 64px;
+      right: 64px;
+      bottom: 28px;
     }
     .brand {
       position: absolute;
@@ -514,6 +577,7 @@ function baseStyles() {
 
 function oracleHtml(card) {
   const imagePath = path.join(ROOT, 'images', 'cards', 'oracle', `${pad2(card.id)}.jpg`);
+  const backdrop = visualBackdrop('oracle', card.id, imagePath);
   const message = oracleVisualMessage(card);
   const action = oracleVisualAction(card);
   return `
@@ -528,10 +592,10 @@ function oracleHtml(card) {
       </style>
     </head>
     <body>
-      <main class="post oracle-post">
-        <img class="bg" src="${fileUrl(imagePath)}" alt="">
+      <main class="post oracle-post${backdrop.generated ? ' generated-plate' : ''}">
+        <img class="bg${backdrop.generated ? ' bg-generated' : ''}" src="${fileUrl(backdrop.path)}" alt="">
         <div class="wash"></div>
-        <div class="character-frame"><img class="character" src="${fileUrl(CHARACTER_IMAGE)}" alt=""></div>
+        ${backdrop.generated ? '' : `<div class="character-frame"><img class="character" src="${fileUrl(CHARACTER_IMAGE)}" alt=""></div>`}
         <div class="brand"><span class="brand-mark">R</span><span>羅針占術</span></div>
         <figure class="card-art"><img src="${fileUrl(imagePath)}" alt=""></figure>
         <section class="hero-copy">
@@ -557,6 +621,7 @@ function oracleHtml(card) {
 
 function empathyHtml(item) {
   const imagePath = path.join(ROOT, 'images', 'cards', 'lenormand', `${pad2(item.cardNumber)}.jpg`);
+  const backdrop = visualBackdrop('lenormand-empathy', item.cardNumber, imagePath);
   const reading = empathyVisualReading(item);
   return `
     <!doctype html>
@@ -570,10 +635,10 @@ function empathyHtml(item) {
       </style>
     </head>
     <body>
-      <main class="post empathy-post">
-        <img class="bg" src="${fileUrl(imagePath)}" alt="">
+      <main class="post empathy-post${backdrop.generated ? ' generated-plate' : ''}">
+        <img class="bg${backdrop.generated ? ' bg-generated' : ''}" src="${fileUrl(backdrop.path)}" alt="">
         <div class="wash"></div>
-        <div class="character-frame"><img class="character" src="${fileUrl(CHARACTER_IMAGE)}" alt=""></div>
+        ${backdrop.generated ? '' : `<div class="character-frame"><img class="character" src="${fileUrl(CHARACTER_IMAGE)}" alt=""></div>`}
         <div class="brand"><span class="brand-mark">R</span><span>羅針占術</span></div>
         <figure class="card-art"><img src="${fileUrl(imagePath)}" alt=""></figure>
         <section class="hero-copy">
