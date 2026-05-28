@@ -65,9 +65,8 @@ function assertImageAndAlt(imagePath, altText, label) {
   assert.ok(String(altText || '').trim().length >= 10, `${label} alt text is too short`);
 }
 
-function normalizePlatformOnlyUrl(text) {
+function normalizeBlueskyHashtagOnlyDifference(text) {
   return String(text || '')
-    .replace(/https:\/\/rashin-senjutsu\.onrender\.com/g, 'rashin-senjutsu.onrender.com')
     .replace(/(^|\n)#[^\s#]+(?:\s+#[^\s#]+)*/g, '$1#<platform-tags>')
     .replace(/utm_source=(threads|bluesky)/g, 'utm_source=<platform>');
 }
@@ -87,6 +86,8 @@ function testDraftHasTrackingImagesAndAlt() {
     assertImageAndAlt(draft[kind].imagePath, draft[kind].altText, `threads ${kind}`);
     assertImageAndAlt(draft[kind].blueskyImagePath, draft[kind].altText, `bluesky ${kind}`);
     assertImageAndAlt(draft[kind].instagramImagePath, draft[kind].altText, `instagram ${kind}`);
+    assert.equal(draft[kind].blueskyImagePath, draft[kind].imagePath, `${kind} Bluesky image should match Threads image`);
+    assert.equal(draft[kind].blueskyImageUrl, draft[kind].imageUrl, `${kind} Bluesky image URL should match Threads image URL`);
     assert.match(draft[kind].instagramImageUrl, /\.jpg$/i, `${kind} Instagram image must be JPEG`);
     if (kind === 'oracle') {
       assert.match(draft[kind].imagePath, /images[\\/]social[\\/]instagram[\\/]oracle[\\/]\d{2}\.jpg$/, 'oracle Threads should use the text-added generated image');
@@ -139,9 +140,9 @@ function testPlatformHashtagPolicy() {
     }
     assert.equal(countHashtags(draft[kind].blueskyText), blueskyTags.length, `${kind} Bluesky post should use configured hashtags`);
     assert.equal(
-      normalizePlatformOnlyUrl(draft[kind].blueskyText),
-      normalizePlatformOnlyUrl(draft[kind].text),
-      `${kind} Bluesky copy should match Threads copy except URL protocol and hashtags`
+      normalizeBlueskyHashtagOnlyDifference(draft[kind].blueskyText),
+      normalizeBlueskyHashtagOnlyDifference(draft[kind].text),
+      `${kind} Bluesky copy should match Threads copy except hashtags`
     );
 
     assert.match(draft[kind].xText, /#羅針占術/, `${kind} X draft should keep the brand tag`);
@@ -164,8 +165,8 @@ function testQuestionLaneIsReplyFocusedAndTracked() {
   assert.doesNotMatch(draft.text, /rashin-senjutsu\.onrender\.com/, 'question Threads post should avoid a visible URL');
   assert.match(draft.trackedUrl, /utm_content=question_20260602_v\d{2}/, 'question tracked URL should keep a versioned utm_content for KPI review');
   assert.equal(
-    normalizePlatformOnlyUrl(draft.blueskyText),
-    normalizePlatformOnlyUrl(draft.text),
+    normalizeBlueskyHashtagOnlyDifference(draft.blueskyText),
+    normalizeBlueskyHashtagOnlyDifference(draft.text),
     'question Bluesky copy should match Threads copy except hashtags'
   );
   assert.match(draft.instagramText, /コメントではA\/Bだけでも大丈夫です。/, 'question Instagram copy should use an Instagram-specific comment cue');

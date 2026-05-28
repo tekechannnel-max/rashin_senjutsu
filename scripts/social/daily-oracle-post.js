@@ -528,7 +528,6 @@ function hasDisplayUrl(text) {
 
 function normalizeSharedThreadsBlueskyText(text) {
   return String(text || '')
-    .replace(/https:\/\/rashin-senjutsu\.onrender\.com/g, 'rashin-senjutsu.onrender.com')
     .replace(/(^|\n)#[^\s#]+(?:\s+#[^\s#]+)*/g, '$1#<platform-tags>');
 }
 
@@ -740,7 +739,7 @@ function buildDisplayUrl(publicOrigin = DEFAULT_PUBLIC_ORIGIN, options = {}) {
 }
 
 function buildDisplayUrlForPlatform(publicOrigin, config) {
-  return buildDisplayUrl(publicOrigin, { includeProtocol: config?.primaryPlatform === 'bluesky' });
+  return buildDisplayUrl(publicOrigin, { includeProtocol: false });
 }
 
 function buildUtmParams(config, content) {
@@ -940,14 +939,14 @@ function validateDraft(draft, args) {
       for (const requiredHashtag of requiredHashtags) {
         if (!entry.blueskyText.includes(requiredHashtag)) throw new Error(`${kind} Bluesky post is missing the required hashtag: ${requiredHashtag}`);
       }
-      if (requiresVisibleUrl(kind) && !/https:\/\/rashin-senjutsu\.onrender\.com\b/i.test(entry.blueskyText)) {
-        throw new Error(`${kind} Bluesky post must use a clickable https://rashin-senjutsu.onrender.com URL.`);
-      }
       if (!entry.blueskyImagePath) throw new Error(`${kind} Bluesky post requires a local image path.`);
+      if (entry.blueskyImagePath !== entry.imagePath) {
+        throw new Error(`${kind} Bluesky image must match the Threads image.`);
+      }
       if (!entry.altText) throw new Error(`${kind} Bluesky image post requires alt text.`);
     }
     if (kinds.includes('midday') && normalizeSharedThreadsBlueskyText(draft.midday.text) !== normalizeSharedThreadsBlueskyText(draft.midday.blueskyText)) {
-      throw new Error('midday Threads and Bluesky posts must use matching copy except the Bluesky URL protocol.');
+      throw new Error('midday Threads and Bluesky posts must use matching copy except hashtags.');
     }
   }
   if (platforms.includes('instagram')) {
@@ -1691,7 +1690,8 @@ async function buildDraft(args) {
       xTrackedUrl: buildOracleTrackedUrl(card, publicOrigin, xConfig, dateKey),
       blueskyText: buildBlueskyOracleText(card, publicOrigin, { dateKey, config: blueskyConfig }),
       blueskyTrackedUrl: buildOracleTrackedUrl(card, publicOrigin, blueskyConfig, dateKey),
-      blueskyImagePath: path.join(ROOT, 'images', 'cards', 'oracle', imageName),
+      blueskyImagePath: oracleInstagramImagePath,
+      blueskyImageUrl: oracleInstagramImageUrl,
       instagramText: buildOracleText(card, publicOrigin, { dateKey, config: instagramOracleConfig }),
       instagramTrackedUrl: buildOracleTrackedUrl(card, publicOrigin, instagramOracleConfig, dateKey),
       instagramImagePath: oracleInstagramImagePath,
@@ -1711,8 +1711,8 @@ async function buildDraft(args) {
       xTrackedUrl: buildEmpathyTrackedUrl(empathyPost, dateKey, publicOrigin, xConfig),
       blueskyText: buildEmpathyText(empathyPost, dateKey, publicOrigin, blueskyConfig),
       blueskyTrackedUrl: buildEmpathyTrackedUrl(empathyPost, dateKey, publicOrigin, blueskyConfig),
-      blueskyImagePath: empathyImagePath,
-      blueskyImageUrl: empathyImageUrl,
+      blueskyImagePath: empathyInstagramImagePath,
+      blueskyImageUrl: empathyInstagramImageUrl,
       instagramText: buildInstagramEmpathyText(empathyPost, dateKey, publicOrigin, instagramEmpathyConfig),
       instagramTrackedUrl: buildEmpathyTrackedUrl(empathyPost, dateKey, publicOrigin, instagramEmpathyConfig),
       instagramImagePath: empathyInstagramImagePath,

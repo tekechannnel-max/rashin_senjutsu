@@ -104,10 +104,6 @@ function hasPublicUrl(text) {
   return /https?:\/\//i.test(String(text || '')) || /\brashin-senjutsu\.onrender\.com\b/i.test(String(text || ''));
 }
 
-function hasClickableRashinUrl(text) {
-  return /https:\/\/rashin-senjutsu\.onrender\.com\b/i.test(String(text || ''));
-}
-
 function hasUtm(text) {
   return /[?&]utm_content=/i.test(String(text || ''));
 }
@@ -173,9 +169,6 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
   if (!value.trim()) addIssue(issues, 'error', 'empty', '投稿文が空です。');
   if (length > limit) addIssue(issues, 'error', 'length', `${platform}の文字数上限を超えています: ${length}/${limit}`);
   if (kind !== 'question' && !hasPublicUrl(value)) addIssue(issues, 'error', 'visible_url_missing', `${platform}投稿には表示用URLが必要です。`);
-  if (platform === 'bluesky' && kind !== 'question' && !hasClickableRashinUrl(value)) {
-    addIssue(issues, 'error', 'bluesky_clickable_url', 'Bluesky投稿の羅針占術URLは https:// 付きにします。');
-  }
   if (!hasUtm(value) && !hasUtm(tracking)) addIssue(issues, 'error', 'utm_missing', `${platform}投稿には台帳用utm_contentが必要です。`);
   const requiredHashtags = REQUIRED_HASHTAGS_BY_PLATFORM[platform] || [];
   requiredHashtags.forEach(requiredHashtag => {
@@ -274,6 +267,9 @@ function auditImage({ draft, kind, platform }) {
   } else if (platform === 'instagram' && !/\.jpe?g$/i.test(imagePath)) {
     addIssue(issues, 'error', 'instagram_image_not_jpeg', `Instagram用画像はJPEGにします: ${imagePath}`);
   } else if (platform === 'bluesky') {
+    if (entry.imagePath && imagePath !== entry.imagePath) {
+      addIssue(issues, 'error', 'bluesky_image_mismatch', `Bluesky用画像はThreads用画像と同じにします: ${imagePath} !== ${entry.imagePath}`);
+    }
     const size = fs.statSync(imagePath).size;
     if (size > BLUESKY_IMAGE_LIMIT_BYTES) {
       addIssue(issues, 'error', 'bluesky_image_too_large', `Bluesky用画像が1,000,000 bytesを超えています: ${size}/${BLUESKY_IMAGE_LIMIT_BYTES} ${imagePath}`);
