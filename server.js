@@ -790,8 +790,12 @@ function isResultChatTask(payload = {}) {
   return String(payload?.task_key || '').trim() === 'result_chat';
 }
 
+function isPaidResultChatTask(payload = {}) {
+  return isResultChatTask(payload) && String(payload?.plan || '').trim() === 'paid';
+}
+
 function requiresPaidAccess(payload = {}) {
-  return isPaidModel(payload?.model) || isResultChatTask(payload);
+  return isPaidModel(payload?.model) || isPaidResultChatTask(payload);
 }
 
 function getRequestProto(req) {

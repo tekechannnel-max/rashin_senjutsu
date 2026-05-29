@@ -4,6 +4,7 @@ const path = require('path');
 
 const rootDir = path.resolve(__dirname, '..');
 const appSource = fs.readFileSync(path.join(rootDir, 'app.js'), 'utf8');
+const htmlSource = fs.readFileSync(path.join(rootDir, 'uranai-v5.html'), 'utf8');
 
 function sliceFromMarker(source, startMarker, endMarker) {
   const start = source.indexOf(startMarker);
@@ -19,7 +20,10 @@ function sliceFromMarker(source, startMarker, endMarker) {
   'function buildRashinYearCalendarSource()',
   'function buildRashinYearCalendarMonths(source)',
   'async function createRashinYearCalendarImageBlob(sourceData=null)',
+  'function canOpenPaidRashinYearCalendar()',
+  'async function requestRashinYearCalendarFromPaid',
   "window.openRashinYearCalendar=openRashinYearCalendar",
+  "window.requestRashinYearCalendarFromPaid=requestRashinYearCalendarFromPaid",
 ].forEach(marker => {
   assert.ok(appSource.includes(marker), `Rashin year calendar marker missing: ${marker}`);
 });
@@ -34,6 +38,39 @@ assert.ok(
   entrySection.includes("buildRashinYearCalendarEntryHtml('top_entry')"),
   'top paid/free/mini entry must include the 2026 Rashin calendar CTA'
 );
+
+const calendarEntryBuilder = sliceFromMarker(
+  appSource,
+  'function buildRashinYearCalendarEntryHtml',
+  'function renderPremiumEntrySection'
+);
+
+assert.ok(
+  calendarEntryBuilder.includes('姓名判断・四柱推命・動物タイプ診断・カード占い') &&
+    calendarEntryBuilder.includes("requestRashinYearCalendarFromPaid('${source}')"),
+  'top calendar CTA must explain paid-source materials and route through the paid calendar gate'
+);
+
+assert.ok(
+  htmlSource.includes('id="rashin-year-calendar-result-btn"') &&
+    htmlSource.includes("requestRashinYearCalendarFromPaid('result_paid')"),
+  'paid result actions must expose the Rashin calendar button'
+);
+
+const paidCalendarGate = sliceFromMarker(
+  appSource,
+  'function canOpenPaidRashinYearCalendar()',
+  'function syncRashinYearCalendarActionButton()'
+);
+
+[
+  "if(PLAN!=='paid'||!CURRENT_READING_ID) return false;",
+  'hasPaidRashinYearCalendarTicket()',
+  '深掘り鑑定を作れませんでした',
+  '深掘り鑑定を停止しました',
+].forEach(marker => {
+  assert.ok(paidCalendarGate.includes(marker), `paid calendar gate must check: ${marker}`);
+});
 
 const sourceBuilder = sliceFromMarker(
   appSource,

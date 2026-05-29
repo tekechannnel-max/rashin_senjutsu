@@ -131,8 +131,16 @@ assert.ok(
 );
 
 assert.ok(
-  htmlSource.includes('id="result-chat-drawer"') && htmlSource.includes('id="result-chat-launcher"'),
-  'result screen must include the result-chat popout and persistent launcher'
+  appSource.includes("if(PLAN==='paid') return hasResultChatEntitlement();") &&
+    appSource.includes("return PLAN==='free'||isSimpleReadingPlan();"),
+  'result chat must be available to free/simple results while keeping paid entitlement checks'
+);
+
+assert.ok(
+  htmlSource.includes('id="result-chat-drawer"') &&
+    htmlSource.includes('id="result-chat-launcher"') &&
+    htmlSource.includes('id="result-chat-inline-btn"'),
+  'result screen must include the result-chat popout, persistent launcher, and inline action'
 );
 
 assert.ok(
@@ -152,8 +160,10 @@ assert.ok(
 );
 
 assert.ok(
-  serverSource.includes('function isResultChatTask') && serverSource.includes('requiresPaidAccess(payload)'),
-  'server must treat result chat as a paid-entitled task even though it uses OpenAI'
+  serverSource.includes('function isPaidResultChatTask') &&
+    serverSource.includes("return isResultChatTask(payload) && String(payload?.plan || '').trim() === 'paid';") &&
+    serverSource.includes('isPaidResultChatTask(payload)'),
+  'server must require paid entitlement only for paid result-chat requests'
 );
 
 assert.ok(

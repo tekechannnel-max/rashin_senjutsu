@@ -7050,6 +7050,8 @@ function repairStaticCopy(){
   setText('#dossier-save-btn','PDFダウンロード');
   setText('#dossier-copy-inline-btn','要約をコピー');
   setText('#dossier-evidence-btn','根拠を見る');
+  setText('#rashin-year-calendar-result-btn','羅針カレンダーを作成');
+  setText('#result-chat-inline-btn','鑑定について聞く');
   const shareBtn=document.getElementById('share-x-btn');
   if(shareBtn){
     const svg=shareBtn.querySelector('svg');
@@ -7265,15 +7267,52 @@ function ensureRashinYearCalendarStyles(){
   document.head.appendChild(style);
 }
 
+function hasPaidRashinYearCalendarTicket(){
+  if(isMemberActive()) return true;
+  const ticket=ACTIVE_PAID_READING_TICKET;
+  if(!ticket?.id) return false;
+  const status=String(ticket.status||'unused').trim();
+  const ticketReadingId=String(ticket.paidReadingId||PENDING_PAID_READING_ID||CURRENT_READING_ID||'').trim();
+  if(ticketReadingId&&CURRENT_READING_ID&&ticketReadingId!==CURRENT_READING_ID) return false;
+  return status===''||status==='unused'||status==='used';
+}
+
+function canOpenPaidRashinYearCalendar(){
+  if(PLAN!=='paid'||!CURRENT_READING_ID) return false;
+  const integration=String(LAST_OUTPUTS?.integration||'').trim();
+  if(!integration||/深掘り鑑定を作れませんでした|深掘り鑑定を停止しました/.test(integration)) return false;
+  return hasPaidRashinYearCalendarTicket();
+}
+
+function syncRashinYearCalendarActionButton(){
+  const btn=document.getElementById('rashin-year-calendar-result-btn');
+  if(btn) btn.style.display=canOpenPaidRashinYearCalendar()?'inline-flex':'none';
+}
+
+async function requestRashinYearCalendarFromPaid(source='result_paid'){
+  if(canOpenPaidRashinYearCalendar()){
+    await openRashinYearCalendar(source);
+    return true;
+  }
+  trackEvent('rashin_year_calendar_paid_required',{source,plan:PLAN,has_reading:!!CURRENT_READING_ID});
+  showToast('羅針カレンダーは、深掘り羅針鑑定の結果から作成します');
+  if(PLAN==='free'&&CURRENT_READING_ID&&canContinueCurrentReadingToPaid()){
+    await upgradeCurrentReadingToPaid();
+    return false;
+  }
+  await startFlow('paid');
+  return false;
+}
+
 function buildRashinYearCalendarEntryHtml(source='top_entry'){
   return `
     <div class="rashin-year-calendar-entry">
       <div class="rashin-year-calendar-main">
         <div class="rashin-year-calendar-kicker">2026 PERSONAL CALENDAR</div>
         <div class="rashin-year-calendar-title">${RASHIN_YEAR_CALENDAR_LABEL}</div>
-        <div class="rashin-year-calendar-copy">無料鑑定・深掘り鑑定・ミニ鑑定・カード履歴をもとに、あなた専用の一年の流れを一枚画像にまとめます。</div>
+        <div class="rashin-year-calendar-copy">姓名判断・四柱推命・動物タイプ診断・カード占いを重ねた深掘り鑑定から、あなた専用の一年の流れを一枚画像にまとめます。</div>
       </div>
-      <button class="rashin-year-calendar-btn" type="button" onclick="openRashinYearCalendar('${source}')">作成する</button>
+      <button class="rashin-year-calendar-btn" type="button" onclick="requestRashinYearCalendarFromPaid('${source}')">有料鑑定から作成する</button>
     </div>`;
 }
 
@@ -11318,6 +11357,7 @@ function updateResultActionState(){
   if(deepCta) deepCta.style.display='none';
   if(homeBtn) homeBtn.style.display=shouldShowDeep?'none':'inline-flex';
   if(retryBtn) retryBtn.classList.toggle('nav-btn-primary',!shouldShowDeep);
+  syncRashinYearCalendarActionButton();
   refreshDeepenCtaViewTracking(upgradePanel||document);
 }
 
@@ -19640,6 +19680,7 @@ async function completeResultGenerationUI(){
   persistCurrentReading();
   renderMemberFollowupSection();
   renderReturnRitual();
+  syncResultChatAvailability();
   document.getElementById('progress').style.width='100%';
   trackReadingComplete();
   playResultCompleteSound();
@@ -20532,6 +20573,7 @@ ${buildReadingOutputFormatGuide('integration',false,focus)}`;
   persistCurrentReading();
   renderMemberFollowupSection();
   renderReturnRitual();
+  syncResultChatAvailability();
   document.getElementById('progress').style.width='100%';
   trackReadingComplete();
   setTimeout(()=>{
@@ -20984,11 +21026,30 @@ function hasResultChatEntitlement(){
   );
 }
 
+function hasResultChatResultContent(){
+  if(isSimpleReadingPlan()) return !!(MEIMEI||NAMEJUDGE||REACTION_PROFILE);
+  return [
+    LAST_OUTPUTS?.integration,
+    LAST_OUTPUTS?.len,
+    LAST_OUTPUTS?.orc,
+    LAST_OUTPUTS?.about,
+    LAST_OUTPUTS?.foundationDeep,
+  ].some(text=>String(text||'').trim());
+}
+
+function getResultChatReadingType(){
+  if(PLAN==='paid') return 'paid';
+  if(isSimpleReadingPlan()) return 'simple';
+  return 'free';
+}
+
 function canUseResultChat(){
-  if(PLAN!=='paid'||!CURRENT_READING_ID) return false;
+  if(!CURRENT_READING_ID||PLAN==='reader') return false;
+  if(!hasResultChatResultContent()) return false;
   const integration=String(LAST_OUTPUTS?.integration||'').trim();
-  if(!integration||/深掘り鑑定を作れませんでした|深掘り鑑定を停止しました/.test(integration)) return false;
-  return hasResultChatEntitlement();
+  if(/深掘り鑑定を作れませんでした|深掘り鑑定を停止しました/.test(integration)) return false;
+  if(PLAN==='paid') return hasResultChatEntitlement();
+  return PLAN==='free'||isSimpleReadingPlan();
 }
 
 function getResultChatInputValue(value=''){
@@ -21031,8 +21092,10 @@ function renderResultChatMessages(){
 
 function syncResultChatAvailability(options={}){
   const launcher=document.getElementById('result-chat-launcher');
+  const inlineBtn=document.getElementById('result-chat-inline-btn');
   const visible=!options.forceHide&&canUseResultChat();
   if(launcher) launcher.style.display=visible?'inline-flex':'none';
+  if(inlineBtn) inlineBtn.style.display=visible?'inline-flex':'none';
   if(!visible){
     closeResultChatDrawer({silent:true});
     return;
@@ -21048,20 +21111,20 @@ function syncResultChatAvailability(options={}){
 
 function openResultChatDrawer(){
   if(!canUseResultChat()){
-    showToast('この有料鑑定で使えるチャットを準備できませんでした');
+    showToast('この鑑定で使えるチャットを準備できませんでした');
     return;
   }
   renderResultChatMessages();
   setModalOpen('result-chat-drawer',true);
   document.body.classList.add('result-chat-open');
   setTimeout(()=>document.getElementById('result-chat-input')?.focus(),160);
-  trackEvent('result_chat_opened',{reading_type:'paid',category:getCurrentInputSnapshot().cat||'総合'});
+  trackEvent('result_chat_opened',{reading_type:getResultChatReadingType(),category:getCurrentInputSnapshot().cat||'総合'});
 }
 
 function closeResultChatDrawer(options={}){
   const drawer=setModalOpen('result-chat-drawer',false);
   document.body.classList.remove('result-chat-open');
-  if(!options.silent&&drawer) trackEvent('result_chat_closed',{reading_type:'paid'});
+  if(!options.silent&&drawer) trackEvent('result_chat_closed',{reading_type:getResultChatReadingType()});
 }
 
 function buildResultChatPrompt(question=''){
@@ -21077,13 +21140,13 @@ ${history}
 【今回の質問】
 ${question}
 
-上の有料鑑定結果を根拠に、質問へ答えてください。新しい占いを始めず、この結果の読み返し、要約、補足、判断軸の整理として返してください。`;
+上の鑑定結果を根拠に、質問へ答えてください。新しい占いを始めず、この結果の読み返し、要約、補足、判断軸の整理として返してください。`;
 }
 
 function getResultChatSystemPrompt(){
-  return `あなたは羅針占術の有料鑑定結果を読み返すための羅針相談チャットです。
+  return `あなたは羅針占術の鑑定結果を読み返すための羅針相談チャットです。
 以下を必ず守ってください。
-- 前回の有料鑑定内容だけを根拠に答える
+- 前回の鑑定内容だけを根拠に答える
 - 新規テーマ、別人物、別鑑定を求められたら、この鑑定で扱える範囲に戻す
 - 要約、補足、読み返しポイント、判断軸の整理に答える
 - 相手の気持ちや未来を断定しない。医療、法律、投資など専門判断は断定しない
@@ -21093,7 +21156,7 @@ function getResultChatSystemPrompt(){
 async function sendResultChatMessage(value=''){
   if(RESULT_CHAT_LOADING) return;
   if(!canUseResultChat()){
-    showToast('この有料鑑定で使えるチャットを準備できませんでした');
+    showToast('この鑑定で使えるチャットを準備できませんでした');
     return;
   }
   const inputEl=document.getElementById('result-chat-input');
@@ -21119,7 +21182,7 @@ async function sendResultChatMessage(value=''){
       at:new Date().toISOString(),
     });
     persistCurrentReading();
-    trackEvent('result_chat_sent',{reading_type:'paid',category:getCurrentInputSnapshot().cat||'総合'});
+    trackEvent('result_chat_sent',{reading_type:getResultChatReadingType(),category:getCurrentInputSnapshot().cat||'総合'});
   }catch(e){
     ensureResultChatMessages().push({
       role:'assistant',
@@ -22652,7 +22715,7 @@ async function loadServerHealth(silent=false){
     const res=await fetchApi('/api/health',{cache:'no-store'});
     const data=await readJsonSafe(res);
     if(data?.aiModels&&typeof data.aiModels==='object'){
-      ['free','paid','history','light','paidFallback','paidAbOpenai','structure'].forEach(key=>{
+      ['free','paid','history','light','paidFallback','paidAbOpenai','resultChat','structure'].forEach(key=>{
         if(typeof data.aiModels[key]==='string'&&data.aiModels[key].trim()) AI_MODELS[key]=data.aiModels[key].trim();
       });
     }
@@ -23531,6 +23594,7 @@ if(typeof window!=='undefined'){
   window.openFlowAnalysisModal=openFlowAnalysisModal;
   window.closeFlowAnalysisModal=closeFlowAnalysisModal;
   window.openRashinYearCalendar=openRashinYearCalendar;
+  window.requestRashinYearCalendarFromPaid=requestRashinYearCalendarFromPaid;
   window.openResultChatDrawer=openResultChatDrawer;
   window.closeResultChatDrawer=closeResultChatDrawer;
   window.sendResultChatMessage=sendResultChatMessage;
