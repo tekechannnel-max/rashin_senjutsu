@@ -14,7 +14,7 @@ const GENERATED_PLATE_ROOT = path.join(OUT_ROOT, 'generated-plates');
 const V_MODEL_ROOT = path.join(ROOT, '占い素材');
 const CHARACTER_IMAGE = path.join(V_MODEL_ROOT, '通常背景無し.png');
 const CHIBI_CHARACTER_IMAGE = path.join(V_MODEL_ROOT, 'ミニキャラ.png');
-const LENORMAND_SCENE_IMAGE = path.join(V_MODEL_ROOT, '羅針カード背景.png');
+const LENORMAND_SCENE_IMAGE = path.join(OUT_ROOT, 'ルノルマンカードメッセージ.png');
 
 function parseArgs(argv) {
   const args = {

@@ -144,11 +144,10 @@ npm run social:draft -- --date=2026-05-18 --platforms=threads,bluesky,instagram
 - `post-ledger.js` は `data/social-posts/posts.csv` に投稿台帳を保存する。本文とalt textはSHA-256ハッシュだけを保存し、APIキー、トークン、投稿全文、個人情報は保存しない。
 - `audit-social-drafts.js` は文字数、UTM、画像、alt text、重複本文、禁止表現を検査する。
 - `run-scheduled-posts.js` はRender Cron用。JSTの投稿対象時間だけ `daily-oracle-post.js --write --post --yes` 相当を実行する。
-- 朝07:00の `oracle` はカード1〜33の投稿文をThreads / Bluesky / Instagram向けに出す。ThreadsとBlueskyの本文URLと画像は同じにし、差分はハッシュタグだけにする。UTM付きURLは `posts.csv` の分析用URLとして保存する。画像は `images/social/instagram/oracle/NN.jpg` を使い、締め文は必ず「今日の1枚はこちら」にする。
+- 朝07:00の `oracle` はカード1〜33の投稿文をThreads / Bluesky / Instagram向けに出す。Threads / Bluesky / Instagramの本文URLと画像は同じにし、差分はハッシュタグだけにする。UTM付きURLは `posts.csv` の分析用URLとして保存する。画像は `images/social/instagram/oracle/NN.jpg` を使い、締め文は必ず「今日の1枚はこちら」にする。
 - 月・水・金12:00の `empathy` は、内部名は互換性のため残すが、表向きは「今日のルノルマン一枚」として出す。カード番号、日本語名、英語名、カードの一言、今日のヒントで構成し、不安訴求へ寄せない。画像は `images/social/instagram/lenormand-empathy/NN.jpg` を使い、初回36投稿で重複させない。
 - 火・木12:00の `question` は、A/Bで返信しやすい問いを出す。Threads / Blueskyでは本文URLを出さず、UTM付きURLは台帳とKPIレビュー用に保存する。画像は `images/ui/app-promo-vertical-social.jpg` を使う。
-- Threadsのハッシュタグは `#占い師のつぶやき` だけにし、`#羅針占術` は使わない。Blueskyは `#羅針占術 #今日の占い #今日の運勢 #占い師` を使い、300文字を超えたら投稿しない。Threadsとの差分はハッシュタグだけにし、本文URLと画像は同じにする。`question` はThreads/Blueskyとも本文URLなしにする。
-- Instagramのハッシュタグは投稿種別ごとに最大5個だけ付ける。大量タグではなく、内容に合うタグを `SOCIAL_INSTAGRAM_*_HASHTAGS` で管理する。`empathy` / `difference` / `free_paid_compare` はThreads本文をそのまま使わず、保存用メモとして見返しやすい文にする。
+- Threadsのハッシュタグは `#占い師のつぶやき` だけにし、`#羅針占術` は使わない。Blueskyは `#羅針占術 #今日の占い #今日の運勢 #占い師` を使い、300文字を超えたら投稿しない。Instagramは投稿種別ごとに最大5個だけ付ける。`oracle` / `empathy` / `difference` / `free_paid_compare` はThreadsとの差分をハッシュタグだけにし、本文URLと画像は同じにする。`question` はThreads/Blueskyとも本文URLなしにする。
 - 火20:00の `difference` は、羅針占術が他のAI占いと違う点、自由記載、命・卜・相の総合占術、鑑定履歴をローテーションで伝える。画像は `images/social/instagram/difference.jpg` をThreadsにも使う。
 - 土20:00の `free_paid_compare` は、無料版と有料版の違い、カード枚数差、鑑定履歴解析の価値を、強すぎない有料導線として伝える。画像は `images/social/instagram/free-paid-compare.jpg` をThreadsにも使う。
 

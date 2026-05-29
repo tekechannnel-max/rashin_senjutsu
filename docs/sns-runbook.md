@@ -136,7 +136,7 @@ THREADS_POST_VERIFY_TIMEOUT_MS=120000
 - 火20:00: `difference`。他のAI占いとの差、自由記載、命・卜・相の総合占術、鑑定履歴、占い師兼エンジニア設計をローテーションで伝える
 - 土20:00: `free_paid_compare`。無料版でできること、有料版で深掘りできること、カード枚数差、鑑定履歴解析の価値を、強すぎない有料導線として伝える
 - Threadsは500文字以内、ハッシュタグは `#占い師のつぶやき` だけにする。`#羅針占術` はThreadsでは使わない
-- Instagramは2,200文字以内。ハッシュタグは投稿種別ごとに最大5個だけ付ける。大量タグではなく、`oracle` はオラクル、`empathy` はルノルマン、`question` はコメントしやすさ、`difference` はAI占いの違い、`free_paid_compare` は無料版/有料版に寄せる。`empathy` / `difference` / `free_paid_compare` はThreads本文をそのまま使わず、保存用メモとして見返しやすい文にする
+- Instagramは2,200文字以内。ハッシュタグは投稿種別ごとに最大5個だけ付ける。大量タグではなく、`oracle` はオラクル、`empathy` はルノルマン、`question` はコメントしやすさ、`difference` はAI占いの違い、`free_paid_compare` は無料版/有料版に寄せる。`oracle` / `empathy` / `difference` / `free_paid_compare` はThreads本文と同じ構成にし、差分はハッシュタグだけにする
 - Blueskyは300文字以内、`#羅針占術 #今日の占い #今日の運勢 #占い師`、画像1枚、alt textを付ける。Threadsとの差分はハッシュタグだけにし、本文URLと画像はThreadsと同じにする。`question` はThreadsと同じく本文URLなしで、差分はハッシュタグだけにする
 - XはThreads本文の丸写しにしない。今は下書きのみ
 - 不安を煽る、未来を断定する、医療/法律/投資判断の代替に見える表現は禁止

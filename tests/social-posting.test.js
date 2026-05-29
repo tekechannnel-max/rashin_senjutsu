@@ -6,6 +6,7 @@ const { spawnSync } = require('node:child_process');
 const ROOT = path.resolve(__dirname, '..');
 const NODE = process.execPath;
 const ACTIVE_KINDS = ['oracle', 'empathy', 'question', 'difference', 'free_paid_compare'];
+const THREADS_MATCHED_PLATFORM_KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
 const { LENORMAND_EMPATHY_POSTS } = require('../scripts/social/content/lenormand-empathy-posts');
 
 function runNode(args, options = {}) {
@@ -66,10 +67,10 @@ function assertImageAndAlt(imagePath, altText, label) {
   assert.ok(String(altText || '').trim().length >= 10, `${label} alt text is too short`);
 }
 
-function normalizeBlueskyHashtagOnlyDifference(text) {
+function normalizePlatformHashtagOnlyDifference(text) {
   return String(text || '')
     .replace(/(^|\n)#[^\s#]+(?:\s+#[^\s#]+)*/g, '$1#<platform-tags>')
-    .replace(/utm_source=(threads|bluesky)/g, 'utm_source=<platform>');
+    .replace(/utm_source=(threads|bluesky|instagram)/g, 'utm_source=<platform>');
 }
 
 function countHashtags(text) {
@@ -144,8 +145,8 @@ function testPlatformHashtagPolicy() {
     }
     assert.equal(countHashtags(draft[kind].blueskyText), blueskyTags.length, `${kind} Bluesky post should use configured hashtags`);
     assert.equal(
-      normalizeBlueskyHashtagOnlyDifference(draft[kind].blueskyText),
-      normalizeBlueskyHashtagOnlyDifference(draft[kind].text),
+      normalizePlatformHashtagOnlyDifference(draft[kind].blueskyText),
+      normalizePlatformHashtagOnlyDifference(draft[kind].text),
       `${kind} Bluesky copy should match Threads copy except hashtags`
     );
 
@@ -158,6 +159,13 @@ function testPlatformHashtagPolicy() {
       assert.ok(draft[kind].instagramText.includes(tag), `${kind} Instagram post should include ${tag}`);
     }
     assert.doesNotMatch(draft[kind].instagramText, /#占い鑑定/, `${kind} Instagram post should not use the legacy Threads tag`);
+    if (THREADS_MATCHED_PLATFORM_KINDS.includes(kind)) {
+      assert.equal(
+        normalizePlatformHashtagOnlyDifference(draft[kind].instagramText),
+        normalizePlatformHashtagOnlyDifference(draft[kind].text),
+        `${kind} Instagram copy should match Threads copy except hashtags`
+      );
+    }
     assert.equal(countHashtags(customInstagramDraft[kind].instagramText), 5, `${kind} custom Instagram hashtags should be capped at five`);
     assert.doesNotMatch(customInstagramDraft[kind].instagramText, /#six/, `${kind} custom Instagram hashtags should drop tags after the fifth`);
   }
@@ -171,8 +179,8 @@ function testQuestionLaneIsReplyFocusedAndTracked() {
   assert.doesNotMatch(draft.text, /rashin-senjutsu\.onrender\.com/, 'question Threads post should avoid a visible URL');
   assert.match(draft.trackedUrl, /utm_content=question_20260602_v\d{2}/, 'question tracked URL should keep a versioned utm_content for KPI review');
   assert.equal(
-    normalizeBlueskyHashtagOnlyDifference(draft.blueskyText),
-    normalizeBlueskyHashtagOnlyDifference(draft.text),
+    normalizePlatformHashtagOnlyDifference(draft.blueskyText),
+    normalizePlatformHashtagOnlyDifference(draft.text),
     'question Bluesky copy should match Threads copy except hashtags'
   );
   assert.match(draft.instagramText, /コメントではA\/Bだけでも大丈夫です。/, 'question Instagram copy should use an Instagram-specific comment cue');
@@ -194,6 +202,18 @@ function testAutomationDocsEnableBlueskyWithThreadsAndInstagram() {
   }
 }
 
+function testWorkflowPostingPlatformsMatchProductionLane() {
+  for (const relativeFile of [path.join('.github', 'workflows', 'sns-automation.yml'), path.join('.github', 'workflows', 'threads-social.yml')]) {
+    const source = fs.readFileSync(path.join(ROOT, relativeFile), 'utf8');
+    assert.match(source, /SOCIAL_PLATFORMS:\s*threads,bluesky,instagram/, `${relativeFile} should post to Threads, Bluesky, and Instagram together`);
+    assert.match(source, /BLUESKY_APP_PASSWORD/, `${relativeFile} should require Bluesky credentials`);
+    assert.match(source, /INSTAGRAM_ACCESS_TOKEN/, `${relativeFile} should require Instagram credentials`);
+    assert.match(source, /npm run instagram:doctor/, `${relativeFile} should verify Instagram before posting`);
+    assert.match(source, /npm run bluesky:doctor/, `${relativeFile} should verify Bluesky before posting`);
+    assert.doesNotMatch(source, /SOCIAL_PLATFORMS:\s*threads\s*$/m, `${relativeFile} should not keep a Threads-only posting lane`);
+  }
+}
+
 function testMorningOracleCopyStillKeepsRequiredClosing() {
   const draft = parseDraft('2026-05-27');
   assert.match(draft.oracle.text, /今日の数秘オラクル/, 'morning oracle post should keep the oracle label');
@@ -205,12 +225,14 @@ function testMorningOracleCopyStillKeepsRequiredClosing() {
 function testLenormandOneCardCopyDataQuality() {
   const oldLabel = new RegExp('悩み' + '共感');
   const positiveBlockedWords = /不安|苦し|重い|消耗|注意|無理|壁|曇|削|背負|傷/;
-  const cautionActionWords = /注意|確認|距離|寝かせる|見る|探す|手放す|分ける|決める|深呼吸/;
+  const forcedTaskWords = /確認|書く|書き|言葉にする|形に残す|試す|選ぶ前|候補|深呼吸|手放す|決める前|事実だけ|都合よく使われ|行き先|優先する/;
+  const cautionStateWords = /注意|急がない|距離|消耗|違和感|守り|余白|鋭く|静けさ|無理|壁|迂回|負担|重く/;
   const generatorSource = fs.readFileSync(path.join(ROOT, 'scripts', 'social', 'generate-instagram-assets.js'), 'utf8');
   const seen = new Set();
 
   assert.equal(LENORMAND_EMPATHY_POSTS.length, 36, 'Lenormand one-card copy should cover all 36 cards');
-  assert.match(generatorSource, /LENORMAND_SCENE_IMAGE/, 'Lenormand image generator should use the Rashin scene backdrop');
+  assert.match(generatorSource, /ルノルマンカードメッセージ\.png/, 'Lenormand image generator should use the Lenormand message backdrop');
+  assert.doesNotMatch(generatorSource, /羅針カード背景\.png|ルノルマンカード表紙デザイン2\.png/, 'Lenormand image generator should not use the wrong backdrop');
   assert.match(generatorSource, /lenormand-one-card/, 'Lenormand image generator should use the fixed one-card layout');
   for (const item of LENORMAND_EMPATHY_POSTS) {
     assert.ok(!seen.has(item.cardNumber), `duplicate Lenormand card: ${item.cardNumber}`);
@@ -222,13 +244,14 @@ function testLenormandOneCardCopyDataQuality() {
       assert.doesNotMatch(String(item[field]), oldLabel, `${item.cardNumber} should not use the old empathy label`);
     }
     assert.ok([...item.title].length <= 12, `${item.cardNumber} title should fit the image headline`);
-    assert.ok([...item.message].length <= 17, `${item.cardNumber} message should fit the image message area without awkward wrapping`);
-    assert.ok([...item.action].length <= 17, `${item.cardNumber} action should fit the image action area without awkward wrapping`);
+    assert.ok([...item.message].length <= 15, `${item.cardNumber} message should fit the image message area without awkward wrapping`);
+    assert.ok([...item.action].length <= 15, `${item.cardNumber} action should fit the image action area without awkward wrapping`);
+    assert.doesNotMatch(`${item.title}${item.message}${item.action}`, forcedTaskWords, `${item.cardNumber} should not assign manual checking or writing tasks to the reader`);
     if (item.tone === 'positive') {
       assert.doesNotMatch(`${item.title}${item.message}${item.action}`, positiveBlockedWords, `${item.cardNumber} positive card should not be forced into negative empathy copy`);
     }
     if (item.tone === 'caution') {
-      assert.match(item.action, cautionActionWords, `${item.cardNumber} caution card should give a concrete thing to watch`);
+      assert.match(`${item.title}${item.message}${item.action}`, cautionStateWords, `${item.cardNumber} caution card should describe a concrete caution state without assigning homework`);
     }
   }
 }
@@ -494,6 +517,7 @@ function testXWebDraftWorkflowUsesPlaywrightAndSecrets() {
 testDraftHasTrackingImagesAndAlt();
 testPlatformHashtagPolicy();
 testAutomationDocsEnableBlueskyWithThreadsAndInstagram();
+testWorkflowPostingPlatformsMatchProductionLane();
 testMorningOracleCopyStillKeepsRequiredClosing();
 testLenormandOneCardCopyDataQuality();
 testEmpathyUsesRandomLenormandRotation();

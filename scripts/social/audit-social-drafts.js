@@ -13,6 +13,7 @@ const BLUESKY_LIMIT = 300;
 const INSTAGRAM_LIMIT = 2200;
 const INSTAGRAM_HASHTAG_LIMIT = 5;
 const BLUESKY_IMAGE_LIMIT_BYTES = 1_000_000;
+const DEFAULT_SOCIAL_PLATFORMS = 'threads,bluesky,instagram';
 const SOCIAL_EXPANSION_START_DATE = process.env.SOCIAL_EXPANSION_START_DATE || '2026-05-27';
 const REQUIRED_HASHTAGS_BY_PLATFORM = {
   threads: ['#占い師のつぶやき'],
@@ -59,7 +60,7 @@ function parseArgs(argv) {
   const args = {
     from: process.env.SOCIAL_AUDIT_FROM || '2026-05-13',
     to: process.env.SOCIAL_AUDIT_TO || '2026-05-29',
-    platforms: process.env.SOCIAL_PLATFORMS || 'threads',
+    platforms: process.env.SOCIAL_PLATFORMS || DEFAULT_SOCIAL_PLATFORMS,
     releaseMode: process.env.SOCIAL_RELEASE_MODE || 'auto',
   };
   for (let i = 0; i < argv.length; i += 1) {

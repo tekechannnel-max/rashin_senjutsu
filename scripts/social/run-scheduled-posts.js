@@ -7,6 +7,7 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const OUT_DIR = path.join(ROOT, 'data', 'social-posts');
 const DEFAULT_STATE_FILE = path.join(OUT_DIR, 'scheduled-post-state.json');
 const DAILY_SCRIPT = path.join(__dirname, 'daily-oracle-post.js');
+const DEFAULT_SOCIAL_PLATFORMS = 'threads,bluesky,instagram';
 const DEFAULT_POST_GRACE_MINUTES = 2;
 const MAX_STATELESS_POST_GRACE_MINUTES = 2;
 const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'question', 'difference', 'free_paid_compare'];
@@ -182,7 +183,7 @@ function requirePostingEnabled() {
 }
 
 function runPost(kind, dateKey) {
-  const platforms = process.env.SOCIAL_PLATFORMS || 'threads';
+  const platforms = process.env.SOCIAL_PLATFORMS || DEFAULT_SOCIAL_PLATFORMS;
   const result = spawnSync(process.execPath, [
     DAILY_SCRIPT,
     '--write',

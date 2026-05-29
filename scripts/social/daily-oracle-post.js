@@ -19,6 +19,7 @@ const DEFAULT_PUBLIC_ORIGIN = 'https://rashin-senjutsu.onrender.com';
 const DEFAULT_HASHTAG = '#羅針占術';
 const DEFAULT_THREADS_HASHTAG = '#占い師のつぶやき';
 const DEFAULT_BLUESKY_HASHTAGS = '#羅針占術 #今日の占い #今日の運勢 #占い師';
+const DEFAULT_SOCIAL_PLATFORMS = 'threads,bluesky,instagram';
 const INSTAGRAM_HASHTAG_LIMIT = 5;
 const DEFAULT_INSTAGRAM_HASHTAGS_BY_KIND = Object.freeze({
   oracle: ['#羅針占術', '#今日の占い', '#オラクルカード', '#占い好きな人と繋がりたい', '#AI占い'],
@@ -55,6 +56,7 @@ const SOCIAL_RELEASE_MODES = new Set(['auto', 'prelaunch', 'prerelease', 'fix', 
 const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'question', 'difference', 'free_paid_compare'];
 const LEGACY_SOCIAL_POST_KINDS = ['midday', 'concept'];
 const DRAFT_POST_KINDS = [...SOCIAL_POST_KINDS, ...LEGACY_SOCIAL_POST_KINDS];
+const THREADS_MATCHED_PLATFORM_KINDS = new Set(['oracle', 'empathy', 'difference', 'free_paid_compare']);
 const RESULT_SUFFIX_BY_KIND = {
   oracle: 'Oracle',
   empathy: 'Empathy',
@@ -393,7 +395,7 @@ const ORACLE_SOCIAL_READINGS = {
 };
 
 function parseArgs(argv) {
-  const defaultPlatforms = String(process.env.SOCIAL_PLATFORMS || 'threads')
+  const defaultPlatforms = String(process.env.SOCIAL_PLATFORMS || DEFAULT_SOCIAL_PLATFORMS)
     .split(',')
     .map(s => s.trim())
     .filter(Boolean);
@@ -529,9 +531,17 @@ function hasDisplayUrl(text) {
   return /https?:\/\//i.test(String(text || '')) || /\brashin-senjutsu\.onrender\.com\b/i.test(String(text || ''));
 }
 
-function normalizeSharedThreadsBlueskyText(text) {
+function normalizeSharedPlatformText(text) {
   return String(text || '')
     .replace(/(^|\n)#[^\s#]+(?:\s+#[^\s#]+)*/g, '$1#<platform-tags>');
+}
+
+function assertSharedTextMatchesThreads(entry, platform, kind) {
+  if (!THREADS_MATCHED_PLATFORM_KINDS.has(kind)) return;
+  const platformText = getEntryTextForPlatform(entry, platform);
+  if (normalizeSharedPlatformText(entry.text) !== normalizeSharedPlatformText(platformText)) {
+    throw new Error(`${kind} ${platform} post must match the Threads post except hashtags.`);
+  }
 }
 
 function fitPostText(parts, maxChars) {
@@ -947,8 +957,9 @@ function validateDraft(draft, args) {
         throw new Error(`${kind} Bluesky image must match the Threads image.`);
       }
       if (!entry.altText) throw new Error(`${kind} Bluesky image post requires alt text.`);
+      assertSharedTextMatchesThreads(entry, 'bluesky', kind);
     }
-    if (kinds.includes('midday') && normalizeSharedThreadsBlueskyText(draft.midday.text) !== normalizeSharedThreadsBlueskyText(draft.midday.blueskyText)) {
+    if (kinds.includes('midday') && normalizeSharedPlatformText(draft.midday.text) !== normalizeSharedPlatformText(draft.midday.blueskyText)) {
       throw new Error('midday Threads and Bluesky posts must use matching copy except hashtags.');
     }
   }
@@ -959,6 +970,7 @@ function validateDraft(draft, args) {
       if (!entry.instagramImageUrl) throw new Error(`${kind} Instagram post requires a public image URL.`);
       instagramClient.ensurePublicImageUrl(entry.instagramImageUrl);
       if (!entry.altText) throw new Error(`${kind} Instagram post requires alt text.`);
+      assertSharedTextMatchesThreads(entry, 'instagram', kind);
     }
   }
 }
@@ -1495,17 +1507,7 @@ function buildXEmpathyText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, 
 }
 
 function buildInstagramEmpathyText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['instagram'] })) {
-  return buildInstagramSocialText([
-    buildLenormandCardLine(item),
-    item.title,
-    `カードの一言\n${item.message}`,
-    `今日のヒント\n${item.action}`,
-    item.cta,
-  ], dateKey, publicOrigin, config, {
-    heading: '今日のルノルマン一枚',
-    note: '画像と一緒に、今日の流れとして見返せます。',
-    cycleNote: buildScheduledCycleNote(dateKey, EMPATHY_WEEKDAYS, LENORMAND_EMPATHY_POSTS.length, 'カード'),
-  });
+  return buildEmpathyText(item, dateKey, publicOrigin, config);
 }
 
 function buildQuestionText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['threads'] })) {
@@ -1549,15 +1551,7 @@ function buildXDifferenceText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGI
 }
 
 function buildInstagramDifferenceText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['instagram'] })) {
-  return buildInstagramSocialText([
-    item.title,
-    item.body,
-    item.cta,
-  ], dateKey, publicOrigin, config, {
-    heading: '画像で見る違い',
-    note: 'スワイプ前提ではなく、1枚画像でも要点が残るようにしています。',
-    cycleNote: buildScheduledCycleNote(dateKey, DIFFERENCE_WEEKDAYS, DIFFERENCE_POSTS.length, '違い紹介'),
-  });
+  return buildDifferenceText(item, dateKey, publicOrigin, config);
 }
 
 function buildFreePaidCompareText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['threads'] })) {
@@ -1581,15 +1575,7 @@ function buildXFreePaidCompareText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_
 }
 
 function buildInstagramFreePaidCompareText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['instagram'] })) {
-  return buildInstagramSocialText([
-    item.title,
-    item.body,
-    item.cta,
-  ], dateKey, publicOrigin, config, {
-    heading: '無料版と有料版の見分け方',
-    note: '必要な人だけ深掘りへ進めるように、違いを保存用にまとめています。',
-    cycleNote: buildScheduledCycleNote(dateKey, FREE_PAID_COMPARE_WEEKDAYS, FREE_PAID_COMPARE_POSTS.length, '比較'),
-  });
+  return buildFreePaidCompareText(item, dateKey, publicOrigin, config);
 }
 
 function buildEmpathyAltText(item) {
