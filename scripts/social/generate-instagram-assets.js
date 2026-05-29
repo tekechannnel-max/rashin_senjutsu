@@ -407,7 +407,7 @@ function baseStyles() {
       inset: 0;
       width: 100%;
       height: 100%;
-      opacity: .82;
+      opacity: .96;
       filter: none;
       transform: none;
       object-fit: cover;
@@ -415,10 +415,10 @@ function baseStyles() {
     }
     .lenormand-one-card .wash {
       background:
-        linear-gradient(90deg, rgba(4, 10, 18, .88), rgba(4, 10, 18, .66) 48%, rgba(4, 10, 18, .42)),
-        linear-gradient(180deg, rgba(4, 10, 18, .10), rgba(4, 10, 18, .62)),
-        repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 1px, transparent 1px 120px);
-      opacity: .97;
+        linear-gradient(90deg, rgba(4, 10, 18, .70), rgba(4, 10, 18, .44) 48%, rgba(4, 10, 18, .18)),
+        linear-gradient(180deg, rgba(4, 10, 18, .04), rgba(4, 10, 18, .42)),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0 1px, transparent 1px 120px);
+      opacity: .90;
     }
     .lenormand-one-card .hero-copy {
       left: 70px;
