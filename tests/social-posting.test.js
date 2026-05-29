@@ -232,6 +232,33 @@ function testMorningOracleCopyStillKeepsRequiredClosing() {
   assert.match(draft.oracle.trackedUrl, /utm_content=oracle_20260527/, 'oracle tracked URL should keep the oracle utm_content');
 }
 
+function sliceBetween(source, start, end, label) {
+  const startIndex = source.indexOf(start);
+  assert.ok(startIndex >= 0, `${label} start marker is missing`);
+  const endIndex = source.indexOf(end, startIndex + start.length);
+  assert.ok(endIndex >= 0, `${label} end marker is missing`);
+  return source.slice(startIndex, endIndex);
+}
+
+function testOracleGuideDailyCopyIsGroundedInCardReading() {
+  const appSource = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8');
+  const postSource = fs.readFileSync(path.join(ROOT, 'scripts', 'social', 'daily-oracle-post.js'), 'utf8');
+  const guideDaily = sliceBetween(
+    appSource,
+    '{id:1,name:"The Guide"',
+    '\n  {id:2,name:"The Supporter"',
+    'daily oracle guide copy'
+  );
+  const guideAction = sliceBetween(postSource, "  1: '自分の意志", "\n  2: '支え", 'guide action copy');
+  const guideReading = sliceBetween(postSource, "  1: '始まりの道筋", "\n  2: '静か", 'guide social reading copy');
+  const guideCopy = `${guideDaily}\n${guideAction}\n${guideReading}`;
+
+  assert.match(guideCopy, /自分の意志/, 'The Guide copy should use the card source theme: will');
+  assert.match(guideCopy, /一歩/, 'The Guide copy should point to choosing the first step');
+  assert.match(guideCopy, /道しるべ|道筋/, 'The Guide copy should stay on the guide/path reading');
+  assert.doesNotMatch(guideCopy, /灯|火|まだ消えていない/, 'The Guide copy should not drift into ungrounded fire/light metaphors');
+}
+
 function testLenormandOneCardCopyDataQuality() {
   const oldLabel = new RegExp('悩み' + '共感');
   const positiveBlockedWords = /不安|苦し|重い|消耗|注意|無理|壁|曇|削|背負|傷/;
@@ -529,6 +556,7 @@ testPlatformHashtagPolicy();
 testAutomationDocsEnableBlueskyWithThreadsAndInstagram();
 testWorkflowPostingPlatformsMatchProductionLane();
 testMorningOracleCopyStillKeepsRequiredClosing();
+testOracleGuideDailyCopyIsGroundedInCardReading();
 testLenormandOneCardCopyDataQuality();
 testEmpathyUsesRandomLenormandRotation();
 testQuestionLaneIsReplyFocusedAndTracked();
