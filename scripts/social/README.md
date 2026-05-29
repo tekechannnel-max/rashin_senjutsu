@@ -1,6 +1,6 @@
 # SNS scripts
 
-実運用の正本は `docs/sns-runbook.md`。このREADMEはスクリプト利用メモだけにする。
+実運用の正本は `docs/sns-runbook.md`。Threads / Instagram主軸の戦略判断は `docs/sns-strategy-threads-instagram.md`。このREADMEはスクリプト利用メモだけにする。
 
 ## 役割
 
@@ -144,10 +144,10 @@ npm run social:draft -- --date=2026-05-18 --platforms=threads,bluesky,instagram
 - `post-ledger.js` は `data/social-posts/posts.csv` に投稿台帳を保存する。本文とalt textはSHA-256ハッシュだけを保存し、APIキー、トークン、投稿全文、個人情報は保存しない。
 - `audit-social-drafts.js` は文字数、UTM、画像、alt text、重複本文、禁止表現を検査する。
 - `run-scheduled-posts.js` はRender Cron用。JSTの投稿対象時間だけ `daily-oracle-post.js --write --post --yes` 相当を実行する。
-- 朝07:00の `oracle` はカード1〜33の投稿文をThreads / Bluesky / Instagram向けに出す。Threads / Bluesky / Instagramの本文URLと画像は同じにし、差分はハッシュタグだけにする。UTM付きURLは `posts.csv` の分析用URLとして保存する。画像は `images/social/instagram/oracle/NN.jpg` を使い、締め文は必ず「今日の1枚はこちら」にする。
+- 朝07:00の `oracle` はカード1〜33の投稿文をThreads / Bluesky / Instagram向けに出す。Threads / Blueskyの本文URLと画像は同じにする。Instagramは通常キャプションのURL導線を避け、「プロフィールのリンクから」と書き、UTM付きURLは `posts.csv` の分析用URLとして保存する。画像は `images/social/instagram/oracle/NN.jpg` を使い、締め文は必ず「今日の1枚はこちら」にする。
 - 月・水・金12:00の `empathy` は、内部名は互換性のため残すが、表向きは「今日のルノルマン一枚」として出す。カード番号、日本語名、英語名、カードの一言、今日のヒントで構成し、不安訴求へ寄せない。画像は `images/social/instagram/lenormand-empathy/NN.jpg` を使い、初回36投稿で重複させない。
 - 火・木12:00の `question` は、A/Bで返信しやすい問いを出す。Threads / Blueskyでは本文URLを出さず、UTM付きURLは台帳とKPIレビュー用に保存する。画像は `images/ui/app-promo-vertical-social.jpg` を使う。
-- Threadsのハッシュタグは `#占い師のつぶやき` だけにし、`#羅針占術` は使わない。Blueskyは `#羅針占術 #今日の占い #今日の運勢 #占い師` を使い、300文字を超えたら投稿しない。Instagramは投稿種別ごとに最大5個だけ付ける。`oracle` / `empathy` / `difference` / `free_paid_compare` はThreadsとの差分をハッシュタグだけにし、本文URLと画像は同じにする。`question` はThreads/Blueskyとも本文URLなしにする。
+- Threadsのハッシュタグは `#占い師のつぶやき` だけにし、`#羅針占術` は使わない。Blueskyは `#羅針占術 #今日の占い #今日の運勢 #占い師` を使い、300文字を超えたら投稿しない。Instagramは投稿種別ごとに最大5個だけ付ける。`oracle` / `empathy` / `difference` / `free_paid_compare` はThreadsとの差分をハッシュタグとプロフィールリンク誘導だけにし、画像は同じにする。`question` はThreads/Blueskyとも本文URLなしにする。
 - 火20:00の `difference` は、羅針占術が他のAI占いと違う点、自由記載、命・卜・相の総合占術、鑑定履歴をローテーションで伝える。画像は `images/social/instagram/difference.jpg` をThreadsにも使う。
 - 土20:00の `free_paid_compare` は、無料版と有料版の違い、カード枚数差、鑑定履歴解析の価値を、強すぎない有料導線として伝える。画像は `images/social/instagram/free-paid-compare.jpg` をThreadsにも使う。
 
@@ -212,6 +212,8 @@ SOCIAL_UTM_CAMPAIGN=202605_prerelease
 ```powershell
 npm run social:kpi-template -- --from=2026-06-01 --to=2026-06-07 --platforms=threads,bluesky,instagram
 ```
+
+Threads / Instagram主軸で見る週は、同じコマンドの `--platforms` を `threads,instagram` にする。`new_follows` はプロフィール訪問後の伸びを見る手入力欄として使う。
 
 ## トラブル対応
 

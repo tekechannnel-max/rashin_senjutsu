@@ -51,9 +51,12 @@ function scheduledDates(from, weekdays, count) {
 
 function assertTracked(text, trackedUrl, label, options = {}) {
   if (options.visibleUrl === false) {
-    assert.doesNotMatch(String(text || ''), /rashin-senjutsu\.onrender\.com/, `${label} should keep visible URL out of the reply-focused copy`);
+    assert.doesNotMatch(String(text || ''), /rashin-senjutsu\.onrender\.com/, `${label} should keep visible URL out of the copy`);
   } else {
     assert.match(String(text || ''), /rashin-senjutsu\.onrender\.com/, `${label} needs visible app URL`);
+  }
+  if (options.profileLink) {
+    assert.match(String(text || ''), /プロフィールのリンクから/, `${label} should point Instagram readers to the profile link`);
   }
   assert.match(trackedUrl, /https:\/\/rashin-senjutsu\.onrender\.com\/\S*utm_source=/, `${label} needs tracked URL`);
   assert.match(trackedUrl, /[?&]utm_medium=social\b/, `${label} needs utm_medium`);
@@ -70,6 +73,8 @@ function assertImageAndAlt(imagePath, altText, label) {
 function normalizePlatformHashtagOnlyDifference(text) {
   return String(text || '')
     .replace(/(^|\n)#[^\s#]+(?:\s+#[^\s#]+)*/g, '$1#<platform-tags>')
+    .replace(/\brashin-senjutsu\.onrender\.com\b/g, '<profile-link>')
+    .replace(/プロフィールのリンクから[^\n]*/g, '<profile-link>')
     .replace(/utm_source=(threads|bluesky|instagram)/g, 'utm_source=<platform>');
 }
 
@@ -84,7 +89,11 @@ function testDraftHasTrackingImagesAndAlt() {
     assertTracked(draft[kind].text, draft[kind].trackedUrl, `threads ${kind}`, { visibleUrl });
     assertTracked(draft[kind].blueskyText, draft[kind].blueskyTrackedUrl, `bluesky ${kind}`, { visibleUrl });
     assertTracked(draft[kind].xText, draft[kind].xTrackedUrl, `x ${kind}`, { visibleUrl });
-    assertTracked(draft[kind].instagramText, draft[kind].instagramTrackedUrl, `instagram ${kind}`, { visibleUrl });
+    assert.ok([...draft[kind].xText].length <= 280, `${kind} X draft should fit the 280 character posting limit`);
+    assertTracked(draft[kind].instagramText, draft[kind].instagramTrackedUrl, `instagram ${kind}`, {
+      visibleUrl: false,
+      profileLink: kind !== 'question',
+    });
     assertImageAndAlt(draft[kind].imagePath, draft[kind].altText, `threads ${kind}`);
     assertImageAndAlt(draft[kind].blueskyImagePath, draft[kind].altText, `bluesky ${kind}`);
     assertImageAndAlt(draft[kind].instagramImagePath, draft[kind].altText, `instagram ${kind}`);
@@ -105,6 +114,7 @@ function testDraftHasTrackingImagesAndAlt() {
       assert.match(draft[kind].imagePath, /images[\\/]ui[\\/]app-promo-vertical-social\.jpg$/, 'question Threads should use the app promo social image');
       assert.match(draft[kind].imageUrl, /\/images\/ui\/app-promo-vertical-social\.jpg$/, 'question Threads URL should use the public app promo social image');
       assert.match(draft[kind].instagramImagePath, /images[\\/]ui[\\/]app-promo-vertical-social\.jpg$/, 'question Instagram should use the app promo social image');
+      assert.match(draft[kind].text, /返信に一文字/, 'question Threads should explicitly ask for a one-letter reply');
     } else if (kind === 'difference') {
       assert.match(draft[kind].instagramImagePath, /images[\\/]social[\\/]instagram[\\/]difference\.jpg$/, 'difference Instagram should use the dedicated Instagram image');
     } else if (kind === 'free_paid_compare') {
@@ -431,7 +441,7 @@ function testBroadSocialAuditPasses() {
   assert.match(result.stdout, /"errors": 0/, 'audit should report zero errors');
 }
 
-function testXDraftExportUsesRandomOracleAndNoLengthLimit() {
+function testXDraftExportUsesRandomOracleAndFitsPostingLimit() {
   const outDir = path.join(ROOT, '.tmp-x-drafts-test');
   fs.rmSync(outDir, { recursive: true, force: true });
   const result = runNode([
@@ -449,7 +459,7 @@ function testXDraftExportUsesRandomOracleAndNoLengthLimit() {
   const entry = JSON.parse(fs.readFileSync(path.join(outDir, '2026-05-27-oracle.json'), 'utf8'));
   assert.equal(entry.kind, 'oracle', 'exported X draft should be the oracle lane');
   assert.ok(entry.oracleCard.id >= 1 && entry.oracleCard.id <= 33, 'exported X draft should record an oracle card from 1 to 33');
-  assert.ok(entry.characterCount > 280, 'exported X draft should allow long manual-post text');
+  assert.ok(entry.characterCount <= 280, 'exported X draft should fit the 280 character posting limit');
   fs.rmSync(outDir, { recursive: true, force: true });
 }
 
@@ -529,7 +539,7 @@ testScheduledPostsRespectJstWeekdays();
 testStatelessScheduleCapsWideGraceWindow();
 testBroadSocialAuditPasses();
 testKpiReviewTemplatePreservesManualMetrics();
-testXDraftExportUsesRandomOracleAndNoLengthLimit();
+testXDraftExportUsesRandomOracleAndFitsPostingLimit();
 testXDraftDueWindowsCreateScheduledDrafts();
 testXSocialDraftWorkflowCreatesVisibleDrafts();
 testXWebDraftWorkflowUsesPlaywrightAndSecrets();

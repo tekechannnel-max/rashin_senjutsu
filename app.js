@@ -4932,7 +4932,8 @@ async function loadMemberStatus(options={}){
       rashinCodeConfigured:!!RUNTIME_HEALTH.rashinCodeConfigured,
     },{error:'FETCH_FAILED'});
   }
-  if(syncLocalPreview&&MEMBER_MODE&&canUsePaidTestMode()&&!MEMBER_AUTH.active){
+  const serverAllowsLocalPreview=canUseProxy()&&!!RUNTIME_HEALTH.checked&&!!RUNTIME_HEALTH.paidTestMode;
+  if(syncLocalPreview&&MEMBER_MODE&&serverAllowsLocalPreview&&!MEMBER_AUTH.active){
     await activateMemberSession({mode:'local_preview'},{silent:true,render:options.render});
     return MEMBER_AUTH;
   }

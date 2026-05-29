@@ -105,6 +105,10 @@ function hasPublicUrl(text) {
   return /https?:\/\//i.test(String(text || '')) || /\brashin-senjutsu\.onrender\.com\b/i.test(String(text || ''));
 }
 
+function hasInstagramProfileLinkCue(text) {
+  return String(text || '').includes('プロフィールのリンクから');
+}
+
 function hasUtm(text) {
   return /[?&]utm_content=/i.test(String(text || ''));
 }
@@ -160,7 +164,7 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
   const prelaunch = isPrelaunchDate(dateKey);
   const releasePhase = getReleasePhase(dateKey);
   const limit = platform === 'x'
-    ? Infinity
+    ? 280
     : platform === 'bluesky'
       ? BLUESKY_LIMIT
       : platform === 'instagram'
@@ -169,7 +173,11 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
 
   if (!value.trim()) addIssue(issues, 'error', 'empty', '投稿文が空です。');
   if (length > limit) addIssue(issues, 'error', 'length', `${platform}の文字数上限を超えています: ${length}/${limit}`);
-  if (kind !== 'question' && !hasPublicUrl(value)) addIssue(issues, 'error', 'visible_url_missing', `${platform}投稿には表示用URLが必要です。`);
+  if (kind !== 'question' && platform === 'instagram' && !hasInstagramProfileLinkCue(value)) {
+    addIssue(issues, 'error', 'instagram_profile_link_missing', 'Instagram投稿にはプロフィールリンク誘導が必要です。');
+  } else if (kind !== 'question' && platform !== 'instagram' && !hasPublicUrl(value)) {
+    addIssue(issues, 'error', 'visible_url_missing', `${platform}投稿には表示用URLが必要です。`);
+  }
   if (!hasUtm(value) && !hasUtm(tracking)) addIssue(issues, 'error', 'utm_missing', `${platform}投稿には台帳用utm_contentが必要です。`);
   const requiredHashtags = REQUIRED_HASHTAGS_BY_PLATFORM[platform] || [];
   requiredHashtags.forEach(requiredHashtag => {

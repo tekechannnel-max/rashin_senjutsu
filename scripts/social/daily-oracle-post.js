@@ -533,7 +533,9 @@ function hasDisplayUrl(text) {
 
 function normalizeSharedPlatformText(text) {
   return String(text || '')
-    .replace(/(^|\n)#[^\s#]+(?:\s+#[^\s#]+)*/g, '$1#<platform-tags>');
+    .replace(/(^|\n)#[^\s#]+(?:\s+#[^\s#]+)*/g, '$1#<platform-tags>')
+    .replace(/\brashin-senjutsu\.onrender\.com\b/g, '<profile-link>')
+    .replace(/プロフィールのリンクから[^\n]*/g, '<profile-link>');
 }
 
 function assertSharedTextMatchesThreads(entry, platform, kind) {
@@ -752,6 +754,9 @@ function buildDisplayUrl(publicOrigin = DEFAULT_PUBLIC_ORIGIN, options = {}) {
 }
 
 function buildDisplayUrlForPlatform(publicOrigin, config) {
+  if (config?.primaryPlatform === 'instagram') {
+    return 'プロフィールのリンクから';
+  }
   return buildDisplayUrl(publicOrigin, { includeProtocol: false });
 }
 
@@ -896,6 +901,9 @@ function validatePostText(text, options = {}) {
   if (options.requireTrackedUrl && options.requireVisibleUrl !== false && !hasPublicUrl(value)) {
     throw new Error(`${label} is missing a visible URL.`);
   }
+  if (options.requireProfileLink && !value.includes('プロフィールのリンクから')) {
+    throw new Error(`${label} is missing the Instagram profile link cue.`);
+  }
   if (options.requireTrackedUrl && !extractUtmContent(value) && !extractUtmContent(options.trackedUrl)) {
     throw new Error(`${label} is missing utm_content.`);
   }
@@ -966,7 +974,14 @@ function validateDraft(draft, args) {
   if (platforms.includes('instagram')) {
     for (const kind of kinds) {
       const entry = draft[kind];
-      validatePostText(entry.instagramText, { label: `${kind} Instagram post`, platforms: ['instagram'], requireTrackedUrl: true, requireVisibleUrl: requiresVisibleUrl(kind), trackedUrl: entry.instagramTrackedUrl });
+      validatePostText(entry.instagramText, {
+        label: `${kind} Instagram post`,
+        platforms: ['instagram'],
+        requireTrackedUrl: true,
+        requireVisibleUrl: false,
+        requireProfileLink: requiresVisibleUrl(kind),
+        trackedUrl: entry.instagramTrackedUrl,
+      });
       if (!entry.instagramImageUrl) throw new Error(`${kind} Instagram post requires a public image URL.`);
       instagramClient.ensurePublicImageUrl(entry.instagramImageUrl);
       if (!entry.altText) throw new Error(`${kind} Instagram post requires alt text.`);
@@ -1240,28 +1255,18 @@ function buildXOracleManualDraftText(card, publicOrigin, options = {}) {
   const readingLines = splitSocialSentences(ORACLE_SOCIAL_READINGS[Number(card.id)] || buildOracleReadingLine(card));
   const action = String(card.action || ORACLE_SOFT_ACTIONS[Number(card.id)] || '').trim();
   const cycleNote = buildRepeatCycleNote(dateKey, ORACLE_CARD_CYCLE_LENGTH);
-  return [
+  const message = readingLines[0] || leadLines[0] || '';
+  return fitPostText([
     'おはてけ🌸🦦',
-    '',
-    '今日の数秘オラクル',
-    card.name,
-    '',
+    `今日の数秘オラクル：${card.name}`,
     `テーマ：${card.title}`,
-    '',
-    ...leadLines,
-    '',
-    'カードメッセージ：',
-    ...readingLines,
-    '',
-    '今日のよりどころ：',
-    action,
+    message ? `カードメッセージ：${message}` : '',
+    action ? `今日のよりどころ：${action}` : '',
     cycleNote || null,
-    '',
-    '今日の１枚はこちら👇😌',
+    '今日の1枚はこちら',
     publicUrl,
-    '',
-    ...X_ORACLE_HASHTAGS,
-  ].filter(line => line !== null).join('\n');
+    X_ORACLE_HASHTAGS.join(' '),
+  ].filter(line => line !== null), X_CHARACTER_LIMIT);
 }
 
 function buildBlueskyOracleText(card, publicOrigin, options = {}) {
@@ -1513,6 +1518,7 @@ function buildInstagramEmpathyText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_
 function buildQuestionText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['threads'] })) {
   return buildQuestionSocialText(item, dateKey, config, {
     cycleNote: buildScheduledCycleNote(dateKey, QUESTION_WEEKDAYS, THREAD_QUESTION_POSTS.length, '質問'),
+    extraLine: 'AかBだけで大丈夫です。今近い方を返信に一文字で置いてください。',
   });
 }
 

@@ -1,5 +1,7 @@
 # SNS運用 Runbook
 
+戦略判断の主軸はThreads / Instagram。Blueskyは現行の同時投稿レーンとして残すが、投稿量・文面・導線の改善判断は `docs/sns-strategy-threads-instagram.md` とThreads / InstagramのKPIを優先する。
+
 ## 本番前レビュー後の運用ルール
 
 このSNS自動投稿は、Threads / Bluesky / Instagram本番投稿前に次を満たす。BlueskyはThreadsと同じ予定時刻・投稿種別・本文URL・画像で動かし、本文差分はBluesky用ハッシュタグだけにする。
@@ -42,7 +44,7 @@ BOOTH購入分析では、アクセス解析またはBOOTH側で確認できる�
 npm run social:kpi-template -- --from=2026-06-01 --to=2026-06-07 --platforms=threads,bluesky,instagram
 ```
 
-見る順番は `views`、`replies`、`saves`、`profile_visits`、`link_clicks`、`free_reading_starts`、`paid_deep_reading_starts`、`paid_completions`。`question` は返信数、`oracle` はリンククリック、`empathy` は保存と無料鑑定開始、`free_paid_compare` は有料開始と有料完了を主指標にする。週次レビュー後、次週の投稿増減は `next_action` に残す。
+見る順番は `views`、`replies`、`reposts_or_shares`、`saves`、`profile_visits`、`new_follows`、`link_clicks`、`free_reading_starts`、`paid_deep_reading_starts`、`paid_completions`。`question` は返信数、`oracle` はリンククリック、`empathy` は保存と無料鑑定開始、`difference` はプロフィール訪問と新規フォロー、`free_paid_compare` は有料開始と有料完了を主指標にする。週次レビュー後、次週の投稿増減は `next_action` に残す。
 
 トラブル時:
 
@@ -133,10 +135,11 @@ THREADS_POST_VERIFY_TIMEOUT_MS=120000
 - 07:00: `oracle`。数秘オラクル1〜33の投稿はThreads / Bluesky / Instagram向けにし、短いURL、`images/social/instagram/oracle/NN.jpg`、alt text、カードメッセージ、今日の一手を入れる。締め文は必ず「今日の1枚はこちら」にする
 - 月・水・金12:00: `empathy`。表向きは「今日のルノルマン一枚」。カード番号、日本語名、英語名、カードの一言、今日のヒントで構成し、不安訴求へ寄せない。画像は `images/social/instagram/lenormand-empathy/NN.jpg` を使う
 - 火・木12:00: `question`。A/Bで返せる質問で返信の入口を作る。本文URLは出さず、台帳用の `tracked_url` だけを保存する。画像は `images/ui/app-promo-vertical-social.jpg` を使う
+- `question` 本文は、A/Bだけで返信できることを明示する。返信0が続く場合も投稿数を増やさず、投稿後10分で関連投稿5件に手動返信し、自投稿に補足リプを1本だけ置く
 - 火20:00: `difference`。他のAI占いとの差、自由記載、命・卜・相の総合占術、鑑定履歴、占い師兼エンジニア設計をローテーションで伝える
 - 土20:00: `free_paid_compare`。無料版でできること、有料版で深掘りできること、カード枚数差、鑑定履歴解析の価値を、強すぎない有料導線として伝える
 - Threadsは500文字以内、ハッシュタグは `#占い師のつぶやき` だけにする。`#羅針占術` はThreadsでは使わない
-- Instagramは2,200文字以内。ハッシュタグは投稿種別ごとに最大5個だけ付ける。大量タグではなく、`oracle` はオラクル、`empathy` はルノルマン、`question` はコメントしやすさ、`difference` はAI占いの違い、`free_paid_compare` は無料版/有料版に寄せる。`oracle` / `empathy` / `difference` / `free_paid_compare` はThreads本文と同じ構成にし、差分はハッシュタグだけにする
+- Instagramは2,200文字以内。ハッシュタグは投稿種別ごとに最大5個だけ付ける。大量タグではなく、`oracle` はオラクル、`empathy` はルノルマン、`question` はコメントしやすさ、`difference` はAI占いの違い、`free_paid_compare` は無料版/有料版に寄せる。`oracle` / `empathy` / `difference` / `free_paid_compare` はThreads本文と同じ構成にし、差分はハッシュタグとプロフィールリンク誘導だけにする。通常キャプションに `rashin-senjutsu.onrender.com` は出さず、「プロフィールのリンクから」にする
 - Blueskyは300文字以内、`#羅針占術 #今日の占い #今日の運勢 #占い師`、画像1枚、alt textを付ける。Threadsとの差分はハッシュタグだけにし、本文URLと画像はThreadsと同じにする。`question` はThreadsと同じく本文URLなしで、差分はハッシュタグだけにする
 - XはThreads本文の丸写しにしない。今は下書きのみ
 - 不安を煽る、未来を断定する、医療/法律/投資判断の代替に見える表現は禁止
