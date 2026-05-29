@@ -228,11 +228,17 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
   if (kind === 'oracle' && !/今日の1枚|テーマ|よりどころ/.test(value)) {
     addIssue(issues, 'warn', 'oracle_structure', '朝オラクルとしてカード、テーマ、よりどころのどれかが弱いです。');
   }
-  if (kind === 'empathy' && !/ルノルマンカード「.+」/.test(value)) {
-    addIssue(issues, 'error', 'empathy_card_missing', 'empathy投稿にはルノルマンカード名が必要です。');
+  if (kind === 'empathy' && !/今日のルノルマン一枚/.test(value)) {
+    addIssue(issues, 'error', 'lenormand_one_card_missing', 'empathy投稿には「今日のルノルマン一枚」が必要です。');
   }
-  if (kind === 'empathy' && !/自由記載|深掘り|現実の流れ/.test(value)) {
-    addIssue(issues, 'warn', 'empathy_cta', 'empathy投稿の羅針占術CTAが弱い可能性があります。');
+  if (kind === 'empathy' && !/No\.\d{2}\s*\/\s*.+\s*\/\s*[A-Za-z]/.test(value)) {
+    addIssue(issues, 'error', 'lenormand_card_line_missing', 'empathy投稿にはカード番号、日本語名、英語名が必要です。');
+  }
+  if (kind === 'empathy' && !/カードの一言[\s\S]+今日のヒント/.test(value)) {
+    addIssue(issues, 'error', 'lenormand_one_card_structure', 'empathy投稿には「カードの一言」と「今日のヒント」が必要です。');
+  }
+  if (kind === 'empathy' && new RegExp('悩み' + '共感').test(value)) {
+    addIssue(issues, 'error', 'lenormand_old_empathy_label', 'ルノルマン投稿では旧ラベルを使いません。');
   }
   if (kind === 'question' && !/A:\s*[\s\S]+B:\s*.+/.test(value)) {
     addIssue(issues, 'error', 'question_options', 'question投稿にはA/Bで返信しやすい選択肢が必要です。');

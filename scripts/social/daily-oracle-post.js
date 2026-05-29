@@ -22,7 +22,7 @@ const DEFAULT_BLUESKY_HASHTAGS = '#羅針占術 #今日の占い #今日の運�
 const INSTAGRAM_HASHTAG_LIMIT = 5;
 const DEFAULT_INSTAGRAM_HASHTAGS_BY_KIND = Object.freeze({
   oracle: ['#羅針占術', '#今日の占い', '#オラクルカード', '#占い好きな人と繋がりたい', '#AI占い'],
-  empathy: ['#羅針占術', '#ルノルマンカード', '#悩み相談', '#占い好きな人と繋がりたい', '#AI占い'],
+  empathy: ['#羅針占術', '#ルノルマンカード', '#今日の占い', '#カード占い', '#AI占い'],
   question: ['#羅針占術', '#悩み相談', '#占い好きな人と繋がりたい', '#今日の占い', '#AI占い'],
   difference: ['#羅針占術', '#AI占い', '#無料占い', '#占い師のつぶやき', '#悩み相談'],
   free_paid_compare: ['#羅針占術', '#無料占い', '#占い師のつぶやき', '#ルノルマンカード', '#AI占い'],
@@ -466,9 +466,12 @@ function instagramHashtagEnvName(kind) {
 function getInstagramHashtagLine(kind) {
   const key = String(kind || 'concept');
   const configured = String(process.env[instagramHashtagEnvName(key)] || process.env.SOCIAL_INSTAGRAM_HASHTAGS || '').trim();
-  const tags = configured
+  let tags = configured
     ? parseHashtagList(configured)
     : uniqueHashtags(DEFAULT_INSTAGRAM_HASHTAGS_BY_KIND[key] || DEFAULT_INSTAGRAM_HASHTAGS_BY_KIND.concept);
+  if (key === 'empathy' && tags.includes('#悩み相談')) {
+    tags = uniqueHashtags(DEFAULT_INSTAGRAM_HASHTAGS_BY_KIND.empathy);
+  }
   return tags.slice(0, INSTAGRAM_HASHTAG_LIMIT).join(' ');
 }
 
@@ -1464,47 +1467,43 @@ function pickFreePaidComparePost(dateKey) {
   return pickScheduledContent(FREE_PAID_COMPARE_POSTS, dateKey, FREE_PAID_COMPARE_WEEKDAYS, 'free-paid-compare');
 }
 
-function stripLenormandLead(body, cardName) {
-  return String(body || '').replace(new RegExp(`^ルノルマンカード「${cardName}」。?`), '').trim();
+function buildLenormandCardLine(item) {
+  return `No.${pad2(item.cardNumber)} / ${item.cardName} / ${item.cardNameEn}`;
+}
+
+function buildLenormandOneCardParts(item) {
+  return [
+    '今日のルノルマン一枚',
+    buildLenormandCardLine(item),
+    item.title,
+    `カードの一言\n${item.message}`,
+    `今日のヒント\n${item.action}`,
+    item.cta,
+  ];
 }
 
 function buildEmpathyText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['threads'] })) {
-  const cardLine = `ルノルマンカード「${item.cardName}」`;
-  const reading = stripLenormandLead(item.body, item.cardName);
-  return buildGenericSocialText([
-    item.hook,
-    cardLine,
-    reading,
-    item.cta,
-  ], dateKey, publicOrigin, config, {
+  return buildGenericSocialText(buildLenormandOneCardParts(item), dateKey, publicOrigin, config, {
     cycleNote: buildScheduledCycleNote(dateKey, EMPATHY_WEEKDAYS, LENORMAND_EMPATHY_POSTS.length, 'カード'),
   });
 }
 
 function buildXEmpathyText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['x'] })) {
-  const cardLine = `ルノルマンカード「${item.cardName}」`;
-  const reading = stripLenormandLead(item.body, item.cardName);
-  return buildXGenericSocialText([
-    item.hook,
-    cardLine,
-    reading,
-    item.cta,
-  ], publicOrigin, config, {
+  return buildXGenericSocialText(buildLenormandOneCardParts(item), publicOrigin, config, {
     cycleNote: buildScheduledCycleNote(dateKey, EMPATHY_WEEKDAYS, LENORMAND_EMPATHY_POSTS.length, 'カード'),
   });
 }
 
 function buildInstagramEmpathyText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['instagram'] })) {
-  const cardLine = `ルノルマンカード「${item.cardName}」`;
-  const reading = stripLenormandLead(item.body, item.cardName);
   return buildInstagramSocialText([
-    item.hook,
-    cardLine,
-    reading,
+    buildLenormandCardLine(item),
+    item.title,
+    `カードの一言\n${item.message}`,
+    `今日のヒント\n${item.action}`,
     item.cta,
   ], dateKey, publicOrigin, config, {
-    heading: '保存用メモ',
-    note: '画像のカード名と一緒に、あとで今の迷いを見返せます。',
+    heading: '今日のルノルマン一枚',
+    note: '画像と一緒に、今日の流れとして見返せます。',
     cycleNote: buildScheduledCycleNote(dateKey, EMPATHY_WEEKDAYS, LENORMAND_EMPATHY_POSTS.length, 'カード'),
   });
 }
@@ -1594,7 +1593,7 @@ function buildInstagramFreePaidCompareText(item, dateKey, publicOrigin = DEFAULT
 }
 
 function buildEmpathyAltText(item) {
-  return `ルノルマンカード No.${item.cardNumber}「${item.cardName}」。悩み共感投稿で使うカード画像。`;
+  return `ルノルマンカード No.${item.cardNumber}「${item.cardName} / ${item.cardNameEn}」。今日のルノルマン一枚投稿で使うカード画像。`;
 }
 
 function buildQuestionAltText(item) {
@@ -1701,6 +1700,9 @@ async function buildDraft(args) {
       card: {
         cardNumber: empathyPost.cardNumber,
         cardName: empathyPost.cardName,
+        cardNameEn: empathyPost.cardNameEn,
+        tone: empathyPost.tone,
+        title: empathyPost.title,
       },
       imagePath: empathyInstagramImagePath,
       imageUrl: empathyInstagramImageUrl,
@@ -1840,6 +1842,9 @@ async function buildDraft(args) {
         empathy: {
           cardNumber: empathyPost.cardNumber,
           cardName: empathyPost.cardName,
+          cardNameEn: empathyPost.cardNameEn,
+          tone: empathyPost.tone,
+          title: empathyPost.title,
         },
         question: {
           version: questionPost.version,

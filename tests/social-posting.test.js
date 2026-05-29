@@ -6,6 +6,7 @@ const { spawnSync } = require('node:child_process');
 const ROOT = path.resolve(__dirname, '..');
 const NODE = process.execPath;
 const ACTIVE_KINDS = ['oracle', 'empathy', 'question', 'difference', 'free_paid_compare'];
+const { LENORMAND_EMPATHY_POSTS } = require('../scripts/social/content/lenormand-empathy-posts');
 
 function runNode(args, options = {}) {
   const result = spawnSync(NODE, args, {
@@ -120,10 +121,13 @@ function testPlatformHashtagPolicy() {
   const customInstagramDraft = parseDraft('2026-06-06', {
     env: { SOCIAL_INSTAGRAM_HASHTAGS: '#one #two #three #four #five #six' },
   });
+  const legacyInstagramDraft = parseDraft('2026-06-06', {
+    env: { SOCIAL_INSTAGRAM_EMPATHY_HASHTAGS: '#羅針占術 #ルノルマンカード #悩み相談 #占い好きな人と繋がりたい #AI占い' },
+  });
   const blueskyTags = ['#羅針占術', '#今日の占い', '#今日の運勢', '#占い師'];
   const instagramKindTags = {
     oracle: ['#今日の占い', '#オラクルカード'],
-    empathy: ['#ルノルマンカード', '#悩み相談'],
+    empathy: ['#ルノルマンカード', '#カード占い'],
     question: ['#悩み相談', '#今日の占い'],
     difference: ['#AI占い', '#無料占い'],
     free_paid_compare: ['#無料占い', '#ルノルマンカード'],
@@ -157,6 +161,8 @@ function testPlatformHashtagPolicy() {
     assert.equal(countHashtags(customInstagramDraft[kind].instagramText), 5, `${kind} custom Instagram hashtags should be capped at five`);
     assert.doesNotMatch(customInstagramDraft[kind].instagramText, /#six/, `${kind} custom Instagram hashtags should drop tags after the fifth`);
   }
+  assert.match(legacyInstagramDraft.empathy.instagramText, /#カード占い/, 'legacy Lenormand Instagram tags should normalize to card-reading tags');
+  assert.doesNotMatch(legacyInstagramDraft.empathy.instagramText, /#悩み相談/, 'legacy Lenormand Instagram tags should not keep the old worry tag');
 }
 
 function testQuestionLaneIsReplyFocusedAndTracked() {
@@ -196,14 +202,49 @@ function testMorningOracleCopyStillKeepsRequiredClosing() {
   assert.match(draft.oracle.trackedUrl, /utm_content=oracle_20260527/, 'oracle tracked URL should keep the oracle utm_content');
 }
 
+function testLenormandOneCardCopyDataQuality() {
+  const oldLabel = new RegExp('悩み' + '共感');
+  const positiveBlockedWords = /不安|苦し|重い|消耗|注意|無理|壁|曇|削|背負|傷/;
+  const cautionActionWords = /注意|確認|距離|寝かせる|見る|探す|手放す|分ける|決める|深呼吸/;
+  const generatorSource = fs.readFileSync(path.join(ROOT, 'scripts', 'social', 'generate-instagram-assets.js'), 'utf8');
+  const seen = new Set();
+
+  assert.equal(LENORMAND_EMPATHY_POSTS.length, 36, 'Lenormand one-card copy should cover all 36 cards');
+  assert.match(generatorSource, /LENORMAND_SCENE_IMAGE/, 'Lenormand image generator should use the Rashin scene backdrop');
+  assert.match(generatorSource, /lenormand-one-card/, 'Lenormand image generator should use the fixed one-card layout');
+  for (const item of LENORMAND_EMPATHY_POSTS) {
+    assert.ok(!seen.has(item.cardNumber), `duplicate Lenormand card: ${item.cardNumber}`);
+    seen.add(item.cardNumber);
+    assert.ok(['positive', 'neutral', 'caution'].includes(item.tone), `${item.cardNumber} should have a valid tone`);
+    for (const field of ['cardName', 'cardNameEn', 'title', 'message', 'action', 'cta']) {
+      assert.ok(String(item[field] || '').trim(), `${item.cardNumber} ${field} is required`);
+      assert.doesNotMatch(String(item[field]), /\r|\n/, `${item.cardNumber} ${field} should not contain manual line breaks`);
+      assert.doesNotMatch(String(item[field]), oldLabel, `${item.cardNumber} should not use the old empathy label`);
+    }
+    assert.ok([...item.title].length <= 12, `${item.cardNumber} title should fit the image headline`);
+    assert.ok([...item.message].length <= 17, `${item.cardNumber} message should fit the image message area without awkward wrapping`);
+    assert.ok([...item.action].length <= 17, `${item.cardNumber} action should fit the image action area without awkward wrapping`);
+    if (item.tone === 'positive') {
+      assert.doesNotMatch(`${item.title}${item.message}${item.action}`, positiveBlockedWords, `${item.cardNumber} positive card should not be forced into negative empathy copy`);
+    }
+    if (item.tone === 'caution') {
+      assert.match(item.action, cautionActionWords, `${item.cardNumber} caution card should give a concrete thing to watch`);
+    }
+  }
+}
+
 function testEmpathyUsesRandomLenormandRotation() {
   const seen = new Set();
+  const oldLabel = new RegExp('悩み' + '共感');
   for (const dateKey of scheduledDates('2026-05-27', [1, 3, 5], 36)) {
     const draft = parseDraft(dateKey);
     const cardNumber = draft.empathy.card.cardNumber;
     seen.add(cardNumber);
-    assert.match(draft.empathy.text, /ルノルマンカード「.+」/, `${dateKey} empathy post should show card name`);
-    assert.match(draft.empathy.text, /迷いを現実の流れとして読みます。/, `${dateKey} empathy post should keep soft CTA`);
+    assert.match(draft.empathy.text, /今日のルノルマン一枚/, `${dateKey} empathy post should use the public Lenormand one-card label`);
+    assert.match(draft.empathy.text, /No\.\d{2}\s*\/\s*.+\s*\/\s*[A-Za-z]/, `${dateKey} empathy post should show card number, Japanese name, and English name`);
+    assert.match(draft.empathy.text, /カードの一言[\s\S]+今日のヒント/, `${dateKey} empathy post should use a natural one-card structure`);
+    assert.match(draft.empathy.text, /今の流れと次の判断を整理します。/, `${dateKey} empathy post should keep a soft Rashin CTA`);
+    assert.doesNotMatch(draft.empathy.text, oldLabel, `${dateKey} empathy post should not use the old empathy label`);
     assert.match(draft.empathy.trackedUrl, new RegExp(`utm_content=empathy_${dateKey.replace(/-/g, '')}_card\\d{2}`), `${dateKey} empathy utm_content should include card number`);
     assert.match(draft.empathy.imagePath, new RegExp(`images[\\\\/]social[\\\\/]instagram[\\\\/]lenormand-empathy[\\\\/]${String(cardNumber).padStart(2, '0')}\\.jpg$`), `${dateKey} empathy should use the matching text-added Lenormand image`);
     assert.match(draft.empathy.imageUrl, new RegExp(`/images/social/instagram/lenormand-empathy/${String(cardNumber).padStart(2, '0')}\\.jpg$`), `${dateKey} empathy URL should use the matching text-added Lenormand image`);
@@ -454,6 +495,7 @@ testDraftHasTrackingImagesAndAlt();
 testPlatformHashtagPolicy();
 testAutomationDocsEnableBlueskyWithThreadsAndInstagram();
 testMorningOracleCopyStillKeepsRequiredClosing();
+testLenormandOneCardCopyDataQuality();
 testEmpathyUsesRandomLenormandRotation();
 testQuestionLaneIsReplyFocusedAndTracked();
 testDifferenceAndFreePaidCompareAxes();

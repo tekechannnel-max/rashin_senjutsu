@@ -145,7 +145,7 @@ npm run social:draft -- --date=2026-05-18 --platforms=threads,bluesky,instagram
 - `audit-social-drafts.js` は文字数、UTM、画像、alt text、重複本文、禁止表現を検査する。
 - `run-scheduled-posts.js` はRender Cron用。JSTの投稿対象時間だけ `daily-oracle-post.js --write --post --yes` 相当を実行する。
 - 朝07:00の `oracle` はカード1〜33の投稿文をThreads / Bluesky / Instagram向けに出す。ThreadsとBlueskyの本文URLと画像は同じにし、差分はハッシュタグだけにする。UTM付きURLは `posts.csv` の分析用URLとして保存する。画像は `images/social/instagram/oracle/NN.jpg` を使い、締め文は必ず「今日の1枚はこちら」にする。
-- 月・水・金12:00の `empathy` は、悩み共感の一文、ルノルマンカード名、見立て文、自由記載深掘りへの軽いCTAで構成する。画像は `images/social/instagram/lenormand-empathy/NN.jpg` を使い、初回36投稿で重複させない。
+- 月・水・金12:00の `empathy` は、内部名は互換性のため残すが、表向きは「今日のルノルマン一枚」として出す。カード番号、日本語名、英語名、カードの一言、今日のヒントで構成し、不安訴求へ寄せない。画像は `images/social/instagram/lenormand-empathy/NN.jpg` を使い、初回36投稿で重複させない。
 - 火・木12:00の `question` は、A/Bで返信しやすい問いを出す。Threads / Blueskyでは本文URLを出さず、UTM付きURLは台帳とKPIレビュー用に保存する。画像は `images/ui/app-promo-vertical-social.jpg` を使う。
 - Threadsのハッシュタグは `#占い師のつぶやき` だけにし、`#羅針占術` は使わない。Blueskyは `#羅針占術 #今日の占い #今日の運勢 #占い師` を使い、300文字を超えたら投稿しない。Threadsとの差分はハッシュタグだけにし、本文URLと画像は同じにする。`question` はThreads/Blueskyとも本文URLなしにする。
 - Instagramのハッシュタグは投稿種別ごとに最大5個だけ付ける。大量タグではなく、内容に合うタグを `SOCIAL_INSTAGRAM_*_HASHTAGS` で管理する。`empathy` / `difference` / `free_paid_compare` はThreads本文をそのまま使わず、保存用メモとして見返しやすい文にする。
@@ -186,7 +186,7 @@ SOCIAL_AUTOMATED_POSTING_ENABLED=true
 SOCIAL_PLATFORMS=threads,bluesky,instagram
 SOCIAL_THREADS_HASHTAG=#占い師のつぶやき
 SOCIAL_INSTAGRAM_ORACLE_HASHTAGS=#羅針占術 #今日の占い #オラクルカード #占い好きな人と繋がりたい #AI占い
-SOCIAL_INSTAGRAM_EMPATHY_HASHTAGS=#羅針占術 #ルノルマンカード #悩み相談 #占い好きな人と繋がりたい #AI占い
+SOCIAL_INSTAGRAM_EMPATHY_HASHTAGS=#羅針占術 #ルノルマンカード #今日の占い #カード占い #AI占い
 SOCIAL_INSTAGRAM_QUESTION_HASHTAGS=#羅針占術 #悩み相談 #占い好きな人と繋がりたい #今日の占い #AI占い
 SOCIAL_INSTAGRAM_DIFFERENCE_HASHTAGS=#羅針占術 #AI占い #無料占い #占い師のつぶやき #悩み相談
 SOCIAL_INSTAGRAM_FREE_PAID_COMPARE_HASHTAGS=#羅針占術 #無料占い #占い師のつぶやき #ルノルマンカード #AI占い

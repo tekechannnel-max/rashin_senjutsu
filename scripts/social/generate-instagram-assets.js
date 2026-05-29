@@ -14,6 +14,7 @@ const GENERATED_PLATE_ROOT = path.join(OUT_ROOT, 'generated-plates');
 const V_MODEL_ROOT = path.join(ROOT, '占い素材');
 const CHARACTER_IMAGE = path.join(V_MODEL_ROOT, '通常背景無し.png');
 const CHIBI_CHARACTER_IMAGE = path.join(V_MODEL_ROOT, 'ミニキャラ.png');
+const LENORMAND_SCENE_IMAGE = path.join(V_MODEL_ROOT, '羅針カード背景.png');
 
 function parseArgs(argv) {
   const args = {
@@ -98,16 +99,12 @@ function visualBackdrop(kind, id, fallbackPath) {
   return { path: fallbackPath, generated: false };
 }
 
+function hasImage(filePath) {
+  return fsSync.existsSync(filePath);
+}
+
 function pad2(value) {
   return String(value).padStart(2, '0');
-}
-
-function escapeRegExp(value) {
-  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function stripLenormandLead(body, cardName) {
-  return String(body || '').replace(new RegExp(`^ルノルマンカード「${escapeRegExp(cardName)}」[。\\s]*`), '').trim();
 }
 
 function compactText(value) {
@@ -131,7 +128,17 @@ function oracleVisualAction(card) {
 }
 
 function empathyVisualReading(item) {
-  return visualText(stripLenormandLead(item.body, item.cardName), 62);
+  return visualText(item.message, 42);
+}
+
+function empathyVisualAction(item) {
+  return visualText(item.action, 34);
+}
+
+function lenormandToneLabel(item) {
+  if (item.tone === 'positive') return '追い風のカード';
+  if (item.tone === 'caution') return '気をつけるカード';
+  return '流れを見るカード';
 }
 
 const PALETTES = [
@@ -396,6 +403,98 @@ function baseStyles() {
       right: 64px;
       bottom: 28px;
     }
+    .lenormand-one-card .bg-scene {
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: .82;
+      filter: none;
+      transform: none;
+      object-fit: cover;
+      object-position: 62% center;
+    }
+    .lenormand-one-card .wash {
+      background:
+        linear-gradient(90deg, rgba(4, 10, 18, .88), rgba(4, 10, 18, .66) 48%, rgba(4, 10, 18, .42)),
+        linear-gradient(180deg, rgba(4, 10, 18, .10), rgba(4, 10, 18, .62)),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 1px, transparent 1px 120px);
+      opacity: .97;
+    }
+    .lenormand-one-card .hero-copy {
+      left: 70px;
+      right: 390px;
+      top: 180px;
+      height: 350px;
+      justify-content: flex-start;
+      align-items: flex-start;
+      gap: 18px;
+      text-align: left;
+    }
+    .lenormand-one-card .kicker {
+      font-size: 31px;
+    }
+    .lenormand-one-card .number {
+      font-size: 28px;
+    }
+    .lenormand-one-card .hook {
+      font-size: 50px;
+      line-height: 1.16;
+      max-height: 176px;
+    }
+    .lenormand-one-card .name {
+      font-size: 28px;
+    }
+    .lenormand-one-card .card-art {
+      left: 70px;
+      top: 590px;
+      width: 232px;
+      height: 348px;
+      padding: 8px;
+      transform: none;
+      z-index: 5;
+    }
+    .lenormand-one-card .panel {
+      left: 70px;
+      right: 372px;
+      bottom: 110px;
+      min-height: 250px;
+      padding: 30px 38px 32px;
+      background: rgba(7, 15, 26, .80);
+      border-color: rgba(255,255,255,.32);
+      z-index: 7;
+      text-align: left;
+    }
+    .lenormand-one-card .label {
+      font-size: 26px;
+      margin-bottom: 12px;
+    }
+    .lenormand-one-card .message {
+      font-size: 34px;
+      line-height: 1.35;
+      max-height: 96px;
+    }
+    .lenormand-one-card .action {
+      margin-top: 18px;
+      font-size: 31px;
+      line-height: 1.32;
+      max-height: 92px;
+    }
+    .lenormand-one-card .action span {
+      font-size: 23px;
+      margin-bottom: 7px;
+    }
+    .lenormand-one-card .footer {
+      left: 64px;
+      right: 64px;
+      bottom: 58px;
+      text-align: left;
+    }
+    .lenormand-one-card .url {
+      left: 64px;
+      right: 64px;
+      bottom: 28px;
+      text-align: right;
+    }
     .brand {
       position: absolute;
       left: 62px;
@@ -578,6 +677,7 @@ function baseStyles() {
 function oracleHtml(card) {
   const imagePath = path.join(ROOT, 'images', 'cards', 'oracle', `${pad2(card.id)}.jpg`);
   const backdrop = visualBackdrop('oracle', card.id, imagePath);
+  const usePlateLayout = backdrop.generated || !hasImage(CHARACTER_IMAGE);
   const message = oracleVisualMessage(card);
   const action = oracleVisualAction(card);
   return `
@@ -592,10 +692,10 @@ function oracleHtml(card) {
       </style>
     </head>
     <body>
-      <main class="post oracle-post${backdrop.generated ? ' generated-plate' : ''}">
+      <main class="post oracle-post${usePlateLayout ? ' generated-plate' : ''}">
         <img class="bg${backdrop.generated ? ' bg-generated' : ''}" src="${fileUrl(backdrop.path)}" alt="">
         <div class="wash"></div>
-        ${backdrop.generated ? '' : `<div class="character-frame"><img class="character" src="${fileUrl(CHARACTER_IMAGE)}" alt=""></div>`}
+        ${usePlateLayout ? '' : `<div class="character-frame"><img class="character" src="${fileUrl(CHARACTER_IMAGE)}" alt=""></div>`}
         <div class="brand"><span class="brand-mark">R</span><span>羅針占術</span></div>
         <figure class="card-art"><img src="${fileUrl(imagePath)}" alt=""></figure>
         <section class="hero-copy">
@@ -621,8 +721,14 @@ function oracleHtml(card) {
 
 function empathyHtml(item) {
   const imagePath = path.join(ROOT, 'images', 'cards', 'lenormand', `${pad2(item.cardNumber)}.jpg`);
-  const backdrop = visualBackdrop('lenormand-empathy', item.cardNumber, imagePath);
+  const hasSceneBackdrop = hasImage(LENORMAND_SCENE_IMAGE);
+  const backdrop = visualBackdrop('lenormand-empathy', item.cardNumber, hasSceneBackdrop ? LENORMAND_SCENE_IMAGE : imagePath);
+  const useSceneBackdrop = hasSceneBackdrop && !backdrop.generated;
+  const usePlateLayout = backdrop.generated || (!useSceneBackdrop && !hasImage(CHARACTER_IMAGE));
+  const useCharacterOverlay = !usePlateLayout && !useSceneBackdrop && hasImage(CHARACTER_IMAGE);
+  const layoutClass = useSceneBackdrop ? ' lenormand-one-card' : (usePlateLayout ? ' generated-plate' : '');
   const reading = empathyVisualReading(item);
+  const action = empathyVisualAction(item);
   return `
     <!doctype html>
     <html lang="ja">
@@ -635,26 +741,26 @@ function empathyHtml(item) {
       </style>
     </head>
     <body>
-      <main class="post empathy-post${backdrop.generated ? ' generated-plate' : ''}">
-        <img class="bg${backdrop.generated ? ' bg-generated' : ''}" src="${fileUrl(backdrop.path)}" alt="">
+      <main class="post empathy-post${layoutClass}">
+        <img class="bg${backdrop.generated ? ' bg-generated' : ''}${useSceneBackdrop ? ' bg-scene' : ''}" src="${fileUrl(backdrop.path)}" alt="">
         <div class="wash"></div>
-        ${backdrop.generated ? '' : `<div class="character-frame"><img class="character" src="${fileUrl(CHARACTER_IMAGE)}" alt=""></div>`}
+        ${useCharacterOverlay ? `<div class="character-frame"><img class="character" src="${fileUrl(CHARACTER_IMAGE)}" alt=""></div>` : ''}
         <div class="brand"><span class="brand-mark">R</span><span>羅針占術</span></div>
         <figure class="card-art"><img src="${fileUrl(imagePath)}" alt=""></figure>
         <section class="hero-copy">
           <div>
-            <div class="kicker">悩み共感 × ルノルマン</div>
-            <div class="number">No.${pad2(item.cardNumber)} / ${escapeHtml(item.cardName)}</div>
+            <div class="kicker">今日のルノルマン一枚</div>
+            <div class="number">No.${pad2(item.cardNumber)} / ${escapeHtml(item.cardName)} / ${escapeHtml(item.cardNameEn)}</div>
           </div>
-          <div class="hook" data-fit data-min="38">${escapeHtml(item.hook)}</div>
-          <div class="name">この悩み、カードでほどく。</div>
+          <div class="hook" data-fit data-min="38">${escapeHtml(item.title)}</div>
+          <div class="name">${escapeHtml(lenormandToneLabel(item))}</div>
         </section>
         <section class="panel">
-          <div class="label">ルノルマンカード「${escapeHtml(item.cardName)}」</div>
+          <div class="label">カードの一言</div>
           <div class="message" data-fit data-min="31">${escapeHtml(reading)}</div>
-          <div class="action" data-fit data-min="27"><span>深掘りしたい人へ</span>羅針占術で、自由記載から整理できます。</div>
+          <div class="action" data-fit data-min="27"><span>今日のヒント</span>${escapeHtml(action)}</div>
         </section>
-        <div class="footer">迷いを、次の一手に変える。</div>
+        <div class="footer">カードの意味を、今日の判断に。</div>
         <div class="url">rashin-senjutsu.onrender.com</div>
       </main>
     </body>
