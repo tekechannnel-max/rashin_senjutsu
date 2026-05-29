@@ -82,6 +82,124 @@ function countHashtags(text) {
   return (String(text || '').match(/(^|\s)#[^\s#]+/g) || []).length;
 }
 
+function scanConstInitializer(source, constName, openChar, closeChar) {
+  const match = new RegExp(`const\\s+${constName}\\s*=`).exec(source);
+  assert.ok(match, `${constName} is missing`);
+  const open = source.indexOf(openChar, match.index + match[0].length);
+  assert.ok(open >= 0, `${constName} initializer is missing`);
+  let depth = 0;
+  let quote = '';
+  let escaped = false;
+  for (let i = open; i < source.length; i += 1) {
+    const ch = source[i];
+    if (quote) {
+      if (escaped) escaped = false;
+      else if (ch === '\\') escaped = true;
+      else if (ch === quote) quote = '';
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === '`') {
+      quote = ch;
+      continue;
+    }
+    if (ch === openChar) depth += 1;
+    if (ch === closeChar) {
+      depth -= 1;
+      if (depth === 0) return source.slice(open, i + 1);
+    }
+  }
+  throw new Error(`${constName} initializer did not close`);
+}
+
+function readConstFromFile(relativeFile, constName, openChar, closeChar) {
+  const source = fs.readFileSync(path.join(ROOT, relativeFile), 'utf8');
+  const literal = scanConstInitializer(source, constName, openChar, closeChar);
+  return Function(`"use strict"; return (${literal});`)();
+}
+
+function assertGroundingTerms(text, terms, label, minimum = 2) {
+  const hits = terms.filter(term => String(text || '').includes(term));
+  assert.ok(
+    hits.length >= minimum,
+    `${label} should be grounded in card meaning terms. hits=${hits.join(',') || '-'} required=${terms.join(',')}`
+  );
+}
+
+const ORACLE_GROUNDING_TERMS = {
+  1: ['意志', '一歩', '道しるべ', '道筋'],
+  2: ['支え', '自分の軸', '尊重'],
+  3: ['純粋', '楽しさ', '創造'],
+  4: ['焦らず', '積み重ね', '基盤', '安定'],
+  5: ['未知', '新しい体験', '成長', '変化'],
+  6: ['思いやり', '自己犠牲', '受け取る', 'バランス'],
+  7: ['感性', '技術', '内面', '一歩'],
+  8: ['覚悟', '行動', '現実', '力'],
+  9: ['経験', '知恵', '手放す', '次のサイクル'],
+  10: ['新しい力', '可能性', '新局面', '転換'],
+  11: ['直感', 'ひらめき', '感覚', '手がかり'],
+  12: ['対立', '違い', '調整', 'バランス'],
+  13: ['冷静', '判断', '責任', '安定'],
+  14: ['変化', '更新', '中庸', '調整'],
+  15: ['役に立つ', '貢献', '純粋な動機'],
+  16: ['本質', '観察', '洞察', '再生'],
+  17: ['希望', '与える', '豊かな流れ'],
+  18: ['探求', '見えていない答え', '不安', '幻想'],
+  19: ['信念', '意志', '謙虚', '道'],
+  20: ['つなげる', '過去', '統合', '可能性'],
+  21: ['完成', '仕上げ', '手放す', '次'],
+  22: ['影響力', 'ビジョン', '構築', '一歩'],
+  23: ['流れ', '乗りこなす', '柔軟', '自分の軸'],
+  24: ['優しさ', '品位', '誠実', '奉仕'],
+  25: ['自分のペース', '道', '内省', '自己信頼'],
+  26: ['切り開く', '野心', '実行力', '責任'],
+  27: ['節目', '新しい段階', '次の扉', '移行'],
+  28: ['共鳴', '人や環境', '運気', '調和'],
+  29: ['ビジョン', '理想', '現実の一歩', '使命'],
+  30: ['想像力', '形', '表現', '創造'],
+  31: ['長期', '計画', '構築', '積み上げ'],
+  32: ['信頼', '仲間', '共創', '相互補完'],
+  33: ['高い視点', '成長', '満たされ', '愛'],
+};
+
+const LENORMAND_GROUNDING_TERMS = {
+  1: ['吉報', '連絡', '早い', '展開'],
+  2: ['小さな幸運', '偶然', '好機', '軽い縁'],
+  3: ['遠方', '移動', '展開', '遠い縁'],
+  4: ['安心', '家', '土台', '安定'],
+  5: ['成長', '時間', '長い流れ'],
+  6: ['曖昧', '不安', '判断', '急がない'],
+  7: ['誘惑', '嫉妬', '注意', '警戒'],
+  8: ['終わり', '停止', '注意', '区切り'],
+  9: ['喜び', '感謝', '贈り物', '魅力'],
+  10: ['突然', '切断', '決断', '注意'],
+  11: ['繰り返', '摩擦', '口論', '消耗'],
+  12: ['会話', '噂', '連絡', '不安'],
+  13: ['新しい始まり', '小さな可能性', '一歩'],
+  14: ['策略', '嘘', '注意', '本音'],
+  15: ['後ろ盾', '保護', '圧力', '力'],
+  16: ['希望', '指針', '展望', '理想'],
+  17: ['変化', '改善', '環境'],
+  18: ['信頼', '忠実', '味方', '誠実'],
+  19: ['自立', '距離', '一人', '判断'],
+  20: ['社交', '人脈', '公の場', '縁'],
+  21: ['障害', '壁', '停滞', '遅れ', '迂回'],
+  22: ['選択', '分岐', '迷い', '道'],
+  23: ['損失', '消耗', '注意', '負担'],
+  24: ['愛情', '感情', '情熱', '好き'],
+  25: ['約束', '契約', '絆', '形'],
+  26: ['秘密', '知識', '隠れた情報', '知らない'],
+  27: ['手紙', '連絡', '書類', '情報'],
+  28: ['男性', '本人', '立場'],
+  29: ['女性', '本人', '立場'],
+  30: ['成熟', '平和', '信頼', '落ち着き'],
+  31: ['成功', '成果', '活力', '明るい'],
+  32: ['感性', '名誉', '直感', '評価'],
+  33: ['解決', '鍵', '突破口', '大事な点'],
+  34: ['豊か', 'お金', '流れ'],
+  35: ['安定', '継続', '安心', '長期'],
+  36: ['重責', '試練', '責任', '負担'],
+};
+
 function testDraftHasTrackingImagesAndAlt() {
   const draft = parseDraft();
   for (const kind of ACTIVE_KINDS) {
@@ -232,31 +350,27 @@ function testMorningOracleCopyStillKeepsRequiredClosing() {
   assert.match(draft.oracle.trackedUrl, /utm_content=oracle_20260527/, 'oracle tracked URL should keep the oracle utm_content');
 }
 
-function sliceBetween(source, start, end, label) {
-  const startIndex = source.indexOf(start);
-  assert.ok(startIndex >= 0, `${label} start marker is missing`);
-  const endIndex = source.indexOf(end, startIndex + start.length);
-  assert.ok(endIndex >= 0, `${label} end marker is missing`);
-  return source.slice(startIndex, endIndex);
-}
+function testOracleDailyCopyIsGroundedInAllCardReadings() {
+  const oracle = readConstFromFile('app.js', 'ORACLE', '{', '}');
+  const dailyMessages = readConstFromFile('app.js', 'DAILY_ORACLE_MESSAGES', '[', ']');
+  const actions = readConstFromFile(path.join('scripts', 'social', 'daily-oracle-post.js'), 'ORACLE_SOFT_ACTIONS', '{', '}');
+  const readings = readConstFromFile(path.join('scripts', 'social', 'daily-oracle-post.js'), 'ORACLE_SOCIAL_READINGS', '{', '}');
+  const seen = new Set();
 
-function testOracleGuideDailyCopyIsGroundedInCardReading() {
-  const appSource = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8');
-  const postSource = fs.readFileSync(path.join(ROOT, 'scripts', 'social', 'daily-oracle-post.js'), 'utf8');
-  const guideDaily = sliceBetween(
-    appSource,
-    '{id:1,name:"The Guide"',
-    '\n  {id:2,name:"The Supporter"',
-    'daily oracle guide copy'
-  );
-  const guideAction = sliceBetween(postSource, "  1: '自分の意志", "\n  2: '支え", 'guide action copy');
-  const guideReading = sliceBetween(postSource, "  1: '始まりの道筋", "\n  2: '静か", 'guide social reading copy');
-  const guideCopy = `${guideDaily}\n${guideAction}\n${guideReading}`;
+  assert.equal(dailyMessages.length, 33, 'daily oracle copy should cover all 33 oracle cards');
+  for (const item of dailyMessages) {
+    const id = Number(item.id);
+    const source = oracle[id];
+    assert.ok(source, `oracle source is missing for ${id}`);
+    assert.equal(item.name, source.name, `${id} oracle daily name should match ORACLE`);
+    assert.ok(actions[id], `${id} oracle action is missing`);
+    assert.ok(readings[id], `${id} oracle social reading is missing`);
+    assert.ok(!seen.has(id), `duplicate oracle daily card: ${id}`);
+    seen.add(id);
 
-  assert.match(guideCopy, /自分の意志/, 'The Guide copy should use the card source theme: will');
-  assert.match(guideCopy, /一歩/, 'The Guide copy should point to choosing the first step');
-  assert.match(guideCopy, /道しるべ|道筋/, 'The Guide copy should stay on the guide/path reading');
-  assert.doesNotMatch(guideCopy, /灯|火|まだ消えていない/, 'The Guide copy should not drift into ungrounded fire/light metaphors');
+    const combined = [item.title, item.message, item.action, item.share, actions[id], readings[id]].join('\n');
+    assertGroundingTerms(combined, ORACLE_GROUNDING_TERMS[id], `oracle ${id} ${item.name}`, 3);
+  }
 }
 
 function testLenormandOneCardCopyDataQuality() {
@@ -265,6 +379,7 @@ function testLenormandOneCardCopyDataQuality() {
   const forcedTaskWords = /確認|書く|書き|言葉にする|形に残す|試す|選ぶ前|候補|深呼吸|手放す|決める前|事実だけ|都合よく使われ|行き先|優先する/;
   const cautionStateWords = /注意|急がない|距離|消耗|違和感|守り|余白|鋭く|静けさ|無理|壁|迂回|負担|重く/;
   const generatorSource = fs.readFileSync(path.join(ROOT, 'scripts', 'social', 'generate-instagram-assets.js'), 'utf8');
+  const lenormand = readConstFromFile('app.js', 'LENORMAND', '{', '}');
   const seen = new Set();
 
   assert.equal(LENORMAND_EMPATHY_POSTS.length, 36, 'Lenormand one-card copy should cover all 36 cards');
@@ -272,9 +387,18 @@ function testLenormandOneCardCopyDataQuality() {
   assert.doesNotMatch(generatorSource, /羅針カード背景\.png|ルノルマンカード表紙デザイン2\.png/, 'Lenormand image generator should not use the wrong backdrop');
   assert.match(generatorSource, /lenormand-one-card/, 'Lenormand image generator should use the fixed one-card layout');
   for (const item of LENORMAND_EMPATHY_POSTS) {
+    const source = lenormand[item.cardNumber];
+    assert.ok(source, `Lenormand source is missing for ${item.cardNumber}`);
+    assert.equal(item.cardName, source.name, `${item.cardNumber} cardName should match LENORMAND`);
     assert.ok(!seen.has(item.cardNumber), `duplicate Lenormand card: ${item.cardNumber}`);
     seen.add(item.cardNumber);
     assert.ok(['positive', 'neutral', 'caution'].includes(item.tone), `${item.cardNumber} should have a valid tone`);
+    assertGroundingTerms(
+      `${item.title}\n${item.message}\n${item.action}`,
+      LENORMAND_GROUNDING_TERMS[item.cardNumber],
+      `Lenormand ${item.cardNumber} ${item.cardName}`,
+      2
+    );
     for (const field of ['cardName', 'cardNameEn', 'title', 'message', 'action', 'cta']) {
       assert.ok(String(item[field] || '').trim(), `${item.cardNumber} ${field} is required`);
       assert.doesNotMatch(String(item[field]), /\r|\n/, `${item.cardNumber} ${field} should not contain manual line breaks`);
@@ -556,7 +680,7 @@ testPlatformHashtagPolicy();
 testAutomationDocsEnableBlueskyWithThreadsAndInstagram();
 testWorkflowPostingPlatformsMatchProductionLane();
 testMorningOracleCopyStillKeepsRequiredClosing();
-testOracleGuideDailyCopyIsGroundedInCardReading();
+testOracleDailyCopyIsGroundedInAllCardReadings();
 testLenormandOneCardCopyDataQuality();
 testEmpathyUsesRandomLenormandRotation();
 testQuestionLaneIsReplyFocusedAndTracked();
