@@ -57,6 +57,28 @@ assert.ok(
   'paid result actions must expose the Rashin calendar button'
 );
 
+const topCtaSetup = sliceFromMarker(
+  appSource,
+  "setText('#s-top .top-kicker'",
+  "setText('#s-top .top-note'"
+);
+
+[
+  'btn-rashin-calendar',
+  "topCalendarBtn.textContent='羅針カレンダーを作成'",
+  "requestRashinYearCalendarFromPaid('top_code_slot')",
+  "topBtns.insertBefore(topCalendarBtn,simpleTopBtn.nextSibling)",
+  "topBtns.insertBefore(rashinCodeForm,topPaidBtn.nextSibling)",
+].forEach(marker => {
+  assert.ok(topCtaSetup.includes(marker), `top CTA placement must include: ${marker}`);
+});
+
+assert.ok(
+  htmlSource.includes('.btn-rashin-calendar') &&
+    htmlSource.includes('.btn-rashin-calendar:hover'),
+  'top Rashin calendar CTA must have dedicated visible styling'
+);
+
 const paidCalendarGate = sliceFromMarker(
   appSource,
   'function canOpenPaidRashinYearCalendar()',

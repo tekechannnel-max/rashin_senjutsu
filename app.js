@@ -6758,7 +6758,8 @@ function repairStaticCopy(){
     topQuickBtn.setAttribute('data-track','free_start_click');
     topQuickBtn.setAttribute('data-track-position','hero');
   }
-  setText('#s-top .btn-top.btn-paid',DEEP_PAID_CTA_LABEL);
+  const topPaidBtn=document.querySelector('#s-top .btn-top.btn-paid');
+  if(topPaidBtn) topPaidBtn.textContent=DEEP_PAID_CTA_LABEL;
   const topBtns=document.querySelector('#s-top .top-btns');
   let simpleTopBtn=document.querySelector('#s-top .btn-top.btn-simple');
   if(!simpleTopBtn){
@@ -6774,6 +6775,27 @@ function repairStaticCopy(){
     simpleTopBtn.setAttribute('data-track-position','hero');
     simpleTopBtn.onclick=null;
   }
+  let topCalendarBtn=document.querySelector('#s-top .btn-top.btn-rashin-calendar');
+  if(!topCalendarBtn){
+    topCalendarBtn=document.createElement('button');
+    topCalendarBtn.type='button';
+    topCalendarBtn.className='btn-top btn-rashin-calendar';
+  }
+  if(topCalendarBtn){
+    topCalendarBtn.textContent='羅針カレンダーを作成';
+    topCalendarBtn.setAttribute('data-track','rashin_year_calendar_top_click');
+    topCalendarBtn.setAttribute('data-track-position','hero_code_slot');
+    topCalendarBtn.onclick=function(event){
+      event.preventDefault();
+      void requestRashinYearCalendarFromPaid('top_code_slot');
+      return false;
+    };
+    if(topBtns){
+      if(simpleTopBtn?.parentNode===topBtns) topBtns.insertBefore(topCalendarBtn,simpleTopBtn.nextSibling);
+      else if(topPaidBtn?.parentNode===topBtns) topBtns.insertBefore(topCalendarBtn,topPaidBtn.nextSibling);
+      else topBtns.appendChild(topCalendarBtn);
+    }
+  }
   let rashinCodeForm=document.querySelector('#s-top .rashin-code-form');
   if(!rashinCodeForm){
     rashinCodeForm=document.createElement('div');
@@ -6785,10 +6807,10 @@ function repairStaticCopy(){
         <button class="rashin-code-submit" id="rashin-code-submit" type="button">認証</button>
       </div>
       <div class="rashin-code-status" id="rashin-code-status" aria-live="polite" style="display:none"></div>`;
-    if(topBtns){
-      if(simpleTopBtn?.nextSibling) topBtns.insertBefore(rashinCodeForm,simpleTopBtn.nextSibling);
-      else topBtns.appendChild(rashinCodeForm);
-    }
+  }
+  if(topBtns&&rashinCodeForm){
+    if(topPaidBtn?.parentNode===topBtns) topBtns.insertBefore(rashinCodeForm,topPaidBtn.nextSibling);
+    else topBtns.appendChild(rashinCodeForm);
   }
   const rashinCodeInput=document.getElementById('rashin-code-input');
   const rashinCodeSubmit=document.getElementById('rashin-code-submit');
