@@ -6775,6 +6775,22 @@ function repairStaticCopy(){
     simpleTopBtn.setAttribute('data-track-position','hero');
     simpleTopBtn.onclick=null;
   }
+  let rashinCodeForm=document.querySelector('#s-top .rashin-code-form');
+  if(!rashinCodeForm){
+    rashinCodeForm=document.createElement('div');
+    rashinCodeForm.className='rashin-code-form';
+    rashinCodeForm.innerHTML=`
+      <label class="rashin-code-label" for="rashin-code-input">羅針コード</label>
+      <div class="rashin-code-row">
+        <input class="rashin-code-input" id="rashin-code-input" type="text" inputmode="text" pattern="[A-Za-z0-9\\-]*" maxlength="14" autocomplete="one-time-code" placeholder="12文字">
+        <button class="rashin-code-submit" id="rashin-code-submit" type="button">認証</button>
+      </div>
+      <div class="rashin-code-status" id="rashin-code-status" aria-live="polite" style="display:none"></div>`;
+  }
+  if(topBtns&&rashinCodeForm){
+    if(simpleTopBtn?.parentNode===topBtns) topBtns.insertBefore(rashinCodeForm,simpleTopBtn.nextSibling);
+    else topBtns.appendChild(rashinCodeForm);
+  }
   let topCalendarBtn=document.querySelector('#s-top .btn-top.btn-rashin-calendar');
   if(!topCalendarBtn){
     topCalendarBtn=document.createElement('button');
@@ -6791,26 +6807,9 @@ function repairStaticCopy(){
       return false;
     };
     if(topBtns){
-      if(simpleTopBtn?.parentNode===topBtns) topBtns.insertBefore(topCalendarBtn,simpleTopBtn.nextSibling);
-      else if(topPaidBtn?.parentNode===topBtns) topBtns.insertBefore(topCalendarBtn,topPaidBtn.nextSibling);
+      if(rashinCodeForm?.parentNode===topBtns) topBtns.insertBefore(topCalendarBtn,rashinCodeForm.nextSibling);
       else topBtns.appendChild(topCalendarBtn);
     }
-  }
-  let rashinCodeForm=document.querySelector('#s-top .rashin-code-form');
-  if(!rashinCodeForm){
-    rashinCodeForm=document.createElement('div');
-    rashinCodeForm.className='rashin-code-form';
-    rashinCodeForm.innerHTML=`
-      <label class="rashin-code-label" for="rashin-code-input">羅針コード</label>
-      <div class="rashin-code-row">
-        <input class="rashin-code-input" id="rashin-code-input" type="text" inputmode="text" pattern="[A-Za-z0-9\\-]*" maxlength="14" autocomplete="one-time-code" placeholder="12文字">
-        <button class="rashin-code-submit" id="rashin-code-submit" type="button">認証</button>
-      </div>
-      <div class="rashin-code-status" id="rashin-code-status" aria-live="polite" style="display:none"></div>`;
-  }
-  if(topBtns&&rashinCodeForm){
-    if(topPaidBtn?.parentNode===topBtns) topBtns.insertBefore(rashinCodeForm,topPaidBtn.nextSibling);
-    else topBtns.appendChild(rashinCodeForm);
   }
   const rashinCodeInput=document.getElementById('rashin-code-input');
   const rashinCodeSubmit=document.getElementById('rashin-code-submit');
