@@ -6449,6 +6449,118 @@ async function handleStripeWebhook(req, res) {
   }
 }
 
+async function handleHealth(req, res) {
+  const setup = await getRuntimeSetupStatus(req);
+  const local = isLocalRequest(req);
+  const health = {
+    ok: true,
+    anthropicKeyConfigured: ANTHROPIC_KEY_CONFIGURED,
+    openaiKeyConfigured: OPENAI_KEY_CONFIGURED,
+    googleClientConfigured: GOOGLE_CLIENT_CONFIGURED,
+    mode: 'provider-router',
+    vaultEnabled: true,
+    production: IS_PRODUCTION,
+    paidTestMode: DEV_ACCESS_ENABLED && isLocalRequest(req),
+    memberCodeConfigured: DEV_ACCESS_ENABLED && MEMBER_ACCESS_CODES.size > 0,
+    rashinCodeConfigured: RASHIN_ACCESS_CODES.size > 0,
+    rashinPaidCodeReady: rashinPaidCodeReady(),
+    memberSessionPersistent: MEMBER_SESSION_PERSISTENT,
+    stripeCheckoutReady: false,
+    stripePortalReady: false,
+    stripeWebhookReady: false,
+    boothPurchaseReady: setup?.boothPurchaseReady ?? boothPurchaseReady(),
+    boothProductUrlConfigured: setup?.boothProductUrlConfigured ?? !!getBoothPaymentPayload().url,
+    boothGmailVerificationRequired: setup?.boothGmailVerificationRequired ?? BOOTH_GMAIL_VERIFICATION_REQUIRED,
+    boothGmailVerificationConfigured: setup?.boothGmailVerificationConfigured ?? boothGmailVerificationConfigured(),
+    boothOrderReferenceAllowlistConfigured: setup?.boothOrderReferenceAllowlistConfigured ?? boothOrderReferenceAllowlistConfigured(),
+    boothOrderClaimVerificationConfigured: setup?.boothOrderClaimVerificationConfigured ?? boothOrderClaimVerificationConfigured(),
+    paidModelAbTest: setup?.paidModelAbTest || {
+      name: PAID_MODEL_AB_TEST_NAME,
+      enabled: PAID_MODEL_AB_TEST_ENABLED,
+      openaiWeight: PAID_MODEL_AB_TEST_OPENAI_WEIGHT,
+      anthropicModel: AI_MODELS.paid,
+      openaiModel: AI_MODELS.paidAbOpenai,
+    },
+    setup: local ? setup : {
+      ok: !!setup?.productionReady,
+      checkedAt: setup?.checkedAt || new Date().toISOString(),
+    },
+  };
+  if (local) health.aiModels = AI_MODELS;
+  sendJson(res, 200, health);
+}
+
+function createGoneJsonHandler(error, message) {
+  return (_req, res) => {
+    sendJson(res, 410, { error, message });
+  };
+}
+
+const PAGE_ROUTES = [
+  { method: 'GET', prefix: '/share/card', handler: handleShareCardPage },
+  { method: 'GET', prefix: '/auth/threads/callback', handler: handleThreadsCallbackPage },
+  { method: 'GET', prefix: '/auth/threads/uninstall', handler: (req, res) => handleThreadsLifecycleCallback(req, res, 'uninstall') },
+  { method: 'GET', prefix: '/auth/threads/delete', handler: (req, res) => handleThreadsLifecycleCallback(req, res, 'delete') },
+];
+
+const API_ROUTES = [
+  { method: 'GET', prefix: '/api/health', handler: handleHealth },
+  { method: 'GET', prefix: '/api/member/status', handler: handleMemberStatus },
+  { method: 'GET', prefix: '/api/rashin-bonus/status', handler: handleRashinBonusStatus },
+  { method: 'POST', prefix: '/api/rashin-bonus/claim', handler: handleRashinBonusClaim },
+  { method: 'POST', prefix: '/api/rashin-bonus/redeem-paid-ticket', handler: handleRashinBonusRedeemPaidTicket },
+  { method: 'GET', prefix: '/api/deep-reading/discount-status', handler: handleDeepReadingDiscountStatus },
+  { method: 'POST', prefix: '/api/rashin-paid-code/purchase-intent', handler: handleRashinPaidCodePurchaseIntent },
+  { method: 'POST', prefix: '/api/rashin-paid-code/redeem', handler: handleRashinPaidCodeRedeem },
+  { method: 'POST', prefix: '/api/rashin-paid-code/booth/claim', handler: handleBoothOrderClaim },
+  { method: 'POST', prefix: '/api/rashin-paid-code/booth/gmail-test', handler: handleBoothGmailVerificationTest },
+  { method: 'POST', prefix: '/api/rashin-paid-code/admin/issue', handler: handleRashinPaidCodeAdminIssue },
+  { method: 'POST', prefix: '/api/auth/google', handler: handleGoogleAuth },
+  { method: 'POST', prefix: '/api/member/session', handler: handleMemberSession },
+  { method: 'POST', prefix: '/api/rashin-code/redeem', handler: handleRashinCodeRedeem },
+  { method: 'POST', prefix: '/api/member/logout', handler: handleMemberLogout },
+  { method: 'POST', prefix: '/api/client-log', handler: handleClientLog },
+  { method: 'GET', prefix: '/api/provider-check', handler: handleProviderCheck },
+  {
+    method: 'POST',
+    prefix: '/api/stripe/checkout-session',
+    handler: createGoneJsonHandler(
+      'STRIPE_CHECKOUT_DISABLED',
+      'Stripe checkout has been disabled. Use Rashin code purchase flow instead.'
+    ),
+  },
+  { method: 'POST', prefix: '/api/paid-reading/prepare-ticket', handler: handlePaidReadingTicketPrepare },
+  { method: 'POST', prefix: '/api/paid-reading/use-ticket', handler: handlePaidReadingTicketUse },
+  { method: 'POST', prefix: '/api/paid-reading/release-ticket', handler: handlePaidReadingTicketRelease },
+  { method: 'GET', prefix: '/api/stripe/checkout/complete', handler: handleStripeCheckoutComplete },
+  {
+    method: 'POST',
+    prefix: '/api/stripe/portal-session',
+    handler: createGoneJsonHandler(
+      'STRIPE_PORTAL_DISABLED',
+      'Stripe billing portal has been disabled.'
+    ),
+  },
+  { method: 'POST', prefix: '/api/stripe/webhook', handler: handleStripeWebhook },
+  { method: 'POST', prefixes: ['/api/ai/generate', '/api/anthropic/messages'], handler: handleAiProxy },
+  { method: 'POST', prefix: '/api/vault/history/query', handler: handleVaultQuery },
+  { method: 'POST', prefix: '/api/vault/history/save', handler: handleVaultSave },
+  { method: 'POST', prefix: '/api/vault/history/clear', handler: handleVaultClear },
+];
+
+function routeMatches(req, route) {
+  if (String(req.method || '').toUpperCase() !== route.method) return false;
+  const prefixes = route.prefixes || [route.prefix];
+  return prefixes.some(prefix => req.url.startsWith(prefix));
+}
+
+async function dispatchRequestRoute(req, res, routes) {
+  const route = routes.find(candidate => routeMatches(req, candidate));
+  if (!route) return false;
+  await route.handler(req, res);
+  return true;
+}
+
 async function handleRequest(req, res) {
   if (!req.url) {
     sendText(res, 400, 'Bad Request');
@@ -6468,207 +6580,8 @@ async function handleRequest(req, res) {
     return;
   }
 
-  if (req.method === 'GET' && req.url.startsWith('/share/card')) {
-    handleShareCardPage(req, res);
-    return;
-  }
-
-  if (req.method === 'GET' && req.url.startsWith('/auth/threads/callback')) {
-    handleThreadsCallbackPage(req, res);
-    return;
-  }
-
-  if (req.method === 'GET' && req.url.startsWith('/auth/threads/uninstall')) {
-    handleThreadsLifecycleCallback(req, res, 'uninstall');
-    return;
-  }
-
-  if (req.method === 'GET' && req.url.startsWith('/auth/threads/delete')) {
-    handleThreadsLifecycleCallback(req, res, 'delete');
-    return;
-  }
-
-  if (req.method === 'GET' && req.url.startsWith('/api/health')) {
-    const setup = await getRuntimeSetupStatus(req);
-    const local = isLocalRequest(req);
-    const health = {
-      ok: true,
-      anthropicKeyConfigured: ANTHROPIC_KEY_CONFIGURED,
-      openaiKeyConfigured: OPENAI_KEY_CONFIGURED,
-      googleClientConfigured: GOOGLE_CLIENT_CONFIGURED,
-      mode: 'provider-router',
-      vaultEnabled: true,
-      production: IS_PRODUCTION,
-      paidTestMode: DEV_ACCESS_ENABLED && isLocalRequest(req),
-      memberCodeConfigured: DEV_ACCESS_ENABLED && MEMBER_ACCESS_CODES.size > 0,
-      rashinCodeConfigured: RASHIN_ACCESS_CODES.size > 0,
-      rashinPaidCodeReady: rashinPaidCodeReady(),
-      memberSessionPersistent: MEMBER_SESSION_PERSISTENT,
-      stripeCheckoutReady: false,
-      stripePortalReady: false,
-      stripeWebhookReady: false,
-      boothPurchaseReady: setup?.boothPurchaseReady ?? boothPurchaseReady(),
-      boothProductUrlConfigured: setup?.boothProductUrlConfigured ?? !!getBoothPaymentPayload().url,
-      boothGmailVerificationRequired: setup?.boothGmailVerificationRequired ?? BOOTH_GMAIL_VERIFICATION_REQUIRED,
-      boothGmailVerificationConfigured: setup?.boothGmailVerificationConfigured ?? boothGmailVerificationConfigured(),
-      boothOrderReferenceAllowlistConfigured: setup?.boothOrderReferenceAllowlistConfigured ?? boothOrderReferenceAllowlistConfigured(),
-      boothOrderClaimVerificationConfigured: setup?.boothOrderClaimVerificationConfigured ?? boothOrderClaimVerificationConfigured(),
-      paidModelAbTest: setup?.paidModelAbTest || {
-        name: PAID_MODEL_AB_TEST_NAME,
-        enabled: PAID_MODEL_AB_TEST_ENABLED,
-        openaiWeight: PAID_MODEL_AB_TEST_OPENAI_WEIGHT,
-        anthropicModel: AI_MODELS.paid,
-        openaiModel: AI_MODELS.paidAbOpenai,
-      },
-      setup: local ? setup : {
-        ok: !!setup?.productionReady,
-        checkedAt: setup?.checkedAt || new Date().toISOString(),
-      },
-    };
-    if (local) health.aiModels = AI_MODELS;
-    sendJson(res, 200, health);
-    return;
-  }
-
-  if (req.method === 'GET' && req.url.startsWith('/api/member/status')) {
-    await handleMemberStatus(req, res);
-    return;
-  }
-
-  if (req.method === 'GET' && req.url.startsWith('/api/rashin-bonus/status')) {
-    await handleRashinBonusStatus(req, res);
-    return;
-  }
-
-  if (req.method === 'POST' && req.url.startsWith('/api/rashin-bonus/claim')) {
-    await handleRashinBonusClaim(req, res);
-    return;
-  }
-
-  if (req.method === 'POST' && req.url.startsWith('/api/rashin-bonus/redeem-paid-ticket')) {
-    await handleRashinBonusRedeemPaidTicket(req, res);
-    return;
-  }
-
-  if (req.method === 'GET' && req.url.startsWith('/api/deep-reading/discount-status')) {
-    await handleDeepReadingDiscountStatus(req, res);
-    return;
-  }
-
-  if (req.method === 'POST' && req.url.startsWith('/api/rashin-paid-code/purchase-intent')) {
-    await handleRashinPaidCodePurchaseIntent(req, res);
-    return;
-  }
-
-  if (req.method === 'POST' && req.url.startsWith('/api/rashin-paid-code/redeem')) {
-    await handleRashinPaidCodeRedeem(req, res);
-    return;
-  }
-
-  if (req.method === 'POST' && req.url.startsWith('/api/rashin-paid-code/booth/claim')) {
-    await handleBoothOrderClaim(req, res);
-    return;
-  }
-
-  if (req.method === 'POST' && req.url.startsWith('/api/rashin-paid-code/booth/gmail-test')) {
-    await handleBoothGmailVerificationTest(req, res);
-    return;
-  }
-
-  if (req.method === 'POST' && req.url.startsWith('/api/rashin-paid-code/admin/issue')) {
-    await handleRashinPaidCodeAdminIssue(req, res);
-    return;
-  }
-
-  if (req.method === 'POST' && req.url.startsWith('/api/auth/google')) {
-    await handleGoogleAuth(req, res);
-    return;
-  }
-
-  if (req.method === 'POST' && req.url.startsWith('/api/member/session')) {
-    await handleMemberSession(req, res);
-    return;
-  }
-
-  if (req.method === 'POST' && req.url.startsWith('/api/rashin-code/redeem')) {
-    await handleRashinCodeRedeem(req, res);
-    return;
-  }
-
-  if (req.method === 'POST' && req.url.startsWith('/api/member/logout')) {
-    await handleMemberLogout(req, res);
-    return;
-  }
-
-  if (req.method === 'POST' && req.url.startsWith('/api/client-log')) {
-    await handleClientLog(req, res);
-    return;
-  }
-
-  if (req.method === 'GET' && req.url.startsWith('/api/provider-check')) {
-    await handleProviderCheck(req, res);
-    return;
-  }
-
-  if (req.method === 'POST' && req.url.startsWith('/api/stripe/checkout-session')) {
-    sendJson(res, 410, {
-      error: 'STRIPE_CHECKOUT_DISABLED',
-      message: 'Stripe checkout has been disabled. Use Rashin code purchase flow instead.',
-    });
-    return;
-  }
-
-  if (req.method === 'POST' && req.url.startsWith('/api/paid-reading/prepare-ticket')) {
-    await handlePaidReadingTicketPrepare(req, res);
-    return;
-  }
-
-  if (req.method === 'POST' && req.url.startsWith('/api/paid-reading/use-ticket')) {
-    await handlePaidReadingTicketUse(req, res);
-    return;
-  }
-  if (req.method === 'POST' && req.url.startsWith('/api/paid-reading/release-ticket')) {
-    await handlePaidReadingTicketRelease(req, res);
-    return;
-  }
-
-  if (req.method === 'GET' && req.url.startsWith('/api/stripe/checkout/complete')) {
-    await handleStripeCheckoutComplete(req, res);
-    return;
-  }
-
-  if (req.method === 'POST' && req.url.startsWith('/api/stripe/portal-session')) {
-    sendJson(res, 410, {
-      error: 'STRIPE_PORTAL_DISABLED',
-      message: 'Stripe billing portal has been disabled.',
-    });
-    return;
-  }
-
-  if (req.method === 'POST' && req.url.startsWith('/api/stripe/webhook')) {
-    await handleStripeWebhook(req, res);
-    return;
-  }
-
-  if (req.method === 'POST' && (req.url.startsWith('/api/ai/generate') || req.url.startsWith('/api/anthropic/messages'))) {
-    await handleAiProxy(req, res);
-    return;
-  }
-
-  if (req.method === 'POST' && req.url.startsWith('/api/vault/history/query')) {
-    await handleVaultQuery(req, res);
-    return;
-  }
-
-  if (req.method === 'POST' && req.url.startsWith('/api/vault/history/save')) {
-    await handleVaultSave(req, res);
-    return;
-  }
-
-  if (req.method === 'POST' && req.url.startsWith('/api/vault/history/clear')) {
-    await handleVaultClear(req, res);
-    return;
-  }
+  if (await dispatchRequestRoute(req, res, PAGE_ROUTES)) return;
+  if (await dispatchRequestRoute(req, res, API_ROUTES)) return;
 
   if (req.method === 'GET' || req.method === 'HEAD') {
     await serveStatic(req, res);
