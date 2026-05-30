@@ -7,6 +7,7 @@ const blueskyClient = require('./bluesky-client');
 const instagramClient = require('./instagram-client');
 const postLedger = require('./post-ledger');
 const { LENORMAND_EMPATHY_POSTS } = require('./content/lenormand-empathy-posts');
+const { ORACLE_CARD_COPY } = require('./content/oracle-card-copy');
 const { DIFFERENCE_POSTS } = require('./content/difference-posts');
 const { FREE_PAID_COMPARE_POSTS } = require('./content/free-paid-compare-posts');
 const { THREAD_QUESTION_POSTS } = require('./content/thread-question-posts');
@@ -593,7 +594,18 @@ function softenOracleSocialWording(text) {
     .replace(/このカードからの一手/g, 'このカードからのヒント');
 }
 
+function oracleSocialCopy(card) {
+  return ORACLE_CARD_COPY[Number(card?.id)] || {};
+}
+
+function oracleSocialTitle(card) {
+  return String(oracleSocialCopy(card).title || card?.title || '').trim();
+}
+
 function buildOracleLeadLine(card) {
+  const lead = String(oracleSocialCopy(card).lead || '').trim();
+  if (lead) return lead;
+
   const message = String(card?.message || '').trim();
   if (message) return softenOracleSocialWording(message);
 
@@ -610,13 +622,13 @@ function buildOracleLeadLine(card) {
 
 function buildOracleActionLine(card) {
   const id = Number(card?.id);
-  const action = ORACLE_SOFT_ACTIONS[id] || '今日は、そのテーマを静かに持っていていい。';
+  const action = oracleSocialCopy(card).support || ORACLE_SOFT_ACTIONS[id] || '今日は、そのテーマを静かに持っていていい。';
   return `今日のよりどころ：${action}`;
 }
 
 function buildOracleReadingLine(card) {
   const id = Number(card?.id);
-  const reading = ORACLE_SOCIAL_READINGS[id] || 'このカードは、結論を急がない日に残る静かな視点を示しています。';
+  const reading = oracleSocialCopy(card).message || ORACLE_SOCIAL_READINGS[id] || 'このカードは、結論を急がない日に残る静かな視点を示しています。';
   return `カードメッセージ：${reading}`;
 }
 
@@ -1190,7 +1202,7 @@ function buildOracleText(card, publicOrigin, options = {}) {
     return fitPostText([
       '先行 数秘オラクル',
       card.name,
-      `テーマ：${card.title}`,
+      `テーマ：${oracleSocialTitle(card)}`,
       buildOracleLeadLine(card),
       buildOracleReadingLine(card),
       buildOracleActionLine(card),
@@ -1203,7 +1215,7 @@ function buildOracleText(card, publicOrigin, options = {}) {
   return fitPostText([
     '今日の数秘オラクル',
     card.name,
-    `テーマ：${card.title}`,
+    `テーマ：${oracleSocialTitle(card)}`,
     buildOracleLeadLine(card),
     buildOracleReadingLine(card),
     buildOracleActionLine(card),
@@ -1221,7 +1233,7 @@ function buildXOracleText(card, publicOrigin, options = {}) {
   const displayUrl = buildDisplayUrl(publicOrigin);
   if (isPreReleasePosting(dateKey, config)) {
     return fitPostText([
-      `先行オラクル：${card.name} / ${card.title}`,
+      `先行オラクル：${card.name} / ${oracleSocialTitle(card)}`,
       buildOracleActionLine(card),
       buildRepeatCycleNote(dateKey, ORACLE_CARD_CYCLE_LENGTH),
       '公開日にまた届きます',
@@ -1231,7 +1243,7 @@ function buildXOracleText(card, publicOrigin, options = {}) {
   }
   return fitPostText([
     `今日の数秘オラクル：${card.name}`,
-    `テーマ：${card.title}`,
+    `テーマ：${oracleSocialTitle(card)}`,
     buildOracleActionLine(card),
     buildRepeatCycleNote(dateKey, ORACLE_CARD_CYCLE_LENGTH),
     displayUrl,
@@ -1251,15 +1263,16 @@ function splitSocialSentences(text) {
 function buildXOracleManualDraftText(card, publicOrigin, options = {}) {
   const dateKey = options.dateKey || getJstDateString();
   const publicUrl = (publicOrigin || DEFAULT_PUBLIC_ORIGIN).replace(/\/$/, '');
-  const leadLines = splitSocialSentences(card.message || buildOracleLeadLine(card));
-  const readingLines = splitSocialSentences(ORACLE_SOCIAL_READINGS[Number(card.id)] || buildOracleReadingLine(card));
-  const action = String(card.action || ORACLE_SOFT_ACTIONS[Number(card.id)] || '').trim();
+  const copy = oracleSocialCopy(card);
+  const leadLines = splitSocialSentences(copy.lead || buildOracleLeadLine(card));
+  const readingLines = splitSocialSentences(copy.message || buildOracleReadingLine(card));
+  const action = String(copy.support || ORACLE_SOFT_ACTIONS[Number(card.id)] || '').trim();
   const cycleNote = buildRepeatCycleNote(dateKey, ORACLE_CARD_CYCLE_LENGTH);
   const message = readingLines[0] || leadLines[0] || '';
   return fitPostText([
     'おはてけ🌸🦦',
     `今日の数秘オラクル：${card.name}`,
-    `テーマ：${card.title}`,
+    `テーマ：${oracleSocialTitle(card)}`,
     message ? `カードメッセージ：${message}` : '',
     action ? `今日のよりどころ：${action}` : '',
     cycleNote || null,
@@ -1275,7 +1288,7 @@ function buildBlueskyOracleText(card, publicOrigin, options = {}) {
 }
 
 function buildOracleAltText(card) {
-  return `数秘オラクルカード No.${card.id}「${card.name}」。テーマは「${card.title}」。`;
+  return `数秘オラクルカード No.${card.id}「${card.name}」。テーマは「${oracleSocialTitle(card)}」。`;
 }
 
 function pickConceptImage(entry, dateKey) {
@@ -1493,8 +1506,8 @@ function buildLenormandOneCardParts(item) {
     '今日のルノルマン一枚',
     buildLenormandCardLine(item),
     item.title,
-    `カードの一言\n${item.message}`,
-    `今日のヒント\n${item.action}`,
+    `今日の兆し\n${item.message}`,
+    `流れのサイン\n${item.action}`,
     item.cta,
   ];
 }

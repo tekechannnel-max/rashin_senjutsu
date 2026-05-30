@@ -132,8 +132,9 @@ THREADS_POST_VERIFY_TIMEOUT_MS=120000
 
 ## 投稿内容のルール
 
-- 07:00: `oracle`。数秘オラクル1〜33の投稿はThreads / Bluesky / Instagram向けにし、短いURL、`images/social/instagram/oracle/NN.jpg`、alt text、カードメッセージ、今日の一手を入れる。締め文は必ず「今日の1枚はこちら」にする
-- 月・水・金12:00: `empathy`。表向きは「今日のルノルマン一枚」。カード番号、日本語名、英語名、カードの一言、今日のヒントで構成し、不安訴求へ寄せない。画像は `images/social/instagram/lenormand-empathy/NN.jpg` を使う
+- カード意味と占い読みの共通基準は `docs/card-reading-meaning-grounding.md`、SNS固有の画像・投稿ルールは `docs/sns-card-meaning-grounding.md` に従う
+- 07:00: `oracle`。数秘オラクル1〜33の投稿はThreads / Bluesky / Instagram向けにし、短いURL、`images/social/instagram/oracle/NN.jpg`、alt text、カードメッセージ、今日のよりどころを入れる。締め文は必ず「今日の1枚はこちら」にする
+- 月・水・金12:00: `empathy`。表向きは「今日のルノルマン一枚」。カード番号、日本語名、英語名、今日の兆し、流れのサインで構成し、不安訴求へ寄せない。画像は `images/social/instagram/lenormand-empathy/NN.jpg` を使う
 - 火・木12:00: `question`。A/Bで返せる質問で返信の入口を作る。本文URLは出さず、台帳用の `tracked_url` だけを保存する。画像は `images/ui/app-promo-vertical-social.jpg` を使う
 - `question` 本文は、A/Bだけで返信できることを明示する。返信0が続く場合も投稿数を増やさず、投稿後10分で関連投稿5件に手動返信し、自投稿に補足リプを1本だけ置く
 - 火20:00: `difference`。他のAI占いとの差、自由記載、命・卜・相の総合占術、鑑定履歴、占い師兼エンジニア設計をローテーションで伝える

@@ -8,6 +8,9 @@ const NODE = process.execPath;
 const ACTIVE_KINDS = ['oracle', 'empathy', 'question', 'difference', 'free_paid_compare'];
 const THREADS_MATCHED_PLATFORM_KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
 const { LENORMAND_EMPATHY_POSTS } = require('../scripts/social/content/lenormand-empathy-posts');
+const { ORACLE_CARD_COPY } = require('../scripts/social/content/oracle-card-copy');
+
+const SOCIAL_FORCED_TASK_WORDS = /確認|見る|見直|読む|書く|書き|整理|測る|言葉にする|形に残す|試す|選ぶ前|候補|深呼吸|手放す|決める前|事実だけ|都合よく使われ|行き先|優先する/;
 
 function runNode(args, options = {}) {
   const result = spawnSync(NODE, args, {
@@ -146,7 +149,7 @@ const ORACLE_GROUNDING_TERMS = {
   18: ['探求', '見えていない答え', '不安', '幻想'],
   19: ['信念', '意志', '謙虚', '道'],
   20: ['つなげる', '過去', '統合', '可能性'],
-  21: ['完成', '仕上げ', '手放す', '次'],
+  21: ['完成', '節目', '終わり', '次'],
   22: ['影響力', 'ビジョン', '構築', '一歩'],
   23: ['流れ', '乗りこなす', '柔軟', '自分の軸'],
   24: ['優しさ', '品位', '誠実', '奉仕'],
@@ -162,42 +165,42 @@ const ORACLE_GROUNDING_TERMS = {
 };
 
 const LENORMAND_GROUNDING_TERMS = {
-  1: ['吉報', '連絡', '早い', '展開'],
-  2: ['小さな幸運', '偶然', '好機', '軽い縁'],
-  3: ['遠方', '移動', '展開', '遠い縁'],
-  4: ['安心', '家', '土台', '安定'],
-  5: ['成長', '時間', '長い流れ'],
-  6: ['曖昧', '不安', '判断', '急がない'],
-  7: ['誘惑', '嫉妬', '注意', '警戒'],
-  8: ['終わり', '停止', '注意', '区切り'],
-  9: ['喜び', '感謝', '贈り物', '魅力'],
-  10: ['突然', '切断', '決断', '注意'],
-  11: ['繰り返', '摩擦', '口論', '消耗'],
-  12: ['会話', '噂', '連絡', '不安'],
-  13: ['新しい始まり', '小さな可能性', '一歩'],
-  14: ['策略', '嘘', '注意', '本音'],
-  15: ['後ろ盾', '保護', '圧力', '力'],
-  16: ['希望', '指針', '展望', '理想'],
-  17: ['変化', '改善', '環境'],
+  1: ['知らせ', '吉報', '流れ', '早まる'],
+  2: ['幸運', '偶然', '好機', '味方'],
+  3: ['遠方', '遠い縁', '旅立ち', '動き出す'],
+  4: ['安心', '土台', '居場所', '支え'],
+  5: ['根づく', '時間', '実り', '安定'],
+  6: ['霧', '迷い', '不安', '前触れ'],
+  7: ['絡む', '誘惑', '複雑', '影'],
+  8: ['終わり', '閉じる', '再生', '静けさ'],
+  9: ['祝福', '喜び', '好意', '予感'],
+  10: ['突然', '区切り', '分かれ目', '鋭く'],
+  11: ['繰り返', '摩擦', '衝突', '余白'],
+  12: ['ざわめく', '言葉', '波', '不安'],
+  13: ['新芽', '始まり', '小さな芽', '可能性'],
+  14: ['隠れた意図', '本音', '影', '慎重'],
+  15: ['守り', '強い力', '背後', '庇護'],
+  16: ['星', '希望', '光', '理想'],
+  17: ['変化', '環境', '改善', '風'],
   18: ['信頼', '忠実', '味方', '誠実'],
-  19: ['自立', '距離', '一人', '判断'],
-  20: ['社交', '人脈', '公の場', '縁'],
-  21: ['障害', '壁', '停滞', '遅れ', '迂回'],
-  22: ['選択', '分岐', '迷い', '道'],
-  23: ['損失', '消耗', '注意', '負担'],
-  24: ['愛情', '感情', '情熱', '好き'],
-  25: ['約束', '契約', '絆', '形'],
-  26: ['秘密', '知識', '隠れた情報', '知らない'],
-  27: ['手紙', '連絡', '書類', '情報'],
-  28: ['男性', '本人', '立場'],
-  29: ['女性', '本人', '立場'],
-  30: ['成熟', '平和', '信頼', '落ち着き'],
-  31: ['成功', '成果', '活力', '明るい'],
-  32: ['感性', '名誉', '直感', '評価'],
-  33: ['解決', '鍵', '突破口', '大事な点'],
-  34: ['豊か', 'お金', '流れ'],
-  35: ['安定', '継続', '安心', '長期'],
-  36: ['重責', '試練', '責任', '負担'],
+  19: ['孤高', '塔', '距離', '自立'],
+  20: ['人の輪', '縁', '場', '運'],
+  21: ['山', '壁', '遅れ', '迂回'],
+  22: ['分岐', '道', '迷い', '転機'],
+  23: ['削られる', '消耗', '欠け', '運気'],
+  24: ['心', '愛情', '好意', '流れ'],
+  25: ['結び', '約束', '絆', '巡り'],
+  26: ['隠された', '秘密', '知識', '鍵'],
+  27: ['知らせ', '運気', '返事', '流れ'],
+  28: ['男性性', '焦点', '立場', '運'],
+  29: ['女性性', '焦点', '立場', '運'],
+  30: ['成熟', '平和', '信頼', '根'],
+  31: ['成功', '成果', '光', '運気'],
+  32: ['月', '評判', '感性', '流れ'],
+  33: ['鍵', '突破口', '答え', '扉'],
+  34: ['豊か', '巡り', '金運', '動き始める'],
+  35: ['錨', '安定', '戻り', '支え'],
+  36: ['十字架', '責任', '試練', '山場'],
 };
 
 function testDraftHasTrackingImagesAndAlt() {
@@ -351,24 +354,47 @@ function testMorningOracleCopyStillKeepsRequiredClosing() {
 }
 
 function testOracleDailyCopyIsGroundedInAllCardReadings() {
+  const appSource = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8');
   const oracle = readConstFromFile('app.js', 'ORACLE', '{', '}');
   const dailyMessages = readConstFromFile('app.js', 'DAILY_ORACLE_MESSAGES', '[', ']');
-  const actions = readConstFromFile(path.join('scripts', 'social', 'daily-oracle-post.js'), 'ORACLE_SOFT_ACTIONS', '{', '}');
-  const readings = readConstFromFile(path.join('scripts', 'social', 'daily-oracle-post.js'), 'ORACLE_SOCIAL_READINGS', '{', '}');
+  const generatorSource = fs.readFileSync(path.join(ROOT, 'scripts', 'social', 'generate-instagram-assets.js'), 'utf8');
+  const posterSource = fs.readFileSync(path.join(ROOT, 'scripts', 'social', 'daily-oracle-post.js'), 'utf8');
   const seen = new Set();
 
   assert.equal(dailyMessages.length, 33, 'daily oracle copy should cover all 33 oracle cards');
+  assert.equal(Object.keys(ORACLE_CARD_COPY).length, 33, 'oracle social copy should cover all 33 oracle cards');
+  assert.doesNotMatch(appSource, /今日の一手/, 'daily oracle app copy should use 今日のよりどころ instead of 今日の一手');
+  assert.match(generatorSource, /ORACLE_CARD_COPY/, 'oracle image generator should use externally grounded social copy');
+  assert.match(posterSource, /ORACLE_CARD_COPY/, 'oracle social drafts should use externally grounded social copy');
   for (const item of dailyMessages) {
     const id = Number(item.id);
     const source = oracle[id];
+    const copy = ORACLE_CARD_COPY[id];
     assert.ok(source, `oracle source is missing for ${id}`);
     assert.equal(item.name, source.name, `${id} oracle daily name should match ORACLE`);
-    assert.ok(actions[id], `${id} oracle action is missing`);
-    assert.ok(readings[id], `${id} oracle social reading is missing`);
+    assert.ok(copy, `${id} oracle social copy is missing`);
     assert.ok(!seen.has(id), `duplicate oracle daily card: ${id}`);
     seen.add(id);
 
-    const combined = [item.title, item.message, item.action, item.share, actions[id], readings[id]].join('\n');
+    for (const field of ['title', 'lead', 'message', 'support']) {
+      assert.ok(String(copy[field] || '').trim(), `${id} oracle ${field} is required`);
+      assert.doesNotMatch(String(copy[field]), /\r|\n/, `${id} oracle ${field} should not contain manual line breaks`);
+    }
+    assert.ok([...copy.title].length <= 14, `${id} oracle social title should fit the image headline`);
+    assert.ok([...copy.message].length <= 18, `${id} oracle message should fit the image message area`);
+    assert.ok([...copy.support].length <= 18, `${id} oracle support should fit the image support area`);
+    assert.doesNotMatch(
+      `${copy.title}${copy.lead}${copy.message}${copy.support}`,
+      SOCIAL_FORCED_TASK_WORDS,
+      `${id} oracle social copy should describe the card meaning without assigning work to the reader`
+    );
+
+    const combined = [item.title, item.message, item.action, item.share, copy.title, copy.lead, copy.message, copy.support].join('\n');
+    assert.doesNotMatch(
+      [item.title, item.message, item.action, item.share].join('\n'),
+      SOCIAL_FORCED_TASK_WORDS,
+      `${id} daily oracle app copy should read as support, not as manual work`
+    );
     assertGroundingTerms(combined, ORACLE_GROUNDING_TERMS[id], `oracle ${id} ${item.name}`, 3);
   }
 }
@@ -376,8 +402,8 @@ function testOracleDailyCopyIsGroundedInAllCardReadings() {
 function testLenormandOneCardCopyDataQuality() {
   const oldLabel = new RegExp('悩み' + '共感');
   const positiveBlockedWords = /不安|苦し|重い|消耗|注意|無理|壁|曇|削|背負|傷/;
-  const forcedTaskWords = /確認|書く|書き|言葉にする|形に残す|試す|選ぶ前|候補|深呼吸|手放す|決める前|事実だけ|都合よく使われ|行き先|優先する/;
-  const cautionStateWords = /注意|急がない|距離|消耗|違和感|守り|余白|鋭く|静けさ|無理|壁|迂回|負担|重く/;
+  const cautionStateWords = /曖昧|揺れ|誘惑|嫉妬|警戒|停止|終わり|急|摩擦|口論|消耗|ざわめき|不安|嘘|隠れ|停滞|遅れ|壁|迂回|損失|負担|責任|重く|背負/;
+  const divinationSignalWords = /兆し|予兆|気配|運気|運|流れ|サイン|暗示|前触れ|予感|導き|光|風|影|扉|鍵|巡り|転機|山場|祝福|吉報|幸運/;
   const generatorSource = fs.readFileSync(path.join(ROOT, 'scripts', 'social', 'generate-instagram-assets.js'), 'utf8');
   const lenormand = readConstFromFile('app.js', 'LENORMAND', '{', '}');
   const seen = new Set();
@@ -407,7 +433,8 @@ function testLenormandOneCardCopyDataQuality() {
     assert.ok([...item.title].length <= 12, `${item.cardNumber} title should fit the image headline`);
     assert.ok([...item.message].length <= 15, `${item.cardNumber} message should fit the image message area without awkward wrapping`);
     assert.ok([...item.action].length <= 15, `${item.cardNumber} action should fit the image action area without awkward wrapping`);
-    assert.doesNotMatch(`${item.title}${item.message}${item.action}`, forcedTaskWords, `${item.cardNumber} should not assign manual checking or writing tasks to the reader`);
+    assert.doesNotMatch(`${item.title}${item.message}${item.action}`, SOCIAL_FORCED_TASK_WORDS, `${item.cardNumber} should not assign manual checking or writing tasks to the reader`);
+    assert.match(`${item.title}${item.message}${item.action}`, divinationSignalWords, `${item.cardNumber} should read like divination, not a plain task or office memo`);
     if (item.tone === 'positive') {
       assert.doesNotMatch(`${item.title}${item.message}${item.action}`, positiveBlockedWords, `${item.cardNumber} positive card should not be forced into negative empathy copy`);
     }
@@ -426,8 +453,8 @@ function testEmpathyUsesRandomLenormandRotation() {
     seen.add(cardNumber);
     assert.match(draft.empathy.text, /今日のルノルマン一枚/, `${dateKey} empathy post should use the public Lenormand one-card label`);
     assert.match(draft.empathy.text, /No\.\d{2}\s*\/\s*.+\s*\/\s*[A-Za-z]/, `${dateKey} empathy post should show card number, Japanese name, and English name`);
-    assert.match(draft.empathy.text, /カードの一言[\s\S]+今日のヒント/, `${dateKey} empathy post should use a natural one-card structure`);
-    assert.match(draft.empathy.text, /今の流れと次の判断を整理します。/, `${dateKey} empathy post should keep a soft Rashin CTA`);
+    assert.match(draft.empathy.text, /今日の兆し[\s\S]+流れのサイン/, `${dateKey} empathy post should use a natural one-card divination structure`);
+    assert.match(draft.empathy.text, /今の流れと次の判断にそっと寄り添います。/, `${dateKey} empathy post should keep a soft Rashin CTA`);
     assert.doesNotMatch(draft.empathy.text, oldLabel, `${dateKey} empathy post should not use the old empathy label`);
     assert.match(draft.empathy.trackedUrl, new RegExp(`utm_content=empathy_${dateKey.replace(/-/g, '')}_card\\d{2}`), `${dateKey} empathy utm_content should include card number`);
     assert.match(draft.empathy.imagePath, new RegExp(`images[\\\\/]social[\\\\/]instagram[\\\\/]lenormand-empathy[\\\\/]${String(cardNumber).padStart(2, '0')}\\.jpg$`), `${dateKey} empathy should use the matching text-added Lenormand image`);

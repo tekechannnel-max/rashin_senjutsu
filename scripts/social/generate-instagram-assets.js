@@ -3,6 +3,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const { chromium } = require('playwright');
 const { LENORMAND_EMPATHY_POSTS } = require('./content/lenormand-empathy-posts');
+const { ORACLE_CARD_COPY } = require('./content/oracle-card-copy');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const APP_JS = path.join(ROOT, 'app.js');
@@ -11,6 +12,7 @@ const HEIGHT = 1350;
 const DEFAULT_QUALITY = 88;
 const OUT_ROOT = path.join(ROOT, 'images', 'social', 'instagram');
 const GENERATED_PLATE_ROOT = path.join(OUT_ROOT, 'generated-plates');
+const ORACLE_SCENE_IMAGE = path.join(OUT_ROOT, '\u4eca\u65e5\u306e\u30aa\u30e9\u30af\u30eb\u7528.png');
 const V_MODEL_ROOT = path.join(ROOT, '占い素材');
 const CHARACTER_IMAGE = path.join(V_MODEL_ROOT, '通常背景無し.png');
 const CHIBI_CHARACTER_IMAGE = path.join(V_MODEL_ROOT, 'ミニキャラ.png');
@@ -94,6 +96,9 @@ function generatedPlatePath(kind, id) {
 }
 
 function visualBackdrop(kind, id, fallbackPath) {
+  if (kind === 'oracle' && fsSync.existsSync(ORACLE_SCENE_IMAGE)) {
+    return { path: ORACLE_SCENE_IMAGE, generated: false, scene: true };
+  }
   const platePath = generatedPlatePath(kind, id);
   if (fsSync.existsSync(platePath)) return { path: platePath, generated: true };
   return { path: fallbackPath, generated: false };
@@ -119,12 +124,20 @@ function visualText(value, maxLength) {
   return `${text.slice(0, maxLength - 1)}…`;
 }
 
+function oracleCopy(card) {
+  return ORACLE_CARD_COPY[Number(card?.id)] || {};
+}
+
+function oracleVisualTitle(card) {
+  return visualText(oracleCopy(card).title || card.title, 24);
+}
+
 function oracleVisualMessage(card) {
-  return visualText(card.message, 54);
+  return visualText(oracleCopy(card).message || card.message, 54);
 }
 
 function oracleVisualAction(card) {
-  return visualText(card.action, 42);
+  return visualText(oracleCopy(card).support || card.action, 42);
 }
 
 function empathyVisualReading(item) {
@@ -137,8 +150,8 @@ function empathyVisualAction(item) {
 
 function lenormandToneLabel(item) {
   if (item.tone === 'positive') return '追い風のカード';
-  if (item.tone === 'caution') return '気をつけるカード';
-  return '流れを見るカード';
+  if (item.tone === 'caution') return '慎重さのカード';
+  return '兆しのカード';
 }
 
 const PALETTES = [
@@ -402,6 +415,103 @@ function baseStyles() {
       left: 64px;
       right: 64px;
       bottom: 28px;
+    }
+    .oracle-scene .bg-oracle-scene {
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: .98;
+      filter: brightness(.83) saturate(.98) contrast(1.04);
+      transform: none;
+      object-fit: cover;
+      object-position: center center;
+    }
+    .oracle-scene .wash {
+      background:
+        linear-gradient(90deg, rgba(4, 10, 18, .74), rgba(4, 10, 18, .50) 38%, rgba(4, 10, 18, .18) 68%, rgba(4, 10, 18, .42)),
+        linear-gradient(180deg, rgba(4, 10, 18, .10), rgba(4, 10, 18, .68)),
+        radial-gradient(circle at 68% 34%, rgba(151, 205, 255, .14), transparent 32%),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0 1px, transparent 1px 120px);
+      opacity: .92;
+    }
+    .oracle-scene .character-frame {
+      display: none;
+    }
+    .oracle-scene .brand {
+      color: #e0f2fe;
+      text-shadow: 0 3px 18px rgba(0,0,0,.66);
+    }
+    .oracle-scene .card-art {
+      left: 70px;
+      top: 548px;
+      width: 250px;
+      height: 375px;
+      padding: 8px;
+      transform: rotate(-2deg);
+      background: linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,.08));
+      border-color: rgba(226,242,255,.48);
+      box-shadow: 0 30px 70px rgba(0,0,0,.54), 0 0 0 1px rgba(255,255,255,.08);
+      z-index: 5;
+    }
+    .oracle-scene .hero-copy {
+      left: 64px;
+      right: 448px;
+      top: 150px;
+      height: 350px;
+      justify-content: flex-start;
+      align-items: flex-start;
+      text-align: left;
+      gap: 16px;
+      text-shadow: 0 3px 22px rgba(0,0,0,.70);
+      z-index: 6;
+    }
+    .oracle-scene .kicker {
+      color: #dbeafe;
+      font-size: 31px;
+    }
+    .oracle-scene .number {
+      color: rgba(248,250,252,.82);
+      font-size: 25px;
+    }
+    .oracle-scene .title {
+      color: #e0f2fe;
+      font-size: 68px;
+      line-height: 1.08;
+      max-height: 220px;
+    }
+    .oracle-scene .name {
+      color: rgba(255,255,255,.90);
+      font-size: 28px;
+    }
+    .oracle-scene .panel {
+      left: 350px;
+      right: 64px;
+      bottom: 116px;
+      min-height: 350px;
+      padding: 32px 38px 34px;
+      background: rgba(5, 13, 24, .74);
+      border-color: rgba(226,242,255,.32);
+      box-shadow: 0 28px 80px rgba(0,0,0,.46);
+      backdrop-filter: blur(13px);
+      z-index: 7;
+    }
+    .oracle-scene .label {
+      color: #fde68a;
+      font-size: 25px;
+    }
+    .oracle-scene .message {
+      font-size: 36px;
+      line-height: 1.38;
+      max-height: 150px;
+    }
+    .oracle-scene .action {
+      color: #dbeafe;
+      font-size: 32px;
+      max-height: 104px;
+    }
+    .oracle-scene .action span {
+      color: #fde68a;
+      font-size: 23px;
     }
     .lenormand-one-card .bg-scene {
       inset: 0;
@@ -678,6 +788,8 @@ function oracleHtml(card) {
   const imagePath = path.join(ROOT, 'images', 'cards', 'oracle', `${pad2(card.id)}.jpg`);
   const backdrop = visualBackdrop('oracle', card.id, imagePath);
   const usePlateLayout = backdrop.generated || !hasImage(CHARACTER_IMAGE);
+  const useCharacter = !backdrop.scene && !usePlateLayout;
+  const title = oracleVisualTitle(card);
   const message = oracleVisualMessage(card);
   const action = oracleVisualAction(card);
   return `
@@ -692,10 +804,10 @@ function oracleHtml(card) {
       </style>
     </head>
     <body>
-      <main class="post oracle-post${usePlateLayout ? ' generated-plate' : ''}">
-        <img class="bg${backdrop.generated ? ' bg-generated' : ''}" src="${fileUrl(backdrop.path)}" alt="">
+      <main class="post oracle-post${usePlateLayout ? ' generated-plate' : ''}${backdrop.scene ? ' oracle-scene' : ''}">
+        <img class="bg${backdrop.generated ? ' bg-generated' : ''}${backdrop.scene ? ' bg-oracle-scene' : ''}" src="${fileUrl(backdrop.path)}" alt="">
         <div class="wash"></div>
-        ${usePlateLayout ? '' : `<div class="character-frame"><img class="character" src="${fileUrl(CHARACTER_IMAGE)}" alt=""></div>`}
+        ${useCharacter ? `<div class="character-frame"><img class="character" src="${fileUrl(CHARACTER_IMAGE)}" alt=""></div>` : ''}
         <div class="brand"><span class="brand-mark">R</span><span>羅針占術</span></div>
         <figure class="card-art"><img src="${fileUrl(imagePath)}" alt=""></figure>
         <section class="hero-copy">
@@ -703,15 +815,15 @@ function oracleHtml(card) {
             <div class="kicker">今日の数秘オラクル</div>
             <div class="number">No.${pad2(card.id)} / ${escapeHtml(card.name)}</div>
           </div>
-          <div class="title" data-fit data-min="48">${escapeHtml(card.title)}</div>
+          <div class="title" data-fit data-min="48">${escapeHtml(title)}</div>
           <div class="name">今日の流れを一言で。</div>
         </section>
         <section class="panel">
           <div class="label">カードメッセージ</div>
           <div class="message" data-fit data-min="31">${escapeHtml(message)}</div>
-          <div class="action" data-fit data-min="27"><span>今日の一手</span>${escapeHtml(action)}</div>
+          <div class="action" data-fit data-min="27"><span>今日のよりどころ</span>${escapeHtml(action)}</div>
         </section>
-        <div class="footer">保存して、今日の判断軸に。</div>
+        <div class="footer">今日の流れに静かに寄り添う。</div>
         <div class="url">rashin-senjutsu.onrender.com</div>
       </main>
     </body>
@@ -756,11 +868,11 @@ function empathyHtml(item) {
           <div class="name">${escapeHtml(lenormandToneLabel(item))}</div>
         </section>
         <section class="panel">
-          <div class="label">カードの一言</div>
+          <div class="label">今日の兆し</div>
           <div class="message" data-fit data-min="31">${escapeHtml(reading)}</div>
-          <div class="action" data-fit data-min="27"><span>今日のヒント</span>${escapeHtml(action)}</div>
+          <div class="action" data-fit data-min="27"><span>流れのサイン</span>${escapeHtml(action)}</div>
         </section>
-        <div class="footer">カードの意味を、今日の判断に。</div>
+        <div class="footer">カードの意味を、今日の流れのそばに。</div>
         <div class="url">rashin-senjutsu.onrender.com</div>
       </main>
     </body>

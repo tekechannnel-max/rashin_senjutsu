@@ -23,6 +23,7 @@ function sliceFromMarker(source, startMarker, endMarker) {
   'function getDualConcernThemeLabels',
   'function removeUnbalancedMarkdownBoldMarkers',
   'function detectGeneralLuckVisibleScopeIssues',
+  'function detectTaskLikeReadingIssues',
   'function getFreeReadingQualityMinimum',
   'function detectFreeLenPairScopeIssues',
   'function buildEmergencyFreeLenPairFallback',
@@ -42,6 +43,7 @@ const freeQualityGate = sliceFromMarker(
 
 [
   'detectPaidTextQualityIssues',
+  'detectTaskLikeReadingIssues',
   'detectThemeVocabularyDriftIssues',
   'detectWeakEscapeIssues',
   'detectTruncatedSummaryIssues',
@@ -71,6 +73,16 @@ const paidTextQualityGate = sliceFromMarker(
   '前に出る引っかかりが前に出て',
 ].forEach(marker => {
   assert.ok(paidTextQualityGate.includes(marker), `paid/free text quality gate missing: ${marker}`);
+});
+
+[
+  '作業指示・業務メモ',
+  'カード由来の兆し',
+  'カード意味は今日の運気、兆し、現実の流れ、違和感、支え、転機として読み',
+  '現実タスクや確認作業で終わらせず',
+  '業務メモで終わらせないでください',
+].forEach(marker => {
+  assert.ok(appSource.includes(marker), `app reading prompt must preserve divination-not-task rule: ${marker}`);
 });
 
 const freeLenPairScope = sliceFromMarker(

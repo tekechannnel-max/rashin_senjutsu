@@ -76,39 +76,39 @@ const ORACLE={
 };
 
 const DAILY_ORACLE_MESSAGES=[
-  {id:1,name:"The Guide",title:"自分の意志で進む日",message:"今日は、誰かの正解より、自分が一番したいことに立ち返る流れです。小さな一歩が道しるべになります。",action:"自分の意志で、一歩を選ぶ。",share:"今日は、自分の意志が道しるべになる日。"},
-  {id:2,name:"The Supporter",title:"支えと軸の日",message:"今日は、支える役割が流れを整えます。ただし相手を尊重するほど、自分の軸も薄くしないことが大切です。",action:"支えながら、自分の軸も保つ。",share:"今日は、支えと自分の軸を両方見る日。"},
-  {id:3,name:"The Innocent",title:"純粋に楽しむ日",message:"今日は、難しく考えすぎないほど表現と創造が戻ります。純粋な楽しさが、次の行動を軽くします。",action:"純粋な楽しさを優先する。",share:"今日は、楽しさが創造を動かす日。"},
-  {id:4,name:"The Diligent",title:"積み重ねる日",message:"今日は、焦らず努力を積み重ねることが基盤になります。地道な継続ほど、揺るがない安定を作ります。",action:"焦らず、土台を積み重ねる。",share:"今日は、継続が安定した基盤になる日。"},
-  {id:5,name:"The Adventurer",title:"未知へ動く日",message:"今日は、未知の選択や新しい体験に成長の芽があります。同じ場所に留まるより、変化を少し受け入れる流れです。",action:"未知の体験を少し受け入れる。",share:"今日は、自由と変化が成長につながる日。"},
-  {id:6,name:"The Caregiver",title:"思いやりの日",message:"今日は、思いやる行動が安心と愛を深めます。ただし自己犠牲ではなく、与えることと受け取ることのバランスが鍵です。",action:"与えることと受け取ることを整える。",share:"今日は、思いやりと境界を整える日。"},
-  {id:7,name:"The Artisan",title:"感性を磨く日",message:"今日は、感性や技術を磨くほど内面の価値が形になります。深く考えるだけで止まらず、まず一歩が突破口です。",action:"感性を磨き、まず一歩動く。",share:"今日は、専門性と内面の価値を形にする日。"},
-  {id:8,name:"The Warrior",title:"覚悟で動く日",message:"今日は、覚悟を決めて行動するほど現実が味方します。力は押し切るためではなく、目的を達成するために使う流れです。",action:"何のための力かを決めて動く。",share:"今日は、覚悟と行動が現実を動かす日。"},
-  {id:9,name:"The Sage",title:"知恵で受け止める日",message:"今日は、経験から得た知恵で物事を広く受け止める流れです。執着を手放すほど、次のサイクルが起動します。",action:"経験を知恵にして、執着を手放す。",share:"今日は、経験と知恵で流れを受け止める日。"},
-  {id:10,name:"The Great Power",title:"新局面へ入る日",message:"今日は、新しい力の流れが始まっています。過去に縛られず、自分の可能性を制限しないことが転換点になります。",action:"可能性を制限せず、新局面へ進む。",share:"今日は、新しい力と転換期が開く日。"},
-  {id:11,name:"The Inspired One",title:"直感を信じる日",message:"今日は、直感やひらめきが重要な手がかりになります。頭だけで決めず、感覚を信頼するほど力が開きます。",action:"直感とひらめきを手がかりにする。",share:"今日は、感覚が重要な手がかりになる日。"},
-  {id:12,name:"The Harmonizer",title:"違いを整える日",message:"今日は、対立や違いを調整し、全体のバランスを整える流れです。自分を後回しにしすぎない受容が鍵になります。",action:"違いを調整し、自分も後回しにしない。",share:"今日は、調整と受容で流れを整える日。"},
-  {id:13,name:"The Wise King",title:"責任ある判断の日",message:"今日は、冷静な判断と責任ある行動が安定を作ります。古い土台を見直し、新しい秩序へ変容させる流れです。",action:"冷静に判断し、責任ある形を選ぶ。",share:"今日は、判断と責任が安定を作る日。"},
-  {id:14,name:"The Transformer",title:"変化を統合する日",message:"今日は、変化を受け入れ、自分に合う形へ更新する流れです。極端に振れず、中庸と調整が道を作ります。",action:"極端を避け、変化を統合する。",share:"今日は、節制と調整で変化を扱う日。"},
-  {id:15,name:"The Servant",title:"純粋に貢献する日",message:"今日は、誰かの役に立つ行動が大きな意味を生みます。承認欲求ではなく、純粋な動機で貢献することが鍵です。",action:"貢献の動機を澄ませる。",share:"今日は、奉仕と貢献が意味を生む日。"},
-  {id:16,name:"The Perceptive One",title:"本質を見る日",message:"今日は、表面ではなく内側を観察するほど本質が見えます。崩れることを恐れず、洞察を再生の出発点にする流れです。",action:"表面ではなく、本質を観察する。",share:"今日は、洞察が再生の出発点になる日。"},
-  {id:17,name:"The Benefactor",title:"希望を保つ日",message:"今日は、惜しまず与える姿勢が豊かな流れを呼びます。暗い時期でも希望を保つ力が、現実を少し変えます。",action:"希望を保ち、惜しまず与える。",share:"今日は、希望と寛大さが流れを呼ぶ日。"},
-  {id:18,name:"The Seeker",title:"真実を探す日",message:"今日は、まだ見えていない答えを探求する流れです。不安や幻想に呑まれず、内側と外側を対話させてください。",action:"見えない答えを、急がず探求する。",share:"今日は、探求と直感で真実へ近づく日。"},
-  {id:19,name:"The Unwavering One",title:"信念を曲げない日",message:"今日は、困難があっても信念を曲げず進むことで道が開きます。意志の勝利は、謙虚さを保つほど輝きます。",action:"信念を曲げず、謙虚に進む。",share:"今日は、信念と意志が道を開く日。"},
-  {id:20,name:"The Unifier",title:"つなぎ直す日",message:"今日は、人や意見をつなげることで新しい可能性が生まれます。過去を清算し、大きな目的へ統合する流れです。",action:"過去を清算し、人や意見をつなぐ。",share:"今日は、統合と目覚めが可能性を開く日。"},
-  {id:21,name:"The Completer",title:"丁寧に完成する日",message:"今日は、ひとつの流れを最後まで丁寧に仕上げる時です。終わりは次の始まりであり、手放すほど完成へ近づきます。",action:"最後まで仕上げ、次へ手放す。",share:"今日は、完成と手放しが次を開く日。"},
-  {id:22,name:"The Charism",title:"影響力を使う日",message:"今日は、自分の存在感や影響力を前向きに使う流れです。大きなビジョンは、一歩ずつ構築してこそ力になります。",action:"影響力を前向きに使い、着実に築く。",share:"今日は、影響力とビジョンを構築する日。"},
-  {id:23,name:"The Flowrider",title:"流れに乗る日",message:"今日は、状況を無理に変えず、今の流れを上手に乗りこなす時です。柔軟に適応しながら、自分の軸を失わないことが鍵です。",action:"流れに適応し、自分の軸を保つ。",share:"今日は、適応と柔軟性で流れに乗る日。"},
-  {id:24,name:"The Gracebearer",title:"品位で整える日",message:"今日は、優しさと品位ある行動が周囲の空気を整えます。押し付けず、誠実な奉仕として愛情を扱う流れです。",action:"品位と誠実さで、空気を整える。",share:"今日は、優しさと品位が流れを整える日。"},
-  {id:25,name:"The Wayfarer",title:"自分の道を歩む日",message:"今日は、自分のペースで歩むほど進むべき道が見えてきます。内省と自己信頼が、孤独な旅の中の洞察になります。",action:"自分のペースで、道を見極める。",share:"今日は、自己信頼と内省で道を歩む日。"},
-  {id:26,name:"The Trailblazer",title:"道を切り開く日",message:"今日は、まだ誰も進んでいない道を切り開く流れです。野心と実行力を、責任感と協調性で支えてください。",action:"責任を持って、新しい道を切り開く。",share:"今日は、開拓と実行力が現実を動かす日。"},
-  {id:27,name:"The Gatewalker",title:"節目を越える日",message:"今日は、人生の節目に立ち、新しい段階へ移る準備をする流れです。終わりは、次の扉が開く合図です。",action:"節目を受け取り、次の扉へ備える。",share:"今日は、移行と変容が次の段階を開く日。"},
-  {id:28,name:"The Resonator",title:"共鳴を選ぶ日",message:"今日は、共鳴する人や環境を選ぶことで運気が整います。誰と響き合うかが、流れの分岐点になります。",action:"共鳴する人と場を選ぶ。",share:"今日は、共鳴と調和が流れを整える日。"},
-  {id:29,name:"The Visionweaver",title:"ビジョンを描く日",message:"今日は、未来のビジョンを具体的に描くほど現実が動きます。理想を掲げるだけでなく、現実の一歩へつなげる時です。",action:"理想を描き、現実の一歩へつなげる。",share:"今日は、ビジョンと使命を現実へ近づける日。"},
-  {id:30,name:"The Creator",title:"表現を形にする日",message:"今日は、想像力を信じ、形にすることを恐れない流れです。表現すること自体が喜びとなり、創造力を動かします。",action:"想像力を信じ、表現を形にする。",share:"今日は、創造と表現が喜びになる日。"},
-  {id:31,name:"The Architect",title:"計画を築く日",message:"今日は、長期的な視点で計画を立て、現実的に構築する流れです。アイデアは、一つずつ積み上げて価値になります。",action:"長期視点で、現実的に構築する。",share:"今日は、計画と構築が価値を作る日。"},
-  {id:32,name:"The Collaborator",title:"仲間と共創する日",message:"今日は、信頼できる仲間と力を合わせるほど成果が大きくなります。依存ではなく、共創と相互補完が鍵です。",action:"信頼できる仲間と共創する。",share:"今日は、協力と信頼が成果を広げる日。"},
-  {id:33,name:"The Awakened",title:"満たして導く日",message:"今日は、高い視点から物事を見て、周囲の成長を助ける流れです。自分自身が満たされているほど、愛の使命が正しく働きます。",action:"自分を満たし、高い視点で導く。",share:"今日は、愛と奉仕が目覚めて働く日。"},
+  {id:1,name:"The Guide",title:"自分の意志で進む日",message:"今日は、誰かの正解より、自分が一番したいことに立ち返る流れです。小さな一歩が道しるべになります。",action:"意志が道しるべになる。",share:"今日は、自分の意志が道しるべになる日。"},
+  {id:2,name:"The Supporter",title:"支えと軸の日",message:"今日は、支える役割が流れを整えます。ただし相手を尊重するほど、自分の軸も薄くしないことが大切です。",action:"やわらかな協力が支え。",share:"今日は、支えと自分の軸が並ぶ日。"},
+  {id:3,name:"The Innocent",title:"純粋に楽しむ日",message:"今日は、難しく考えすぎないほど表現と創造が戻ります。純粋な楽しさが、次の行動を軽くします。",action:"軽やかな表現が入口。",share:"今日は、楽しさが創造を動かす日。"},
+  {id:4,name:"The Diligent",title:"積み重ねる日",message:"今日は、焦らず努力を積み重ねることが基盤になります。地道な継続ほど、揺るがない安定を作ります。",action:"地道さが安定の土台。",share:"今日は、継続が安定した基盤になる日。"},
+  {id:5,name:"The Adventurer",title:"未知へ動く日",message:"今日は、未知の選択や新しい体験に成長の芽があります。同じ場所に留まるより、変化を少し受け入れる流れです。",action:"自由さが流れを開く。",share:"今日は、自由と変化が成長につながる日。"},
+  {id:6,name:"The Caregiver",title:"思いやりの日",message:"今日は、思いやる行動が安心と愛を深めます。ただし自己犠牲ではなく、与えることと受け取ることのバランスが鍵です。",action:"愛情と境界の調和。",share:"今日は、思いやりと境界が整う日。"},
+  {id:7,name:"The Artisan",title:"感性を磨く日",message:"今日は、感性や技術を磨くほど内面の価値が形になります。深く考えるだけで止まらず、まず一歩が突破口です。",action:"静かな集中が支え。",share:"今日は、専門性と内面の価値が形になる日。"},
+  {id:8,name:"The Warrior",title:"覚悟で動く日",message:"今日は、覚悟を決めて行動するほど現実が味方します。力は押し切るためではなく、目的を達成するために使う流れです。",action:"力の使い道が鍵。",share:"今日は、覚悟と行動が現実を動かす日。"},
+  {id:9,name:"The Sage",title:"知恵で受け止める日",message:"今日は、経験から得た知恵で物事を広く受け止める流れです。執着がほどけるほど、次のサイクルが起動します。",action:"執着がほどける流れ。",share:"今日は、経験と知恵で流れを受け止める日。"},
+  {id:10,name:"The Great Power",title:"新局面へ入る日",message:"今日は、新しい力の流れが始まっています。過去に縛られず、自分の可能性を制限しないことが転換点になります。",action:"可能性が流れを広げる。",share:"今日は、新しい力と転換期が開く日。"},
+  {id:11,name:"The Inspired One",title:"直感を信じる日",message:"今日は、直感やひらめきが重要な手がかりになります。頭だけで決めず、感覚を信頼するほど力が開きます。",action:"直感が静かな灯り。",share:"今日は、感覚が重要な手がかりになる日。"},
+  {id:12,name:"The Harmonizer",title:"違いを整える日",message:"今日は、対立や違いを調整し、全体のバランスを整える流れです。自分を後回しにしすぎない受容が鍵になります。",action:"受容と軸のバランス。",share:"今日は、調整と受容で流れが整う日。"},
+  {id:13,name:"The Wise King",title:"責任ある判断の日",message:"今日は、冷静な判断と責任ある行動が安定を作ります。古い土台が整い、新しい秩序へ変容する流れです。",action:"冷静さが土台になる。",share:"今日は、判断と責任が安定を作る日。"},
+  {id:14,name:"The Transformer",title:"変化を統合する日",message:"今日は、変化を受け入れ、自分に合う形へ更新する流れです。極端に振れず、中庸と調整が道を作ります。",action:"中庸と調整が支え。",share:"今日は、節制と調整で変化を扱う日。"},
+  {id:15,name:"The Servant",title:"純粋に貢献する日",message:"今日は、誰かの役に立つ行動が大きな意味を生みます。承認欲求ではなく、純粋な動機で貢献することが鍵です。",action:"澄んだ動機が鍵。",share:"今日は、奉仕と貢献が意味を生む日。"},
+  {id:16,name:"The Perceptive One",title:"本質が浮かぶ日",message:"今日は、表面ではなく内側を観察するほど本質が見えます。崩れることを恐れず、洞察を再生の出発点にする流れです。",action:"崩れた後の再生。",share:"今日は、洞察が再生の出発点になる日。"},
+  {id:17,name:"The Benefactor",title:"希望を保つ日",message:"今日は、惜しまず与える姿勢が豊かな流れを呼びます。暗い時期でも希望を保つ力が、現実を少し変えます。",action:"惜しみない心が支え。",share:"今日は、希望と寛大さが流れを呼ぶ日。"},
+  {id:18,name:"The Seeker",title:"真実を探す日",message:"今日は、まだ見えていない答えを探求する流れです。不安や幻想に呑まれず、内側と外側を対話させてください。",action:"直感と探求の灯り。",share:"今日は、探求と直感で真実へ近づく日。"},
+  {id:19,name:"The Unwavering One",title:"信念を曲げない日",message:"今日は、困難があっても信念を曲げず進むことで道が開きます。意志の勝利は、謙虚さを保つほど輝きます。",action:"謙虚さが光を保つ。",share:"今日は、信念と意志が道を開く日。"},
+  {id:20,name:"The Unifier",title:"つなぎ直す日",message:"今日は、人や意見をつなげることで新しい可能性が生まれます。過去を清算し、大きな目的へ統合する流れです。",action:"再生と統合の合図。",share:"今日は、統合と目覚めが可能性を開く日。"},
+  {id:21,name:"The Completer",title:"丁寧に完成する日",message:"今日は、ひとつの流れを最後まで丁寧に仕上げる時です。終わりは次の始まりであり、ほどけるほど完成へ近づきます。",action:"終わりは次の入口。",share:"今日は、完成と節目が次を開く日。"},
+  {id:22,name:"The Charism",title:"影響力を使う日",message:"今日は、自分の存在感や影響力を前向きに使う流れです。大きなビジョンは、一歩ずつ構築してこそ力になります。",action:"影響力と責任の調和。",share:"今日は、影響力とビジョンを構築する日。"},
+  {id:23,name:"The Flowrider",title:"流れに乗る日",message:"今日は、状況を無理に変えず、今の流れを上手に乗りこなす時です。柔軟に適応しながら、自分の軸を失わないことが鍵です。",action:"軸を失わない軽さ。",share:"今日は、適応と柔軟性で流れに乗る日。"},
+  {id:24,name:"The Gracebearer",title:"品位で整える日",message:"今日は、優しさと品位ある行動が周囲の空気を整えます。押し付けず、誠実な奉仕として愛情を扱う流れです。",action:"誠実さが空気を澄ます。",share:"今日は、優しさと品位が流れを整える日。"},
+  {id:25,name:"The Wayfarer",title:"自分の道を歩む日",message:"今日は、自分のペースで歩むほど進むべき道が見えてきます。内省と自己信頼が、孤独な旅の中の洞察になります。",action:"自己信頼が支え。",share:"今日は、自己信頼と内省で道を歩む日。"},
+  {id:26,name:"The Trailblazer",title:"道を切り開く日",message:"今日は、まだ誰も進んでいない道を切り開く流れです。野心と実行力を、責任感と協調性で支えてください。",action:"責任ある開拓心。",share:"今日は、開拓と実行力が現実を動かす日。"},
+  {id:27,name:"The Gatewalker",title:"節目を越える日",message:"今日は、人生の節目に立ち、新しい段階へ移る準備をする流れです。終わりは、次の扉が開く合図です。",action:"終わりは次の合図。",share:"今日は、移行と変容が次の段階を開く日。"},
+  {id:28,name:"The Resonator",title:"共鳴を選ぶ日",message:"今日は、共鳴する人や環境を選ぶことで運気が整います。誰と響き合うかが、流れの分岐点になります。",action:"調和する場が支え。",share:"今日は、共鳴と調和が流れを整える日。"},
+  {id:29,name:"The Visionweaver",title:"ビジョンを描く日",message:"今日は、未来のビジョンを具体的に描くほど現実が動きます。理想を掲げるだけでなく、現実の一歩へつなげる時です。",action:"理想と一歩の橋渡し。",share:"今日は、ビジョンと使命を現実へ近づける日。"},
+  {id:30,name:"The Creator",title:"表現を形にする日",message:"今日は、想像力を信じ、形にすることを恐れない流れです。表現すること自体が喜びとなり、創造力を動かします。",action:"表現そのものが喜び。",share:"今日は、創造と表現が喜びになる日。"},
+  {id:31,name:"The Architect",title:"計画を築く日",message:"今日は、長期的な視点で計画を立て、現実的に構築する流れです。アイデアは、一つずつ積み上げて価値になります。",action:"構築力が価値になる。",share:"今日は、計画と構築が価値を作る日。"},
+  {id:32,name:"The Collaborator",title:"仲間と共創する日",message:"今日は、信頼できる仲間と力を合わせるほど成果が大きくなります。依存ではなく、共創と相互補完が鍵です。",action:"信頼と共創の流れ。",share:"今日は、協力と信頼が成果を広げる日。"},
+  {id:33,name:"The Awakened",title:"満たして導く日",message:"今日は、高い視点から物事を見て、周囲の成長を助ける流れです。自分自身が満たされているほど、愛の使命が正しく働きます。",action:"愛と奉仕の目覚め。",share:"今日は、愛と奉仕が目覚めて働く日。"},
 ];
 
 // ══════════════════════════════════════════════════
@@ -3872,7 +3872,7 @@ function openDailyOracleStage(record,options={}){
             <div class="daily-oracle-stage-block-body">${escapeHtml(card.message)}</div>
           </div>
           <div class="daily-oracle-stage-block">
-            <div class="daily-oracle-stage-block-title">今日の一手</div>
+            <div class="daily-oracle-stage-block-title">今日のよりどころ</div>
             <div class="daily-oracle-stage-block-body">${escapeHtml(card.action)}</div>
           </div>
           <div class="daily-oracle-stage-actions">
@@ -3927,7 +3927,7 @@ function renderDailyOracle(){
   if(!record){
     if(introEl) introEl.textContent=DAILY_ORACLE_TEST_MODE
       ?'テスト表示中です。クリックするたびに別のオラクルカードを確認できます。'
-      :'数秘オラクルカードから、今日の一手を1枚引きます。';
+      :'数秘オラクルカードから、今日のよりどころを1枚引きます。';
     resultEl.innerHTML='';
     resultEl.hidden=true;
     drawBtn.hidden=false;
@@ -3963,7 +3963,7 @@ function renderDailyOracle(){
         <div class="daily-oracle-block-body">${escapeHtml(card.message)}</div>
       </div>
       <div class="daily-oracle-block">
-        <div class="daily-oracle-block-title">今日の一手</div>
+        <div class="daily-oracle-block-title">今日のよりどころ</div>
         <div class="daily-oracle-block-body">${escapeHtml(card.action)}</div>
       </div>
       ${renderDailyOracleMiniAnalysis()}
@@ -9889,6 +9889,7 @@ function buildReadingOutputFormatGuide(kind='len',is9=false,focusOverride=null){
         '1ブロックは90〜180字を目安にし、原因を何層にも広げないでください。',
         '1文は45〜60字を目安に短くし、結論は必ず先頭の1文で言い切ってください。',
         '本文ではカード名を出さないでください。キーワード列挙ではなく、今回の相談への翻訳だけを書いてください。',
+        '現実タスクや確認作業で終わらせず、2枚から出る兆し、流れ、支え、違和感として読んでください。',
         '',
         '【出力形式・厳守事項】',
         '見出しは必ず次の順で固定してください。',
@@ -9924,6 +9925,7 @@ function buildReadingOutputFormatGuide(kind='len',is9=false,focusOverride=null){
       'ただし内部根拠の読解は消さず、現実、注意点、違和感の出どころとして自然な日本語へ翻訳してください。',
       '本文ではカード名を出さないでください。キーワード列挙ではなく、今回の相談への翻訳だけを書いてください。',
       '「『船』は遠距離恋愛・旅先での縁を示します」のような辞書説明は禁止です。「距離感の手応えがまだ薄い」のように現実語へ変換してください。',
+      '現実語へ変換しても、確認作業・条件整理・業務メモで終わらせないでください。カード由来の兆し、気配、流れ、支え、壁、転機として読ませてください。',
       `内部根拠と相談者の判断軸「${ctx.criteriaText}」を混同しないでください。現実・障害・流れを読み、最後は迷いの正体として接続してください。`,
       ...(isReconciliationContext(ctx)?[
         '恋愛サブテーマは復縁です。一般恋愛ではなく、元恋人ともう一度信頼を作れるか、過去の別れの原因に向き合えるか、寂しさや懐かしさだけでつながっていないかを読むこと。',
@@ -9975,6 +9977,7 @@ function buildReadingOutputFormatGuide(kind='len',is9=false,focusOverride=null){
       '1ブロックは160〜220字を目安にし、3文を超える場合は小見出しで分けてください。',
       '1文は45〜60字を目安に短くし、結論は必ず先頭の1文で言い切ってください。',
       '作業指示ではなく、相談者が自分をどう扱えばよいか、どこに意識を戻せばよいかを書く。',
+      'カードの意味は、光、導き、支え、転機、整う方向として読ませ、宿題や行動チェックに変換しないでください。',
       '',
       '【出力形式・厳守事項】',
       '見出しは必ず次の順で固定してください。',
@@ -10007,6 +10010,7 @@ function buildReadingOutputFormatGuide(kind='len',is9=false,focusOverride=null){
       '1文は45〜60字を目安に短くし、今回の答えは必ず先頭の1文で言い切ってください。',
       '箇条書きの作業リストにしないでください。条件分岐は内部で使い、本文では迷いの正体と羅針の指針へ翻訳してください。',
       '無根拠な未来・他人の心・医療法律投資などの専門判断は断定しないでください。ただし、相談者が戻るべき判断軸は曖昧にしないでください。',
+      '現実的なタスク表ではなく、占いとして読める現在の流れ、兆し、注意点、羅針の指針へ変換してください。',
       '',
       '【出力形式・厳守事項】',
       '見出しは必ず次の順で固定してください。',
@@ -17112,6 +17116,9 @@ const INTEGRATION_ACTION_GUIDE_HEADING='羅針の指針';
 const INTEGRATION_CLOSING_HEADING='最後の一言';
 const ORACLE_COMPASS_HEADING='羅針盤が示すもの';
 const LEGACY_INTEGRATION_ACTION_GUIDE_HEADINGS=['背中を'+'押す一文','背中'+'押し文','目下の'+'行動指針','今の行動方針'];
+const RASHIN_DIVINATION_SIGNAL_RE=/兆し|予兆|気配|運気|運の|流れ|サイン|暗示|前触れ|予感|導き|光|風|影|扉|鍵|巡り|転機|山場|羅針|指針|引力|追い風|好転|見立て|象意|整う|支え|違和感|判断軸/;
+const RASHIN_TASKLIKE_SURFACE_RE=/確認してください|確認する|確認できる|書き出してください|書き出す|比較してください|比較する|材料を集め|情報収集|チェックしてください|チェックする|メモしてください|メモする|整理してください|整理する|距離を測|条件を整理|条件表|作業|タスク|ToDo|TODO|行動リスト/;
+const RASHIN_TASKLIKE_COUNT_RE=/確認|書き出|比較|材料を集め|情報収集|チェック|メモ|整理|距離を測|条件を整理|条件表|作業|タスク|ToDo|TODO|行動リスト/g;
 
 function getRashinReadingPolicyManual(){
   const root=typeof window!=='undefined'?window:globalThis;
@@ -17177,6 +17184,7 @@ function getRashinReadingPolicyPrompt(scope='all'){
 内部では使ってよいが、表では現実の見立て、違和感の言語化、内面の整え方、羅針の指針へ変換してください。`;
   const quality=`【共通品質】
 根拠を見る以外のユーザー表示では、カード名・カード説明・配置語・占術名・占術説明を一切出さない。相手の心の断定、根拠のない未来断定、作業指示、機械的な条件表も出さない。相談本文の具体語を反映し、迷いの正体を一文で言葉にしてください。
+カード意味は必ず、今日の運気、兆し、現実の流れ、違和感、支え、転機、羅針の指針として読んでください。業務メモ、作業手順、読者への宿題、単なる現実タスクに落とさないでください。
 「今回の答え」は3〜5文で短く強くまとめ、同じ意味を2回出さないでください。結論、迷いの正体、今見えている流れ、羅針の指針、羅針カード本文で同じ内容を言い換えて水増ししないでください。
 同じ判断軸セットや同じ比喩を連呼しないでください。初回だけ明示し、2回目以降は「努力の見返り」「返ってくるもの」「続ける意味」「安心の根拠」「信頼の温度」などの自然語へ圧縮してください。
 「今見えている流れ」は条件の列挙ではなく、現在の動き、強まりやすい方向、注意点をひと続きの自然な流れとして書いてください。「Aがある。Bもある。Cなら良い」のような条件リストにしないでください。
@@ -17189,17 +17197,20 @@ function getRashinReadingPolicyPrompt(scope='all'){
 - 役割は現実の見立てです。今の現実、止まっている理由、改善の兆し、気をつけること、今見えている流れを読む。
 - 本文ではカード名、枚数、配置語、占術名、「このカードは〜を意味します」を出さない。
 - 内部根拠はすべて相談者の現実語へ必ず翻訳する。
+- ただし現実語へ寄せても、確認作業・条件整理・業務メモで終わらせない。カード由来の兆し、気配、流れ、支え、壁、転機として読ませる。
 - 「今見えている流れ」は良い可能性と悪い可能性の羅列にせず、ひと続きの自然な流れにする。`,
     orc:`【内面整理専用】
 - 役割は助言、内面整理、向き合い方です。行動タスクではなく、光のメッセージと「${ORACLE_COMPASS_HEADING}」に統合する。
 - 本文ではカード名、枚数、配置語、占術名、「カードが示すのは〜」を出さない。
 - 相談者が自分をどう扱うと雑に扱わずに済むかを言葉にする。
+- 作業指示ではなく、光、導き、支え、転機、整う方向として読ませる。
 - ルノルマンの説明やカード配置の説明を混ぜない。`,
     integration:`【統合判断専用】
 - 鑑定結果の最初に出す、相談者が持ち帰る答えです。
 - ${INTEGRATION_FINAL_HEADING}、${INTEGRATION_CORE_HEADING}、${INTEGRATION_FLOW_HEADING}、${INTEGRATION_ACTION_GUIDE_HEADING}を自然な文章で返す。
 - ${INTEGRATION_CLOSING_HEADING}は${INTEGRATION_ACTION_GUIDE_HEADING}と重複するため、統合判断の表示セクションとして出さない。
 - まとめではなく、迷いの正体と自分を雑に扱わない判断軸を先に出す。
+- 現実的な行動表ではなく、占いとして読める現在の流れ、兆し、注意点、羅針の指針へ変換する。
 - ${INTEGRATION_FINAL_HEADING}では同じ意味の文を繰り返さず、${INTEGRATION_FLOW_HEADING}は箇条書き風の条件リストにしない。`,
     paid:`【有料鑑定全体】
 - ルノルマンは現実の見立て、オラクルは内面整理、統合判断は持ち帰る答えとして役割を分ける。
@@ -17802,6 +17813,26 @@ function detectJapaneseSurfaceQualityIssues(text='',label='text'){
   return [...new Set(issues)];
 }
 
+function detectTaskLikeReadingIssues(text='',label='text'){
+  const source=String(text||'');
+  const issues=[];
+  if(!source.trim()) return issues;
+  const taskMatches=source.match(RASHIN_TASKLIKE_COUNT_RE)||[];
+  const hasTaskLike=RASHIN_TASKLIKE_SURFACE_RE.test(source);
+  const hasDivinationSignal=RASHIN_DIVINATION_SIGNAL_RE.test(source);
+  if(hasTaskLike&&!hasDivinationSignal){
+    issues.push(`${label}が占い読みではなく作業指示・業務メモに寄っています`);
+  }
+  if(taskMatches.length>=4){
+    issues.push(`${label}に作業を強いる語が多すぎます`);
+  }
+  if(/(?:情報|書類|条件|材料)[^。！？\n]{0,24}(?:読む|見る|確認|整理|集める)/.test(source)
+    &&!/兆し|運気|流れ|羅針|指針|違和感|支え|転機|サイン/.test(source)){
+    issues.push(`${label}がカード由来の兆しではなく現実タスクで止まっています`);
+  }
+  return [...new Set(issues)];
+}
+
 function detectNearTermRepetitionIssues(text=''){
   const issues=[];
   const sentences=splitJapaneseSentences(text).map(sentence=>sentence.trim()).filter(Boolean);
@@ -18303,6 +18334,7 @@ function detectPaidTextQualityIssues(key='',text=''){
   if(!source) return [`${key}が空です`];
   issues.push(...detectRashinVisibleTextPolicyIssues(source,key));
   issues.push(...detectJapaneseSurfaceQualityIssues(source,key));
+  issues.push(...detectTaskLikeReadingIssues(source,key));
   if(/今回の展開に今回の相談|今回の展開に迷いの中心|迷いの中心を続ける意味|続ける意味や約束の重さ|今回の相談の判断に関わる要素|前に出る引っかかりが前に出て|前に出る違和感が前に出て|違和感を消すより、違和感が教えている軸|引っかかりを消すより/.test(source)){
     issues.push(`${key}に旧式の汎用接続文が残っています`);
   }
@@ -18406,6 +18438,7 @@ function validateFreeReadingSectionQuality(kind='',text='',context={}){
   if(count<min) issues.push(`${key}が短い（${count}字）`);
   const focus=context.focus||getFocusForContext(context.cat||'',context.theme||'',context);
   issues.push(...detectPaidTextQualityIssues(key,source));
+  issues.push(...detectTaskLikeReadingIssues(source,key));
   issues.push(...detectThemeVocabularyDriftIssues(source,focus,key,context));
   issues.push(...detectGeneralLuckVisibleScopeIssues(source,{...context,focus},key));
   issues.push(...detectWeakEscapeIssues(source).map(issue=>`${key}: ${issue}`));
@@ -18934,6 +18967,7 @@ function validateIntegrationSatisfaction(text='',context={}){
   if(/確認してください|書き出してください|比較してください|材料を集めてください|7日以内|30日以内|今週の一手|次の一手|進む条件|止まる条件|残る条件|動く条件|保留条件/.test(source)){
     issues.push('integrationに作業指示または機械的な条件表が残っています');
   }
+  issues.push(...detectTaskLikeReadingIssues(source,'integration'));
   issues.push(...detectBrokenDecisionCriteriaPhraseIssues(source,'integration'));
   if(!/迷い|違和感|現実|流れ|羅針|指針|安心|信頼|消耗|判断軸/.test(source)){
     issues.push('integrationが入力内容の再掲に寄っています');
@@ -22918,6 +22952,7 @@ const AI_READING_QUALITY_RULES=`【AI鑑定文の品質ルール】
 - 結論は早めに出す。無根拠な未来や他人の心は断定しないが、迷いの正体と判断軸は曖昧にしない
 - 強みと注意点をセットで出し、抽象的な性格説明だけで終わらせない
 - 今回の相談にどう関係するかを必ず書き、最後は判断軸か羅針の指針に着地する
+- カード意味は今日の運気、兆し、現実の流れ、違和感、支え、転機として読み、業務メモや作業リストに落とさない
 - 「怖い結果」だけ、「大丈夫です」だけで終わらせない
 - 7日以内や30日以内の作業指示、確認する、書き出す、比較する、材料を集める、機械的な条件表は出さない
 - 恋愛では「好きかどうか」より「相手の行動・安定感・向き合い方」を見る

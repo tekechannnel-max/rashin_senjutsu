@@ -243,8 +243,8 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
   if (kind === 'empathy' && !/No\.\d{2}\s*\/\s*.+\s*\/\s*[A-Za-z]/.test(value)) {
     addIssue(issues, 'error', 'lenormand_card_line_missing', 'empathy投稿にはカード番号、日本語名、英語名が必要です。');
   }
-  if (kind === 'empathy' && !/カードの一言[\s\S]+今日のヒント/.test(value)) {
-    addIssue(issues, 'error', 'lenormand_one_card_structure', 'empathy投稿には「カードの一言」と「今日のヒント」が必要です。');
+  if (kind === 'empathy' && !/今日の兆し[\s\S]+流れのサイン/.test(value)) {
+    addIssue(issues, 'error', 'lenormand_one_card_structure', 'empathy投稿には「今日の兆し」と「流れのサイン」が必要です。');
   }
   if (kind === 'empathy' && new RegExp('悩み' + '共感').test(value)) {
     addIssue(issues, 'error', 'lenormand_old_empathy_label', 'ルノルマン投稿では旧ラベルを使いません。');
