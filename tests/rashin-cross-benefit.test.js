@@ -99,4 +99,26 @@ assert.ok(
   'paid result calendar button must reflect the free calendar benefit state'
 );
 
+const ensurePaidAccessBody = sliceFromMarker(
+  appSource,
+  'async function ensurePaidAccess',
+  'function resumePendingMemberIntent'
+);
+
+const startPaidBenefitIndex = ensurePaidAccessBody.indexOf("if(intent==='start-paid'&&MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.authProvider==='google')");
+assert.notStrictEqual(startPaidBenefitIndex, -1, 'start-paid must check Google benefit state');
+assert.ok(
+  ensurePaidAccessBody.indexOf('if(!RASHIN_BONUS_STATUS) await loadRashinBonusStatus({render:true});', startPaidBenefitIndex) <
+    ensurePaidAccessBody.indexOf('getRashinCrossBenefitSnapshot().freePaidReadingBenefit?.available', startPaidBenefitIndex),
+  'start-paid must load cross-benefit status before checking the free paid-reading benefit'
+);
+
+const upgradePaidIndex = ensurePaidAccessBody.indexOf("if(intent==='upgrade-paid'&&PLAN==='free'&&canContinueCurrentReadingToPaid())");
+assert.notStrictEqual(upgradePaidIndex, -1, 'upgrade-paid must keep free-result upgrade branch');
+assert.ok(
+  ensurePaidAccessBody.indexOf('const prepared=await preparePaidReadingTicket(sourceReadingId,PENDING_PAID_READING_ID);', upgradePaidIndex) <
+    ensurePaidAccessBody.indexOf('redeemRashinCalendarBenefitForPaidTicket(sourceReadingId,PENDING_PAID_READING_ID', upgradePaidIndex),
+  'upgrade-paid must first reuse an existing paid ticket, then fall back to the calendar benefit'
+);
+
 console.log('rashin-cross-benefit.test.js: ok');

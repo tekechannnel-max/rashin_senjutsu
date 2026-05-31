@@ -11,7 +11,7 @@ const docsSource = fs.readFileSync(path.join(rootDir, 'docs', 'rashin-reading-ar
 
 [
   'global.RASHIN_READING_POLICY_MANUAL',
-  "version:'2026-05-18'",
+  "version:'2026-05-31'",
   'planBoundaries',
   'paidAccess',
   'tagSelection',
@@ -40,6 +40,7 @@ const docsSource = fs.readFileSync(path.join(rootDir, 'docs', 'rashin-reading-ar
   '羅針コード、BOOTH注文番号、購入状態',
   '品質確認できない本文は表示せず、チケットを消費しない',
   'お金タグでは恋愛の距離感語彙へ寄せず',
+  '柔らかい作業語',
   'このカードは',
 ].forEach(requiredText => {
   assert.ok(policySource.includes(requiredText), `policy manual must preserve rule: ${requiredText}`);

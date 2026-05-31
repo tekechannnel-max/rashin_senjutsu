@@ -49,7 +49,7 @@ const ORACLE={
   7:{name:"The Artisan",msg:"自分の感性や技術を磨き、内面から生まれる価値を形にしてください。",essence:"内省・精神・専門性",keywords:["洞察","真理探求","直感","深化"],shadow:"孤立しがちで、人との距離を置きすぎると孤独感が強まる。",note:"7は内なる探求の数。深く考えすぎて行動が止まるときは「考えは後、まず一歩」が突破のヒントになる。",master:false},
   8:{name:"The Warrior",msg:"覚悟を決めて行動することで、現実はあなたの味方になります。",essence:"力・達成・現実化",keywords:["決断力","実行力","影響力","豊かさ"],shadow:"支配的になりやすく、力への執着が人間関係を壊すことがある。",note:"8は達成の数。覚悟と行動が重なった瞬間にエネルギーが動き始める。「何のための力か」を問い直すことが安定の鍵。",master:false},
   9:{name:"The Sage",msg:"経験から得た知恵を使い、物事を広い視点で受け止めてください。",essence:"完成・博愛・手放し",keywords:["慈悲","普遍性","成熟","統合"],shadow:"手放しへの抵抗や殉教者的傾向が生まれ、自己を犠牲にしすぎる。",note:"9は完成点。執着を手放すほど新しい流れが起動し、古いものを抱え込むほど次のサイクルが遅れる。",master:false},
-  10:{name:"The Great Power",msg:"新しい力の流れが始まっているため、自分の可能性を制限しないでください。",essence:"刷新・転換・新局面",keywords:["再起動","チャンス","転換期","可能性"],shadow:"変化の波に乗れず過去に縛られると、チャンスが素通りしていく。",note:"10は1+0のサイクルの再始動。個の力が新しい次元へ移行するタイミングを示しており、より高い段階への転換が求められている。",master:false},
+  10:{name:"The Great Power",msg:"新しい力の流れが始まり、自分の可能性を狭めない方向へ運気が開いています。",essence:"刷新・転換・新局面",keywords:["再起動","チャンス","転換期","可能性"],shadow:"変化の波に乗れず過去に縛られると、チャンスが素通りしていく。",note:"10は1+0のサイクルの再始動。個の力が新しい次元へ移行するタイミングを示しており、より高い段階への転換が求められている。",master:false},
   11:{name:"The Inspired One",msg:"直感やひらめきを手がかりにすると、重要な手がかりが見えてきます。",essence:"霊感・啓示・使命",keywords:["直感","インスピレーション","理想","覚醒"],shadow:"過敏さや神経的緊張が高まりやすく、地に足がつかない感覚に陥ることがある。",note:"11はマスターナンバー。霊的な感受性と高次の直感を宿す精神的メッセンジャー。頭でなく感覚を信頼することで力が開花する。",master:true},
   12:{name:"The Harmonizer",msg:"対立や違いを調整し、全体のバランスを整える役割を意識してください。",essence:"調整・奉仕・受容",keywords:["バランス","仲介","包容","受容"],shadow:"自分を後回しにしすぎて、気がつけば誰かのために消耗している。",note:"12は受け入れと調整の数（1+2=3）。自分が通り道になることで流れを整える局面を示す。",master:false},
   13:{name:"The Wise King",msg:"冷静な判断と責任ある行動によって、周囲に安定をもたらしてください。",essence:"秩序・判断・変容",keywords:["成熟","権威","責任","変革"],shadow:"頑固さと変化への恐怖が重なると、時代遅れのやり方に固執してしまう。",note:"13（1+3=4）は変容と再生の数。古いものを壊して新しい土台を作る強力な変化の力を持つ。",master:false},
@@ -1764,10 +1764,10 @@ const MEMBER_SESSION_ENDPOINT='/api/member/session';
 const MEMBER_LOGOUT_ENDPOINT='/api/member/logout';
 const RASHIN_BONUS_STATUS_ENDPOINT='/api/rashin-bonus/status';
 const RASHIN_BONUS_CLAIM_ENDPOINT='/api/rashin-bonus/claim';
+const RASHIN_BONUS_REDEEM_PAID_TICKET_ENDPOINT='/api/rashin-bonus/redeem-paid-ticket';
 const RASHIN_CROSS_BENEFIT_STATUS_ENDPOINT='/api/rashin-cross-benefit/status';
 const RASHIN_CROSS_BENEFIT_USE_CALENDAR_ENDPOINT='/api/rashin-cross-benefit/use-calendar';
 const RASHIN_CROSS_BENEFIT_REDEEM_PAID_TICKET_ENDPOINT='/api/rashin-cross-benefit/redeem-paid-ticket';
-const RASHIN_BONUS_REDEEM_PAID_TICKET_ENDPOINT='/api/rashin-bonus/redeem-paid-ticket';
 const DEEP_READING_DISCOUNT_STATUS_ENDPOINT='/api/deep-reading/discount-status';
 const STRIPE_CHECKOUT_ENDPOINT='/api/stripe/checkout-session';
 const STRIPE_CHECKOUT_COMPLETE_ENDPOINT='/api/stripe/checkout/complete';
@@ -2105,10 +2105,10 @@ let MEMBER_AUTH={
   cancelAtPeriodEnd:false,
   manageBillingAvailable:false,
   rashinStones:0,
+  lastRashinBonusClaimedDate:null,
   rashinCalendarFreeCredits:0,
   rashinPaidReadingFreeCredits:0,
   crossBenefit:null,
-  lastRashinBonusClaimedDate:null,
 };
 
 function getGenderPersonCard(gender=GENDER){
@@ -3091,6 +3091,7 @@ function getRashinFragmentSnapshot(status=RASHIN_BONUS_STATUS){
     freeReadingBenefit,
   };
 }
+
 function normalizeCrossBenefitCredits(value){
   const count=Math.floor(Number(value||0));
   return Number.isFinite(count)&&count>0?count:0;
@@ -3155,7 +3156,6 @@ async function loadRashinCrossBenefitStatus(options={}){
     return null;
   }
 }
-
 
 async function startDailyOracleDeepReading(source='daily_oracle',useDiscount=false){
   const context=getConsultationCtaContext();
@@ -4917,11 +4917,11 @@ function getMemberStatusMeta(){
 }
 
 function applyMemberAuthData(data,overrides={}){
+  const nextProduction=data?.production??MEMBER_AUTH.production;
   const crossBenefit=normalizeRashinCrossBenefitView(data?.crossBenefit||{
     freeCalendarCredits:data?.rashinCalendarFreeCredits,
     freePaidReadingCredits:data?.rashinPaidReadingFreeCredits,
   });
-  const nextProduction=data?.production??MEMBER_AUTH.production;
   MEMBER_AUTH={
     ...MEMBER_AUTH,
     checked:true,
@@ -4956,10 +4956,10 @@ function applyMemberAuthData(data,overrides={}){
     cancelAtPeriodEnd:!!data?.cancelAtPeriodEnd,
     manageBillingAvailable:!!data?.manageBillingAvailable,
     rashinStones:Number.isFinite(Number(data?.rashinStones))?Math.max(0,Math.floor(Number(data.rashinStones))):MEMBER_AUTH.rashinStones,
+    lastRashinBonusClaimedDate:data?.lastRashinBonusClaimedDate||MEMBER_AUTH.lastRashinBonusClaimedDate||null,
     rashinCalendarFreeCredits:crossBenefit.freeCalendarCredits,
     rashinPaidReadingFreeCredits:crossBenefit.freePaidReadingCredits,
     crossBenefit,
-    lastRashinBonusClaimedDate:data?.lastRashinBonusClaimedDate||MEMBER_AUTH.lastRashinBonusClaimedDate||null,
     ...overrides,
   };
   return MEMBER_AUTH;
@@ -5321,8 +5321,8 @@ async function loadRashinBonusStatus(options={}){
     if(!res.ok) throw new Error(getServerErrorMessage(data,'羅針のかけらを確認できませんでした'));
     RASHIN_BONUS_STATUS=data;
     MEMBER_AUTH.rashinStones=Math.max(0,Math.floor(Number(data?.rashinStones||0)));
-    if(data?.crossBenefit) applyRashinCrossBenefitData(data);
     MEMBER_AUTH.lastRashinBonusClaimedDate=data?.lastRashinBonusClaimedDate||MEMBER_AUTH.lastRashinBonusClaimedDate;
+    if(data?.crossBenefit) applyRashinCrossBenefitData(data);
     return data;
   }catch(e){
     RASHIN_BONUS_STATUS=null;
@@ -5347,8 +5347,8 @@ async function claimRashinBonus(options={}){
     const data=await readJsonSafe(res);
     if(!res.ok) throw new Error(getServerErrorMessage(data,'羅針のかけらの反映に失敗しました'));
     RASHIN_BONUS_STATUS=data;
-    if(data?.crossBenefit) applyRashinCrossBenefitData(data);
     MEMBER_AUTH.rashinStones=Math.max(0,Math.floor(Number(data?.rashinStones||0)));
+    if(data?.crossBenefit) applyRashinCrossBenefitData(data);
     if(data?.claimed){
       showToast('羅針のかけらを1つ獲得しました');
       trackEvent('fragment_awarded',{
@@ -5864,6 +5864,7 @@ function openBoothOrderModal({booth={},finalAmount=DEEP_READING_PRICE}={}){
           <label class="modal-label" for="booth-reference-input">BOOTH注文番号</label>
           <input class="modal-input" id="booth-reference-input" type="text" inputmode="text" autocomplete="off" placeholder="BOOTH注文番号">
           <div class="booth-modal-error" id="booth-order-error">BOOTH注文番号を入力してください。</div>
+        </div>
         <div class="booth-reference-row booth-rashin-code-row">
           <label class="modal-label" for="booth-rashin-code-input">羅針コード</label>
           <div class="rashin-code-form booth-rashin-code-form">
@@ -5873,7 +5874,6 @@ function openBoothOrderModal({booth={},finalAmount=DEEP_READING_PRICE}={}){
             </div>
             <div class="rashin-code-status" id="booth-rashin-code-status" aria-live="polite" style="display:none"></div>
           </div>
-        </div>
         </div>
         <div class="modal-btns">
           <button class="modal-save" type="button" id="booth-reference-submit">注文番号を入力して始める</button>
@@ -5893,6 +5893,7 @@ function openBoothOrderModal({booth={},finalAmount=DEEP_READING_PRICE}={}){
     });
     document.body.appendChild(modal);
     const input=modal.querySelector('#booth-reference-input');
+    const error=modal.querySelector('#booth-order-error');
     const codeInput=modal.querySelector('#booth-rashin-code-input');
     const codeSubmit=modal.querySelector('#booth-rashin-code-submit');
     const codeStatus=modal.querySelector('#booth-rashin-code-status');
@@ -5902,7 +5903,6 @@ function openBoothOrderModal({booth={},finalAmount=DEEP_READING_PRICE}={}){
       codeStatus.className=`rashin-code-status ${state||''}`.trim();
       codeStatus.style.display=message?'block':'none';
     };
-    const error=modal.querySelector('#booth-order-error');
     const submit=()=>{
       const value=String(input?.value||'').trim();
       if(!value){
@@ -5911,6 +5911,7 @@ function openBoothOrderModal({booth={},finalAmount=DEEP_READING_PRICE}={}){
         return;
       }
       finish(value);
+    };
     const submitCode=()=>{
       const code=normalizeRashinPaidCodeInput(codeInput?.value||'');
       if(codeInput) codeInput.value=formatRashinPaidCodeInput(code);
@@ -5922,7 +5923,6 @@ function openBoothOrderModal({booth={},finalAmount=DEEP_READING_PRICE}={}){
       savePendingRashinPaidCode(code);
       setCodeStatus('羅針コードを保存しました。認証へ進みます。','ok');
       finish({useRashinCode:true});
-    };
     };
     modal.querySelector('#booth-reference-submit')?.addEventListener('click',submit);
     codeSubmit?.addEventListener('click',submitCode);
@@ -5937,6 +5937,7 @@ function openBoothOrderModal({booth={},finalAmount=DEEP_READING_PRICE}={}){
         event.preventDefault();
         finish(null);
       }
+    });
     codeInput?.addEventListener('input',()=>{
       codeInput.value=formatRashinPaidCodeInput(codeInput.value);
       setCodeStatus('', '');
@@ -5950,7 +5951,6 @@ function openBoothOrderModal({booth={},finalAmount=DEEP_READING_PRICE}={}){
         event.preventDefault();
         finish(null);
       }
-    });
     });
     setModalOpen(modal,true);
     setTimeout(()=>input?.focus(),80);
@@ -6137,6 +6137,7 @@ async function redeemRashinFragmentsForPaidTicket(sourceReadingId='',paidReading
     return{ok:false,error:'NETWORK_ERROR',message:'羅針のかけらの使用に失敗しました'};
   }
 }
+
 async function redeemRashinCalendarBenefitForPaidTicket(sourceReadingId='',paidReadingId='',options={}){
   const sourceId=String(sourceReadingId||'').trim();
   const paidId=String(paidReadingId||'').trim();
@@ -6214,7 +6215,6 @@ async function startRashinPaidReadingFromCalendarBenefit(source='calendar_popup'
   return true;
 }
 
-
 async function preparePaidReadingTicket(sourceReadingId='',paidReadingId=''){
   const sourceId=sourceReadingId||CURRENT_READING_ID;
   const nextPaidId=paidReadingId||PENDING_PAID_READING_ID||createReadingId();
@@ -6263,12 +6263,12 @@ async function markPaidReadingTicketUsed(){
     });
     const data=await readJsonSafe(res);
     if(res.ok){
+      ACTIVE_PAID_READING_TICKET={...ACTIVE_PAID_READING_TICKET,status:data?.ticketStatus||'used'};
       if(data?.crossBenefit) applyRashinCrossBenefitData(data);
       syncRashinYearCalendarActionButton();
       if(data?.calendarBenefit?.granted){
         showToast('特典として羅針カレンダー1回分を受け取りました');
       }
-      ACTIVE_PAID_READING_TICKET={...ACTIVE_PAID_READING_TICKET,status:data?.ticketStatus||'used'};
       trackEvent('deep_ticket_used',{
         source:'result',
         price:DEEP_READING_PRICE,
@@ -6804,6 +6804,7 @@ async function ensurePaidAccess(intent=''){
     return false;
   }
   if(intent==='start-paid'&&MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.authProvider==='google'){
+    if(!RASHIN_BONUS_STATUS) await loadRashinBonusStatus({render:true});
     if(getRashinCrossBenefitSnapshot().freePaidReadingBenefit?.available){
       const directSourceId=createReadingId();
       if(!PENDING_PAID_READING_ID) PENDING_PAID_READING_ID=createReadingId();
@@ -6817,7 +6818,6 @@ async function ensurePaidAccess(intent=''){
         return false;
       }
     }
-    if(!RASHIN_BONUS_STATUS) await loadRashinBonusStatus({render:true});
     if(getRashinFragmentSnapshot().freeReadingBenefit?.available){
       const directSourceId=createReadingId();
       if(!PENDING_PAID_READING_ID) PENDING_PAID_READING_ID=createReadingId();
@@ -6836,6 +6836,7 @@ async function ensurePaidAccess(intent=''){
     const sourceReadingId=CURRENT_READING_ID;
     if(!PENDING_PAID_READING_ID) PENDING_PAID_READING_ID=createReadingId();
     const prepared=await preparePaidReadingTicket(sourceReadingId,PENDING_PAID_READING_ID);
+    if(prepared.ok) return true;
     if(getRashinCrossBenefitSnapshot().freePaidReadingBenefit?.available){
       const calendarTicket=await redeemRashinCalendarBenefitForPaidTicket(sourceReadingId,PENDING_PAID_READING_ID,{
         source:'result_upgrade',
@@ -6846,7 +6847,6 @@ async function ensurePaidAccess(intent=''){
         return false;
       }
     }
-    if(prepared.ok) return true;
     const fragmentTicket=await redeemRashinFragmentsForPaidTicket(sourceReadingId,PENDING_PAID_READING_ID);
     if(fragmentTicket.ok) return true;
     if(fragmentTicket.error&&!['UNAVAILABLE','RASHIN_FRAGMENTS_INSUFFICIENT'].includes(fragmentTicket.error)){
@@ -6889,10 +6889,10 @@ function resumePendingMemberIntent(){
       void loadRashinBonusStatus({render:true});
     }
     return;
+  }
   if(intent==='calendar-paid-benefit'){
     void startRashinPaidReadingFromCalendarBenefit('login_resume');
     return;
-  }
   }
   if(isMemberActive()){
     if(intent==='start-paid') startAuthorizedPaidFlowWithTags();
@@ -7549,6 +7549,7 @@ function buildRashinYearCalendarEntryHtml(source='top_entry'){
       <button class="rashin-year-calendar-btn" type="button" onclick="requestRashinYearCalendarFromPaid('${source}')">有料鑑定から作成する</button>
     </div>`;
 }
+
 async function completeRashinYearCalendarBenefit(source='result_paid'){
   if(!canUseProxy()||!MEMBER_AUTH.authLoggedIn||MEMBER_AUTH.authProvider!=='google') return{ok:false,reason:'login_required'};
   let snapshot=getRashinCrossBenefitSnapshot();
@@ -7588,7 +7589,6 @@ async function completeRashinYearCalendarBenefit(source='result_paid'){
     return{ok:false,error:'NETWORK_ERROR',message:'羅針カレンダー特典の反映に失敗しました',crossBenefit:getRashinCrossBenefitSnapshot()};
   }
 }
-
 
 function renderPremiumEntrySection(){
   const el=document.getElementById('premium-entry');
@@ -9446,10 +9446,29 @@ function getLenCoreFocusText(id){
     case 6:return 'いま一番大事なのは、不安が大きくなりすぎて、状況を必要以上に複雑に見てしまっていることです。';
     default:
       if([15,34].includes(id)) return 'いま一番大事なのは、お金・自立・巡りの問題を無視しないことです。';
-      if([24,25,30].includes(id)) return 'いま一番大事なのは、情とつながり方を見直すことです。';
+      if([24,25,30].includes(id)) return 'いま一番大事なのは、情とつながり方の重さが分かれていくことです。';
       if([8,10,17].includes(id)) return 'いま一番大事なのは、変化や区切りを避けて通れないところです。';
       return 'いま一番大事なのは、気持ちだけで決めず、大事な点の輪郭を見ることです。';
   }
+}
+
+function getLenFallbackFlowTextForContext(ctx={}){
+  if(ctx.primaryTheme==='love'){
+    return `今の流れは、${ctx.criteriaText}を一度に読もうとして、言葉と行動の差が見えにくくなっている状態です。近づく前に、自分だけが納得材料を補っていないかを見るほど判断は整います。`;
+  }
+  if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career'){
+    return `今の流れは、今の場所を続ける力と、別の選択肢を見る力が同時に動いています。${ctx.criteriaText}として返る現実があるかを分けて見るほど、次の判断は軽くなります。`;
+  }
+  if(ctx.primaryTheme==='money'){
+    return '今の流れは、増やすことと守ることを同じ焦りで抱えやすい状態です。入ってくる金額より、手元に安心として残る流れがあるかを見るほど現実的に動きやすくなります。';
+  }
+  if(ctx.primaryTheme==='relationship'){
+    return '今の流れは、関わり続けたい気持ちと、関わるほど削られる感覚が同時に出ています。相手や場に合わせる前に、距離を整えたとき何が軽くなるかを見るほど判断しやすくなります。';
+  }
+  if(ctx.primaryTheme==='dual_concern'){
+    return `今の流れは、${ctx.dualThemeText||'複数のテーマ'}を同じ不安で抱え、どちらから見るかが曖昧になっている状態です。先に削られている場所を分けるほど、現実の順番が戻ります。`;
+  }
+  return '今の流れは、答えを急ぐほど気持ちと現実の反応が混ざりやすい状態です。いちばん強く出ている違和感と、まだ残っている支えを分けて見るほど判断は落ち着きます。';
 }
 
 function buildThemeSpecificActionPlan(focus,context={}){
@@ -10508,7 +10527,7 @@ function makeFoundationSummary(type='',fullText='',context={}){
   }
   if(type==='nameBirth'){
     if(isGeneralLuckFocus(focus,context)){
-      return '名前と生まれからは、状況を観察して整える力が出ています。急に大きく変えるより、生活の土台と将来の準備を小さく並べ直すほど運気の流れが安定します。';
+      return '名前と生まれからは、状況を観察して整える力が出ています。急に大きく変えるより、生活の土台と将来の準備の重さが自然に分かれるほど運気の流れが安定します。';
     }
     if(isWorkLifeDirectionFocus(focus)){
       return '名前からは調整力と対話力、生まれからは現実を整える力が出ています。急な決断より、現実に見えている根拠を見ながら進むほど安定しやすい傾向です。';
@@ -12613,6 +12632,7 @@ function buildDossierOneLineForDecisionContext(ctx){
   if(ctx.primaryTheme==='relationship') return '近づくほど自然体が戻る距離か。';
   if(ctx.primaryTheme==='money') return '増やす前に、手元に安心が残る流れか。';
   if(ctx.primaryTheme==='creative') return '好きな気持ちが義務感に飲まれていないか。';
+  if(ctx.primaryTheme==='general') return '生活リズムと健康の余白が戻るほど整います。';
   return `${ctx.primaryLabel}は、違和感の出どころを見るほど整います。`;
 }
 
@@ -12625,6 +12645,7 @@ function buildDossierLeadForDecisionContext(ctx){
   if(ctx.primaryTheme==='money') return 'お金の判断は、不安を消すことより安心が残る余白が軸です。';
   if(ctx.primaryTheme==='family') return '家族の判断は、役割より境界線が戻る距離が軸です。';
   if(ctx.primaryTheme==='self_understanding') return '今の自分は、正解探しより力を出せる感覚が軸です。';
+  if(ctx.primaryTheme==='general') return 'この総合運は、生活リズムと健康の余白が羅針の中心です。';
   return '今回の相談は、違和感の正体を分けて、判断軸を取り戻すことが中心です。';
 }
 
@@ -12717,7 +12738,7 @@ function buildDossierClosingForDecisionContext(ctx){
   if(ctx.primaryTheme==='love') return '我慢だけが増える関係を、愛情と呼ばなくていい。';
   if(ctx.primaryTheme==='work_life_direction'||ctx.primaryTheme==='career') return '我慢だけが増える場所を、居場所と呼ばなくていい。';
   if(ctx.primaryTheme==='relationship') return '関係を守ることと、自分を削ることは同じではありません。';
-  if(ctx.primaryTheme==='dual_concern') return `${ctx.dualThemeText}を一度に決めず、先に自分を削っている場所へ羅針を戻してください。`;
+  if(ctx.primaryTheme==='dual_concern') return `${ctx.dualThemeText}を一度に決めないほど、先に自分を削っている場所へ羅針が戻ります。`;
   if(ctx.primaryTheme==='creative') return '好きな気持ちが戻る形こそ、今のあなたの羅針です。';
   return '違和感を無理に流さず、そこに残る判断軸を取り戻していい。';
 }
@@ -13432,13 +13453,22 @@ function buildDossierSignalSummaries(card={}){
   const fallback=buildDossierWeightedSignalFallbacks(safeCard,focus);
   const visibleSummaries=[topLen,topOracle].filter(Boolean);
   const themeBullets=getDossierThemedGuidanceBullets(focus,safeCard);
-  const lenormand=buildDossierGuidanceBulletSummary([
-    topLen,
-    fallback.lenormand,
-    safeCard.DECISION_AXIS,
-    safeCard.EVIDENCE_SUMMARY,
-    ...themeBullets.lenormand,
-  ],[topOracle].filter(Boolean),fallback.lenormand,{
+  const lenormandCandidates=layout.isFree
+    ?[
+      ...themeBullets.lenormand,
+      fallback.lenormand,
+      safeCard.DECISION_AXIS,
+      safeCard.EVIDENCE_SUMMARY,
+      topLen,
+    ]
+    :[
+      topLen,
+      fallback.lenormand,
+      safeCard.DECISION_AXIS,
+      safeCard.EVIDENCE_SUMMARY,
+      ...themeBullets.lenormand,
+    ];
+  const lenormand=buildDossierGuidanceBulletSummary(lenormandCandidates,[topOracle].filter(Boolean),fallback.lenormand,{
     target:layout.lenTarget,
     min:layout.lenTarget,
     max:layout.lenMax,
@@ -13502,7 +13532,7 @@ function buildDossierFoundationItems(items=[],fallbackItems=[]){
     const trimmed=trimDossierTextSafely(sanitizeRashinVisibleText(redactDossierPrivateNames(cleanDossierItemText(String(item||'')))),34,8);
     if(!trimmed||/[、,，・/／:：]$/.test(trimmed)) return;
     const clean=ensureJapaneseSentence(trimmed);
-    if(/確認する|確認して|書き出|比較する|材料を集め|整理する|整理して|7日以内|30日以内/.test(clean)) return;
+    if(/確認する|確認して|書き出|比較する|材料を集め|整理する|整理して|見てください|予定に入れる|予定を守|見直すほど|並べ直す|調べる、整理する|小さな行動に落とす|7日以内|30日以内/.test(clean)) return;
     if(!clean||unique.includes(clean)||unique.length>=5) return;
     unique.push(clean);
   });
@@ -13518,7 +13548,7 @@ function addDossierFoundationSummaryLine(lines,line='',max=36){
     if(firstSentence) sentence=firstSentence;
   }
   if(sentence.length>max||hasDanglingJapaneseFragment(sentence)) return;
-  if(/確認する|確認して|書き出|比較する|材料を集め|整理する|整理して|7日以内|30日以内/.test(sentence)) return;
+  if(/確認する|確認して|書き出|比較する|材料を集め|整理する|整理して|見てください|予定に入れる|予定を守|見直すほど|並べ直す|調べる、整理する|小さな行動に落とす|7日以内|30日以内/.test(sentence)) return;
   const key=sentence.replace(/[。、\s]/g,'');
   if(key.length<8||lines.some(item=>item.replace(/[。、\s]/g,'')===key)) return;
   lines.push(sentence);
@@ -13729,8 +13759,11 @@ function normalizeDossierOracleAdviceLine(text='',max=24){
     .replace(/が必要です。?$/,'を避けないことです。')
     .replace(/が大切です。?$/,'を大切にすることです。')
     .replace(/へ戻ります。?$/,'へ戻ることです。')
-    .replace(/が戻ります。?$/,'を戻すことです。');
-  if(!/(ことです|大切です|しないでください|避けてください|戻してください)。?$/.test(line)){
+    .replace(/が戻ります。?$/,'を戻すことです。')
+    .replace(/しないでください。?$/,'しないことです。')
+    .replace(/避けてください。?$/,'避けることです。')
+    .replace(/戻してください。?$/,'戻ることです。');
+  if(!/(ことです|大切です)。?$/.test(line)){
     line=line.replace(/[。.!?！？]+$/,'');
     line=`${line}ことです。`;
   }
@@ -13796,6 +13829,8 @@ function hasDanglingDossierGuidanceLine(line=''){
   const core=text.replace(/[。、,.，．]+$/,'').trim();
   if(!text) return true;
   if(core.length<8) return true;
+  if(/^(?:2)?枚から|^から見ると|^(?:ルノルマン|オラクル)(?:の|では|から)/.test(core)) return true;
+  if(/してください|見てください|予定に入れる|予定を守|見直すほど|並べ直す|確認してください|書き出してください|材料を集め/.test(core)) return true;
   if(/^(ここまでのあなたは|今回の迷いは|迷っているのは|反応の出方を見ると)$/.test(core)) return true;
   if(/評価[、・]収入$/.test(core)) return true;
   return /(ではなく|だけでなく|重なり|薄れ|強まり|高まり|増え|減り|残り|見え|動き|戻り|広がり|乱れ|崩れ|揺れ|偏り|止まり|続き|変わり|おり|おらず|られず|できず|ならず|せず|あり|なり|出て|いて|して|持ち|抱え|残し|示し|見せ|受け|寄せ|向かい|比べ|として|なら|ほど|けれど|ただし|または|そして|から|まで|より|よりも|には|では|ところ|もの|こと|か|を|が|に|へ|と|で|は)$/.test(core);
@@ -13870,6 +13905,20 @@ function getDossierThemedGuidanceBullets(focus={},card={}){
       oracle:[
         '焦りで選ばないことです。',
         '安心できる余白を残すことです。',
+      ],
+    };
+  }
+  if(ctx.primaryTheme==='general'||isGeneralLuckFocus(focus)){
+    return{
+      lenormand:[
+        '生活リズムと健康の余白が焦点です。',
+        '抱える順番が重いほど気力が落ちます。',
+        '仕事と人間関係の負荷が重なります。',
+        '回復が戻るほど優先順位が浮かびます。',
+      ],
+      oracle:[
+        '全部を同時に抱えないことです。',
+        '回復の余白を軽く扱わないことです。',
       ],
     };
   }
@@ -14081,7 +14130,8 @@ function detectDossierCardQualityIssues(data={},options={}){
   if(/保存カードやPDFには含めません|根拠を見る|土台から見えたこと|追加質問から見えたこと/.test(text)) issues.push('羅針カード本体に根拠詳細が混ざっている');
   if(new RegExp('保存'+'キーワード').test(displayText)) issues.push('羅針カードに不要なキーワード欄が残っている');
   if(new RegExp(`${escapeRegExp(INTEGRATION_ACTION_GUIDE_HEADING)}|${escapeRegExp(INTEGRATION_CLOSING_HEADING)}`).test(displayText)) issues.push('羅針カードに旧見出しが残っている');
-  if(/進む条件|止まる条件|残る条件|動く条件|保留条件|関わる条件|距離を置く条件|今週の一手|7日以内|30日以内|確認してください|書き出してください|材料を集め/.test(text)) issues.push('羅針カードに旧方針の条件表または作業指示が混入している');
+  if(/進む条件|止まる条件|残る条件|動く条件|保留条件|関わる条件|距離を置く条件|今週の一手|7日以内|30日以内|確認してください|書き出してください|材料を集め|見てください|予定に入れる|予定を守|見直すほど|並べ直す|調べる、整理する|小さな行動に落とす/.test(text)) issues.push('羅針カードに旧方針の条件表または作業指示が混入している');
+  if(/(?:^|\n)\s*(?:2)?枚から|から見ると、?今は/.test(displayText)) issues.push('羅針カードに鑑定本文の切り抜き断片が混入している');
   if(/です。があるなら|ことです。があるなら|確認してから選ぶことです。が/.test(displayText)) issues.push('羅針カードに接続崩れがあります');
   conditionGroups.forEach(group=>{
     if((group.items||[]).length!==3) issues.push(`${group.label}が3行ではない`);
@@ -14113,7 +14163,7 @@ function detectDossierCardQualityIssues(data={},options={}){
   }
   if(lenormandLineCount<guidanceLayout.lenMin||lenormandLineCount>guidanceLayout.lenMax) issues.push(guidanceLayout.lenLineIssue);
   if(oracleLineCount<guidanceLayout.oracleMin||oracleLineCount>guidanceLayout.oracleMax) issues.push(guidanceLayout.oracleLineIssue);
-  if(getDossierGuidanceLines(guidance.oracle).some(line=>!/(ことです|大切です|しないでください|避けてください|戻してください)。?$/.test(line))){
+  if(getDossierGuidanceLines(guidance.oracle).some(line=>!/(ことです|大切です)。?$/.test(line))){
     issues.push(`${DOSSIER_ORACLE_GUIDANCE_HEADING}が断定寄りアドバイスになっていません`);
   }
   if(isDossierSummaryDuplicate(guidance.lenormand,readingDigestCopies)){
@@ -17152,18 +17202,18 @@ function buildEmergencyFreeLenPairFallback(name='あなた',cat='総合',context
     ?`${ctx.dualThemeText}のどちらを先に見るか`
     :`${ctx.primaryLabel}でいちばん先に見る一点`;
   const flow=workplaceDual
-    ?`2枚から見ると、今は職場での人間関係と仕事の負担を分ける段階です。結論を急ぐより、上司との距離、チーム内の立ち位置、任される仕事量のどれが先に自分を削っているかを言葉にすると、判断の順番が戻ります。`
+    ?`今の流れは、職場での人間関係と仕事の負担が一つに重なって見えにくくなっています。上司との距離、チーム内の立ち位置、任される仕事量のうち、どこで自分が削られているかの輪郭が出るほど、判断の順番は戻ります。`
     :ctx.primaryTheme==='dual_concern'
-      ?`2枚から見ると、今は${subject}を分ける段階です。結論を急ぐより、どちらの違和感が先に自分を削っているかを言葉にすると、判断の順番が戻ります。`
-    :`2枚から見ると、今は${subject}を絞る段階です。大きな結論へ急ぐより、いま強く出ている違和感と現実の反応を分けるほど、判断は落ち着きます。`;
+      ?`今の流れは、${subject}が重なり、結論より先に消耗の出どころが前に出ています。どちらの違和感が先に自分を削っているかの輪郭が出るほど、判断の順番は戻ります。`
+    :`今の流れは、${subject}が少しずつ前に出ている状態です。大きな結論へ急ぐより、いま強く出ている違和感と現実の反応が分かれるほど、判断は落ち着きます。`;
   const caution=workplaceDual
     ?`注意したいのは、職場の距離感と仕事量を一つの不安として抱え続けることです。混ぜたまま動くと、人間関係の消耗なのか、役割や負担の問題なのかを取り違えやすくなります。`
     :ctx.primaryTheme==='dual_concern'
       ?`注意したいのは、${ctx.dualThemeText}を一つの不安として抱え続けることです。混ぜたまま動くと、仕事量なのか距離感なのか、消耗の原因を取り違えやすくなります。`
     :`注意したいのは、気持ちの重さだけで全体を決めることです。まだ見えていない点を不安で補うほど、必要な判断軸がぼやけやすくなります。`;
   const compass=workplaceDual
-    ?`羅針の指針は、職場で信頼を積める距離感と、無理なく続けられる仕事量が両方残るかを見ることです。今は転職か継続かを急がず、最初に軽くなる一点へ戻してください。`
-    :`羅針の指針は、${ctx.criteriaText||getDecisionAxisShortPhrase(ctx)}を手がかりに、無理なく続けられる現実が残るかを見ることです。今は答えを広げるより、最初に軽くなる一点へ戻してください。`;
+    ?`羅針の指針は、職場で信頼を積める距離感と、無理なく続けられる仕事量が両方残る現実へ焦点を戻すことです。今は転職か継続かの二択より、最初に軽くなる一点が判断の入口になります。`
+    :`羅針の指針は、${ctx.criteriaText||getDecisionAxisShortPhrase(ctx)}を手がかりに、無理なく続けられる現実へ焦点を戻すことです。答えを広げるより、最初に軽くなる一点が判断の入口になります。`;
   return sanitizeRashinVisibleText([
     `■ 2枚で見えること\n${flow}`,
     `■ 注意したい一点\n${caution}`,
@@ -17372,6 +17422,8 @@ const LEGACY_INTEGRATION_ACTION_GUIDE_HEADINGS=['背中を'+'押す一文','背�
 const RASHIN_DIVINATION_SIGNAL_RE=/兆し|予兆|気配|運気|運の|流れ|サイン|暗示|前触れ|予感|導き|光|風|影|扉|鍵|巡り|転機|山場|羅針|指針|引力|追い風|好転|見立て|象意|整う|支え|違和感|判断軸/;
 const RASHIN_TASKLIKE_SURFACE_RE=/確認してください|確認する|確認できる|書き出してください|書き出す|比較してください|比較する|材料を集め|情報収集|チェックしてください|チェックする|メモしてください|メモする|整理してください|整理する|距離を測|条件を整理|条件表|作業|タスク|ToDo|TODO|行動リスト/;
 const RASHIN_TASKLIKE_COUNT_RE=/確認|書き出|比較|材料を集め|情報収集|チェック|メモ|整理|距離を測|条件を整理|条件表|作業|タスク|ToDo|TODO|行動リスト/g;
+const RASHIN_SOFT_TASKLIKE_SURFACE_RE=/見てください|順番に見て|見直してください|見直すこと|見直すほど|予定に入れる|予定を守|休む予定|並べ直す|調べる、整理する|小さな行動に落とす|選んでください|戻してください|避けてください|しないでください|見落とさないでください/;
+const RASHIN_SOFT_TASKLIKE_COUNT_RE=/見てください|順番に見て|見直す|予定に入れる|予定を守|休む予定|並べ直す|調べる、整理する|小さな行動に落とす|選んでください|戻してください|避けてください|しないでください|見落とさないでください/g;
 
 function getRashinReadingPolicyManual(){
   const root=typeof window!=='undefined'?window:globalThis;
@@ -17433,7 +17485,7 @@ function getRashinReadingPolicyPrompt(scope='all'){
 目的は宿題を増やすことではなく、「自分はここで迷っていたのか」と読後に納得できる言語化を返すことです。
 未来断定、相手の心の決めつけ、過度なスピリチュアルは避けてください。`;
   const forbidden=`【ユーザー表示で禁止】
-確認してください / 確認する / 確認できる / 確認できない / 確認したとき / まだ確認していない / 本気度確認 / 条件確認 / 判断条件 / 行動方針 / 書き出してください / 書き出す / 材料を集めてください / 材料を集める / 比較してください / 比較する / メモしてください / メモする / 整理してください / 整理する / 情報収集してください / 情報収集する / 条件を洗い出してください / 条件を洗い出す / 7日以内 / 30日以内 / 今週の一手 / 次の一手 / Aなら進む、Bなら止まる、Cなら保留 / 機械的な条件表 / 進む条件 / 止まる条件 / 残る条件 / 動く条件 / 保留条件 / 関わる条件 / 距離を置く条件。
+確認してください / 確認する / 確認できる / 確認できない / 確認したとき / まだ確認していない / 本気度確認 / 条件確認 / 判断条件 / 行動方針 / 書き出してください / 書き出す / 材料を集めてください / 材料を集める / 比較してください / 比較する / メモしてください / メモする / 整理してください / 整理する / 情報収集してください / 情報収集する / 条件を洗い出してください / 条件を洗い出す / 見てください / 順番に見てください / 見直してください / 予定に入れる / 予定を守る / 並べ直す / 調べる、整理する / 小さな行動に落とす / しないでください / 7日以内 / 30日以内 / 今週の一手 / 次の一手 / Aなら進む、Bなら止まる、Cなら保留 / 機械的な条件表 / 進む条件 / 止まる条件 / 残る条件 / 動く条件 / 保留条件 / 関わる条件 / 距離を置く条件。
 内部では使ってよいが、表では現実の見立て、違和感の言語化、内面の整え方、羅針の指針へ変換してください。`;
   const quality=`【共通品質】
 根拠を見る以外のユーザー表示では、カード名・カード説明・配置語・占術名・占術説明を一切出さない。相手の心の断定、根拠のない未来断定、作業指示、機械的な条件表も出さない。相談本文の具体語を反映し、迷いの正体を一文で言葉にしてください。
@@ -17515,6 +17567,10 @@ function buildRashinNaturalTaskRewrite(sentence=''){
   const hasWork=/書き出|比較|材料を集め|メモ|整理|情報収集|洗い出/.test(source);
   const hasDeadline=/7日以内|30日以内|今週の一手|次の一手|今日から/.test(source);
   const hasCondition=/進む条件|止まる条件|残る条件|動く条件|保留条件|関わる条件|距離を置く条件|条件A|条件B|条件C|Aなら|Bなら|Cなら|判断条件|行動方針/.test(source);
+  const hasSoftLook=/見てください|順番に見て|見落とさないでください/.test(source);
+  const hasSoftSchedule=/予定に入れる|予定を守|休む予定|調べる、整理する|小さな行動に落とす/.test(source);
+  const hasSoftReorder=/見直す|見直して|並べ直す/.test(source);
+  const hasDirectChoice=/選んでください|戻してください|避けてください|しないでください/.test(source);
   if(isQuestion){
     if(hasConfirm){
       if(theme==='love'||theme==='reconciliation') return 'どの反応が安心につながり、どの反応が違和感として残っていますか？';
@@ -17526,6 +17582,23 @@ function buildRashinNaturalTaskRewrite(sentence=''){
     return 'いま一番引っかかっている違和感は何ですか？';
   }
   if(/本気度確認/.test(source)) return '信頼の温度は、言葉よりも行動の続き方に表れます。';
+  if(hasSoftSchedule){
+    if(theme==='general') return '回復の余白が先に戻るほど、仕事、人間関係、将来の準備の優先順位は自然に浮かび上がります。';
+    if(theme==='work') return '生活の余白が戻るほど、努力の見返りと消耗の差が見えやすくなります。';
+    if(theme==='love'||theme==='reconciliation') return '安心の余白が戻るほど、言葉のあとに残る反応が見えやすくなります。';
+    return '余白が戻るほど、違和感の輪郭と進める兆しは自然に分かれていきます。';
+  }
+  if(hasSoftLook){
+    if(theme==='general') return '生活リズムと健康の余白が戻るほど、次の一年の優先順位は自然に見えてきます。';
+    if(theme==='work') return '評価や役割の返り方が見えるほど、残る意味と動く意味の差がはっきりします。';
+    if(theme==='love'||theme==='reconciliation') return '言葉のあとに安心が残るほど、関係の温度は静かに見えてきます。';
+    return 'いちばん強く出ている現実が見えるほど、判断の輪郭は静かに整います。';
+  }
+  if(hasSoftReorder){
+    if(theme==='general') return '抱えているものの順番がほどけるほど、運の受け取り方は安定します。';
+    return '負担の置き場所がほどけるほど、判断の輪郭は静かに整います。';
+  }
+  if(hasDirectChoice) return '選ぶ力は、焦りが薄れて自分を雑に扱わない視点へ戻るほど強くなります。';
   if(hasConfirm){
     if(theme==='love'||theme==='reconciliation') return '安心は、言葉のあとに行動が続くところに表れます。';
     if(theme==='work') return '頑張りが役割や評価として返る場所なら、まだ整う余地があります。';
@@ -17549,7 +17622,7 @@ function buildRashinNaturalTaskRewrite(sentence=''){
 }
 
 function rewriteRashinTaskSentences(text=''){
-  return String(text||'').replace(/[^。！？!?。\n]*(?:確認してください|ご確認ください|確認して下さい|確認する|確認できる|確認できない|確認したとき|確認した時|まだ確認していない|本気度確認|条件確認|判断条件|行動方針|書き出してください|書き出す|材料を集めてください|材料を集める|比較してください|比較する|メモしてください|メモする|整理してください|整理する|情報収集してください|情報収集する|条件を洗い出してください|条件を洗い出す|7日以内|30日以内|今週の一手|次の一手|進む条件|止まる条件|残る条件|動く条件|保留条件|関わる条件|距離を置く条件|してください|しましょう|ましょう)[^。！？!?\n]*(?:[。！？!?]|$)/g,match=>{
+  return String(text||'').replace(/[^。！？!?。\n]*(?:確認してください|ご確認ください|確認して下さい|確認する|確認できる|確認できない|確認したとき|確認した時|まだ確認していない|本気度確認|条件確認|判断条件|行動方針|書き出してください|書き出す|材料を集めてください|材料を集める|比較してください|比較する|メモしてください|メモする|整理してください|整理する|情報収集してください|情報収集する|条件を洗い出してください|条件を洗い出す|見てください|順番に見て|見直してください|見直すこと|見直すほど|予定に入れる|予定を守れるほど|休む予定を守れるほど|並べ直す|調べる、整理する|小さな行動に落とす|選んでください|戻してください|避けてください|しないでください|見落とさないでください|7日以内|30日以内|今週の一手|次の一手|進む条件|止まる条件|残る条件|動く条件|保留条件|関わる条件|距離を置く条件|してください|しましょう|ましょう)[^。！？!?\n]*(?:[。！？!?]|$)/g,match=>{
     const rewrite=buildRashinNaturalTaskRewrite(match);
     return rewrite||match;
   });
@@ -17956,6 +18029,7 @@ function detectRashinVisibleTextPolicyIssues(text='',label='text'){
   const rules=[
     {name:'確認系の作業語',pattern:/確認|確かめてください|確かめる|確かめて|本気度確認|条件確認|確認材料|確認ポイント|確認不足/},
     {name:'書く・集める・比較する作業語',pattern:/書き出してください|書き出す|材料を集めてください|材料を集める|比較してください|比較する|メモしてください|メモする|整理してください|整理する|情報収集してください|情報収集する|条件を洗い出してください|条件を洗い出す/},
+    {name:'柔らかい作業指示',pattern:RASHIN_SOFT_TASKLIKE_SURFACE_RE},
     {name:'命令調の作業指示',pattern:/してください|しましょう|ましょう/},
     {name:'期限つき作業指示',pattern:/7日以内|30日以内|今週の一手|次の一手/},
     {name:'機械的な条件表',pattern:/進む条件|止まる条件|残る条件|動く条件|保留条件|関わる条件|距離を置く条件|条件A|条件B|条件C|Aなら進む|Bなら止まる|Cなら保留|判断条件|行動方針/},
@@ -18070,9 +18144,16 @@ function detectTaskLikeReadingIssues(text='',label='text'){
   const source=String(text||'');
   const issues=[];
   if(!source.trim()) return issues;
-  const taskMatches=source.match(RASHIN_TASKLIKE_COUNT_RE)||[];
+  const taskMatches=[
+    ...(source.match(RASHIN_TASKLIKE_COUNT_RE)||[]),
+    ...(source.match(RASHIN_SOFT_TASKLIKE_COUNT_RE)||[]),
+  ];
   const hasTaskLike=RASHIN_TASKLIKE_SURFACE_RE.test(source);
+  const hasSoftTaskLike=RASHIN_SOFT_TASKLIKE_SURFACE_RE.test(source);
   const hasDivinationSignal=RASHIN_DIVINATION_SIGNAL_RE.test(source);
+  if(hasSoftTaskLike){
+    issues.push(`${label}に占いではなく作業へ寄る柔らかい指示語が残っています`);
+  }
   if(hasTaskLike&&!hasDivinationSignal){
     issues.push(`${label}が占い読みではなく作業指示・業務メモに寄っています`);
   }
@@ -18419,7 +18500,7 @@ function ensureIntegrationHeadingItems(output='',heading='',focus={},cat='総合
 function ensureIntegrationPushLine(output='',focus={},cat='総合',theme=''){
   output=normalizeIntegrationActionGuideHeading(output);
   if(isGeneralLuckFocus(focus,{cat,theme})){
-    return replaceHeadingBody(output,INTEGRATION_ACTION_GUIDE_HEADING,'羅針は、全部を同時に片づけることではなく、先に自分の回復を予定に入れることです。生活、健康、仕事、人間関係、将来の順に見直すほど、次の一年の流れは安定します。');
+    return replaceHeadingBody(output,INTEGRATION_ACTION_GUIDE_HEADING,'羅針は、全部を同時に片づけることではなく、回復の余白が最初に戻る流れです。生活リズムと健康が整うほど、仕事、人間関係、将来の準備の優先順位は自然に浮かび上がります。');
   }
   const body=extractHeadingBody(output,INTEGRATION_ACTION_GUIDE_HEADING);
   const existing=String(body||'').split(/(?<=。)/).map(item=>stripIntegrationListMarker(item).trim()).find(Boolean);
@@ -18433,7 +18514,7 @@ function ensureIntegrationPushLine(output='',focus={},cat='総合',theme=''){
 function buildIntegrationFlowNarrative(focus={},cat='総合',theme='',context={}){
   const ctx=buildDecisionContext(focus,{cat,theme,...context});
   if(ctx.primaryTheme==='general'||isGeneralLuckFocus(focus,{cat,theme,...context})){
-    return '今は、毎日の整い方が運の受け取り方を左右しています。朝のリズムが戻り、休む予定を守れるほど、仕事の負荷も人との距離も選び直しやすくなります。将来の準備は、その余白が戻ってから小さく進みます。';
+    return '今は、毎日の整い方が運の受け取り方を左右しています。朝のリズムと休息の余白が戻るほど、仕事の負荷も人との距離も軽くなります。将来の準備は、その余白が戻ってから静かに形を持ち始めます。';
   }
   const cardFlow=buildCardGroundedFlowText(ctx,buildCardReadingFlags(focus,context));
   if(cardFlow) return cardFlow;
@@ -18529,7 +18610,7 @@ function ensureIntegrationSlots(text='',name='あなた',cat='総合',theme='',c
   output=removeLegacyIntegrationSections(output);
   const ctx=buildDecisionContext(focus,{...context,cat,theme});
   const required=getRequiredIntegrationHeadings(focus);
-  const hasForbiddenSurface=/7日以内|30日以内|今週の一手|次の一手|進む条件|止まる条件|残る条件|動く条件|保留条件|関わる条件|距離を置く条件|確認してください|書き出してください|比較してください|材料を集め/.test(output);
+  const hasForbiddenSurface=/7日以内|30日以内|今週の一手|次の一手|進む条件|止まる条件|残る条件|動く条件|保留条件|関わる条件|距離を置く条件|確認してください|書き出してください|比較してください|材料を集め|見てください|予定に入れる|予定を守|見直すほど|並べ直す|調べる、整理する|小さな行動に落とす/.test(output);
   const hasRequired=required.every(heading=>hasIntegrationHeading(output,heading));
   if(!hasRequired||hasForbiddenSurface){
     output=fallback;
@@ -19217,7 +19298,7 @@ function validateIntegrationSatisfaction(text='',context={}){
     issues.push(`integrationに${INTEGRATION_CLOSING_HEADING}が残っています`);
   }
   if(!/今回の答え|答え/.test(source)) issues.push('integrationが相談者の質問に直接答えていません');
-  if(/確認してください|書き出してください|比較してください|材料を集めてください|7日以内|30日以内|今週の一手|次の一手|進む条件|止まる条件|残る条件|動く条件|保留条件/.test(source)){
+  if(/確認してください|書き出してください|比較してください|材料を集めてください|見てください|予定に入れる|予定を守|見直すほど|並べ直す|調べる、整理する|小さな行動に落とす|7日以内|30日以内|今週の一手|次の一手|進む条件|止まる条件|残る条件|動く条件|保留条件/.test(source)){
     issues.push('integrationに作業指示または機械的な条件表が残っています');
   }
   issues.push(...detectTaskLikeReadingIssues(source,'integration'));
@@ -19282,7 +19363,7 @@ function validatePaidReadingQuality(parsed={},context={}){
   issues.push(...detectCardExplanationSmellIssues(joined).map(issue=>`有料鑑定全体: ${issue}`));
   issues.push(...detectAwkwardRashinJapaneseIssues(joined).map(issue=>`有料鑑定全体: ${issue}`));
   issues.push(...detectRepeatedRashinPhraseIssues(joined).map(issue=>`有料鑑定全体: ${issue}`));
-  if(/7日以内|30日以内|今週の一手|次の一手|進む条件|止まる条件|残る条件|動く条件|保留条件/.test(parsed.integration||'')){
+  if(/7日以内|30日以内|今週の一手|次の一手|進む条件|止まる条件|残る条件|動く条件|保留条件|見てください|予定に入れる|予定を守|見直すほど|並べ直す|調べる、整理する|小さな行動に落とす/.test(parsed.integration||'')){
     issues.push('integrationに旧式の作業指示または条件表が残っています');
   }
   ['len','orc','integration'].forEach(key=>{
@@ -19769,13 +19850,13 @@ function buildLocalPaidLenormandRepair(name='あなた',cat='総合',theme='',co
 ${displayName}さんの迷いは、何か一つの事件が起きているからではなく、生活リズム、健康、仕事、人間関係、将来の準備が同時に少しずつ重くなっているところから来ています。大きく崩れていないからこそ、どこから手をつければよいかが見えにくく、気力が戻らないまま日々を回している状態です。仕事では信用を守ろうとし、人間関係では波風を立てないようにし、健康面では休むべきサインを後回しにしやすい流れがあります。今の停滞は怠けではなく、複数の負担を同じ力で抱え続けたことで、判断の優先順位が曇っているサインです。ここで必要なのは、一気に人生を変えることではなく、先に守るものを決めて運気の土台を戻すことです。
 
 ■ 今の流れ
-今は外側の出来事よりも、毎日の整い方が運の受け取り方を左右しています。表面上は仕事も人間関係も保てていますが、朝の動き出し、睡眠の質、食事や休息の取り方が乱れるほど、将来の準備へ向かう力が削られやすくなります。周囲から頼られる場面が増える一方で、自分の回復を予定に入れないままだと、よい話が来ても受け取る余白が残りません。局面を変える鍵は、大きな決断ではなく、生活の順番を取り戻すことです。まず気力と体力の回復が戻り、次に仕事の負荷を見直し、そのあと人との距離と将来準備が整っていきます。焦って全部を直そうとすると、どれも中途半端になりやすい時期です。
+今は外側の出来事よりも、毎日の整い方が運の受け取り方を左右しています。表面上は仕事も人間関係も保てていますが、朝の動き出し、睡眠の質、食事や休息の余白が乱れるほど、将来の準備へ向かう力が削られやすくなります。周囲から頼られる場面が増える一方で、回復の余白が薄いままだと、よい話が来ても受け取る力が残りません。局面を変える鍵は、大きな決断ではなく、生活の順番が戻ることです。気力と体力の回復が戻り、仕事の負荷が軽くなり、人との距離と将来準備が自然に整っていく流れです。焦って全部を直そうとするほど、どれも中途半端になりやすい時期です。
 
 ■ 気をつけること
 一番気をつけたいのは、問題が表に出ていないことを「まだ大丈夫」と扱い続けることです。疲れが強いままでも予定を詰められてしまう人ほど、自分の限界を後回しにして、あとから急に動けなくなります。総合運では、仕事の成果だけでなく、健康の余白、人間関係の距離、将来に向けた小さな準備が同じくらい大事です。周囲の期待に応えることばかりを優先すると、${displayName}さん自身が何を望んでいるのかが見えにくくなります。今は新しいことを増やすより、抱える量を減らし、休む余白と人との距離を取り戻すほうが運の流れは安定します。
 
 ■ あなたの引力
-${displayName}さんには、周囲の状況を見ながら現実的に立て直す力があります。その力は、気合で押し切ると弱まり、順番を決めると戻ります。総合運の羅針は、生活リズムを先に整え、健康の余白を確保し、仕事と人間関係の負荷を見直したうえで、将来の準備を小さく始めることです。完璧に整ってから動く必要はありません。朝のリズムが少し戻る、休む予定を守れる、近い人への反応を急がずに済む、その小さな変化が次の一年の土台になります。${displayName}さんが自分の回復を予定の中心に置くほど、仕事も人間関係も無理なく選び直せます。`);
+${displayName}さんには、周囲の状況を見ながら現実的に立て直す力があります。その力は、気合で押し切ると弱まり、運気の順番が戻るほど強くなります。総合運の羅針は、生活リズム、健康の余白、仕事と人間関係の負荷、将来の準備が同じ場所で絡まらないことです。完璧に整ってから動く必要はありません。朝のリズムが少し戻り、休息の余白が戻り、近い人への反応を急がずに済むほど、その小さな変化が次の一年の土台になります。${displayName}さんの回復が流れの中心に戻るほど、仕事も人間関係も無理なく選び直せます。`);
   }
   if(loveSpecific){
     return sanitizeRashinVisibleText(`■ 迷いの構造
@@ -19795,13 +19876,13 @@ ${displayName}さんには、関係を壊さずに大事な話を現実へ下ろ
 ${displayName}さんの迷いは、今の会社に残るか、転職活動へ動くか、副業を小さく試すかという二択だけではありません。今の会社には安定と積み上げた信用がありますが、評価や収入が思う形で返らず、責任だけが先に重くなっています。外の候補には可能性がありますが、給与、勤務時間、担当範囲、生活リズムがまだ十分に見えていません。止まっている理由は決断力の弱さではなく、努力の見返りと疲れを増やさない働き方を同時に見ようとしているからです。
 
 ■ 今の流れ
-今は、今の場所を守る力と外の選択肢を確かめる力が同時に動いています。会社側から頼られる場面は増えていますが、それが経験・収入・成長として残るかは、まだ言葉だけでは判断できません。ここで大事なのは、上司の期待を信じるか疑うかではなく、評価条件、担当範囲、裁量、昇給の時期を具体的に出したとき、自分で納得できる現実の返答が返ってくるかを見ることです。返答が具体化するなら残る意味はあります。話が流れるなら、転職活動で外の基準を見に行くほど判断が締まります。
+今は、今の場所を守る力と外の選択肢へ向かう力が同時に動いています。会社側から頼られる場面は増えていますが、それが経験・収入・成長として残るかは、まだ言葉だけでは判断できません。ここで大事なのは、上司の期待を信じるか疑うかではなく、評価条件、担当範囲、裁量、昇給の時期が現実の返答として返ってくるかです。返答が具体化するなら残る意味はあります。話が流れるなら、外の基準が見えるほど判断が締まります。
 
 ■ 気をつけること
 一番気をつけたいのは、疲れが抜けない状態を成長の証拠として扱ってしまうことです。責任が増えても収入や裁量が動かないままだと、頑張るほど自分の時間だけが削られます。外の候補も、仕事内容への魅力だけで選ぶと生活リズムの負担が後から前に出ます。最初に見るべきなのは、今の会社で努力が返る条件が実際にあるか、外の候補で自分の経験がどう評価されるか、そして自分で納得できる材料がそろうかです。
 
 ■ あなたの引力
-${displayName}さんには、理想をただ語るだけで終わらせず、仕事として形にする力があります。その力は、我慢の長さではなく、選ぶ基準をはっきりさせたときに強く出ます。残るなら評価と役割が現実に変わること、動くなら給与と生活リズムが自分で納得できる形になること。そこが分かれ目です。疲れを増やす選び方ではなく、力を出したあとに納得が残る場所を選んでください。`);
+${displayName}さんには、理想をただ語るだけで終わらせず、仕事として形にする力があります。その力は、我慢の長さではなく、選ぶ基準がはっきりしたときに強く出ます。残るなら評価と役割が現実に変わること、動くなら給与と生活リズムが自分で納得できる形になること。そこが分かれ目です。疲れを増やす選び方ではなく、力を出したあとに納得が残る場所ほど、仕事の羅針は安定します。`);
   }
   return sanitizeRashinVisibleText(`■ 迷いの構造
 ${displayName}さんの迷いは、気持ちだけでは決められない現実の違和感が残っているところから来ています。今の状況には支えになる要素もありますが、それがこの先も続く根拠として十分かどうかはまだ見えきっていません。ここで急いで白黒をつけるより、何が自分を安心させ、何が判断を鈍らせているのかを分けることが大事です。
@@ -19828,14 +19909,14 @@ function buildLocalPaidOracleRepair(name='あなた',cat='総合',theme='',conte
 ${displayName}さんの強さは、乱れているものを見ないふりせず、現実の順番へ戻そうとするところです。いま気力が続きにくいのは、意志が弱いからではありません。仕事、人間関係、健康、将来の準備を同時に抱え、どれも雑にしたくない気持ちがあるからです。ただ、そのまま全部を同じ重さで持つと、体と心の回復が後回しになり、よい流れが来ても受け取る余白が薄くなります。自分を大事にするとは、大きなご褒美を用意することではなく、朝の始まり、睡眠、食事、休む予定を軽く扱わないことです。そこが整うほど、判断の声は静かに戻ってきます。
 
 ■ ${ORACLE_COMPASS_HEADING}
-迷ったときの羅針は、何を増やすかより、何を先に守るかです。今の${displayName}さんは、生活リズムと健康の余白を最初に守るほど、仕事の負荷も人間関係の距離も見えやすくなります。将来の準備は、一気に形にしなくて大丈夫です。まず週に一つだけ、調べる、整理する、余白を作るという小さな行動に落とすことです。周囲に合わせすぎて疲れる場面では、すぐ答えを返さず、一呼吸置いてから選んでください。自分の回復を予定に入れることが、次の一年の運を受け取る入口になります。`);
+迷ったときの羅針は、何を増やすかより、何が先に守られるべきかです。今の${displayName}さんは、生活リズムと健康の余白が戻るほど、仕事の負荷も人間関係の距離も見えやすくなります。将来の準備は、一気に形にしなくて大丈夫です。周囲に合わせすぎて疲れる場面ほど、反応を急がない余白が運の受け取り口になります。自分の回復が先に戻る流れが、次の一年を安定させる入口です。`);
   }
   if(loveSpecific){
     return sanitizeRashinVisibleText(`■ 光のメッセージ
 ${displayName}さんの強さは、相手に合わせながらも、心の奥ではちゃんと現実を見ようとしているところです。優しさを大事にできる人ほど、相手を責めたくなくて自分の不安を後回しにしやすくなります。でも今回の不安は、わがままではありません。結婚は気持ちだけでなく、生活リズム、お金、将来の話を二人で持てるかが関わります。そこに違和感があるなら、心が弱いのではなく、先の自分を守ろうとしている反応です。今の${displayName}さんに必要なのは、好きな気持ちを疑うことではなく、その好きが安心して続く形を持てるかを見てあげることです。
 
 ■ ${ORACLE_COMPASS_HEADING}
-迷ったときの羅針は、相手の言葉の甘さではなく、話しにくい現実を出したあとの空気にあります。結婚の時期、生活の分担、お金の使い方を出したとき、相手が黙るのか、逃げるのか、少しでも一緒に考えようとするのか。そこに本当の判断材料があります。${displayName}さんが自分を雑に扱わないためには、安心したいから信じるのではなく、信じられる行動が少しずつ積み上がるかを見ることです。待つことも伝えることも間違いではありません。ただ、待つほど自分が小さくなるなら、その待ち方は見直していいです。`);
+迷ったときの羅針は、相手の言葉の甘さではなく、話しにくい現実を出したあとの空気にあります。結婚の時期、生活の分担、お金の使い方が話題に出たとき、相手が黙るのか、逃げるのか、少しでも一緒に考えようとするのか。そこに本当の判断材料があります。${displayName}さんが自分を雑に扱わないためには、安心したいから信じるのではなく、信じられる行動が少しずつ積み上がる流れに身を置くことです。待つことも伝えることも間違いではありません。ただ、待つほど自分が小さくなるなら、その待ち方はもう羅針から外れています。`);
   }
   if(workSpecific){
     const axis=normalizeWorkPaidAxisText(ctx.criteriaText||'収入・評価・役割・裁量');
@@ -19870,10 +19951,10 @@ function buildLocalPaidIntegrationRepair(name='あなた',cat='総合',theme='',
 迷いの正体は、大きく崩れていない現状を守りたい気持ちと、このまま気力を削り続ける不安が同時にあることです。休むことを後回しにする癖が、判断の輪郭を曇らせています。
 
 ■ ${INTEGRATION_FLOW_HEADING}
-今は、毎日の整い方が運の受け取り方を左右しています。朝のリズムが戻り、休む予定を守れるほど、仕事の負荷も人との距離も選び直しやすくなります。将来の準備は、その余白が戻ってから小さく進みます。
+今は、毎日の整い方が運の受け取り方を左右しています。朝のリズムと休息の余白が戻るほど、仕事の負荷も人との距離も軽くなります。将来の準備は、その余白が戻ってから静かに形を持ち始めます。
 
 ■ ${INTEGRATION_ACTION_GUIDE_HEADING}
-羅針は、全部を同時に片づけることではなく、先に自分の回復を予定に入れることです。生活、健康、仕事、人間関係、将来の順に見直すほど、次の一年の流れは安定します。`);
+羅針は、全部を同時に片づけることではなく、回復の余白が最初に戻る流れです。生活リズムと健康が整うほど、仕事、人間関係、将来の準備の優先順位は自然に浮かび上がります。`);
   }
   if(loveSpecific){
     return sanitizeRashinVisibleText(`■ ${INTEGRATION_FINAL_HEADING}
@@ -19886,7 +19967,7 @@ function buildLocalPaidIntegrationRepair(name='あなた',cat='総合',theme='',
 ${cardFlow||'今の関係は、普段の優しさで保たれていますが、将来の話になると現実の輪郭がぼやけやすい流れです。'}相手が小さくても具体的な行動を返すなら安心は育ちますが、話題を流すだけなら不安は残ります。
 
 ■ ${INTEGRATION_ACTION_GUIDE_HEADING}
-羅針は、好きかどうかではなく、話しにくい生活の話を二人で持てるかです。自分の不安を責めず、言葉のあとに行動が残るかを見てください。`);
+羅針は、好きかどうかではなく、話しにくい生活の話を二人で持てるかです。不安を責めないほど、言葉のあとに行動が残る関係かどうかが静かに見えてきます。`);
   }
   if(workSpecific){
     const axis=normalizeWorkPaidAxisText(ctx.criteriaText||'収入・評価・役割・裁量');
@@ -22232,9 +22313,9 @@ function getRashinYearCalendarPopupHtml(contentHtml=''){
   .calendar-popup-head{display:flex;justify-content:space-between;align-items:center;gap:12px;}
   .calendar-popup-title{font-size:22px;font-weight:800;color:#f0c95e;}
   .calendar-popup-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;}
+  .calendar-popup-btn{border:1px solid rgba(240,201,94,.74);border-radius:999px;background:rgba(4,13,30,.92);color:#fff8dc;padding:10px 14px;text-decoration:none;font-weight:800;cursor:pointer;}
   .calendar-popup-benefit{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid rgba(240,201,94,.42);background:rgba(4,13,30,.82);padding:14px 16px;line-height:1.7;}
   .calendar-popup-benefit strong{display:block;color:#f0c95e;margin-bottom:2px;}
-  .calendar-popup-btn{border:1px solid rgba(240,201,94,.74);border-radius:999px;background:rgba(4,13,30,.92);color:#fff8dc;padding:10px 14px;text-decoration:none;font-weight:800;cursor:pointer;}
   .calendar-popup-img{width:100%;height:auto;border:1px solid rgba(240,201,94,.52);box-shadow:0 18px 60px rgba(0,0,0,.45);}
   .calendar-popup-loading{min-height:360px;display:grid;place-items:center;border:1px solid rgba(240,201,94,.34);background:rgba(4,13,30,.88);text-align:center;padding:28px;line-height:1.8;}
   @media (max-width:640px){body{padding:12px}.calendar-popup-head,.calendar-popup-benefit{align-items:flex-start;flex-direction:column}.calendar-popup-actions{justify-content:flex-start}}
@@ -22270,6 +22351,7 @@ async function openRashinYearCalendar(source='top_entry'){
     const blob=await createRashinYearCalendarImageBlob(sourceData);
     if(!blob) throw new Error('calendar_blob_empty');
     const url=URL.createObjectURL(blob);
+    const filename='rashin-calendar-2026.png';
     const benefitResult=await completeRashinYearCalendarBenefit(source);
     const benefitReady=!!benefitResult?.crossBenefit?.freePaidReadingBenefit?.available;
     const benefitHtml=benefitReady?`
@@ -22277,10 +22359,9 @@ async function openRashinYearCalendar(source='top_entry'){
           <div><strong>羅針カレンダー特典を受け取りました</strong>このまま深掘り鑑定を1回、追加料金なしで始められます。</div>
           <button class="calendar-popup-btn" type="button" onclick="window.opener?.startRashinPaidReadingFromCalendarBenefit?.('calendar_popup')">無料特典で深掘り鑑定へ</button>
         </div>`:'';
-    const filename='rashin-calendar-2026.png';
     if(!popup){
-      if(benefitReady) showToast('羅針カレンダー特典で深掘り鑑定1回分を使えます');
       downloadBlobFile(blob,filename);
+      if(benefitReady) showToast('羅針カレンダー特典で深掘り鑑定1回分を使えます');
       return;
     }
     popup.document.open();
@@ -22292,8 +22373,8 @@ async function openRashinYearCalendar(source='top_entry'){
             <a class="calendar-popup-btn" href="${url}" download="${filename}">PNG保存</a>
             <button class="calendar-popup-btn" type="button" onclick="window.close()">閉じる</button>
           </div>
-        ${benefitHtml}
         </div>
+        ${benefitHtml}
         <img class="calendar-popup-img" alt="${RASHIN_YEAR_CALENDAR_LABEL}" src="${url}">
       </div>`));
     popup.document.close();
@@ -23445,45 +23526,45 @@ function buildRichLenFallback(name,cat){
     const pairHasChoice=hasLenGroup(ids,'choice');
     const flowByTheme=()=>{
       if(ctx.primaryTheme==='money'){
-        if(pairHasValue) return '2枚から見ると、今は金運の良し悪しより、お金が入ったあと手元に安心として残るかが焦点です。増やす話と使う話を同じ勢いで進めると、流れの輪郭がぼやけやすくなります。';
-        if(pairHasBurden||pairHasEnding) return '2枚から見ると、今は収入を増やす前に、支出や消耗の流れを止めることが焦点です。大きく悪い流れというより、少しずつ減るものを放置しないほうが整いやすい状態です。';
-        return '2枚から見ると、今はお金の入り口より、出入りの流れをどう整えるかが焦点です。焦って増やす判断より、残る安心と減りやすい部分を分けて見るほど現実的に動きやすくなります。';
+        if(pairHasValue) return '今の流れは、金運の良し悪しより、お金が入ったあと手元に安心として残るかが焦点です。増やす話と使う話を同じ勢いで進めると、流れの輪郭がぼやけやすくなります。';
+        if(pairHasBurden||pairHasEnding) return '今の流れは、収入を増やす前に、支出や消耗の流れを静かに止めることが焦点です。大きく悪い流れというより、少しずつ減るものを軽く扱わないほうが整いやすい状態です。';
+        return '今の流れは、お金の入り口より、出入りの流れがどう落ち着くかに焦点があります。焦って増やす判断より、残る安心と減りやすい部分が分かれるほど現実的に動きやすくなります。';
       }
       if(ctx.primaryTheme==='career'||ctx.primaryTheme==='work_life_direction'){
-        if(pairHasChoice) return `2枚から見ると、今は${ctx.criteriaText}が残る働き方かどうかを一点で見る場面です。続けるか変えるかを急ぐより、評価や役割として返っているものを確認するほど判断が整います。`;
-        if(pairHasBurden) return '2枚から見ると、今は努力不足ではなく、負担や停滞が判断を重くしている流れです。職場や案件の全体像を決めつけるより、どこで消耗が増えているかを見る段階です。';
-        return '2枚から見ると、今は仕事や進路の全体結論より、目の前の案件や役割が次につながるかを一点で見る場面です。焦って広げるほど、見るべき判断材料が散りやすくなります。';
+        if(pairHasChoice) return `今の流れは、${ctx.criteriaText}が残る働き方かどうかに焦点があります。続けるか変えるかを急ぐより、評価や役割として返っているものが見えるほど判断は整います。`;
+        if(pairHasBurden) return '今の流れは、努力不足ではなく、負担や停滞が判断を重くしている状態です。職場や案件の全体像を決めつけるより、消耗が強まる場所の輪郭が出るほど判断は落ち着きます。';
+        return '今の流れは、仕事や進路の全体結論より、目の前の案件や役割が次につながるかに焦点があります。焦って広げるほど、判断の材料が散りやすくなります。';
       }
       if(ctx.primaryTheme==='love'){
         return isReconciliationContext(ctx)
-          ?'2枚から見ると、今は復縁できるかの断定より、もう一度信頼を作れる流れがあるかを一点で見る段階です。懐かしさだけではなく、言葉のあとに安心できる動きが続くかが焦点です。'
-          :'2枚から見ると、今は相手の本音を決めつけるより、言葉と行動の手応えがそろうかを一点で見る段階です。距離感を詰める前に、安心できる反応が続くかが焦点になります。';
+          ?'今の流れは、復縁できるかの断定より、もう一度信頼を作れる余地があるかに焦点があります。懐かしさだけではなく、言葉のあとに安心できる動きが続くかが大事になります。'
+          :'今の流れは、相手の本音を決めつけるより、言葉と行動の手応えがそろうかに焦点があります。距離感を詰める前に、安心できる反応が続くかが大事になります。';
       }
       if(ctx.primaryTheme==='relationship'){
-        return '2枚から見ると、今は相手を変えようとするより、関わるほど消耗する接点と協力できる余地を分けて見る段階です。距離の取り方が整うほど、判断もしやすくなります。';
+        return '今の流れは、相手を変えようとするより、関わるほど消耗する接点と協力できる余地が分かれ始めています。距離の取り方が整うほど、判断もしやすくなります。';
       }
       if(generalLuck){
-        return '2枚から見ると、今は仕事、人間関係、生活リズムを同じ気力で抱え続け、回復の順番が見えにくくなっている流れです。大きく崩れていないからこそ、健康と将来の準備を後回しにしないことが焦点になります。';
+        return '今の流れは、仕事、人間関係、生活リズムを同じ気力で抱え続け、回復の順番が見えにくくなっている状態です。大きく崩れていないからこそ、健康と将来の準備を後回しにしないことが焦点になります。';
       }
-      return '2枚から見ると、今は全体を深く掘るより、いちばん目立つ流れと見落としやすい一点を確認する段階です。答えを広げすぎず、今の現実で何が強く出ているかを見るほど整います。';
+      return '今の流れは、全体を深く掘るより、いちばん目立つ流れと見落としやすい一点が前に出ています。答えを広げすぎないほど、今の現実で強く出ているものが整って見えてきます。';
     };
     const warningByTheme=()=>{
       if(generalLuck) return '注意したいのは、問題が表に出ていないことを理由に、休息や生活リズムの乱れを軽く扱うことです。仕事や人間関係で反応を拾いすぎるほど、健康のサインが後回しになりやすくなります。';
       if(pairHasPredatorPair) return '注意したいのは、消耗や損失を別の要素が強めやすい点です。誰かや状況に合わせるほど減るものがあるなら、そこを軽く扱わないほうが安全です。';
       if(pairHasBurden) return ctx.primaryTheme==='money'
-        ?'注意したいのは、小さな出費や負担を気合いで流してしまうことです。金額の大きさだけでなく、続くほど手元の安心を削る流れを見落とさないでください。'
+        ?'注意したいのは、小さな出費や負担を気合いで流してしまうことです。金額の大きさよりも、続くほど手元の安心を削る流れが前に出ています。'
         :'注意したいのは、負担を慣れとして扱い続けることです。大きな問題に見えなくても、続くほど判断が重くなる一点は早めに言葉にしておく必要があります。';
       if(pairHasHidden) return '注意したいのは、見えていない部分を都合よく補って判断してしまうことです。まだ確認できていないものを、期待や不安だけで埋めないほうが流れを読み違えません。';
       if(pairHasEnding) return '注意したいのは、区切りの流れを怖がって先送りすることです。終わりを急ぐ必要はありませんが、変化の兆しを見ないふりすると選ぶ余地が狭くなります。';
       return '注意したいのは、答えを急いで2枚以上の意味を背負わせることです。今は深い原因まで断定するより、目の前で繰り返している一点を見たほうが判断しやすくなります。';
     };
     const compassByTheme=()=>{
-      if(generalLuck) return '羅針の指針は、将来の準備を急ぐ前に、気力が戻る生活リズムを先に整えることです。仕事、人間関係、健康を並べて見たとき、いちばん回復が遅れている場所が次の優先順位になります。';
-      if(pairHasSupport) return '羅針の指針は、小さな好転を拾える場所を見ることです。悪い流れを探すだけでなく、支えや見通しがどこに残っているかを確認してください。';
-      if(pairHasStability) return '羅針の指針は、安定と停滞を分けて見ることです。安心できる土台なのか、動けなさを固定しているだけなのかを分けると判断が整います。';
-      if(pairHasChoice) return '羅針の指針は、選択肢を増やす前に判断基準を一つに絞ることです。どちらが正しいかより、何を守るために選ぶのかを見てください。';
-      if(pairHasRelationship) return '羅針の指針は、相手や場に合わせる前に、自分が削られない関わり方を確認することです。距離を整えるほど、流れも読みやすくなります。';
-      return '羅針の指針は、今見えている事実と気持ちの反応を分けることです。深く掘る前に、まず一番強く出ている現実を静かに確認してください。';
+      if(generalLuck) return '羅針の指針は、将来の準備を急ぐ前に、気力が戻る生活リズムを先に整えることです。仕事、人間関係、健康の中で回復が遅れている場所ほど、次の優先順位として浮かび上がります。';
+      if(pairHasSupport) return '羅針の指針は、小さな好転を拾える場所にあります。悪い流れだけでなく、支えや見通しが残る場所ほど、判断の入口になります。';
+      if(pairHasStability) return '羅針の指針は、安定と停滞の差にあります。安心できる土台なのか、動けなさを固定しているだけなのかが分かれるほど判断は整います。';
+      if(pairHasChoice) return '羅針の指針は、選択肢を増やすことより、守りたい軸が一つに絞られる流れです。正しさよりも、何を守るための選択かが中心になります。';
+      if(pairHasRelationship) return '羅針の指針は、相手や場に合わせる前に、自分が削られない関わり方へ戻ることです。距離が整うほど、流れも読みやすくなります。';
+      return '羅針の指針は、今見えている事実と気持ちの反応が分かれる場所にあります。深く掘る前に、一番強く出ている現実が判断の中心になります。';
     };
     return[
       `■ 2枚で見えること\n${flowByTheme()}`,
@@ -23509,10 +23590,12 @@ function buildRichLenFallback(name,cat){
   }else{
     structureLines.push('今回の迷いは、選択肢そのものより、何を見れば納得して選べるかがまだ定まっていないところから来ています。');
   }
-  structureLines.push(cardSignal(coreId)||getLenCoreFocusText(coreId));
+  const coreSignal=cardSignal(coreId)||getLenCoreFocusText(coreId);
+  structureLines.push(coreSignal);
 
   const flowLines=[];
-  flowLines.push(cardSignal(currentId)||getLenCoreFocusText(currentId));
+  const currentSignal=cardSignal(currentId)||getLenCoreFocusText(currentId);
+  flowLines.push(currentId===coreId&&currentSignal===coreSignal?getLenFallbackFlowTextForContext(ctx):currentSignal);
   if(hasHidden||currentHidden){
     flowLines.push(isReconciliationContext(ctx)
       ?'今の流れには、まだ聞けていない本音や、過去の別れの原因に触れないまま残っている曖昧さがあります。ここを飛ばすと、懐かしさで戻ったつもりでも同じ不安が残りやすいです。'
@@ -23546,7 +23629,7 @@ function buildRichLenFallback(name,cat){
     warningLines.push('気持ちが整うまで待ち続けるほど、現実の変化や小さな違和感を見落としやすくなります。判断の根拠が増えないまま考え続けると、同じ迷いに戻りやすくなります。');
   }
   if(hasPredatorPair){
-    warningLines.push('消耗や損失を示す組み合わせもあるため、相手や環境に合わせすぎる選び方は避けてください。守るべきものを決めるほど、余計な負担を減らせます。');
+    warningLines.push('消耗や損失を示す組み合わせもあるため、相手や環境に合わせすぎる選び方は重くなります。守るべきものが見えるほど、余計な負担は減らせます。');
   }
   if(futureEnding||hasEnding){
     warningLines.push('区切りにつながる流れもあるため、先送りを続けると自分で選ぶ前に状況側の変化に押されやすくなります。');
@@ -23623,7 +23706,7 @@ function buildRichOrcFallback(name,cat,is3){
 ${name}さんは、仕事、人間関係、健康、将来の準備を同じ重さで抱えながら、何とか崩れずに進もうとしてきたはずです。いま気力が続きにくいのは、答えがないからではなく、生活リズムと休息が後回しになり、判断の土台が薄くなっているからです。場の反応から力を得やすい分、空気が冷える場面では疲れも早く出ます。
 
 ■ ${ORACLE_COMPASS_HEADING}
-羅針盤が示すのは、何を増やすかより、何を先に守るかです。まず生活リズムと健康の余白を戻し、そのうえで仕事の負荷、人間関係の距離、将来の準備を順番に見てください。全部を同時に整えようとしないほど、次の一年の優先順位は自然に見えてきます。`);
+羅針盤が示すのは、何を増やすかより、何が先に守られるべきかです。生活リズムと健康の余白が戻るほど、仕事の負荷、人間関係の距離、将来の準備の優先順位は自然に浮かび上がります。全部を同時に整えようとしないほど、次の一年の流れは静かに安定していきます。`);
   }
   const summarizeOracleHint=(msg,mode='present')=>{
     const text=String(msg||'').trim();
@@ -23635,7 +23718,7 @@ ${name}さんは、仕事、人間関係、健康、将来の準備を同じ重�
     }
     if(/バランス|調整|全体/.test(text)){
       if(mode==='reflective') return 'これまでのあなたは、その場を荒立てず全体が回るように気を配ってきたはずです。';
-      if(mode==='present') return '今は白黒を急ぐより、ぶつかっている条件を並べ直すことが大切です。';
+      if(mode==='present') return '今は白黒を急ぐより、ぶつかっているものの重さが自然に分かれていくことが大切です。';
       return '対立を減らし、無理のない形に整えるほど状況は静かに好転します。';
     }
     if(/基盤|土台|積み重ね|努力/.test(text)){
@@ -23650,7 +23733,7 @@ ${name}さんは、仕事、人間関係、健康、将来の準備を同じ重�
     }
     if(/変化|更新|生まれ変わ/.test(text)){
       if(mode==='reflective') return 'これまでのあなたは、節目ごとに自分を更新しながらここまで来ています。';
-      if(mode==='present') return '今は古いやり方のまま頑張るより、やり方そのものを見直すことが大切です。';
+      if(mode==='present') return '今は古いやり方のまま頑張るより、流れそのものが軽くなる方向へ目が向き始めています。';
       return '変化を怖がりすぎず、小さく更新していくほど流れは軽くなります。';
     }
     if(/流れ|乗りこな/.test(text)){
@@ -23696,7 +23779,7 @@ ${name}さんは、仕事、人間関係、健康、将来の準備を同じ重�
   lines.push('',`■ ${ORACLE_COMPASS_HEADING}`,'');
   if(focus.explicitUserPriority||isWorkLifeDirectionFocus(focus)){
     const secondary=buildSecondaryThemeSentence(ctx);
-    lines.push(`今の羅針盤は、今日すべてを決め切ることではありません。${ctx.criteriaText}が戻る場所かどうかを、自分を雑に扱わない視点で見直すことです。${secondary}`);
+    lines.push(`今の羅針盤は、今日すべてを決め切ることではありません。${ctx.criteriaText}が戻る場所かどうかが、自分を雑に扱わない視点の中心になります。${secondary}`);
   }else if(focus.isDualConcern){
     lines.push(`${ctx.dualThemeText}を同じ不安で抱えないことが最優先です。それぞれの問いを分けるだけで、いま何に心を削られているかが見えやすくなります。`);
   }else if(focus.hasLove){
@@ -23762,15 +23845,15 @@ function buildIntegratedFallback(name,cat,theme='',context={}){
 
   lines.push('',`■ ${INTEGRATION_FLOW_HEADING}`,'');
   if(isGeneralLuckFocus(focus,{cat,theme,...context})){
-    lines.push('今は、毎日の整い方が運の受け取り方を左右しています。朝のリズムが戻り、休む予定を守れるほど、仕事の負荷も人との距離も選び直しやすくなります。将来の準備は、その余白が戻ってから小さく進みます。');
+    lines.push('今は、毎日の整い方が運の受け取り方を左右しています。朝のリズムと休息の余白が戻るほど、仕事の負荷も人との距離も軽くなります。将来の準備は、その余白が戻ってから静かに形を持ち始めます。');
   }else{
     lines.push(`${hasSupport?'支えや好転の兆しはあります。':''}${hasEnding?'一方で、先送りが続くほど流れに押されやすい状態です。':''}${hasHidden?'まだ言葉になっていない本音が残っています。':''}`||'今は、焦って答えを出すより違和感の輪郭が戻るほど判断しやすい流れです。');
   }
   lines.push('',`■ ${INTEGRATION_ACTION_GUIDE_HEADING}`,'');
   if(isGeneralLuckFocus(focus,{cat,theme,...context})){
-    lines.push('羅針は、全部を同時に片づけることではなく、先に自分の回復を予定に入れることです。生活、健康、仕事、人間関係、将来の順に見直すほど、次の一年の流れは安定します。');
+    lines.push('羅針は、全部を同時に片づけることではなく、回復の余白が最初に戻る流れです。生活リズムと健康が整うほど、仕事、人間関係、将来の準備の優先順位は自然に浮かび上がります。');
   }else if(ctx.primaryTheme==='dual_concern'){
-    lines.push(`${ctx.dualThemeText}を一度に決めず、先に自分を削っている場所へ羅針を戻してください。`);
+    lines.push(`${ctx.dualThemeText}を一度に決めないほど、先に自分を削っている場所へ羅針が戻ります。`);
   }else{
     lines.push(actionPlan[0]||'違和感を無理に流さず、そこに残る判断軸を取り戻していい。');
   }
@@ -23914,8 +23997,8 @@ if(typeof window!=='undefined'){
   window.openFlowAnalysisModal=openFlowAnalysisModal;
   window.closeFlowAnalysisModal=closeFlowAnalysisModal;
   window.openRashinYearCalendar=openRashinYearCalendar;
-  window.startRashinPaidReadingFromCalendarBenefit=startRashinPaidReadingFromCalendarBenefit;
   window.requestRashinYearCalendarFromPaid=requestRashinYearCalendarFromPaid;
+  window.startRashinPaidReadingFromCalendarBenefit=startRashinPaidReadingFromCalendarBenefit;
   window.openResultChatDrawer=openResultChatDrawer;
   window.closeResultChatDrawer=closeResultChatDrawer;
   window.sendResultChatMessage=sendResultChatMessage;

@@ -27,6 +27,7 @@ function sliceFromMarker(source, startMarker, endMarker) {
   'function getFreeReadingQualityMinimum',
   'function detectFreeLenPairScopeIssues',
   'function buildEmergencyFreeLenPairFallback',
+  'function getLenFallbackFlowTextForContext',
   'function validateFreeReadingSectionQuality',
   'function buildFreeReadingQualityFallback',
   'function applyFreeReadingQualityGate',
@@ -212,7 +213,7 @@ const paidLocalRepair = sliceFromMarker(
   'const generalLuckSpecific=isGeneralLuckFocus',
   '生活リズム、健康、仕事、人間関係、将来の準備',
   '生活リズムと健康の余白を最初に戻す',
-  '何を増やすかより、何を先に守るか',
+  '何が先に守られるべきか',
 ].forEach(marker => {
   assert.ok(paidLocalRepair.includes(marker), `general luck paid local repair missing: ${marker}`);
 });
@@ -239,10 +240,26 @@ const integrationFlow = sliceFromMarker(
 );
 
 [
-  '先に自分の回復を予定に入れる',
+  '回復の余白が最初に戻る流れ',
   '毎日の整い方が運の受け取り方を左右しています',
 ].forEach(marker => {
   assert.ok(integrationFlow.includes(marker), `general luck integration repair missing: ${marker}`);
+});
+
+[
+  '先に自分の回復を予定に入れる',
+  '休む予定を守れるほど',
+  '順番に見てください',
+].forEach(marker => {
+  assert.strictEqual(integrationFlow.includes(marker), false, `general luck integration repair must not keep task-like phrase: ${marker}`);
+});
+
+[
+  'RASHIN_SOFT_TASKLIKE_SURFACE_RE',
+  '柔らかい作業指示',
+  '鑑定本文の切り抜き断片',
+].forEach(marker => {
+  assert.ok(appSource.includes(marker), `soft task/card fragment quality guard missing: ${marker}`);
 });
 
 [
@@ -350,6 +367,17 @@ const freeLenRunner = sliceFromMarker(
 assert.ok(
   (freeLenRunner.match(/buildEmergencyFreeLenPairFallback/g) || []).length >= 2,
   'free Lenormand runner must keep a non-empty fallback even when normalization or rich fallback fails'
+);
+
+const richLenFallback = sliceFromMarker(
+  appSource,
+  'function buildRichLenFallback',
+  'function buildOracleLifePathUserText'
+);
+
+assert.ok(
+  richLenFallback.includes('currentId===coreId&&currentSignal===coreSignal?getLenFallbackFlowTextForContext(ctx):currentSignal'),
+  'single-card rich Lenormand fallback must not repeat the core focus sentence as the current-flow body'
 );
 
 console.log('free-reading-quality-gate.test.js: ok');
