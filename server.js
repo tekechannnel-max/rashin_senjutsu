@@ -158,7 +158,7 @@ const GA_TRACKING_ID = isPlaceholderEnvValue(GA_TRACKING_ID_RAW) ? '' : GA_TRACK
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 const STRIPE_PRICE_ID_MONTHLY = process.env.STRIPE_PRICE_ID_MONTHLY || '';
-const STRIPE_PRICE_ID_DEEP_READING_780 = process.env.STRIPE_PRICE_ID_DEEP_READING_780 || '';
+const STRIPE_PRICE_ID_DEEP_READING_2000 = process.env.STRIPE_PRICE_ID_DEEP_READING_2000 || process.env.STRIPE_PRICE_ID_DEEP_READING_780 || '';
 const STRIPE_SUCCESS_PATH = process.env.STRIPE_SUCCESS_PATH || '/uranai-v5.html?stripe_success=1&session_id={CHECKOUT_SESSION_ID}';
 const STRIPE_CANCEL_PATH = process.env.STRIPE_CANCEL_PATH || '/uranai-v5.html?stripe_cancel=1';
 const STRIPE_PORTAL_RETURN_PATH = process.env.STRIPE_PORTAL_RETURN_PATH || '/uranai-v5.html';
@@ -231,7 +231,7 @@ const GOOGLE_CLIENT_CONFIGURED = isConfiguredGoogleClientId(GOOGLE_CLIENT_ID);
 const STRIPE_SECRET_CONFIGURED = isConfiguredStripeSecretKey(STRIPE_SECRET_KEY);
 const STRIPE_WEBHOOK_CONFIGURED = isConfiguredStripeWebhookSecret(STRIPE_WEBHOOK_SECRET);
 const STRIPE_PRICE_CONFIGURED = isConfiguredStripePriceId(STRIPE_PRICE_ID_MONTHLY);
-const STRIPE_DEEP_READING_PRICE_CONFIGURED = isConfiguredStripePriceId(STRIPE_PRICE_ID_DEEP_READING_780);
+const STRIPE_DEEP_READING_PRICE_CONFIGURED = isConfiguredStripePriceId(STRIPE_PRICE_ID_DEEP_READING_2000);
 const MEMBER_SESSION_PERSISTENT = isConfiguredAppSecret(process.env.MEMBER_SESSION_SECRET || '');
 const AUTH_SESSION_PERSISTENT = isConfiguredAppSecret(process.env.AUTH_SESSION_SECRET || process.env.MEMBER_SESSION_SECRET || '');
 const MAX_JSON_BYTES = 1024 * 1024;
@@ -281,9 +281,9 @@ const PAID_MODEL_AB_TEST_OPENAI_WEIGHT = Number.isFinite(PAID_MODEL_AB_TEST_OPEN
   ? Math.min(100, Math.max(0, PAID_MODEL_AB_TEST_OPENAI_WEIGHT_RAW))
   : 50;
 const PAID_MODELS = new Set([AI_MODELS.paid, AI_MODELS.history, AI_MODELS.paidFallback, AI_MODELS.paidAbOpenai]);
-const DEEP_READING_PRERELEASE_AMOUNT = Math.max(1, parseInt(process.env.DEEP_READING_PRERELEASE_AMOUNT || '780', 10) || 780);
-const DEEP_READING_RELEASE_AMOUNT = Math.max(1, parseInt(process.env.DEEP_READING_RELEASE_AMOUNT || '1000', 10) || 1000);
-const DEEP_READING_NORMAL_AMOUNT = Math.max(1, parseInt(process.env.DEEP_READING_ONCE_AMOUNT || String(DEEP_READING_PRERELEASE_AMOUNT), 10) || DEEP_READING_PRERELEASE_AMOUNT);
+const DEEP_READING_PRERELEASE_AMOUNT = Math.max(1, parseInt(process.env.DEEP_READING_PRERELEASE_AMOUNT || '2000', 10) || 2000);
+const DEEP_READING_RELEASE_AMOUNT = Math.max(1, parseInt(process.env.DEEP_READING_RELEASE_AMOUNT || '2000', 10) || 2000);
+const DEEP_READING_NORMAL_AMOUNT = Math.max(1, parseInt(process.env.DEEP_READING_ONCE_AMOUNT || String(DEEP_READING_RELEASE_AMOUNT), 10) || DEEP_READING_RELEASE_AMOUNT);
 const RASHIN_BONUS_REWARD_AMOUNT = 1;
 const RASHIN_BONUS_VALID_DAYS = 7;
 const RASHIN_BONUS_FREE_READING_REQUIRED_STONES = 30;
@@ -1495,6 +1495,36 @@ function getRashinFreeReadingBenefit(stones) {
   };
 }
 
+function normalizeBenefitCredits(value) {
+  const count = Math.floor(Number(value || 0));
+  return Number.isFinite(count) && count > 0 ? count : 0;
+}
+
+function normalizeBenefitUseKeys(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map(item => String(item || '').trim())
+    .filter(item => /^[a-f0-9]{16,64}$/.test(item))
+    .slice(-100);
+}
+
+function buildRashinCrossBenefitView(userRecord = {}) {
+  const freeCalendarCredits = normalizeBenefitCredits(userRecord?.rashin_calendar_free_credits);
+  const freePaidReadingCredits = normalizeBenefitCredits(userRecord?.rashin_paid_reading_free_credits);
+  return {
+    freeCalendarCredits,
+    freePaidReadingCredits,
+    freeCalendarBenefit: {
+      available: freeCalendarCredits > 0,
+      remainingUses: freeCalendarCredits,
+    },
+    freePaidReadingBenefit: {
+      available: freePaidReadingCredits > 0,
+      remainingUses: freePaidReadingCredits,
+    },
+  };
+}
+
 function readAmount(value, fallback) {
   if (value === undefined || value === null || value === '') return fallback;
   const amount = Number(value);
@@ -1522,6 +1552,7 @@ function buildRashinBonusView(userRecord, today = getJstDateStamp()) {
       amount: RASHIN_BONUS_REWARD_AMOUNT,
     },
     freeReadingBenefit: getRashinFreeReadingBenefit(rashinStones),
+    crossBenefit: buildRashinCrossBenefitView(userRecord),
   };
   if (!canClaim) payload.reason = 'already_claimed';
   return payload;
@@ -1997,6 +2028,9 @@ function buildUserRecordFromGoogleProfile(profile, existing = null) {
     latestCheckoutSessionId: existing?.latestCheckoutSessionId || '',
     rashin_stones: normalizeRashinStones(existing?.rashin_stones),
     last_rashin_bonus_claimed_date: existing?.last_rashin_bonus_claimed_date || null,
+    rashin_calendar_free_credits: normalizeBenefitCredits(existing?.rashin_calendar_free_credits),
+    rashin_paid_reading_free_credits: normalizeBenefitCredits(existing?.rashin_paid_reading_free_credits),
+    rashin_calendar_benefit_use_keys: normalizeBenefitUseKeys(existing?.rashin_calendar_benefit_use_keys),
     createdAt: existing?.createdAt || now,
     updatedAt: now,
   };
@@ -2095,6 +2129,9 @@ async function ensureDeveloperUserRecord(email, name = '') {
     latestCheckoutSessionId: '',
     rashin_stones: 0,
     last_rashin_bonus_claimed_date: null,
+    rashin_calendar_free_credits: 0,
+    rashin_paid_reading_free_credits: 0,
+    rashin_calendar_benefit_use_keys: [],
     createdAt: now,
     updatedAt: now,
   };
@@ -2148,6 +2185,9 @@ function buildUserRecordFromStripe(data = {}, existing = null) {
     latestCheckoutSessionId: String(data.checkoutSessionId || existing?.latestCheckoutSessionId || '').trim(),
     rashin_stones: normalizeRashinStones(existing?.rashin_stones),
     last_rashin_bonus_claimed_date: existing?.last_rashin_bonus_claimed_date || null,
+    rashin_calendar_free_credits: normalizeBenefitCredits(existing?.rashin_calendar_free_credits),
+    rashin_paid_reading_free_credits: normalizeBenefitCredits(existing?.rashin_paid_reading_free_credits),
+    rashin_calendar_benefit_use_keys: normalizeBenefitUseKeys(existing?.rashin_calendar_benefit_use_keys),
     createdAt: existing?.createdAt || now,
     updatedAt: now,
   };
@@ -2224,6 +2264,7 @@ async function buildMemberStatus(req, sessionPayload = null) {
     manageBillingAvailable: false,
     rashinStones: normalizeRashinStones(userRecord?.rashin_stones),
     lastRashinBonusClaimedDate: userRecord?.last_rashin_bonus_claimed_date || null,
+    crossBenefit: buildRashinCrossBenefitView(userRecord),
   };
 }
 
@@ -2917,6 +2958,24 @@ function makePaidTicketIdForRashinFragments(userId, sourceReadingId) {
   return `prt_${crypto.createHash('sha256').update(`rashin_fragments:${safeUserId}:${sourceId}`).digest('hex')}`;
 }
 
+function makePaidTicketIdForRashinCalendarBenefit(userId, sourceReadingId) {
+  const safeUserId = normalizeUserId(userId);
+  const sourceId = normalizeVaultRecordId(sourceReadingId);
+  if (!safeUserId || !sourceId) return '';
+  return `prt_${crypto.createHash('sha256').update(`rashin_calendar_benefit:${safeUserId}:${sourceId}`).digest('hex')}`;
+}
+
+function makeRashinCalendarBenefitUseKey({ userId, sourceReadingId = '', paidReadingId = '', source = '' } = {}) {
+  const safeUserId = normalizeUserId(userId);
+  const sourceId = normalizeVaultRecordId(sourceReadingId);
+  const paidId = normalizeVaultRecordId(paidReadingId);
+  if (!safeUserId || (!sourceId && !paidId)) return '';
+  return crypto
+    .createHash('sha256')
+    .update(`rashin_calendar_use:${safeUserId}:${sourceId}:${paidId}`)
+    .digest('hex');
+}
+
 function getRashinCodeAdminSecret(req, body = {}) {
   return normalizeEnvValue(req?.headers?.['x-rashin-code-admin-secret'] || body?.adminSecret || body?.admin_secret || '');
 }
@@ -3545,6 +3604,202 @@ async function createPaidTicketFromRashinFragments({ userRecord, sourceReadingId
     const nextUser = {
       ...(latestUser || userRecord),
       rashin_stones: currentStones - RASHIN_BONUS_FREE_READING_REQUIRED_STONES,
+      updatedAt: now,
+    };
+    await writeUserRecord(safeUserId, nextUser);
+    return { ticket: writeResult.ticket, consumed: true, userRecord: nextUser };
+  });
+}
+
+function paidTicketEarnsCalendarBenefit(ticket) {
+  if (!ticket || ticket.ownerType !== 'user' || !ticket.userId) return false;
+  const discountType = String(ticket.discountType || '').trim();
+  const paymentProvider = String(ticket.paymentProvider || ticket.checkoutProvider || '').trim();
+  if ([
+    'rashin_calendar_cross_benefit',
+    'rashin_fragments_free_reading',
+    'manual_free_code',
+  ].includes(discountType)) return false;
+  if ([
+    'rashin_calendar_benefit',
+    'rashin_fragments',
+    'manual_free_code',
+  ].includes(paymentProvider)) return false;
+  return true;
+}
+
+async function grantCalendarBenefitForPaidTicket(ticket) {
+  if (!paidTicketEarnsCalendarBenefit(ticket)) {
+    return { granted: false, reason: 'ineligible_ticket', crossBenefit: null };
+  }
+  return withUserMutation(ticket.userId, async safeUserId => {
+    const latestTicket = await readPaidReadingTicket(ticket.id) || ticket;
+    const latestUser = await readUserRecord(safeUserId);
+    if (latestTicket.calendarBenefitGrantedAt) {
+      return {
+        granted: false,
+        reason: 'already_granted',
+        userRecord: latestUser,
+        crossBenefit: buildRashinCrossBenefitView(latestUser),
+      };
+    }
+    const now = new Date().toISOString();
+    const currentCredits = normalizeBenefitCredits(latestUser?.rashin_calendar_free_credits);
+    const nextUser = {
+      ...(latestUser || { userId: safeUserId, googleSub: safeUserId }),
+      rashin_calendar_free_credits: currentCredits + 1,
+      updatedAt: now,
+    };
+    const markedTicket = {
+      ...latestTicket,
+      calendarBenefitGrantedAt: now,
+      calendarBenefitGrantedToUserId: safeUserId,
+    };
+    await writeUserRecord(safeUserId, nextUser);
+    await writePaidReadingTicket(markedTicket);
+    return {
+      granted: true,
+      reason: 'paid_reading_used',
+      userRecord: nextUser,
+      crossBenefit: buildRashinCrossBenefitView(nextUser),
+    };
+  });
+}
+
+async function consumeRashinCalendarBenefitForPaidReadingCredit({ userRecord, sourceReadingId = '', paidReadingId = '', source = '' }) {
+  if (!userRecord?.userId) {
+    const error = new Error('LOGIN_REQUIRED');
+    error.statusCode = 401;
+    throw error;
+  }
+  return withUserMutation(userRecord.userId, async safeUserId => {
+    const latestUser = await readUserRecord(safeUserId);
+    const useKey = makeRashinCalendarBenefitUseKey({ userId: safeUserId, sourceReadingId, paidReadingId, source });
+    const usedKeys = normalizeBenefitUseKeys(latestUser?.rashin_calendar_benefit_use_keys);
+    if (useKey && usedKeys.includes(useKey)) {
+      return {
+        consumed: false,
+        grantedPaidReading: false,
+        duplicate: true,
+        userRecord: latestUser,
+        crossBenefit: buildRashinCrossBenefitView(latestUser),
+      };
+    }
+    const freeCalendarCredits = normalizeBenefitCredits(latestUser?.rashin_calendar_free_credits);
+    if (freeCalendarCredits < 1) {
+      const error = new Error('RASHIN_CALENDAR_CREDIT_REQUIRED');
+      error.statusCode = 409;
+      error.crossBenefit = buildRashinCrossBenefitView(latestUser);
+      throw error;
+    }
+    const now = new Date().toISOString();
+    const nextUseKeys = useKey ? [...usedKeys, useKey].slice(-100) : usedKeys;
+    const nextUser = {
+      ...(latestUser || userRecord),
+      rashin_calendar_free_credits: freeCalendarCredits - 1,
+      rashin_paid_reading_free_credits: normalizeBenefitCredits(latestUser?.rashin_paid_reading_free_credits) + 1,
+      rashin_calendar_benefit_use_keys: nextUseKeys,
+      last_rashin_calendar_benefit_used_at: now,
+      last_rashin_paid_reading_credit_granted_at: now,
+      updatedAt: now,
+    };
+    await writeUserRecord(safeUserId, nextUser);
+    return {
+      consumed: true,
+      grantedPaidReading: true,
+      duplicate: false,
+      userRecord: nextUser,
+      crossBenefit: buildRashinCrossBenefitView(nextUser),
+    };
+  });
+}
+
+async function createPaidTicketFromRashinCalendarBenefit({ userRecord, sourceReadingId, paidReadingId = '', allowDirectPaid = false }) {
+  const sourceId = normalizeVaultRecordId(sourceReadingId);
+  const paidId = normalizeVaultRecordId(paidReadingId);
+  if (!userRecord?.userId || !sourceId || !paidId) {
+    const error = new Error('READING_ID_REQUIRED');
+    error.statusCode = 400;
+    throw error;
+  }
+  return withUserMutation(userRecord.userId, async safeUserId => {
+    const latestUser = await readUserRecord(safeUserId);
+    const owner = { ownerType: 'user', userId: safeUserId, vaultId: '' };
+    const reusableTicket = await findUsablePaidReadingTicket({ owner, sourceReadingId: sourceId, paidReadingId: paidId });
+    if (reusableTicket) {
+      const now = new Date().toISOString();
+      const locked = reusableTicket.lockedReadingId ? reusableTicket : {
+        ...reusableTicket,
+        lockedReadingId: paidId,
+        lockedAt: now,
+      };
+      if (!reusableTicket.lockedReadingId) await writePaidReadingTicket(locked);
+      return { ticket: locked, consumed: false, userRecord: latestUser };
+    }
+    if (await hasDeepReadingPurchaseForSource(owner, sourceId)) {
+      const error = new Error('DEEP_READING_ALREADY_PURCHASED');
+      error.statusCode = 409;
+      throw error;
+    }
+    if (!allowDirectPaid) {
+      const freeRecords = await getUserFreeReadingRecords(safeUserId);
+      const requested = freeRecords.find(record => record.id === sourceId) || null;
+      const latest = freeRecords[0] || null;
+      if (!requested || !latest) {
+        const error = new Error('ORACLE_RESULT_NOT_AVAILABLE');
+        error.statusCode = 403;
+        throw error;
+      }
+      if (latest.id !== sourceId) {
+        const error = new Error('LATEST_RESULT_REQUIRED');
+        error.statusCode = 409;
+        throw error;
+      }
+      const expiresAt = getRashinDiscountExpiry(requested);
+      if (!expiresAt || new Date(expiresAt).getTime() < Date.now()) {
+        const error = new Error('ORACLE_RESULT_EXPIRED');
+        error.statusCode = 410;
+        throw error;
+      }
+    }
+    const currentCredits = normalizeBenefitCredits(latestUser?.rashin_paid_reading_free_credits);
+    if (currentCredits < 1) {
+      const error = new Error('RASHIN_PAID_READING_CREDIT_REQUIRED');
+      error.statusCode = 409;
+      error.crossBenefit = buildRashinCrossBenefitView(latestUser);
+      throw error;
+    }
+
+    const now = new Date().toISOString();
+    const ticket = {
+      id: makePaidTicketIdForRashinCalendarBenefit(safeUserId, sourceId) || generateRecordId('prt'),
+      ownerType: 'user',
+      userId: safeUserId,
+      vaultId: '',
+      sourceReadingId: sourceId,
+      purchaseOrderId: '',
+      paymentProvider: 'rashin_calendar_benefit',
+      checkoutProvider: 'rashin_calendar_benefit',
+      baseAmount: DEEP_READING_NORMAL_AMOUNT,
+      originalAmount: DEEP_READING_NORMAL_AMOUNT,
+      discountAmount: DEEP_READING_NORMAL_AMOUNT,
+      finalAmount: 0,
+      discountStonesUsed: 0,
+      discountType: 'rashin_calendar_cross_benefit',
+      currency: 'jpy',
+      status: 'unused',
+      createdAt: now,
+      usedAt: '',
+      expiresAt: addDaysIso(30),
+      usedReadingId: '',
+      lockedReadingId: paidId,
+      lockedAt: now,
+    };
+    const writeResult = await writePaidReadingTicketIfAbsent(ticket);
+    if (!writeResult.created) return { ticket: writeResult.ticket, consumed: false, userRecord: latestUser };
+    const nextUser = {
+      ...(latestUser || userRecord),
+      rashin_paid_reading_free_credits: currentCredits - 1,
       updatedAt: now,
     };
     await writeUserRecord(safeUserId, nextUser);
@@ -5284,6 +5539,151 @@ async function handleRashinBonusRedeemPaidTicket(req, res) {
   }
 }
 
+async function handleRashinCrossBenefitStatus(req, res) {
+  const userRecord = await readGoogleUserForRequest(req);
+  if (!userRecord) {
+    sendJson(res, 401, {
+      error: 'LOGIN_REQUIRED',
+      message: 'Google login is required.',
+    });
+    return;
+  }
+  sendJson(res, 200, {
+    ok: true,
+    crossBenefit: buildRashinCrossBenefitView(userRecord),
+  });
+}
+
+async function handleRashinCrossBenefitUseCalendar(req, res) {
+  let body;
+  try {
+    body = await readJsonBody(req);
+  } catch (error) {
+    sendJson(res, 400, {
+      error: error.message || 'INVALID_JSON',
+      message: 'Rashin calendar benefit payload could not be parsed.',
+    });
+    return;
+  }
+  const userRecord = await readGoogleUserForRequest(req);
+  if (!userRecord) {
+    sendJson(res, 401, {
+      error: 'LOGIN_REQUIRED',
+      message: 'Google login is required.',
+    });
+    return;
+  }
+  const sourceReadingId = normalizeVaultRecordId(body?.sourceReadingId || body?.source_reading_id || '');
+  const paidReadingId = normalizeVaultRecordId(body?.paidReadingId || body?.paid_reading_id || '');
+  const source = String(body?.source || '').trim().slice(0, 80);
+  try {
+    const result = await consumeRashinCalendarBenefitForPaidReadingCredit({
+      userRecord,
+      sourceReadingId,
+      paidReadingId,
+      source,
+    });
+    sendJson(res, 200, {
+      ok: true,
+      consumed: !!result.consumed,
+      grantedPaidReading: !!result.grantedPaidReading,
+      duplicate: !!result.duplicate,
+      crossBenefit: result.crossBenefit,
+    });
+  } catch (error) {
+    if (error.statusCode) {
+      sendJson(res, error.statusCode, {
+        error: error.message,
+        message: error.message === 'RASHIN_CALENDAR_CREDIT_REQUIRED'
+          ? 'A Rashin calendar benefit is required.'
+          : 'The request could not be completed. Please wait and try again.',
+        crossBenefit: error.crossBenefit || buildRashinCrossBenefitView(userRecord),
+      });
+      return;
+    }
+    console.error('Rashin calendar benefit use failed', {
+      error: error.message,
+      stack: error.stack,
+      userId: userRecord?.userId || '',
+      sourceReadingId,
+      paidReadingId,
+    });
+    sendJson(res, 500, {
+      error: 'RASHIN_CALENDAR_BENEFIT_USE_FAILED',
+      message: 'The request could not be completed. Please wait and try again.',
+    });
+  }
+}
+
+async function handleRashinCrossBenefitRedeemPaidTicket(req, res) {
+  let body;
+  try {
+    body = await readJsonBody(req);
+  } catch (error) {
+    sendJson(res, 400, {
+      error: error.message || 'INVALID_JSON',
+      message: 'Rashin calendar paid ticket payload could not be parsed.',
+    });
+    return;
+  }
+  const userRecord = await readGoogleUserForRequest(req);
+  if (!userRecord) {
+    sendJson(res, 401, {
+      error: 'LOGIN_REQUIRED',
+      message: 'Google login is required.',
+    });
+    return;
+  }
+  const sourceReadingId = normalizeVaultRecordId(body?.sourceReadingId || body?.source_reading_id || body?.oracleResultId || body?.oracle_result_id || '');
+  const paidReadingId = normalizeVaultRecordId(body?.paidReadingId || body?.paid_reading_id || '');
+  const allowDirectPaid = body?.allowDirectPaid === true || body?.allow_direct_paid === true;
+  try {
+    const result = await createPaidTicketFromRashinCalendarBenefit({ userRecord, sourceReadingId, paidReadingId, allowDirectPaid });
+    sendJson(res, 200, {
+      ok: true,
+      consumed: !!result.consumed,
+      ticketId: result.ticket.id,
+      ticketStatus: result.ticket.status,
+      sourceReadingId: result.ticket.sourceReadingId,
+      paidReadingId: result.ticket.lockedReadingId || paidReadingId,
+      normalAmount: result.ticket.originalAmount,
+      discountAmount: result.ticket.discountAmount,
+      finalAmount: result.ticket.finalAmount,
+      discountType: result.ticket.discountType || '',
+      currency: result.ticket.currency,
+      crossBenefit: buildRashinCrossBenefitView(result.userRecord),
+    });
+  } catch (error) {
+    const messages = {
+      READING_ID_REQUIRED: 'A source reading id and paid reading id are required.',
+      ORACLE_RESULT_NOT_AVAILABLE: 'The source reading could not be found.',
+      LATEST_RESULT_REQUIRED: 'Use this benefit from your latest free reading.',
+      ORACLE_RESULT_EXPIRED: 'This free reading is no longer eligible.',
+      DEEP_READING_ALREADY_PURCHASED: 'This reading already has a deep reading ticket.',
+      RASHIN_PAID_READING_CREDIT_REQUIRED: 'A Rashin calendar paid reading benefit is required.',
+    };
+    if (error.statusCode) {
+      sendJson(res, error.statusCode, {
+        error: error.message,
+        message: messages[error.message] || 'The request could not be completed. Please wait and try again.',
+        crossBenefit: error.crossBenefit || buildRashinCrossBenefitView(userRecord),
+      });
+      return;
+    }
+    console.error('Rashin calendar paid ticket redeem failed', {
+      error: error.message,
+      stack: error.stack,
+      userId: userRecord?.userId || '',
+      sourceReadingId,
+      paidReadingId,
+    });
+    sendJson(res, 500, {
+      error: 'RASHIN_CALENDAR_PAID_TICKET_REDEEM_FAILED',
+      message: 'The request could not be completed. Please wait and try again.',
+    });
+  }
+}
+
 async function handleDeepReadingDiscountStatus(req, res) {
   const userRecord = await readGoogleUserForRequest(req);
   if (!userRecord) {
@@ -5844,7 +6244,14 @@ async function handlePaidReadingTicketUse(req, res) {
     return;
   }
   if (ticket.status === 'used' && ticket.usedReadingId === paidReadingId) {
-    sendJson(res, 200, { ok: true, ticketId: ticket.id, ticketStatus: ticket.status });
+    const calendarBenefit = await grantCalendarBenefitForPaidTicket(ticket);
+    sendJson(res, 200, {
+      ok: true,
+      ticketId: ticket.id,
+      ticketStatus: ticket.status,
+      calendarBenefit,
+      crossBenefit: calendarBenefit.crossBenefit || null,
+    });
     return;
   }
   if (ticket.status !== 'unused' || isExpiredIso(ticket.expiresAt)) {
@@ -5861,10 +6268,13 @@ async function handlePaidReadingTicketUse(req, res) {
     usedReadingId: paidReadingId,
   };
   await writePaidReadingTicket(used);
+  const calendarBenefit = await grantCalendarBenefitForPaidTicket(used);
   sendJson(res, 200, {
     ok: true,
     ticketId: used.id,
     ticketStatus: used.status,
+    calendarBenefit,
+    crossBenefit: calendarBenefit.crossBenefit || null,
   });
 }
 
@@ -6067,7 +6477,7 @@ async function handleStripeCheckoutSessionCreate(req, res) {
     params.set(`payment_method_types[${index}]`, paymentMethodType);
   });
   if (purchaseOrder.finalAmount === DEEP_READING_NORMAL_AMOUNT) {
-    params.set('line_items[0][price]', STRIPE_PRICE_ID_DEEP_READING_780);
+    params.set('line_items[0][price]', STRIPE_PRICE_ID_DEEP_READING_2000);
   } else {
     params.set('line_items[0][price_data][currency]', purchaseOrder.currency);
     params.set('line_items[0][price_data][unit_amount]', String(purchaseOrder.finalAmount));
@@ -6509,6 +6919,9 @@ const API_ROUTES = [
   { method: 'GET', prefix: '/api/rashin-bonus/status', handler: handleRashinBonusStatus },
   { method: 'POST', prefix: '/api/rashin-bonus/claim', handler: handleRashinBonusClaim },
   { method: 'POST', prefix: '/api/rashin-bonus/redeem-paid-ticket', handler: handleRashinBonusRedeemPaidTicket },
+  { method: 'GET', prefix: '/api/rashin-cross-benefit/status', handler: handleRashinCrossBenefitStatus },
+  { method: 'POST', prefix: '/api/rashin-cross-benefit/use-calendar', handler: handleRashinCrossBenefitUseCalendar },
+  { method: 'POST', prefix: '/api/rashin-cross-benefit/redeem-paid-ticket', handler: handleRashinCrossBenefitRedeemPaidTicket },
   { method: 'GET', prefix: '/api/deep-reading/discount-status', handler: handleDeepReadingDiscountStatus },
   { method: 'POST', prefix: '/api/rashin-paid-code/purchase-intent', handler: handleRashinPaidCodePurchaseIntent },
   { method: 'POST', prefix: '/api/rashin-paid-code/redeem', handler: handleRashinPaidCodeRedeem },

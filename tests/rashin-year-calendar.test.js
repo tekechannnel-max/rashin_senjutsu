@@ -67,8 +67,8 @@ const topCtaSetup = sliceFromMarker(
   'btn-rashin-calendar',
   "topCalendarBtn.textContent='羅針カレンダーを作成'",
   "requestRashinYearCalendarFromPaid('top_code_slot')",
-  "topBtns.insertBefore(rashinCodeForm,simpleTopBtn.nextSibling)",
-  "topBtns.insertBefore(topCalendarBtn,rashinCodeForm.nextSibling)",
+  "document.querySelector('#s-top .rashin-code-form')?.remove()",
+  "topBtns.insertBefore(topCalendarBtn,simpleTopBtn.nextSibling)",
 ].forEach(marker => {
   assert.ok(topCtaSetup.includes(marker), `top CTA placement must include: ${marker}`);
 });

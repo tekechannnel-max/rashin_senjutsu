@@ -73,6 +73,12 @@ const boothClientBody = sliceFromMarker(
   'requestRashinCodePurchase=requestRashinCodePurchaseBooth'
 );
 
+const boothModalBody = sliceFromMarker(
+  appSource,
+  'function openBoothOrderModal',
+  'async function requestRashinCodePurchaseBooth'
+);
+
 assert.strictEqual(
   boothClientBody.includes('BOOTH購入番号の自動照合は準備中です'),
   false,
@@ -83,6 +89,38 @@ assert.strictEqual(
   boothClientBody.includes('if(!RASHIN_BOOTH_ORDER_CLAIM_READY)'),
   false,
   'client must not hide the BOOTH order-number claim flow based only on health readiness'
+);
+
+assert.ok(
+  serverSource.includes("process.env.DEEP_READING_PRERELEASE_AMOUNT || '2000'") &&
+    serverSource.includes("process.env.DEEP_READING_RELEASE_AMOUNT || '2000'") &&
+    serverSource.includes('String(DEEP_READING_RELEASE_AMOUNT)'),
+  'server BOOTH purchase amount must default to the 2000 yen release amount'
+);
+
+assert.ok(
+  appSource.includes('const DEEP_READING_PRICE=DEEP_READING_RELEASE_PRICE;') &&
+    appSource.includes('const DEEP_READING_RELEASE_PRICE=2000;'),
+  'client paid amount must render and track the 2000 yen release amount'
+);
+
+assert.ok(
+  boothModalBody.includes('booth-rashin-code-input') &&
+    boothModalBody.includes('booth-rashin-code-submit') &&
+    boothModalBody.includes('savePendingRashinPaidCode(code)'),
+  'BOOTH modal must include inline Rashin-code input below the order-number field'
+);
+
+assert.strictEqual(
+  boothModalBody.includes('id="booth-reference-code"'),
+  false,
+  'BOOTH modal must not use the old separate Rashin-code prompt button'
+);
+
+assert.strictEqual(
+  boothModalBody.includes('フィードバックやご感想も、同じ連絡先でお待ちしております。'),
+  false,
+  'BOOTH modal help copy must stay compact'
 );
 
 assert.ok(

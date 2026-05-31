@@ -45,6 +45,7 @@ const syntaxTargets = [
   'tests/free-reading-quality-gate.test.js',
   'tests/free-rashin-card.test.js',
   'tests/rashin-year-calendar.test.js',
+  'tests/rashin-cross-benefit.test.js',
   'tests/reading-policy-manual.test.js',
 ];
 
@@ -60,6 +61,7 @@ const runtimeTests = [
   'tests/free-reading-quality-gate.test.js',
   'tests/free-rashin-card.test.js',
   'tests/rashin-year-calendar.test.js',
+  'tests/rashin-cross-benefit.test.js',
   'tests/reading-policy-manual.test.js',
 ];
 

@@ -1764,6 +1764,9 @@ const MEMBER_SESSION_ENDPOINT='/api/member/session';
 const MEMBER_LOGOUT_ENDPOINT='/api/member/logout';
 const RASHIN_BONUS_STATUS_ENDPOINT='/api/rashin-bonus/status';
 const RASHIN_BONUS_CLAIM_ENDPOINT='/api/rashin-bonus/claim';
+const RASHIN_CROSS_BENEFIT_STATUS_ENDPOINT='/api/rashin-cross-benefit/status';
+const RASHIN_CROSS_BENEFIT_USE_CALENDAR_ENDPOINT='/api/rashin-cross-benefit/use-calendar';
+const RASHIN_CROSS_BENEFIT_REDEEM_PAID_TICKET_ENDPOINT='/api/rashin-cross-benefit/redeem-paid-ticket';
 const RASHIN_BONUS_REDEEM_PAID_TICKET_ENDPOINT='/api/rashin-bonus/redeem-paid-ticket';
 const DEEP_READING_DISCOUNT_STATUS_ENDPOINT='/api/deep-reading/discount-status';
 const STRIPE_CHECKOUT_ENDPOINT='/api/stripe/checkout-session';
@@ -1774,15 +1777,15 @@ const RASHIN_PAID_CODE_REDEEM_ENDPOINT='/api/rashin-paid-code/redeem';
 const RASHIN_PAID_CODE_BOOTH_CLAIM_ENDPOINT='/api/rashin-paid-code/booth/claim';
 const PAID_READING_PREPARE_ENDPOINT='/api/paid-reading/prepare-ticket';
 const BOOTH_RASHIN_SHOP_URL='https://teke-sensai.booth.pm/';
-const BOOTH_ANY_GOODS_NOTE='BOOTH内のどのグッズを購入しても、購入後のBOOTH注文番号で深掘り羅針鑑定を利用できます。';
+const BOOTH_ANY_GOODS_NOTE='どのBOOTHグッズでも、購入後の注文番号で利用できます。';
 const RASHIN_BOOTH_PURCHASE_ENABLED=true;
 let RASHIN_BOOTH_ORDER_CLAIM_READY=false;
 const PAID_READING_USE_ENDPOINT='/api/paid-reading/use-ticket';
 const PAID_READING_RELEASE_ENDPOINT='/api/paid-reading/release-ticket';
-const DEEP_READING_PRERELEASE_PRICE=780;
-const DEEP_READING_RELEASE_PRICE=1000;
-const DEEP_READING_PRICE=DEEP_READING_PRERELEASE_PRICE;
-const DEEP_READING_PRICE_COPY=`プレリリース価格${DEEP_READING_PRERELEASE_PRICE}円（正式リリース後は${DEEP_READING_RELEASE_PRICE}円予定）`;
+const DEEP_READING_PRERELEASE_PRICE=2000;
+const DEEP_READING_RELEASE_PRICE=2000;
+const DEEP_READING_PRICE=DEEP_READING_RELEASE_PRICE;
+const DEEP_READING_PRICE_COPY=`対象金額${DEEP_READING_PRICE}円`;
 const VAULT_QUERY_ENDPOINT='/api/vault/history/query';
 const VAULT_SAVE_ENDPOINT='/api/vault/history/save';
 const VAULT_CLEAR_ENDPOINT='/api/vault/history/clear';
@@ -2102,6 +2105,9 @@ let MEMBER_AUTH={
   cancelAtPeriodEnd:false,
   manageBillingAvailable:false,
   rashinStones:0,
+  rashinCalendarFreeCredits:0,
+  rashinPaidReadingFreeCredits:0,
+  crossBenefit:null,
   lastRashinBonusClaimedDate:null,
 };
 
@@ -2268,7 +2274,7 @@ const BRAND_PROFILE={
     member:{
       badge:'深掘り',
       title:'深掘り鑑定で、進路を自分で選べるようになる',
-      price:'深掘り鑑定 最安1000円',
+      price:`深掘り鑑定 ${DEEP_READING_PRICE}円`,
       items:[
         '具体的な悩みの構造と本音を整理できる',
         '次にどちらへ進むかが現実レベルで具体的に残る',
@@ -2279,7 +2285,7 @@ const BRAND_PROFILE={
 };
 
 const MEMBERSHIP_PLAN={
-  price:'深掘り鑑定 最安1000円',
+  price:`深掘り鑑定 ${DEEP_READING_PRICE}円`,
   status:'読み返しと記録は準備中',
   promise:'無料で見えたことを、次にすることまで深く読む鑑定です',
   description:'無料で見えた「今の状態」をもとに、ここからは悩みをもっと深く読みます。現実を見ながら、次にどう動くかまで残せます。',
@@ -2323,9 +2329,9 @@ const MEMBERSHIP_PLAN={
     },
   ],
 };
-const BOOTH_RASHIN_GUIDE_HTML=`深掘り羅針鑑定は、BOOTH購入後に注文番号を入力して利用できる有料鑑定です。${BOOTH_ANY_GOODS_NOTE} 購入はこちら：<a href="${BOOTH_RASHIN_SHOP_URL}" target="_blank" rel="noopener">${BOOTH_RASHIN_SHOP_URL}</a> 料金は対象グッズの価格に準じます。目安は最安1000円です。無料鑑定を先に作成する必要はありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。`;
+const BOOTH_RASHIN_GUIDE_HTML=`深掘り羅針鑑定は、BOOTH購入後に注文番号を入力して利用できます。${BOOTH_ANY_GOODS_NOTE} 対象金額は${DEEP_READING_PRICE}円です。購入はこちら：<a href="${BOOTH_RASHIN_SHOP_URL}" target="_blank" rel="noopener">${BOOTH_RASHIN_SHOP_URL}</a>`;
 const CHECKOUT_DISCLOSURE_HTML=BOOTH_RASHIN_GUIDE_HTML;
-const RESULT_CHECKOUT_DISCLOSURE_HTML=`深掘り鑑定はBOOTH購入後に注文番号を入力して利用できます。${BOOTH_ANY_GOODS_NOTE} 購入はこちら：<a href="${BOOTH_RASHIN_SHOP_URL}" target="_blank" rel="noopener">${BOOTH_RASHIN_SHOP_URL}</a> 無料で引いたカードの続きから追加カードを展開することも、直接有料鑑定から始めることもできます。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。`;
+const RESULT_CHECKOUT_DISCLOSURE_HTML=`深掘り鑑定はBOOTH購入後に注文番号を入力して利用できます。${BOOTH_ANY_GOODS_NOTE} 対象金額は${DEEP_READING_PRICE}円です。購入はこちら：<a href="${BOOTH_RASHIN_SHOP_URL}" target="_blank" rel="noopener">${BOOTH_RASHIN_SHOP_URL}</a>`;
 const RASHIN_PAID_CODE_GUIDE_HTML=`深掘り羅針鑑定は、運営者から受け取った羅針コードで利用できる有料鑑定です。羅針コードを入力し、Googleログイン後に利用状態を確認します。無料鑑定を先に作成する必要はありません。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。`;
 const RASHIN_PAID_CODE_RESULT_DISCLOSURE_HTML=`深掘り鑑定は、運営者から受け取った羅針コードで利用できます。無料で引いたカードの続きから追加カードを展開することも、直接有料鑑定から始めることもできます。返金条件などは <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a> をご確認ください。`;
 function getCheckoutDisclosureHtml(){
@@ -3085,6 +3091,71 @@ function getRashinFragmentSnapshot(status=RASHIN_BONUS_STATUS){
     freeReadingBenefit,
   };
 }
+function normalizeCrossBenefitCredits(value){
+  const count=Math.floor(Number(value||0));
+  return Number.isFinite(count)&&count>0?count:0;
+}
+
+function normalizeRashinCrossBenefitView(raw={}){
+  const freeCalendarCredits=normalizeCrossBenefitCredits(
+    raw?.freeCalendarCredits??raw?.rashinCalendarFreeCredits??raw?.calendarCredits
+  );
+  const freePaidReadingCredits=normalizeCrossBenefitCredits(
+    raw?.freePaidReadingCredits??raw?.rashinPaidReadingFreeCredits??raw?.paidReadingCredits
+  );
+  return{
+    freeCalendarCredits,
+    freePaidReadingCredits,
+    freeCalendarBenefit:{
+      ...(raw?.freeCalendarBenefit||{}),
+      available:freeCalendarCredits>0,
+      remainingUses:freeCalendarCredits,
+    },
+    freePaidReadingBenefit:{
+      ...(raw?.freePaidReadingBenefit||{}),
+      available:freePaidReadingCredits>0,
+      remainingUses:freePaidReadingCredits,
+    },
+  };
+}
+
+function applyRashinCrossBenefitData(data={}){
+  const raw=data?.crossBenefit||data||{};
+  const view=normalizeRashinCrossBenefitView(raw);
+  MEMBER_AUTH.rashinCalendarFreeCredits=view.freeCalendarCredits;
+  MEMBER_AUTH.rashinPaidReadingFreeCredits=view.freePaidReadingCredits;
+  MEMBER_AUTH.crossBenefit=view;
+  if(RASHIN_BONUS_STATUS){
+    RASHIN_BONUS_STATUS={...RASHIN_BONUS_STATUS,crossBenefit:view};
+  }
+  return view;
+}
+
+function getRashinCrossBenefitSnapshot(status=RASHIN_BONUS_STATUS){
+  return normalizeRashinCrossBenefitView(status?.crossBenefit||MEMBER_AUTH.crossBenefit||{
+    freeCalendarCredits:MEMBER_AUTH.rashinCalendarFreeCredits,
+    freePaidReadingCredits:MEMBER_AUTH.rashinPaidReadingFreeCredits,
+  });
+}
+
+async function loadRashinCrossBenefitStatus(options={}){
+  if(!canUseProxy()||!MEMBER_AUTH.authLoggedIn||MEMBER_AUTH.authProvider!=='google') return null;
+  try{
+    const res=await fetchApi(RASHIN_CROSS_BENEFIT_STATUS_ENDPOINT,{cache:'no-store'});
+    const data=await readJsonSafe(res);
+    if(!res.ok) return null;
+    const view=applyRashinCrossBenefitData(data);
+    if(options.render!==false){
+      renderRashinBonusCard();
+      renderRecentHistory();
+      syncRashinYearCalendarActionButton();
+    }
+    return view;
+  }catch(e){
+    return null;
+  }
+}
+
 
 async function startDailyOracleDeepReading(source='daily_oracle',useDiscount=false){
   const context=getConsultationCtaContext();
@@ -4819,7 +4890,7 @@ function getMemberStatusMeta(){
     return{
       cls:'inactive',
       label:'深掘り鑑定',
-      copy:'深掘り羅針鑑定は、目安として最安1000円です。無料鑑定から続きのカードを引くことも、直接有料鑑定から始めることもできます。',
+      copy:`深掘り羅針鑑定は${DEEP_READING_PRICE}円です。無料鑑定から続けることも、直接始めることもできます。`,
       action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">${getPaidEntryActionLabel()}</button>`,
     };
   }
@@ -4827,7 +4898,7 @@ function getMemberStatusMeta(){
     return{
       cls:'inactive',
       label:'深掘り鑑定',
-      copy:'深掘り羅針鑑定は、目安として最安1000円です。無料鑑定から続きのカードを引くことも、直接有料鑑定から始めることもできます。',
+      copy:`深掘り羅針鑑定は${DEEP_READING_PRICE}円です。無料鑑定から続けることも、直接始めることもできます。`,
       action:`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">${getPaidEntryActionLabel()}</button>`,
     };
   }
@@ -4837,8 +4908,8 @@ function getMemberStatusMeta(){
     copy:canUseAccessCode()
       ?'前回の鑑定をもとに、続きの悩みを読み解けます。確認コードを入力すると深掘り鑑定の利用状態を確認できます。'
       :(RASHIN_BOOTH_PURCHASE_ENABLED
-        ?'深掘り羅針鑑定は、BOOTH購入後に注文番号を入力すると利用できます。料金は対象グッズの価格に準じます。目安は最安1000円です。'
-        :'深掘り羅針鑑定は、羅針のかけら30個または羅針コードで利用できます。目安は最安1000円です。'),
+        ?`深掘り羅針鑑定は、BOOTH購入後に注文番号を入力すると利用できます。対象金額は${DEEP_READING_PRICE}円です。`
+        :`深掘り羅針鑑定は、羅針のかけら30個または羅針コードで利用できます。対象金額は${DEEP_READING_PRICE}円です。`),
     action:canUseAccessCode()
       ?`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="openMemberAccessModal('start-paid')">確認コードを入力</button>`
       :`<button class="vault-link" data-track="deepen_cta_click" data-track-position="top" onclick="startFlow('paid')">${getPaidEntryActionLabel()}</button>`,
@@ -4846,6 +4917,10 @@ function getMemberStatusMeta(){
 }
 
 function applyMemberAuthData(data,overrides={}){
+  const crossBenefit=normalizeRashinCrossBenefitView(data?.crossBenefit||{
+    freeCalendarCredits:data?.rashinCalendarFreeCredits,
+    freePaidReadingCredits:data?.rashinPaidReadingFreeCredits,
+  });
   const nextProduction=data?.production??MEMBER_AUTH.production;
   MEMBER_AUTH={
     ...MEMBER_AUTH,
@@ -4881,6 +4956,9 @@ function applyMemberAuthData(data,overrides={}){
     cancelAtPeriodEnd:!!data?.cancelAtPeriodEnd,
     manageBillingAvailable:!!data?.manageBillingAvailable,
     rashinStones:Number.isFinite(Number(data?.rashinStones))?Math.max(0,Math.floor(Number(data.rashinStones))):MEMBER_AUTH.rashinStones,
+    rashinCalendarFreeCredits:crossBenefit.freeCalendarCredits,
+    rashinPaidReadingFreeCredits:crossBenefit.freePaidReadingCredits,
+    crossBenefit,
     lastRashinBonusClaimedDate:data?.lastRashinBonusClaimedDate||MEMBER_AUTH.lastRashinBonusClaimedDate||null,
     ...overrides,
   };
@@ -5243,6 +5321,7 @@ async function loadRashinBonusStatus(options={}){
     if(!res.ok) throw new Error(getServerErrorMessage(data,'羅針のかけらを確認できませんでした'));
     RASHIN_BONUS_STATUS=data;
     MEMBER_AUTH.rashinStones=Math.max(0,Math.floor(Number(data?.rashinStones||0)));
+    if(data?.crossBenefit) applyRashinCrossBenefitData(data);
     MEMBER_AUTH.lastRashinBonusClaimedDate=data?.lastRashinBonusClaimedDate||MEMBER_AUTH.lastRashinBonusClaimedDate;
     return data;
   }catch(e){
@@ -5268,6 +5347,7 @@ async function claimRashinBonus(options={}){
     const data=await readJsonSafe(res);
     if(!res.ok) throw new Error(getServerErrorMessage(data,'羅針のかけらの反映に失敗しました'));
     RASHIN_BONUS_STATUS=data;
+    if(data?.crossBenefit) applyRashinCrossBenefitData(data);
     MEMBER_AUTH.rashinStones=Math.max(0,Math.floor(Number(data?.rashinStones||0)));
     if(data?.claimed){
       showToast('羅針のかけらを1つ獲得しました');
@@ -5769,27 +5849,34 @@ function openBoothOrderModal({booth={},finalAmount=DEEP_READING_PRICE}={}){
     modal.innerHTML=`
       <div class="modal-box booth-modal-box" role="dialog" aria-modal="true" aria-labelledby="booth-order-title">
         <div class="modal-title" id="booth-order-title">BOOTH購入番号を入力</div>
-        <div class="modal-desc">BOOTHでグッズを購入後、BOOTH注文番号を入力してください。どのグッズの購入でも、深掘り羅針鑑定を利用できます。</div>
+        <div class="modal-desc">購入後のBOOTH注文番号、または羅針コードで深掘り鑑定を開始できます。</div>
         <div class="booth-payment-detail">
           <div class="booth-amount">対象金額：${escapeHtml(String(finalAmount))}円</div>
           ${purchaseLink}
-          <div class="booth-reference-hint">${escapeHtml(BOOTH_ANY_GOODS_NOTE)} 注文番号は、BOOTHの注文内容確認メール、または購入履歴から確認できます。公開投稿やリプライには書かず、この画面に入力してください。</div>
+          <div class="booth-reference-hint">${escapeHtml(BOOTH_ANY_GOODS_NOTE)} 注文番号は購入履歴または確認メールで確認できます。</div>
           ${booth.note?`<div class="booth-reference-hint">${escapeHtml(booth.note)}</div>`:''}
           <div class="booth-reference-hint booth-contact-hint">
-            有料購入後にBOOTH注文番号で利用できない場合や、不具合が起きた場合は、
-            <a href="https://x.com/Teke_Sensai" target="_blank" rel="noopener">X（@Teke_Sensai）のDM</a>
+            使えない場合は <a href="https://x.com/Teke_Sensai" target="_blank" rel="noopener">X（@Teke_Sensai）のDM</a>
             または <a href="mailto:tekechannnel@gmail.com">tekechannnel@gmail.com</a> までご連絡ください。
-            フィードバックやご感想も、同じ連絡先でお待ちしております。
           </div>
         </div>
         <div class="booth-reference-row">
           <label class="modal-label" for="booth-reference-input">BOOTH注文番号</label>
           <input class="modal-input" id="booth-reference-input" type="text" inputmode="text" autocomplete="off" placeholder="BOOTH注文番号">
           <div class="booth-modal-error" id="booth-order-error">BOOTH注文番号を入力してください。</div>
+        <div class="booth-reference-row booth-rashin-code-row">
+          <label class="modal-label" for="booth-rashin-code-input">羅針コード</label>
+          <div class="rashin-code-form booth-rashin-code-form">
+            <div class="rashin-code-row">
+              <input class="rashin-code-input" id="booth-rashin-code-input" type="text" inputmode="text" pattern="[A-Za-z0-9\\-]*" maxlength="14" autocomplete="one-time-code" placeholder="12文字">
+              <button class="rashin-code-submit" id="booth-rashin-code-submit" type="button">認証</button>
+            </div>
+            <div class="rashin-code-status" id="booth-rashin-code-status" aria-live="polite" style="display:none"></div>
+          </div>
+        </div>
         </div>
         <div class="modal-btns">
           <button class="modal-save" type="button" id="booth-reference-submit">注文番号を入力して始める</button>
-          <button class="modal-cancel" type="button" id="booth-reference-code">羅針コードで始める</button>
           <button class="modal-cancel" type="button" id="booth-reference-cancel">キャンセル</button>
         </div>
       </div>`;
@@ -5806,6 +5893,15 @@ function openBoothOrderModal({booth={},finalAmount=DEEP_READING_PRICE}={}){
     });
     document.body.appendChild(modal);
     const input=modal.querySelector('#booth-reference-input');
+    const codeInput=modal.querySelector('#booth-rashin-code-input');
+    const codeSubmit=modal.querySelector('#booth-rashin-code-submit');
+    const codeStatus=modal.querySelector('#booth-rashin-code-status');
+    const setCodeStatus=(message='',state='')=>{
+      if(!codeStatus) return;
+      codeStatus.textContent=message;
+      codeStatus.className=`rashin-code-status ${state||''}`.trim();
+      codeStatus.style.display=message?'block':'none';
+    };
     const error=modal.querySelector('#booth-order-error');
     const submit=()=>{
       const value=String(input?.value||'').trim();
@@ -5815,12 +5911,21 @@ function openBoothOrderModal({booth={},finalAmount=DEEP_READING_PRICE}={}){
         return;
       }
       finish(value);
+    const submitCode=()=>{
+      const code=normalizeRashinPaidCodeInput(codeInput?.value||'');
+      if(codeInput) codeInput.value=formatRashinPaidCodeInput(code);
+      if(!code||code.length!==12){
+        setCodeStatus('12文字の羅針コードを入力してください','ng');
+        codeInput?.focus();
+        return;
+      }
+      savePendingRashinPaidCode(code);
+      setCodeStatus('羅針コードを保存しました。認証へ進みます。','ok');
+      finish({useRashinCode:true});
+    };
     };
     modal.querySelector('#booth-reference-submit')?.addEventListener('click',submit);
-    modal.querySelector('#booth-reference-code')?.addEventListener('click',async()=>{
-      const code=await promptForPendingRashinPaidCode();
-      if(code) finish({useRashinCode:true});
-    });
+    codeSubmit?.addEventListener('click',submitCode);
     modal.querySelector('#booth-reference-cancel')?.addEventListener('click',()=>finish(null));
     input?.addEventListener('input',()=>{if(error) error.style.display='none';});
     input?.addEventListener('keydown',event=>{
@@ -5832,6 +5937,20 @@ function openBoothOrderModal({booth={},finalAmount=DEEP_READING_PRICE}={}){
         event.preventDefault();
         finish(null);
       }
+    codeInput?.addEventListener('input',()=>{
+      codeInput.value=formatRashinPaidCodeInput(codeInput.value);
+      setCodeStatus('', '');
+    });
+    codeInput?.addEventListener('keydown',event=>{
+      if(event.key==='Enter'){
+        event.preventDefault();
+        submitCode();
+      }
+      if(event.key==='Escape'){
+        event.preventDefault();
+        finish(null);
+      }
+    });
     });
     setModalOpen(modal,true);
     setTimeout(()=>input?.focus(),80);
@@ -5999,7 +6118,10 @@ async function redeemRashinFragmentsForPaidTicket(sourceReadingId='',paidReading
     };
     ACTIVE_PAID_SOURCE_READING_ID=ACTIVE_PAID_READING_TICKET.sourceReadingId;
     PENDING_PAID_READING_ID=ACTIVE_PAID_READING_TICKET.paidReadingId;
-    if(data.bonusStatus) RASHIN_BONUS_STATUS=data.bonusStatus;
+    if(data.bonusStatus){
+      RASHIN_BONUS_STATUS=data.bonusStatus;
+      if(data.bonusStatus.crossBenefit) applyRashinCrossBenefitData(data.bonusStatus);
+    }
     MEMBER_AUTH.rashinStones=Math.max(0,Math.floor(Number(data.rashinStones||0)));
     renderRashinBonusCard();
     renderRecentHistory();
@@ -6015,6 +6137,83 @@ async function redeemRashinFragmentsForPaidTicket(sourceReadingId='',paidReading
     return{ok:false,error:'NETWORK_ERROR',message:'羅針のかけらの使用に失敗しました'};
   }
 }
+async function redeemRashinCalendarBenefitForPaidTicket(sourceReadingId='',paidReadingId='',options={}){
+  const sourceId=String(sourceReadingId||'').trim();
+  const paidId=String(paidReadingId||'').trim();
+  if(!canUseProxy()||!MEMBER_AUTH.authLoggedIn||MEMBER_AUTH.authProvider!=='google'||!sourceId||!paidId){
+    return{ok:false,error:'UNAVAILABLE'};
+  }
+  try{
+    const res=await fetchApi(RASHIN_CROSS_BENEFIT_REDEEM_PAID_TICKET_ENDPOINT,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        sourceReadingId:sourceId,
+        paidReadingId:paidId,
+        identity:getPaidReadingIdentity(),
+        allowDirectPaid:options.allowDirectPaid===true,
+      }),
+    });
+    const data=await readJsonSafe(res);
+    if(!res.ok){
+      return{ok:false,error:data?.error||'',message:getServerErrorMessage(data,'羅針カレンダー特典を深掘り鑑定に使えませんでした')};
+    }
+    ACTIVE_PAID_READING_TICKET={
+      id:data.ticketId||'',
+      sourceReadingId:data.sourceReadingId||sourceId,
+      paidReadingId:data.paidReadingId||paidId,
+      status:data.ticketStatus||'unused',
+      finalAmount:Number(data.finalAmount||0),
+      discountStonesUsed:0,
+      discountType:data.discountType||'rashin_calendar_cross_benefit',
+    };
+    ACTIVE_PAID_SOURCE_READING_ID=ACTIVE_PAID_READING_TICKET.sourceReadingId;
+    PENDING_PAID_READING_ID=ACTIVE_PAID_READING_TICKET.paidReadingId;
+    if(data.crossBenefit) applyRashinCrossBenefitData(data);
+    renderRashinBonusCard();
+    renderRecentHistory();
+    showToast(data.consumed?'羅針カレンダー特典で深掘り鑑定を開きました':'深掘り鑑定の準備が整いました');
+    trackEvent('calendar_free_paid_ticket_redeemed',{
+      source:options.source||'calendar_popup',
+      consumed:!!data.consumed,
+      free_paid_reading_credits:getRashinCrossBenefitSnapshot().freePaidReadingCredits,
+    });
+    return{ok:true,ticket:ACTIVE_PAID_READING_TICKET};
+  }catch(e){
+    return{ok:false,error:'NETWORK_ERROR',message:'羅針カレンダー特典の使用に失敗しました'};
+  }
+}
+
+async function startRashinPaidReadingFromCalendarBenefit(source='calendar_popup'){
+  if(!canUseProxy()){
+    showToast('羅針カレンダー特典はサーバー経由で利用できます');
+    return false;
+  }
+  if(!MEMBER_AUTH.authLoggedIn||MEMBER_AUTH.authProvider!=='google'){
+    openMemberAccessModal('calendar-paid-benefit');
+    return false;
+  }
+  if(!RASHIN_BONUS_STATUS) await loadRashinBonusStatus({render:true});
+  const snapshot=getRashinCrossBenefitSnapshot();
+  if(!snapshot.freePaidReadingBenefit?.available){
+    showToast('利用できる羅針カレンダー特典がありません');
+    return false;
+  }
+  const sourceId=createReadingId();
+  const paidId=createReadingId();
+  PENDING_PAID_READING_ID=paidId;
+  const redeemed=await redeemRashinCalendarBenefitForPaidTicket(sourceId,paidId,{
+    allowDirectPaid:true,
+    source,
+  });
+  if(!redeemed.ok){
+    showToast(redeemed.message||'羅針カレンダー特典を深掘り鑑定に使えませんでした');
+    return false;
+  }
+  startAuthorizedPaidFlowWithTags();
+  return true;
+}
+
 
 async function preparePaidReadingTicket(sourceReadingId='',paidReadingId=''){
   const sourceId=sourceReadingId||CURRENT_READING_ID;
@@ -6064,6 +6263,11 @@ async function markPaidReadingTicketUsed(){
     });
     const data=await readJsonSafe(res);
     if(res.ok){
+      if(data?.crossBenefit) applyRashinCrossBenefitData(data);
+      syncRashinYearCalendarActionButton();
+      if(data?.calendarBenefit?.granted){
+        showToast('特典として羅針カレンダー1回分を受け取りました');
+      }
       ACTIVE_PAID_READING_TICKET={...ACTIVE_PAID_READING_TICKET,status:data?.ticketStatus||'used'};
       trackEvent('deep_ticket_used',{
         source:'result',
@@ -6600,6 +6804,19 @@ async function ensurePaidAccess(intent=''){
     return false;
   }
   if(intent==='start-paid'&&MEMBER_AUTH.authLoggedIn&&MEMBER_AUTH.authProvider==='google'){
+    if(getRashinCrossBenefitSnapshot().freePaidReadingBenefit?.available){
+      const directSourceId=createReadingId();
+      if(!PENDING_PAID_READING_ID) PENDING_PAID_READING_ID=createReadingId();
+      const calendarTicket=await redeemRashinCalendarBenefitForPaidTicket(directSourceId,PENDING_PAID_READING_ID,{
+        allowDirectPaid:true,
+        source:'paid_start',
+      });
+      if(calendarTicket.ok) return true;
+      if(calendarTicket.error&&calendarTicket.error!=='RASHIN_PAID_READING_CREDIT_REQUIRED'){
+        showToast(calendarTicket.message||'羅針カレンダー特典を深掘り鑑定に使えませんでした');
+        return false;
+      }
+    }
     if(!RASHIN_BONUS_STATUS) await loadRashinBonusStatus({render:true});
     if(getRashinFragmentSnapshot().freeReadingBenefit?.available){
       const directSourceId=createReadingId();
@@ -6619,6 +6836,16 @@ async function ensurePaidAccess(intent=''){
     const sourceReadingId=CURRENT_READING_ID;
     if(!PENDING_PAID_READING_ID) PENDING_PAID_READING_ID=createReadingId();
     const prepared=await preparePaidReadingTicket(sourceReadingId,PENDING_PAID_READING_ID);
+    if(getRashinCrossBenefitSnapshot().freePaidReadingBenefit?.available){
+      const calendarTicket=await redeemRashinCalendarBenefitForPaidTicket(sourceReadingId,PENDING_PAID_READING_ID,{
+        source:'result_upgrade',
+      });
+      if(calendarTicket.ok) return true;
+      if(calendarTicket.error&&!['UNAVAILABLE','RASHIN_PAID_READING_CREDIT_REQUIRED','ORACLE_RESULT_NOT_AVAILABLE','LATEST_RESULT_REQUIRED'].includes(calendarTicket.error)){
+        showToast(calendarTicket.message||'羅針カレンダー特典を深掘り鑑定に使えませんでした');
+        return false;
+      }
+    }
     if(prepared.ok) return true;
     const fragmentTicket=await redeemRashinFragmentsForPaidTicket(sourceReadingId,PENDING_PAID_READING_ID);
     if(fragmentTicket.ok) return true;
@@ -6662,6 +6889,10 @@ function resumePendingMemberIntent(){
       void loadRashinBonusStatus({render:true});
     }
     return;
+  if(intent==='calendar-paid-benefit'){
+    void startRashinPaidReadingFromCalendarBenefit('login_resume');
+    return;
+  }
   }
   if(isMemberActive()){
     if(intent==='start-paid') startAuthorizedPaidFlowWithTags();
@@ -6775,22 +7006,7 @@ function repairStaticCopy(){
     simpleTopBtn.setAttribute('data-track-position','hero');
     simpleTopBtn.onclick=null;
   }
-  let rashinCodeForm=document.querySelector('#s-top .rashin-code-form');
-  if(!rashinCodeForm){
-    rashinCodeForm=document.createElement('div');
-    rashinCodeForm.className='rashin-code-form';
-    rashinCodeForm.innerHTML=`
-      <label class="rashin-code-label" for="rashin-code-input">羅針コード</label>
-      <div class="rashin-code-row">
-        <input class="rashin-code-input" id="rashin-code-input" type="text" inputmode="text" pattern="[A-Za-z0-9\\-]*" maxlength="14" autocomplete="one-time-code" placeholder="12文字">
-        <button class="rashin-code-submit" id="rashin-code-submit" type="button">認証</button>
-      </div>
-      <div class="rashin-code-status" id="rashin-code-status" aria-live="polite" style="display:none"></div>`;
-  }
-  if(topBtns&&rashinCodeForm){
-    if(simpleTopBtn?.parentNode===topBtns) topBtns.insertBefore(rashinCodeForm,simpleTopBtn.nextSibling);
-    else topBtns.appendChild(rashinCodeForm);
-  }
+  document.querySelector('#s-top .rashin-code-form')?.remove();
   let topCalendarBtn=document.querySelector('#s-top .btn-top.btn-rashin-calendar');
   if(!topCalendarBtn){
     topCalendarBtn=document.createElement('button');
@@ -6807,17 +7023,10 @@ function repairStaticCopy(){
       return false;
     };
     if(topBtns){
-      if(rashinCodeForm?.parentNode===topBtns) topBtns.insertBefore(topCalendarBtn,rashinCodeForm.nextSibling);
+      if(simpleTopBtn?.parentNode===topBtns) topBtns.insertBefore(topCalendarBtn,simpleTopBtn.nextSibling);
       else topBtns.appendChild(topCalendarBtn);
     }
   }
-  const rashinCodeInput=document.getElementById('rashin-code-input');
-  const rashinCodeSubmit=document.getElementById('rashin-code-submit');
-  if(rashinCodeInput){
-    rashinCodeInput.oninput=handleRashinCodeInput;
-    rashinCodeInput.onkeydown=handleRashinCodeKeydown;
-  }
-  if(rashinCodeSubmit) rashinCodeSubmit.onclick=submitRashinCode;
   document.querySelectorAll('#s-top .btn-top.btn-paid').forEach(el=>{
     el.setAttribute('href','?flow=paid');
     el.setAttribute('data-flow-target','paid');
@@ -6848,12 +7057,12 @@ function repairStaticCopy(){
   }
   if(planCards[1]){
     setWithin(planCards[1],'.plan-compare-title','深掘り鑑定');
-  setWithin(planCards[1],'.plan-compare-price','最安1000円');
-    setWithin(planCards[1],'.plan-compare-trial','今は単発のみ');
-    setWithin(planCards[1],'.plan-compare-badge','プレリリース価格');
+  setWithin(planCards[1],'.plan-compare-price',`${DEEP_READING_PRICE}円`);
+    setWithin(planCards[1],'.plan-compare-trial','単発鑑定');
+    setWithin(planCards[1],'.plan-compare-badge','正式リリース価格');
     const deepItems=planCards[1].querySelectorAll('.plan-compare-list li');
     [
-      '最安1000円：まず1回だけ、いまの悩みを深く読む',
+      `${DEEP_READING_PRICE}円：まず1回だけ、いまの悩みを深く読む`,
       'BOOTHグッズは価格が異なる場合があります',
       '今は単発のみ',
       '追加質問で悩みの前提を具体化',
@@ -6875,7 +7084,7 @@ function repairStaticCopy(){
     }
   }
   document.querySelectorAll('.paid-band-note').forEach(el=>{
-  el.textContent='深掘り羅針鑑定 最安1000円';
+  el.textContent=`深掘り羅針鑑定 ${DEEP_READING_PRICE}円`;
   });
   document.querySelectorAll('.checkout-disclosure').forEach(el=>{
     if(el.closest('#member-access-modal')) return;
@@ -6888,7 +7097,7 @@ function repairStaticCopy(){
     ['数秘オラクルカードって何ですか？','誕生日などの数字の意味と、直感で選ぶカードを合わせて読むアドバイスカードです。<br>あなたの強み、今の向き合い方、羅針の指針を示します。'],
     ['AIがどうやって占うのですか？','相談内容・名前・生年月日・カード結果をもとに、設計された占術ロジックに沿って鑑定文を生成します。<br>同じカードでも、相談内容やこれまでの流れによって読み方が変わります。'],
     ['無料鑑定では何ができますか？','無料鑑定では、姓名判断・四柱推命・動物タイプ診断に加え、ルノルマンカード2枚と数秘オラクルカード1枚で読み解きます。<br>ルノルマン2枚では、金運ならお金の流れ、恋愛なら距離感、仕事なら案件や評価など、相談テーマに合わせて「今見える流れ」と「注意したい一点」を確認できます。'],
-    ['無料鑑定と深掘り鑑定の違いは？','無料鑑定では、ルノルマンカード2枚で相談テーマに対する一点判断を行います。無料鑑定とミニ鑑定はあわせて1日5回までです。<br>深掘り鑑定では、同じ相談内容を前提に続きの追加カードを引くことも、直接有料鑑定から始めることもできます。ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>料金の目安は最安1000円です。BOOTHグッズは価格が異なる場合があります。有料課金ごとに無料鑑定枠が1回分回復します。'],
+    ['無料鑑定と深掘り鑑定の違いは？',`無料鑑定では、ルノルマンカード2枚で相談テーマに対する一点判断を行います。無料鑑定とミニ鑑定はあわせて1日5回までです。<br>深掘り鑑定では、ルノルマン9枚・数秘オラクル3枚・追加質問・履歴の流れまで読みます。<br>料金は${DEEP_READING_PRICE}円です。有料課金ごとに無料鑑定枠が1回分回復します。`],
     ['過去の鑑定は読み返せますか？','はい。これまでの鑑定は「過去の占いを読み返す」から確認できます。<br>前回のテーマやカードの流れを見返すことで、同じ悩みの続きや変化を確認しやすくなります。'],
     ['「鑑定履歴の流れを読み解く」って何ですか？','これまでの鑑定をまとめて、よく出るカード、相談テーマの変化、くり返し向き合っている悩みを時系列で読み解く機能です。<br>鑑定履歴があるほど、変化の流れが見えやすくなります。']
   ];
@@ -7199,13 +7408,12 @@ function ensureRashinYearCalendarStyles(){
       width:min(860px,100%);
       margin:18px auto 0;
       padding:16px 18px;
-      border:1px solid rgba(229,184,86,.62);
+      border:1px solid rgba(181,220,255,.66);
       border-radius:8px;
       background:
-        linear-gradient(135deg,rgba(7,18,34,.94),rgba(2,7,18,.86)),
-        radial-gradient(circle at 14% 0%,rgba(229,184,86,.24),transparent 34%),
-        radial-gradient(circle at 96% 100%,rgba(111,198,215,.18),transparent 34%);
-      box-shadow:0 18px 44px rgba(0,0,0,.34), inset 0 0 0 1px rgba(255,244,190,.12);
+        linear-gradient(135deg,rgba(12,24,70,.96),rgba(38,29,105,.92) 48%,rgba(108,58,168,.88)),
+        linear-gradient(90deg,rgba(94,226,255,.18),transparent 38%,rgba(214,180,255,.20));
+      box-shadow:0 0 36px rgba(97,143,255,.28),0 18px 44px rgba(0,0,0,.34), inset 0 0 0 1px rgba(224,240,255,.16);
       overflow:hidden;
     }
     .rashin-year-calendar-entry:before,
@@ -7216,7 +7424,7 @@ function ensureRashinYearCalendarStyles(){
     }
     .rashin-year-calendar-entry:before{
       inset:7px;
-      border:1px solid rgba(229,184,86,.24);
+      border:1px solid rgba(197,227,255,.30);
       border-radius:6px;
     }
     .rashin-year-calendar-entry:after{
@@ -7224,12 +7432,12 @@ function ensureRashinYearCalendarStyles(){
       top:14px;
       width:72px;
       height:72px;
-      border:1px solid rgba(229,184,86,.34);
+      border:1px solid rgba(169,224,255,.36);
       border-radius:50%;
       background:
-        linear-gradient(90deg,transparent 49%,rgba(229,184,86,.28) 50%,transparent 51%),
-        linear-gradient(0deg,transparent 49%,rgba(229,184,86,.28) 50%,transparent 51%);
-      opacity:.42;
+        linear-gradient(90deg,transparent 49%,rgba(185,225,255,.30) 50%,transparent 51%),
+        linear-gradient(0deg,transparent 49%,rgba(185,225,255,.30) 50%,transparent 51%);
+      opacity:.46;
     }
     .rashin-year-calendar-main{
       position:relative;
@@ -7239,7 +7447,7 @@ function ensureRashinYearCalendarStyles(){
       min-width:0;
     }
     .rashin-year-calendar-kicker{
-      color:#e8bc59;
+      color:#8eeeff;
       font-size:.72rem;
       font-weight:800;
       letter-spacing:.14em;
@@ -7250,7 +7458,7 @@ function ensureRashinYearCalendarStyles(){
       font-size:clamp(1.15rem,2.3vw,1.72rem);
       font-weight:800;
       line-height:1.28;
-      text-shadow:0 0 18px rgba(232,188,89,.28);
+      text-shadow:0 0 20px rgba(134,210,255,.42),0 0 28px rgba(174,113,255,.28);
     }
     .rashin-year-calendar-copy{
       max-width:58em;
@@ -7263,12 +7471,13 @@ function ensureRashinYearCalendarStyles(){
       z-index:1;
       min-width:154px;
       min-height:46px;
-      border:1px solid rgba(255,233,158,.8);
+      border:1px solid rgba(222,243,255,.82);
       border-radius:999px;
-      background:linear-gradient(135deg,#f5d777,#a97021);
-      color:#07101e;
+      background:linear-gradient(135deg,#173c91,#6f58e8 54%,#57ddec);
+      color:#f8fcff;
       font-weight:900;
-      box-shadow:0 10px 22px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.45);
+      text-shadow:0 1px 10px rgba(26,9,74,.60);
+      box-shadow:0 0 24px rgba(112,139,255,.42),0 10px 22px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.42);
       cursor:pointer;
     }
     .rashin-year-calendar-btn:focus-visible{
@@ -7307,7 +7516,11 @@ function canOpenPaidRashinYearCalendar(){
 
 function syncRashinYearCalendarActionButton(){
   const btn=document.getElementById('rashin-year-calendar-result-btn');
-  if(btn) btn.style.display=canOpenPaidRashinYearCalendar()?'inline-flex':'none';
+  if(btn){
+    const calendarBenefitReady=!!getRashinCrossBenefitSnapshot().freeCalendarBenefit?.available;
+    btn.textContent=calendarBenefitReady?'特典で羅針カレンダーを作成':'羅針カレンダーを作成';
+    btn.style.display=canOpenPaidRashinYearCalendar()?'inline-flex':'none';
+  }
 }
 
 async function requestRashinYearCalendarFromPaid(source='result_paid'){
@@ -7336,6 +7549,46 @@ function buildRashinYearCalendarEntryHtml(source='top_entry'){
       <button class="rashin-year-calendar-btn" type="button" onclick="requestRashinYearCalendarFromPaid('${source}')">有料鑑定から作成する</button>
     </div>`;
 }
+async function completeRashinYearCalendarBenefit(source='result_paid'){
+  if(!canUseProxy()||!MEMBER_AUTH.authLoggedIn||MEMBER_AUTH.authProvider!=='google') return{ok:false,reason:'login_required'};
+  let snapshot=getRashinCrossBenefitSnapshot();
+  if(!snapshot.freeCalendarBenefit?.available){
+    await loadRashinCrossBenefitStatus({render:false});
+    snapshot=getRashinCrossBenefitSnapshot();
+  }
+  if(!snapshot.freeCalendarBenefit?.available) return{ok:false,reason:'no_calendar_credit',crossBenefit:snapshot};
+  try{
+    const res=await fetchApi(RASHIN_CROSS_BENEFIT_USE_CALENDAR_ENDPOINT,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        sourceReadingId:ACTIVE_PAID_SOURCE_READING_ID||ACTIVE_PAID_READING_TICKET?.sourceReadingId||CURRENT_READING_ID||'',
+        paidReadingId:CURRENT_READING_ID||ACTIVE_PAID_READING_TICKET?.paidReadingId||PENDING_PAID_READING_ID||'',
+        source,
+      }),
+    });
+    const data=await readJsonSafe(res);
+    if(data?.crossBenefit) applyRashinCrossBenefitData(data);
+    if(!res.ok) return{ok:false,error:data?.error||'',message:getServerErrorMessage(data,'羅針カレンダー特典を反映できませんでした'),crossBenefit:getRashinCrossBenefitSnapshot()};
+    renderRashinBonusCard();
+    renderRecentHistory();
+    syncRashinYearCalendarActionButton();
+    if(data?.grantedPaidReading){
+      showToast('羅針カレンダー特典として深掘り鑑定1回分を受け取りました');
+    }
+    trackEvent('calendar_benefit_used',{
+      source,
+      consumed:!!data?.consumed,
+      granted_paid_reading:!!data?.grantedPaidReading,
+      duplicate:!!data?.duplicate,
+      free_paid_reading_credits:getRashinCrossBenefitSnapshot().freePaidReadingCredits,
+    });
+    return{ok:true,...data,crossBenefit:getRashinCrossBenefitSnapshot()};
+  }catch(e){
+    return{ok:false,error:'NETWORK_ERROR',message:'羅針カレンダー特典の反映に失敗しました',crossBenefit:getRashinCrossBenefitSnapshot()};
+  }
+}
+
 
 function renderPremiumEntrySection(){
   const el=document.getElementById('premium-entry');
@@ -7350,7 +7603,7 @@ function renderPremiumEntrySection(){
         <a class="today-cta today-cta-simple" href="?flow=simple" data-flow-target="simple" data-track="simple_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('simple');return false;}">${SIMPLE_READING_LABEL_HTML}</a>
       </div>
       ${buildRashinYearCalendarEntryHtml('top_entry')}
-      <div class="paid-band-note">深掘り羅針鑑定 最安1000円</div>
+      <div class="paid-band-note">深掘り羅針鑑定 ${DEEP_READING_PRICE}円</div>
       <div class="checkout-disclosure">${getCheckoutDisclosureHtml()}</div>
     </div>`;
 }
@@ -10786,7 +11039,7 @@ function renderPremiumEntryFallback(){
         <a class="today-cta today-cta-simple" href="?flow=simple" data-flow-target="simple" data-track="simple_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('simple');return false;}">${SIMPLE_READING_LABEL_HTML}</a>
       </div>
       ${buildRashinYearCalendarEntryHtml('top_entry_fallback')}
-      <div class="paid-band-note">深掘り羅針鑑定 最安1000円</div>
+      <div class="paid-band-note">深掘り羅針鑑定 ${DEEP_READING_PRICE}円</div>
       <div class="checkout-disclosure">${getCheckoutDisclosureHtml()}</div>
     </div>`;
 }
@@ -11570,13 +11823,13 @@ function renderResultUpgradePanel(){
       <div class="upgrade-head">
         <div>
           <div class="upgrade-badge">深掘り鑑定</div>
-          <div class="upgrade-title">この相談を、もう少し深く整理しますか？</div>
+          <div class="upgrade-title">深掘り鑑定しますか？</div>
           <div class="upgrade-copy">無料鑑定はここで完了です。<br>深掘り鑑定では、追加カード・追加質問・これまでの鑑定履歴をもとに、止まりやすい点、見落としやすい注意点、次に取る一手まで読み解きます。</div>
         </div>
         <div class="upgrade-meta">
           <div class="upgrade-price">
             <div class="upgrade-price-label">料金</div>
-          <div class="upgrade-price-value" id="upgrade-price-value">最安 1000円</div>
+          <div class="upgrade-price-value" id="upgrade-price-value">${DEEP_READING_PRICE}円</div>
             <div class="upgrade-bonus-note" id="upgrade-bonus-note"></div>
           </div>
           <div class="upgrade-note">BOOTHグッズは価格が異なる場合があります</div>
@@ -20957,9 +21210,9 @@ function renderMemberFollowupSection(){
     noteEl.textContent=canUsePaidTestMode()
       ?'深掘り鑑定では、追加カードで作成した有料鑑定に追加質問を使えます。'
       :((MEMBER_AUTH.googleClientConfigured&&!MEMBER_AUTH.authLoggedIn)
-    ?'追加カードで有料鑑定を作る場合は、最安1000円の深掘り鑑定へ進んでください。'
+    ?`追加カードで有料鑑定を作る場合は、${DEEP_READING_PRICE}円の深掘り鑑定へ進んでください。`
         :((MEMBER_AUTH.authLoggedIn)
-    ?'追加カードで有料鑑定を作る場合は、最安1000円の深掘り鑑定へ進んでください。'
+    ?`追加カードで有料鑑定を作る場合は、${DEEP_READING_PRICE}円の深掘り鑑定へ進んでください。`
           :(canUseAccessCode()
             ?'確認コードがある場合は入力して利用状態を確認できます。'
             :'現在はまだ使えません。')));
@@ -21979,10 +22232,12 @@ function getRashinYearCalendarPopupHtml(contentHtml=''){
   .calendar-popup-head{display:flex;justify-content:space-between;align-items:center;gap:12px;}
   .calendar-popup-title{font-size:22px;font-weight:800;color:#f0c95e;}
   .calendar-popup-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;}
+  .calendar-popup-benefit{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid rgba(240,201,94,.42);background:rgba(4,13,30,.82);padding:14px 16px;line-height:1.7;}
+  .calendar-popup-benefit strong{display:block;color:#f0c95e;margin-bottom:2px;}
   .calendar-popup-btn{border:1px solid rgba(240,201,94,.74);border-radius:999px;background:rgba(4,13,30,.92);color:#fff8dc;padding:10px 14px;text-decoration:none;font-weight:800;cursor:pointer;}
   .calendar-popup-img{width:100%;height:auto;border:1px solid rgba(240,201,94,.52);box-shadow:0 18px 60px rgba(0,0,0,.45);}
   .calendar-popup-loading{min-height:360px;display:grid;place-items:center;border:1px solid rgba(240,201,94,.34);background:rgba(4,13,30,.88);text-align:center;padding:28px;line-height:1.8;}
-  @media (max-width:640px){body{padding:12px}.calendar-popup-head{align-items:flex-start;flex-direction:column}.calendar-popup-actions{justify-content:flex-start}}
+  @media (max-width:640px){body{padding:12px}.calendar-popup-head,.calendar-popup-benefit{align-items:flex-start;flex-direction:column}.calendar-popup-actions{justify-content:flex-start}}
 </style>
 </head>
 <body>
@@ -22015,8 +22270,16 @@ async function openRashinYearCalendar(source='top_entry'){
     const blob=await createRashinYearCalendarImageBlob(sourceData);
     if(!blob) throw new Error('calendar_blob_empty');
     const url=URL.createObjectURL(blob);
+    const benefitResult=await completeRashinYearCalendarBenefit(source);
+    const benefitReady=!!benefitResult?.crossBenefit?.freePaidReadingBenefit?.available;
+    const benefitHtml=benefitReady?`
+        <div class="calendar-popup-benefit">
+          <div><strong>羅針カレンダー特典を受け取りました</strong>このまま深掘り鑑定を1回、追加料金なしで始められます。</div>
+          <button class="calendar-popup-btn" type="button" onclick="window.opener?.startRashinPaidReadingFromCalendarBenefit?.('calendar_popup')">無料特典で深掘り鑑定へ</button>
+        </div>`:'';
     const filename='rashin-calendar-2026.png';
     if(!popup){
+      if(benefitReady) showToast('羅針カレンダー特典で深掘り鑑定1回分を使えます');
       downloadBlobFile(blob,filename);
       return;
     }
@@ -22029,6 +22292,7 @@ async function openRashinYearCalendar(source='top_entry'){
             <a class="calendar-popup-btn" href="${url}" download="${filename}">PNG保存</a>
             <button class="calendar-popup-btn" type="button" onclick="window.close()">閉じる</button>
           </div>
+        ${benefitHtml}
         </div>
         <img class="calendar-popup-img" alt="${RASHIN_YEAR_CALENDAR_LABEL}" src="${url}">
       </div>`));
@@ -23650,6 +23914,7 @@ if(typeof window!=='undefined'){
   window.openFlowAnalysisModal=openFlowAnalysisModal;
   window.closeFlowAnalysisModal=closeFlowAnalysisModal;
   window.openRashinYearCalendar=openRashinYearCalendar;
+  window.startRashinPaidReadingFromCalendarBenefit=startRashinPaidReadingFromCalendarBenefit;
   window.requestRashinYearCalendarFromPaid=requestRashinYearCalendarFromPaid;
   window.openResultChatDrawer=openResultChatDrawer;
   window.closeResultChatDrawer=closeResultChatDrawer;

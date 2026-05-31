@@ -358,20 +358,29 @@ body{
 }
 
 .btn-rashin-calendar{
-  width:300px;max-width:100%;min-width:238px;
+  width:374px;max-width:100%;min-width:300px;min-height:56px;padding:12px 18px;
   background:
-    radial-gradient(circle at 18% 12%,rgba(255,250,217,.22),transparent 32%),
-    linear-gradient(135deg,rgba(11,43,60,.95),rgba(29,116,122,.9),rgba(229,184,86,.9));
-  border:1px solid rgba(255,232,151,.72);
-  color:#fff8dc;font-size:14px;font-weight:800;letter-spacing:.08em;
-  text-shadow:0 1px 10px rgba(5,15,24,.62);
-  box-shadow:0 0 24px rgba(63,177,177,.24),0 16px 34px rgba(3,14,22,.28),inset 0 1px 0 rgba(255,255,255,.24);
+    linear-gradient(115deg,rgba(13,30,74,.96),rgba(63,56,161,.94) 44%,rgba(157,92,224,.88) 68%,rgba(64,214,237,.90)),
+    linear-gradient(90deg,rgba(255,255,255,.20),transparent 34%,rgba(255,255,255,.16) 70%,transparent);
+  border:1px solid rgba(184,225,255,.78);
+  color:#f6fbff;font-size:14px;font-weight:900;letter-spacing:.08em;
+  text-shadow:0 1px 12px rgba(22,10,68,.72),0 0 18px rgba(134,210,255,.42);
+  box-shadow:0 0 26px rgba(111,139,255,.42),0 0 42px rgba(97,224,245,.22),0 18px 38px rgba(16,12,52,.34),inset 0 1px 0 rgba(255,255,255,.36),inset 0 0 22px rgba(209,230,255,.14);
+  animation:calendarAuroraPulse 4.8s ease-in-out infinite;
 }
 .btn-rashin-calendar:hover{
-  border-color:rgba(255,239,184,.92);
-  color:#fffdfa;
-  box-shadow:0 0 32px rgba(94,205,205,.34),0 20px 40px rgba(3,14,22,.34),inset 0 1px 0 rgba(255,255,255,.3);
+  border-color:rgba(222,243,255,.98);
+  color:#ffffff;
+  background:
+    linear-gradient(115deg,rgba(21,43,104,.98),rgba(82,73,190,.96) 42%,rgba(178,104,240,.94) 68%,rgba(85,230,249,.95)),
+    linear-gradient(90deg,rgba(255,255,255,.24),transparent 34%,rgba(255,255,255,.18) 70%,transparent);
+  box-shadow:0 0 34px rgba(128,153,255,.56),0 0 58px rgba(106,230,250,.32),0 22px 44px rgba(16,12,52,.38),inset 0 1px 0 rgba(255,255,255,.42),inset 0 0 26px rgba(230,242,255,.20);
   transform:translateY(-1px);
+}
+
+@keyframes calendarAuroraPulse{
+  0%,100%{box-shadow:0 0 24px rgba(111,139,255,.38),0 0 40px rgba(97,224,245,.20),0 18px 38px rgba(16,12,52,.32),inset 0 1px 0 rgba(255,255,255,.34),inset 0 0 22px rgba(209,230,255,.12);}
+  50%{box-shadow:0 0 38px rgba(144,116,255,.58),0 0 64px rgba(108,230,250,.34),0 20px 42px rgba(16,12,52,.36),inset 0 1px 0 rgba(255,255,255,.42),inset 0 0 28px rgba(226,239,255,.20);}
 }
 
 @keyframes gentleGreenPulse{
@@ -6563,6 +6572,9 @@ body.consultation-tag-open{overflow:hidden;}
 .booth-open-link{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:11px 14px;border-radius:3px;border:1px solid rgba(201,149,42,.28);background:rgba(201,149,42,.08);color:var(--gold-l);font-family:'Shippori Mincho',serif;font-size:13px;letter-spacing:.12em;text-decoration:none;}
 .booth-open-link:hover{border-color:rgba(201,149,42,.55);background:rgba(201,149,42,.13);}
 .booth-reference-row{margin-top:8px;}
+.booth-rashin-code-row{margin-top:18px;padding-top:14px;border-top:1px solid rgba(201,149,42,.12);}
+.booth-rashin-code-form{width:100%;min-width:0;margin-top:8px;grid-template-columns:minmax(152px,1fr) auto;padding-left:10px;}
+.booth-rashin-code-form .rashin-code-row{display:contents;}
 .booth-reference-hint{font-size:11px;line-height:1.8;color:rgba(240,234,216,.56);margin-top:8px;}
 .booth-contact-hint{border-top:1px solid rgba(201,149,42,.12);padding-top:10px;}
 .booth-contact-hint a{color:var(--gold-l);text-decoration:none;border-bottom:1px solid rgba(201,149,42,.35);}
@@ -6843,7 +6855,7 @@ body.consultation-tag-open{overflow:hidden;}
         <div class="key-status" id="google-auth-error" style="display:none;margin-top:10px;"></div>
       </div>
       <div class="checkout-disclosure">
-        深掘り羅針鑑定はプレリリース価格780円、正式リリース後は1000円予定です。無料鑑定を先に作成せず、羅針のかけら30個または羅針コードで直接開始できる別の有料鑑定です。返金可否は利用規約と決済サービスの処理状況に従います。占いは娯楽・自己理解支援であり、医療・法律・投資などの専門判断ではありません。
+        深掘り羅針鑑定は2000円です。無料鑑定を先に作成せず、羅針のかけら30個または羅針コードで直接開始できる別の有料鑑定です。返金可否は利用規約と決済サービスの処理状況に従います。占いは娯楽・自己理解支援であり、医療・法律・投資などの専門判断ではありません。
         <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a>
       </div>
     <div id="developer-access-shell" style="display:none;margin:14px 0 18px;">
@@ -7014,7 +7026,7 @@ body.consultation-tag-open{overflow:hidden;}
         <div class="plan-compare-card deep">
           <div class="plan-compare-kicker">DEEP READING</div>
           <div class="plan-compare-title">深掘り鑑定</div>
-          <div class="plan-compare-price">プレリリース780円 / 通常1000円予定</div>
+          <div class="plan-compare-price">2000円</div>
           <div class="plan-compare-trial">今は単発のみ</div>
           <div class="plan-compare-badge">無料鑑定の内容をすべて含む</div>
           <ul class="plan-compare-list">
@@ -7127,7 +7139,7 @@ body.consultation-tag-open{overflow:hidden;}
         <span class="top-faq-q-text">無料鑑定と深掘り鑑定の違いは？</span>
         <span class="top-faq-arrow">›</span>
       </button>
-      <div class="top-faq-a">無料鑑定では、ルノルマンカード2枚で相談テーマに対する一点判断を行います。<br>深掘り鑑定では、同じ相談内容を前提に続きの追加カードを引くことも、直接有料鑑定から始めることもできます。ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>料金はプレリリース価格780円、正式リリース後は1000円予定です。有料課金ごとに無料鑑定枠が1回分回復します。</div>
+      <div class="top-faq-a">無料鑑定では、ルノルマンカード2枚で相談テーマに対する一点判断を行います。<br>深掘り鑑定では、同じ相談内容を前提に続きの追加カードを引くことも、直接有料鑑定から始めることもできます。ルノルマンカード9枚・数秘オラクルカード3枚・追加質問・鑑定履歴の流れの読み解きが使えます。<br>料金は2000円です。有料課金ごとに無料鑑定枠が1回分回復します。</div>
     </div>
     <div class="top-faq-item">
       <button class="top-faq-q" onclick="toggleFaq(this)">
@@ -7159,9 +7171,9 @@ body.consultation-tag-open{overflow:hidden;}
         <a class="today-cta today-cta-paid deep-premium-button" href="?flow=paid" data-flow-target="paid" data-track="deepen_cta_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('paid');return false;}">深掘り羅針鑑定をする(有料)</a>
         <a class="today-cta today-cta-simple" href="?flow=simple" data-flow-target="simple" data-track="simple_start_click" data-track-position="entry" onclick="if(window.startFlow){startFlow('simple');return false;}">ミニ羅針鑑定はこちら<br>（カードなし）</a>
       </div>
-      <div class="paid-band-note">深掘り羅針鑑定 プレリリース780円 / 通常1000円予定</div>
+      <div class="paid-band-note">深掘り羅針鑑定 2000円</div>
       <div class="checkout-disclosure">
-        深掘り羅針鑑定はプレリリース価格780円、正式リリース後は1000円予定です。無料鑑定を先に作成せず、羅針のかけら30個または羅針コードで直接開始できる別の有料鑑定です。返金可否は利用規約と決済サービスの処理状況に従います。占いは娯楽・自己理解支援であり、医療・法律・投資などの専門判断ではありません。
+        深掘り羅針鑑定は2000円です。無料鑑定を先に作成せず、羅針のかけら30個または羅針コードで直接開始できる別の有料鑑定です。返金可否は利用規約と決済サービスの処理状況に従います。占いは娯楽・自己理解支援であり、医療・法律・投資などの専門判断ではありません。
         <a href="terms.html" target="_blank" rel="noopener">利用規約</a> / <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="commercial-transactions.html" target="_blank" rel="noopener">特商法表記</a>
       </div>
     </div>

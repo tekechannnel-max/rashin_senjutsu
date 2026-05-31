@@ -48,6 +48,9 @@ function assertRoute(registry, method, prefix, handlerMarker) {
   ['GET', '/api/rashin-bonus/status', 'handleRashinBonusStatus'],
   ['POST', '/api/rashin-bonus/claim', 'handleRashinBonusClaim'],
   ['POST', '/api/rashin-bonus/redeem-paid-ticket', 'handleRashinBonusRedeemPaidTicket'],
+  ['GET', '/api/rashin-cross-benefit/status', 'handleRashinCrossBenefitStatus'],
+  ['POST', '/api/rashin-cross-benefit/use-calendar', 'handleRashinCrossBenefitUseCalendar'],
+  ['POST', '/api/rashin-cross-benefit/redeem-paid-ticket', 'handleRashinCrossBenefitRedeemPaidTicket'],
   ['GET', '/api/deep-reading/discount-status', 'handleDeepReadingDiscountStatus'],
   ['POST', '/api/rashin-paid-code/purchase-intent', 'handleRashinPaidCodePurchaseIntent'],
   ['POST', '/api/rashin-paid-code/redeem', 'handleRashinPaidCodeRedeem'],
@@ -79,7 +82,7 @@ assert.ok(
 );
 
 assert.strictEqual(countOccurrences(pageRoutes, /method: '/g), 4, 'page route count changed unexpectedly');
-assert.strictEqual(countOccurrences(apiRoutes, /method: '/g), 28, 'API route count changed unexpectedly');
+assert.strictEqual(countOccurrences(apiRoutes, /method: '/g), 31, 'API route count changed unexpectedly');
 
 assert.ok(serverSource.includes('async function handleHealth(req, res)'), 'health response must be isolated from request dispatch');
 assert.ok(serverSource.includes('function dispatchRequestRoute(req, res, routes)'), 'request dispatch helper is missing');
