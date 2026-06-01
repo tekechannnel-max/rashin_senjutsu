@@ -99,6 +99,19 @@ assert.ok(
   'paid result calendar button must reflect the free calendar benefit state'
 );
 
+const calendarBenefitPaidStart = sliceFromMarker(
+  appSource,
+  'async function startRashinPaidReadingFromCalendarBenefit',
+  'async function preparePaidReadingTicket'
+);
+
+assert.ok(
+  calendarBenefitPaidStart.includes('RASHIN_YEAR_CALENDAR_PAID_START_PENDING=true') &&
+    calendarBenefitPaidStart.includes('prepareRashinYearCalendarPaidStart()') &&
+    calendarBenefitPaidStart.includes('startAuthorizedPaidFlowWithTags()'),
+  'calendar popup free paid-reading benefit must resume as a comprehensive no-tag paid flow'
+);
+
 const ensurePaidAccessBody = sliceFromMarker(
   appSource,
   'async function ensurePaidAccess',

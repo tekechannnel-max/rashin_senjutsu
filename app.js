@@ -2147,6 +2147,7 @@ let PENDING_PAID_READING_ID='';
 let ACTIVE_PAID_READING_TICKET=null;
 let ACTIVE_PAID_SOURCE_READING_ID='';
 let CHECKOUT_OPENING=false;
+let RASHIN_YEAR_CALENDAR_PAID_START_PENDING=false;
 let CLIENT_LOGGING_READY=false;
 const SENT_CLIENT_LOG_KEYS=new Set();
 let CURRENT_READING_CREATED_AT='';
@@ -2900,6 +2901,39 @@ function getConsultationTagSelections(options={}){
 
 function getConsultationPrimaryCategory(){
   return getConsultationTagSelections()[0]||normalizeConsultationCategoryTag(document.getElementById('f-cat')?.value||'総合');
+}
+
+function prepareRashinYearCalendarPaidStart(){
+  setConsultationCategory('総合');
+  setConsultationTagSelections(['総合']);
+  CONSULTATION_TAG_CONFIRMED=true;
+  const themeEl=document.getElementById('f-theme');
+  if(themeEl&&!themeEl.value.trim()){
+    themeEl.value='2026年の総合運';
+  }
+  updateThemeCounter();
+}
+
+function startRashinYearCalendarPaidFlowUnlocked(){
+  prepareRashinYearCalendarPaidStart();
+  RASHIN_YEAR_CALENDAR_PAID_START_PENDING=false;
+  startFlowUnlocked('paid',{preserveTagConfirmation:true});
+}
+
+async function startRashinYearCalendarPaidFlow(source='rashin_calendar'){
+  RASHIN_YEAR_CALENDAR_PAID_START_PENDING=true;
+  prepareRashinYearCalendarPaidStart();
+  trackEvent('rashin_year_calendar_paid_flow_start',{source});
+  const ready=await ensurePaidAccess('start-paid');
+  if(ready&&RASHIN_YEAR_CALENDAR_PAID_START_PENDING){
+    startRashinYearCalendarPaidFlowUnlocked();
+  }
+  if(!ready){
+    const waitingMember=document.getElementById('member-access-modal')?.getAttribute('aria-hidden')==='false';
+    const waitingBooth=document.getElementById('booth-order-modal')?.getAttribute('aria-hidden')==='false';
+    if(!waitingMember&&!waitingBooth) RASHIN_YEAR_CALENDAR_PAID_START_PENDING=false;
+  }
+  return false;
 }
 
 function syncConsultationTagModalState(){
@@ -6211,6 +6245,8 @@ async function startRashinPaidReadingFromCalendarBenefit(source='calendar_popup'
     showToast(redeemed.message||'羅針カレンダー特典を深掘り鑑定に使えませんでした');
     return false;
   }
+  RASHIN_YEAR_CALENDAR_PAID_START_PENDING=true;
+  prepareRashinYearCalendarPaidStart();
   startAuthorizedPaidFlowWithTags();
   return true;
 }
@@ -6644,7 +6680,10 @@ function openMemberAccessModal(intent=''){
 function closeMemberAccessModal(clearIntent=true){
   const modal=document.getElementById('member-access-modal');
   setModalOpen(modal,false);
-  if(clearIntent) MEMBER_PENDING_INTENT='';
+  if(clearIntent){
+    MEMBER_PENDING_INTENT='';
+    RASHIN_YEAR_CALENDAR_PAID_START_PENDING=false;
+  }
   clearMemberAccessError();
   clearGoogleAuthError();
 }
@@ -7469,20 +7508,54 @@ function ensureRashinYearCalendarStyles(){
     .rashin-year-calendar-btn{
       position:relative;
       z-index:1;
+      overflow:hidden;
+      isolation:isolate;
       min-width:154px;
       min-height:46px;
-      border:1px solid rgba(222,243,255,.82);
+      border:1px solid rgba(237,206,255,.86);
       border-radius:999px;
-      background:linear-gradient(135deg,#173c91,#6f58e8 54%,#57ddec);
+      background:
+        linear-gradient(105deg,#1a075b 0%,#4310a8 34%,#8a32ea 54%,#e3c1ff 68%,#5b19c7 84%,#24076f 100%),
+        radial-gradient(circle at 26% 14%,rgba(255,255,255,.32),transparent 34%);
+      background-size:240% auto,100% 100%;
       color:#f8fcff;
       font-weight:900;
-      text-shadow:0 1px 10px rgba(26,9,74,.60);
-      box-shadow:0 0 24px rgba(112,139,255,.42),0 10px 22px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.42);
+      text-shadow:0 1px 10px rgba(27,5,85,.70),0 0 14px rgba(226,192,255,.46);
+      box-shadow:0 0 26px rgba(148,78,255,.52),0 0 40px rgba(218,136,255,.28),0 10px 22px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.42);
+      animation:rashinCalendarButtonShimmer 5s linear infinite,rashinCalendarButtonPulse 4.8s ease-in-out infinite;
       cursor:pointer;
+    }
+    .rashin-year-calendar-btn:before{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background:linear-gradient(105deg,transparent 0 34%,rgba(255,255,255,.24) 43%,rgba(239,213,255,.70) 50%,rgba(180,112,255,.32) 57%,transparent 68%);
+      transform:translateX(-135%) skewX(-14deg);
+      animation:rashinCalendarButtonSweep 3.5s ease-in-out infinite;
+      opacity:.9;
     }
     .rashin-year-calendar-btn:focus-visible{
       outline:2px solid #fff4ba;
       outline-offset:3px;
+    }
+    .rashin-year-calendar-btn:hover{
+      border-color:rgba(249,230,255,.98);
+      box-shadow:0 0 38px rgba(168,91,255,.68),0 0 62px rgba(230,148,255,.38),0 12px 26px rgba(0,0,0,.36), inset 0 1px 0 rgba(255,255,255,.46);
+      transform:translateY(-1px);
+    }
+    .rashin-year-calendar-btn:hover:before{animation-duration:1.8s;}
+    @keyframes rashinCalendarButtonShimmer{
+      0%{background-position:220% center,center;}
+      100%{background-position:-220% center,center;}
+    }
+    @keyframes rashinCalendarButtonPulse{
+      0%,100%{box-shadow:0 0 24px rgba(148,78,255,.46),0 0 38px rgba(218,136,255,.24),0 10px 22px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.40);}
+      50%{box-shadow:0 0 38px rgba(176,98,255,.68),0 0 62px rgba(232,153,255,.38),0 12px 26px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.46);}
+    }
+    @keyframes rashinCalendarButtonSweep{
+      0%,56%{transform:translateX(-135%) skewX(-14deg);}
+      78%,100%{transform:translateX(135%) skewX(-14deg);}
     }
     @media (max-width:680px){
       .rashin-year-calendar-entry{
@@ -7491,6 +7564,12 @@ function ensureRashinYearCalendarStyles(){
       }
       .rashin-year-calendar-btn{
         width:100%;
+      }
+    }
+    @media (prefers-reduced-motion: reduce){
+      .rashin-year-calendar-btn,
+      .rashin-year-calendar-btn:before{
+        animation:none;
       }
     }
   `;
@@ -7534,7 +7613,7 @@ async function requestRashinYearCalendarFromPaid(source='result_paid'){
     await upgradeCurrentReadingToPaid();
     return false;
   }
-  await startFlow('paid');
+  await startRashinYearCalendarPaidFlow(source);
   return false;
 }
 
@@ -14775,6 +14854,7 @@ function showScreen(id,progress){
 
 async function startFlow(plan){
   const normalized=plan===SIMPLE_READING_PLAN?SIMPLE_READING_PLAN:(plan==='paid'?'paid':'free');
+  RASHIN_YEAR_CALENDAR_PAID_START_PENDING=false;
   if(normalized!==SIMPLE_READING_PLAN){
     setConsultationTagSelections([]);
     CONSULTATION_TAG_PENDING_ACTION={type:'startFlow',plan:normalized};
@@ -14791,6 +14871,10 @@ async function continueStartFlowAfterTag(plan,preserveTagConfirmation=false){
 }
 
 function startAuthorizedPaidFlowWithTags(){
+  if(RASHIN_YEAR_CALENDAR_PAID_START_PENDING){
+    startRashinYearCalendarPaidFlowUnlocked();
+    return;
+  }
   setConsultationTagSelections([]);
   CONSULTATION_TAG_PENDING_ACTION={type:'startAuthorizedPaidFlow'};
   if(openConsultationTagModal(document.getElementById('f-cat')?.value||'総合')) return;

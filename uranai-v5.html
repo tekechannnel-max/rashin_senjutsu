@@ -360,27 +360,40 @@ body{
 .btn-rashin-calendar{
   width:374px;max-width:100%;min-width:300px;min-height:56px;padding:12px 18px;
   background:
-    linear-gradient(115deg,rgba(13,30,74,.96),rgba(63,56,161,.94) 44%,rgba(157,92,224,.88) 68%,rgba(64,214,237,.90)),
-    linear-gradient(90deg,rgba(255,255,255,.20),transparent 34%,rgba(255,255,255,.16) 70%,transparent);
-  border:1px solid rgba(184,225,255,.78);
+    linear-gradient(105deg,#1b075d 0%,#3b129c 31%,#7c2de2 52%,#d9b5ff 66%,#5a1bc6 82%,#24076f 100%),
+    radial-gradient(circle at 28% 18%,rgba(255,255,255,.30),transparent 34%);
+  background-size:240% auto,100% 100%;
+  border:1px solid rgba(226,191,255,.84);
   color:#f6fbff;font-size:14px;font-weight:900;letter-spacing:.08em;
-  text-shadow:0 1px 12px rgba(22,10,68,.72),0 0 18px rgba(134,210,255,.42);
-  box-shadow:0 0 26px rgba(111,139,255,.42),0 0 42px rgba(97,224,245,.22),0 18px 38px rgba(16,12,52,.34),inset 0 1px 0 rgba(255,255,255,.36),inset 0 0 22px rgba(209,230,255,.14);
-  animation:calendarAuroraPulse 4.8s ease-in-out infinite;
+  text-shadow:0 1px 12px rgba(28,5,87,.82),0 0 18px rgba(222,185,255,.50);
+  box-shadow:0 0 30px rgba(142,74,255,.54),0 0 46px rgba(212,134,255,.30),0 18px 38px rgba(24,9,68,.38),inset 0 1px 0 rgba(255,255,255,.38),inset 0 0 24px rgba(233,211,255,.18);
+  animation:ctaShimmer 5s linear infinite, calendarVioletPulse 4.8s ease-in-out infinite;
+}
+.btn-rashin-calendar::before{
+  background:linear-gradient(105deg,transparent 0 34%,rgba(255,255,255,.24) 43%,rgba(239,213,255,.72) 50%,rgba(180,112,255,.32) 57%,transparent 68%);
+  transform:translateX(-130%) skewX(-14deg);
+  animation:calendarButtonSweep 3.5s ease-in-out infinite;
+  opacity:.9;
 }
 .btn-rashin-calendar:hover{
-  border-color:rgba(222,243,255,.98);
+  border-color:rgba(246,226,255,.98);
   color:#ffffff;
   background:
-    linear-gradient(115deg,rgba(21,43,104,.98),rgba(82,73,190,.96) 42%,rgba(178,104,240,.94) 68%,rgba(85,230,249,.95)),
-    linear-gradient(90deg,rgba(255,255,255,.24),transparent 34%,rgba(255,255,255,.18) 70%,transparent);
-  box-shadow:0 0 34px rgba(128,153,255,.56),0 0 58px rgba(106,230,250,.32),0 22px 44px rgba(16,12,52,.38),inset 0 1px 0 rgba(255,255,255,.42),inset 0 0 26px rgba(230,242,255,.20);
+    linear-gradient(105deg,#22076f 0%,#4d16bd 30%,#953aff 52%,#ead2ff 66%,#6f22e0 82%,#2d0784 100%),
+    radial-gradient(circle at 28% 18%,rgba(255,255,255,.36),transparent 34%);
+  box-shadow:0 0 42px rgba(161,86,255,.68),0 0 68px rgba(224,141,255,.38),0 22px 44px rgba(24,9,68,.44),inset 0 1px 0 rgba(255,255,255,.44),inset 0 0 30px rgba(241,222,255,.24);
   transform:translateY(-1px);
 }
+.btn-rashin-calendar:hover::before{animation-duration:1.8s;}
 
-@keyframes calendarAuroraPulse{
-  0%,100%{box-shadow:0 0 24px rgba(111,139,255,.38),0 0 40px rgba(97,224,245,.20),0 18px 38px rgba(16,12,52,.32),inset 0 1px 0 rgba(255,255,255,.34),inset 0 0 22px rgba(209,230,255,.12);}
-  50%{box-shadow:0 0 38px rgba(144,116,255,.58),0 0 64px rgba(108,230,250,.34),0 20px 42px rgba(16,12,52,.36),inset 0 1px 0 rgba(255,255,255,.42),inset 0 0 28px rgba(226,239,255,.20);}
+@keyframes calendarVioletPulse{
+  0%,100%{box-shadow:0 0 28px rgba(142,74,255,.48),0 0 44px rgba(212,134,255,.26),0 18px 38px rgba(24,9,68,.36),inset 0 1px 0 rgba(255,255,255,.36),inset 0 0 24px rgba(233,211,255,.16);}
+  50%{box-shadow:0 0 44px rgba(172,96,255,.70),0 0 72px rgba(232,153,255,.40),0 20px 42px rgba(24,9,68,.42),inset 0 1px 0 rgba(255,255,255,.44),inset 0 0 30px rgba(241,222,255,.24);}
+}
+
+@keyframes calendarButtonSweep{
+  0%,56%{transform:translateX(-135%) skewX(-14deg);}
+  78%,100%{transform:translateX(135%) skewX(-14deg);}
 }
 
 @keyframes gentleGreenPulse{
@@ -6009,7 +6022,9 @@ body.dossier-viewer-open{
   .deep-premium-button::before,
   .deep-premium-button::after,
   .btn-top.deep-premium-button::before,
-  .plan-compare-action.deep-premium-button::before{
+  .plan-compare-action.deep-premium-button::before,
+  .btn-rashin-calendar,
+  .btn-rashin-calendar::before{
     animation:none;
   }
   .feature-carousel-track,

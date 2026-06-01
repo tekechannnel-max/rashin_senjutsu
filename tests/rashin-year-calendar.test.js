@@ -75,8 +75,10 @@ const topCtaSetup = sliceFromMarker(
 
 assert.ok(
   htmlSource.includes('.btn-rashin-calendar') &&
-    htmlSource.includes('.btn-rashin-calendar:hover'),
-  'top Rashin calendar CTA must have dedicated visible styling'
+    htmlSource.includes('.btn-rashin-calendar:hover') &&
+    htmlSource.includes('calendarButtonSweep') &&
+    htmlSource.includes('calendarVioletPulse'),
+  'top Rashin calendar CTA must have dedicated visible violet shimmer styling'
 );
 
 const paidCalendarGate = sliceFromMarker(
@@ -93,6 +95,50 @@ const paidCalendarGate = sliceFromMarker(
 ].forEach(marker => {
   assert.ok(paidCalendarGate.includes(marker), `paid calendar gate must check: ${marker}`);
 });
+
+const calendarPaidStart = sliceFromMarker(
+  appSource,
+  'function prepareRashinYearCalendarPaidStart',
+  'function syncConsultationTagModalState'
+);
+
+[
+  "setConsultationCategory('総合')",
+  "setConsultationTagSelections(['総合'])",
+  "themeEl.value='2026年の総合運'",
+  "RASHIN_YEAR_CALENDAR_PAID_START_PENDING=false",
+  "startFlowUnlocked('paid',{preserveTagConfirmation:true})",
+].forEach(marker => {
+  assert.ok(calendarPaidStart.includes(marker), `calendar paid start must force comprehensive flow without tag prompt: ${marker}`);
+});
+
+const calendarRequest = sliceFromMarker(
+  appSource,
+  'async function requestRashinYearCalendarFromPaid',
+  'function buildRashinYearCalendarEntryHtml'
+);
+
+assert.ok(
+  calendarRequest.includes('await startRashinYearCalendarPaidFlow(source)'),
+  'calendar paid gate must start the comprehensive paid flow helper'
+);
+assert.strictEqual(
+  calendarRequest.includes("await startFlow('paid')"),
+  false,
+  'calendar paid gate must not open the generic paid tag-selection flow'
+);
+
+const authorizedPaidStart = sliceFromMarker(
+  appSource,
+  'function startAuthorizedPaidFlowWithTags',
+  'function startFlowUnlocked'
+);
+
+assert.ok(
+  authorizedPaidStart.includes('if(RASHIN_YEAR_CALENDAR_PAID_START_PENDING)') &&
+    authorizedPaidStart.includes('startRashinYearCalendarPaidFlowUnlocked()'),
+  'authorized paid resume must preserve the no-tag calendar path after BOOTH/code/login'
+);
 
 const sourceBuilder = sliceFromMarker(
   appSource,
