@@ -53,8 +53,7 @@ JSTでは次だけ投稿対象にする。指定外の曜日・時刻では `run
 
 ```text
 08:00: oracle
-月・水 12:00: empathy
-火・木 12:00: empathy
+月〜木 12:00: empathy
 火 19:00: difference
 木 19:00: free_paid_compare
 ```
@@ -143,8 +142,7 @@ npm run social:draft -- --date=2026-05-18 --platforms=threads,bluesky,instagram
 - `run-scheduled-posts.js` はRender Cron用。JSTの投稿対象時間だけ `daily-oracle-post.js --write --post --yes` 相当を実行する。
 - カード意味と占い読みの共通基準は `docs/card-reading-meaning-grounding.md`、SNS固有の画像・投稿ルールは `docs/sns-card-meaning-grounding.md` に従う。
 - 朝08:00の `oracle` はカード1〜33の投稿文をThreads / Bluesky / Instagram向けに出す。冒頭は `おはてけ🌸🦦`、締めの導線は `今日の1枚はこちら！👇` にする。Threads / Blueskyの本文URLと画像は同じにする。Instagramは本文URLを出さず「プロフィールのリンクから」と書き、UTM付きURLは `posts.csv` の分析用URLとして保存する。画像は `images/social/instagram/oracle/NN.jpg` を使い、Instagramの `oracle` には `#おはようvtuber` を入れる。
-- 月・水12:00の `empathy` は、内部名は互換性のため残すが、表向きは「今日のルノルマン一枚」として出す。冒頭は `こんてけ🌸🦦`、カード番号、日本語名、英語名、今日の兆し、流れのサインで構成し、不安訴求へ寄せない。画像は `images/social/instagram/lenormand-empathy/NN.jpg` を使い、初回36投稿で重複させない。
-- 火・木12:00の `empathy` も、月・水と同じ「今日のルノルマン一枚」を出す。
+- 月〜木12:00の `empathy` は、内部名は互換性のため残すが、表向きは「今日のルノルマン一枚」として出す。冒頭は `こんてけ🌸🦦`、カード番号、日本語名、英語名、今日の兆し、流れのサインで構成し、不安訴求へ寄せない。画像は `images/social/instagram/lenormand-empathy/NN.jpg` を使い、初回36投稿で重複させない。
 - Threadsのハッシュタグは `#占い師のつぶやき` だけにし、`#羅針占術` は使わない。Blueskyは `#羅針占術 #今日の占い #今日の運勢 #占い師` を使い、300文字を超えたら投稿しない。Instagramは投稿種別ごとに最大5個だけ付ける。`oracle` / `empathy` / `difference` / `free_paid_compare` はThreadsとの差分をハッシュタグとプロフィールリンク誘導だけにし、画像は同じにする。
 - 火19:00の `difference` は、羅針占術が他のAI占いと違う点、自由記載、命・卜・相の総合占術、鑑定履歴をローテーションで伝える。画像は `images/social/instagram/difference.jpg` をThreadsにも使う。
 - 木19:00の `free_paid_compare` は、無料版と有料版の違い、カード枚数差、鑑定履歴解析の価値を、強すぎない有料導線として伝える。画像は `images/social/instagram/free-paid-compare.jpg` をThreadsにも使う。
@@ -184,7 +182,6 @@ SOCIAL_PLATFORMS=threads,bluesky,instagram
 SOCIAL_THREADS_HASHTAG=#占い師のつぶやき
 SOCIAL_INSTAGRAM_ORACLE_HASHTAGS=#羅針占術 #おはようvtuber #今日の占い #オラクルカード #占い好きな人と繋がりたい
 SOCIAL_INSTAGRAM_EMPATHY_HASHTAGS=#羅針占術 #ルノルマンカード #今日の占い #カード占い #AI占い
-SOCIAL_INSTAGRAM_QUESTION_HASHTAGS=#羅針占術 #悩み相談 #占い好きな人と繋がりたい #今日の占い #AI占い
 SOCIAL_INSTAGRAM_DIFFERENCE_HASHTAGS=#羅針占術 #AI占い #無料占い #占い師のつぶやき #悩み相談
 SOCIAL_INSTAGRAM_FREE_PAID_COMPARE_HASHTAGS=#羅針占術 #無料占い #占い師のつぶやき #ルノルマンカード #AI占い
 SOCIAL_BLUESKY_HASHTAGS=#羅針占術 #今日の占い #今日の運勢 #占い師

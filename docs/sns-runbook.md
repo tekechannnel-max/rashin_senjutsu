@@ -12,8 +12,7 @@
 - Threads / Bluesky / Instagramは投稿前に既存投稿を検索し、UTMの `utm_content` を重複判定用markerとして使う。
 - APIの一時失敗は `SOCIAL_API_RETRY_ATTEMPTS` と `SOCIAL_API_RETRY_BASE_MS` に従って再試行する。認証失敗、アカウント不一致、画像サイズ超過などは再試行しない。
 - すべての投稿には `utm_source`、`utm_medium=social`、`utm_campaign`、`utm_content` 付きの分析用URLを生成し、`posts.csv` に保存する。通常投稿の本文には短い `rashin-senjutsu.onrender.com` を出す。
-- 月・水12:00の `empathy` 投稿は、内部名は互換性のため残すが、表向きは「今日のルノルマン一枚」として出す。ポジティブカードは追い風、注意カードは気をつける一点、中立カードは流れの整理として扱い、初回36投稿で重複させない。UTMは `empathy_YYYYMMDD_cardNN`。
-- 火・木12:00の `empathy` 投稿も「今日のルノルマン一枚」として出す。UTMは `empathy_YYYYMMDD_cardNN`。
+- 月〜木12:00の `empathy` 投稿は、内部名は互換性のため残すが、表向きは「今日のルノルマン一枚」として出す。ポジティブカードは追い風、注意カードは気をつける一点、中立カードは流れの整理として扱い、初回36投稿で重複させない。UTMは `empathy_YYYYMMDD_cardNN`。
 - 火19:00の `difference` 投稿は、羅針占術が他のAI占いと違う点を伝える。自由記載、命・卜・相の総合占術、鑑定履歴、占い師兼エンジニア設計をローテーションで扱う。UTMは `difference_YYYYMMDD_vNN`。
 - 木19:00の `free_paid_compare` 投稿は、無料版と有料版の違いを整理する。有料導線だが、不安を煽らず「必要な人だけ深掘り」の温度にする。UTMは `freepaid_YYYYMMDD_vNN`。
 - `data/social-posts/posts.csv` は投稿台帳。本文とalt textはSHA-256ハッシュだけを保存し、`tracked_url` と `utm_content` でBOOTH側の流入分析と突き合わせる。
@@ -82,8 +81,7 @@ RenderのcronはUTC。上のscheduleはJSTで次の時刻に1回ずつ動く。
 
 ```text
 08:00 JST: oracle
-月・水 12:00 JST: empathy
-火・木 12:00 JST: empathy
+月〜木 12:00 JST: empathy
 火 19:00 JST: difference
 木 19:00 JST: free_paid_compare
 ```
@@ -110,7 +108,6 @@ SOCIAL_PLATFORMS=threads,bluesky,instagram
 SOCIAL_THREADS_HASHTAG=#占い師のつぶやき
 SOCIAL_INSTAGRAM_ORACLE_HASHTAGS=#羅針占術 #おはようvtuber #今日の占い #オラクルカード #占い好きな人と繋がりたい
 SOCIAL_INSTAGRAM_EMPATHY_HASHTAGS=#羅針占術 #ルノルマンカード #今日の占い #カード占い #AI占い
-SOCIAL_INSTAGRAM_QUESTION_HASHTAGS=#羅針占術 #悩み相談 #占い好きな人と繋がりたい #今日の占い #AI占い
 SOCIAL_INSTAGRAM_DIFFERENCE_HASHTAGS=#羅針占術 #AI占い #無料占い #占い師のつぶやき #悩み相談
 SOCIAL_INSTAGRAM_FREE_PAID_COMPARE_HASHTAGS=#羅針占術 #無料占い #占い師のつぶやき #ルノルマンカード #AI占い
 SOCIAL_BLUESKY_HASHTAGS=#羅針占術 #今日の占い #今日の運勢 #占い師
@@ -134,8 +131,7 @@ THREADS_POST_VERIFY_TIMEOUT_MS=120000
 
 - カード意味と占い読みの共通基準は `docs/card-reading-meaning-grounding.md`、SNS固有の画像・投稿ルールは `docs/sns-card-meaning-grounding.md` に従う
 - 08:00: `oracle`。数秘オラクル1〜33の投稿はThreads / Bluesky / Instagram向けにし、冒頭は `おはてけ🌸🦦`、カード名、テーマ、今日の流れ、迷った時の合図、`今日の1枚はこちら！👇` を入れる。画像は `images/social/instagram/oracle/NN.jpg` を使い、Instagramの `oracle` には `#おはようvtuber` を入れる
-- 月・水12:00: `empathy`。表向きは「今日のルノルマン一枚」。冒頭は `こんてけ🌸🦦`、カード番号、日本語名、英語名、今日の兆し、流れのサインで構成し、不安訴求へ寄せない。画像は `images/social/instagram/lenormand-empathy/NN.jpg` を使う
-- 火・木12:00: `empathy`。月・水と同じく「今日のルノルマン一枚」を出す。
+- 月〜木12:00: `empathy`。表向きは「今日のルノルマン一枚」。冒頭は `こんてけ🌸🦦`、カード番号、日本語名、英語名、今日の兆し、流れのサインで構成し、不安訴求へ寄せない。画像は `images/social/instagram/lenormand-empathy/NN.jpg` を使う
 - 火19:00: `difference`。他のAI占いとの差、自由記載、命・卜・相の総合占術、鑑定履歴、占い師兼エンジニア設計をローテーションで伝える
 - 木19:00: `free_paid_compare`。無料版でできること、有料版で深掘りできること、カード枚数差、鑑定履歴解析の価値を、強すぎない有料導線として伝える
 - Threadsは500文字以内、ハッシュタグは `#占い師のつぶやき` だけにする。`#羅針占術` はThreadsでは使わない
