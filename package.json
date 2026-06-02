@@ -24,6 +24,7 @@
     "social:kpi-template": "node scripts/social/prepare-kpi-review.js",
     "social:x:drafts": "node scripts/social/export-x-drafts.js",
     "social:x:today": "node scripts/social/export-x-drafts.js --date=today",
+    "social:x:next-card-drafts": "node scripts/social/export-x-next-card-drafts.js",
     "social:x:capture-auth": "node scripts/social/capture-x-auth-state.js",
     "social:x:web-draft": "node scripts/social/save-x-web-draft.js",
     "social:run-due": "node scripts/social/run-scheduled-posts.js --once",

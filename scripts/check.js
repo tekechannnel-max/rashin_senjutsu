@@ -28,6 +28,7 @@ const syntaxTargets = [
   'scripts/social/post-ledger.js',
   'scripts/social/prepare-kpi-review.js',
   'scripts/social/export-x-drafts.js',
+  'scripts/social/export-x-next-card-drafts.js',
   'scripts/social/capture-x-auth-state.js',
   'scripts/social/save-x-web-draft.js',
   'scripts/rashin/build-free-paid-code-hash-pool.js',

@@ -14,8 +14,22 @@ const OUT_ROOT = path.join(ROOT, 'images', 'social', 'instagram');
 const GENERATED_PLATE_ROOT = path.join(OUT_ROOT, 'generated-plates');
 const ORACLE_SCENE_IMAGE = path.join(OUT_ROOT, '\u4eca\u65e5\u306e\u30aa\u30e9\u30af\u30eb\u7528.png');
 const V_MODEL_ROOT = path.join(ROOT, '占い素材');
-const CHARACTER_IMAGE = path.join(V_MODEL_ROOT, '通常背景無し.png');
-const CHIBI_CHARACTER_IMAGE = path.join(V_MODEL_ROOT, 'ミニキャラ.png');
+function firstExistingPath(candidates) {
+  return candidates.find(candidate => fsSync.existsSync(candidate)) || candidates[0];
+}
+
+const HOST_CHARACTER_IMAGE = path.join(OUT_ROOT, 'rashin-host-inspired-v1.png');
+const ORIGINAL_CHIBI_CHARACTER_IMAGE = path.join(V_MODEL_ROOT, 'ミニキャラ.png');
+const CHARACTER_IMAGE = firstExistingPath([
+  path.join(V_MODEL_ROOT, '通常背景無し.png'),
+  HOST_CHARACTER_IMAGE,
+]);
+const CHIBI_CHARACTER_IMAGE = firstExistingPath([
+  ORIGINAL_CHIBI_CHARACTER_IMAGE,
+  CHARACTER_IMAGE,
+  HOST_CHARACTER_IMAGE,
+]);
+const HAS_STATIC_CHARACTER_IMAGE = fsSync.existsSync(ORIGINAL_CHIBI_CHARACTER_IMAGE);
 const LENORMAND_SCENE_IMAGE = path.join(OUT_ROOT, 'ルノルマンカードメッセージ.png');
 
 function parseArgs(argv) {
@@ -899,7 +913,7 @@ function staticDifferenceHtml() {
         .static-title {
           position: absolute;
           left: 76px;
-          right: 330px;
+          right: ${HAS_STATIC_CHARACTER_IMAGE ? '330px' : '76px'};
           top: 158px;
           font-size: 86px;
           line-height: 1.04;
@@ -918,7 +932,7 @@ function staticDifferenceHtml() {
         .feature-list {
           position: absolute;
           left: 76px;
-          right: 402px;
+          right: ${HAS_STATIC_CHARACTER_IMAGE ? '402px' : '76px'};
           top: 520px;
           display: grid;
           gap: 18px;
@@ -966,7 +980,7 @@ function staticDifferenceHtml() {
       <main class="post">
         <img class="bg" src="${fileUrl(imagePath)}" alt="">
         <div class="wash"></div>
-        <div class="static-character-frame"><img class="static-character" src="${fileUrl(CHIBI_CHARACTER_IMAGE)}" alt=""></div>
+        ${HAS_STATIC_CHARACTER_IMAGE ? `<div class="static-character-frame"><img class="static-character" src="${fileUrl(CHIBI_CHARACTER_IMAGE)}" alt=""></div>` : ''}
         <div class="brand"><span class="brand-mark">R</span><span>羅針占術</span></div>
         <h1 class="static-title">占い結果で<br>終わらせない<span class="static-sub">悩みをそのまま書いて、次に動ける形へ。</span></h1>
         <section class="feature-list">
@@ -974,7 +988,7 @@ function staticDifferenceHtml() {
           <article class="feature"><h2>複数占術</h2><p>命式・姓名・動物タイプ・カードを重ねて読みます。</p></article>
           <article class="feature"><h2>次の一手</h2><p>あとで見返せる判断材料として残します。</p></article>
         </section>
-        <div class="footer">火曜 20:00</div>
+        <div class="footer">火曜 19:00</div>
         <div class="url">rashin-senjutsu.onrender.com</div>
       </main>
     </body>
@@ -1001,7 +1015,7 @@ function staticFreePaidHtml() {
         .compare-title {
           position: absolute;
           left: 76px;
-          right: 340px;
+          right: ${HAS_STATIC_CHARACTER_IMAGE ? '340px' : '76px'};
           top: 158px;
           font-size: 78px;
           line-height: 1.04;
@@ -1108,7 +1122,7 @@ function staticFreePaidHtml() {
       <main class="post">
         <img class="bg" src="${fileUrl(imagePath)}" alt="">
         <div class="wash"></div>
-        <div class="compare-character-frame"><img class="compare-character" src="${fileUrl(CHIBI_CHARACTER_IMAGE)}" alt=""></div>
+        ${HAS_STATIC_CHARACTER_IMAGE ? `<div class="compare-character-frame"><img class="compare-character" src="${fileUrl(CHIBI_CHARACTER_IMAGE)}" alt=""></div>` : ''}
         <div class="brand"><span class="brand-mark">R</span><span>羅針占術</span></div>
         <h1 class="compare-title">無料で入口。<br>有料で深掘り。<span>必要な人だけ、もう一段具体的に見る設計です。</span></h1>
         <section class="columns">
@@ -1134,7 +1148,7 @@ function staticFreePaidHtml() {
           </article>
         </section>
         <div class="note">強い購入誘導ではなく、必要な時の選択肢として。</div>
-        <div class="footer">土曜 20:00</div>
+        <div class="footer">木曜 19:00</div>
         <div class="url">rashin-senjutsu.onrender.com</div>
       </main>
     </body>

@@ -8,7 +8,6 @@
 - `run-scheduled-posts.js`: JSTの予定時刻に来た投稿だけ、設定されたSNSへ送る。現運用はThreads / Bluesky / Instagram
 - `export-x-drafts.js`: X手動投稿用の下書きを出す
 - `content/lenormand-empathy-posts.js`: `empathy` 用の36枚ルノルマン投稿素材
-- `content/thread-question-posts.js`: `question` 用のA/B返信誘発投稿素材
 - `content/difference-posts.js`: `difference` 用のローテーション投稿素材
 - `content/free-paid-compare-posts.js`: `free_paid_compare` 用のローテーション投稿素材
 - `threads-tool.js`: Threads token確認、OAuth、手動投稿テストを行う
@@ -47,17 +46,17 @@ node scripts/social/run-scheduled-posts.js --once --only-kind=all
 Render schedule:
 
 ```text
-0 3,11,22 * * *
+0 3,10,22 * * *
 ```
 
 JSTでは次だけ投稿対象にする。指定外の曜日・時刻では `run-scheduled-posts.js` が投稿しない。
 
 ```text
-07:00: oracle
-月・水・金 12:00: empathy
-火・木 12:00: question
-火 20:00: difference
-土 20:00: free_paid_compare
+08:00: oracle
+月・水 12:00: empathy
+火・木 12:00: empathy
+火 19:00: difference
+木 19:00: free_paid_compare
 ```
 
 5分おき実行は使わない。Render Cronでは状態ファイルが永続化されないため、広い猶予で複数回起動すると同じ投稿が再送される。
@@ -67,7 +66,7 @@ JSTでは次だけ投稿対象にする。指定外の曜日・時刻では `run
 ## X下書き
 
 Xは現在、自動投稿しない。下書きだけ生成する。
-GitHub Actionsの `X social drafts` が、07:03 JST、月・水・金12:03 JST、火・木12:03 JST、火20:03 JST、土20:03 JSTに手動投稿用の下書きをArtifactとStep Summaryへ出す。
+GitHub Actionsの `X social drafts` が、07:03 JSTに朝オラクルだけの手動投稿用下書きをArtifactとStep Summaryへ出す。
 朝オラクルのX下書きは、数秘オラクル1〜33から日付ごとにランダム選択し、Xの280文字制限では切り詰めない。
 
 ```powershell
@@ -99,7 +98,6 @@ npm run social:run-due
 ```powershell
 node scripts/social/run-scheduled-posts.js --once --only-kind=oracle
 node scripts/social/run-scheduled-posts.js --once --only-kind=empathy
-node scripts/social/run-scheduled-posts.js --once --only-kind=question
 node scripts/social/run-scheduled-posts.js --once --only-kind=difference
 node scripts/social/run-scheduled-posts.js --once --only-kind=free_paid_compare
 ```
@@ -109,7 +107,6 @@ node scripts/social/run-scheduled-posts.js --once --only-kind=free_paid_compare
 ```powershell
 node scripts/social/run-scheduled-posts.js --force-kind=oracle
 node scripts/social/run-scheduled-posts.js --force-kind=empathy
-node scripts/social/run-scheduled-posts.js --force-kind=question
 node scripts/social/run-scheduled-posts.js --force-kind=difference
 node scripts/social/run-scheduled-posts.js --force-kind=free_paid_compare
 ```
@@ -145,12 +142,12 @@ npm run social:draft -- --date=2026-05-18 --platforms=threads,bluesky,instagram
 - `audit-social-drafts.js` は文字数、UTM、画像、alt text、重複本文、禁止表現を検査する。
 - `run-scheduled-posts.js` はRender Cron用。JSTの投稿対象時間だけ `daily-oracle-post.js --write --post --yes` 相当を実行する。
 - カード意味と占い読みの共通基準は `docs/card-reading-meaning-grounding.md`、SNS固有の画像・投稿ルールは `docs/sns-card-meaning-grounding.md` に従う。
-- 朝07:00の `oracle` はカード1〜33の投稿文をThreads / Bluesky / Instagram向けに出す。Threads / Blueskyの本文URLと画像は同じにする。Instagramは通常キャプションのURL導線を避け、「プロフィールのリンクから」と書き、UTM付きURLは `posts.csv` の分析用URLとして保存する。画像は `images/social/instagram/oracle/NN.jpg` を使い、締め文は必ず「今日の1枚はこちら」にする。
-- 月・水・金12:00の `empathy` は、内部名は互換性のため残すが、表向きは「今日のルノルマン一枚」として出す。カード番号、日本語名、英語名、今日の兆し、流れのサインで構成し、不安訴求へ寄せない。画像は `images/social/instagram/lenormand-empathy/NN.jpg` を使い、初回36投稿で重複させない。
-- 火・木12:00の `question` は、A/Bで返信しやすい問いを出す。Threads / Blueskyでは本文URLを出さず、UTM付きURLは台帳とKPIレビュー用に保存する。画像は `images/ui/app-promo-vertical-social.jpg` を使う。
-- Threadsのハッシュタグは `#占い師のつぶやき` だけにし、`#羅針占術` は使わない。Blueskyは `#羅針占術 #今日の占い #今日の運勢 #占い師` を使い、300文字を超えたら投稿しない。Instagramは投稿種別ごとに最大5個だけ付ける。`oracle` / `empathy` / `difference` / `free_paid_compare` はThreadsとの差分をハッシュタグとプロフィールリンク誘導だけにし、画像は同じにする。`question` はThreads/Blueskyとも本文URLなしにする。
-- 火20:00の `difference` は、羅針占術が他のAI占いと違う点、自由記載、命・卜・相の総合占術、鑑定履歴をローテーションで伝える。画像は `images/social/instagram/difference.jpg` をThreadsにも使う。
-- 土20:00の `free_paid_compare` は、無料版と有料版の違い、カード枚数差、鑑定履歴解析の価値を、強すぎない有料導線として伝える。画像は `images/social/instagram/free-paid-compare.jpg` をThreadsにも使う。
+- 朝08:00の `oracle` はカード1〜33の投稿文をThreads / Bluesky / Instagram向けに出す。冒頭は `おはてけ🌸🦦`、締めの導線は `今日の1枚はこちら！👇` にする。Threads / Blueskyの本文URLと画像は同じにする。Instagramは本文URLを出さず「プロフィールのリンクから」と書き、UTM付きURLは `posts.csv` の分析用URLとして保存する。画像は `images/social/instagram/oracle/NN.jpg` を使い、Instagramの `oracle` には `#おはようvtuber` を入れる。
+- 月・水12:00の `empathy` は、内部名は互換性のため残すが、表向きは「今日のルノルマン一枚」として出す。冒頭は `こんてけ🌸🦦`、カード番号、日本語名、英語名、今日の兆し、流れのサインで構成し、不安訴求へ寄せない。画像は `images/social/instagram/lenormand-empathy/NN.jpg` を使い、初回36投稿で重複させない。
+- 火・木12:00の `empathy` も、月・水と同じ「今日のルノルマン一枚」を出す。
+- Threadsのハッシュタグは `#占い師のつぶやき` だけにし、`#羅針占術` は使わない。Blueskyは `#羅針占術 #今日の占い #今日の運勢 #占い師` を使い、300文字を超えたら投稿しない。Instagramは投稿種別ごとに最大5個だけ付ける。`oracle` / `empathy` / `difference` / `free_paid_compare` はThreadsとの差分をハッシュタグとプロフィールリンク誘導だけにし、画像は同じにする。
+- 火19:00の `difference` は、羅針占術が他のAI占いと違う点、自由記載、命・卜・相の総合占術、鑑定履歴をローテーションで伝える。画像は `images/social/instagram/difference.jpg` をThreadsにも使う。
+- 木19:00の `free_paid_compare` は、無料版と有料版の違い、カード枚数差、鑑定履歴解析の価値を、強すぎない有料導線として伝える。画像は `images/social/instagram/free-paid-compare.jpg` をThreadsにも使う。
 
 ## 手動投稿とプレビュー
 
@@ -185,16 +182,15 @@ BLUESKY_EXPECTED_HANDLE=tekesensai.bsky.social
 SOCIAL_AUTOMATED_POSTING_ENABLED=true
 SOCIAL_PLATFORMS=threads,bluesky,instagram
 SOCIAL_THREADS_HASHTAG=#占い師のつぶやき
-SOCIAL_INSTAGRAM_ORACLE_HASHTAGS=#羅針占術 #今日の占い #オラクルカード #占い好きな人と繋がりたい #AI占い
+SOCIAL_INSTAGRAM_ORACLE_HASHTAGS=#羅針占術 #おはようvtuber #今日の占い #オラクルカード #占い好きな人と繋がりたい
 SOCIAL_INSTAGRAM_EMPATHY_HASHTAGS=#羅針占術 #ルノルマンカード #今日の占い #カード占い #AI占い
 SOCIAL_INSTAGRAM_QUESTION_HASHTAGS=#羅針占術 #悩み相談 #占い好きな人と繋がりたい #今日の占い #AI占い
 SOCIAL_INSTAGRAM_DIFFERENCE_HASHTAGS=#羅針占術 #AI占い #無料占い #占い師のつぶやき #悩み相談
 SOCIAL_INSTAGRAM_FREE_PAID_COMPARE_HASHTAGS=#羅針占術 #無料占い #占い師のつぶやき #ルノルマンカード #AI占い
 SOCIAL_BLUESKY_HASHTAGS=#羅針占術 #今日の占い #今日の運勢 #占い師
 SOCIAL_EMPATHY_TIME=12:00
-SOCIAL_QUESTION_TIME=12:00
-SOCIAL_DIFFERENCE_TIME=20:00
-SOCIAL_FREE_PAID_COMPARE_TIME=20:00
+SOCIAL_DIFFERENCE_TIME=19:00
+SOCIAL_FREE_PAID_COMPARE_TIME=19:00
 SOCIAL_EXPANSION_START_DATE=2026-05-27
 SOCIAL_POSTS_LEDGER_FILE=data/social-posts/posts.csv
 SOCIAL_API_RETRY_ATTEMPTS=3

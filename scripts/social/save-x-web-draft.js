@@ -1,12 +1,11 @@
 const fs = require('fs/promises');
 const path = require('path');
-const { spawnSync } = require('child_process');
 const { chromium } = require('playwright');
+const { exportXDrafts } = require('./export-x-drafts');
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const EXPORT_SCRIPT = path.join(__dirname, 'export-x-drafts.js');
 const DEFAULT_OUT_DIR = path.join(ROOT, '.tmp-x-web-drafts');
-const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'question', 'difference', 'free_paid_compare'];
+const SOCIAL_POST_KINDS = ['oracle'];
 
 function parseArgs(argv) {
   const args = {
@@ -77,26 +76,12 @@ async function readStorageState(args) {
 async function exportDraftEntries(args) {
   await fs.rm(args.out, { recursive: true, force: true });
   await fs.mkdir(args.out, { recursive: true });
-  const result = spawnSync(process.execPath, [
-    EXPORT_SCRIPT,
-    '--date', args.date,
-    '--kind', args.kind,
-    '--out', rel(args.out),
-  ], {
-    cwd: ROOT,
-    env: {
-      ...process.env,
-      SOCIAL_STATELESS_MODE: 'true',
-      SOCIAL_ORACLE_CARD_MODE: process.env.SOCIAL_ORACLE_CARD_MODE || 'random',
-    },
-    encoding: 'utf8',
-    maxBuffer: 10 * 1024 * 1024,
-    stdio: ['ignore', 'pipe', 'pipe'],
+  const report = await exportXDrafts({
+    date: args.date,
+    kind: args.kind,
+    out: args.out,
+    due: false,
   });
-  if (result.status !== 0) {
-    throw new Error(`X draft export failed: ${result.stderr || result.stdout}`);
-  }
-  const report = JSON.parse(result.stdout);
   if (report.status !== 'x_drafts_written') return { report, entries: [] };
   const entries = [];
   for (const item of report.entries || []) {
@@ -225,6 +210,9 @@ async function saveEntry(page, entry, args) {
     if (args.requireAlt && !altApplied) throw new Error('Image was attached, but alt text could not be applied.');
   }
   const saveClicked = await saveOpenDraft(page, args);
+  const screenshotPath = path.join(args.out, `${entry.date}-${entry.kind}-saved.png`);
+  await fs.mkdir(args.out, { recursive: true });
+  await page.screenshot({ path: screenshotPath, fullPage: true });
   return {
     date: entry.date,
     kind: entry.kind,
@@ -233,6 +221,7 @@ async function saveEntry(page, entry, args) {
     imageAttached,
     altApplied,
     saveClicked,
+    screenshot: rel(screenshotPath),
   };
 }
 

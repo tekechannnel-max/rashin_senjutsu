@@ -7,18 +7,16 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const DAILY_SCRIPT = path.join(__dirname, 'daily-oracle-post.js');
 const OUT_DIR = path.join(ROOT, 'data', 'social-posts', 'kpi-review');
 const SOCIAL_EXPANSION_START_DATE = process.env.SOCIAL_EXPANSION_START_DATE || '2026-05-27';
-const KINDS = ['oracle', 'empathy', 'question', 'difference', 'free_paid_compare'];
+const KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
 const WEEKDAYS_BY_KIND = {
   oracle: null,
-  empathy: [1, 3, 5],
-  question: [2, 4],
+  empathy: [1, 2, 3, 4],
   difference: [2],
-  free_paid_compare: [6],
+  free_paid_compare: [4],
 };
 const KPI_FOCUS_BY_KIND = {
   oracle: 'habit_link_clicks',
   empathy: 'saves_and_free_starts',
-  question: 'replies',
   difference: 'profile_visits_and_free_starts',
   free_paid_compare: 'paid_starts_and_paid_completions',
 };

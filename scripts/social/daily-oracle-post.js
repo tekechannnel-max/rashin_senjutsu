@@ -23,9 +23,8 @@ const DEFAULT_BLUESKY_HASHTAGS = '#羅針占術 #今日の占い #今日の運�
 const DEFAULT_SOCIAL_PLATFORMS = 'threads,bluesky,instagram';
 const INSTAGRAM_HASHTAG_LIMIT = 5;
 const DEFAULT_INSTAGRAM_HASHTAGS_BY_KIND = Object.freeze({
-  oracle: ['#羅針占術', '#今日の占い', '#オラクルカード', '#占い好きな人と繋がりたい', '#AI占い'],
+  oracle: ['#羅針占術', '#おはようvtuber', '#今日の占い', '#オラクルカード', '#占い好きな人と繋がりたい'],
   empathy: ['#羅針占術', '#ルノルマンカード', '#今日の占い', '#カード占い', '#AI占い'],
-  question: ['#羅針占術', '#悩み相談', '#占い好きな人と繋がりたい', '#今日の占い', '#AI占い'],
   difference: ['#羅針占術', '#AI占い', '#無料占い', '#占い師のつぶやき', '#悩み相談'],
   free_paid_compare: ['#羅針占術', '#無料占い', '#占い師のつぶやき', '#ルノルマンカード', '#AI占い'],
   midday: ['#羅針占術', '#AI占い', '#無料占い', '#悩み相談', '#占い好きな人と繋がりたい'],
@@ -42,6 +41,10 @@ const X_ORACLE_HASHTAGS = [
   '#今日の一枚',
   '#オラクルカード',
 ];
+const SOCIAL_ORACLE_GREETING = 'おはてけ🌸🦦';
+const LENORMAND_GREETING = 'こんてけ🌸🦦';
+const SOCIAL_ORACLE_CTA = '今日の1枚はこちら！👇';
+const X_ORACLE_GREETING = SOCIAL_ORACLE_GREETING;
 const DEFAULT_SOCIAL_CAMPAIGN = '202605_prerelease';
 const PRERELEASE_START_DATE = '2026-05-16';
 const PRERELEASE_END_DATE = '2026-05-29';
@@ -54,23 +57,23 @@ const CONTENT_CYCLE_START_DATE = process.env.SOCIAL_CONTENT_CYCLE_START_DATE || 
 const ORACLE_CARD_CYCLE_LENGTH = 33;
 const SOCIAL_PAID_CTA_MODES = new Set(['off', 'soft', 'active']);
 const SOCIAL_RELEASE_MODES = new Set(['auto', 'prelaunch', 'prerelease', 'fix', 'release', 'launch', 'postrelease']);
-const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'question', 'difference', 'free_paid_compare'];
+const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
 const LEGACY_SOCIAL_POST_KINDS = ['midday', 'concept'];
 const DRAFT_POST_KINDS = [...SOCIAL_POST_KINDS, ...LEGACY_SOCIAL_POST_KINDS];
+const X_POST_KINDS = new Set(['oracle']);
 const THREADS_MATCHED_PLATFORM_KINDS = new Set(['oracle', 'empathy', 'difference', 'free_paid_compare']);
 const RESULT_SUFFIX_BY_KIND = {
   oracle: 'Oracle',
   empathy: 'Empathy',
-  question: 'Question',
   difference: 'Difference',
   free_paid_compare: 'FreePaidCompare',
   midday: 'Midday',
   concept: 'Concept',
 };
-const EMPATHY_WEEKDAYS = [1, 3, 5];
+const EMPATHY_WEEKDAYS = [1, 2, 3, 4];
 const QUESTION_WEEKDAYS = [2, 4];
 const DIFFERENCE_WEEKDAYS = [2];
-const FREE_PAID_COMPARE_WEEKDAYS = [6];
+const FREE_PAID_COMPARE_WEEKDAYS = [4];
 const CARD_OVERRIDES_BY_DATE = {
   '2026-05-12': 8,
   '2026-05-13': 8,
@@ -421,6 +424,9 @@ function parseArgs(argv) {
   if (!['all', ...DRAFT_POST_KINDS].includes(args.kind)) {
     throw new Error(`Invalid --kind: ${args.kind}`);
   }
+  if (args.platforms.includes('x') && args.kind !== 'all' && !X_POST_KINDS.has(args.kind)) {
+    throw new Error(`X drafts are limited to oracle. Invalid --kind for X: ${args.kind}`);
+  }
   if (!args.write && !args.post) args.dryRun = true;
   return args;
 }
@@ -472,6 +478,10 @@ function getInstagramHashtagLine(kind) {
   let tags = configured
     ? parseHashtagList(configured)
     : uniqueHashtags(DEFAULT_INSTAGRAM_HASHTAGS_BY_KIND[key] || DEFAULT_INSTAGRAM_HASHTAGS_BY_KIND.concept);
+  if (key === 'oracle' && !tags.includes('#おはようvtuber')) {
+    tags.splice(Math.min(1, tags.length), 0, '#おはようvtuber');
+    tags = uniqueHashtags(tags);
+  }
   if (key === 'empathy' && tags.includes('#悩み相談')) {
     tags = uniqueHashtags(DEFAULT_INSTAGRAM_HASHTAGS_BY_KIND.empathy);
   }
@@ -535,8 +545,9 @@ function hasDisplayUrl(text) {
 function normalizeSharedPlatformText(text) {
   return String(text || '')
     .replace(/(^|\n)#[^\s#]+(?:\s+#[^\s#]+)*/g, '$1#<platform-tags>')
-    .replace(/\brashin-senjutsu\.onrender\.com\b/g, '<profile-link>')
-    .replace(/プロフィールのリンクから[^\n]*/g, '<profile-link>');
+    .replace(/(?:https?:\/\/)?rashin-senjutsu\.onrender\.com\b/g, '<profile-link>')
+    .replace(/プロフィールのリンクから[^\n]*/g, '<profile-link>')
+    .replace(/<profile-link>(?:\s*<profile-link>)+/g, '<profile-link>');
 }
 
 function assertSharedTextMatchesThreads(entry, platform, kind) {
@@ -938,7 +949,7 @@ function getTrackedUrlForPlatform(entry, platform) {
 function validateDraft(draft, args) {
   const platforms = Array.isArray(args.platforms) ? args.platforms : ['threads'];
   const kinds = selectedKindsFromArgs(args);
-  const requiresVisibleUrl = kind => kind !== 'question';
+  const requiresVisibleUrl = () => true;
   if (platforms.includes('threads')) {
     const requiredHashtag = draft.meta?.policy?.threadsHashtag || DEFAULT_THREADS_HASHTAG;
     const preRelease = isPreReleasePosting(draft.date, draft.meta?.socialConfig || {});
@@ -953,12 +964,12 @@ function validateDraft(draft, args) {
       if (draft.oracle.text.includes('今日の1枚はこちら')) {
         throw new Error('pre-release oracle Threads post must not use the live oracle closing line.');
       }
-    } else if (kinds.includes('oracle') && !draft.oracle.text.trim().endsWith('今日の1枚はこちら')) {
-      throw new Error('oracle Threads post must end with the required closing line.');
+    } else if (kinds.includes('oracle') && !draft.oracle.text.includes(SOCIAL_ORACLE_CTA)) {
+      throw new Error('oracle Threads post must include the required CTA line.');
     }
   }
   if (platforms.includes('x')) {
-    for (const kind of kinds) {
+    for (const kind of selectedXKindsFromArgs(args)) {
       const entry = draft[kind];
       validatePostText(entry.xText, { label: `${kind} X post`, platforms: ['x'], requireTrackedUrl: true, requireVisibleUrl: requiresVisibleUrl(kind), trackedUrl: entry.xTrackedUrl });
       if (entry.xText === entry.text) throw new Error(`${kind} X post must not be identical to the Threads post.`);
@@ -1213,16 +1224,15 @@ function buildOracleText(card, publicOrigin, options = {}) {
     ], limit);
   }
   return fitPostText([
-    '今日の数秘オラクル',
-    card.name,
-    `テーマ：${oracleSocialTitle(card)}`,
-    buildOracleLeadLine(card),
-    buildOracleReadingLine(card),
-    buildOracleActionLine(card),
+    SOCIAL_ORACLE_GREETING,
+    `今日の数秘オラクルは「${card.name}」🫶✨`,
+    `テーマは「${oracleSocialTitle(card)}」！`,
+    buildFriendlyXOracleMessage(oracleSocialCopy(card).message || buildOracleReadingLine(card)),
+    buildFriendlyXOracleSupport(oracleSocialCopy(card).support || buildOracleActionLine(card)),
     buildRepeatCycleNote(dateKey, ORACLE_CARD_CYCLE_LENGTH),
+    SOCIAL_ORACLE_CTA,
     displayUrl,
     hashtag,
-    '今日の1枚はこちら',
   ], limit);
 }
 
@@ -1260,6 +1270,23 @@ function splitSocialSentences(text) {
     .filter(Boolean);
 }
 
+function stripSentenceEnding(text) {
+  return String(text || '').trim().replace(/[。.!！?？]+$/u, '');
+}
+
+function buildFriendlyXOracleMessage(text) {
+  const value = stripSentenceEnding(text);
+  if (!value) return '';
+  if (value.endsWith('になる')) return `今日は、${value.replace(/になる$/u, 'になってくれそう')}！`;
+  if (value.endsWith('近づく')) return `今日は、${value.replace(/近づく$/u, '近づけそう')}！`;
+  return `今日は、${value}流れがありそう！`;
+}
+
+function buildFriendlyXOracleSupport(text) {
+  const value = stripSentenceEnding(text);
+  return value ? `迷ったら「${value}」を合図に🔮✨` : '';
+}
+
 function buildXOracleManualDraftText(card, publicOrigin, options = {}) {
   const dateKey = options.dateKey || getJstDateString();
   const publicUrl = (publicOrigin || DEFAULT_PUBLIC_ORIGIN).replace(/\/$/, '');
@@ -1270,13 +1297,13 @@ function buildXOracleManualDraftText(card, publicOrigin, options = {}) {
   const cycleNote = buildRepeatCycleNote(dateKey, ORACLE_CARD_CYCLE_LENGTH);
   const message = readingLines[0] || leadLines[0] || '';
   return fitPostText([
-    'おはてけ🌸🦦',
-    `今日の数秘オラクル：${card.name}`,
-    `テーマ：${oracleSocialTitle(card)}`,
-    message ? `カードメッセージ：${message}` : '',
-    action ? `今日のよりどころ：${action}` : '',
+    X_ORACLE_GREETING,
+    `今日の数秘オラクルは「${card.name}」🫶✨`,
+    `テーマは「${oracleSocialTitle(card)}」！`,
+    buildFriendlyXOracleMessage(message),
+    buildFriendlyXOracleSupport(action),
     cycleNote || null,
-    '今日の1枚はこちら',
+    SOCIAL_ORACLE_CTA,
     publicUrl,
     X_ORACLE_HASHTAGS.join(' '),
   ].filter(line => line !== null), X_CHARACTER_LIMIT);
@@ -1312,7 +1339,9 @@ function pickBlueskyConceptImage(conceptImage) {
 function buildConceptText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['threads'] })) {
   const entry = getCalendarEntry(dateKey);
   const paidCta = resolvePaidCta(entry, config);
-  const link = buildConceptTrackedUrl(dateKey, publicOrigin, config, paidCta);
+  const link = config?.primaryPlatform === 'instagram'
+    ? buildDisplayUrlForPlatform(publicOrigin, config)
+    : buildConceptTrackedUrl(dateKey, publicOrigin, config, paidCta);
   return fitPostText([
     pickNightConceptBody(dateKey),
     buildRepeatCycleNote(dateKey, NIGHT_CONCEPT_POSTS.length),
@@ -1503,11 +1532,12 @@ function buildLenormandCardLine(item) {
 
 function buildLenormandOneCardParts(item) {
   return [
-    '今日のルノルマン一枚',
+    LENORMAND_GREETING,
+    `今日のルノルマン一枚は「${item.cardName}」🫶✨`,
     buildLenormandCardLine(item),
-    item.title,
-    `今日の兆し\n${item.message}`,
-    `流れのサイン\n${item.action}`,
+    `テーマは「${item.title}」！`,
+    `今日の兆しは「${stripSentenceEnding(item.message)}」！`,
+    `流れのサインは「${stripSentenceEnding(item.action)}」を合図に🔮✨`,
     item.cta,
   ];
 }
@@ -1622,7 +1652,6 @@ async function buildDraft(args) {
   const blueskyConfig = withPlatform(config, 'bluesky');
   const instagramOracleConfig = withInstagramKind(config, 'oracle');
   const instagramEmpathyConfig = withInstagramKind(config, 'empathy');
-  const instagramQuestionConfig = withInstagramKind(config, 'question');
   const instagramDifferenceConfig = withInstagramKind(config, 'difference');
   const instagramFreePaidCompareConfig = withInstagramKind(config, 'free_paid_compare');
   const instagramMiddayConfig = withInstagramKind(config, 'midday');
@@ -1631,16 +1660,13 @@ async function buildDraft(args) {
   const paidCta = resolvePaidCta(calendar, config);
   const conceptImage = pickConceptImage(calendar, dateKey);
   const empathyPost = pickEmpathyPost(dateKey);
-  const questionPost = pickQuestionPost(dateKey);
   const differencePost = pickDifferencePost(dateKey);
   const freePaidComparePost = pickFreePaidComparePost(dateKey);
   const differenceImage = SOCIAL_CONTENT_IMAGES.difference;
   const freePaidCompareImage = SOCIAL_CONTENT_IMAGES.free_paid_compare;
   const blueskyConceptImage = pickBlueskyConceptImage(conceptImage);
   const middayImage = SOCIAL_CONCEPT_IMAGES.icon;
-  const questionImage = SOCIAL_CONCEPT_IMAGES.vertical;
   const blueskyMiddayImage = pickBlueskyConceptImage(middayImage);
-  const blueskyQuestionImage = pickBlueskyConceptImage(questionImage);
   const blueskyDifferenceImage = pickBlueskyConceptImage(differenceImage);
   const blueskyFreePaidCompareImage = pickBlueskyConceptImage(freePaidCompareImage);
   const instagramConceptImage = pickBlueskyConceptImage(conceptImage);
@@ -1648,9 +1674,7 @@ async function buildDraft(args) {
   const conceptImagePath = path.join(ROOT, 'images', 'ui', conceptImage.file);
   const blueskyConceptImagePath = path.join(ROOT, 'images', 'ui', blueskyConceptImage.file);
   const middayImagePath = path.join(ROOT, 'images', 'ui', middayImage.file);
-  const questionImagePath = path.join(ROOT, 'images', 'ui', questionImage.blueskyFile || questionImage.file);
   const blueskyMiddayImagePath = path.join(ROOT, 'images', 'ui', blueskyMiddayImage.file);
-  const blueskyQuestionImagePath = path.join(ROOT, 'images', 'ui', blueskyQuestionImage.file);
   const empathyImagePath = lenormandImagePath(empathyPost.cardNumber);
   const empathyImageUrl = lenormandImageUrl(publicOrigin, empathyPost.cardNumber);
   const differenceImagePath = instagramSocialImagePath(differenceImage.file);
@@ -1659,7 +1683,6 @@ async function buildDraft(args) {
   const blueskyFreePaidCompareImagePath = instagramSocialImagePath(blueskyFreePaidCompareImage.file);
   const instagramConceptImagePath = path.join(ROOT, 'images', 'ui', instagramConceptImage.file);
   const instagramMiddayImagePath = path.join(ROOT, 'images', 'ui', instagramMiddayImage.file);
-  const questionImageUrl = buildPublicUiImageUrl(publicOrigin, questionImage.blueskyFile || questionImage.file);
   const messages = await loadDailyOracleMessages();
   const card = await pickCard(messages, dateKey, args.write || args.post, args);
   const imageName = `${String(card.id).padStart(2, '0')}.jpg`;
@@ -1675,11 +1698,10 @@ async function buildDraft(args) {
   const draft = {
     date: dateKey,
     schedule: {
-      oracle: `${process.env.SOCIAL_ORACLE_TIME || '07:00'} Asia/Tokyo`,
-      empathy: `${process.env.SOCIAL_EMPATHY_TIME || '12:00'} Asia/Tokyo Mon/Wed/Fri`,
-      question: `${process.env.SOCIAL_QUESTION_TIME || '12:00'} Asia/Tokyo Tue/Thu`,
-      difference: `${process.env.SOCIAL_DIFFERENCE_TIME || '20:00'} Asia/Tokyo Tue`,
-      free_paid_compare: `${process.env.SOCIAL_FREE_PAID_COMPARE_TIME || '20:00'} Asia/Tokyo Sat`,
+      oracle: `${process.env.SOCIAL_ORACLE_TIME || '08:00'} Asia/Tokyo`,
+      empathy: `${process.env.SOCIAL_EMPATHY_TIME || '12:00'} Asia/Tokyo Mon/Tue/Wed/Thu`,
+      difference: `${process.env.SOCIAL_DIFFERENCE_TIME || '19:00'} Asia/Tokyo Tue`,
+      free_paid_compare: `${process.env.SOCIAL_FREE_PAID_COMPARE_TIME || '19:00'} Asia/Tokyo Thu`,
       midday: `${process.env.SOCIAL_MIDDAY_TIME || '12:00'} Asia/Tokyo`,
       concept: `${process.env.SOCIAL_CONCEPT_TIME || '20:00'} Asia/Tokyo`,
     },
@@ -1724,27 +1746,6 @@ async function buildDraft(args) {
       instagramTrackedUrl: buildEmpathyTrackedUrl(empathyPost, dateKey, publicOrigin, instagramEmpathyConfig),
       instagramImagePath: empathyInstagramImagePath,
       instagramImageUrl: empathyInstagramImageUrl,
-    },
-    question: {
-      content: {
-        version: questionPost.version,
-        title: questionPost.title,
-      },
-      imagePath: questionImagePath,
-      imageUrl: questionImageUrl,
-      altText: buildQuestionAltText(questionPost),
-      text: buildQuestionText(questionPost, dateKey, publicOrigin, threadsConfig),
-      trackedUrl: buildQuestionTrackedUrl(questionPost, dateKey, publicOrigin, threadsConfig),
-      xText: buildXQuestionText(questionPost, dateKey, publicOrigin, xConfig),
-      xTrackedUrl: buildQuestionTrackedUrl(questionPost, dateKey, publicOrigin, xConfig),
-      blueskyText: buildQuestionText(questionPost, dateKey, publicOrigin, blueskyConfig),
-      blueskyTrackedUrl: buildQuestionTrackedUrl(questionPost, dateKey, publicOrigin, blueskyConfig),
-      blueskyImagePath: blueskyQuestionImagePath,
-      blueskyImageUrl: buildPublicUiImageUrl(publicOrigin, blueskyQuestionImage.file),
-      instagramText: buildInstagramQuestionText(questionPost, dateKey, publicOrigin, instagramQuestionConfig),
-      instagramTrackedUrl: buildQuestionTrackedUrl(questionPost, dateKey, publicOrigin, instagramQuestionConfig),
-      instagramImagePath: questionImagePath,
-      instagramImageUrl: questionImageUrl,
     },
     difference: {
       content: {
@@ -1850,10 +1851,6 @@ async function buildDraft(args) {
           cardNameEn: empathyPost.cardNameEn,
           tone: empathyPost.tone,
           title: empathyPost.title,
-        },
-        question: {
-          version: questionPost.version,
-          title: questionPost.title,
         },
         difference: {
           version: differencePost.version,
@@ -2033,6 +2030,10 @@ function selectedKindsFromArgs(args) {
   return SOCIAL_POST_KINDS;
 }
 
+function selectedXKindsFromArgs(args) {
+  return selectedKindsFromArgs(args).filter(kind => X_POST_KINDS.has(kind));
+}
+
 function shouldPostKind(args, kind) {
   return args.kind === 'all' || args.kind === kind;
 }
@@ -2197,7 +2198,7 @@ async function main() {
       if (process.env.SOCIAL_X_API_POSTING_ENABLED !== 'true') {
         throw new Error('X API posting is disabled. Generate X drafts with npm run social:x:drafts and post manually, or set SOCIAL_X_API_POSTING_ENABLED=true when official X API credentials are intentionally configured.');
       }
-      for (const kind of kindsToPost) {
+      for (const kind of selectedXKindsFromArgs(args)) {
         const entry = draft[kind];
         results[resultKeyFor('x', kind)] = await withSocialRetry(`x:${kind}`, () => postToX(entry.xText, entry.imagePath));
       }
@@ -2243,7 +2244,14 @@ async function main() {
   console.log(JSON.stringify({ posted: results }, null, 2));
 }
 
-main().catch(error => {
-  console.error(error?.stack || error?.message || String(error));
-  process.exit(1);
-});
+module.exports = {
+  buildDraft,
+  getJstDateString,
+};
+
+if (require.main === module) {
+  main().catch(error => {
+    console.error(error?.stack || error?.message || String(error));
+    process.exit(1);
+  });
+}

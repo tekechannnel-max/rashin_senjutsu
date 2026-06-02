@@ -15,7 +15,6 @@ on:
           - auto
           - oracle
           - empathy
-          - question
           - difference
           - free_paid_compare
 

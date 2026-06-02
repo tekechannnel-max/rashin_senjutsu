@@ -1,4 +1,4 @@
-const LENORMAND_ONE_CARD_CTA = '羅針占術では、ルノルマンで今の流れと次の判断にそっと寄り添います。';
+const LENORMAND_ONE_CARD_CTA = '羅針占術では、ルノルマンで今の流れと次の判断にそっと寄り添う😌👍';
 
 const LENORMAND_EMPATHY_POSTS = [
   {

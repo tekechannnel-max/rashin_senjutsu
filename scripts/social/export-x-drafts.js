@@ -1,23 +1,17 @@
 const fs = require('fs/promises');
 const path = require('path');
-const { spawnSync } = require('child_process');
+const { buildDraft, getJstDateString: getDraftJstDateString } = require('./daily-oracle-post');
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const DAILY_SCRIPT = path.join(__dirname, 'daily-oracle-post.js');
 const DEFAULT_OUT_DIR = path.join(ROOT, 'data', 'social-posts', 'x-drafts');
 const PRERELEASE_START_DATE = '2026-05-16';
 const PRERELEASE_END_DATE = '2026-05-29';
 const FIX_PERIOD_END_DATE = '2026-06-05';
 const FULL_RELEASE_DATE = '2026-06-06';
 const DEFAULT_X_DRAFT_GRACE_MINUTES = 60;
-const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'question', 'difference', 'free_paid_compare'];
-const SOCIAL_EXPANSION_START_DATE = process.env.SOCIAL_EXPANSION_START_DATE || '2026-05-27';
+const SOCIAL_POST_KINDS = ['oracle'];
 const SCHEDULED_TIME_BY_KIND = {
   oracle: '07:00 Asia/Tokyo',
-  empathy: '12:00 Asia/Tokyo Mon/Wed/Fri',
-  question: '12:00 Asia/Tokyo Tue/Thu',
-  difference: '20:00 Asia/Tokyo Tue',
-  free_paid_compare: '20:00 Asia/Tokyo Sat',
 };
 
 function parseArgs(argv) {
@@ -52,16 +46,7 @@ function parseArgs(argv) {
 }
 
 function getJstDateString(date = new Date()) {
-  const parts = new Intl.DateTimeFormat('sv-SE', {
-    timeZone: 'Asia/Tokyo',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(date).reduce((acc, part) => {
-    acc[part.type] = part.value;
-    return acc;
-  }, {});
-  return `${parts.year}-${parts.month}-${parts.day}`;
+  return getDraftJstDateString(date);
 }
 
 function getNow() {
@@ -123,10 +108,6 @@ function getDateRange(args) {
 function getSchedule() {
   return [
     { kind: 'oracle', time: '07:00', minute: 7 * 60, days: null },
-    { kind: 'empathy', time: '12:00', minute: 12 * 60, days: [1, 3, 5] },
-    { kind: 'question', time: '12:00', minute: 12 * 60, days: [2, 4] },
-    { kind: 'difference', time: '20:00', minute: 20 * 60, days: [2] },
-    { kind: 'free_paid_compare', time: '20:00', minute: 20 * 60, days: [6] },
   ];
 }
 
@@ -136,7 +117,6 @@ function getDueKinds() {
   const minutes = getJstMinutes();
   const graceMinutes = getDraftGraceMinutes();
   return getSchedule()
-    .filter(item => item.kind === 'oracle' || dateKey >= SOCIAL_EXPANSION_START_DATE)
     .filter(item => !Array.isArray(item.days) || item.days.includes(weekday))
     .filter(item => {
       const lateByMinutes = minutes - item.minute;
@@ -156,29 +136,27 @@ function getKinds(args) {
 }
 
 function runDailyDraft(dateKey) {
-  const result = spawnSync(process.execPath, [
-    DAILY_SCRIPT,
-    '--dry-run',
-    `--date=${dateKey}`,
-    '--kind=all',
-    '--platforms=threads,x',
-  ], {
-    cwd: ROOT,
-    env: {
-      ...process.env,
-      SOCIAL_STATELESS_MODE: 'true',
-      SOCIAL_ORACLE_CARD_MODE: process.env.SOCIAL_ORACLE_CARD_MODE || 'random',
-      SOCIAL_RELEASE_MODE: process.env.SOCIAL_RELEASE_MODE || 'auto',
-      SOCIAL_PLATFORMS: 'threads,x',
-    },
-    encoding: 'utf8',
-    maxBuffer: 10 * 1024 * 1024,
-    stdio: ['ignore', 'pipe', 'pipe'],
+  const originalEnv = {
+    SOCIAL_STATELESS_MODE: process.env.SOCIAL_STATELESS_MODE,
+    SOCIAL_ORACLE_CARD_MODE: process.env.SOCIAL_ORACLE_CARD_MODE,
+    SOCIAL_RELEASE_MODE: process.env.SOCIAL_RELEASE_MODE,
+    SOCIAL_PLATFORMS: process.env.SOCIAL_PLATFORMS,
+  };
+  process.env.SOCIAL_STATELESS_MODE = 'true';
+  process.env.SOCIAL_ORACLE_CARD_MODE = process.env.SOCIAL_ORACLE_CARD_MODE || 'random';
+  process.env.SOCIAL_RELEASE_MODE = process.env.SOCIAL_RELEASE_MODE || 'auto';
+  process.env.SOCIAL_PLATFORMS = 'threads,x';
+  return buildDraft({
+    dryRun: true,
+    date: dateKey,
+    kind: 'all',
+    platforms: ['threads', 'x'],
+  }).finally(() => {
+    for (const [key, value] of Object.entries(originalEnv)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
   });
-  if (result.status !== 0) {
-    throw new Error(`Draft generation failed for ${dateKey}: ${result.stderr || result.stdout}`);
-  }
-  return JSON.parse(result.stdout);
 }
 
 function rel(file) {
@@ -280,27 +258,25 @@ async function writeEntry(entry, outDir) {
   return { jsonPath, mdPath };
 }
 
-async function main() {
-  const args = parseArgs(process.argv.slice(2));
+async function exportXDrafts(args) {
   const dates = getDateRange(args);
   const kinds = getKinds(args);
   const outDir = path.resolve(ROOT, args.out);
   const written = [];
 
   if (!kinds.length) {
-    console.log(JSON.stringify({
+    return {
       status: 'no_due_x_drafts',
       date: getJstDateString(),
       nowMinute: getJstMinutes(),
       graceMinutes: getDraftGraceMinutes(),
       schedule: getSchedule().map(item => ({ kind: item.kind, time: item.time })),
       reason: 'No X draft lane is inside its JST due window.',
-    }, null, 2));
-    return;
+    };
   }
 
   for (const dateKey of dates) {
-    const draft = runDailyDraft(dateKey);
+    const draft = await runDailyDraft(dateKey);
     for (const kind of kinds) {
       const entry = await buildEntry(draft, kind);
       const files = await writeEntry(entry, outDir);
@@ -318,16 +294,29 @@ async function main() {
     }
   }
 
-  console.log(JSON.stringify({
+  return {
     status: 'x_drafts_written',
     outputDir: rel(outDir),
     nowMinute: getJstMinutes(),
     graceMinutes: getDraftGraceMinutes(),
     entries: written,
-  }, null, 2));
+  };
 }
 
-main().catch(error => {
-  console.error(error?.stack || error?.message || String(error));
-  process.exit(1);
-});
+async function main() {
+  const args = parseArgs(process.argv.slice(2));
+  const report = await exportXDrafts(args);
+  console.log(JSON.stringify(report, null, 2));
+}
+
+module.exports = {
+  exportXDrafts,
+  parseArgs,
+};
+
+if (require.main === module) {
+  main().catch(error => {
+    console.error(error?.stack || error?.message || String(error));
+    process.exit(1);
+  });
+}

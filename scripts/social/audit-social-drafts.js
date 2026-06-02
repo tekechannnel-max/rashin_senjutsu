@@ -21,13 +21,13 @@ const REQUIRED_HASHTAGS_BY_PLATFORM = {
   bluesky: ['#羅針占術', '#今日の占い', '#今日の運勢', '#占い師'],
   instagram: ['#羅針占術'],
 };
-const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'question', 'difference', 'free_paid_compare'];
+const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
+const X_POST_KINDS = new Set(['oracle']);
 const WEEKDAYS_BY_KIND = {
   oracle: null,
-  empathy: [1, 3, 5],
-  question: [2, 4],
+  empathy: [1, 2, 3, 4],
   difference: [2],
-  free_paid_compare: [6],
+  free_paid_compare: [4],
 };
 
 const HARD_NG_PATTERNS = [
@@ -140,6 +140,10 @@ function isScheduledKindForDate(kind, dateKey) {
   return !Array.isArray(weekdays) || weekdays.includes(getWeekday(dateKey));
 }
 
+function isEnabledForPlatform(kind, platform) {
+  return platform !== 'x' || X_POST_KINDS.has(kind);
+}
+
 function isPrelaunchDate(dateKey) {
   return getReleasePhase(dateKey) === 'prelaunch';
 }
@@ -173,9 +177,11 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
 
   if (!value.trim()) addIssue(issues, 'error', 'empty', '投稿文が空です。');
   if (length > limit) addIssue(issues, 'error', 'length', `${platform}の文字数上限を超えています: ${length}/${limit}`);
-  if (kind !== 'question' && platform === 'instagram' && !hasInstagramProfileLinkCue(value)) {
-    addIssue(issues, 'error', 'instagram_profile_link_missing', 'Instagram投稿にはプロフィールリンク誘導が必要です。');
-  } else if (kind !== 'question' && platform !== 'instagram' && !hasPublicUrl(value)) {
+  if (platform === 'instagram') {
+    if (!hasInstagramProfileLinkCue(value)) {
+      addIssue(issues, 'error', 'instagram_profile_link_missing', 'Instagram投稿にはプロフィールリンク誘導が必要です。');
+    }
+  } else if (platform !== 'instagram' && !hasPublicUrl(value)) {
     addIssue(issues, 'error', 'visible_url_missing', `${platform}投稿には表示用URLが必要です。`);
   }
   if (!hasUtm(value) && !hasUtm(tracking)) addIssue(issues, 'error', 'utm_missing', `${platform}投稿には台帳用utm_contentが必要です。`);
@@ -197,6 +203,9 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
     addIssue(issues, 'error', 'hashtag_count', `Blueskyのハッシュタグは${requiredHashtags.length}個にします: ${hashtagCount}`);
   }
   if (platform === 'instagram') {
+    if (kind === 'oracle' && !value.includes('#おはようvtuber')) {
+      addIssue(issues, 'error', 'instagram_oracle_morning_hashtag_missing', 'Instagramのoracle投稿には #おはようvtuber が必要です。');
+    }
     if (hashtagCount > INSTAGRAM_HASHTAG_LIMIT) {
       addIssue(issues, 'error', 'instagram_hashtag_count', `Instagramのハッシュタグは${INSTAGRAM_HASHTAG_LIMIT}個までにします: ${hashtagCount}`);
     }
@@ -222,7 +231,7 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
       addIssue(issues, 'warn', 'early_deep_cta', '公開3日前以前の深掘り言及は弱めに抑えてください。');
     }
   } else if (platform === 'threads') {
-    if (kind === 'oracle' && !value.trim().endsWith('今日の1枚はこちら')) {
+    if (kind === 'oracle' && !value.includes('今日の1枚はこちら！👇')) {
       addIssue(issues, 'error', 'oracle_closing', '公開後の朝オラクルは指定の締めで終える必要があります。');
     }
   }
@@ -248,12 +257,6 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
   }
   if (kind === 'empathy' && new RegExp('悩み' + '共感').test(value)) {
     addIssue(issues, 'error', 'lenormand_old_empathy_label', 'ルノルマン投稿では旧ラベルを使いません。');
-  }
-  if (kind === 'question' && !/A:\s*[\s\S]+B:\s*.+/.test(value)) {
-    addIssue(issues, 'error', 'question_options', 'question投稿にはA/Bで返信しやすい選択肢が必要です。');
-  }
-  if (kind === 'question' && hasPublicUrl(value)) {
-    addIssue(issues, 'warn', 'question_visible_url', 'question投稿は返信誘発用なので、本文URLなしを基本にします。');
   }
   if (kind === 'difference' && !/AI占い|自由記載|四柱推命|姓名判断|動物タイプ|命・卜・相|総合占術|エンジニア|本質|本音|カード|断定|整理|次に動ける/.test(value)) {
     addIssue(issues, 'warn', 'difference_axis', '羅針占術の違い紹介としての軸が弱い可能性があります。');
@@ -347,6 +350,7 @@ function main() {
     const draft = generateDraft(dateKey, args);
     for (const kind of SOCIAL_POST_KINDS.filter(item => isScheduledKindForDate(item, dateKey))) {
       for (const platform of platforms) {
+        if (!isEnabledForPlatform(kind, platform)) continue;
         const text = platform === 'x'
           ? draft[kind].xText
           : platform === 'bluesky'

@@ -10,7 +10,7 @@ const DAILY_SCRIPT = path.join(__dirname, 'daily-oracle-post.js');
 const DEFAULT_SOCIAL_PLATFORMS = 'threads,bluesky,instagram';
 const DEFAULT_POST_GRACE_MINUTES = 2;
 const MAX_STATELESS_POST_GRACE_MINUTES = 2;
-const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'question', 'difference', 'free_paid_compare'];
+const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
 const SOCIAL_EXPANSION_START_DATE = process.env.SOCIAL_EXPANSION_START_DATE || '2026-05-27';
 
 function parseArgs(argv) {
@@ -109,33 +109,27 @@ function getSchedule() {
   return [
     {
       kind: 'oracle',
-      time: process.env.SOCIAL_ORACLE_TIME || '07:00',
-      minute: parseTimeToMinutes(process.env.SOCIAL_ORACLE_TIME, '07:00'),
+      time: process.env.SOCIAL_ORACLE_TIME || '08:00',
+      minute: parseTimeToMinutes(process.env.SOCIAL_ORACLE_TIME, '08:00'),
       days: null,
     },
     {
       kind: 'empathy',
       time: process.env.SOCIAL_EMPATHY_TIME || '12:00',
       minute: parseTimeToMinutes(process.env.SOCIAL_EMPATHY_TIME, '12:00'),
-      days: [1, 3, 5],
-    },
-    {
-      kind: 'question',
-      time: process.env.SOCIAL_QUESTION_TIME || '12:00',
-      minute: parseTimeToMinutes(process.env.SOCIAL_QUESTION_TIME, '12:00'),
-      days: [2, 4],
+      days: [1, 2, 3, 4],
     },
     {
       kind: 'difference',
-      time: process.env.SOCIAL_DIFFERENCE_TIME || '20:00',
-      minute: parseTimeToMinutes(process.env.SOCIAL_DIFFERENCE_TIME, '20:00'),
+      time: process.env.SOCIAL_DIFFERENCE_TIME || '19:00',
+      minute: parseTimeToMinutes(process.env.SOCIAL_DIFFERENCE_TIME, '19:00'),
       days: [2],
     },
     {
       kind: 'free_paid_compare',
-      time: process.env.SOCIAL_FREE_PAID_COMPARE_TIME || '20:00',
-      minute: parseTimeToMinutes(process.env.SOCIAL_FREE_PAID_COMPARE_TIME, '20:00'),
-      days: [6],
+      time: process.env.SOCIAL_FREE_PAID_COMPARE_TIME || '19:00',
+      minute: parseTimeToMinutes(process.env.SOCIAL_FREE_PAID_COMPARE_TIME, '19:00'),
+      days: [4],
     },
   ];
 }

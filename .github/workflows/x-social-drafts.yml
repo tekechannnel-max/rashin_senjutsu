@@ -12,14 +12,6 @@ on:
   schedule:
     # 07:03 JST. X Web draft lane for the morning oracle post.
     - cron: '3 22 * * *'
-    # 12:03 JST on Mon/Wed/Fri. X Web draft lane for empathy posts.
-    - cron: '3 3 * * 1,3,5'
-    # 12:03 JST on Tue/Thu. X Web draft lane for A/B question posts.
-    - cron: '3 3 * * 2,4'
-    # 20:03 JST on Tue. X Web draft lane for difference posts.
-    - cron: '3 11 * * 2'
-    # 20:03 JST on Sat. X Web draft lane for free/paid comparison posts.
-    - cron: '3 11 * * 6'
   workflow_dispatch:
     inputs:
       kind:
@@ -30,10 +22,6 @@ on:
         options:
           - auto
           - oracle
-          - empathy
-          - question
-          - difference
-          - free_paid_compare
           - all
 
 permissions:
@@ -86,10 +74,6 @@ jobs:
           today="$(TZ=Asia/Tokyo date +%F)"
           case "${{ github.event.schedule }}" in
             "3 22 * * *") kind="oracle" ;;
-            "3 3 * * 1,3,5") kind="empathy" ;;
-            "3 3 * * 2,4") kind="question" ;;
-            "3 11 * * 2") kind="difference" ;;
-            "3 11 * * 6") kind="free_paid_compare" ;;
             *) kind="${{ github.event.inputs.kind || 'oracle' }}" ;;
           esac
           echo "today=$today" >> "$GITHUB_OUTPUT"

@@ -5,7 +5,7 @@
 ## できること
 
 - GitHub Actionsで実行するため、ローカルPCの起動は不要。
-- `07:03 JST` は `oracle`、月・水・金 `12:03 JST` は `empathy`、火・木 `12:03 JST` は `question`、火 `20:03 JST` は `difference`、土 `20:03 JST` は `free_paid_compare` を作る。
+- `07:03 JST` は `oracle` だけを作る。Xでは `empathy` / `question` / `difference` / `free_paid_compare` 下書きは作らない。
 - X APIの投稿エンドポイントは使わない。
 - Playwrightで `https://x.com/compose/post` を開き、本文と画像を入れて、閉じる操作から `Save` / `保存` を押す。
 - 誤投稿防止として、`CreateTweet` / `/2/tweets` / `statuses/update` への投稿リクエストを検出したら止める。
@@ -16,6 +16,7 @@
 - XのUI変更、ログイン期限切れ、追加認証、bot判定で失敗する可能性がある。
 - X側が下書きをブラウザ内ローカル保存だけにしている場合、GitHub Actions上で保存した下書きがスマホや別PCに同期されない可能性がある。X側の同期仕様に依存する。
 - 長文投稿はX Premium対象だが、X Helpでは長文投稿のWeb下書き・予約に制限がある。Web UIで保存できない場合は、本文を短くする必要がある。
+- ローカル端末で人間が見ているブラウザを補助操作する場合は、既存タブを上書きしない。必ず新しいタブを開いてから対象URLへ移動する。
 
 ## 初回セットアップ
 
@@ -55,7 +56,7 @@ GitHub上で:
 
 ```text
 Actions -> X social drafts -> Run workflow
-kind: oracle / empathy / question / difference / free_paid_compare / all
+kind: oracle / all
 ```
 
 ローカル確認だけなら:

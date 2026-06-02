@@ -4,11 +4,11 @@ const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const DEFAULT_LEDGER_FILE = path.join(ROOT, 'data', 'social-posts', 'posts.csv');
-const DEFAULT_KINDS = ['oracle', 'empathy', 'question', 'difference', 'free_paid_compare'];
+const DEFAULT_KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
+const X_LEDGER_KINDS = new Set(['oracle']);
 const RESULT_SUFFIX_BY_KIND = {
   oracle: 'Oracle',
   empathy: 'Empathy',
-  question: 'Question',
   difference: 'Difference',
   free_paid_compare: 'FreePaidCompare',
   midday: 'Midday',
@@ -197,6 +197,7 @@ function rowsFromDraft(draft, options = {}) {
   const rows = [];
   for (const kind of kinds) {
     for (const platform of platforms) {
+      if (platform === 'x' && !X_LEDGER_KINDS.has(kind)) continue;
       const entry = getEntryForPlatform(draft, kind, platform);
       const text = String(entry.text || '');
       const trackedUrl = String(entry.trackedUrl || '').trim() || extractFirstUrl(text);
