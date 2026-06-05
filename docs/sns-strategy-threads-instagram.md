@@ -1,80 +1,34 @@
 # Threads / Instagram SNS戦略
 
-更新日: 2026-05-29
+更新日: 2026-06-04
 
-このメモは、羅針占術のSNS運用をThreadsとInstagram中心に判断するための戦略メモです。実投稿手順の正本は `docs/sns-runbook.md` に置きます。
-投稿頻度と時間帯の調査根拠は `docs/sns-posting-schedule-research-2026-06-01.md` に置きます。
+このメモは、羅針占術のSNS運用をThreadsとInstagram中心に判断するための戦略メモです。実行手順の正本は `docs/sns-runbook.md` です。
 
-## 現状評価
+## 現在の方針
 
-- 自動投稿の土台は良いです。`oracle`、`empathy`、`difference`、`free_paid_compare` の4本柱があり、Threads / Instagram下書き検査はエラー0で通ります。
-- Threadsは自動投稿だけで返信を待つ媒体にしないほうがよいです。露出は投稿直後の手動返信と補足リプで作ります。自動投稿の返信数だけで投稿量を増やしません。
-- Instagramは保存・共有・プロフィール遷移を取りに行く媒体として使います。キャプション内URLはクリック導線になりにくいため、通常投稿では本文URLを出さず「プロフィールのリンクから」に寄せます。UTM付きURLは投稿台帳で追跡します。
-- BlueskyとXは補助レーンです。改善判断はThreads / Instagramの反応を優先し、勝ちパターンが見えたものだけ横展開します。
+- 自動運用対象はThreadsとInstagramに限定します。
+- 対象外媒体の再開前提手順は残しません。
+- 20:00枠は、投稿ごとに内容が決まっているものだけを入れます。同じ画像の定期再投稿はしません。
+- 画像が未作成の毎日20:00投稿は、自動化対象にしません。
 
-## 役割分担
+## 投稿枠
 
-| 媒体 | 役割 | 主KPI | 運用判断 |
-| --- | --- | --- | --- |
-| Threads | 毎日の接触、プロフィール遷移、手動会話の入口 | views、profile_visits、link_clicks、手動起点のreplies | 自動投稿の返信数だけで判断しない |
-| Instagram Feed | 保存される占いメモ | saves / views、shares / views、profile_visits | 保存率が高い型を残す |
-| Instagram Stories | プロフィールリンクへの誘導 | link taps、replies | 手動で週3回から運用する |
-| Instagram Reels / Carousel | 新規発見 | views、shares、new_follows | 週1本の手動企画から始める |
+1. `oracle`: 毎朝8:00。朝の接触用です。
+2. `birthday_monthly`: 毎月1日 20:00 / 21:00 / 22:00 / 23:00。2026年6月だけ6月5日に実施します。
+3. `birthday_ranking`: 画像が完成している単発ランキング投稿だけを予定に入れます。
+4. `rashin_point`: 羅針占術の違いや強みを説明する単発投稿です。
 
-## 投稿柱
+## 媒体別の役割
 
-1. `oracle`: 毎朝8:00。習慣化とリンククリック用です。Threadsでは短いURL、Instagramではプロフィールリンク誘導を使います。
-2. `empathy`: 月火水木12:00。表向きは「今日のルノルマン一枚」です。Instagramでは保存用の一枚メモとして扱います。
-3. `difference`: 火19:00。羅針占術が「それっぽいAI占い」と違う理由を伝え、プロフィール確認につなげます。
-4. `free_paid_compare`: 木19:00。強い売り込みではなく、無料で十分な人と深掘り向きの人を分けます。
-
-## 30日改善プラン
-
-### 1週目
-
-- Threads / Instagramのプロフィール文、固定投稿、リンク導線を揃えます。
-- KPI台帳はThreads / Instagramを主対象にします。Blueskyは比較参考に留めます。
-- 毎日、投稿後10分で関連投稿5件に手動返信し、必要なら自投稿に補足リプを1本置きます。
-
-### 2週目
-
-- `empathy` の保存率と無料鑑定開始を見て、カード別の冒頭表現を2つ追加します。
-- Instagramで保存率が高い `oracle` / `empathy` を2つ選び、手動carousel案に変換します。
-
-### 3週目
-
-- `difference` と `free_paid_compare` のプロフィール遷移率を比較します。
-- 有料導線はクリックよりも「無料で一度試す」文脈を優先します。
-
-### 4週目
-
-- 反応が高い3投稿だけを固定投稿、プロフィール導線、Storiesで再利用します。
-- 伸びなかった型は増やさず、本文冒頭と画像テキストを直して再テストします。
-
-## 週次レビュー
-
-見る順番:
-
-1. Threads: views、profile_visits、link_clicks
-2. Instagram: saves / views
-3. Instagram: shares / views
-4. 両媒体: profile_visits
-5. 両媒体: link_clicks / free_reading_starts
-6. 有料導線: paid_deep_reading_starts / paid_completions
-
-判断基準:
-
-- repliesは「自動投稿由来」と「手動返信由来」を分けます。自動投稿の返信0だけで失敗扱いにしません。
-- savesが高い投稿はInstagram carousel化します。
-- sharesが高い投稿はブランド説明よりも「自分ごと化」できている可能性が高いです。
-- profile_visitsはあるがlink_clicksが弱い場合、プロフィール文とリンク表示を直します。
-- link_clicksはあるがfree_reading_startsが弱い場合、リンク先のファーストビューとCTAを直します。
+| 媒体 | 役割 | 見る指標 |
+| --- | --- | --- |
+| Threads | 毎日の接触、プロフィール遷移、会話の入口 | views / replies / profile_visits / link_clicks |
+| Instagram Feed | 保存される占いメモ、カルーセル投稿 | saves / shares / profile_visits |
+| Instagram Stories | プロフィールリンクへの誘導 | link taps / replies |
 
 ## 守るルール
 
-- Instagram本文に長いURLを貼りません。プロフィールリンク誘導にします。
-- Threadsでは自動投稿だけの返信0を失敗扱いせず、投稿直後の手動初動を固定します。
-- 自動投稿の返信0を見て投稿量を増やしません。まず投稿後10分の手動初動を固定します。
-- ハッシュタグは増やしません。Instagramは5個以内、Threadsは1個だけです。
-- 断定、不安煽り、専門判断の代替に見える表現は禁止です。
-- 反応がない投稿を増産しません。週次レビューで勝ち型だけ増やします。
+- Instagram本文に長いURLは貼りません。プロフィール導線にします。
+- ハッシュタグは増やしすぎません。Instagramは5個以内、Threadsは原則1個です。
+- 必須タグは投稿ごとのルールに従います。誕生日系は `#誕生日占い` と `#数秘` を必須にします。
+- 自動投稿に入れる前に、画像、本文、alt text、UTM、投稿時刻を確認します。

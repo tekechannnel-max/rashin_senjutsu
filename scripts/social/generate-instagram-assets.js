@@ -988,7 +988,7 @@ function staticDifferenceHtml() {
           <article class="feature"><h2>複数占術</h2><p>命式・姓名・動物タイプ・カードを重ねて読みます。</p></article>
           <article class="feature"><h2>次の一手</h2><p>あとで見返せる判断材料として残します。</p></article>
         </section>
-        <div class="footer">火曜 19:00</div>
+        <div class="footer">比較投稿</div>
         <div class="url">rashin-senjutsu.onrender.com</div>
       </main>
     </body>
@@ -1148,7 +1148,7 @@ function staticFreePaidHtml() {
           </article>
         </section>
         <div class="note">強い購入誘導ではなく、必要な時の選択肢として。</div>
-        <div class="footer">木曜 19:00</div>
+        <div class="footer">無料/有料比較</div>
         <div class="url">rashin-senjutsu.onrender.com</div>
       </main>
     </body>

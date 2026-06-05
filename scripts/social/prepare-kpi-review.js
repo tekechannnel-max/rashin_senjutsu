@@ -6,19 +6,57 @@ const postLedger = require('./post-ledger');
 const ROOT = path.resolve(__dirname, '..', '..');
 const DAILY_SCRIPT = path.join(__dirname, 'daily-oracle-post.js');
 const OUT_DIR = path.join(ROOT, 'data', 'social-posts', 'kpi-review');
+const SUPPORTED_PLATFORMS = new Set(['threads', 'instagram']);
 const SOCIAL_EXPANSION_START_DATE = process.env.SOCIAL_EXPANSION_START_DATE || '2026-05-27';
-const KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
+const KINDS = ['oracle', 'rashin_point', 'birthday_monthly', 'birthday_ranking'];
+const SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE = process.env.SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE || '2026-06-05';
+const SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE = process.env.SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE || '2026-07-01';
+const ONE_OFF_POSTS = [
+  {
+    id: 'rashin_point',
+    kind: 'rashin_point',
+    date: '2026-06-04',
+    time: '20:00',
+  },
+  {
+    id: 'birthday_ranking_love_at_first_sight',
+    kind: 'birthday_ranking',
+    date: '2026-06-06',
+    time: '20:00',
+  },
+  {
+    id: 'birthday_ranking_money_luck',
+    kind: 'birthday_ranking',
+    date: '2026-06-07',
+    time: '20:00',
+  },
+  {
+    id: 'birthday_ranking_horror_resistance',
+    kind: 'birthday_ranking',
+    date: '2026-06-08',
+    time: '20:00',
+  },
+  {
+    id: 'birthday_ranking_weird',
+    kind: 'birthday_ranking',
+    date: '2026-06-09',
+    time: '20:00',
+  },
+];
+const BIRTHDAY_MONTHLY_SLOTS = [
+  { id: 'birthday_monthly_01_10', kind: 'birthday_monthly', time: '20:00', birthdayDays: '1-10' },
+  { id: 'birthday_monthly_11_20', kind: 'birthday_monthly', time: '21:00', birthdayDays: '11-20' },
+  { id: 'birthday_monthly_21_30', kind: 'birthday_monthly', time: '22:00', birthdayDays: '21-30' },
+  { id: 'birthday_monthly_31', kind: 'birthday_monthly', time: '23:00', birthdayDays: '31' },
+];
 const WEEKDAYS_BY_KIND = {
   oracle: null,
-  empathy: [1, 2, 3, 4],
-  difference: [2],
-  free_paid_compare: [4],
 };
 const KPI_FOCUS_BY_KIND = {
   oracle: 'habit_link_clicks',
-  empathy: 'saves_and_free_starts',
-  difference: 'profile_visits_and_free_starts',
-  free_paid_compare: 'paid_starts_and_paid_completions',
+  rashin_point: 'trust_paid_flow_clicks',
+  birthday_monthly: 'saves_profile_visits',
+  birthday_ranking: 'saves_profile_visits',
 };
 
 const COLUMNS = [
@@ -86,7 +124,7 @@ function parseArgs(argv) {
   const args = {
     from: process.env.SOCIAL_KPI_FROM || today,
     to: process.env.SOCIAL_KPI_TO || today,
-    platforms: process.env.SOCIAL_KPI_PLATFORMS || process.env.SOCIAL_PLATFORMS || 'threads,bluesky,instagram',
+    platforms: process.env.SOCIAL_KPI_PLATFORMS || process.env.SOCIAL_PLATFORMS || 'threads,instagram',
     out: '',
   };
   for (let i = 0; i < argv.length; i += 1) {
@@ -108,6 +146,8 @@ function parseArgs(argv) {
     .map(item => item.trim())
     .filter(Boolean);
   if (!args.platforms.length) throw new Error('At least one platform is required.');
+  const unsupported = args.platforms.filter(platform => !SUPPORTED_PLATFORMS.has(platform));
+  if (unsupported.length) throw new Error(`Unsupported platform: ${unsupported.join(', ')}`);
   args.out = args.out
     ? path.resolve(ROOT, args.out)
     : path.join(OUT_DIR, `social-kpi-${args.from}_${args.to}.csv`);
@@ -118,10 +158,25 @@ function getWeekday(dateKey) {
   return new Date(`${dateKey}T00:00:00.000Z`).getUTCDay();
 }
 
-function isScheduledKindForDate(kind, dateKey) {
-  if (kind !== 'oracle' && dateKey < SOCIAL_EXPANSION_START_DATE) return false;
-  const weekdays = WEEKDAYS_BY_KIND[kind];
+function isBirthdayMonthlyDate(dateKey) {
+  return dateKey === SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE
+    || (dateKey >= SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE && dateKey.endsWith('-01'));
+}
+
+function isScheduledItemForDate(item, dateKey) {
+  if (item.date && item.date !== dateKey) return false;
+  if (item.kind === 'birthday_monthly' && !isBirthdayMonthlyDate(dateKey)) return false;
+  if (item.kind !== 'oracle' && dateKey < SOCIAL_EXPANSION_START_DATE) return false;
+  const weekdays = WEEKDAYS_BY_KIND[item.kind];
   return !Array.isArray(weekdays) || weekdays.includes(getWeekday(dateKey));
+}
+
+function scheduledItemsForDate(dateKey) {
+  return [
+    { id: 'oracle', kind: 'oracle', time: `${process.env.SOCIAL_ORACLE_TIME || '08:00'} Asia/Tokyo` },
+    ...BIRTHDAY_MONTHLY_SLOTS.map(item => ({ ...item, time: `${item.time} Asia/Tokyo` })),
+    ...ONE_OFF_POSTS.map(item => ({ ...item, time: `${item.time} Asia/Tokyo one-off ${item.date}` })),
+  ].filter(item => KINDS.includes(item.kind) && isScheduledItemForDate(item, dateKey));
 }
 
 function csvEscape(value) {
@@ -180,19 +235,22 @@ function writeRows(rows) {
   ].join('\n') + '\n';
 }
 
-function runDraft(dateKey, platforms) {
+function runDraft(dateKey, platforms, item = { kind: 'all' }) {
+  const kind = item.kind || 'all';
   const result = spawnSync(process.execPath, [
     DAILY_SCRIPT,
     '--dry-run',
     `--date=${dateKey}`,
-    '--kind=all',
+    `--kind=${kind}`,
     `--platforms=${platforms.join(',')}`,
+    ...(item.birthdayDays ? [`--birthday-days=${item.birthdayDays}`] : []),
   ], {
     cwd: ROOT,
     env: {
       ...process.env,
       SOCIAL_STATELESS_MODE: 'true',
       SOCIAL_PLATFORMS: platforms.join(','),
+      ...(item.birthdayDays ? { SOCIAL_BIRTHDAY_MONTHLY_DAYS: item.birthdayDays } : {}),
     },
     encoding: 'utf8',
     maxBuffer: 10 * 1024 * 1024,
@@ -205,12 +263,6 @@ function runDraft(dateKey, platforms) {
 }
 
 function getPlatformEntry(entry, platform) {
-  if (platform === 'x') {
-    return { text: entry.xText, trackedUrl: entry.xTrackedUrl };
-  }
-  if (platform === 'bluesky') {
-    return { text: entry.blueskyText, trackedUrl: entry.blueskyTrackedUrl };
-  }
   if (platform === 'instagram') {
     return { text: entry.instagramText, trackedUrl: entry.instagramTrackedUrl };
   }
@@ -221,8 +273,9 @@ function buildRows(args) {
   const updatedAt = new Date().toISOString();
   const rows = [];
   for (let dateKey = args.from; dateKey <= args.to; dateKey = addDays(dateKey, 1)) {
-    const draft = runDraft(dateKey, args.platforms);
-    for (const kind of KINDS.filter(item => isScheduledKindForDate(item, dateKey))) {
+    for (const item of scheduledItemsForDate(dateKey)) {
+      const kind = item.kind;
+      const draft = runDraft(dateKey, args.platforms, item);
       for (const platform of args.platforms) {
         const entry = getPlatformEntry(draft[kind], platform);
         const tracking = postLedger.extractTracking(entry.trackedUrl);
@@ -232,7 +285,7 @@ function buildRows(args) {
           date: dateKey,
           kind,
           platform,
-          scheduled_time: draft.schedule?.[kind] || '',
+          scheduled_time: item.time || draft.schedule?.[kind] || '',
           utm_content: utmContent,
           tracked_url: entry.trackedUrl || '',
           permalink: '',

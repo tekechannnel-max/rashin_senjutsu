@@ -5,8 +5,8 @@ const { spawnSync } = require('node:child_process');
 
 const ROOT = path.resolve(__dirname, '..');
 const NODE = process.execPath;
-const ACTIVE_KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
-const THREADS_MATCHED_PLATFORM_KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
+const ACTIVE_KINDS = ['oracle'];
+const THREADS_MATCHED_PLATFORM_KINDS = ['oracle'];
 const { LENORMAND_EMPATHY_POSTS } = require('../scripts/social/content/lenormand-empathy-posts');
 const { ORACLE_CARD_COPY } = require('../scripts/social/content/oracle-card-copy');
 
@@ -28,12 +28,16 @@ function runNode(args, options = {}) {
 }
 
 function parseDraft(date = '2026-05-27', options = {}) {
+  const kind = options.kind || 'all';
+  const platforms = options.platforms || 'threads,instagram';
+  const extraArgs = options.birthdayDays ? [`--birthday-days=${options.birthdayDays}`] : [];
   const result = runNode([
     'scripts/social/daily-oracle-post.js',
     '--dry-run',
     `--date=${date}`,
-    '--platforms=threads,bluesky,x,instagram',
-    '--kind=all',
+    `--platforms=${platforms}`,
+    `--kind=${kind}`,
+    ...extraArgs,
   ], options);
   return JSON.parse(result.stdout);
 }
@@ -79,7 +83,7 @@ function normalizePlatformHashtagOnlyDifference(text) {
     .replace(/(?:https?:\/\/)?rashin-senjutsu\.onrender\.com\b/g, '<profile-link>')
     .replace(/プロフィールのリンクから[^\n]*/g, '<profile-link>')
     .replace(/<profile-link>(?:\s*<profile-link>)+/g, '<profile-link>')
-    .replace(/utm_source=(threads|bluesky|instagram)/g, 'utm_source=<platform>');
+    .replace(/utm_source=(threads|instagram)/g, 'utm_source=<platform>');
 }
 
 function countHashtags(text) {
@@ -209,24 +213,23 @@ function testDraftHasTrackingImagesAndAlt() {
   for (const kind of ACTIVE_KINDS) {
     const visibleUrl = true;
     assertTracked(draft[kind].text, draft[kind].trackedUrl, `threads ${kind}`, { visibleUrl });
-    assertTracked(draft[kind].blueskyText, draft[kind].blueskyTrackedUrl, `bluesky ${kind}`, { visibleUrl });
-    assertTracked(draft[kind].xText, draft[kind].xTrackedUrl, `x ${kind}`, { visibleUrl });
-    assert.ok([...draft[kind].xText].length <= 280, `${kind} X draft should fit the 280 character posting limit`);
     assertTracked(draft[kind].instagramText, draft[kind].instagramTrackedUrl, `instagram ${kind}`, {
       visibleUrl: false,
       profileLink: true,
     });
     assertImageAndAlt(draft[kind].imagePath, draft[kind].altText, `threads ${kind}`);
-    assertImageAndAlt(draft[kind].blueskyImagePath, draft[kind].altText, `bluesky ${kind}`);
     assertImageAndAlt(draft[kind].instagramImagePath, draft[kind].altText, `instagram ${kind}`);
-    assert.equal(draft[kind].blueskyImagePath, draft[kind].imagePath, `${kind} Bluesky image should match Threads image`);
-    assert.equal(draft[kind].blueskyImageUrl, draft[kind].imageUrl, `${kind} Bluesky image URL should match Threads image URL`);
     assert.match(draft[kind].instagramImageUrl, /\.jpg$/i, `${kind} Instagram image must be JPEG`);
     if (kind === 'oracle') {
       assert.match(draft[kind].imagePath, /images[\\/]social[\\/]instagram[\\/]oracle[\\/]\d{2}\.jpg$/, 'oracle Threads should use the text-added generated image');
       assert.match(draft[kind].imageUrl, /\/images\/social\/instagram\/oracle\/\d{2}\.jpg$/, 'oracle Threads URL should use the generated image');
       assert.match(draft[kind].instagramImagePath, /images[\\/]social[\\/]instagram[\\/]oracle[\\/]\d{2}\.jpg$/, 'oracle Instagram should use the text-added generated image');
       assert.match(draft[kind].instagramImageUrl, /\/images\/social\/instagram\/oracle\/\d{2}\.jpg$/, 'oracle Instagram URL should use the generated image');
+    } else if (kind === 'birthday_monthly') {
+      assert.match(draft[kind].imagePath, /images[\\/]social[\\/]instagram[\\/]generated-birthday[\\/]2026-06[\\/]monthly[\\/]\d{2}-\d{2}[\\/]\d{2}-birth-\d{2}\.jpg$/, 'birthday_monthly Threads should use the generated birthday image');
+      assert.match(draft[kind].imageUrl, /\/images\/social\/instagram\/generated-birthday\/2026-06\/monthly\/\d{2}-\d{2}\/\d{2}-birth-\d{2}\.jpg$/, 'birthday_monthly Threads URL should use the generated birthday image');
+      assert.match(draft[kind].instagramImagePath, /images[\\/]social[\\/]instagram[\\/]generated-birthday[\\/]2026-06[\\/]monthly[\\/]\d{2}-\d{2}[\\/]\d{2}-birth-\d{2}\.jpg$/, 'birthday_monthly Instagram should use the generated birthday image');
+      assert.match(draft[kind].instagramImageUrl, /\/images\/social\/instagram\/generated-birthday\/2026-06\/monthly\/\d{2}-\d{2}\/\d{2}-birth-\d{2}\.jpg$/, 'birthday_monthly Instagram URL should use the generated birthday image');
     } else if (kind === 'empathy') {
       assert.match(draft[kind].imagePath, /images[\\/]social[\\/]instagram[\\/]lenormand-empathy[\\/]\d{2}\.jpg$/, 'empathy Threads should use the text-added generated image');
       assert.match(draft[kind].imageUrl, /\/images\/social\/instagram\/lenormand-empathy\/\d{2}\.jpg$/, 'empathy Threads URL should use the generated image');
@@ -237,7 +240,6 @@ function testDraftHasTrackingImagesAndAlt() {
     } else if (kind === 'free_paid_compare') {
       assert.match(draft[kind].instagramImagePath, /images[\\/]social[\\/]instagram[\\/]free-paid-compare\.jpg$/, 'free_paid_compare Instagram should use the dedicated Instagram image');
     }
-    assert.ok(fs.statSync(draft[kind].blueskyImagePath).size <= 1_000_000, `${kind} Bluesky image must be <= 1,000,000 bytes`);
   }
 }
 
@@ -252,9 +254,9 @@ function testPlatformHashtagPolicy() {
   const legacyInstagramDraft = parseDraft('2026-06-06', {
     env: { SOCIAL_INSTAGRAM_EMPATHY_HASHTAGS: '#羅針占術 #ルノルマンカード #悩み相談 #占い好きな人と繋がりたい #AI占い' },
   });
-  const blueskyTags = ['#羅針占術', '#今日の占い', '#今日の運勢', '#占い師'];
   const instagramKindTags = {
     oracle: ['#おはようvtuber', '#今日の占い', '#オラクルカード'],
+    birthday_monthly: ['#ルノルマンカード', '#カード占い'],
     empathy: ['#ルノルマンカード', '#カード占い'],
     difference: ['#AI占い', '#無料占い'],
     free_paid_compare: ['#無料占い', '#ルノルマンカード'],
@@ -265,19 +267,6 @@ function testPlatformHashtagPolicy() {
     assert.equal(countHashtags(draft[kind].text), 1, `${kind} Threads post should keep one hashtag`);
     assert.match(legacyEnvDraft[kind].text, /#占い師のつぶやき/, `${kind} legacy Threads hashtag env should normalize to #占い師のつぶやき`);
     assert.doesNotMatch(legacyEnvDraft[kind].text, /#占い鑑定/, `${kind} legacy Threads hashtag env should not leak #占い鑑定`);
-
-    for (const tag of blueskyTags) {
-      assert.ok(draft[kind].blueskyText.includes(tag), `${kind} Bluesky post should include ${tag}`);
-    }
-    assert.equal(countHashtags(draft[kind].blueskyText), blueskyTags.length, `${kind} Bluesky post should use configured hashtags`);
-    assert.equal(
-      normalizePlatformHashtagOnlyDifference(draft[kind].blueskyText),
-      normalizePlatformHashtagOnlyDifference(draft[kind].text),
-      `${kind} Bluesky copy should match Threads copy except hashtags`
-    );
-
-    assert.match(draft[kind].xText, /#羅針占術/, `${kind} X draft should keep the brand tag`);
-    assert.doesNotMatch(draft[kind].xText, /#占い師のつぶやき/, `${kind} X draft should not use the Threads tag`);
 
     assert.match(draft[kind].instagramText, /#羅針占術/, `${kind} Instagram post should keep the brand tag`);
     assert.equal(countHashtags(draft[kind].instagramText), 5, `${kind} Instagram post should use five focused hashtags`);
@@ -299,32 +288,30 @@ function testPlatformHashtagPolicy() {
   assert.doesNotMatch(legacyInstagramDraft.empathy.instagramText, /#悩み相談/, 'legacy Lenormand Instagram tags should not keep the old worry tag');
 }
 
-function testAutomationDocsEnableBlueskyWithThreadsAndInstagram() {
-  const expectedPlatforms = 'SOCIAL_PLATFORMS=threads,bluesky,instagram';
+function testAutomationDocsUseThreadsInstagramProductionLane() {
+  const expectedPlatforms = 'SOCIAL_PLATFORMS=threads,instagram';
   for (const relativeFile of ['.env.example', '.env.example.txt', path.join('docs', 'sns-runbook.md'), path.join('scripts', 'social', 'README.md')]) {
     const source = fs.readFileSync(path.join(ROOT, relativeFile), 'utf8');
-    assert.match(source, new RegExp(expectedPlatforms), `${relativeFile} should configure Bluesky with Threads and Instagram`);
+    assert.match(source, new RegExp(expectedPlatforms), `${relativeFile} should configure Threads and Instagram as the production lane`);
+    assert.doesNotMatch(source, /SOCIAL_PLATFORMS=threads,bluesky,instagram/, `${relativeFile} should not keep Bluesky in the default production lane`);
   }
   const runbook = fs.readFileSync(path.join(ROOT, 'docs', 'sns-runbook.md'), 'utf8');
-  const disabledBlueskyPhrases = [
-    ['Blueskyは現運用では', '自動投稿しない'].join(''),
-    ['Bluesky', '再開時だけ'].join(''),
-  ];
-  for (const phrase of disabledBlueskyPhrases) {
-    assert.ok(!runbook.includes(phrase), 'runbook should not describe Bluesky as disabled');
-  }
+  assert.doesNotMatch(runbook, /Bluesky|BLUESKY/, 'runbook should not keep Bluesky operation notes');
+  assert.doesNotMatch(runbook, /X下書き|social:x:/, 'runbook should not keep X draft operation notes');
 }
 
 function testWorkflowPostingPlatformsMatchProductionLane() {
   for (const relativeFile of [path.join('.github', 'workflows', 'sns-automation.yml'), path.join('.github', 'workflows', 'threads-social.yml')]) {
     const source = fs.readFileSync(path.join(ROOT, relativeFile), 'utf8');
-    assert.match(source, /SOCIAL_PLATFORMS:\s*threads,bluesky,instagram/, `${relativeFile} should post to Threads, Bluesky, and Instagram together`);
-    assert.match(source, /BLUESKY_APP_PASSWORD/, `${relativeFile} should require Bluesky credentials`);
+    assert.match(source, /SOCIAL_PLATFORMS:\s*threads,instagram/, `${relativeFile} should post to Threads and Instagram together`);
+    assert.doesNotMatch(source, /BLUESKY_APP_PASSWORD/, `${relativeFile} should not require Bluesky credentials`);
     assert.match(source, /INSTAGRAM_ACCESS_TOKEN/, `${relativeFile} should require Instagram credentials`);
     assert.match(source, /npm run instagram:doctor/, `${relativeFile} should verify Instagram before posting`);
-    assert.match(source, /npm run bluesky:doctor/, `${relativeFile} should verify Bluesky before posting`);
+    assert.doesNotMatch(source, /npm run bluesky:doctor/, `${relativeFile} should not verify Bluesky before posting`);
+    assert.doesNotMatch(source, /threads,bluesky,instagram/, `${relativeFile} should not keep Bluesky in the production platforms`);
     assert.doesNotMatch(source, /SOCIAL_PLATFORMS:\s*threads\s*$/m, `${relativeFile} should not keep a Threads-only posting lane`);
   }
+  assert.ok(!fs.existsSync(path.join(ROOT, '.github', 'workflows', 'x-social-drafts.yml')), 'X draft workflow should be removed');
 }
 
 function testMorningOracleCopyStillKeepsRequiredClosing() {
@@ -430,7 +417,7 @@ function testLenormandOneCardCopyDataQuality() {
 function testEmpathyUsesRandomLenormandRotation() {
   const seen = new Set();
   const oldLabel = new RegExp('悩み' + '共感');
-  for (const dateKey of scheduledDates('2026-05-27', [1, 2, 3, 4], 36)) {
+  for (const dateKey of scheduledDates('2026-05-27', [0, 1, 3, 5, 6], 36)) {
     const draft = parseDraft(dateKey);
     const cardNumber = draft.empathy.card.cardNumber;
     seen.add(cardNumber);
@@ -446,6 +433,96 @@ function testEmpathyUsesRandomLenormandRotation() {
     assert.match(draft.empathy.imageUrl, new RegExp(`/images/social/instagram/lenormand-empathy/${String(cardNumber).padStart(2, '0')}\\.jpg$`), `${dateKey} empathy URL should use the matching text-added Lenormand image`);
   }
   assert.equal(seen.size, 36, 'first empathy rotation cycle should use all 36 Lenormand cards without repeats');
+}
+
+function testBirthdayMonthlyUsesGeneratedSlides() {
+  const first = parseDraft('2026-06-05', { kind: 'birthday_monthly' }).birthday_monthly;
+  assert.equal(first.content.day, 1, '2026-06-05 should start with the 1st birthday slide');
+  assert.match(first.text, /1日生まれ/, 'birthday_monthly text should show the target birthday');
+  assert.match(first.text, /ルノルマン4枚/, 'birthday_monthly text should explain the Lenormand 4-card basis');
+  assert.match(first.trackedUrl, /utm_content=birthdaymonthly_20260605_birth01/, 'birthday_monthly tracked URL should include birthday day');
+  assert.match(first.imagePath, /images[\\/]social[\\/]instagram[\\/]generated-birthday[\\/]2026-06[\\/]monthly[\\/]01-10[\\/]01-birth-01\.jpg$/, 'birthday_monthly should use day 1 generated slide');
+
+  const next = parseDraft('2026-06-06', { kind: 'birthday_monthly' }).birthday_monthly;
+  assert.equal(next.content.day, 2, '2026-06-06 should use the 2nd birthday slide');
+  assert.match(next.trackedUrl, /utm_content=birthdaymonthly_20260606_birth02/, 'birthday_monthly should advance daily');
+
+  const group = parseDraft('2026-06-05', { kind: 'birthday_monthly', birthdayDays: '1-10' }).birthday_monthly;
+  assert.deepEqual(group.content.days, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], '20:00 birthday monthly group should cover days 1-10');
+  assert.equal(group.imagePaths.length, 10, '20:00 birthday monthly group should publish a 10-slide carousel');
+  assert.equal(group.instagramImageUrls.length, 10, 'Instagram birthday monthly group should publish a 10-slide carousel');
+  assert.equal(group.altTexts.length, 10, 'birthday monthly group should provide alt text for every slide');
+  assert.match(group.text, /1-10日生まれの6月運勢/, 'birthday monthly group text should show the target day range');
+  assert.match(group.text, /10枚のカルーセル/, 'birthday monthly group text should explain the carousel count');
+  assert.match(group.trackedUrl, /utm_content=birthdaymonthly_20260605_birth01_10/, 'birthday monthly group UTM should include the day range');
+  assert.match(group.imagePaths[0], /images[\\/]social[\\/]instagram[\\/]generated-birthday[\\/]2026-06[\\/]monthly[\\/]01-10[\\/]01-birth-01\.jpg$/, 'birthday monthly group should start with day 1');
+  assert.match(group.imagePaths[9], /images[\\/]social[\\/]instagram[\\/]generated-birthday[\\/]2026-06[\\/]monthly[\\/]01-10[\\/]10-birth-10\.jpg$/, 'birthday monthly group should end with day 10');
+
+  const finalDay = parseDraft('2026-06-05', { kind: 'birthday_monthly', birthdayDays: '31' }).birthday_monthly;
+  assert.deepEqual(finalDay.content.days, [31], '23:00 birthday monthly group should cover day 31 only');
+  assert.equal(finalDay.imagePaths.length, 1, '31st birthday monthly post should publish one slide');
+  assert.match(finalDay.trackedUrl, /utm_content=birthdaymonthly_20260605_birth31/, '31st birthday monthly UTM should include day 31');
+  assert.match(finalDay.imagePath, /images[\\/]social[\\/]instagram[\\/]generated-birthday[\\/]2026-06[\\/]monthly[\\/]21-31[\\/]31-birth-31\.jpg$/, '31st birthday monthly post should use the generated day 31 slide');
+}
+
+function testRashinPointOneOffCarouselDraft() {
+  const draft = parseDraft('2026-06-04', { kind: 'rashin_point', platforms: 'threads,instagram' });
+  const entry = draft.rashin_point;
+  assert.ok(entry, 'rashin_point draft should be generated when explicitly requested');
+  assert.deepEqual(
+    entry.imagePaths.map(file => path.basename(file)),
+    ['difference.jpg', 'rashin_point.jpg', 'free-paid-compare.jpg'],
+    'rashin_point should publish the three trust carousel slides in the intended order'
+  );
+  assert.deepEqual(
+    entry.instagramImageUrls.map(url => url.split('/').pop()),
+    ['difference.jpg', 'rashin_point.jpg', 'free-paid-compare.jpg'],
+    'rashin_point Instagram carousel should use public image URLs for all three slides'
+  );
+  assert.match(entry.text, /AI占いで物足りなかった人へ/, 'rashin_point Threads copy should start with the trust hook');
+  assert.match(entry.text, /#占い師$/, 'rashin_point Threads copy should end with #占い師');
+  assert.equal(countHashtags(entry.text), 1, 'rashin_point Threads copy should use exactly one hashtag');
+  assert.doesNotMatch(entry.text, /#羅針占術|#占い師のつぶやき/, 'rashin_point Threads copy should not use extra Threads hashtags');
+  assert.match(entry.instagramText, /プロフィールのリンクから/, 'rashin_point Instagram copy should point to the profile link');
+  assert.match(entry.instagramText, /#羅針占術/, 'rashin_point Instagram copy should include the brand hashtag');
+  assert.equal(countHashtags(entry.instagramText), 5, 'rashin_point Instagram copy should use five focused hashtags');
+  assert.match(entry.trackedUrl, /utm_content=rashinpoint_20260604/, 'rashin_point Threads URL should use one-off UTM content');
+  assert.match(entry.instagramTrackedUrl, /utm_source=instagram/, 'rashin_point Instagram URL should use Instagram UTM source');
+}
+
+function testBirthdayRankingInstagramDrafts() {
+  const expected = [
+    ['2026-06-06', 'love-at-first-sight-top5.jpg', '一目惚れしやすい生まれ日TOP5', 'love_at_first_sight'],
+    ['2026-06-07', 'money-luck-top5.jpg', '金運が強い生まれ日TOP5', 'money_luck'],
+    ['2026-06-08', 'horror-resistance-top5.jpg', 'ホラー耐性のある生まれ日TOP5', 'horror_resistance'],
+    ['2026-06-09', 'weird-top5.jpg', '変人に見られやすい生まれ日TOP5', 'weird'],
+  ];
+  for (const [date, imageName, title, slug] of expected) {
+    const entry = parseDraft(date, { kind: 'birthday_ranking', platforms: 'threads,instagram' }).birthday_ranking;
+    assert.ok(entry, `${date} birthday_ranking draft should be generated`);
+    assert.equal(entry.content.title, title, `${date} birthday_ranking should use the intended title`);
+    assert.match(entry.instagramImagePath, new RegExp(`images[\\\\/]social[\\\\/]instagram[\\\\/]generated-birthday[\\\\/]2026-06[\\\\/]ranking[\\\\/]${imageName}$`), `${date} birthday_ranking should use the intended image`);
+    assert.match(entry.instagramText, new RegExp(title), `${date} Instagram copy should include the ranking title`);
+    assert.match(entry.instagramText, /^\\無料占いはプロフィールURLから\//, `${date} Instagram copy should use the short profile URL hook`);
+    assert.match(entry.text, /^\\無料占いはプロフィールURLから\//, `${date} Threads copy should use the same profile URL hook`);
+    assert.match(entry.text, new RegExp(title), `${date} Threads copy should include the ranking title`);
+    assert.match(entry.text, /#占い師のつぶやき/, `${date} Threads copy should use the Threads hashtag`);
+    assert.doesNotMatch(entry.text, /#誕生日占い|#数秘/, `${date} Threads copy should not use Instagram hashtags`);
+    assert.equal(
+      entry.text.replace(/#占い師のつぶやき/g, '#<tags>'),
+      entry.instagramText.replace(/#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい/g, '#<tags>'),
+      `${date} Threads and Instagram copy should differ only by hashtag line`
+    );
+    assert.match(entry.instagramText, /当てはまったら保存/, `${date} Instagram copy should ask for saves`);
+    assert.match(entry.instagramText, /🌸当てはまったら保存/, `${date} Instagram copy should use the flower save icon`);
+    assert.match(entry.instagramText, /🦦周りの人の誕生日も見てみて/, `${date} Instagram copy should use the otter birthday check icon`);
+    assert.match(entry.instagramText, /何日生まれかコメントで教えてね/, `${date} Instagram copy should invite comments`);
+    assert.match(entry.instagramText, /🪭何日生まれかコメントで教えてね/, `${date} Instagram copy should use the fan comment icon`);
+    assert.match(entry.instagramText, /#誕生日占い/, `${date} Instagram copy should include #誕生日占い`);
+    assert.match(entry.instagramText, /#数秘/, `${date} Instagram copy should include #数秘`);
+    assert.equal(countHashtags(entry.instagramText), 5, `${date} Instagram copy should use five focused hashtags`);
+    assert.match(entry.instagramTrackedUrl, new RegExp(`utm_content=birthdayranking_${date.replace(/-/g, '')}_${slug}`), `${date} birthday_ranking should use date and slug UTM content`);
+  }
 }
 
 function testDifferenceAndFreePaidCompareAxes() {
@@ -471,26 +548,23 @@ function testPostsLedgerWriteIsTraceableAndSecretSafe() {
     'scripts/social/daily-oracle-post.js',
     '--write',
     '--date=2026-05-27',
-    '--platforms=threads,bluesky,instagram',
+    '--platforms=threads,instagram',
     '--kind=all',
   ], {
     env: {
       SOCIAL_POSTS_LEDGER_FILE: ledgerFile,
       THREADS_ACCESS_TOKEN: 'unit-test-threads-token',
-      BLUESKY_APP_PASSWORD: 'unit-test-bluesky-password',
       INSTAGRAM_ACCESS_TOKEN: 'unit-test-instagram-token',
     },
   });
 
   const csv = fs.readFileSync(ledgerFile, 'utf8');
   const rows = csv.trim().split(/\r?\n/);
-  assert.equal(rows.length, 13, 'ledger should contain header plus twelve draft rows');
+  assert.equal(rows.length, 3, 'ledger should contain header plus two active oracle draft rows');
   assert.match(rows[0], /post_key,date,kind,platform,status/, 'ledger header is missing expected columns');
   assert.match(csv, /utm_content=oracle_20260527/, 'oracle tracked URL is missing from ledger');
-  assert.match(csv, /utm_content=empathy_20260527_card\d{2}/, 'empathy tracked URL is missing from ledger');
-  assert.match(csv, /utm_content=difference_20260527_v\d{2}/, 'difference tracked URL is missing from ledger');
-  assert.match(csv, /utm_content=freepaid_20260527_v\d{2}/, 'free_paid_compare tracked URL is missing from ledger');
-  assert.doesNotMatch(csv, /unit-test-threads-token|unit-test-bluesky-password|unit-test-instagram-token/, 'ledger must not leak tokens');
+  assert.doesNotMatch(csv, /utm_content=birthdaymonthly_20260527_birth\d{2}|utm_content=empathy_20260527_card\d{2}|utm_content=difference_20260527_v\d{2}|utm_content=freepaid_20260527_v\d{2}/, 'manual/held lanes should not be recorded by --kind=all');
+  assert.doesNotMatch(csv, /unit-test-threads-token|unit-test-instagram-token/, 'ledger must not leak tokens');
   assert.doesNotMatch(csv, /今日の数秘オラクル|ルノルマンカード|無料版 \/ 有料版/, 'ledger should store hashes, URLs, and metadata, not full post copy');
 
   fs.rmSync(ledgerFile, { force: true });
@@ -539,13 +613,21 @@ function scheduleReport(nowIso, onlyKind = 'all') {
 }
 
 function testScheduledPostsRespectJstWeekdays() {
-  assert.deepEqual(scheduleReport('2026-05-27T03:01:00.000Z').due, ['empathy'], 'Wed 12:01 JST should post empathy');
-  assert.deepEqual(scheduleReport('2026-05-29T03:01:00.000Z').due, [], 'Fri 12:01 JST should not post empathy after the optimized cadence');
-  assert.deepEqual(scheduleReport('2026-06-02T03:01:00.000Z').due, ['empathy'], 'Tue 12:01 JST should post empathy');
-  assert.deepEqual(scheduleReport('2026-06-04T03:01:00.000Z').due, ['empathy'], 'Thu 12:01 JST should post empathy');
-  assert.deepEqual(scheduleReport('2026-06-02T10:01:00.000Z').due, ['difference'], 'Tue 19:01 JST should post difference');
-  assert.deepEqual(scheduleReport('2026-06-04T10:01:00.000Z').due, ['free_paid_compare'], 'Thu 19:01 JST should post free_paid_compare');
-  assert.deepEqual(scheduleReport('2026-05-30T10:01:00.000Z').due, [], 'Sat 19:01 JST should not post free_paid_compare');
+  assert.deepEqual(scheduleReport('2026-06-04T11:01:00.000Z').due, ['rashin_point'], 'Thu 20:01 JST should post the one-off trust carousel');
+  assert.deepEqual(scheduleReport('2026-06-05T11:01:00.000Z').due, ['birthday_monthly_01_10'], 'Fri 20:01 JST should post birthday days 1-10');
+  assert.deepEqual(scheduleReport('2026-06-05T11:29:00.000Z').due, ['birthday_monthly_01_10'], 'Fri 20:29 JST delayed scheduler should still post birthday days 1-10');
+  assert.deepEqual(scheduleReport('2026-06-05T12:01:00.000Z').due, ['birthday_monthly_11_20'], 'Fri 21:01 JST should post birthday days 11-20');
+  assert.deepEqual(scheduleReport('2026-06-05T13:01:00.000Z').due, ['birthday_monthly_21_30'], 'Fri 22:01 JST should post birthday days 21-30');
+  assert.deepEqual(scheduleReport('2026-06-05T14:01:00.000Z').due, ['birthday_monthly_31'], 'Fri 23:01 JST should post birthday day 31');
+  assert.deepEqual(scheduleReport('2026-06-06T11:01:00.000Z').due, ['birthday_ranking_love_at_first_sight'], 'Sat 20:01 JST should post the one-off love-at-first-sight ranking');
+  assert.deepEqual(scheduleReport('2026-06-07T11:01:00.000Z').due, ['birthday_ranking_money_luck'], 'Sun 20:01 JST should post the one-off money luck ranking');
+  assert.deepEqual(scheduleReport('2026-06-08T11:01:00.000Z').due, ['birthday_ranking_horror_resistance'], 'Mon 20:01 JST should post the one-off horror resistance ranking');
+  assert.deepEqual(scheduleReport('2026-06-09T11:01:00.000Z').due, ['birthday_ranking_weird'], 'Tue 20:01 JST should post the one-off weird ranking');
+  assert.deepEqual(scheduleReport('2026-06-10T11:01:00.000Z').due, [], 'Wed 20:01 JST should stay empty after the one-off ranking run');
+  assert.deepEqual(scheduleReport('2026-06-11T11:01:00.000Z').due, [], 'Next Thu 20:01 JST should not repeat the one-off trust carousel');
+  assert.deepEqual(scheduleReport('2026-07-01T11:01:00.000Z', 'birthday_monthly').due, ['birthday_monthly_01_10'], '2026-07-01 20:01 JST should start the monthly birthday carousel schedule');
+  assert.deepEqual(scheduleReport('2026-07-01T14:01:00.000Z', 'birthday_monthly').due, ['birthday_monthly_31'], '2026-07-01 23:01 JST should finish the monthly birthday carousel schedule');
+  assert.deepEqual(scheduleReport('2026-07-02T11:01:00.000Z', 'birthday_monthly').due, [], 'birthday monthly carousel should not repeat on the 2nd');
 }
 
 function testKpiReviewTemplatePreservesManualMetrics() {
@@ -553,45 +635,65 @@ function testKpiReviewTemplatePreservesManualMetrics() {
   fs.rmSync(outFile, { force: true });
   runNode([
     'scripts/social/prepare-kpi-review.js',
-    '--from=2026-06-02',
-    '--to=2026-06-04',
-    '--platforms=threads,bluesky,instagram',
+    '--from=2026-06-01',
+    '--to=2026-06-09',
+    '--platforms=threads,instagram',
     `--out=${path.basename(outFile)}`,
   ]);
   let csv = fs.readFileSync(outFile, 'utf8');
-  assert.match(csv, /empathy_20260602_card\d{2}/, 'KPI template should include the Tuesday Lenormand lane');
-  assert.match(csv, /empathy_20260604_card\d{2}/, 'KPI template should include the Thursday Lenormand lane');
+  assert.match(csv, /utm_content=oracle_20260601/, 'KPI template should include the daily oracle lane');
+  assert.match(csv, /utm_content=rashinpoint_20260604/, 'KPI template should include the one-off trust carousel lane');
+  assert.match(csv, /utm_content=birthdaymonthly_20260605_birth01_10/, 'KPI template should include the 20:00 birthday monthly carousel lane');
+  assert.match(csv, /utm_content=birthdaymonthly_20260605_birth11_20/, 'KPI template should include the 21:00 birthday monthly carousel lane');
+  assert.match(csv, /utm_content=birthdaymonthly_20260605_birth21_30/, 'KPI template should include the 22:00 birthday monthly carousel lane');
+  assert.match(csv, /utm_content=birthdaymonthly_20260605_birth31/, 'KPI template should include the 23:00 birthday monthly carousel lane');
+  assert.match(csv, /utm_content=birthdayranking_20260606_love_at_first_sight/, 'KPI template should include the 2026-06-06 birthday ranking lane');
+  assert.match(csv, /utm_content=birthdayranking_20260607_money_luck/, 'KPI template should include the 2026-06-07 birthday ranking lane');
+  assert.match(csv, /utm_content=birthdayranking_20260608_horror_resistance/, 'KPI template should include the 2026-06-08 birthday ranking lane');
+  assert.match(csv, /utm_content=birthdayranking_20260609_weird/, 'KPI template should include the 2026-06-09 birthday ranking lane');
+  assert.doesNotMatch(csv, /empathy_20260601_card\d{2}|difference_20260602_v\d{2}|freepaid_20260604_v\d{2}/, 'KPI template should not include held manual/comparison lanes');
   assert.match(csv, /paid_deep_reading_starts/, 'KPI template should include paid funnel columns');
   const lines = csv.trim().split(/\r?\n/);
   const header = lines[0].split(',');
   const repliesIndex = header.indexOf('replies');
-  const rowIndex = lines.findIndex(line => /^2026-06-02:empathy:threads:/.test(line));
-  assert.ok(rowIndex > 0, 'KPI template should contain the Threads empathy row');
+  const rowIndex = lines.findIndex(line => /^2026-06-03:oracle:threads:/.test(line));
+  assert.ok(rowIndex > 0, 'KPI template should contain the Threads oracle row');
   const cells = lines[rowIndex].split(',');
   cells[repliesIndex] = '12';
   lines[rowIndex] = cells.join(',');
   fs.writeFileSync(outFile, `${lines.join('\n')}\n`);
   runNode([
     'scripts/social/prepare-kpi-review.js',
-    '--from=2026-06-02',
-    '--to=2026-06-04',
-    '--platforms=threads,bluesky,instagram',
+    '--from=2026-06-01',
+    '--to=2026-06-09',
+    '--platforms=threads,instagram',
     `--out=${path.basename(outFile)}`,
   ]);
   const preserved = fs.readFileSync(outFile, 'utf8');
   const preservedLines = preserved.trim().split(/\r?\n/);
-  const preservedRow = preservedLines.find(line => /^2026-06-02:empathy:threads:/.test(line));
+  const preservedRow = preservedLines.find(line => /^2026-06-03:oracle:threads:/.test(line));
   assert.equal(preservedRow.split(',')[repliesIndex], '12', 'KPI template should preserve manually filled reply counts');
   fs.rmSync(outFile, { force: true });
 }
 
-function testStatelessScheduleCapsWideGraceWindow() {
-  const report = scheduleReport('2026-05-18T23:05:00.000Z', 'oracle');
-  assert.equal(report.date, '2026-05-19', 'schedule dry-run should use the JST date');
-  assert.equal(report.graceMinutes, 2, 'stateless runs should cap the effective grace window');
-  assert.equal(report.graceCappedForStateless, false, 'default stateless grace should already be narrow');
-  assert.deepEqual(report.due, [], 'a 08:05 stateless repeat tick must not repost the 08:00 oracle');
-  assert.deepEqual(report.expired, ['oracle'], 'the repeat tick should be treated as expired after the narrow window');
+function testStatelessScheduleKeepsRecoveryGraceWindow() {
+  const delayed = scheduleReport('2026-05-18T23:05:00.000Z', 'oracle');
+  assert.equal(delayed.date, '2026-05-19', 'schedule dry-run should use the JST date');
+  assert.equal(delayed.graceMinutes, 59, 'stateless runs should keep enough grace for delayed schedulers');
+  assert.equal(delayed.graceCappedForStateless, false, 'default stateless grace should not be capped below the recovery window');
+  assert.deepEqual(delayed.due, ['oracle'], 'an 08:05 delayed scheduler tick must still post the 08:00 oracle');
+
+  const expired = scheduleReport('2026-05-19T00:05:00.000Z', 'oracle');
+  assert.deepEqual(expired.due, [], 'a 09:05 scheduler tick should not post the 08:00 oracle');
+  assert.deepEqual(expired.expired, ['oracle'], 'the 08:00 oracle should expire after the recovery window');
+}
+
+function testWorkflowHasScheduledPostingBackup() {
+  const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'threads-social.yml'), 'utf8');
+  assert.match(workflow, /cron: '0 23,11,12,13,14 \* \* \*'/, 'Threads workflow should run backup ticks for 08:00 and 20:00-23:00 JST');
+  assert.match(workflow, /SOCIAL_POST_GRACE_MINUTES: '59'/, 'workflow should allow delayed scheduled runs to recover within the hour');
+  assert.match(workflow, /birthday_monthly_01_10/, 'workflow dispatch should allow forcing the missed 20:00 birthday monthly slot');
+  assert.match(workflow, /birthday_ranking_love_at_first_sight/, 'workflow dispatch should allow forcing one-off birthday ranking slots');
 }
 
 function testBroadSocialAuditPasses() {
@@ -599,189 +701,29 @@ function testBroadSocialAuditPasses() {
     'scripts/social/audit-social-drafts.js',
     '--from=2026-05-13',
     '--to=2026-06-30',
-    '--platforms=threads,bluesky,x,instagram',
+    '--platforms=threads,instagram',
   ]);
   assert.match(result.stdout, /"errors": 0/, 'audit should report zero errors');
 }
 
-function testXDraftExportUsesRandomOracleAndFitsPostingLimit() {
-  const outDir = path.join(ROOT, '.tmp-x-drafts-test');
-  fs.rmSync(outDir, { recursive: true, force: true });
-  const result = runNode([
-    'scripts/social/export-x-drafts.js',
-    '--date=2026-05-27',
-    '--kind=oracle',
-    `--out=${path.basename(outDir)}`,
-  ], {
-    env: {
-      SOCIAL_ORACLE_CARD_MODE: 'random',
-      SOCIAL_ORACLE_CARD_ID: '1',
-    },
-  });
-  assert.match(result.stdout, /"status": "x_drafts_written"/, 'X draft export should write artifacts');
-  const entry = JSON.parse(fs.readFileSync(path.join(outDir, '2026-05-27-oracle.json'), 'utf8'));
-  assert.equal(entry.kind, 'oracle', 'exported X draft should be the oracle lane');
-  assert.ok(entry.oracleCard.id >= 1 && entry.oracleCard.id <= 33, 'exported X draft should record an oracle card from 1 to 33');
-  assert.ok(entry.characterCount <= 280, 'exported X draft should fit the 280 character posting limit');
-  assert.ok(entry.text.startsWith('おはてけ🌸🦦'), 'exported X oracle draft should start with the friendly greeting');
-  assert.match(entry.text, /今日の数秘オラクルは「[^」]+」🫶✨/, 'exported X oracle draft should use the friendly X title line');
-  assert.match(entry.text, /今日の1枚はこちら！👇/, 'exported X oracle draft should use the requested CTA wording');
-  fs.rmSync(outDir, { recursive: true, force: true });
-}
-
-function testXDraftDueWindowsCreateScheduledDrafts() {
-  const outDir = path.join(ROOT, '.tmp-x-drafts-due-test');
-  fs.rmSync(outDir, { recursive: true, force: true });
-  const cases = [
-    { kind: 'oracle', date: '2026-05-28', now: '2026-05-27T22:03:00.000Z' },
-  ];
-  for (const item of cases) {
-    const result = runNode([
-      'scripts/social/export-x-drafts.js',
-      `--date=${item.date}`,
-      '--kind=auto',
-      '--due',
-      `--out=${path.basename(outDir)}`,
-    ], {
-      env: {
-        SOCIAL_ORACLE_CARD_MODE: 'random',
-        SOCIAL_NOW_ISO: item.now,
-      },
-    });
-    const report = JSON.parse(result.stdout);
-    assert.equal(report.status, 'x_drafts_written', `${item.kind} due run should write a draft`);
-    assert.equal(report.entries.length, 1, `${item.kind} due run should write only the due lane`);
-    assert.equal(report.entries[0].kind, item.kind, `${item.kind} due run should select the correct lane`);
-    assert.ok(fs.existsSync(path.join(outDir, `${item.date}-${item.kind}.md`)), `${item.kind} markdown draft should exist`);
-    fs.rmSync(outDir, { recursive: true, force: true });
-  }
-}
-
-function testXNextCardDraftExportCreatesOnlyAllowedFutureDrafts() {
-  const outDir = path.join(ROOT, '.tmp-x-card-drafts-test');
-  fs.rmSync(outDir, { recursive: true, force: true });
-  const result = runNode([
-    'scripts/social/export-x-next-card-drafts.js',
-    `--out=${path.basename(outDir)}`,
-  ], {
-    env: {
-      SOCIAL_NOW_ISO: '2026-06-01T00:00:00.000Z',
-      SOCIAL_ORACLE_CARD_MODE: 'random',
-    },
-  });
-  const report = JSON.parse(result.stdout);
-  assert.equal(report.status, 'x_card_drafts_written', 'next card X draft export should write artifacts');
-  assert.equal(report.from, '2026-06-02', 'next card X draft export should start with tomorrow in JST');
-  assert.equal(report.to, '2026-06-03', 'next card X draft export should include the day after tomorrow in JST');
-  assert.equal(report.writtenCount, 2, 'fresh next card X draft export should write both missing drafts');
-  assert.equal(report.reusedCount, 0, 'fresh next card X draft export should not reuse drafts');
-  assert.deepEqual(
-    report.entries.map(entry => `${entry.date}:${entry.kind}`).sort(),
-    ['2026-06-02:oracle', '2026-06-03:oracle'],
-    'next card X draft export should include only daily oracle drafts'
-  );
-  assert.deepEqual(new Set(report.blockedKinds), new Set(['empathy', 'question', 'difference', 'free_paid_compare', 'midday', 'concept']));
-  for (const entry of report.entries) {
-    assert.equal(entry.kind, 'oracle', `${entry.date} should not export non-oracle X draft kinds`);
-    assert.equal(entry.action, 'written', `${entry.date} fresh X oracle draft should be written`);
-    assert.ok(entry.characterCount <= 280, `${entry.date} ${entry.kind} should fit X`);
-    assert.ok(fs.existsSync(path.join(ROOT, entry.files.md)), `${entry.date} ${entry.kind} markdown should exist`);
-    assert.ok(fs.existsSync(entry.imagePath), `${entry.date} ${entry.kind} image should exist`);
-    const json = JSON.parse(fs.readFileSync(path.join(ROOT, entry.files.json), 'utf8'));
-    assert.ok(json.text.startsWith('おはてけ🌸🦦'), `${entry.date} morning oracle should start with the morning greeting`);
-    assert.match(json.text, /#おはようVtuber/, `${entry.date} morning oracle X draft should include #おはようVtuber`);
-    assert.match(json.text, /今日の数秘オラクルは「[^」]+」🫶✨/, `${entry.date} morning oracle X draft should use the friendly X title line`);
-    assert.match(json.text, /テーマは「[^」]+」！/, `${entry.date} morning oracle X draft should use the friendly theme line`);
-    assert.match(json.text, /🔮✨/, `${entry.date} morning oracle X draft should use the requested oracle emoji cue`);
-    assert.match(json.text, /今日の1枚はこちら！👇/, `${entry.date} morning oracle X draft should use the requested CTA wording`);
-    assert.doesNotMatch(json.text, /ルノルマン|こんてけ/, `${entry.date} X oracle draft should not include Lenormand wording`);
-  }
-  assert.ok(fs.existsSync(path.join(ROOT, report.files.md)), 'next card X draft report markdown should exist');
-  fs.rmSync(outDir, { recursive: true, force: true });
-}
-
-function testXNextCardDraftExportKeepsExistingDateDrafts() {
-  const outDir = path.join(ROOT, '.tmp-x-card-drafts-reuse-test');
-  fs.rmSync(outDir, { recursive: true, force: true });
-  const args = [
-    'scripts/social/export-x-next-card-drafts.js',
-    '--from=2026-06-02',
-    '--to=2026-06-02',
-    `--out=${path.basename(outDir)}`,
-  ];
-  const firstResult = runNode(args, {
-    env: {
-      SOCIAL_ORACLE_CARD_ID: '11',
-      SOCIAL_ORACLE_CARD_MODE: 'random',
-    },
-  });
-  const firstReport = JSON.parse(firstResult.stdout);
-  assert.equal(firstReport.writtenCount, 1, 'first run should write the missing date draft');
-  assert.equal(firstReport.reusedCount, 0, 'first run should not reuse a missing date draft');
-  assert.equal(firstReport.entries[0].action, 'written', 'first run should mark the date as written');
-  const jsonPath = path.join(outDir, '2026-06-02-oracle.json');
-  const firstDraft = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-
-  const secondResult = runNode(args, {
-    env: {
-      SOCIAL_ORACLE_CARD_ID: '18',
-      SOCIAL_ORACLE_CARD_MODE: 'random',
-    },
-  });
-  const secondReport = JSON.parse(secondResult.stdout);
-  const secondDraft = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-  assert.equal(secondReport.writtenCount, 0, 'second run should not rewrite an existing date draft');
-  assert.equal(secondReport.reusedCount, 1, 'second run should reuse the existing date draft');
-  assert.equal(secondReport.entries[0].action, 'reused_existing', 'second run should mark the date as reused');
-  assert.equal(secondDraft.oracleCard.id, firstDraft.oracleCard.id, 'existing date draft should keep the original card');
-  assert.equal(secondDraft.text, firstDraft.text, 'existing date draft should keep the original text');
-  fs.rmSync(outDir, { recursive: true, force: true });
-}
-
-function testXSocialDraftWorkflowCreatesVisibleDrafts() {
-  const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'x-social-drafts.yml'), 'utf8');
-  assert.match(workflow, /cron: '3 22 \* \* \*'/, 'X draft workflow should run at the JST morning slot');
-  assert.doesNotMatch(workflow, /cron: '3 3 \* \* 1,3,5'|cron: '3 3 \* \* 2,4'|cron: '3 11 \* \* 2'|cron: '3 11 \* \* 6'/, 'X draft workflow should not schedule non-oracle slots');
-  assert.match(workflow, /default: 'oracle'/, 'manual X draft dispatch should default to the oracle draft');
-  assert.match(workflow, /"3 22 \* \* \*"\) kind="oracle"/, 'morning schedule should explicitly export the oracle draft');
-  assert.doesNotMatch(workflow, /kind="empathy"|kind="question"|kind="difference"|kind="free_paid_compare"|-\s+empathy|-\s+question|-\s+difference|-\s+free_paid_compare/, 'X draft workflow should not expose non-oracle drafts');
-  assert.match(workflow, /\$status" != "x_drafts_written"/, 'empty X draft runs should not pass as success');
-}
-
-function testXWebDraftWorkflowUsesPlaywrightAndSecrets() {
-  const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'x-social-drafts.yml'), 'utf8');
-  const webDraftScript = fs.readFileSync(path.join(ROOT, 'scripts', 'social', 'save-x-web-draft.js'), 'utf8');
-  const captureScript = fs.readFileSync(path.join(ROOT, 'scripts', 'social', 'capture-x-auth-state.js'), 'utf8');
-  assert.match(workflow, /X_AUTH_STORAGE_BASE64: \$\{\{ secrets\.X_AUTH_STORAGE_BASE64 \}\}/, 'workflow should use an encrypted X browser session secret');
-  assert.match(workflow, /npx playwright install --with-deps chromium/, 'workflow should install Chromium for Playwright');
-  assert.match(workflow, /node scripts\/social\/save-x-web-draft\.js/, 'workflow should save a real X Web draft, not only an artifact');
-  assert.match(webDraftScript, /https:\/\/x\.com\/compose\/post/, 'web draft script should open the X compose UI');
-  assert.match(webDraftScript, /SOCIAL_POST_KINDS = \['oracle'\]/, 'web draft script should only allow oracle X drafts');
-  assert.match(webDraftScript, /Save draft prompt|下書き/, 'web draft script should close the compose box through the draft save UI');
-  assert.match(webDraftScript, /CreateTweet\|\\\/2\\\/tweets\|statuses\\\/update/, 'web draft script should block accidental post requests');
-  assert.match(captureScript, /storageState/, 'auth capture script should export Playwright storage state');
-}
-
 testDraftHasTrackingImagesAndAlt();
 testPlatformHashtagPolicy();
-testAutomationDocsEnableBlueskyWithThreadsAndInstagram();
+testAutomationDocsUseThreadsInstagramProductionLane();
 testWorkflowPostingPlatformsMatchProductionLane();
 testMorningOracleCopyStillKeepsRequiredClosing();
 testOracleDailyCopyIsGroundedInAllCardReadings();
 testLenormandOneCardCopyDataQuality();
 testEmpathyUsesRandomLenormandRotation();
+testBirthdayMonthlyUsesGeneratedSlides();
+testRashinPointOneOffCarouselDraft();
+testBirthdayRankingInstagramDrafts();
 testDifferenceAndFreePaidCompareAxes();
 testPostsLedgerWriteIsTraceableAndSecretSafe();
 testRealPostingRequiresExplicitYesOutsideScheduler();
 testScheduledPostsRespectJstWeekdays();
-testStatelessScheduleCapsWideGraceWindow();
+testStatelessScheduleKeepsRecoveryGraceWindow();
+testWorkflowHasScheduledPostingBackup();
 testBroadSocialAuditPasses();
 testKpiReviewTemplatePreservesManualMetrics();
-testXDraftExportUsesRandomOracleAndFitsPostingLimit();
-testXDraftDueWindowsCreateScheduledDrafts();
-testXNextCardDraftExportCreatesOnlyAllowedFutureDrafts();
-testXNextCardDraftExportKeepsExistingDateDrafts();
-testXSocialDraftWorkflowCreatesVisibleDrafts();
-testXWebDraftWorkflowUsesPlaywrightAndSecrets();
 
 console.log('social-posting tests passed');

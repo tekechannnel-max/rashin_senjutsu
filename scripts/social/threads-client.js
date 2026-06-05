@@ -115,6 +115,14 @@ function normalizeThreadsAltText(altText) {
   return String(altText || '').trim();
 }
 
+function ensureCarouselMediaUrls(imageUrls) {
+  const urls = Array.isArray(imageUrls) ? imageUrls : [];
+  if (urls.length < 2 || urls.length > 10) {
+    throw new Error(`Threads carousel requires 2-10 images: ${urls.length}`);
+  }
+  return urls.map(ensurePublicMediaUrl);
+}
+
 async function requestJson(url, options = {}) {
   const res = await fetch(url, options);
   const json = await res.json().catch(() => ({}));
@@ -259,21 +267,29 @@ async function assertExpectedThreadsAccount(credentials = null) {
   return me;
 }
 
-async function createThreadsContainer({ mediaType, text, imageUrl, altText = '', credentials = null }) {
+async function createThreadsContainer({ mediaType, text, imageUrl, altText = '', children = [], isCarouselItem = false, credentials = null }) {
   const creds = credentials || await getThreadsCredentials();
   requireThreadsCredentials(creds);
   const media = String(mediaType || '').toUpperCase();
   const body = new URLSearchParams({
     media_type: media,
-    text: ensureThreadsText(text),
     access_token: creds.accessToken,
   });
+  if (!isCarouselItem) body.set('text', ensureThreadsText(text));
   if (media === 'IMAGE') {
     body.set('image_url', ensurePublicMediaUrl(imageUrl));
     const normalizedAltText = normalizeThreadsAltText(altText);
     if (normalizedAltText) body.set('alt_text', normalizedAltText);
   }
-  if (!['TEXT', 'IMAGE'].includes(media)) throw new Error(`Unsupported Threads media_type: ${media}`);
+  if (isCarouselItem) body.set('is_carousel_item', 'true');
+  if (media === 'CAROUSEL') {
+    const childIds = Array.isArray(children) ? children.map(String).filter(Boolean) : [];
+    if (childIds.length < 2 || childIds.length > 10) {
+      throw new Error(`Threads carousel container requires 2-10 child containers: ${childIds.length}`);
+    }
+    body.set('children', childIds.join(','));
+  }
+  if (!['TEXT', 'IMAGE', 'CAROUSEL'].includes(media)) throw new Error(`Unsupported Threads media_type: ${media}`);
   return requestJson(`${GRAPH_BASE}/${encodeURIComponent(creds.userId)}/threads`, { method: 'POST', body });
 }
 
@@ -318,6 +334,35 @@ async function postImageToThreads({ text, imageUrl, altText = '', waitMs = null,
   return { ...published, permalink: verified.permalink, verified: true };
 }
 
+async function postCarouselToThreads({ text, imageUrls, altTexts = [], waitMs = null, credentials = null }) {
+  const creds = credentials || await getThreadsCredentials();
+  await assertExpectedThreadsAccount(creds);
+  const urls = ensureCarouselMediaUrls(imageUrls);
+  const timeoutMs = waitMs === null ? Number(process.env.THREADS_CONTAINER_TIMEOUT_MS || 90000) : Number(waitMs);
+  const intervalMs = Number(process.env.THREADS_CONTAINER_POLL_MS || 5000);
+  const children = [];
+  for (let index = 0; index < urls.length; index += 1) {
+    const created = await createThreadsContainer({
+      mediaType: 'IMAGE',
+      imageUrl: urls[index],
+      altText: Array.isArray(altTexts) ? altTexts[index] || '' : '',
+      isCarouselItem: true,
+      credentials: creds,
+    });
+    await waitForThreadsContainer(created.id, { credentials: creds, timeoutMs, intervalMs });
+    children.push(created.id);
+  }
+  const carousel = await createThreadsContainer({ mediaType: 'CAROUSEL', text, children, credentials: creds });
+  await waitForThreadsContainer(carousel.id, { credentials: creds, timeoutMs, intervalMs });
+  const published = await publishThreadsContainer(carousel.id, creds);
+  const verified = await verifyPublishedThread(published.id, {
+    credentials: creds,
+    timeoutMs: Number(process.env.THREADS_POST_VERIFY_TIMEOUT_MS || 90000),
+    intervalMs: Number(process.env.THREADS_POST_VERIFY_INTERVAL_MS || 10000),
+  });
+  return { ...published, permalink: verified.permalink, verified: true, carouselChildren: children };
+}
+
 function sanitizeTokenResult(value) {
   if (!value || typeof value !== 'object') return value;
   return {
@@ -342,9 +387,11 @@ module.exports = {
   saveStoredToken,
   postTextToThreads,
   postImageToThreads,
+  postCarouselToThreads,
   sanitizeTokenResult,
   ensureThreadsText,
   ensurePublicMediaUrl,
+  ensureCarouselMediaUrls,
   normalizeThreadsAltText,
   normalizeUsername,
 };

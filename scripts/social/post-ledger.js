@@ -4,10 +4,11 @@ const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const DEFAULT_LEDGER_FILE = path.join(ROOT, 'data', 'social-posts', 'posts.csv');
-const DEFAULT_KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
-const X_LEDGER_KINDS = new Set(['oracle']);
+const DEFAULT_KINDS = ['oracle'];
 const RESULT_SUFFIX_BY_KIND = {
   oracle: 'Oracle',
+  rashin_point: 'RashinPoint',
+  birthday_monthly: 'BirthdayMonthly',
   empathy: 'Empathy',
   difference: 'Difference',
   free_paid_compare: 'FreePaidCompare',
@@ -132,32 +133,26 @@ function relativePath(value) {
   return path.relative(ROOT, absolute).replace(/\\/g, '/');
 }
 
+function relativePaths(value) {
+  if (Array.isArray(value) && value.length) return value.map(relativePath).join(' | ');
+  return relativePath(value);
+}
+
+function imageUrls(value, fallback = '') {
+  if (Array.isArray(value) && value.length) return value.join(' | ');
+  return fallback || '';
+}
+
 function getEntryForPlatform(draft, kind, platform) {
   const entry = draft[kind] || {};
-  if (platform === 'x') {
-    return {
-      text: entry.xText,
-      trackedUrl: entry.xTrackedUrl,
-      imagePath: entry.imagePath,
-      imageUrl: entry.imageUrl,
-      altText: entry.altText,
-    };
-  }
-  if (platform === 'bluesky') {
-    return {
-      text: entry.blueskyText,
-      trackedUrl: entry.blueskyTrackedUrl,
-      imagePath: entry.blueskyImagePath || entry.imagePath,
-      imageUrl: entry.blueskyImageUrl || entry.imageUrl,
-      altText: entry.altText,
-    };
-  }
   if (platform === 'instagram') {
     return {
       text: entry.instagramText,
       trackedUrl: entry.instagramTrackedUrl,
       imagePath: entry.instagramImagePath || entry.imagePath,
+      imagePaths: entry.instagramImagePaths || entry.imagePaths,
       imageUrl: entry.instagramImageUrl || entry.imageUrl,
+      imageUrls: entry.instagramImageUrls || entry.imageUrls,
       altText: entry.altText,
     };
   }
@@ -165,7 +160,9 @@ function getEntryForPlatform(draft, kind, platform) {
     text: entry.text,
     trackedUrl: entry.trackedUrl,
     imagePath: entry.imagePath,
+    imagePaths: entry.imagePaths,
     imageUrl: entry.imageUrl,
+    imageUrls: entry.imageUrls,
     altText: entry.altText,
   };
 }
@@ -197,7 +194,6 @@ function rowsFromDraft(draft, options = {}) {
   const rows = [];
   for (const kind of kinds) {
     for (const platform of platforms) {
-      if (platform === 'x' && !X_LEDGER_KINDS.has(kind)) continue;
       const entry = getEntryForPlatform(draft, kind, platform);
       const text = String(entry.text || '');
       const trackedUrl = String(entry.trackedUrl || '').trim() || extractFirstUrl(text);
@@ -220,8 +216,8 @@ function rowsFromDraft(draft, options = {}) {
         permalink: result?.permalink || '',
         external_id: normalizeExternalId(result),
         text_sha256: sha256(text),
-        image_path: relativePath(entry.imagePath),
-        image_url: entry.imageUrl || '',
+        image_path: relativePaths(entry.imagePaths || entry.imagePath),
+        image_url: imageUrls(entry.imageUrls, entry.imageUrl),
         alt_text_sha256: sha256(entry.altText || ''),
         updated_at: updatedAt,
       });

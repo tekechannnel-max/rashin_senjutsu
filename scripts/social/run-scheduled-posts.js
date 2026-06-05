@@ -7,11 +7,54 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const OUT_DIR = path.join(ROOT, 'data', 'social-posts');
 const DEFAULT_STATE_FILE = path.join(OUT_DIR, 'scheduled-post-state.json');
 const DAILY_SCRIPT = path.join(__dirname, 'daily-oracle-post.js');
-const DEFAULT_SOCIAL_PLATFORMS = 'threads,bluesky,instagram';
-const DEFAULT_POST_GRACE_MINUTES = 2;
-const MAX_STATELESS_POST_GRACE_MINUTES = 2;
-const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
+const DEFAULT_SOCIAL_PLATFORMS = 'threads,instagram';
+const DEFAULT_POST_GRACE_MINUTES = 59;
+const MAX_STATELESS_POST_GRACE_MINUTES = 59;
+const SOCIAL_POST_KINDS = ['oracle', 'rashin_point', 'birthday_monthly', 'birthday_ranking'];
 const SOCIAL_EXPANSION_START_DATE = process.env.SOCIAL_EXPANSION_START_DATE || '2026-05-27';
+const SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE = process.env.SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE || '2026-06-05';
+const SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE = process.env.SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE || '2026-07-01';
+const ONE_OFF_POSTS = [
+  {
+    kind: 'rashin_point',
+    date: '2026-06-04',
+    time: '20:00',
+  },
+  {
+    id: 'birthday_ranking_love_at_first_sight',
+    kind: 'birthday_ranking',
+    date: '2026-06-06',
+    time: '20:00',
+    platforms: 'threads,instagram',
+  },
+  {
+    id: 'birthday_ranking_money_luck',
+    kind: 'birthday_ranking',
+    date: '2026-06-07',
+    time: '20:00',
+    platforms: 'threads,instagram',
+  },
+  {
+    id: 'birthday_ranking_horror_resistance',
+    kind: 'birthday_ranking',
+    date: '2026-06-08',
+    time: '20:00',
+    platforms: 'threads,instagram',
+  },
+  {
+    id: 'birthday_ranking_weird',
+    kind: 'birthday_ranking',
+    date: '2026-06-09',
+    time: '20:00',
+    platforms: 'threads,instagram',
+  },
+];
+const BIRTHDAY_MONTHLY_SLOTS = [
+  { id: 'birthday_monthly_01_10', kind: 'birthday_monthly', time: '20:00', birthdayDays: '1-10' },
+  { id: 'birthday_monthly_11_20', kind: 'birthday_monthly', time: '21:00', birthdayDays: '11-20' },
+  { id: 'birthday_monthly_21_30', kind: 'birthday_monthly', time: '22:00', birthdayDays: '21-30' },
+  { id: 'birthday_monthly_31', kind: 'birthday_monthly', time: '23:00', birthdayDays: '31' },
+];
 
 function parseArgs(argv) {
   const args = { once: false, dryRun: false, forceKind: '', onlyKind: '' };
@@ -108,38 +151,33 @@ function parseTimeToMinutes(value, fallback) {
 function getSchedule() {
   return [
     {
+      id: 'oracle',
       kind: 'oracle',
       time: process.env.SOCIAL_ORACLE_TIME || '08:00',
       minute: parseTimeToMinutes(process.env.SOCIAL_ORACLE_TIME, '08:00'),
       days: null,
     },
-    {
-      kind: 'empathy',
-      time: process.env.SOCIAL_EMPATHY_TIME || '12:00',
-      minute: parseTimeToMinutes(process.env.SOCIAL_EMPATHY_TIME, '12:00'),
-      days: [1, 2, 3, 4],
-    },
-    {
-      kind: 'difference',
-      time: process.env.SOCIAL_DIFFERENCE_TIME || '19:00',
-      minute: parseTimeToMinutes(process.env.SOCIAL_DIFFERENCE_TIME, '19:00'),
-      days: [2],
-    },
-    {
-      kind: 'free_paid_compare',
-      time: process.env.SOCIAL_FREE_PAID_COMPARE_TIME || '19:00',
-      minute: parseTimeToMinutes(process.env.SOCIAL_FREE_PAID_COMPARE_TIME, '19:00'),
-      days: [4],
-    },
+    ...BIRTHDAY_MONTHLY_SLOTS.map(item => ({
+      ...item,
+      minute: parseTimeToMinutes(item.time, item.time),
+      days: null,
+    })),
+    ...ONE_OFF_POSTS.map(item => ({
+      ...item,
+      id: item.id || item.kind,
+      minute: parseTimeToMinutes(item.time, item.time),
+      days: null,
+    })),
   ];
 }
 
 function filterScheduleByKind(schedule, onlyKind) {
   if (!onlyKind || onlyKind === 'all') return schedule;
-  if (!SOCIAL_POST_KINDS.includes(onlyKind)) {
+  const hasKindOrId = SOCIAL_POST_KINDS.includes(onlyKind) || schedule.some(item => item.id === onlyKind);
+  if (!hasKindOrId) {
     throw new Error(`Invalid --only-kind: ${onlyKind}`);
   }
-  return schedule.filter(item => item.kind === onlyKind);
+  return schedule.filter(item => item.kind === onlyKind || item.id === onlyKind);
 }
 
 function splitCsv(value) {
@@ -153,6 +191,13 @@ function isSkippedByEnv(kind, dateKey) {
 }
 
 function isScheduledForDate(item, dateKey, weekday) {
+  if (item.date && item.date !== dateKey) return false;
+  if (item.kind === 'birthday_monthly') {
+    const monthlyStart = SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE;
+    const isJuneKickoff = dateKey === SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE;
+    const isMonthlyFirst = dateKey >= monthlyStart && dateKey.endsWith('-01');
+    if (!isJuneKickoff && !isMonthlyFirst) return false;
+  }
   if (item.kind !== 'oracle' && dateKey < SOCIAL_EXPANSION_START_DATE) return false;
   return !Array.isArray(item.days) || item.days.includes(weekday);
 }
@@ -176,20 +221,22 @@ function requirePostingEnabled() {
   }
 }
 
-function runPost(kind, dateKey) {
-  const platforms = process.env.SOCIAL_PLATFORMS || DEFAULT_SOCIAL_PLATFORMS;
+function runPost(item, dateKey) {
+  const platforms = item.platforms || process.env.SOCIAL_PLATFORMS || DEFAULT_SOCIAL_PLATFORMS;
   const result = spawnSync(process.execPath, [
     DAILY_SCRIPT,
     '--write',
     '--post',
-    `--kind=${kind}`,
+    `--kind=${item.kind}`,
     `--date=${dateKey}`,
     `--platforms=${platforms}`,
+    ...(item.birthdayDays ? [`--birthday-days=${item.birthdayDays}`] : []),
   ], {
     cwd: ROOT,
     env: {
       ...process.env,
       SOCIAL_SCHEDULED_RUN: 'true',
+      ...(item.birthdayDays ? { SOCIAL_BIRTHDAY_MONTHLY_DAYS: item.birthdayDays } : {}),
     },
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -197,7 +244,7 @@ function runPost(kind, dateKey) {
   if (result.stdout) process.stdout.write(result.stdout);
   if (result.stderr) process.stderr.write(result.stderr);
   if (result.status !== 0) {
-    throw new Error(`Scheduled ${kind} post failed with exit code ${result.status}`);
+    throw new Error(`Scheduled ${item.id || item.kind} post failed with exit code ${result.status}`);
   }
 }
 
@@ -215,15 +262,15 @@ async function runDue(args) {
 
   const scheduledToday = schedule.filter(item => isScheduledForDate(item, dateKey, weekday));
   const due = args.forceKind
-    ? scheduledToday.filter(item => args.forceKind === 'all' || item.kind === args.forceKind)
+    ? scheduledToday.filter(item => args.forceKind === 'all' || item.kind === args.forceKind || item.id === args.forceKind)
     : scheduledToday.filter(item => {
       const lateByMinutes = nowMinute - item.minute;
-      return lateByMinutes >= 0 && lateByMinutes <= graceMinutes && !state[dateKey][item.kind];
+      return lateByMinutes >= 0 && lateByMinutes <= graceMinutes && !state[dateKey][item.id || item.kind];
     });
   const dueAfterSkips = due.filter(item => !isSkippedByEnv(item.kind, dateKey));
   const expired = args.forceKind ? [] : scheduledToday
-    .filter(item => nowMinute - item.minute > graceMinutes && !state[dateKey][item.kind])
-    .map(item => item.kind);
+    .filter(item => nowMinute - item.minute > graceMinutes && !state[dateKey][item.id || item.kind])
+    .map(item => item.id || item.kind);
 
   const report = {
     date: dateKey,
@@ -232,12 +279,12 @@ async function runDue(args) {
     graceMinutes,
     configuredGraceMinutes: gracePolicy.configuredMinutes,
     graceCappedForStateless: gracePolicy.cappedForStateless,
-    schedule: schedule.map(item => ({ kind: item.kind, time: item.time, days: item.days })),
-    scheduledToday: scheduledToday.map(item => item.kind),
+    schedule: schedule.map(item => ({ id: item.id || item.kind, kind: item.kind, time: item.time, days: item.days, birthdayDays: item.birthdayDays || null, platforms: item.platforms || null })),
+    scheduledToday: scheduledToday.map(item => item.id || item.kind),
     onlyKind: args.onlyKind || null,
-    due: dueAfterSkips.map(item => item.kind),
+    due: dueAfterSkips.map(item => item.id || item.kind),
     expired,
-    skippedByEnv: due.filter(item => isSkippedByEnv(item.kind, dateKey)).map(item => item.kind),
+    skippedByEnv: due.filter(item => isSkippedByEnv(item.kind, dateKey)).map(item => item.id || item.kind),
     dryRun: args.dryRun,
   };
   console.log(JSON.stringify(report, null, 2));
@@ -246,8 +293,8 @@ async function runDue(args) {
   requirePostingEnabled();
 
   for (const item of dueAfterSkips) {
-    runPost(item.kind, dateKey);
-    state[dateKey][item.kind] = new Date().toISOString();
+    runPost(item, dateKey);
+    state[dateKey][item.id || item.kind] = new Date().toISOString();
     await writeJson(stateFile, state);
   }
 }

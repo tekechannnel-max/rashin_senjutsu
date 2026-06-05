@@ -9,25 +9,42 @@ const PRERELEASE_END_DATE = '2026-05-29';
 const FIX_PERIOD_END_DATE = '2026-06-05';
 const RELEASE_DATE = PRERELEASE_START_DATE;
 const THREADS_LIMIT = 500;
-const BLUESKY_LIMIT = 300;
 const INSTAGRAM_LIMIT = 2200;
 const INSTAGRAM_HASHTAG_LIMIT = 5;
-const BLUESKY_IMAGE_LIMIT_BYTES = 1_000_000;
-const DEFAULT_SOCIAL_PLATFORMS = 'threads,bluesky,instagram';
+const DEFAULT_SOCIAL_PLATFORMS = 'threads,instagram';
+const SUPPORTED_PLATFORMS = new Set(['threads', 'instagram']);
 const SOCIAL_EXPANSION_START_DATE = process.env.SOCIAL_EXPANSION_START_DATE || '2026-05-27';
 const REQUIRED_HASHTAGS_BY_PLATFORM = {
   threads: ['#占い師のつぶやき'],
-  x: ['#羅針占術'],
-  bluesky: ['#羅針占術', '#今日の占い', '#今日の運勢', '#占い師'],
   instagram: ['#羅針占術'],
 };
-const SOCIAL_POST_KINDS = ['oracle', 'empathy', 'difference', 'free_paid_compare'];
-const X_POST_KINDS = new Set(['oracle']);
+const REQUIRED_HASHTAGS_BY_KIND = {
+  rashin_point: {
+    threads: ['#占い師'],
+    instagram: ['#羅針占術'],
+  },
+  birthday_ranking: {
+    instagram: ['#羅針占術', '#誕生日占い', '#数秘'],
+  },
+};
+const SOCIAL_POST_KINDS = ['oracle', 'rashin_point', 'birthday_monthly', 'birthday_ranking'];
+const SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE = process.env.SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE || '2026-06-05';
+const SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE = process.env.SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE || '2026-07-01';
+const ONE_OFF_POSTS = [
+  { id: 'rashin_point', kind: 'rashin_point', date: '2026-06-04' },
+  { id: 'birthday_ranking_love_at_first_sight', kind: 'birthday_ranking', date: '2026-06-06' },
+  { id: 'birthday_ranking_money_luck', kind: 'birthday_ranking', date: '2026-06-07' },
+  { id: 'birthday_ranking_horror_resistance', kind: 'birthday_ranking', date: '2026-06-08' },
+  { id: 'birthday_ranking_weird', kind: 'birthday_ranking', date: '2026-06-09' },
+];
+const BIRTHDAY_MONTHLY_SLOTS = [
+  { id: 'birthday_monthly_01_10', kind: 'birthday_monthly', birthdayDays: '1-10' },
+  { id: 'birthday_monthly_11_20', kind: 'birthday_monthly', birthdayDays: '11-20' },
+  { id: 'birthday_monthly_21_30', kind: 'birthday_monthly', birthdayDays: '21-30' },
+  { id: 'birthday_monthly_31', kind: 'birthday_monthly', birthdayDays: '31' },
+];
 const WEEKDAYS_BY_KIND = {
   oracle: null,
-  empathy: [1, 2, 3, 4],
-  difference: [2],
-  free_paid_compare: [4],
 };
 
 const HARD_NG_PATTERNS = [
@@ -76,6 +93,9 @@ function parseArgs(argv) {
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(args.from)) throw new Error(`Invalid --from date: ${args.from}`);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(args.to)) throw new Error(`Invalid --to date: ${args.to}`);
+  const platforms = args.platforms.split(',').map(item => item.trim()).filter(Boolean);
+  const unsupported = platforms.filter(platform => !SUPPORTED_PLATFORMS.has(platform));
+  if (unsupported.length) throw new Error(`Unsupported platform: ${unsupported.join(', ')}`);
   return args;
 }
 
@@ -134,14 +154,25 @@ function getWeekday(dateKey) {
   return new Date(`${dateKey}T00:00:00.000Z`).getUTCDay();
 }
 
-function isScheduledKindForDate(kind, dateKey) {
-  if (kind !== 'oracle' && dateKey < SOCIAL_EXPANSION_START_DATE) return false;
-  const weekdays = WEEKDAYS_BY_KIND[kind];
+function isBirthdayMonthlyDate(dateKey) {
+  return dateKey === SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE
+    || (dateKey >= SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE && dateKey.endsWith('-01'));
+}
+
+function isScheduledItemForDate(item, dateKey) {
+  if (item.date && item.date !== dateKey) return false;
+  if (item.kind === 'birthday_monthly' && !isBirthdayMonthlyDate(dateKey)) return false;
+  if (item.kind !== 'oracle' && dateKey < SOCIAL_EXPANSION_START_DATE) return false;
+  const weekdays = WEEKDAYS_BY_KIND[item.kind];
   return !Array.isArray(weekdays) || weekdays.includes(getWeekday(dateKey));
 }
 
-function isEnabledForPlatform(kind, platform) {
-  return platform !== 'x' || X_POST_KINDS.has(kind);
+function scheduledItemsForDate(dateKey) {
+  return [
+    { id: 'oracle', kind: 'oracle' },
+    ...BIRTHDAY_MONTHLY_SLOTS,
+    ...ONE_OFF_POSTS,
+  ].filter(item => SOCIAL_POST_KINDS.includes(item.kind) && isScheduledItemForDate(item, dateKey));
 }
 
 function isPrelaunchDate(dateKey) {
@@ -167,25 +198,19 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
   const length = textLength(value);
   const prelaunch = isPrelaunchDate(dateKey);
   const releasePhase = getReleasePhase(dateKey);
-  const limit = platform === 'x'
-    ? 280
-    : platform === 'bluesky'
-      ? BLUESKY_LIMIT
-      : platform === 'instagram'
-        ? INSTAGRAM_LIMIT
-        : THREADS_LIMIT;
+  const limit = platform === 'instagram' ? INSTAGRAM_LIMIT : THREADS_LIMIT;
 
   if (!value.trim()) addIssue(issues, 'error', 'empty', '投稿文が空です。');
   if (length > limit) addIssue(issues, 'error', 'length', `${platform}の文字数上限を超えています: ${length}/${limit}`);
   if (platform === 'instagram') {
-    if (!hasInstagramProfileLinkCue(value)) {
+    if (kind !== 'birthday_ranking' && !hasInstagramProfileLinkCue(value)) {
       addIssue(issues, 'error', 'instagram_profile_link_missing', 'Instagram投稿にはプロフィールリンク誘導が必要です。');
     }
-  } else if (platform !== 'instagram' && !hasPublicUrl(value)) {
+  } else if (platform !== 'instagram' && kind !== 'birthday_ranking' && !hasPublicUrl(value)) {
     addIssue(issues, 'error', 'visible_url_missing', `${platform}投稿には表示用URLが必要です。`);
   }
   if (!hasUtm(value) && !hasUtm(tracking)) addIssue(issues, 'error', 'utm_missing', `${platform}投稿には台帳用utm_contentが必要です。`);
-  const requiredHashtags = REQUIRED_HASHTAGS_BY_PLATFORM[platform] || [];
+  const requiredHashtags = REQUIRED_HASHTAGS_BY_KIND[kind]?.[platform] || REQUIRED_HASHTAGS_BY_PLATFORM[platform] || [];
   requiredHashtags.forEach(requiredHashtag => {
     if (!value.includes(requiredHashtag)) addIssue(issues, 'error', 'hashtag_missing', `${requiredHashtag} がありません。`);
   });
@@ -195,12 +220,6 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
   const hashtagCount = countHashtags(value);
   if (platform === 'threads' && hashtagCount !== requiredHashtags.length) {
     addIssue(issues, 'error', 'hashtag_count', `Threadsのハッシュタグは${requiredHashtags.length}つだけにします: ${hashtagCount}`);
-  }
-  if (platform === 'x' && hashtagCount < 1) {
-    addIssue(issues, 'error', 'hashtag_count', `Xのハッシュタグがありません: ${hashtagCount}`);
-  }
-  if (platform === 'bluesky' && hashtagCount !== requiredHashtags.length) {
-    addIssue(issues, 'error', 'hashtag_count', `Blueskyのハッシュタグは${requiredHashtags.length}個にします: ${hashtagCount}`);
   }
   if (platform === 'instagram') {
     if (kind === 'oracle' && !value.includes('#おはようvtuber')) {
@@ -218,7 +237,7 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
     if (pattern.test(value)) addIssue(issues, 'error', 'hard_ng', `${label}に該当する表現があります。`);
   }
 
-  if (prelaunch && !(platform === 'x' && kind === 'oracle')) {
+  if (prelaunch) {
     if (!hasPrelaunchAnchor(value)) addIssue(issues, 'error', 'prelaunch_anchor', '5/16公開前の先行投稿だと分かる文脈が不足しています。');
     if (!hasPrelaunchWaitCta(value)) addIssue(issues, 'error', 'prelaunch_cta', 'プレリリース前はフォロー/保存/待つCTAが必要です。');
     for (const pattern of PRELAUNCH_LIVE_CTA_PATTERNS) {
@@ -270,13 +289,11 @@ function auditText({ text, trackedUrl, dateKey, kind, platform }) {
 
 function auditImage({ draft, kind, platform }) {
   const issues = [];
-  if (!['threads', 'x', 'bluesky', 'instagram'].includes(platform)) return issues;
+  if (!SUPPORTED_PLATFORMS.has(platform)) return issues;
   const entry = draft[kind] || {};
-  const imagePath = platform === 'bluesky'
-    ? entry.blueskyImagePath
-    : platform === 'instagram'
-      ? entry.instagramImagePath
-      : entry.imagePath;
+  const imagePath = platform === 'instagram'
+    ? entry.instagramImagePath
+    : entry.imagePath;
   const altText = entry.altText;
   if (!imagePath) {
     addIssue(issues, 'error', `${platform}_image_missing`, `${platform}用投稿に画像パスがありません。`);
@@ -284,14 +301,6 @@ function auditImage({ draft, kind, platform }) {
     addIssue(issues, 'error', `${platform}_image_not_found`, `${platform}用画像が見つかりません: ${imagePath}`);
   } else if (platform === 'instagram' && !/\.jpe?g$/i.test(imagePath)) {
     addIssue(issues, 'error', 'instagram_image_not_jpeg', `Instagram用画像はJPEGにします: ${imagePath}`);
-  } else if (platform === 'bluesky') {
-    if (entry.imagePath && imagePath !== entry.imagePath) {
-      addIssue(issues, 'error', 'bluesky_image_mismatch', `Bluesky用画像はThreads用画像と同じにします: ${imagePath} !== ${entry.imagePath}`);
-    }
-    const size = fs.statSync(imagePath).size;
-    if (size > BLUESKY_IMAGE_LIMIT_BYTES) {
-      addIssue(issues, 'error', 'bluesky_image_too_large', `Bluesky用画像が1,000,000 bytesを超えています: ${size}/${BLUESKY_IMAGE_LIMIT_BYTES} ${imagePath}`);
-    }
   }
   if (!String(altText || '').trim()) {
     addIssue(issues, 'error', `${platform}_alt_missing`, `${platform}用画像のalt textがありません。`);
@@ -299,7 +308,8 @@ function auditImage({ draft, kind, platform }) {
   return issues;
 }
 
-function generateDraft(dateKey, args) {
+function generateDraft(dateKey, args, item = { kind: 'all' }) {
+  const kind = item.kind || 'all';
   const env = {
     ...process.env,
     SOCIAL_STATELESS_MODE: 'true',
@@ -310,8 +320,9 @@ function generateDraft(dateKey, args) {
     DAILY_SCRIPT,
     '--dry-run',
     `--date=${dateKey}`,
-    '--kind=all',
+    `--kind=${kind}`,
     `--platforms=${args.platforms}`,
+    ...(item.birthdayDays ? [`--birthday-days=${item.birthdayDays}`] : []),
   ], {
     cwd: ROOT,
     env,
@@ -347,35 +358,24 @@ function main() {
   const seenText = new Map();
 
   for (const dateKey of result.dates) {
-    const draft = generateDraft(dateKey, args);
-    for (const kind of SOCIAL_POST_KINDS.filter(item => isScheduledKindForDate(item, dateKey))) {
+    for (const item of scheduledItemsForDate(dateKey)) {
+      const kind = item.kind;
+      const draft = generateDraft(dateKey, args, item);
       for (const platform of platforms) {
-        if (!isEnabledForPlatform(kind, platform)) continue;
-        const text = platform === 'x'
-          ? draft[kind].xText
-          : platform === 'bluesky'
-            ? draft[kind].blueskyText
-            : platform === 'instagram'
-              ? draft[kind].instagramText
-              : draft[kind].text;
-        const trackedUrl = platform === 'x'
-          ? draft[kind].xTrackedUrl
-          : platform === 'bluesky'
-            ? draft[kind].blueskyTrackedUrl
-            : platform === 'instagram'
-              ? draft[kind].instagramTrackedUrl
-              : draft[kind].trackedUrl;
+        const text = platform === 'instagram' ? draft[kind].instagramText : draft[kind].text;
+        const trackedUrl = platform === 'instagram' ? draft[kind].instagramTrackedUrl : draft[kind].trackedUrl;
         const audit = auditText({ text, trackedUrl, dateKey, kind, platform, releaseMode: args.releaseMode });
         const imageIssues = auditImage({ draft, kind, platform });
         const repeatKey = `${kind}:${platform}:${normalizeForRepeat(text)}`;
         const repeatIssues = [];
-        if (seenText.has(repeatKey) && !(platform === 'x' && kind === 'oracle')) {
+        if (seenText.has(repeatKey)) {
           addIssue(repeatIssues, 'error', 'duplicate_text', `${platform}/${kind} の投稿文が ${seenText.get(repeatKey)} と同一です。`);
         } else {
           seenText.set(repeatKey, dateKey);
         }
         result.entries.push({
           date: dateKey,
+          id: item.id || kind,
           kind,
           platform,
           releasePhase: getReleasePhase(dateKey),

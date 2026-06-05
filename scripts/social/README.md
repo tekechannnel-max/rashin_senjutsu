@@ -1,217 +1,75 @@
 # SNS scripts
 
-実運用の正本は `docs/sns-runbook.md`。Threads / Instagram主軸の戦略判断は `docs/sns-strategy-threads-instagram.md`。このREADMEはスクリプト利用メモだけにする。
+実行手順の正本は `docs/sns-runbook.md` です。このREADMEは、スクリプト単位の役割だけを残します。
 
-## 役割
+## 現在の運用対象
 
-- `daily-oracle-post.js`: Threads/Bluesky/Instagram/X向けの当日投稿文、画像、alt textを作る
-- `run-scheduled-posts.js`: JSTの予定時刻に来た投稿だけ、設定されたSNSへ送る。現運用はThreads / Bluesky / Instagram
-- `export-x-drafts.js`: X手動投稿用の下書きを出す
-- `content/lenormand-empathy-posts.js`: `empathy` 用の36枚ルノルマン投稿素材
-- `content/difference-posts.js`: `difference` 用のローテーション投稿素材
-- `content/free-paid-compare-posts.js`: `free_paid_compare` 用のローテーション投稿素材
-- `threads-tool.js`: Threads token確認、OAuth、手動投稿テストを行う
-- `bluesky-tool.js`: Blueskyアプリパスワード確認、画像付き手動投稿テストを行う
-- `audit-social-drafts.js`: 文字数、タグ、CTA、禁止表現を機械検査する
-- `prepare-kpi-review.js`: 週次KPIレビュー用の空CSVを投稿スケジュールとUTMから生成する
+- Threads
+- Instagram
+
+対象外媒体の再開予定がない手順や検証コマンドは残しません。
+
+## 主なスクリプト
+
+- `daily-oracle-post.js`: 投稿文、画像パス、alt text、UTM付きURLを生成します。
+- `run-scheduled-posts.js`: Render Cronから対象時刻の投稿だけを実行します。
+- `audit-social-drafts.js`: 投稿文、UTM、画像、alt text、ハッシュタグ、重複を検査します。
+- `prepare-kpi-review.js`: KPI確認用CSVを生成します。
+- `threads-tool.js`: Threadsの接続確認と手動テスト用です。
+- `instagram-client.js`: Instagram投稿APIの共通処理です。
+
+投稿素材は主に `scripts/social/content/` と `images/social/instagram/generated-birthday/` に置きます。
 
 ## 通常確認
 
 ```powershell
 npm run check
-npm run social:audit -- --from=2026-05-13 --to=2026-05-29 --platforms=threads,bluesky,instagram,x
-npm run threads:doctor
-npm run bluesky:doctor
-node scripts/social/run-scheduled-posts.js --dry-run
+npm run social:audit -- --from=2026-06-06 --to=2026-06-09 --platforms=threads,instagram
+npm run social:draft -- --date=2026-06-06 --kind=birthday_ranking --platforms=threads,instagram
+node scripts/social/run-scheduled-posts.js --once --dry-run --only-kind=all
 ```
-
-## Threads下書き
-
-```powershell
-npm run social:draft
-npm run social:threads:draft
-npm run social:write
-```
-
-生成物は `data/social-posts/` に出る。このディレクトリはgitignore対象。
 
 ## Render本番
 
-Threads / Bluesky / Instagram本番投稿はRender Cron Job `rashin-threads-scheduler` が実行する。
+Threads / Instagram本番投稿はRender Cron Job `rashin-threads-scheduler` が実行します。
 
 ```text
+SOCIAL_PLATFORMS=threads,instagram
 node scripts/social/run-scheduled-posts.js --once --only-kind=all
 ```
 
-Render schedule:
+ローカルWindowsのTask Scheduler、常駐PowerShell、ローカルdaemonはSNS運用に使いません。
 
-```text
-0 3,10,22 * * *
-```
+## 手動投稿とプレビュー
 
-JSTでは次だけ投稿対象にする。指定外の曜日・時刻では `run-scheduled-posts.js` が投稿しない。
-
-```text
-08:00: oracle
-月〜木 12:00: empathy
-火 19:00: difference
-木 19:00: free_paid_compare
-```
-
-5分おき実行は使わない。Render Cronでは状態ファイルが永続化されないため、広い猶予で複数回起動すると同じ投稿が再送される。
-
-ローカルWindowsのTask Scheduler、可視PowerShell、daemonは使わない。
-
-## X下書き
-
-Xは現在、自動投稿しない。下書きだけ生成する。
-GitHub Actionsの `X social drafts` が、07:03 JSTに朝オラクルだけの手動投稿用下書きをArtifactとStep Summaryへ出す。
-朝オラクルのX下書きは、数秘オラクル1〜33から日付ごとにランダム選択し、Xの280文字制限では切り詰めない。
+通常端末では、プレビュー後に `yes` を入力しない限り実投稿しません。
 
 ```powershell
-npm run social:x:today
-npm run social:x:drafts -- --from=2026-05-13 --to=2026-05-29 --kind=all
+npm run social:draft -- --date=2026-06-06 --kind=birthday_ranking --platforms=threads,instagram
+npm run social:post -- --date=2026-06-06 --kind=birthday_ranking --platforms=threads,instagram
 ```
 
-出力は `data/social-posts/x-drafts/`。本文、画像URL、alt textを人間が確認してXへ投稿する。
+CI、Render Cron、確認済みの手動実行だけ `--yes` を使います。
 
-## Bluesky確認
+## 緊急時
 
-```powershell
-npm run social:bluesky:draft
-npm run bluesky:doctor
-```
-
-実投稿には `BLUESKY_IDENTIFIER=tekesensai.bsky.social`、`BLUESKY_APP_PASSWORD`、`BLUESKY_EXPECTED_HANDLE=tekesensai.bsky.social` が必要。アプリパスワードはGitやmdに書かず、Render環境変数にだけ保存する。
-
-## 緊急時だけ
-
-予定時刻の範囲内で未投稿分だけ実行:
+予定時刻の範囲内で未投稿分だけ実行します。
 
 ```powershell
 npm run social:run-due
 ```
 
-種類を絞る:
+種類を絞る例:
 
 ```powershell
 node scripts/social/run-scheduled-posts.js --once --only-kind=oracle
-node scripts/social/run-scheduled-posts.js --once --only-kind=empathy
-node scripts/social/run-scheduled-posts.js --once --only-kind=difference
-node scripts/social/run-scheduled-posts.js --once --only-kind=free_paid_compare
 ```
 
-強制投稿は通常禁止。使う前に対象日、対象kind、既存投稿、本文を確認する。
-
-```powershell
-node scripts/social/run-scheduled-posts.js --force-kind=oracle
-node scripts/social/run-scheduled-posts.js --force-kind=empathy
-node scripts/social/run-scheduled-posts.js --force-kind=difference
-node scripts/social/run-scheduled-posts.js --force-kind=free_paid_compare
-```
-
-## Threads token
-
-ローカル診断用。Render本番では `THREADS_ACCESS_TOKEN` をRender環境変数に入れる。
+## 接続確認
 
 ```powershell
 npm run threads:doctor
+npm run instagram:doctor
 ```
 
-token作成が必要な場合:
-
-```powershell
-npm run threads:connect
-node scripts/social/threads-tool.js save-token --token="<token-from-user-token-generator>"
-```
-
-`THREADS_ACCESS_TOKEN` はmd、Git、チャットに書かない。
-## 本番運用前チェック
-
-本番投稿前は、ローカルで次を通す。
-
-```powershell
-npm run check
-npm run social:audit -- --from=2026-05-13 --to=2026-06-06 --platforms=threads,bluesky,instagram,x
-npm run social:draft -- --date=2026-05-18 --platforms=threads,bluesky,instagram
-```
-
-- `daily-oracle-post.js` は投稿文、UTM付きURL、画像、alt textを生成する。
-- `post-ledger.js` は `data/social-posts/posts.csv` に投稿台帳を保存する。本文とalt textはSHA-256ハッシュだけを保存し、APIキー、トークン、投稿全文、個人情報は保存しない。
-- `audit-social-drafts.js` は文字数、UTM、画像、alt text、重複本文、禁止表現を検査する。
-- `run-scheduled-posts.js` はRender Cron用。JSTの投稿対象時間だけ `daily-oracle-post.js --write --post --yes` 相当を実行する。
-- カード意味と占い読みの共通基準は `docs/card-reading-meaning-grounding.md`、SNS固有の画像・投稿ルールは `docs/sns-card-meaning-grounding.md` に従う。
-- 朝08:00の `oracle` はカード1〜33の投稿文をThreads / Bluesky / Instagram向けに出す。冒頭は `おはてけ🌸🦦`、締めの導線は `今日の1枚はこちら！👇` にする。Threads / Blueskyの本文URLと画像は同じにする。Instagramは本文URLを出さず「プロフィールのリンクから」と書き、UTM付きURLは `posts.csv` の分析用URLとして保存する。画像は `images/social/instagram/oracle/NN.jpg` を使い、Instagramの `oracle` には `#おはようvtuber` を入れる。
-- 月〜木12:00の `empathy` は、内部名は互換性のため残すが、表向きは「今日のルノルマン一枚」として出す。冒頭は `こんてけ🌸🦦`、カード番号、日本語名、英語名、今日の兆し、流れのサインで構成し、不安訴求へ寄せない。画像は `images/social/instagram/lenormand-empathy/NN.jpg` を使い、初回36投稿で重複させない。
-- Threadsのハッシュタグは `#占い師のつぶやき` だけにし、`#羅針占術` は使わない。Blueskyは `#羅針占術 #今日の占い #今日の運勢 #占い師` を使い、300文字を超えたら投稿しない。Instagramは投稿種別ごとに最大5個だけ付ける。`oracle` / `empathy` / `difference` / `free_paid_compare` はThreadsとの差分をハッシュタグとプロフィールリンク誘導だけにし、画像は同じにする。
-- 火19:00の `difference` は、羅針占術が他のAI占いと違う点、自由記載、命・卜・相の総合占術、鑑定履歴をローテーションで伝える。画像は `images/social/instagram/difference.jpg` をThreadsにも使う。
-- 木19:00の `free_paid_compare` は、無料版と有料版の違い、カード枚数差、鑑定履歴解析の価値を、強すぎない有料導線として伝える。画像は `images/social/instagram/free-paid-compare.jpg` をThreadsにも使う。
-
-## 手動投稿とプレビュー
-
-実投稿は、通常の端末ではプレビュー後に `yes` を入力しない限り進まない。
-
-```powershell
-npm run social:draft -- --date=2026-05-18 --platforms=threads,bluesky,instagram
-npm run social:post -- --date=2026-05-18 --platforms=threads,bluesky,instagram
-```
-
-CI、Render Cron、確認済みの手動実行だけ `--yes` を使う。
-
-```powershell
-node scripts/social/daily-oracle-post.js --write --post --yes --date=2026-05-18 --platforms=threads,bluesky,instagram --kind=oracle
-```
-
-## 環境変数
-
-```text
-PUBLIC_ORIGIN=https://rashin-senjutsu.onrender.com
-THREADS_USER_ID=<Renderに保存>
-THREADS_ACCESS_TOKEN=<Renderに保存>
-THREADS_EXPECTED_USERNAME=sensai_teke
-INSTAGRAM_ENABLED=true
-INSTAGRAM_USER_ID=<Renderに保存>
-INSTAGRAM_ACCESS_TOKEN=<Renderに保存>
-INSTAGRAM_EXPECTED_USERNAME=sensai_teke
-INSTAGRAM_API_VERSION=v23.0
-BLUESKY_IDENTIFIER=tekesensai.bsky.social
-BLUESKY_APP_PASSWORD=<Renderに保存>
-BLUESKY_EXPECTED_HANDLE=tekesensai.bsky.social
-SOCIAL_AUTOMATED_POSTING_ENABLED=true
-SOCIAL_PLATFORMS=threads,bluesky,instagram
-SOCIAL_THREADS_HASHTAG=#占い師のつぶやき
-SOCIAL_INSTAGRAM_ORACLE_HASHTAGS=#羅針占術 #おはようvtuber #今日の占い #オラクルカード #占い好きな人と繋がりたい
-SOCIAL_INSTAGRAM_EMPATHY_HASHTAGS=#羅針占術 #ルノルマンカード #今日の占い #カード占い #AI占い
-SOCIAL_INSTAGRAM_DIFFERENCE_HASHTAGS=#羅針占術 #AI占い #無料占い #占い師のつぶやき #悩み相談
-SOCIAL_INSTAGRAM_FREE_PAID_COMPARE_HASHTAGS=#羅針占術 #無料占い #占い師のつぶやき #ルノルマンカード #AI占い
-SOCIAL_BLUESKY_HASHTAGS=#羅針占術 #今日の占い #今日の運勢 #占い師
-SOCIAL_EMPATHY_TIME=12:00
-SOCIAL_DIFFERENCE_TIME=19:00
-SOCIAL_FREE_PAID_COMPARE_TIME=19:00
-SOCIAL_EXPANSION_START_DATE=2026-05-27
-SOCIAL_POSTS_LEDGER_FILE=data/social-posts/posts.csv
-SOCIAL_API_RETRY_ATTEMPTS=3
-SOCIAL_API_RETRY_BASE_MS=1500
-SOCIAL_UTM_CAMPAIGN=202605_prerelease
-```
-
-`THREADS_ACCESS_TOKEN`、`INSTAGRAM_ACCESS_TOKEN`、`BLUESKY_APP_PASSWORD` はGit、README、チャット、ログに書かない。Renderの環境変数だけに保存する。
-
-## BOOTH分析
-
-投稿ごとのURLには `utm_source`、`utm_medium=social`、`utm_campaign`、`utm_content` が入る。`posts.csv` の `tracked_url`、`platform`、`kind`、`status`、`permalink`、`external_id` を残しておけば、BOOTH側・アクセス解析側の流入データと `utm_content` で突き合わせられる。
-
-週次KPIレビュー用の空台帳は次で作る。数値入力は人間が行うが、投稿行とUTMはスクリプトが生成する。
-
-```powershell
-npm run social:kpi-template -- --from=2026-06-01 --to=2026-06-07 --platforms=threads,bluesky,instagram
-```
-
-Threads / Instagram主軸で見る週は、同じコマンドの `--platforms` を `threads,instagram` にする。`new_follows` はプロフィール訪問後の伸びを見る手入力欄として使う。
-
-## トラブル対応
-
-- 重複投稿が疑わしい: `data/social-posts/posts.csv` の `post_key`、SNS側の既存投稿検索、Renderログの `existing_threads_post` / `existing_instagram_post` / `existing_bluesky_post` を確認する。
-- API失敗: 一時的な5xx/429/タイムアウトは `SOCIAL_API_RETRY_ATTEMPTS` 回まで待って再試行する。認証不備、expected handle不一致、画像サイズ超過は再試行せず止める。
-- UTMがない: `npm run social:audit -- --from=<開始日> --to=<終了日> --platforms=threads,bluesky,instagram,x` を実行し、`missing_utm` を直すまで投稿しない。
-- Bluesky画像で失敗: 画像は1,000,000 bytes以下にする。`images/social/instagram/difference.jpg`、`images/social/instagram/free-paid-compare.jpg`、既存ルノルマンJPGを含めて、`audit-social-drafts.js` と `tests/social-posting.test.js` がこの条件を検査する。
+`THREADS_ACCESS_TOKEN` と `INSTAGRAM_ACCESS_TOKEN` はGit、README、チャット、ログに書きません。Render環境変数だけに保存します。

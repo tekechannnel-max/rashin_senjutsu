@@ -100,6 +100,14 @@ function normalizeAltText(altText) {
   return String(altText || '').trim();
 }
 
+function ensureCarouselImageUrls(imageUrls) {
+  const urls = Array.isArray(imageUrls) ? imageUrls : [];
+  if (urls.length < 2 || urls.length > 10) {
+    throw new Error(`Instagram carousel requires 2-10 images: ${urls.length}`);
+  }
+  return urls.map(ensurePublicImageUrl);
+}
+
 async function requestJson(url, options = {}) {
   const res = await fetch(url, options);
   const json = await res.json().catch(() => ({}));
@@ -212,6 +220,39 @@ async function createInstagramImageContainer({ text, imageUrl, altText = '', cre
   return requestJson(`${creds.graphBase}/${encodeURIComponent(userId)}/media`, { method: 'POST', body });
 }
 
+async function createInstagramCarouselItemContainer({ imageUrl, altText = '', credentials = null }) {
+  requireInstagramEnabled();
+  const creds = credentials || getInstagramCredentials();
+  requireInstagramCredentials(creds);
+  const userId = await resolveInstagramUserId(creds);
+  const body = new URLSearchParams({
+    image_url: ensurePublicImageUrl(imageUrl),
+    is_carousel_item: 'true',
+    access_token: creds.accessToken,
+  });
+  const normalizedAltText = normalizeAltText(altText);
+  if (normalizedAltText) body.set('alt_text', normalizedAltText);
+  return requestJson(`${creds.graphBase}/${encodeURIComponent(userId)}/media`, { method: 'POST', body });
+}
+
+async function createInstagramCarouselContainer({ text, children, credentials = null }) {
+  requireInstagramEnabled();
+  const creds = credentials || getInstagramCredentials();
+  requireInstagramCredentials(creds);
+  const userId = await resolveInstagramUserId(creds);
+  const childIds = Array.isArray(children) ? children.map(String).filter(Boolean) : [];
+  if (childIds.length < 2 || childIds.length > 10) {
+    throw new Error(`Instagram carousel container requires 2-10 child containers: ${childIds.length}`);
+  }
+  const body = new URLSearchParams({
+    media_type: 'CAROUSEL',
+    children: childIds.join(','),
+    caption: ensureInstagramCaption(text),
+    access_token: creds.accessToken,
+  });
+  return requestJson(`${creds.graphBase}/${encodeURIComponent(userId)}/media`, { method: 'POST', body });
+}
+
 async function publishInstagramContainer(creationId, credentials = null) {
   requireInstagramEnabled();
   const creds = credentials || getInstagramCredentials();
@@ -239,6 +280,30 @@ async function postImageToInstagram({ text, imageUrl, altText = '', waitMs = nul
   return { ...published, permalink: media.permalink, verified: Boolean(media.id), media };
 }
 
+async function postCarouselToInstagram({ text, imageUrls, altTexts = [], waitMs = null, credentials = null }) {
+  const creds = credentials || getInstagramCredentials();
+  requireInstagramEnabled();
+  await assertExpectedInstagramAccount(creds);
+  const urls = ensureCarouselImageUrls(imageUrls);
+  const timeoutMs = waitMs === null ? Number(process.env.INSTAGRAM_CONTAINER_TIMEOUT_MS || 300000) : Number(waitMs);
+  const intervalMs = Number(process.env.INSTAGRAM_CONTAINER_POLL_MS || 60000);
+  const children = [];
+  for (let index = 0; index < urls.length; index += 1) {
+    const created = await createInstagramCarouselItemContainer({
+      imageUrl: urls[index],
+      altText: Array.isArray(altTexts) ? altTexts[index] || '' : '',
+      credentials: creds,
+    });
+    await waitForInstagramContainer(created.id, { credentials: creds, timeoutMs, intervalMs });
+    children.push(created.id);
+  }
+  const carousel = await createInstagramCarouselContainer({ text, children, credentials: creds });
+  await waitForInstagramContainer(carousel.id, { credentials: creds, timeoutMs, intervalMs });
+  const published = await publishInstagramContainer(carousel.id, creds);
+  const media = await getInstagramMedia(published.id, creds);
+  return { ...published, permalink: media.permalink, verified: Boolean(media.id), media, carouselChildren: children };
+}
+
 module.exports = {
   INSTAGRAM_CHARACTER_LIMIT,
   getInstagramCredentials,
@@ -248,6 +313,7 @@ module.exports = {
   ensureInstagramCaption,
   ensurePublicImageUrl,
   normalizeAltText,
+  ensureCarouselImageUrls,
   getInstagramMe,
   listInstagramMedia,
   getInstagramMedia,
@@ -255,6 +321,9 @@ module.exports = {
   waitForInstagramContainer,
   assertExpectedInstagramAccount,
   createInstagramImageContainer,
+  createInstagramCarouselItemContainer,
+  createInstagramCarouselContainer,
   publishInstagramContainer,
   postImageToInstagram,
+  postCarouselToInstagram,
 };
