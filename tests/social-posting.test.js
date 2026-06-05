@@ -728,6 +728,8 @@ function testWorkflowHasScheduledPostingBackup() {
   assert.match(workflow, /birthday_monthly_01_10/, 'workflow dispatch should allow forcing the missed 20:00 birthday monthly slot');
   assert.match(workflow, /birthday_monthly_recovery_31/, 'workflow dispatch should allow forcing the 23:00 birthday monthly recovery slot');
   assert.match(workflow, /birthday_ranking_love_at_first_sight/, 'workflow dispatch should allow forcing one-off birthday ranking slots');
+  assert.match(workflow, /- validate_only/, 'workflow dispatch should support credential validation without publishing');
+  assert.match(workflow, /github\.event\.inputs\.kind != 'validate_only'/, 'validate_only dispatch should run checks and doctors without publishing');
 }
 
 function testBroadSocialAuditPasses() {

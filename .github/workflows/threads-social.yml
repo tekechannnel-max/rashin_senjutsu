@@ -18,6 +18,7 @@ on:
         type: choice
         options:
           - auto
+          - validate_only
           - all
           - oracle
           - rashin_point
@@ -124,7 +125,7 @@ jobs:
           echo "kind=$kind" >> "$GITHUB_OUTPUT"
 
       - name: Publish due SNS post
-        if: steps.secrets.outputs.ready == 'true' && github.event_name != 'push'
+        if: steps.secrets.outputs.ready == 'true' && github.event_name != 'push' && github.event.inputs.kind != 'validate_only'
         shell: bash
         run: |
           kind="${{ steps.pick.outputs.kind }}"
