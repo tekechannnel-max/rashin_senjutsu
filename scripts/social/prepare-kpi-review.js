@@ -21,32 +21,64 @@ const ONE_OFF_POSTS = [
   {
     id: 'birthday_ranking_love_at_first_sight',
     kind: 'birthday_ranking',
-    date: '2026-06-06',
+    date: '2026-06-07',
     time: '20:00',
   },
   {
     id: 'birthday_ranking_money_luck',
     kind: 'birthday_ranking',
-    date: '2026-06-07',
+    date: '2026-06-08',
     time: '20:00',
   },
   {
     id: 'birthday_ranking_horror_resistance',
     kind: 'birthday_ranking',
-    date: '2026-06-08',
+    date: '2026-06-09',
     time: '20:00',
   },
   {
     id: 'birthday_ranking_weird',
     kind: 'birthday_ranking',
-    date: '2026-06-09',
+    date: '2026-06-10',
     time: '20:00',
+  },
+  {
+    id: 'birthday_monthly_recovery_01_10',
+    kind: 'birthday_monthly',
+    date: '2026-06-06',
+    time: '20:00',
+    birthdayDays: '1-10',
+    platforms: 'instagram',
+  },
+  {
+    id: 'birthday_monthly_recovery_11_20',
+    kind: 'birthday_monthly',
+    date: '2026-06-06',
+    time: '21:00',
+    birthdayDays: '11-20',
+    platforms: 'instagram',
+  },
+  {
+    id: 'birthday_monthly_recovery_21_30',
+    kind: 'birthday_monthly',
+    date: '2026-06-06',
+    time: '22:00',
+    birthdayDays: '21-30',
+    platforms: 'instagram',
+  },
+  {
+    id: 'birthday_monthly_recovery_31',
+    kind: 'birthday_monthly',
+    date: '2026-06-06',
+    time: '23:00',
+    birthdayDays: '31',
+    platforms: 'instagram',
   },
 ];
 const BIRTHDAY_MONTHLY_SLOTS = [
-  { id: 'birthday_monthly_01_10', kind: 'birthday_monthly', time: '20:00', birthdayDays: '1-10' },
-  { id: 'birthday_monthly_11_20', kind: 'birthday_monthly', time: '21:00', birthdayDays: '11-20' },
-  { id: 'birthday_monthly_21_31', kind: 'birthday_monthly', time: '22:00', birthdayDays: '21-31' },
+  { id: 'birthday_monthly_01_10', kind: 'birthday_monthly', time: '20:00', birthdayDays: '1-10', platforms: 'instagram' },
+  { id: 'birthday_monthly_11_20', kind: 'birthday_monthly', time: '21:00', birthdayDays: '11-20', platforms: 'instagram' },
+  { id: 'birthday_monthly_21_31', kind: 'birthday_monthly', time: '22:00', birthdayDays: '21-31', platforms: 'instagram' },
 ];
 const WEEKDAYS_BY_KIND = {
   oracle: null,
@@ -164,7 +196,7 @@ function isBirthdayMonthlyDate(dateKey) {
 
 function isScheduledItemForDate(item, dateKey) {
   if (item.date && item.date !== dateKey) return false;
-  if (item.kind === 'birthday_monthly' && !isBirthdayMonthlyDate(dateKey)) return false;
+  if (item.kind === 'birthday_monthly' && !item.date && !isBirthdayMonthlyDate(dateKey)) return false;
   if (item.kind !== 'oracle' && dateKey < SOCIAL_EXPANSION_START_DATE) return false;
   const weekdays = WEEKDAYS_BY_KIND[item.kind];
   return !Array.isArray(weekdays) || weekdays.includes(getWeekday(dateKey));
@@ -236,19 +268,22 @@ function writeRows(rows) {
 
 function runDraft(dateKey, platforms, item = { kind: 'all' }) {
   const kind = item.kind || 'all';
+  const itemPlatforms = item.platforms
+    ? String(item.platforms).split(',').map(platform => platform.trim()).filter(Boolean)
+    : platforms;
   const result = spawnSync(process.execPath, [
     DAILY_SCRIPT,
     '--dry-run',
     `--date=${dateKey}`,
     `--kind=${kind}`,
-    `--platforms=${platforms.join(',')}`,
+    `--platforms=${itemPlatforms.join(',')}`,
     ...(item.birthdayDays ? [`--birthday-days=${item.birthdayDays}`] : []),
   ], {
     cwd: ROOT,
     env: {
       ...process.env,
       SOCIAL_STATELESS_MODE: 'true',
-      SOCIAL_PLATFORMS: platforms.join(','),
+      SOCIAL_PLATFORMS: itemPlatforms.join(','),
       ...(item.birthdayDays ? { SOCIAL_BIRTHDAY_MONTHLY_DAYS: item.birthdayDays } : {}),
     },
     encoding: 'utf8',
@@ -275,7 +310,10 @@ function buildRows(args) {
     for (const item of scheduledItemsForDate(dateKey)) {
       const kind = item.kind;
       const draft = runDraft(dateKey, args.platforms, item);
-      for (const platform of args.platforms) {
+      const itemPlatforms = item.platforms
+        ? String(item.platforms).split(',').map(platform => platform.trim()).filter(Boolean)
+        : args.platforms;
+      for (const platform of itemPlatforms.filter(platform => args.platforms.includes(platform))) {
         const entry = getPlatformEntry(draft[kind], platform);
         const tracking = postLedger.extractTracking(entry.trackedUrl);
         const utmContent = tracking.utm_content || `${kind}_${dateKey.replace(/-/g, '')}`;

@@ -295,7 +295,14 @@ function testAutomationDocsUseThreadsInstagramProductionLane() {
     assert.match(source, new RegExp(expectedPlatforms), `${relativeFile} should configure Threads and Instagram as the production lane`);
     assert.doesNotMatch(source, /SOCIAL_PLATFORMS=threads,bluesky,instagram/, `${relativeFile} should not keep Bluesky in the default production lane`);
   }
+  const absoluteRules = fs.readFileSync(path.join(ROOT, 'docs', 'sns-posting-absolute-rules.md'), 'utf8');
+  const agentRules = fs.readFileSync(path.join(ROOT, 'AGENTS.md'), 'utf8');
   const runbook = fs.readFileSync(path.join(ROOT, 'docs', 'sns-runbook.md'), 'utf8');
+  assert.match(absoluteRules, /## 投稿前承認ゲート/, 'absolute SNS rules should require a posting approval gate');
+  assert.match(absoluteRules, /## 絶対停止条件/, 'absolute SNS rules should define hard stop conditions');
+  assert.match(absoluteRules, /#誕生日占い[\s\S]*#数秘/, 'absolute SNS rules should preserve birthday Instagram required tags');
+  assert.match(agentRules, /docs\/sns-posting-absolute-rules\.md/, 'AGENTS.md should force SNS workers to read the absolute rules first');
+  assert.match(runbook, /docs\/sns-posting-absolute-rules\.md/, 'runbook should point to the absolute SNS rules before operational steps');
   assert.doesNotMatch(runbook, /Bluesky|BLUESKY/, 'runbook should not keep Bluesky operation notes');
   assert.doesNotMatch(runbook, /X下書き|social:x:/, 'runbook should not keep X draft operation notes');
 }
@@ -436,35 +443,48 @@ function testEmpathyUsesRandomLenormandRotation() {
 }
 
 function testBirthdayMonthlyUsesGeneratedSlides() {
-  const first = parseDraft('2026-06-05', { kind: 'birthday_monthly' }).birthday_monthly;
+  const first = parseDraft('2026-06-05', { kind: 'birthday_monthly', platforms: 'instagram' }).birthday_monthly;
   assert.equal(first.content.day, 1, '2026-06-05 should start with the 1st birthday slide');
   assert.match(first.text, /1日生まれ/, 'birthday_monthly text should show the target birthday');
-  assert.match(first.text, /ルノルマン4枚/, 'birthday_monthly text should explain the Lenormand 4-card basis');
+  assert.match(first.instagramText, /^\\無料占いはプロフィールURLから\//, 'birthday_monthly Instagram copy should use the approved short profile hook');
+  assert.match(first.instagramText, /🌸自分の誕生日を画像でチェック/, 'birthday_monthly Instagram copy should use the approved flower line');
+  assert.match(first.instagramText, /#誕生日占い/, 'birthday_monthly Instagram copy should include #誕生日占い');
+  assert.match(first.instagramText, /#数秘/, 'birthday_monthly Instagram copy should include #数秘');
+  assert.doesNotMatch(first.instagramText, /保存しておいてください|羅針占術の鑑定へ/, 'birthday_monthly Instagram copy should not use the rejected long CTA');
   assert.match(first.trackedUrl, /utm_content=birthdaymonthly_20260605_birth01/, 'birthday_monthly tracked URL should include birthday day');
   assert.match(first.imagePath, /images[\\/]social[\\/]instagram[\\/]generated-birthday[\\/]2026-06[\\/]monthly[\\/]01-10[\\/]01-birth-01\.jpg$/, 'birthday_monthly should use day 1 generated slide');
 
-  const next = parseDraft('2026-06-06', { kind: 'birthday_monthly' }).birthday_monthly;
+  const next = parseDraft('2026-06-06', { kind: 'birthday_monthly', platforms: 'instagram' }).birthday_monthly;
   assert.equal(next.content.day, 2, '2026-06-06 should use the 2nd birthday slide');
   assert.match(next.trackedUrl, /utm_content=birthdaymonthly_20260606_birth02/, 'birthday_monthly should advance daily');
 
-  const group = parseDraft('2026-06-05', { kind: 'birthday_monthly', birthdayDays: '1-10' }).birthday_monthly;
+  const group = parseDraft('2026-06-05', { kind: 'birthday_monthly', platforms: 'instagram', birthdayDays: '1-10' }).birthday_monthly;
   assert.deepEqual(group.content.days, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], '20:00 birthday monthly group should cover days 1-10');
   assert.equal(group.imagePaths.length, 10, '20:00 birthday monthly group should publish a 10-slide carousel');
   assert.equal(group.instagramImageUrls.length, 10, 'Instagram birthday monthly group should publish a 10-slide carousel');
   assert.equal(group.altTexts.length, 10, 'birthday monthly group should provide alt text for every slide');
   assert.match(group.text, /1-10日生まれの6月運勢/, 'birthday monthly group text should show the target day range');
-  assert.match(group.text, /10枚のカルーセル/, 'birthday monthly group text should explain the carousel count');
+  assert.match(group.instagramText, /🦦周りの人の誕生日も見てみて/, 'birthday monthly group should use the approved otter line');
   assert.match(group.trackedUrl, /utm_content=birthdaymonthly_20260605_birth01_10/, 'birthday monthly group UTM should include the day range');
   assert.match(group.imagePaths[0], /images[\\/]social[\\/]instagram[\\/]generated-birthday[\\/]2026-06[\\/]monthly[\\/]01-10[\\/]01-birth-01\.jpg$/, 'birthday monthly group should start with day 1');
   assert.match(group.imagePaths[9], /images[\\/]social[\\/]instagram[\\/]generated-birthday[\\/]2026-06[\\/]monthly[\\/]01-10[\\/]10-birth-10\.jpg$/, 'birthday monthly group should end with day 10');
 
-  const finalBlock = parseDraft('2026-06-05', { kind: 'birthday_monthly', birthdayDays: '21-31' }).birthday_monthly;
+  const finalBlock = parseDraft('2026-06-05', { kind: 'birthday_monthly', platforms: 'instagram', birthdayDays: '21-31' }).birthday_monthly;
   assert.deepEqual(finalBlock.content.days, [21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31], '22:00 birthday monthly group should cover days 21-31');
   assert.equal(finalBlock.imagePaths.length, 11, '21-31 birthday monthly post should use the existing eleven generated day slides');
   assert.match(finalBlock.trackedUrl, /utm_content=birthdaymonthly_20260605_birth21_31/, '21-31 birthday monthly UTM should include the day range');
   assert.match(finalBlock.imagePaths[10], /images[\\/]social[\\/]instagram[\\/]generated-birthday[\\/]2026-06[\\/]monthly[\\/]21-31[\\/]31-birth-31\.jpg$/, '21-31 birthday monthly post should end with the generated day 31 slide');
-}
 
+  const recoveryBlock = parseDraft('2026-06-06', { kind: 'birthday_monthly', platforms: 'instagram', birthdayDays: '21-30' }).birthday_monthly;
+  assert.deepEqual(recoveryBlock.content.days, [21, 22, 23, 24, 25, 26, 27, 28, 29, 30], '2026-06-06 recovery should split 21-30 into a 10-slide carousel');
+  assert.equal(recoveryBlock.instagramImageUrls.length, 10, '21-30 recovery should stay within the Instagram carousel limit');
+  assert.match(recoveryBlock.trackedUrl, /utm_content=birthdaymonthly_20260606_birth21_30/, '21-30 recovery UTM should include the split day range');
+
+  const day31 = parseDraft('2026-06-06', { kind: 'birthday_monthly', platforms: 'instagram', birthdayDays: '31' }).birthday_monthly;
+  assert.deepEqual(day31.content.days, [31], '2026-06-06 recovery should publish day 31 as a separate post');
+  assert.equal(day31.instagramImageUrls.length, 1, 'day 31 recovery should be a single-image post');
+  assert.match(day31.trackedUrl, /utm_content=birthdaymonthly_20260606_birth31/, 'day 31 recovery UTM should include birth31');
+}
 function testRashinPointOneOffCarouselDraft() {
   const draft = parseDraft('2026-06-04', { kind: 'rashin_point', platforms: 'threads,instagram' });
   const entry = draft.rashin_point;
@@ -492,10 +512,10 @@ function testRashinPointOneOffCarouselDraft() {
 
 function testBirthdayRankingInstagramDrafts() {
   const expected = [
-    ['2026-06-06', 'love-at-first-sight-top5.jpg', '一目惚れしやすい生まれ日TOP5', 'love_at_first_sight'],
-    ['2026-06-07', 'money-luck-top5.jpg', '金運が強い生まれ日TOP5', 'money_luck'],
-    ['2026-06-08', 'horror-resistance-top5.jpg', 'ホラー耐性のある生まれ日TOP5', 'horror_resistance'],
-    ['2026-06-09', 'weird-top5.jpg', '変人に見られやすい生まれ日TOP5', 'weird'],
+    ['2026-06-07', 'love-at-first-sight-top5.jpg', '一目惚れしやすい生まれ日TOP5', 'love_at_first_sight'],
+    ['2026-06-08', 'money-luck-top5.jpg', '金運が強い生まれ日TOP5', 'money_luck'],
+    ['2026-06-09', 'horror-resistance-top5.jpg', 'ホラー耐性のある生まれ日TOP5', 'horror_resistance'],
+    ['2026-06-10', 'weird-top5.jpg', '変人に見られやすい生まれ日TOP5', 'weird'],
   ];
   for (const [date, imageName, title, slug] of expected) {
     const entry = parseDraft(date, { kind: 'birthday_ranking', platforms: 'threads,instagram' }).birthday_ranking;
@@ -619,11 +639,14 @@ function testScheduledPostsRespectJstWeekdays() {
   assert.deepEqual(scheduleReport('2026-06-05T12:01:00.000Z').due, ['birthday_monthly_11_20'], 'Fri 21:01 JST should post birthday days 11-20');
   assert.deepEqual(scheduleReport('2026-06-05T13:01:00.000Z').due, ['birthday_monthly_21_31'], 'Fri 22:01 JST should post birthday days 21-31');
   assert.deepEqual(scheduleReport('2026-06-05T14:01:00.000Z').due, [], 'Fri 23:01 JST should not have a fourth birthday monthly post');
-  assert.deepEqual(scheduleReport('2026-06-06T11:01:00.000Z').due, ['birthday_ranking_love_at_first_sight'], 'Sat 20:01 JST should post the one-off love-at-first-sight ranking');
-  assert.deepEqual(scheduleReport('2026-06-07T11:01:00.000Z').due, ['birthday_ranking_money_luck'], 'Sun 20:01 JST should post the one-off money luck ranking');
-  assert.deepEqual(scheduleReport('2026-06-08T11:01:00.000Z').due, ['birthday_ranking_horror_resistance'], 'Mon 20:01 JST should post the one-off horror resistance ranking');
-  assert.deepEqual(scheduleReport('2026-06-09T11:01:00.000Z').due, ['birthday_ranking_weird'], 'Tue 20:01 JST should post the one-off weird ranking');
-  assert.deepEqual(scheduleReport('2026-06-10T11:01:00.000Z').due, [], 'Wed 20:01 JST should stay empty after the one-off ranking run');
+  assert.deepEqual(scheduleReport('2026-06-06T11:01:00.000Z').due, ['birthday_monthly_recovery_01_10'], 'Sat 20:01 JST should recover birthday monthly days 1-10');
+  assert.deepEqual(scheduleReport('2026-06-06T12:01:00.000Z').due, ['birthday_monthly_recovery_11_20'], 'Sat 21:01 JST should recover birthday monthly days 11-20');
+  assert.deepEqual(scheduleReport('2026-06-06T13:01:00.000Z').due, ['birthday_monthly_recovery_21_30'], 'Sat 22:01 JST should recover birthday monthly days 21-30');
+  assert.deepEqual(scheduleReport('2026-06-06T14:00:00.000Z').due, ['birthday_monthly_recovery_31'], 'Sat 23:00 JST should recover birthday monthly day 31');
+  assert.deepEqual(scheduleReport('2026-06-07T11:01:00.000Z').due, ['birthday_ranking_love_at_first_sight'], 'Sun 20:01 JST should post the one-off love-at-first-sight ranking');
+  assert.deepEqual(scheduleReport('2026-06-08T11:01:00.000Z').due, ['birthday_ranking_money_luck'], 'Mon 20:01 JST should post the one-off money luck ranking');
+  assert.deepEqual(scheduleReport('2026-06-09T11:01:00.000Z').due, ['birthday_ranking_horror_resistance'], 'Tue 20:01 JST should post the one-off horror resistance ranking');
+  assert.deepEqual(scheduleReport('2026-06-10T11:01:00.000Z').due, ['birthday_ranking_weird'], 'Wed 20:01 JST should post the one-off weird ranking');
   assert.deepEqual(scheduleReport('2026-06-11T11:01:00.000Z').due, [], 'Next Thu 20:01 JST should not repeat the one-off trust carousel');
   assert.deepEqual(scheduleReport('2026-07-01T11:01:00.000Z', 'birthday_monthly').due, ['birthday_monthly_01_10'], '2026-07-01 20:01 JST should start the monthly birthday carousel schedule');
   assert.deepEqual(scheduleReport('2026-07-01T14:01:00.000Z', 'birthday_monthly').due, [], '2026-07-01 23:01 JST should not have a fourth birthday monthly post');
@@ -636,7 +659,7 @@ function testKpiReviewTemplatePreservesManualMetrics() {
   runNode([
     'scripts/social/prepare-kpi-review.js',
     '--from=2026-06-01',
-    '--to=2026-06-09',
+    '--to=2026-06-10',
     '--platforms=threads,instagram',
     `--out=${path.basename(outFile)}`,
   ]);
@@ -647,10 +670,12 @@ function testKpiReviewTemplatePreservesManualMetrics() {
   assert.match(csv, /utm_content=birthdaymonthly_20260605_birth11_20/, 'KPI template should include the 21:00 birthday monthly carousel lane');
   assert.match(csv, /utm_content=birthdaymonthly_20260605_birth21_31/, 'KPI template should include the 22:00 birthday monthly carousel lane');
   assert.doesNotMatch(csv, /utm_content=birthdaymonthly_20260605_birth31/, 'KPI template should not include a fourth birthday monthly carousel lane');
-  assert.match(csv, /utm_content=birthdayranking_20260606_love_at_first_sight/, 'KPI template should include the 2026-06-06 birthday ranking lane');
-  assert.match(csv, /utm_content=birthdayranking_20260607_money_luck/, 'KPI template should include the 2026-06-07 birthday ranking lane');
-  assert.match(csv, /utm_content=birthdayranking_20260608_horror_resistance/, 'KPI template should include the 2026-06-08 birthday ranking lane');
-  assert.match(csv, /utm_content=birthdayranking_20260609_weird/, 'KPI template should include the 2026-06-09 birthday ranking lane');
+  assert.match(csv, /utm_content=birthdaymonthly_20260606_birth21_30/, 'KPI template should include the 2026-06-06 23:00 birthday monthly recovery split');
+  assert.match(csv, /utm_content=birthdaymonthly_20260606_birth31/, 'KPI template should include the 2026-06-06 23:00 birthday monthly recovery split');
+  assert.match(csv, /utm_content=birthdayranking_20260607_love_at_first_sight/, 'KPI template should include the 2026-06-07 birthday ranking lane');
+  assert.match(csv, /utm_content=birthdayranking_20260608_money_luck/, 'KPI template should include the 2026-06-08 birthday ranking lane');
+  assert.match(csv, /utm_content=birthdayranking_20260609_horror_resistance/, 'KPI template should include the 2026-06-09 birthday ranking lane');
+  assert.match(csv, /utm_content=birthdayranking_20260610_weird/, 'KPI template should include the 2026-06-10 birthday ranking lane');
   assert.doesNotMatch(csv, /empathy_20260601_card\d{2}|difference_20260602_v\d{2}|freepaid_20260604_v\d{2}/, 'KPI template should not include held manual/comparison lanes');
   assert.match(csv, /paid_deep_reading_starts/, 'KPI template should include paid funnel columns');
   const lines = csv.trim().split(/\r?\n/);
@@ -665,7 +690,7 @@ function testKpiReviewTemplatePreservesManualMetrics() {
   runNode([
     'scripts/social/prepare-kpi-review.js',
     '--from=2026-06-01',
-    '--to=2026-06-09',
+    '--to=2026-06-10',
     '--platforms=threads,instagram',
     `--out=${path.basename(outFile)}`,
   ]);
@@ -690,9 +715,18 @@ function testStatelessScheduleKeepsRecoveryGraceWindow() {
 
 function testWorkflowHasScheduledPostingBackup() {
   const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'threads-social.yml'), 'utf8');
+  const automationWorkflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'sns-automation.yml'), 'utf8');
   assert.match(workflow, /cron: '0 23,11,12,13 \* \* \*'/, 'Threads workflow should run backup ticks for 08:00 and 20:00-22:00 JST');
+  assert.match(workflow, /cron: '0 14 \* \* \*'/, 'Threads workflow should run a separate backup tick for the 23:00 JST recovery post');
+  assert.doesNotMatch(workflow, /cron: '1 14 \* \* \*'/, 'Threads workflow should not run a 23:01 JST recovery tick');
+  assert.match(workflow, /"0 14 \* \* \*"\) kind="birthday_monthly_recovery_31"/, '23:00 JST recovery workflow should force day 31 only');
+  assert.match(workflow, /github\.event_name \}\}" = "push"[\s\S]*echo "ready=false"[\s\S]*exit 0/, 'Threads workflow push validation should not fail only because posting secrets are unavailable');
+  assert.match(automationWorkflow, /github\.event_name \}\}" = "push"[\s\S]*echo "ready=false"[\s\S]*exit 0/, 'SNS automation push validation should not fail only because posting secrets are unavailable');
+  assert.match(workflow, /if: steps\.secrets\.outputs\.ready == 'true' && github\.event_name != 'push'/, 'workflow push events should validate without publishing due posts');
+  assert.match(automationWorkflow, /if: steps\.secrets\.outputs\.ready == 'true' && github\.event_name != 'push'/, 'automation workflow push events should validate without publishing due posts');
   assert.match(workflow, /SOCIAL_POST_GRACE_MINUTES: '59'/, 'workflow should allow delayed scheduled runs to recover within the hour');
   assert.match(workflow, /birthday_monthly_01_10/, 'workflow dispatch should allow forcing the missed 20:00 birthday monthly slot');
+  assert.match(workflow, /birthday_monthly_recovery_31/, 'workflow dispatch should allow forcing the 23:00 birthday monthly recovery slot');
   assert.match(workflow, /birthday_ranking_love_at_first_sight/, 'workflow dispatch should allow forcing one-off birthday ranking slots');
 }
 

@@ -24,7 +24,7 @@
 
 ```powershell
 npm run check
-npm run social:audit -- --from=2026-06-06 --to=2026-06-09 --platforms=threads,instagram
+npm run social:audit -- --from=2026-06-06 --to=2026-06-10 --platforms=threads,instagram
 npm run social:draft -- --date=2026-06-06 --kind=birthday_ranking --platforms=threads,instagram
 node scripts/social/run-scheduled-posts.js --once --dry-run --only-kind=all
 ```

@@ -26,21 +26,28 @@ const REQUIRED_HASHTAGS_BY_KIND = {
   birthday_ranking: {
     instagram: ['#羅針占術', '#誕生日占い', '#数秘'],
   },
+  birthday_monthly: {
+    instagram: ['#羅針占術', '#誕生日占い', '#数秘'],
+  },
 };
 const SOCIAL_POST_KINDS = ['oracle', 'rashin_point', 'birthday_monthly', 'birthday_ranking'];
 const SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE = process.env.SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE || '2026-06-05';
 const SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE = process.env.SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE || '2026-07-01';
 const ONE_OFF_POSTS = [
   { id: 'rashin_point', kind: 'rashin_point', date: '2026-06-04' },
-  { id: 'birthday_ranking_love_at_first_sight', kind: 'birthday_ranking', date: '2026-06-06' },
-  { id: 'birthday_ranking_money_luck', kind: 'birthday_ranking', date: '2026-06-07' },
-  { id: 'birthday_ranking_horror_resistance', kind: 'birthday_ranking', date: '2026-06-08' },
-  { id: 'birthday_ranking_weird', kind: 'birthday_ranking', date: '2026-06-09' },
+  { id: 'birthday_ranking_love_at_first_sight', kind: 'birthday_ranking', date: '2026-06-07' },
+  { id: 'birthday_ranking_money_luck', kind: 'birthday_ranking', date: '2026-06-08' },
+  { id: 'birthday_ranking_horror_resistance', kind: 'birthday_ranking', date: '2026-06-09' },
+  { id: 'birthday_ranking_weird', kind: 'birthday_ranking', date: '2026-06-10' },
+  { id: 'birthday_monthly_recovery_01_10', kind: 'birthday_monthly', date: '2026-06-06', birthdayDays: '1-10', platforms: 'instagram' },
+  { id: 'birthday_monthly_recovery_11_20', kind: 'birthday_monthly', date: '2026-06-06', birthdayDays: '11-20', platforms: 'instagram' },
+  { id: 'birthday_monthly_recovery_21_30', kind: 'birthday_monthly', date: '2026-06-06', birthdayDays: '21-30', platforms: 'instagram' },
+  { id: 'birthday_monthly_recovery_31', kind: 'birthday_monthly', date: '2026-06-06', birthdayDays: '31', platforms: 'instagram' },
 ];
 const BIRTHDAY_MONTHLY_SLOTS = [
-  { id: 'birthday_monthly_01_10', kind: 'birthday_monthly', birthdayDays: '1-10' },
-  { id: 'birthday_monthly_11_20', kind: 'birthday_monthly', birthdayDays: '11-20' },
-  { id: 'birthday_monthly_21_31', kind: 'birthday_monthly', birthdayDays: '21-31' },
+  { id: 'birthday_monthly_01_10', kind: 'birthday_monthly', birthdayDays: '1-10', platforms: 'instagram' },
+  { id: 'birthday_monthly_11_20', kind: 'birthday_monthly', birthdayDays: '11-20', platforms: 'instagram' },
+  { id: 'birthday_monthly_21_31', kind: 'birthday_monthly', birthdayDays: '21-31', platforms: 'instagram' },
 ];
 const WEEKDAYS_BY_KIND = {
   oracle: null,
@@ -125,7 +132,8 @@ function hasPublicUrl(text) {
 }
 
 function hasInstagramProfileLinkCue(text) {
-  return String(text || '').includes('プロフィールのリンクから');
+  const value = String(text || '');
+  return value.includes('プロフィールのリンクから') || value.includes('プロフィールURLから');
 }
 
 function hasUtm(text) {
@@ -140,6 +148,10 @@ function normalizeForRepeat(text) {
     .replace(/\d{1,2}\/\d{1,2}/g, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function shouldSkipDuplicateTextCheck(item, dateKey) {
+  return dateKey === '2026-06-06' && String(item.id || '').startsWith('birthday_monthly_recovery_');
 }
 
 function getReleasePhase(dateKey) {
@@ -160,7 +172,7 @@ function isBirthdayMonthlyDate(dateKey) {
 
 function isScheduledItemForDate(item, dateKey) {
   if (item.date && item.date !== dateKey) return false;
-  if (item.kind === 'birthday_monthly' && !isBirthdayMonthlyDate(dateKey)) return false;
+  if (item.kind === 'birthday_monthly' && !item.date && !isBirthdayMonthlyDate(dateKey)) return false;
   if (item.kind !== 'oracle' && dateKey < SOCIAL_EXPANSION_START_DATE) return false;
   const weekdays = WEEKDAYS_BY_KIND[item.kind];
   return !Array.isArray(weekdays) || weekdays.includes(getWeekday(dateKey));
@@ -309,18 +321,19 @@ function auditImage({ draft, kind, platform }) {
 
 function generateDraft(dateKey, args, item = { kind: 'all' }) {
   const kind = item.kind || 'all';
+  const platforms = item.platforms || args.platforms;
   const env = {
     ...process.env,
     SOCIAL_STATELESS_MODE: 'true',
     SOCIAL_RELEASE_MODE: args.releaseMode,
-    SOCIAL_PLATFORMS: args.platforms,
+    SOCIAL_PLATFORMS: platforms,
   };
   const result = spawnSync(process.execPath, [
     DAILY_SCRIPT,
     '--dry-run',
     `--date=${dateKey}`,
     `--kind=${kind}`,
-    `--platforms=${args.platforms}`,
+    `--platforms=${platforms}`,
     ...(item.birthdayDays ? [`--birthday-days=${item.birthdayDays}`] : []),
   ], {
     cwd: ROOT,
@@ -359,15 +372,18 @@ function main() {
   for (const dateKey of result.dates) {
     for (const item of scheduledItemsForDate(dateKey)) {
       const kind = item.kind;
+      const itemPlatforms = (item.platforms || args.platforms).split(',').map(entry => entry.trim()).filter(Boolean);
       const draft = generateDraft(dateKey, args, item);
-      for (const platform of platforms) {
+      for (const platform of itemPlatforms.filter(platform => platforms.includes(platform))) {
         const text = platform === 'instagram' ? draft[kind].instagramText : draft[kind].text;
         const trackedUrl = platform === 'instagram' ? draft[kind].instagramTrackedUrl : draft[kind].trackedUrl;
         const audit = auditText({ text, trackedUrl, dateKey, kind, platform, releaseMode: args.releaseMode });
         const imageIssues = auditImage({ draft, kind, platform });
         const repeatKey = `${kind}:${platform}:${normalizeForRepeat(text)}`;
         const repeatIssues = [];
-        if (seenText.has(repeatKey)) {
+        if (shouldSkipDuplicateTextCheck(item, dateKey)) {
+          seenText.set(`${repeatKey}:${item.id}`, dateKey);
+        } else if (seenText.has(repeatKey)) {
           addIssue(repeatIssues, 'error', 'duplicate_text', `${platform}/${kind} の投稿文が ${seenText.get(repeatKey)} と同一です。`);
         } else {
           seenText.set(repeatKey, dateKey);

@@ -23,36 +23,68 @@ const ONE_OFF_POSTS = [
   {
     id: 'birthday_ranking_love_at_first_sight',
     kind: 'birthday_ranking',
-    date: '2026-06-06',
+    date: '2026-06-07',
     time: '20:00',
     platforms: 'threads,instagram',
   },
   {
     id: 'birthday_ranking_money_luck',
     kind: 'birthday_ranking',
-    date: '2026-06-07',
+    date: '2026-06-08',
     time: '20:00',
     platforms: 'threads,instagram',
   },
   {
     id: 'birthday_ranking_horror_resistance',
     kind: 'birthday_ranking',
-    date: '2026-06-08',
+    date: '2026-06-09',
     time: '20:00',
     platforms: 'threads,instagram',
   },
   {
     id: 'birthday_ranking_weird',
     kind: 'birthday_ranking',
-    date: '2026-06-09',
+    date: '2026-06-10',
     time: '20:00',
     platforms: 'threads,instagram',
   },
+  {
+    id: 'birthday_monthly_recovery_01_10',
+    kind: 'birthday_monthly',
+    date: '2026-06-06',
+    time: '20:00',
+    birthdayDays: '1-10',
+    platforms: 'instagram',
+  },
+  {
+    id: 'birthday_monthly_recovery_11_20',
+    kind: 'birthday_monthly',
+    date: '2026-06-06',
+    time: '21:00',
+    birthdayDays: '11-20',
+    platforms: 'instagram',
+  },
+  {
+    id: 'birthday_monthly_recovery_21_30',
+    kind: 'birthday_monthly',
+    date: '2026-06-06',
+    time: '22:00',
+    birthdayDays: '21-30',
+    platforms: 'instagram',
+  },
+  {
+    id: 'birthday_monthly_recovery_31',
+    kind: 'birthday_monthly',
+    date: '2026-06-06',
+    time: '23:00',
+    birthdayDays: '31',
+    platforms: 'instagram',
+  },
 ];
 const BIRTHDAY_MONTHLY_SLOTS = [
-  { id: 'birthday_monthly_01_10', kind: 'birthday_monthly', time: '20:00', birthdayDays: '1-10' },
-  { id: 'birthday_monthly_11_20', kind: 'birthday_monthly', time: '21:00', birthdayDays: '11-20' },
-  { id: 'birthday_monthly_21_31', kind: 'birthday_monthly', time: '22:00', birthdayDays: '21-31' },
+  { id: 'birthday_monthly_01_10', kind: 'birthday_monthly', time: '20:00', birthdayDays: '1-10', platforms: 'instagram' },
+  { id: 'birthday_monthly_11_20', kind: 'birthday_monthly', time: '21:00', birthdayDays: '11-20', platforms: 'instagram' },
+  { id: 'birthday_monthly_21_31', kind: 'birthday_monthly', time: '22:00', birthdayDays: '21-31', platforms: 'instagram' },
 ];
 
 function parseArgs(argv) {
@@ -191,7 +223,7 @@ function isSkippedByEnv(kind, dateKey) {
 
 function isScheduledForDate(item, dateKey, weekday) {
   if (item.date && item.date !== dateKey) return false;
-  if (item.kind === 'birthday_monthly') {
+  if (item.kind === 'birthday_monthly' && !item.date) {
     const monthlyStart = SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE;
     const isJuneKickoff = dateKey === SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE;
     const isMonthlyFirst = dateKey >= monthlyStart && dateKey.endsWith('-01');

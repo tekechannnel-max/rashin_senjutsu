@@ -5,9 +5,10 @@ on:
     branches:
       - main
   schedule:
-    # Backup scheduled posting ticks for 08:00, 20:00, 21:00, and 22:00 JST.
+    # Backup scheduled posting ticks for 08:00, 20:00, 21:00, 22:00, and 23:00 JST.
     # GitHub schedule can start late, so run-scheduled-posts.js keeps a 59 minute grace window.
     - cron: '0 23,11,12,13 * * *'
+    - cron: '0 14 * * *'
   workflow_dispatch:
     inputs:
       kind:
@@ -24,6 +25,10 @@ on:
           - birthday_monthly_01_10
           - birthday_monthly_11_20
           - birthday_monthly_21_31
+          - birthday_monthly_recovery_01_10
+          - birthday_monthly_recovery_11_20
+          - birthday_monthly_recovery_21_30
+          - birthday_monthly_recovery_31
           - birthday_ranking
           - birthday_ranking_love_at_first_sight
           - birthday_ranking_money_luck
@@ -74,6 +79,10 @@ jobs:
         id: secrets
         shell: bash
         run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [ -z "$THREADS_ACCESS_TOKEN" ] || [ -z "$THREADS_USER_ID" ] || [ -z "$INSTAGRAM_ACCESS_TOKEN" ] || [ -z "$INSTAGRAM_USER_ID" ]; then
             echo "::error::GitHub Secrets for Threads / Instagram are not set. Scheduled posting cannot run."
             exit 1
@@ -82,22 +91,22 @@ jobs:
           fi
 
       - name: Validate scripts
-        if: steps.secrets.outputs.ready == 'true'
+        if: github.event_name == 'push' || steps.secrets.outputs.ready == 'true'
         run: npm run check
 
       - name: Audit today's social draft
-        if: steps.secrets.outputs.ready == 'true'
+        if: github.event_name == 'push' || steps.secrets.outputs.ready == 'true'
         shell: bash
         run: |
           today="$(TZ=Asia/Tokyo date +%F)"
           npm run social:audit -- --from="$today" --to="$today" --platforms=threads,instagram
 
       - name: Confirm Threads token account
-        if: steps.secrets.outputs.ready == 'true'
+        if: github.event_name != 'push' && steps.secrets.outputs.ready == 'true'
         run: npm run threads:doctor
 
       - name: Confirm Instagram token account
-        if: steps.secrets.outputs.ready == 'true'
+        if: github.event_name != 'push' && steps.secrets.outputs.ready == 'true'
         run: npm run instagram:doctor
 
       - name: Pick scheduled post kind
@@ -108,13 +117,14 @@ jobs:
           kind="${{ github.event.inputs.kind || 'auto' }}"
           if [ "$kind" = "auto" ]; then
             case "${{ github.event.schedule }}" in
+              "0 14 * * *") kind="birthday_monthly_recovery_31" ;;
               *) kind="all" ;;
             esac
           fi
           echo "kind=$kind" >> "$GITHUB_OUTPUT"
 
       - name: Publish due SNS post
-        if: steps.secrets.outputs.ready == 'true'
+        if: steps.secrets.outputs.ready == 'true' && github.event_name != 'push'
         shell: bash
         run: |
           kind="${{ steps.pick.outputs.kind }}"

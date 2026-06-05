@@ -69,6 +69,10 @@ jobs:
         id: secrets
         shell: bash
         run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [ -z "$THREADS_ACCESS_TOKEN" ] || [ -z "$THREADS_USER_ID" ] || [ -z "$INSTAGRAM_ACCESS_TOKEN" ] || [ -z "$INSTAGRAM_USER_ID" ]; then
             echo "::error::GitHub Secrets for Threads / Instagram are not set. Scheduled posting cannot run."
             exit 1
@@ -76,22 +80,22 @@ jobs:
           echo "ready=true" >> "$GITHUB_OUTPUT"
 
       - name: Validate scripts
-        if: steps.secrets.outputs.ready == 'true'
+        if: github.event_name == 'push' || steps.secrets.outputs.ready == 'true'
         run: npm run check
 
       - name: Audit today's social draft
-        if: steps.secrets.outputs.ready == 'true'
+        if: github.event_name == 'push' || steps.secrets.outputs.ready == 'true'
         shell: bash
         run: |
           today="$(TZ=Asia/Tokyo date +%F)"
           npm run social:audit -- --from="$today" --to="$today" --platforms=threads,instagram
 
       - name: Confirm Threads token account
-        if: steps.secrets.outputs.ready == 'true'
+        if: github.event_name != 'push' && steps.secrets.outputs.ready == 'true'
         run: npm run threads:doctor
 
       - name: Confirm Instagram token account
-        if: steps.secrets.outputs.ready == 'true'
+        if: github.event_name != 'push' && steps.secrets.outputs.ready == 'true'
         run: npm run instagram:doctor
 
       - name: Publish due SNS post

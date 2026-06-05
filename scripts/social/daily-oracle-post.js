@@ -24,7 +24,7 @@ const DEFAULT_SOCIAL_PLATFORMS = 'threads,instagram';
 const INSTAGRAM_HASHTAG_LIMIT = 5;
 const DEFAULT_INSTAGRAM_HASHTAGS_BY_KIND = Object.freeze({
   oracle: ['#羅針占術', '#おはようvtuber', '#今日の占い', '#オラクルカード', '#占い好きな人と繋がりたい'],
-  birthday_monthly: ['#羅針占術', '#ルノルマンカード', '#今日の占い', '#カード占い', '#誕生日占い'],
+  birthday_monthly: ['#羅針占術', '#誕生日占い', '#数秘', '#誕生日数', '#占い好きな人と繋がりたい'],
   empathy: ['#羅針占術', '#ルノルマンカード', '#今日の占い', '#カード占い', '#AI占い'],
   difference: ['#羅針占術', '#AI占い', '#無料占い', '#占い師のつぶやき', '#悩み相談'],
   free_paid_compare: ['#羅針占術', '#無料占い', '#占い師のつぶやき', '#ルノルマンカード', '#AI占い'],
@@ -83,7 +83,7 @@ const DIFFERENCE_WEEKDAYS = [2];
 const FREE_PAID_COMPARE_WEEKDAYS = [4];
 const BIRTHDAY_MONTHLY_ROOT = path.join(ROOT, 'images', 'social', 'instagram', 'generated-birthday');
 const BIRTHDAY_RANKING_POSTS = {
-  '2026-06-06': {
+  '2026-06-07': {
     slug: 'love_at_first_sight',
     title: '一目惚れしやすい生まれ日TOP5',
     emoji: '💘',
@@ -92,7 +92,7 @@ const BIRTHDAY_RANKING_POSTS = {
     note: 'ノリ・会話・雰囲気で一気に惹かれやすいタイプが上位です。',
     altText: '一目惚れしやすい生まれ日TOP5のランキング画像。5日、3日、11日、15日、29日生まれの特徴をミニキャラ付きで紹介している。',
   },
-  '2026-06-07': {
+  '2026-06-08': {
     slug: 'money_luck',
     title: '金運が強い生まれ日TOP5',
     emoji: '💰',
@@ -101,7 +101,7 @@ const BIRTHDAY_RANKING_POSTS = {
     note: '稼ぐ力、守る力、人との縁から金運が育つタイプを見ています。',
     altText: '金運が強い生まれ日TOP5のランキング画像。8日、22日、17日、26日、4日生まれの特徴を金貨とゴールド背景で紹介している。',
   },
-  '2026-06-08': {
+  '2026-06-09': {
     slug: 'horror_resistance',
     title: 'ホラー耐性のある生まれ日TOP5',
     emoji: '👻',
@@ -110,7 +110,7 @@ const BIRTHDAY_RANKING_POSTS = {
     note: '怖がらない理由は、鈍感さではなく見方のクセかもしれません。',
     altText: 'ホラー耐性のある生まれ日TOP5のランキング画像。7日、8日、5日、16日、22日生まれの特徴を暗めのホラー風背景で紹介している。',
   },
-  '2026-06-09': {
+  '2026-06-10': {
     slug: 'weird',
     title: '変人に見られやすい生まれ日TOP5',
     emoji: '🪐',
@@ -1772,7 +1772,10 @@ function buildBirthdayMonthlyParts(item) {
 }
 
 function buildBirthdayMonthlyText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['threads'] })) {
-  return buildGenericSocialText(buildBirthdayMonthlyPostParts(item), dateKey, publicOrigin, config);
+  return fitPostText([
+    ...buildBirthdayMonthlyPostParts(item),
+    config.defaultHashtag || DEFAULT_HASHTAG,
+  ], getPostLimitForConfig(config));
 }
 
 function buildBirthdayRankingParts(item) {
@@ -1811,16 +1814,16 @@ function buildInstagramBirthdayRankingText(item, dateKey, publicOrigin = DEFAULT
 }
 
 function buildBirthdayMonthlyPostParts(item) {
-  if (!Array.isArray(item.slides) || item.slides.length <= 1) return buildBirthdayMonthlyParts(item);
   const monthLabel = birthdayMonthLabel(item.month);
-  const dayLabel = `${item.day}-${item.dayEnd}`;
+  const dayLabel = item.dayEnd && item.dayEnd !== item.day ? `${item.day}-${item.dayEnd}` : `${item.day}`;
   return [
-    LENORMAND_GREETING,
-    `${dayLabel}\u65e5\u751f\u307e\u308c\u306e${monthLabel}\u904b\u52e2`,
-    `${item.slides.length}\u679a\u306e\u30ab\u30eb\u30fc\u30bb\u30eb\u3067\u3001\u5404\u65e5\u751f\u307e\u308c\u3054\u3068\u306e\u4ed5\u4e8b\u904b\u30fb\u91d1\u904b\u30fb\u604b\u611b\u904b\u30fb\u7dcf\u5408\u904b\u3092\u898b\u307e\u3057\u305f\u3002`,
-    item.cardSummary ? `\u4e00\u90e8\u30ab\u30fc\u30c9\u7d39\u4ecb\u003a\u0020${item.cardSummary}` : '',
-    '\u753b\u50cf\u3067\u81ea\u5206\u306e\u8a95\u751f\u65e5\u3092\u78ba\u8a8d\u3057\u3066\u3001\u6708\u672b\u306b\u3082\u3046\u4e00\u5ea6\u898b\u8fd4\u305b\u308b\u3088\u3046\u4fdd\u5b58\u3057\u3066\u304a\u3044\u3066\u304f\u3060\u3055\u3044\u3002',
-    '\u3082\u3063\u3068\u6df1\u304f\u6574\u7406\u3057\u305f\u3044\u3068\u304d\u306f\u3001\u7f85\u91dd\u5360\u8853\u306e\u9451\u5b9a\u3078\u3002'
+    '\\無料占いはプロフィールURLから/',
+    `${dayLabel}日生まれの${monthLabel}運勢`,
+    [
+      '🌸自分の誕生日を画像でチェック',
+      '🦦周りの人の誕生日も見てみて',
+      '🪭何日生まれかコメントで教えてね',
+    ].join('\n'),
   ];
 }
 
@@ -2070,7 +2073,7 @@ async function buildDraft(args) {
       oracle: `${process.env.SOCIAL_ORACLE_TIME || '08:00'} Asia/Tokyo`,
       rashin_point: '20:00 Asia/Tokyo one-off 2026-06-04',
       birthday_monthly: '2026-06-05 20:00/21:00/22:00 Asia/Tokyo, then monthly on the 1st from 2026-07-01',
-      birthday_ranking: '20:00 Asia/Tokyo one-off 2026-06-06..2026-06-09, Threads/Instagram',
+      birthday_ranking: '20:00 Asia/Tokyo one-off 2026-06-07..2026-06-10, Threads/Instagram',
       empathy: 'manual only',
       difference: 'hold: weekly comparison timing undecided',
       free_paid_compare: 'hold: weekly comparison timing undecided',
