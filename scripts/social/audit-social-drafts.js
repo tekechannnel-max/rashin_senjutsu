@@ -40,8 +40,7 @@ const ONE_OFF_POSTS = [
 const BIRTHDAY_MONTHLY_SLOTS = [
   { id: 'birthday_monthly_01_10', kind: 'birthday_monthly', birthdayDays: '1-10' },
   { id: 'birthday_monthly_11_20', kind: 'birthday_monthly', birthdayDays: '11-20' },
-  { id: 'birthday_monthly_21_30', kind: 'birthday_monthly', birthdayDays: '21-30' },
-  { id: 'birthday_monthly_31', kind: 'birthday_monthly', birthdayDays: '31' },
+  { id: 'birthday_monthly_21_31', kind: 'birthday_monthly', birthdayDays: '21-31' },
 ];
 const WEEKDAYS_BY_KIND = {
   oracle: null,

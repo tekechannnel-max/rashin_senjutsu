@@ -52,8 +52,7 @@ const ONE_OFF_POSTS = [
 const BIRTHDAY_MONTHLY_SLOTS = [
   { id: 'birthday_monthly_01_10', kind: 'birthday_monthly', time: '20:00', birthdayDays: '1-10' },
   { id: 'birthday_monthly_11_20', kind: 'birthday_monthly', time: '21:00', birthdayDays: '11-20' },
-  { id: 'birthday_monthly_21_30', kind: 'birthday_monthly', time: '22:00', birthdayDays: '21-30' },
-  { id: 'birthday_monthly_31', kind: 'birthday_monthly', time: '23:00', birthdayDays: '31' },
+  { id: 'birthday_monthly_21_31', kind: 'birthday_monthly', time: '22:00', birthdayDays: '21-31' },
 ];
 
 function parseArgs(argv) {

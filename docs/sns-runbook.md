@@ -16,8 +16,7 @@
 08:00 JST: oracle
 20:00 JST: birthday_monthly_01_10 on 2026-06-05 and monthly 1st from 2026-07-01
 21:00 JST: birthday_monthly_11_20 on 2026-06-05 and monthly 1st from 2026-07-01
-22:00 JST: birthday_monthly_21_30 on 2026-06-05 and monthly 1st from 2026-07-01
-23:00 JST: birthday_monthly_31 on 2026-06-05 and monthly 1st from 2026-07-01
+22:00 JST: birthday_monthly_21_31 on 2026-06-05 and monthly 1st from 2026-07-01
 20:00 JST: birthday_ranking one-off on 2026-06-06..2026-06-09
 ```
 

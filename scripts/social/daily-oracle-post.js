@@ -1274,6 +1274,11 @@ function formatBirthdayMonthlyDayRangeKey(days) {
   return `${pad2(days[0])}_${pad2(days[days.length - 1])}`;
 }
 
+function birthdayMonthlySlideDays(slide) {
+  const days = Array.isArray(slide?.days) && slide.days.length ? slide.days : [slide?.day];
+  return days.map(Number).filter(day => Number.isInteger(day));
+}
+
 function summarizeBirthdayMonthlyGroupCards(slides) {
   return (slides || [])
     .flatMap(slide => slide.cards || [])
@@ -1286,7 +1291,7 @@ function summarizeBirthdayMonthlyGroupCards(slides) {
 function buildBirthdayMonthlyGroupPost(slides, manifestFile) {
   if (!slides.length) throw new Error(`Birthday monthly day selection produced no slides: ${manifestFile}`);
   const first = slides[0];
-  const days = slides.map(slide => Number(slide.day));
+  const days = slides.flatMap(birthdayMonthlySlideDays);
   const cardSummary = summarizeBirthdayMonthlyGroupCards(slides);
   return {
     ...first,
@@ -1311,9 +1316,6 @@ function pickBirthdayMonthlyPost(dateKey, args = {}) {
   if (!slides.length) throw new Error(`Birthday monthly manifest has no slides: ${manifestFile}`);
   const requestedDays = parseBirthdayMonthlyDays(args.birthdayDays || process.env.SOCIAL_BIRTHDAY_MONTHLY_DAYS);
   if (requestedDays.length) {
-    if (requestedDays.length > 10) {
-      throw new Error(`Birthday monthly carousel supports at most 10 images per post: ${requestedDays.length}`);
-    }
     const byDay = new Map(slides.map(slide => [Number(slide.day), slide]));
     const selectedSlides = requestedDays.map(day => {
       const slide = byDay.get(day);
@@ -2067,7 +2069,7 @@ async function buildDraft(args) {
     schedule: {
       oracle: `${process.env.SOCIAL_ORACLE_TIME || '08:00'} Asia/Tokyo`,
       rashin_point: '20:00 Asia/Tokyo one-off 2026-06-04',
-      birthday_monthly: '2026-06-05 20:00/21:00/22:00/23:00 Asia/Tokyo, then monthly on the 1st from 2026-07-01',
+      birthday_monthly: '2026-06-05 20:00/21:00/22:00 Asia/Tokyo, then monthly on the 1st from 2026-07-01',
       birthday_ranking: '20:00 Asia/Tokyo one-off 2026-06-06..2026-06-09, Threads/Instagram',
       empathy: 'manual only',
       difference: 'hold: weekly comparison timing undecided',

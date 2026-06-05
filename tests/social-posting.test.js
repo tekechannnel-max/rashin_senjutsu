@@ -458,11 +458,11 @@ function testBirthdayMonthlyUsesGeneratedSlides() {
   assert.match(group.imagePaths[0], /images[\\/]social[\\/]instagram[\\/]generated-birthday[\\/]2026-06[\\/]monthly[\\/]01-10[\\/]01-birth-01\.jpg$/, 'birthday monthly group should start with day 1');
   assert.match(group.imagePaths[9], /images[\\/]social[\\/]instagram[\\/]generated-birthday[\\/]2026-06[\\/]monthly[\\/]01-10[\\/]10-birth-10\.jpg$/, 'birthday monthly group should end with day 10');
 
-  const finalDay = parseDraft('2026-06-05', { kind: 'birthday_monthly', birthdayDays: '31' }).birthday_monthly;
-  assert.deepEqual(finalDay.content.days, [31], '23:00 birthday monthly group should cover day 31 only');
-  assert.equal(finalDay.imagePaths.length, 1, '31st birthday monthly post should publish one slide');
-  assert.match(finalDay.trackedUrl, /utm_content=birthdaymonthly_20260605_birth31/, '31st birthday monthly UTM should include day 31');
-  assert.match(finalDay.imagePath, /images[\\/]social[\\/]instagram[\\/]generated-birthday[\\/]2026-06[\\/]monthly[\\/]21-31[\\/]31-birth-31\.jpg$/, '31st birthday monthly post should use the generated day 31 slide');
+  const finalBlock = parseDraft('2026-06-05', { kind: 'birthday_monthly', birthdayDays: '21-31' }).birthday_monthly;
+  assert.deepEqual(finalBlock.content.days, [21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31], '22:00 birthday monthly group should cover days 21-31');
+  assert.equal(finalBlock.imagePaths.length, 11, '21-31 birthday monthly post should use the existing eleven generated day slides');
+  assert.match(finalBlock.trackedUrl, /utm_content=birthdaymonthly_20260605_birth21_31/, '21-31 birthday monthly UTM should include the day range');
+  assert.match(finalBlock.imagePaths[10], /images[\\/]social[\\/]instagram[\\/]generated-birthday[\\/]2026-06[\\/]monthly[\\/]21-31[\\/]31-birth-31\.jpg$/, '21-31 birthday monthly post should end with the generated day 31 slide');
 }
 
 function testRashinPointOneOffCarouselDraft() {
@@ -617,8 +617,8 @@ function testScheduledPostsRespectJstWeekdays() {
   assert.deepEqual(scheduleReport('2026-06-05T11:01:00.000Z').due, ['birthday_monthly_01_10'], 'Fri 20:01 JST should post birthday days 1-10');
   assert.deepEqual(scheduleReport('2026-06-05T11:29:00.000Z').due, ['birthday_monthly_01_10'], 'Fri 20:29 JST delayed scheduler should still post birthday days 1-10');
   assert.deepEqual(scheduleReport('2026-06-05T12:01:00.000Z').due, ['birthday_monthly_11_20'], 'Fri 21:01 JST should post birthday days 11-20');
-  assert.deepEqual(scheduleReport('2026-06-05T13:01:00.000Z').due, ['birthday_monthly_21_30'], 'Fri 22:01 JST should post birthday days 21-30');
-  assert.deepEqual(scheduleReport('2026-06-05T14:01:00.000Z').due, ['birthday_monthly_31'], 'Fri 23:01 JST should post birthday day 31');
+  assert.deepEqual(scheduleReport('2026-06-05T13:01:00.000Z').due, ['birthday_monthly_21_31'], 'Fri 22:01 JST should post birthday days 21-31');
+  assert.deepEqual(scheduleReport('2026-06-05T14:01:00.000Z').due, [], 'Fri 23:01 JST should not have a fourth birthday monthly post');
   assert.deepEqual(scheduleReport('2026-06-06T11:01:00.000Z').due, ['birthday_ranking_love_at_first_sight'], 'Sat 20:01 JST should post the one-off love-at-first-sight ranking');
   assert.deepEqual(scheduleReport('2026-06-07T11:01:00.000Z').due, ['birthday_ranking_money_luck'], 'Sun 20:01 JST should post the one-off money luck ranking');
   assert.deepEqual(scheduleReport('2026-06-08T11:01:00.000Z').due, ['birthday_ranking_horror_resistance'], 'Mon 20:01 JST should post the one-off horror resistance ranking');
@@ -626,7 +626,7 @@ function testScheduledPostsRespectJstWeekdays() {
   assert.deepEqual(scheduleReport('2026-06-10T11:01:00.000Z').due, [], 'Wed 20:01 JST should stay empty after the one-off ranking run');
   assert.deepEqual(scheduleReport('2026-06-11T11:01:00.000Z').due, [], 'Next Thu 20:01 JST should not repeat the one-off trust carousel');
   assert.deepEqual(scheduleReport('2026-07-01T11:01:00.000Z', 'birthday_monthly').due, ['birthday_monthly_01_10'], '2026-07-01 20:01 JST should start the monthly birthday carousel schedule');
-  assert.deepEqual(scheduleReport('2026-07-01T14:01:00.000Z', 'birthday_monthly').due, ['birthday_monthly_31'], '2026-07-01 23:01 JST should finish the monthly birthday carousel schedule');
+  assert.deepEqual(scheduleReport('2026-07-01T14:01:00.000Z', 'birthday_monthly').due, [], '2026-07-01 23:01 JST should not have a fourth birthday monthly post');
   assert.deepEqual(scheduleReport('2026-07-02T11:01:00.000Z', 'birthday_monthly').due, [], 'birthday monthly carousel should not repeat on the 2nd');
 }
 
@@ -645,8 +645,8 @@ function testKpiReviewTemplatePreservesManualMetrics() {
   assert.match(csv, /utm_content=rashinpoint_20260604/, 'KPI template should include the one-off trust carousel lane');
   assert.match(csv, /utm_content=birthdaymonthly_20260605_birth01_10/, 'KPI template should include the 20:00 birthday monthly carousel lane');
   assert.match(csv, /utm_content=birthdaymonthly_20260605_birth11_20/, 'KPI template should include the 21:00 birthday monthly carousel lane');
-  assert.match(csv, /utm_content=birthdaymonthly_20260605_birth21_30/, 'KPI template should include the 22:00 birthday monthly carousel lane');
-  assert.match(csv, /utm_content=birthdaymonthly_20260605_birth31/, 'KPI template should include the 23:00 birthday monthly carousel lane');
+  assert.match(csv, /utm_content=birthdaymonthly_20260605_birth21_31/, 'KPI template should include the 22:00 birthday monthly carousel lane');
+  assert.doesNotMatch(csv, /utm_content=birthdaymonthly_20260605_birth31/, 'KPI template should not include a fourth birthday monthly carousel lane');
   assert.match(csv, /utm_content=birthdayranking_20260606_love_at_first_sight/, 'KPI template should include the 2026-06-06 birthday ranking lane');
   assert.match(csv, /utm_content=birthdayranking_20260607_money_luck/, 'KPI template should include the 2026-06-07 birthday ranking lane');
   assert.match(csv, /utm_content=birthdayranking_20260608_horror_resistance/, 'KPI template should include the 2026-06-08 birthday ranking lane');
@@ -690,7 +690,7 @@ function testStatelessScheduleKeepsRecoveryGraceWindow() {
 
 function testWorkflowHasScheduledPostingBackup() {
   const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'threads-social.yml'), 'utf8');
-  assert.match(workflow, /cron: '0 23,11,12,13,14 \* \* \*'/, 'Threads workflow should run backup ticks for 08:00 and 20:00-23:00 JST');
+  assert.match(workflow, /cron: '0 23,11,12,13 \* \* \*'/, 'Threads workflow should run backup ticks for 08:00 and 20:00-22:00 JST');
   assert.match(workflow, /SOCIAL_POST_GRACE_MINUTES: '59'/, 'workflow should allow delayed scheduled runs to recover within the hour');
   assert.match(workflow, /birthday_monthly_01_10/, 'workflow dispatch should allow forcing the missed 20:00 birthday monthly slot');
   assert.match(workflow, /birthday_ranking_love_at_first_sight/, 'workflow dispatch should allow forcing one-off birthday ranking slots');
