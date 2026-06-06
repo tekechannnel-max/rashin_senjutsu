@@ -83,7 +83,7 @@ const DIFFERENCE_WEEKDAYS = [2];
 const FREE_PAID_COMPARE_WEEKDAYS = [4];
 const BIRTHDAY_MONTHLY_ROOT = path.join(ROOT, 'images', 'social', 'instagram', 'generated-birthday');
 const BIRTHDAY_RANKING_POSTS = {
-  '2026-06-07': {
+  '2026-06-08': {
     slug: 'love_at_first_sight',
     title: '一目惚れしやすい生まれ日TOP5',
     emoji: '💘',
@@ -92,7 +92,7 @@ const BIRTHDAY_RANKING_POSTS = {
     note: 'ノリ・会話・雰囲気で一気に惹かれやすいタイプが上位です。',
     altText: '一目惚れしやすい生まれ日TOP5のランキング画像。5日、3日、11日、15日、29日生まれの特徴をミニキャラ付きで紹介している。',
   },
-  '2026-06-08': {
+  '2026-06-09': {
     slug: 'money_luck',
     title: '金運が強い生まれ日TOP5',
     emoji: '💰',
@@ -101,7 +101,7 @@ const BIRTHDAY_RANKING_POSTS = {
     note: '稼ぐ力、守る力、人との縁から金運が育つタイプを見ています。',
     altText: '金運が強い生まれ日TOP5のランキング画像。8日、22日、17日、26日、4日生まれの特徴を金貨とゴールド背景で紹介している。',
   },
-  '2026-06-09': {
+  '2026-06-10': {
     slug: 'horror_resistance',
     title: 'ホラー耐性のある生まれ日TOP5',
     emoji: '👻',
@@ -110,7 +110,7 @@ const BIRTHDAY_RANKING_POSTS = {
     note: '怖がらない理由は、鈍感さではなく見方のクセかもしれません。',
     altText: 'ホラー耐性のある生まれ日TOP5のランキング画像。7日、8日、5日、16日、22日生まれの特徴を暗めのホラー風背景で紹介している。',
   },
-  '2026-06-10': {
+  '2026-06-11': {
     slug: 'weird',
     title: '変人に見られやすい生まれ日TOP5',
     emoji: '🪐',

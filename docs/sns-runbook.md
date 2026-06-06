@@ -19,11 +19,11 @@ SNS投稿、投稿文生成、画像生成、予約投稿、自動投稿設定�
 20:00 JST: birthday_monthly_01_10 on 2026-06-05 and monthly 1st from 2026-07-01
 21:00 JST: birthday_monthly_11_20 on 2026-06-05 and monthly 1st from 2026-07-01
 22:00 JST: birthday_monthly_21_31 on 2026-06-05 and monthly 1st from 2026-07-01
-20:00 JST: birthday_monthly_recovery_01_10 on 2026-06-06
-21:00 JST: birthday_monthly_recovery_11_20 on 2026-06-06
-22:00 JST: birthday_monthly_recovery_21_30 on 2026-06-06
-23:00 JST: birthday_monthly_recovery_31 on 2026-06-06
-20:00 JST: birthday_ranking one-off on 2026-06-07..2026-06-10
+20:00 JST: birthday_monthly_recovery_01_10 on 2026-06-07
+21:00 JST: birthday_monthly_recovery_11_20 on 2026-06-07
+22:00 JST: birthday_monthly_recovery_21_30 on 2026-06-07
+23:00 JST: birthday_monthly_recovery_31 on 2026-06-07
+20:00 JST: birthday_ranking one-off on 2026-06-08..2026-06-11
 ```
 
 毎月1日以外の20:00「誕生日数あるある/ランキング」は、素材と投稿文が確定したものだけ一回限りで入れます。木曜20:00は比較系3種に差し替え、Threadsでは3枚画像投稿として扱います。同じ画像を毎週繰り返す設定にはしません。
@@ -63,7 +63,7 @@ THREADS_POST_VERIFY_TIMEOUT_MS=120000
 
 - `oracle`: 毎朝8:00。画像は `images/social/instagram/oracle/NN.jpg`。
 - `birthday_monthly`: 毎月1日。対象月の `images/social/instagram/generated-birthday/YYYY-MM/monthly/manifest.json` と画像が必要。
-- `birthday_ranking`: 2026-06-07から2026-06-10の一回限り。ThreadsとInstagramに同じ趣旨で出し、ハッシュタグだけ分けます。
+- `birthday_ranking`: 2026-06-08から2026-06-11の一回限り。ThreadsとInstagramに同じ趣旨で出し、ハッシュタグだけ分けます。
 - 木曜20:00は `birthday_ranking` / `birthday_aruaru` より比較系3種を優先します。Threadsは3枚画像投稿。
 - `empathy` / `difference` / `free_paid_compare` は手動投稿候補として残しますが、現行の自動投稿スケジュールには入れません。
 - Threadsはハッシュタグ1個。Instagramは投稿種別ごとに最大5個。
