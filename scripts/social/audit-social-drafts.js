@@ -35,19 +35,24 @@ const SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE = process.env.SOCIAL_BIRTHDAY_MONTHLY_JU
 const SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE = process.env.SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE || '2026-07-01';
 const ONE_OFF_POSTS = [
   { id: 'rashin_point', kind: 'rashin_point', date: '2026-06-04' },
-  { id: 'birthday_ranking_love_at_first_sight', kind: 'birthday_ranking', date: '2026-06-08' },
-  { id: 'birthday_ranking_money_luck', kind: 'birthday_ranking', date: '2026-06-09' },
-  { id: 'birthday_ranking_horror_resistance', kind: 'birthday_ranking', date: '2026-06-10' },
-  { id: 'birthday_ranking_weird', kind: 'birthday_ranking', date: '2026-06-11' },
-  { id: 'birthday_monthly_recovery_01_10', kind: 'birthday_monthly', date: '2026-06-07', birthdayDays: '1-10', platforms: 'instagram' },
-  { id: 'birthday_monthly_recovery_11_20', kind: 'birthday_monthly', date: '2026-06-07', birthdayDays: '11-20', platforms: 'instagram' },
-  { id: 'birthday_monthly_recovery_21_30', kind: 'birthday_monthly', date: '2026-06-07', birthdayDays: '21-30', platforms: 'instagram' },
-  { id: 'birthday_monthly_recovery_31', kind: 'birthday_monthly', date: '2026-06-07', birthdayDays: '31', platforms: 'instagram' },
+  { id: 'birthday_ranking_love_at_first_sight', kind: 'birthday_ranking', date: '2026-06-08', rankingSlug: 'love_at_first_sight' },
+  { id: 'birthday_ranking_money_luck', kind: 'birthday_ranking', date: '2026-06-08', rankingSlug: 'money_luck' },
+  { id: 'birthday_ranking_horror_resistance', kind: 'birthday_ranking', date: '2026-06-08', rankingSlug: 'horror_resistance' },
+  { id: 'birthday_ranking_weird', kind: 'birthday_ranking', date: '2026-06-08', rankingSlug: 'weird' },
+  { id: 'birthday_ranking_idol_style', kind: 'birthday_ranking', date: '2026-06-09', rankingSlug: 'idol_style' },
+  { id: 'birthday_ranking_love_style', kind: 'birthday_ranking', date: '2026-06-09', rankingSlug: 'love_style' },
+  { id: 'birthday_ranking_amae_jouzu', kind: 'birthday_ranking', date: '2026-06-09', rankingSlug: 'amae_jouzu' },
+  { id: 'birthday_ranking_buchigire_kowai', kind: 'birthday_ranking', date: '2026-06-09', rankingSlug: 'buchigire_kowai' },
+  { id: 'birthday_monthly_recovery_01_08', kind: 'birthday_monthly', date: '2026-06-07', birthdayDays: '1-8', platforms: 'instagram' },
+  { id: 'birthday_monthly_recovery_09_16', kind: 'birthday_monthly', date: '2026-06-07', birthdayDays: '9-16', platforms: 'instagram' },
+  { id: 'birthday_monthly_recovery_17_24', kind: 'birthday_monthly', date: '2026-06-07', birthdayDays: '17-24', platforms: 'instagram' },
+  { id: 'birthday_monthly_recovery_25_31', kind: 'birthday_monthly', date: '2026-06-07', birthdayDays: '25-31', platforms: 'instagram' },
 ];
 const BIRTHDAY_MONTHLY_SLOTS = [
-  { id: 'birthday_monthly_01_10', kind: 'birthday_monthly', birthdayDays: '1-10', platforms: 'instagram' },
-  { id: 'birthday_monthly_11_20', kind: 'birthday_monthly', birthdayDays: '11-20', platforms: 'instagram' },
-  { id: 'birthday_monthly_21_31', kind: 'birthday_monthly', birthdayDays: '21-31', platforms: 'instagram' },
+  { id: 'birthday_monthly_01_08', kind: 'birthday_monthly', birthdayDays: '1-8', platforms: 'instagram' },
+  { id: 'birthday_monthly_09_16', kind: 'birthday_monthly', birthdayDays: '9-16', platforms: 'instagram' },
+  { id: 'birthday_monthly_17_24', kind: 'birthday_monthly', birthdayDays: '17-24', platforms: 'instagram' },
+  { id: 'birthday_monthly_25_31', kind: 'birthday_monthly', birthdayDays: '25-31', platforms: 'instagram' },
 ];
 const WEEKDAYS_BY_KIND = {
   oracle: null,
@@ -151,7 +156,7 @@ function normalizeForRepeat(text) {
 }
 
 function shouldSkipDuplicateTextCheck(item, dateKey) {
-  return dateKey === '2026-06-06' && String(item.id || '').startsWith('birthday_monthly_recovery_');
+  return dateKey === '2026-06-07' && String(item.id || '').startsWith('birthday_monthly_recovery_');
 }
 
 function getReleasePhase(dateKey) {
@@ -305,13 +310,20 @@ function auditImage({ draft, kind, platform }) {
   const imagePath = platform === 'instagram'
     ? entry.instagramImagePath
     : entry.imagePath;
+  const imagePaths = platform === 'instagram'
+    ? entry.instagramImagePaths || entry.imagePaths
+    : entry.imagePaths;
+  const paths = Array.isArray(imagePaths) && imagePaths.length ? imagePaths : [imagePath].filter(Boolean);
   const altText = entry.altText;
   if (!imagePath) {
     addIssue(issues, 'error', `${platform}_image_missing`, `${platform}用投稿に画像パスがありません。`);
-  } else if (!fs.existsSync(imagePath)) {
-    addIssue(issues, 'error', `${platform}_image_not_found`, `${platform}用画像が見つかりません: ${imagePath}`);
-  } else if (platform === 'instagram' && !/\.jpe?g$/i.test(imagePath)) {
-    addIssue(issues, 'error', 'instagram_image_not_jpeg', `Instagram用画像はJPEGにします: ${imagePath}`);
+  }
+  for (const [index, mediaPath] of paths.entries()) {
+    if (!fs.existsSync(mediaPath)) {
+      addIssue(issues, 'error', `${platform}_media_not_found`, `${platform}用メディアが見つかりません: ${mediaPath}`);
+    } else if (platform === 'instagram' && index === 0 && !/\.jpe?g$/i.test(mediaPath)) {
+      addIssue(issues, 'error', 'instagram_image_not_jpeg', `Instagram用1枚目はJPEGにします: ${mediaPath}`);
+    }
   }
   if (!String(altText || '').trim()) {
     addIssue(issues, 'error', `${platform}_alt_missing`, `${platform}用画像のalt textがありません。`);
@@ -335,6 +347,7 @@ function generateDraft(dateKey, args, item = { kind: 'all' }) {
     `--kind=${kind}`,
     `--platforms=${platforms}`,
     ...(item.birthdayDays ? [`--birthday-days=${item.birthdayDays}`] : []),
+    ...(item.rankingSlug ? [`--birthday-ranking-slug=${item.rankingSlug}`] : []),
   ], {
     cwd: ROOT,
     env,

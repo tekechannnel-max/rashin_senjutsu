@@ -35,19 +35,10 @@ const DEFAULT_INSTAGRAM_HASHTAGS_BY_KIND = Object.freeze({
 });
 const THREADS_CHARACTER_LIMIT = 500;
 const INSTAGRAM_CHARACTER_LIMIT = instagramClient.INSTAGRAM_CHARACTER_LIMIT;
-const X_CHARACTER_LIMIT = 280;
 const BLUESKY_CHARACTER_LIMIT = 300;
-const X_ORACLE_HASHTAGS = [
-  '#おはようVtuber',
-  '#羅針占術',
-  '#今日の占い',
-  '#今日の一枚',
-  '#オラクルカード',
-];
 const SOCIAL_ORACLE_GREETING = 'おはてけ🌸🦦';
 const LENORMAND_GREETING = 'こんてけ🌸🦦';
 const SOCIAL_ORACLE_CTA = '今日の1枚はこちら！👇';
-const X_ORACLE_GREETING = SOCIAL_ORACLE_GREETING;
 const DEFAULT_SOCIAL_CAMPAIGN = '202605_prerelease';
 const PRERELEASE_START_DATE = '2026-05-16';
 const PRERELEASE_END_DATE = '2026-05-29';
@@ -64,7 +55,6 @@ const SOCIAL_RELEASE_MODES = new Set(['auto', 'prelaunch', 'prerelease', 'fix', 
 const SOCIAL_POST_KINDS = ['oracle'];
 const LEGACY_SOCIAL_POST_KINDS = ['rashin_point', 'birthday_monthly', 'birthday_ranking', 'empathy', 'difference', 'free_paid_compare', 'midday', 'concept'];
 const DRAFT_POST_KINDS = [...SOCIAL_POST_KINDS, ...LEGACY_SOCIAL_POST_KINDS];
-const X_POST_KINDS = new Set(['oracle']);
 const THREADS_MATCHED_PLATFORM_KINDS = new Set(['oracle', 'birthday_monthly', 'empathy', 'difference', 'free_paid_compare']);
 const RESULT_SUFFIX_BY_KIND = {
   oracle: 'Oracle',
@@ -81,43 +71,88 @@ const EMPATHY_WEEKDAYS = [0, 1, 3, 5, 6];
 const QUESTION_WEEKDAYS = [2, 4];
 const DIFFERENCE_WEEKDAYS = [2];
 const FREE_PAID_COMPARE_WEEKDAYS = [4];
-const BIRTHDAY_MONTHLY_ROOT = path.join(ROOT, 'images', 'social', 'instagram', 'generated-birthday');
+const BIRTHDAY_MONTHLY_ROOT = path.join(ROOT, 'images', 'social', 'instagram', '誕生日数×ルノルマン');
+const BIRTHDAY_MONTHLY_RELATIVE_ROOT = ['images', 'social', 'instagram', '誕生日数×ルノルマン'];
+const BIRTHDAY_MONTHLY_MAX_CAROUSEL_MEDIA = 10;
+const BIRTHDAY_RANKING_SLUG_BY_DATE = {
+  '2026-06-08': 'love_at_first_sight',
+};
 const BIRTHDAY_RANKING_POSTS = {
-  '2026-06-08': {
+  love_at_first_sight: {
     slug: 'love_at_first_sight',
     title: '一目惚れしやすい生まれ日TOP5',
     emoji: '💘',
-    file: 'images/social/instagram/generated-birthday/2026-06/ranking/love-at-first-sight-top5.jpg',
+    file: 'images/social/instagram/【インスタ】あるある・ランキング系/love-at-first-sight-top5.jpg',
+    videoFile: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-08/love-at-first-sight-reel-profile-emoji.mp4',
     lead: '恋のスイッチが入りやすい生まれ日を、誕生日数の傾向でまとめました。',
     note: 'ノリ・会話・雰囲気で一気に惹かれやすいタイプが上位です。',
     altText: '一目惚れしやすい生まれ日TOP5のランキング画像。5日、3日、11日、15日、29日生まれの特徴をミニキャラ付きで紹介している。',
   },
-  '2026-06-09': {
+  money_luck: {
     slug: 'money_luck',
     title: '金運が強い生まれ日TOP5',
     emoji: '💰',
-    file: 'images/social/instagram/generated-birthday/2026-06/ranking/money-luck-top5.jpg',
+    file: 'images/social/instagram/【インスタ】あるある・ランキング系/money-luck-top5.jpg',
+    videoFile: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-08/money-luck-reel-profile-emoji.mp4',
     lead: 'お金との縁が強く出やすい生まれ日を、誕生日数の傾向でまとめました。',
     note: '稼ぐ力、守る力、人との縁から金運が育つタイプを見ています。',
     altText: '金運が強い生まれ日TOP5のランキング画像。8日、22日、17日、26日、4日生まれの特徴を金貨とゴールド背景で紹介している。',
   },
-  '2026-06-10': {
+  horror_resistance: {
     slug: 'horror_resistance',
     title: 'ホラー耐性のある生まれ日TOP5',
     emoji: '👻',
-    file: 'images/social/instagram/generated-birthday/2026-06/ranking/horror-resistance-top5.jpg',
+    file: 'images/social/instagram/【インスタ】あるある・ランキング系/horror-resistance-top5.jpg',
+    videoFile: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-08/horror-resistance-reel-profile-emoji.mp4',
     lead: '怖いものをどう受け止めやすいかを、誕生日数の傾向でまとめました。',
     note: '怖がらない理由は、鈍感さではなく見方のクセかもしれません。',
     altText: 'ホラー耐性のある生まれ日TOP5のランキング画像。7日、8日、5日、16日、22日生まれの特徴を暗めのホラー風背景で紹介している。',
   },
-  '2026-06-11': {
+  weird: {
     slug: 'weird',
     title: '変人に見られやすい生まれ日TOP5',
     emoji: '🪐',
-    file: 'images/social/instagram/generated-birthday/2026-06/ranking/weird-top5.jpg',
+    file: 'images/social/instagram/【インスタ】あるある・ランキング系/weird-top5.jpg',
+    videoFile: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-08/weird-reel-profile-emoji.mp4',
     lead: '独特に見られやすい生まれ日を、誕生日数の傾向でまとめました。',
     note: '変わっていることは弱点ではなく、使いどころで魅力になります。',
     altText: '変人に見られやすい生まれ日TOP5のランキング画像。11日、7日、22日、5日、29日生まれの特徴をミニキャラ付きで紹介している。',
+  },
+  idol_style: {
+    slug: 'idol_style',
+    title: 'アイドルになったら大体こんな感じ',
+    emoji: '',
+    file: 'images/social/instagram/【インスタ】あるある・ランキング系/idol-style-4class.jpg',
+    lead: '',
+    note: '',
+    altText: 'アイドルになったら大体こんな感じの4分類画像。センター・カリスマ型、愛されファンサ型、世界観・沼らせ型、職人・クセ強パフォーマー型を誕生日ごとに紹介している。',
+  },
+  love_style: {
+    slug: 'love_style',
+    title: '恋愛スタイル4分類',
+    emoji: '',
+    file: 'images/social/instagram/【インスタ】あるある・ランキング系/love-style-4class.jpg',
+    lead: '',
+    note: '',
+    altText: '恋愛スタイル4分類の画像。追いかける主導権型、愛されたい・尽くしたい型、ときめき・自由恋愛型、慎重・深愛・内面重視型を誕生日ごとに紹介している。',
+  },
+  amae_jouzu: {
+    slug: 'amae_jouzu',
+    title: '甘え上手ランキングtop5',
+    emoji: '',
+    file: 'images/social/instagram/【インスタ】あるある・ランキング系/amae-jouzu-top5.jpg',
+    lead: '',
+    note: '',
+    altText: '甘え上手ランキングtop5の画像。2日、6日、15日、3日、20日生まれの甘え方をミニキャラ付きで紹介している。',
+  },
+  buchigire_kowai: {
+    slug: 'buchigire_kowai',
+    title: 'ブチギレると怖い生まれ日TOP5はこちらです。',
+    emoji: '',
+    file: 'images/social/instagram/【インスタ】あるある・ランキング系/buchigire-kowai-top5.jpg',
+    lead: '',
+    note: '',
+    altText: 'ブチギレると怖い生まれ日TOP5の画像。8日、1日、16日、22日、5日生まれの怒り方をミニキャラ付きで紹介している。',
   },
 };
 const CARD_OVERRIDES_BY_DATE = {
@@ -478,6 +513,8 @@ function parseArgs(argv) {
     else if (arg.startsWith('--oracle-card-mode=')) args.oracleCardMode = arg.split('=')[1];
     else if (arg === '--birthday-days') args.birthdayDays = argv[++i];
     else if (arg.startsWith('--birthday-days=')) args.birthdayDays = arg.split('=')[1];
+    else if (arg === '--birthday-ranking-slug') args.birthdayRankingSlug = argv[++i];
+    else if (arg.startsWith('--birthday-ranking-slug=')) args.birthdayRankingSlug = arg.split('=')[1];
   }
   if (!['all', ...DRAFT_POST_KINDS].includes(args.kind)) {
     throw new Error(`Invalid --kind: ${args.kind}`);
@@ -558,7 +595,6 @@ function getSocialConfig(args) {
   return {
     timezone: 'Asia/Tokyo',
     primaryPlatform,
-    enableX: platforms.includes('x'),
     enableInstagram: platforms.includes('instagram'),
     paidCtaMode,
     releaseMode: normalizeMode(process.env.SOCIAL_RELEASE_MODE, SOCIAL_RELEASE_MODES, 'auto'),
@@ -765,25 +801,6 @@ function buildThreadsCtaLine(paidCta, dateKey, config) {
   return '迷いに、静かな羅針を置く占い。';
 }
 
-function buildXCtaLine(paidCta, dateKey, config) {
-  if (isPreReleasePosting(dateKey, config)) {
-    if (paidCta === 'soft_paid' || paidCta === 'active_paid') {
-      return '深掘り鑑定は公開後、必要な方だけ案内します。明日の公開を待っていてください。';
-    }
-    return '気になる方は5/16の公開を待っていてください。';
-  }
-  if (paidCta === 'free') {
-    return 'まずは無料の今日のオラクルから。';
-  }
-  if (paidCta === 'active_paid') {
-    return '深く整理したい方は、アプリ内の案内へ。';
-  }
-  if (paidCta === 'soft_paid') {
-    return '必要な方だけ、深掘り鑑定も選べます。';
-  }
-  return 'まずは無料の今日のオラクルから。';
-}
-
 function pickNightConceptBody(dateKey) {
   const index = dateToUtcDay(dateKey) % NIGHT_CONCEPT_POSTS.length;
   return NIGHT_CONCEPT_POSTS[index];
@@ -950,11 +967,6 @@ function findAdjacentRepeatedLine(text) {
   return null;
 }
 
-function getXHashtagLine(config = {}) {
-  const configured = String(process.env.SOCIAL_X_HASHTAGS || '').trim();
-  return configured || `${config.defaultHashtag || DEFAULT_HASHTAG} #AI占い`;
-}
-
 function getThreadsHashtagLine(config = {}) {
   const configured = String(process.env.SOCIAL_THREADS_HASHTAG || '').trim();
   return normalizeThreadsHashtag(configured || config.threadsHashtag || DEFAULT_THREADS_HASHTAG);
@@ -992,8 +1004,6 @@ function validatePostText(text, options = {}) {
   if (options.platforms?.includes('threads') && [...value].length > THREADS_CHARACTER_LIMIT) {
     throw new Error(`${label} is too long for Threads: ${[...value].length}/${THREADS_CHARACTER_LIMIT}`);
   }
-  // X output is manual-post oriented, so this lane does not enforce a
-  // character limit here. Threads still keeps its platform limit.
   if (options.platforms?.includes('instagram') && [...value].length > INSTAGRAM_CHARACTER_LIMIT) {
     throw new Error(`${label} is too long for Instagram: ${[...value].length}/${INSTAGRAM_CHARACTER_LIMIT}`);
   }
@@ -1009,13 +1019,11 @@ function validatePostText(text, options = {}) {
 }
 
 function getEntryTextForPlatform(entry, platform) {
-  if (platform === 'x') return entry.xText;
   if (platform === 'instagram') return entry.instagramText;
   return entry.text;
 }
 
 function getTrackedUrlForPlatform(entry, platform) {
-  if (platform === 'x') return entry.xTrackedUrl;
   if (platform === 'instagram') return entry.instagramTrackedUrl;
   return entry.trackedUrl;
 }
@@ -1034,6 +1042,7 @@ function validateDraft(draft, args) {
       if (kind === 'rashin_point' && countHashtags(entry.text) !== 1) throw new Error('rashin_point Threads post must use only #占い師.');
       if (entry.text.includes(DEFAULT_HASHTAG)) throw new Error(`${kind} Threads post must not use the brand hashtag.`);
       if (!extractUtmContent(entry.trackedUrl || entry.text)) throw new Error(`${kind} Threads post is missing utm_content.`);
+      if (Array.isArray(entry.imageUrls) && entry.imageUrls.length > 1) threadsClient.ensureCarouselMediaItems(entry.imageUrls, entry.altTexts);
     }
     if (preRelease) {
       if (draft.oracle.text.includes('今日の1枚はこちら')) {
@@ -1041,13 +1050,6 @@ function validateDraft(draft, args) {
       }
     } else if (kinds.includes('oracle') && !draft.oracle.text.includes(SOCIAL_ORACLE_CTA)) {
       throw new Error('oracle Threads post must include the required CTA line.');
-    }
-  }
-  if (platforms.includes('x')) {
-    for (const kind of selectedXKindsFromArgs(args)) {
-      const entry = draft[kind];
-      validatePostText(entry.xText, { label: `${kind} X post`, platforms: ['x'], requireTrackedUrl: true, requireVisibleUrl: requiresVisibleUrl(kind), trackedUrl: entry.xTrackedUrl });
-      if (entry.xText === entry.text) throw new Error(`${kind} X post must not be identical to the Threads post.`);
     }
   }
   if (platforms.includes('instagram')) {
@@ -1062,7 +1064,11 @@ function validateDraft(draft, args) {
         trackedUrl: entry.instagramTrackedUrl,
       });
       if (!entry.instagramImageUrl) throw new Error(`${kind} Instagram post requires a public image URL.`);
-      instagramClient.ensurePublicImageUrl(entry.instagramImageUrl);
+      if (Array.isArray(entry.instagramImageUrls) && entry.instagramImageUrls.length > 1) {
+        instagramClient.ensureCarouselMediaItems(entry.instagramImageUrls, entry.altTexts);
+      } else {
+        instagramClient.ensurePublicImageUrl(entry.instagramImageUrl);
+      }
       if (!entry.altText) throw new Error(`${kind} Instagram post requires alt text.`);
       assertSharedTextMatchesThreads(entry, 'instagram', kind);
     }
@@ -1208,6 +1214,26 @@ function publicRepoImageUrl(publicOrigin, repoRelativeFile) {
     .join('/')}`;
 }
 
+function publicRepoAssetUrl(publicOrigin, repoRelativeFile) {
+  return publicRepoImageUrl(publicOrigin, repoRelativeFile);
+}
+
+function birthdayRankingMediaPaths(item, imagePath) {
+  const paths = [imagePath].filter(Boolean);
+  if (item?.videoFile) paths.push(path.resolve(ROOT, item.videoFile));
+  return paths;
+}
+
+function birthdayRankingMediaUrls(item, imageUrl, publicOrigin) {
+  const urls = [imageUrl].filter(Boolean);
+  if (item?.videoFile) urls.push(publicRepoAssetUrl(publicOrigin, item.videoFile));
+  return urls;
+}
+
+function birthdayRankingAltTexts(item) {
+  return item?.videoFile ? [item.altText, item.altText] : [];
+}
+
 function positiveModulo(value, divisor) {
   return ((value % divisor) + divisor) % divisor;
 }
@@ -1232,15 +1258,64 @@ function birthdayMonthlyManifestPath(dateKey) {
   throw new Error(`Birthday monthly manifest was not found for ${requestedMonth}: ${requested}`);
 }
 
+function birthdayMonthlyPartKeyForDay(day) {
+  if (day >= 1 && day <= 10) return '01-10';
+  if (day >= 11 && day <= 20) return '11-20';
+  if (day >= 21 && day <= 31) return '21-31';
+  throw new Error(`Invalid birthday monthly day: ${day}`);
+}
+
+function birthdayMonthlyStrictRelativeFile(month, day) {
+  const normalizedDay = Number(day);
+  const partKey = birthdayMonthlyPartKeyForDay(normalizedDay);
+  const fileName = `${pad2(normalizedDay)}-birth-${pad2(normalizedDay)}.jpg`;
+  return path.posix.join(...BIRTHDAY_MONTHLY_RELATIVE_ROOT, month, 'monthly', partKey, fileName);
+}
+
+function birthdayMonthlyCoverRelativeFile(month, days) {
+  const rangeKey = formatBirthdayMonthlyDayRangeKey(days).replace('_', '-');
+  return path.posix.join(...BIRTHDAY_MONTHLY_RELATIVE_ROOT, month, 'monthly', `cover-${rangeKey}.jpg`);
+}
+
+function assertBirthdayMonthlySelection(days, manifestFile, options = {}) {
+  if (!Array.isArray(days) || !days.length) return;
+  const includeCover = options.includeCover !== false;
+  const mediaCount = days.length + (includeCover ? 1 : 0);
+  if (mediaCount > BIRTHDAY_MONTHLY_MAX_CAROUSEL_MEDIA) {
+    throw new Error(`Birthday monthly carousel must use 10 or fewer media items including the cover from the approved folder: ${days.join(', ')} (${manifestFile})`);
+  }
+  for (let index = 1; index < days.length; index += 1) {
+    if (days[index] !== days[index - 1] + 1) {
+      throw new Error(`Birthday monthly slides must be consecutive birth days: ${days.join(', ')} (${manifestFile})`);
+    }
+  }
+}
+
 function collectBirthdayMonthlySlides(manifest) {
+  const month = String(manifest.month || '').trim();
+  if (!/^\d{4}-\d{2}$/.test(month)) throw new Error(`Birthday monthly manifest has an invalid month: ${manifest.month}`);
   return (manifest.parts || [])
     .flatMap(part => (part.slides || []).map(slide => ({
       ...slide,
       partKey: part.key,
       partLabel: part.label,
-      month: manifest.month,
+      month,
     })))
     .filter(slide => Number.isFinite(Number(slide.day)) && slide.file)
+    .map(slide => {
+      const day = Number(slide.day);
+      const file = birthdayMonthlyStrictRelativeFile(month, day);
+      const absoluteFile = path.resolve(ROOT, file);
+      if (!fsSync.existsSync(absoluteFile)) {
+        throw new Error(`Birthday monthly approved slide was not found: ${absoluteFile}`);
+      }
+      return {
+        ...slide,
+        day,
+        partKey: birthdayMonthlyPartKeyForDay(day),
+        file,
+      };
+    })
     .sort((left, right) => Number(left.day) - Number(right.day));
 }
 
@@ -1292,15 +1367,23 @@ function buildBirthdayMonthlyGroupPost(slides, manifestFile) {
   if (!slides.length) throw new Error(`Birthday monthly day selection produced no slides: ${manifestFile}`);
   const first = slides[0];
   const days = slides.flatMap(birthdayMonthlySlideDays);
+  assertBirthdayMonthlySelection(days, manifestFile, { includeCover: true });
+  const coverFile = birthdayMonthlyCoverRelativeFile(first.month, days);
+  const coverAbsoluteFile = path.resolve(ROOT, coverFile);
+  if (!fsSync.existsSync(coverAbsoluteFile)) {
+    throw new Error(`Birthday monthly approved cover was not found: ${coverAbsoluteFile}`);
+  }
   const cardSummary = summarizeBirthdayMonthlyGroupCards(slides);
   return {
     ...first,
+    file: coverFile,
     day: days[0],
     dayEnd: days[days.length - 1],
     days,
     dayRangeKey: formatBirthdayMonthlyDayRangeKey(days),
     slides,
-    files: slides.map(slide => slide.file),
+    coverFile,
+    files: [coverFile, ...slides.map(slide => slide.file)],
     cards: first.cards || [],
     cardSummary,
     manifestFile,
@@ -1316,6 +1399,7 @@ function pickBirthdayMonthlyPost(dateKey, args = {}) {
   if (!slides.length) throw new Error(`Birthday monthly manifest has no slides: ${manifestFile}`);
   const requestedDays = parseBirthdayMonthlyDays(args.birthdayDays || process.env.SOCIAL_BIRTHDAY_MONTHLY_DAYS);
   if (requestedDays.length) {
+    assertBirthdayMonthlySelection(requestedDays, manifestFile, { includeCover: true });
     const byDay = new Map(slides.map(slide => [Number(slide.day), slide]));
     const selectedSlides = requestedDays.map(day => {
       const slide = byDay.get(day);
@@ -1339,10 +1423,11 @@ function birthdayMonthLabel(month) {
   return Number.isFinite(value) && value > 0 ? `${value}月` : '今月';
 }
 
-function pickBirthdayRankingPost(dateKey) {
-  const item = BIRTHDAY_RANKING_POSTS[dateKey];
+function pickBirthdayRankingPost(dateKey, args = {}) {
+  const slug = String(args.birthdayRankingSlug || process.env.SOCIAL_BIRTHDAY_RANKING_SLUG || BIRTHDAY_RANKING_SLUG_BY_DATE[dateKey] || '').trim();
+  const item = BIRTHDAY_RANKING_POSTS[slug];
   if (!item) {
-    throw new Error(`Birthday ranking post is not scheduled for ${dateKey}.`);
+    throw new Error(`Birthday ranking post is not scheduled for ${dateKey}${slug ? ` / ${slug}` : ''}.`);
   }
   const imagePath = path.resolve(ROOT, item.file);
   if (!fsSync.existsSync(imagePath)) {
@@ -1435,40 +1520,15 @@ function buildOracleText(card, publicOrigin, options = {}) {
   }
   return fitPostText([
     SOCIAL_ORACLE_GREETING,
-    `今日の数秘オラクルは「${card.name}」🫵☺`,
+    `今日の数秘オラクルは「${card.name}」🫶`,
     `テーマは「${oracleSocialTitle(card)}」！`,
-    buildFriendlyXOracleMessage(oracleSocialCopy(card).message || buildOracleReadingLine(card)),
-    buildFriendlyXOracleSupport(oracleSocialCopy(card).support || buildOracleActionLine(card)),
+    buildFriendlyOracleMessage(oracleSocialCopy(card).message || buildOracleReadingLine(card)),
+    buildFriendlyOracleSupport(oracleSocialCopy(card).support || buildOracleActionLine(card)),
     buildRepeatCycleNote(dateKey, ORACLE_CARD_CYCLE_LENGTH),
     SOCIAL_ORACLE_CTA,
     displayUrl,
     hashtag,
   ], limit);
-}
-
-function buildXOracleText(card, publicOrigin, options = {}) {
-  const dateKey = options.dateKey || getJstDateString();
-  const config = options.config || getSocialConfig({ platforms: ['x'] });
-  const hashtags = getXHashtagLine(config);
-  const displayUrl = buildDisplayUrl(publicOrigin);
-  if (isPreReleasePosting(dateKey, config)) {
-    return fitPostText([
-      `先行オラクル：${card.name} / ${oracleSocialTitle(card)}`,
-      buildOracleActionLine(card),
-      buildRepeatCycleNote(dateKey, ORACLE_CARD_CYCLE_LENGTH),
-      '公開日にまた届きます',
-      displayUrl,
-      hashtags,
-    ], X_CHARACTER_LIMIT);
-  }
-  return fitPostText([
-    `今日の数秘オラクル：${card.name}`,
-    `テーマ：${oracleSocialTitle(card)}`,
-    buildOracleActionLine(card),
-    buildRepeatCycleNote(dateKey, ORACLE_CARD_CYCLE_LENGTH),
-    displayUrl,
-    hashtags,
-  ], X_CHARACTER_LIMIT);
 }
 
 function splitSocialSentences(text) {
@@ -1484,7 +1544,7 @@ function stripSentenceEnding(text) {
   return String(text || '').trim().replace(/[。.!！?？]+$/u, '');
 }
 
-function buildFriendlyXOracleMessage(text) {
+function buildFriendlyOracleMessage(text) {
   const value = stripSentenceEnding(text);
   if (!value) return '';
   if (value.endsWith('になる')) return `今日は、${value.replace(/になる$/u, 'になってくれそう')}！`;
@@ -1492,31 +1552,9 @@ function buildFriendlyXOracleMessage(text) {
   return `今日は、${value}流れがありそう！`;
 }
 
-function buildFriendlyXOracleSupport(text) {
+function buildFriendlyOracleSupport(text) {
   const value = stripSentenceEnding(text);
   return value ? `迷ったら「${value}」を合図に🔮✨` : '';
-}
-
-function buildXOracleManualDraftText(card, publicOrigin, options = {}) {
-  const dateKey = options.dateKey || getJstDateString();
-  const publicUrl = (publicOrigin || DEFAULT_PUBLIC_ORIGIN).replace(/\/$/, '');
-  const copy = oracleSocialCopy(card);
-  const leadLines = splitSocialSentences(copy.lead || buildOracleLeadLine(card));
-  const readingLines = splitSocialSentences(copy.message || buildOracleReadingLine(card));
-  const action = String(copy.support || ORACLE_SOFT_ACTIONS[Number(card.id)] || '').trim();
-  const cycleNote = buildRepeatCycleNote(dateKey, ORACLE_CARD_CYCLE_LENGTH);
-  const message = readingLines[0] || leadLines[0] || '';
-  return fitPostText([
-    X_ORACLE_GREETING,
-    `今日の数秘オラクルは「${card.name}」🫵☺`,
-    `テーマは「${oracleSocialTitle(card)}」！`,
-    buildFriendlyXOracleMessage(message),
-    buildFriendlyXOracleSupport(action),
-    cycleNote || null,
-    SOCIAL_ORACLE_CTA,
-    publicUrl,
-    X_ORACLE_HASHTAGS.join(' '),
-  ].filter(line => line !== null), X_CHARACTER_LIMIT);
 }
 
 function buildBlueskyOracleText(card, publicOrigin, options = {}) {
@@ -1561,40 +1599,6 @@ function buildConceptText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config 
   ], BLUESKY_CHARACTER_LIMIT);
 }
 
-const X_CONCEPT_POSTS = {
-  '先行版: 羅針占術とは': '自作AI占いアプリ「羅針占術」を5/16にプレリリースします。\n\n未来を断定せず、本質・本音・いまの現実から次の一手を整理する占いです。',
-  '羅針占術とは': '本日、自作AI占いアプリ「羅針占術」をプレリリースしました。\n\n迷いを「次の一手」に変える占いです。',
-  '今日のオラクルの使い方': '今日のオラクルは、読むだけで終わらせず、今日の行動をひとつ決めるために使えます。',
-  '無料鑑定で見えるもの': '無料鑑定では、本質・本音・いまの現実・次の一手まで整理できます。',
-  '二択にしない迷いの整理': '迷っているときは、二択に見えるものを「試す・待つ・相談する」に分けてみてください。',
-  '読みっぱなしにしない占い': '占いは、読んで終わりにしなくてもいい。迷い、カード、その後の行動を残すと変化が見えます。',
-  '鑑定結果を記録する価値': '前回の迷いを見返すと、同じ悩みに見えても少し変わっていることがあります。',
-  '深掘り鑑定の違い': '深掘り鑑定は、無料で見えた流れを追加カードと質問で具体化する鑑定です。',
-  'BOOTH購入後の流れ': '購入情報はSNSでは扱いません。必要な方だけ、アプリ内の案内からBOOTH購入と注文番号入力に進めます。',
-  '迷いを3行で整理する': '今週の迷いを3行で整理するなら、何に迷ったか、何を後回しにしたか、何を少し動かせたか。',
-  '当てるより整理する占い': '悪いカードが悪い未来を決めるわけではありません。注意点は、整えるためのヒントです。',
-  '仕事・転職の使い方': '仕事の迷いは、今すぐ決めることと、まず確認することを分けると前に進みやすくなります。',
-  '恋愛で断定しない理由': '恋愛占いで大切にしたいのは、相手の気持ちを決めつけることではなく、自分の本音を見ることです。',
-  '専門判断の代替にしない': 'お金、健康、法律の不安が強いときほど、占いだけで判断しないことが大切です。',
-  '深掘り鑑定の利用例': '深掘り鑑定は強い結果を出すものではなく、次に確認したいことを具体化する鑑定です。',
-  '今日のオラクルから深掘りまでの流れ': '今日のオラクルは入口。無料鑑定は整理。必要な方だけ深掘りへ。',
-  'プレリリース前日案内': '明日、自作AI占いアプリ「羅針占術」をプレリリースします。\n\n入口は無料の今日のオラクルと無料鑑定です。',
-};
-
-function buildXConceptText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['x'] })) {
-  const entry = getCalendarEntry(dateKey);
-  const paidCta = resolvePaidCta(entry, config);
-  const hashtags = getXHashtagLine(config);
-  const link = buildConceptTrackedUrl(dateKey, publicOrigin, config, paidCta);
-  return fitPostText([
-    pickNightConceptBody(dateKey),
-    buildRepeatCycleNote(dateKey, NIGHT_CONCEPT_POSTS.length),
-    buildNightConceptCtaLine(paidCta, dateKey, config),
-    link,
-    hashtags,
-  ], X_CHARACTER_LIMIT);
-}
-
 function buildBlueskyConceptText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['bluesky'] })) {
   return buildConceptText(dateKey, publicOrigin, config);
 }
@@ -1636,29 +1640,6 @@ function buildMiddayText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config =
   ], BLUESKY_CHARACTER_LIMIT);
 }
 
-function buildXMiddayText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['x'] })) {
-  const focus = pickMiddayFocus(dateKey);
-  if (isPreReleasePosting(dateKey, config)) {
-    return fitPostText([
-      '昼の羅針｜公開前メモ',
-      '羅針占術は5/16公開予定です。現実と本音を分けて、次の一手を整理するAI占いとして準備しています。',
-      focus,
-      '保存して、公開日に見返してください。',
-      buildDisplayUrl(publicOrigin),
-      getXHashtagLine(config),
-    ], X_CHARACTER_LIMIT);
-  }
-  const topic = pickMiddayTopic(dateKey);
-  return fitPostText([
-    topic.title,
-    topic.body,
-    focus,
-    '無料鑑定はこちら',
-    buildDisplayUrl(publicOrigin),
-    getXHashtagLine(config),
-  ], X_CHARACTER_LIMIT);
-}
-
 function buildBlueskyMiddayText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['bluesky'] })) {
   return buildMiddayText(dateKey, publicOrigin, config);
 }
@@ -1684,15 +1665,6 @@ function buildGenericSocialText(parts, dateKey, publicOrigin, config, options = 
     buildDisplayUrlForPlatform(publicOrigin, config),
     config.defaultHashtag || DEFAULT_HASHTAG,
   ], limit);
-}
-
-function buildXGenericSocialText(parts, publicOrigin, config, options = {}) {
-  return fitPostText([
-    ...parts,
-    options.cycleNote || '',
-    buildDisplayUrl(publicOrigin),
-    getXHashtagLine(config),
-  ], options.limit || THREADS_CHARACTER_LIMIT);
 }
 
 function buildInstagramSocialText(parts, dateKey, publicOrigin, config, options = {}) {
@@ -1827,24 +1799,12 @@ function buildBirthdayMonthlyPostParts(item) {
   ];
 }
 
-function buildXBirthdayMonthlyText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['x'] })) {
-  return buildXGenericSocialText(buildBirthdayMonthlyPostParts(item), publicOrigin, config, {
-    limit: X_CHARACTER_LIMIT,
-  });
-}
-
 function buildInstagramBirthdayMonthlyText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['instagram'] })) {
   return buildBirthdayMonthlyText(item, dateKey, publicOrigin, config);
 }
 
 function buildEmpathyText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['threads'] })) {
   return buildGenericSocialText(buildLenormandOneCardParts(item), dateKey, publicOrigin, config, {
-    cycleNote: buildScheduledCycleNote(dateKey, EMPATHY_WEEKDAYS, LENORMAND_EMPATHY_POSTS.length, 'カード'),
-  });
-}
-
-function buildXEmpathyText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['x'] })) {
-  return buildXGenericSocialText(buildLenormandOneCardParts(item), publicOrigin, config, {
     cycleNote: buildScheduledCycleNote(dateKey, EMPATHY_WEEKDAYS, LENORMAND_EMPATHY_POSTS.length, 'カード'),
   });
 }
@@ -1857,13 +1817,6 @@ function buildQuestionText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, 
   return buildQuestionSocialText(item, dateKey, config, {
     cycleNote: buildScheduledCycleNote(dateKey, QUESTION_WEEKDAYS, THREAD_QUESTION_POSTS.length, '質問'),
     extraLine: 'AかBだけで大丈夫です。今近い方を返信に一文字で置いてください。',
-  });
-}
-
-function buildXQuestionText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['x'] })) {
-  return buildQuestionSocialText(item, dateKey, config, {
-    cycleNote: buildScheduledCycleNote(dateKey, QUESTION_WEEKDAYS, THREAD_QUESTION_POSTS.length, '質問'),
-    extraLine: '返信しやすいほうを一文字で残せます。',
   });
 }
 
@@ -1884,16 +1837,6 @@ function buildDifferenceText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN
   });
 }
 
-function buildXDifferenceText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['x'] })) {
-  return buildXGenericSocialText([
-    item.title,
-    item.body,
-    item.cta,
-  ], publicOrigin, config, {
-    cycleNote: buildScheduledCycleNote(dateKey, DIFFERENCE_WEEKDAYS, DIFFERENCE_POSTS.length, '違い紹介'),
-  });
-}
-
 function buildInstagramDifferenceText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['instagram'] })) {
   return buildDifferenceText(item, dateKey, publicOrigin, config);
 }
@@ -1904,16 +1847,6 @@ function buildFreePaidCompareText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_O
     item.body,
     item.cta,
   ], dateKey, publicOrigin, config, {
-    cycleNote: buildScheduledCycleNote(dateKey, FREE_PAID_COMPARE_WEEKDAYS, FREE_PAID_COMPARE_POSTS.length, '比較'),
-  });
-}
-
-function buildXFreePaidCompareText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['x'] })) {
-  return buildXGenericSocialText([
-    item.title,
-    item.body,
-    item.cta,
-  ], publicOrigin, config, {
     cycleNote: buildScheduledCycleNote(dateKey, FREE_PAID_COMPARE_WEEKDAYS, FREE_PAID_COMPARE_POSTS.length, '比較'),
   });
 }
@@ -1953,7 +1886,15 @@ function buildRashinPointBlueskyText(dateKey, publicOrigin = DEFAULT_PUBLIC_ORIG
 
 function buildBirthdayMonthlyAltTexts(item) {
   if (!Array.isArray(item.slides)) return [];
-  return item.slides.map(slide => buildBirthdayMonthlyAltText(slide));
+  const altTexts = [];
+  if (item.coverFile) altTexts.push(buildBirthdayMonthlyCoverAltText(item));
+  return altTexts.concat(item.slides.map(slide => buildBirthdayMonthlyAltText(slide)));
+}
+
+function buildBirthdayMonthlyCoverAltText(item) {
+  const monthLabel = birthdayMonthLabel(item.month);
+  const dayLabel = item.dayEnd && item.dayEnd !== item.day ? `${item.day}〜${item.dayEnd}` : `${item.day}`;
+  return `羅針占術の${dayLabel}日生まれ向け${monthLabel}運勢カルーセル表紙。`;
 }
 
 function buildBirthdayMonthlyAltText(item) {
@@ -1981,11 +1922,9 @@ function stripOutOfScopePlatformFields(value) {
   if (Array.isArray(value)) return value.map(stripOutOfScopePlatformFields);
   if (!value || typeof value !== 'object') return value;
   return Object.fromEntries(Object.entries(value)
-    .filter(([key]) => !/^x[A-Z]/.test(key)
-      && !/^bluesky/i.test(key)
-      && key !== 'enableX'
+    .filter(([key]) => !/^bluesky/i.test(key)
       && key !== 'enableBluesky'
-      && key !== 'xHashtags')
+      )
     .map(([key, item]) => [key, stripOutOfScopePlatformFields(item)]));
 }
 
@@ -1994,7 +1933,6 @@ async function buildDraft(args) {
   const publicOrigin = (process.env.PUBLIC_ORIGIN || DEFAULT_PUBLIC_ORIGIN).replace(/\/$/, '');
   const config = getSocialConfig(args);
   const threadsConfig = withPlatform(config, 'threads');
-  const xConfig = withPlatform(config, 'x');
   const blueskyConfig = withPlatform(config, 'bluesky');
   const instagramOracleConfig = withInstagramKind(config, 'oracle');
   const instagramRashinPointConfig = withInstagramKind(config, 'rashin_point');
@@ -2013,7 +1951,7 @@ async function buildDraft(args) {
   const paidCta = resolvePaidCta(calendar, config);
   const conceptImage = pickConceptImage(calendar, dateKey);
   const birthdayMonthlyPost = shouldBuildBirthdayMonthly ? pickBirthdayMonthlyPost(dateKey, args) : null;
-  const birthdayRankingPost = shouldBuildBirthdayRanking ? pickBirthdayRankingPost(dateKey) : null;
+  const birthdayRankingPost = shouldBuildBirthdayRanking ? pickBirthdayRankingPost(dateKey, args) : null;
   const empathyPost = pickEmpathyPost(dateKey);
   const differencePost = pickDifferencePost(dateKey);
   const freePaidComparePost = pickFreePaidComparePost(dateKey);
@@ -2035,6 +1973,9 @@ async function buildDraft(args) {
   const birthdayMonthlyImageUrl = birthdayMonthlyPost ? publicRepoImageUrl(publicOrigin, birthdayMonthlyPost.file) : null;
   const birthdayRankingImagePath = birthdayRankingPost ? birthdayRankingPost.imagePath : null;
   const birthdayRankingImageUrl = birthdayRankingPost ? publicRepoImageUrl(publicOrigin, birthdayRankingPost.file) : null;
+  const birthdayRankingMediaPathsValue = birthdayRankingPost ? birthdayRankingMediaPaths(birthdayRankingPost, birthdayRankingImagePath) : [];
+  const birthdayRankingMediaUrlsValue = birthdayRankingPost ? birthdayRankingMediaUrls(birthdayRankingPost, birthdayRankingImageUrl, publicOrigin) : [];
+  const birthdayRankingAltTextsValue = birthdayRankingPost ? birthdayRankingAltTexts(birthdayRankingPost) : [];
   const birthdayMonthlyImagePaths = birthdayMonthlyPost?.files
     ? birthdayMonthlyPost.files.map(file => path.resolve(ROOT, file))
     : [];
@@ -2070,10 +2011,10 @@ async function buildDraft(args) {
   const draft = {
     date: dateKey,
     schedule: {
-      oracle: `${process.env.SOCIAL_ORACLE_TIME || '08:00'} Asia/Tokyo`,
+      oracle: `${process.env.SOCIAL_ORACLE_TIME || '07:00'} Asia/Tokyo`,
       rashin_point: '20:00 Asia/Tokyo one-off 2026-06-04',
-      birthday_monthly: '2026-06-05 20:00/21:00/22:00 Asia/Tokyo, then monthly on the 1st from 2026-07-01',
-      birthday_ranking: '20:00 Asia/Tokyo one-off 2026-06-07..2026-06-10, Threads/Instagram',
+      birthday_monthly: '2026-06-05 20:00/21:00/22:00/23:00 Asia/Tokyo, then monthly on the 1st from 2026-07-01',
+      birthday_ranking: '20:00/21:00/22:00/23:00 Asia/Tokyo one-off on 2026-06-08 and 2026-06-09, Threads/Instagram',
       empathy: 'manual only',
       difference: 'hold: weekly comparison timing undecided',
       free_paid_compare: 'hold: weekly comparison timing undecided',
@@ -2087,8 +2028,6 @@ async function buildDraft(args) {
       altText: buildOracleAltText(card),
       text: buildOracleText(card, publicOrigin, { dateKey, config: threadsConfig }),
       trackedUrl: buildOracleTrackedUrl(card, publicOrigin, threadsConfig, dateKey),
-      xText: buildXOracleManualDraftText(card, publicOrigin, { dateKey }),
-      xTrackedUrl: buildOracleTrackedUrl(card, publicOrigin, xConfig, dateKey),
       blueskyText: buildBlueskyOracleText(card, publicOrigin, { dateKey, config: blueskyConfig }),
       blueskyTrackedUrl: buildOracleTrackedUrl(card, publicOrigin, blueskyConfig, dateKey),
       blueskyImagePath: oracleInstagramImagePath,
@@ -2112,8 +2051,6 @@ async function buildDraft(args) {
       altTexts: rashinPointImage.altTexts,
       text: buildRashinPointThreadsText(dateKey, publicOrigin),
       trackedUrl: buildRashinPointTrackedUrl(dateKey, publicOrigin, threadsConfig),
-      xText: '',
-      xTrackedUrl: '',
       blueskyText: buildRashinPointBlueskyText(dateKey, publicOrigin, blueskyConfig),
       blueskyTrackedUrl: buildRashinPointTrackedUrl(dateKey, publicOrigin, blueskyConfig),
       blueskyImagePath: rashinPointImagePaths[0],
@@ -2134,6 +2071,7 @@ async function buildDraft(args) {
         days: birthdayMonthlyPost.days || [birthdayMonthlyPost.day],
         dayEnd: birthdayMonthlyPost.dayEnd || birthdayMonthlyPost.day,
         dayRangeKey: birthdayMonthlyPost.dayRangeKey || null,
+        coverFile: birthdayMonthlyPost.coverFile || null,
         sequenceIndex: birthdayMonthlyPost.sequenceIndex,
         sequenceTotal: birthdayMonthlyPost.sequenceTotal,
         cards: birthdayMonthlyPost.cards || [],
@@ -2143,11 +2081,9 @@ async function buildDraft(args) {
       imagePaths: birthdayMonthlyImagePaths,
       imageUrls: birthdayMonthlyImageUrls,
       altTexts: buildBirthdayMonthlyAltTexts(birthdayMonthlyPost),
-      altText: buildBirthdayMonthlyAltText(birthdayMonthlyPost),
+      altText: birthdayMonthlyPost.coverFile ? buildBirthdayMonthlyCoverAltText(birthdayMonthlyPost) : buildBirthdayMonthlyAltText(birthdayMonthlyPost),
       text: buildBirthdayMonthlyText(birthdayMonthlyPost, dateKey, publicOrigin, threadsConfig),
       trackedUrl: buildBirthdayMonthlyTrackedUrl(birthdayMonthlyPost, dateKey, publicOrigin, threadsConfig),
-      xText: buildXBirthdayMonthlyText(birthdayMonthlyPost, dateKey, publicOrigin, xConfig),
-      xTrackedUrl: buildBirthdayMonthlyTrackedUrl(birthdayMonthlyPost, dateKey, publicOrigin, xConfig),
       blueskyText: buildBirthdayMonthlyText(birthdayMonthlyPost, dateKey, publicOrigin, blueskyConfig),
       blueskyTrackedUrl: buildBirthdayMonthlyTrackedUrl(birthdayMonthlyPost, dateKey, publicOrigin, blueskyConfig),
       blueskyImagePath: birthdayMonthlyImagePath,
@@ -2167,11 +2103,12 @@ async function buildDraft(args) {
       },
       imagePath: birthdayRankingImagePath,
       imageUrl: birthdayRankingImageUrl,
+      imagePaths: birthdayRankingMediaPathsValue,
+      imageUrls: birthdayRankingMediaUrlsValue,
       altText: birthdayRankingPost.altText,
+      altTexts: birthdayRankingAltTextsValue,
       text: buildBirthdayRankingText(birthdayRankingPost, dateKey, publicOrigin, threadsConfig),
       trackedUrl: buildBirthdayRankingTrackedUrl(birthdayRankingPost, dateKey, publicOrigin, threadsConfig),
-      xText: '',
-      xTrackedUrl: '',
       blueskyText: buildBirthdayRankingText(birthdayRankingPost, dateKey, publicOrigin, blueskyConfig),
       blueskyTrackedUrl: buildBirthdayRankingTrackedUrl(birthdayRankingPost, dateKey, publicOrigin, blueskyConfig),
       blueskyImagePath: birthdayRankingImagePath,
@@ -2180,6 +2117,8 @@ async function buildDraft(args) {
       instagramTrackedUrl: buildBirthdayRankingTrackedUrl(birthdayRankingPost, dateKey, publicOrigin, instagramBirthdayRankingConfig),
       instagramImagePath: birthdayRankingImagePath,
       instagramImageUrl: birthdayRankingImageUrl,
+      instagramImagePaths: birthdayRankingMediaPathsValue,
+      instagramImageUrls: birthdayRankingMediaUrlsValue,
     } } : {}),
     empathy: {
       card: {
@@ -2194,8 +2133,6 @@ async function buildDraft(args) {
       altText: buildEmpathyAltText(empathyPost),
       text: buildEmpathyText(empathyPost, dateKey, publicOrigin, threadsConfig),
       trackedUrl: buildEmpathyTrackedUrl(empathyPost, dateKey, publicOrigin, threadsConfig),
-      xText: buildXEmpathyText(empathyPost, dateKey, publicOrigin, xConfig),
-      xTrackedUrl: buildEmpathyTrackedUrl(empathyPost, dateKey, publicOrigin, xConfig),
       blueskyText: buildEmpathyText(empathyPost, dateKey, publicOrigin, blueskyConfig),
       blueskyTrackedUrl: buildEmpathyTrackedUrl(empathyPost, dateKey, publicOrigin, blueskyConfig),
       blueskyImagePath: empathyInstagramImagePath,
@@ -2215,8 +2152,6 @@ async function buildDraft(args) {
       altText: buildDifferenceAltText(differencePost),
       text: buildDifferenceText(differencePost, dateKey, publicOrigin, threadsConfig),
       trackedUrl: buildDifferenceTrackedUrl(differencePost, dateKey, publicOrigin, threadsConfig),
-      xText: buildXDifferenceText(differencePost, dateKey, publicOrigin, xConfig),
-      xTrackedUrl: buildDifferenceTrackedUrl(differencePost, dateKey, publicOrigin, xConfig),
       blueskyText: buildDifferenceText(differencePost, dateKey, publicOrigin, blueskyConfig),
       blueskyTrackedUrl: buildDifferenceTrackedUrl(differencePost, dateKey, publicOrigin, blueskyConfig),
       blueskyImagePath: blueskyDifferenceImagePath,
@@ -2236,8 +2171,6 @@ async function buildDraft(args) {
       altText: buildFreePaidCompareAltText(freePaidComparePost),
       text: buildFreePaidCompareText(freePaidComparePost, dateKey, publicOrigin, threadsConfig),
       trackedUrl: buildFreePaidCompareTrackedUrl(freePaidComparePost, dateKey, publicOrigin, threadsConfig),
-      xText: buildXFreePaidCompareText(freePaidComparePost, dateKey, publicOrigin, xConfig),
-      xTrackedUrl: buildFreePaidCompareTrackedUrl(freePaidComparePost, dateKey, publicOrigin, xConfig),
       blueskyText: buildFreePaidCompareText(freePaidComparePost, dateKey, publicOrigin, blueskyConfig),
       blueskyTrackedUrl: buildFreePaidCompareTrackedUrl(freePaidComparePost, dateKey, publicOrigin, blueskyConfig),
       blueskyImagePath: blueskyFreePaidCompareImagePath,
@@ -2253,8 +2186,6 @@ async function buildDraft(args) {
       altText: middayImage.altText,
       text: buildMiddayText(dateKey, publicOrigin, threadsConfig),
       trackedUrl: buildMiddayTrackedUrl(dateKey, publicOrigin, threadsConfig),
-      xText: buildXMiddayText(dateKey, publicOrigin, xConfig),
-      xTrackedUrl: buildMiddayTrackedUrl(dateKey, publicOrigin, xConfig),
       blueskyText: buildBlueskyMiddayText(dateKey, publicOrigin, blueskyConfig),
       blueskyTrackedUrl: buildMiddayTrackedUrl(dateKey, publicOrigin, blueskyConfig),
       blueskyImagePath: blueskyMiddayImagePath,
@@ -2270,8 +2201,6 @@ async function buildDraft(args) {
       altText: conceptImage.altText,
       text: buildConceptText(dateKey, publicOrigin, threadsConfig),
       trackedUrl: buildConceptTrackedUrl(dateKey, publicOrigin, threadsConfig, paidCta),
-      xText: buildXConceptText(dateKey, publicOrigin, xConfig),
-      xTrackedUrl: buildConceptTrackedUrl(dateKey, publicOrigin, xConfig, paidCta),
       blueskyText: buildBlueskyConceptText(dateKey, publicOrigin, blueskyConfig),
       blueskyTrackedUrl: buildConceptTrackedUrl(dateKey, publicOrigin, blueskyConfig, paidCta),
       blueskyImagePath: blueskyConceptImagePath,
@@ -2337,7 +2266,6 @@ async function buildDraft(args) {
         hashtag: config.defaultHashtag,
         threadsHashtag: getThreadsHashtagLine(threadsConfig),
         blueskyHashtags: getBlueskyHashtagLine(blueskyConfig),
-        xHashtags: getXHashtagLine(xConfig),
         blockedWordCount: NG_WORDS.length,
       },
     },
@@ -2349,75 +2277,6 @@ async function buildDraft(args) {
     await fs.writeFile(path.join(OUT_DIR, `${dateKey}.json`), `${JSON.stringify(outputDraft, null, 2)}\n`);
   }
   return outputDraft;
-}
-
-function oauthEncode(value) {
-  return encodeURIComponent(value).replace(/[!*()']/g, ch => `%${ch.charCodeAt(0).toString(16).toUpperCase()}`);
-}
-
-function buildOAuthHeader(method, url, extraParams = {}) {
-  const required = ['X_API_KEY', 'X_API_SECRET', 'X_ACCESS_TOKEN', 'X_ACCESS_TOKEN_SECRET'];
-  const missing = required.filter(key => !process.env[key]);
-  if (missing.length) throw new Error(`Missing X credentials: ${missing.join(', ')}`);
-  const oauth = {
-    oauth_consumer_key: process.env.X_API_KEY,
-    oauth_nonce: crypto.randomBytes(16).toString('hex'),
-    oauth_signature_method: 'HMAC-SHA1',
-    oauth_timestamp: String(Math.floor(Date.now() / 1000)),
-    oauth_token: process.env.X_ACCESS_TOKEN,
-    oauth_version: '1.0',
-  };
-  const allParams = { ...extraParams, ...oauth };
-  const paramString = Object.keys(allParams).sort().map(key => `${oauthEncode(key)}=${oauthEncode(allParams[key])}`).join('&');
-  const base = [method.toUpperCase(), oauthEncode(url), oauthEncode(paramString)].join('&');
-  const signingKey = `${oauthEncode(process.env.X_API_SECRET)}&${oauthEncode(process.env.X_ACCESS_TOKEN_SECRET)}`;
-  oauth.oauth_signature = crypto.createHmac('sha1', signingKey).update(base).digest('base64');
-  return `OAuth ${Object.keys(oauth).sort().map(key => `${oauthEncode(key)}="${oauthEncode(oauth[key])}"`).join(', ')}`;
-}
-
-async function postToX(text, imagePath) {
-  const uploadUrl = 'https://upload.twitter.com/1.1/media/upload.json';
-  const image = await fs.readFile(imagePath);
-  const form = new FormData();
-  form.append('media', new Blob([image], { type: 'image/jpeg' }), path.basename(imagePath));
-  form.append('media_category', 'tweet_image');
-  const uploadRes = await fetch(uploadUrl, {
-    method: 'POST',
-    headers: { Authorization: buildOAuthHeader('POST', uploadUrl) },
-    body: form,
-  });
-  const uploadJson = await uploadRes.json().catch(() => ({}));
-  if (!uploadRes.ok) throw new Error(`X media upload failed: ${uploadRes.status} ${JSON.stringify(uploadJson)}`);
-  const tweetUrl = 'https://api.x.com/2/tweets';
-  const tweetRes = await fetch(tweetUrl, {
-    method: 'POST',
-    headers: {
-      Authorization: buildOAuthHeader('POST', tweetUrl),
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      text,
-      media: { media_ids: [uploadJson.media_id_string] },
-    }),
-  });
-  const tweetJson = await tweetRes.json().catch(() => ({}));
-  if (!tweetRes.ok) throw new Error(`X post failed: ${tweetRes.status} ${JSON.stringify(tweetJson)}`);
-  return tweetJson;
-}
-
-async function postTextToX(text) {
-  const tweetUrl = 'https://api.x.com/2/tweets';
-  const tweetRes = await fetch(tweetUrl, {
-    method: 'POST',
-    headers: {
-      Authorization: buildOAuthHeader('POST', tweetUrl),
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ text }),
-  });
-  const tweetJson = await tweetRes.json().catch(() => ({}));
-  if (!tweetRes.ok) throw new Error(`X post failed: ${tweetRes.status} ${JSON.stringify(tweetJson)}`);
-  return tweetJson;
 }
 
 async function postToThreads(text, imageUrl, altText = '') {
@@ -2504,10 +2363,6 @@ function selectedKindsFromArgs(args) {
   if (args.kind === 'all') return SOCIAL_POST_KINDS;
   if (DRAFT_POST_KINDS.includes(args.kind)) return [args.kind];
   return SOCIAL_POST_KINDS;
-}
-
-function selectedXKindsFromArgs(args) {
-  return selectedKindsFromArgs(args).filter(kind => X_POST_KINDS.has(kind));
 }
 
 function shouldPostKind(args, kind) {
@@ -2676,15 +2531,6 @@ async function main() {
   const results = {};
   const kindsToPost = selectedKindsFromArgs(args);
   try {
-    if (args.platforms.includes('x')) {
-      if (process.env.SOCIAL_X_API_POSTING_ENABLED !== 'true') {
-        throw new Error('X API posting is disabled in the current SNS workflow.');
-      }
-      for (const kind of selectedXKindsFromArgs(args)) {
-        const entry = draft[kind];
-        results[resultKeyFor('x', kind)] = await withSocialRetry(`x:${kind}`, () => postToX(entry.xText, entry.imagePath));
-      }
-    }
     if (args.platforms.includes('threads')) {
       for (const kind of kindsToPost) {
         const entry = draft[kind];

@@ -15,15 +15,23 @@ SNS投稿、投稿文生成、画像生成、予約投稿、自動投稿設定�
 ## 投稿スケジュール
 
 ```text
-08:00 JST: oracle
-20:00 JST: birthday_monthly_01_10 on 2026-06-05 and monthly 1st from 2026-07-01
-21:00 JST: birthday_monthly_11_20 on 2026-06-05 and monthly 1st from 2026-07-01
-22:00 JST: birthday_monthly_21_31 on 2026-06-05 and monthly 1st from 2026-07-01
-20:00 JST: birthday_monthly_recovery_01_10 on 2026-06-07
-21:00 JST: birthday_monthly_recovery_11_20 on 2026-06-07
-22:00 JST: birthday_monthly_recovery_21_30 on 2026-06-07
-23:00 JST: birthday_monthly_recovery_31 on 2026-06-07
-20:00 JST: birthday_ranking one-off on 2026-06-08..2026-06-11
+07:00 JST: oracle
+20:00 JST: birthday_monthly_01_08 on monthly 1st from 2026-07-01
+21:00 JST: birthday_monthly_09_16 on monthly 1st from 2026-07-01
+22:00 JST: birthday_monthly_17_24 on monthly 1st from 2026-07-01
+23:00 JST: birthday_monthly_25_31 on monthly 1st from 2026-07-01
+20:00 JST: birthday_monthly_recovery_01_08 on 2026-06-07
+21:00 JST: birthday_monthly_recovery_09_16 on 2026-06-07
+22:00 JST: birthday_monthly_recovery_17_24 on 2026-06-07
+23:00 JST: birthday_monthly_recovery_25_31 on 2026-06-07
+20:00 JST: birthday_ranking_love_at_first_sight on 2026-06-08
+21:00 JST: birthday_ranking_money_luck on 2026-06-08
+22:00 JST: birthday_ranking_horror_resistance on 2026-06-08
+23:00 JST: birthday_ranking_weird on 2026-06-08
+20:00 JST: birthday_ranking_idol_style on 2026-06-09
+21:00 JST: birthday_ranking_love_style on 2026-06-09
+22:00 JST: birthday_ranking_amae_jouzu on 2026-06-09
+23:00 JST: birthday_ranking_buchigire_kowai on 2026-06-09
 ```
 
 毎月1日以外の20:00「誕生日数あるある/ランキング」は、素材と投稿文が確定したものだけ一回限りで入れます。木曜20:00は比較系3種に差し替え、Threadsでは3枚画像投稿として扱います。同じ画像を毎週繰り返す設定にはしません。
@@ -47,6 +55,7 @@ INSTAGRAM_API_VERSION=v23.0
 SOCIAL_AUTOMATED_POSTING_ENABLED=true
 SOCIAL_PLATFORMS=threads,instagram
 SOCIAL_THREADS_HASHTAG=#占い師のつぶやき
+SOCIAL_ORACLE_TIME=07:00
 SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE=2026-06-05
 SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE=2026-07-01
 SOCIAL_PAID_CTA_MODE=soft
@@ -61,9 +70,9 @@ THREADS_POST_VERIFY_TIMEOUT_MS=120000
 
 ## 投稿ルール
 
-- `oracle`: 毎朝8:00。画像は `images/social/instagram/oracle/NN.jpg`。
-- `birthday_monthly`: 毎月1日。対象月の `images/social/instagram/generated-birthday/YYYY-MM/monthly/manifest.json` と画像が必要。
-- `birthday_ranking`: 2026-06-08から2026-06-11の一回限り。ThreadsとInstagramに同じ趣旨で出し、ハッシュタグだけ分けます。
+- `oracle`: 毎朝7:00。画像は `images/social/instagram/oracle/NN.jpg`。
+- `birthday_monthly`: 毎月1日。対象月の `images/social/instagram/誕生日数×ルノルマン/YYYY-MM/monthly/` だけを素材正本にします。投稿順は表紙→誕生日順です。表紙込みで1投稿あたり最大10枚のため、`1-8` / `9-16` / `17-24` / `25-31` に分けます。指定フォルダー外の表紙、導入画像、別フォルダー画像、manifest内の別パスは使いません。
+- `birthday_ranking`: 2026-06-08と2026-06-09の20:00〜23:00に4本連続の一回限り。素材は `images/social/instagram/【インスタ】あるある・ランキング系/` を正本にします。2026-06-08の4本は同タイトルの `videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-08/` 配下MP4を2枚目に入れ、画像＋動画のカルーセルとして出します。2026-06-09の4本は画像のみです。ThreadsとInstagramに同じ趣旨で出し、ハッシュタグだけ分けます。
 - 木曜20:00は `birthday_ranking` / `birthday_aruaru` より比較系3種を優先します。Threadsは3枚画像投稿。
 - `empathy` / `difference` / `free_paid_compare` は手動投稿候補として残しますが、現行の自動投稿スケジュールには入れません。
 - Threadsはハッシュタグ1個。Instagramは投稿種別ごとに最大5個。
@@ -75,7 +84,7 @@ THREADS_POST_VERIFY_TIMEOUT_MS=120000
 ```powershell
 npm run check
 npm run social:audit -- --from=2026-06-01 --to=2026-07-01 --platforms=threads,instagram
-npm run social:draft -- --date=2026-06-06 --kind=birthday_ranking --platforms=threads,instagram
+npm run social:draft -- --date=2026-06-08 --kind=birthday_ranking --birthday-ranking-slug=love_at_first_sight --platforms=threads,instagram
 node scripts/social/run-scheduled-posts.js --dry-run
 ```
 

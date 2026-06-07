@@ -5,10 +5,9 @@ on:
     branches:
       - main
   schedule:
-    # Backup scheduled posting ticks for 08:00, 20:00, 21:00, 22:00, and 23:00 JST.
+    # Backup scheduled posting ticks for 07:00, 20:00, 21:00, 22:00, and 23:00 JST.
     # GitHub schedule can start late, so run-scheduled-posts.js keeps a 59 minute grace window.
-    - cron: '0 23,11,12,13 * * *'
-    - cron: '0 14 * * *'
+    - cron: '0 22,11,12,13,14 * * *'
   workflow_dispatch:
     inputs:
       kind:
@@ -23,18 +22,23 @@ on:
           - oracle
           - rashin_point
           - birthday_monthly
-          - birthday_monthly_01_10
-          - birthday_monthly_11_20
-          - birthday_monthly_21_31
-          - birthday_monthly_recovery_01_10
-          - birthday_monthly_recovery_11_20
-          - birthday_monthly_recovery_21_30
-          - birthday_monthly_recovery_31
+          - birthday_monthly_01_08
+          - birthday_monthly_09_16
+          - birthday_monthly_17_24
+          - birthday_monthly_25_31
+          - birthday_monthly_recovery_01_08
+          - birthday_monthly_recovery_09_16
+          - birthday_monthly_recovery_17_24
+          - birthday_monthly_recovery_25_31
           - birthday_ranking
           - birthday_ranking_love_at_first_sight
           - birthday_ranking_money_luck
           - birthday_ranking_horror_resistance
           - birthday_ranking_weird
+          - birthday_ranking_idol_style
+          - birthday_ranking_love_style
+          - birthday_ranking_amae_jouzu
+          - birthday_ranking_buchigire_kowai
 
 permissions:
   contents: read
@@ -58,6 +62,7 @@ jobs:
       INSTAGRAM_EXPECTED_USERNAME: sensai_teke
       SOCIAL_AUTOMATED_POSTING_ENABLED: 'true'
       SOCIAL_PLATFORMS: threads,instagram
+      SOCIAL_ORACLE_TIME: '07:00'
       SOCIAL_PAID_CTA_MODE: soft
       SOCIAL_BOOTH_ENABLED: 'false'
       SOCIAL_UTM_CAMPAIGN: 202605_prerelease
@@ -117,10 +122,7 @@ jobs:
         run: |
           kind="${{ github.event.inputs.kind || 'auto' }}"
           if [ "$kind" = "auto" ]; then
-            case "${{ github.event.schedule }}" in
-              "0 14 * * *") kind="birthday_monthly_recovery_31" ;;
-              *) kind="all" ;;
-            esac
+            kind="all"
           fi
           echo "kind=$kind" >> "$GITHUB_OUTPUT"
 

@@ -25,66 +25,103 @@ const ONE_OFF_POSTS = [
     kind: 'birthday_ranking',
     date: '2026-06-08',
     time: '20:00',
+    rankingSlug: 'love_at_first_sight',
     platforms: 'threads,instagram',
   },
   {
     id: 'birthday_ranking_money_luck',
     kind: 'birthday_ranking',
-    date: '2026-06-09',
-    time: '20:00',
+    date: '2026-06-08',
+    time: '21:00',
+    rankingSlug: 'money_luck',
     platforms: 'threads,instagram',
   },
   {
     id: 'birthday_ranking_horror_resistance',
     kind: 'birthday_ranking',
-    date: '2026-06-10',
-    time: '20:00',
+    date: '2026-06-08',
+    time: '22:00',
+    rankingSlug: 'horror_resistance',
     platforms: 'threads,instagram',
   },
   {
     id: 'birthday_ranking_weird',
     kind: 'birthday_ranking',
-    date: '2026-06-11',
-    time: '20:00',
+    date: '2026-06-08',
+    time: '23:00',
+    rankingSlug: 'weird',
     platforms: 'threads,instagram',
   },
   {
-    id: 'birthday_monthly_recovery_01_10',
+    id: 'birthday_ranking_idol_style',
+    kind: 'birthday_ranking',
+    date: '2026-06-09',
+    time: '20:00',
+    rankingSlug: 'idol_style',
+    platforms: 'threads,instagram',
+  },
+  {
+    id: 'birthday_ranking_love_style',
+    kind: 'birthday_ranking',
+    date: '2026-06-09',
+    time: '21:00',
+    rankingSlug: 'love_style',
+    platforms: 'threads,instagram',
+  },
+  {
+    id: 'birthday_ranking_amae_jouzu',
+    kind: 'birthday_ranking',
+    date: '2026-06-09',
+    time: '22:00',
+    rankingSlug: 'amae_jouzu',
+    platforms: 'threads,instagram',
+  },
+  {
+    id: 'birthday_ranking_buchigire_kowai',
+    kind: 'birthday_ranking',
+    date: '2026-06-09',
+    time: '23:00',
+    rankingSlug: 'buchigire_kowai',
+    platforms: 'threads,instagram',
+  },
+  {
+    id: 'birthday_monthly_recovery_01_08',
     kind: 'birthday_monthly',
     date: '2026-06-07',
     time: '20:00',
-    birthdayDays: '1-10',
+    birthdayDays: '1-8',
     platforms: 'instagram',
   },
   {
-    id: 'birthday_monthly_recovery_11_20',
+    id: 'birthday_monthly_recovery_09_16',
     kind: 'birthday_monthly',
     date: '2026-06-07',
     time: '21:00',
-    birthdayDays: '11-20',
+    birthdayDays: '9-16',
     platforms: 'instagram',
   },
   {
-    id: 'birthday_monthly_recovery_21_30',
+    id: 'birthday_monthly_recovery_17_24',
     kind: 'birthday_monthly',
     date: '2026-06-07',
     time: '22:00',
-    birthdayDays: '21-30',
+    birthdayDays: '17-24',
     platforms: 'instagram',
   },
   {
-    id: 'birthday_monthly_recovery_31',
+    id: 'birthday_monthly_recovery_25_31',
     kind: 'birthday_monthly',
     date: '2026-06-07',
     time: '23:00',
-    birthdayDays: '31',
+    birthdayDays: '25-31',
     platforms: 'instagram',
   },
 ];
 const BIRTHDAY_MONTHLY_SLOTS = [
-  { id: 'birthday_monthly_01_10', kind: 'birthday_monthly', time: '20:00', birthdayDays: '1-10', platforms: 'instagram' },
-  { id: 'birthday_monthly_11_20', kind: 'birthday_monthly', time: '21:00', birthdayDays: '11-20', platforms: 'instagram' },
-  { id: 'birthday_monthly_21_31', kind: 'birthday_monthly', time: '22:00', birthdayDays: '21-31', platforms: 'instagram' },
+  { id: 'birthday_monthly_01_08', kind: 'birthday_monthly', time: '20:00', birthdayDays: '1-8', platforms: 'instagram' },
+  { id: 'birthday_monthly_09_16', kind: 'birthday_monthly', time: '21:00', birthdayDays: '9-16', platforms: 'instagram' },
+  { id: 'birthday_monthly_17_24', kind: 'birthday_monthly', time: '22:00', birthdayDays: '17-24', platforms: 'instagram' },
+  { id: 'birthday_monthly_25_31', kind: 'birthday_monthly', time: '23:00', birthdayDays: '25-31', platforms: 'instagram' },
 ];
 
 function parseArgs(argv) {
@@ -184,8 +221,8 @@ function getSchedule() {
     {
       id: 'oracle',
       kind: 'oracle',
-      time: process.env.SOCIAL_ORACLE_TIME || '08:00',
-      minute: parseTimeToMinutes(process.env.SOCIAL_ORACLE_TIME, '08:00'),
+      time: process.env.SOCIAL_ORACLE_TIME || '07:00',
+      minute: parseTimeToMinutes(process.env.SOCIAL_ORACLE_TIME, '07:00'),
       days: null,
     },
     ...BIRTHDAY_MONTHLY_SLOTS.map(item => ({
@@ -262,12 +299,14 @@ function runPost(item, dateKey) {
     `--date=${dateKey}`,
     `--platforms=${platforms}`,
     ...(item.birthdayDays ? [`--birthday-days=${item.birthdayDays}`] : []),
+    ...(item.rankingSlug ? [`--birthday-ranking-slug=${item.rankingSlug}`] : []),
   ], {
     cwd: ROOT,
     env: {
       ...process.env,
       SOCIAL_SCHEDULED_RUN: 'true',
       ...(item.birthdayDays ? { SOCIAL_BIRTHDAY_MONTHLY_DAYS: item.birthdayDays } : {}),
+      ...(item.rankingSlug ? { SOCIAL_BIRTHDAY_RANKING_SLUG: item.rankingSlug } : {}),
     },
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -292,15 +331,16 @@ async function runDue(args) {
   state[dateKey] = state[dateKey] || {};
 
   const scheduledToday = schedule.filter(item => isScheduledForDate(item, dateKey, weekday));
+  const autoEligibleToday = scheduledToday.filter(item => !item.skipAuto);
   const due = args.forceKind
-    ? scheduledToday.filter(item => args.forceKind === 'all' || item.kind === args.forceKind || item.id === args.forceKind)
-    : scheduledToday.filter(item => {
+    ? autoEligibleToday.filter(item => args.forceKind === 'all' || item.kind === args.forceKind || item.id === args.forceKind)
+    : autoEligibleToday.filter(item => {
       const lateByMinutes = nowMinute - item.minute;
       return lateByMinutes >= 0 && lateByMinutes <= graceMinutes && !state[dateKey][item.id || item.kind];
     });
   const dueAfterSkips = due.filter(item => !isSkippedByEnv(item.kind, dateKey));
   const expired = args.forceKind ? [] : scheduledToday
-    .filter(item => nowMinute - item.minute > graceMinutes && !state[dateKey][item.id || item.kind])
+    .filter(item => !item.skipAuto && nowMinute - item.minute > graceMinutes && !state[dateKey][item.id || item.kind])
     .map(item => item.id || item.kind);
 
   const report = {
@@ -310,8 +350,9 @@ async function runDue(args) {
     graceMinutes,
     configuredGraceMinutes: gracePolicy.configuredMinutes,
     graceCappedForStateless: gracePolicy.cappedForStateless,
-    schedule: schedule.map(item => ({ id: item.id || item.kind, kind: item.kind, time: item.time, days: item.days, birthdayDays: item.birthdayDays || null, platforms: item.platforms || null })),
+    schedule: schedule.map(item => ({ id: item.id || item.kind, kind: item.kind, time: item.time, days: item.days, birthdayDays: item.birthdayDays || null, rankingSlug: item.rankingSlug || null, platforms: item.platforms || null, skipAuto: Boolean(item.skipAuto), skipReason: item.skipReason || null })),
     scheduledToday: scheduledToday.map(item => item.id || item.kind),
+    skippedAutoToday: scheduledToday.filter(item => item.skipAuto).map(item => ({ id: item.id || item.kind, reason: item.skipReason || 'skip_auto' })),
     onlyKind: args.onlyKind || null,
     due: dueAfterSkips.map(item => item.id || item.kind),
     expired,
