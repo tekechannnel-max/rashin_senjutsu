@@ -519,12 +519,6 @@ function testRashinPointOneOffCarouselDraft() {
 }
 
 function testBirthdayRankingInstagramDrafts() {
-  const expectedVideos = new Map([
-    ['love_at_first_sight', 'love-at-first-sight-reel-profile-emoji.mp4'],
-    ['money_luck', 'money-luck-reel-profile-emoji.mp4'],
-    ['horror_resistance', 'horror-resistance-reel-profile-emoji.mp4'],
-    ['weird', 'weird-reel-profile-emoji.mp4'],
-  ]);
   const expected = [
     ['2026-06-08', 'love-at-first-sight-top5.jpg', '一目惚れしやすい生まれ日TOP5', 'love_at_first_sight'],
     ['2026-06-08', 'money-luck-top5.jpg', '金運が強い生まれ日TOP5', 'money_luck'],
@@ -540,19 +534,10 @@ function testBirthdayRankingInstagramDrafts() {
     assert.ok(entry, `${date} birthday_ranking draft should be generated`);
     assert.equal(entry.content.title, title, `${date} birthday_ranking should use the intended title`);
     assert.match(entry.instagramImagePath, new RegExp(`images[\\\\/]social[\\\\/]instagram[\\\\/]【インスタ】あるある・ランキング系[\\\\/]${imageName}$`), `${date} birthday_ranking should use the intended image`);
-    if (expectedVideos.has(slug)) {
-      const videoName = expectedVideos.get(slug);
-      assert.equal(entry.imageUrls.length, 2, `${date} Threads birthday_ranking should post the image and matching video as one carousel`);
-      assert.equal(entry.instagramImageUrls.length, 2, `${date} Instagram birthday_ranking should post the image and matching video as one carousel`);
-      assert.match(entry.imagePaths[0], new RegExp(`images[\\\\/]social[\\\\/]instagram[\\\\/]【インスタ】あるある・ランキング系[\\\\/]${imageName}$`), `${date} carousel should keep the image first`);
-      assert.match(entry.imagePaths[1], new RegExp(`videos[\\\\/]social[\\\\/]instagram[\\\\/].+[\\\\/]2026-06-08[\\\\/]${videoName}$`), `${date} carousel should include the matching reveal video second`);
-      assert.match(entry.instagramImageUrls[0], new RegExp(`/images/social/instagram/.+/${imageName}$`), `${date} Instagram carousel URL should keep the image first`);
-      assert.match(entry.instagramImageUrls[1], new RegExp(`/videos/social/instagram/.+/2026-06-08/${videoName}$`), `${date} Instagram carousel URL should include the matching MP4 second`);
-      assert.deepEqual(entry.altTexts, [entry.altText, entry.altText], `${date} carousel media should keep approved alt text without inventing new copy`);
-    } else {
-      assert.equal(entry.imageUrls.length, 1, `${date} birthday_ranking should not inherit the 2026-06-08 reveal videos`);
-      assert.equal(entry.instagramImageUrls.length, 1, `${date} Instagram birthday_ranking should not inherit the 2026-06-08 reveal videos`);
-    }
+    assert.equal(entry.imageUrls.length, 1, `${date} birthday_ranking should use only the approved ranking image`);
+    assert.equal(entry.instagramImageUrls.length, 1, `${date} Instagram birthday_ranking should use only the approved ranking image`);
+    assert.match(entry.imagePaths[0], new RegExp(`images[\\\\/]social[\\\\/]instagram[\\\\/]【インスタ】あるある・ランキング系[\\\\/]${imageName}$`), `${date} media should stay inside the approved ranking folder`);
+    assert.doesNotMatch(entry.imagePaths.join('\n'), /videos[\\/]/, `${date} birthday_ranking must not use the videos folder`);
     assert.match(entry.instagramText, new RegExp(title), `${date} Instagram copy should include the ranking title`);
     assert.match(entry.instagramText, /^\\無料占いはプロフィールURLから\//, `${date} Instagram copy should use the short profile URL hook`);
     assert.match(entry.text, /^\\無料占いはプロフィールURLから\//, `${date} Threads copy should use the same profile URL hook`);
@@ -741,22 +726,22 @@ function testKpiReviewTemplatePreservesManualMetrics() {
 }
 
 function testStatelessScheduleKeepsRecoveryGraceWindow() {
-  const delayed = scheduleReport('2026-05-18T22:05:00.000Z', 'oracle');
+  const delayed = scheduleReport('2026-05-18T23:05:00.000Z', 'oracle');
   assert.equal(delayed.date, '2026-05-19', 'schedule dry-run should use the JST date');
   assert.equal(delayed.graceMinutes, 59, 'stateless runs should keep enough grace for delayed schedulers');
   assert.equal(delayed.graceCappedForStateless, false, 'default stateless grace should not be capped below the recovery window');
-  assert.deepEqual(delayed.due, ['oracle'], 'a 07:05 delayed scheduler tick must still post the 07:00 oracle');
+  assert.deepEqual(delayed.due, ['oracle'], 'an 08:05 delayed scheduler tick must still post the 08:00 oracle');
 
-  const expired = scheduleReport('2026-05-18T23:05:00.000Z', 'oracle');
-  assert.deepEqual(expired.due, [], 'an 08:05 scheduler tick should not post the 07:00 oracle');
-  assert.deepEqual(expired.expired, ['oracle'], 'the 07:00 oracle should expire after the recovery window');
+  const expired = scheduleReport('2026-05-19T00:05:00.000Z', 'oracle');
+  assert.deepEqual(expired.due, [], 'a 09:05 scheduler tick should not post the 08:00 oracle');
+  assert.deepEqual(expired.expired, ['oracle'], 'the 08:00 oracle should expire after the recovery window');
 }
 
 function testWorkflowHasScheduledPostingBackup() {
   const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'threads-social.yml'), 'utf8');
   const automationWorkflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'sns-automation.yml'), 'utf8');
-  assert.match(workflow, /cron: '0 22,11,12,13,14 \* \* \*'/, 'Threads workflow should run backup ticks for 07:00 and 20:00-23:00 JST');
-  assert.match(workflow, /SOCIAL_ORACLE_TIME: '07:00'/, 'Threads workflow should use the 07:00 JST oracle time');
+  assert.match(workflow, /cron: '0 23,11,12,13,14 \* \* \*'/, 'Threads workflow should run backup ticks for 08:00 and 20:00-23:00 JST');
+  assert.match(workflow, /SOCIAL_ORACLE_TIME: '08:00'/, 'Threads workflow should use the 08:00 JST oracle time');
   assert.doesNotMatch(workflow, /cron: '1 14 \* \* \*'/, 'Threads workflow should not run a 23:01 JST recovery tick');
   assert.doesNotMatch(workflow, /kind="birthday_monthly_recovery_25_31"/, '23:00 JST workflow should allow all due posts, including 6/8 ranking');
   assert.match(workflow, /github\.event_name \}\}" = "push"[\s\S]*echo "ready=false"[\s\S]*exit 0/, 'Threads workflow push validation should not fail only because posting secrets are unavailable');

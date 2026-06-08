@@ -237,7 +237,7 @@ function isScheduledItemForDate(item, dateKey) {
 
 function scheduledItemsForDate(dateKey) {
   return [
-    { id: 'oracle', kind: 'oracle', time: `${process.env.SOCIAL_ORACLE_TIME || '07:00'} Asia/Tokyo` },
+    { id: 'oracle', kind: 'oracle', time: `${process.env.SOCIAL_ORACLE_TIME || '08:00'} Asia/Tokyo` },
     ...BIRTHDAY_MONTHLY_SLOTS.map(item => ({ ...item, time: `${item.time} Asia/Tokyo` })),
     ...ONE_OFF_POSTS.map(item => ({ ...item, time: `${item.time} Asia/Tokyo one-off ${item.date}` })),
   ].filter(item => KINDS.includes(item.kind) && isScheduledItemForDate(item, dateKey));

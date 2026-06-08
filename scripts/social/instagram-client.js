@@ -108,6 +108,14 @@ function ensureCarouselImageUrls(imageUrls) {
   return urls.map(ensurePublicImageUrl);
 }
 
+function ensureCarouselMediaItems(mediaItems, altTexts = []) {
+  return ensureCarouselImageUrls(mediaItems).map((url, index) => ({
+    type: 'IMAGE',
+    url,
+    altText: normalizeAltText(Array.isArray(altTexts) ? altTexts[index] || '' : ''),
+  }));
+}
+
 async function requestJson(url, options = {}) {
   const res = await fetch(url, options);
   const json = await res.json().catch(() => ({}));
@@ -314,6 +322,7 @@ module.exports = {
   ensurePublicImageUrl,
   normalizeAltText,
   ensureCarouselImageUrls,
+  ensureCarouselMediaItems,
   getInstagramMe,
   listInstagramMedia,
   getInstagramMedia,

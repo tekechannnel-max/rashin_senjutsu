@@ -15,7 +15,7 @@ SNS投稿、投稿文生成、画像生成、予約投稿、自動投稿設定�
 ## 投稿スケジュール
 
 ```text
-07:00 JST: oracle
+08:00 JST: oracle
 20:00 JST: birthday_monthly_01_08 on monthly 1st from 2026-07-01
 21:00 JST: birthday_monthly_09_16 on monthly 1st from 2026-07-01
 22:00 JST: birthday_monthly_17_24 on monthly 1st from 2026-07-01
@@ -55,7 +55,7 @@ INSTAGRAM_API_VERSION=v23.0
 SOCIAL_AUTOMATED_POSTING_ENABLED=true
 SOCIAL_PLATFORMS=threads,instagram
 SOCIAL_THREADS_HASHTAG=#占い師のつぶやき
-SOCIAL_ORACLE_TIME=07:00
+SOCIAL_ORACLE_TIME=08:00
 SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE=2026-06-05
 SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE=2026-07-01
 SOCIAL_PAID_CTA_MODE=soft
@@ -70,9 +70,9 @@ THREADS_POST_VERIFY_TIMEOUT_MS=120000
 
 ## 投稿ルール
 
-- `oracle`: 毎朝7:00。画像は `images/social/instagram/oracle/NN.jpg`。
+- `oracle`: 毎朝8:00。画像は `images/social/instagram/oracle/NN.jpg`。Threads / Instagramの両方に投稿します。
 - `birthday_monthly`: 毎月1日。対象月の `images/social/instagram/誕生日数×ルノルマン/YYYY-MM/monthly/` だけを素材正本にします。投稿順は表紙→誕生日順です。表紙込みで1投稿あたり最大10枚のため、`1-8` / `9-16` / `17-24` / `25-31` に分けます。指定フォルダー外の表紙、導入画像、別フォルダー画像、manifest内の別パスは使いません。
-- `birthday_ranking`: 2026-06-08と2026-06-09の20:00〜23:00に4本連続の一回限り。素材は `images/social/instagram/【インスタ】あるある・ランキング系/` を正本にします。2026-06-08の4本は同タイトルの `videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-08/` 配下MP4を2枚目に入れ、画像＋動画のカルーセルとして出します。2026-06-09の4本は画像のみです。ThreadsとInstagramに同じ趣旨で出し、ハッシュタグだけ分けます。
+- `birthday_ranking`: 2026-06-08と2026-06-09の20:00〜23:00に4本連続の一回限り。素材は `images/social/instagram/【インスタ】あるある・ランキング系/` を正本にします。通常投稿は画像だけで、リール動画は混ぜません。ThreadsとInstagramに同じ趣旨で出し、ハッシュタグだけ分けます。
 - 木曜20:00は `birthday_ranking` / `birthday_aruaru` より比較系3種を優先します。Threadsは3枚画像投稿。
 - `empathy` / `difference` / `free_paid_compare` は手動投稿候補として残しますが、現行の自動投稿スケジュールには入れません。
 - Threadsはハッシュタグ1個。Instagramは投稿種別ごとに最大5個。

@@ -123,6 +123,14 @@ function ensureCarouselMediaUrls(imageUrls) {
   return urls.map(ensurePublicMediaUrl);
 }
 
+function ensureCarouselMediaItems(mediaItems, altTexts = []) {
+  return ensureCarouselMediaUrls(mediaItems).map((url, index) => ({
+    type: 'IMAGE',
+    url,
+    altText: normalizeThreadsAltText(Array.isArray(altTexts) ? altTexts[index] || '' : ''),
+  }));
+}
+
 async function requestJson(url, options = {}) {
   const res = await fetch(url, options);
   const json = await res.json().catch(() => ({}));
@@ -392,6 +400,7 @@ module.exports = {
   ensureThreadsText,
   ensurePublicMediaUrl,
   ensureCarouselMediaUrls,
+  ensureCarouselMediaItems,
   normalizeThreadsAltText,
   normalizeUsername,
 };

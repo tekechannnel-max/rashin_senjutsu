@@ -5,9 +5,9 @@ on:
     branches:
       - main
   schedule:
-    # Backup scheduled posting ticks for 07:00, 20:00, 21:00, 22:00, and 23:00 JST.
+    # Backup scheduled posting ticks for 08:00, 20:00, 21:00, 22:00, and 23:00 JST.
     # GitHub schedule can start late, so run-scheduled-posts.js keeps a 59 minute grace window.
-    - cron: '0 22,11,12,13,14 * * *'
+    - cron: '0 23,11,12,13,14 * * *'
   workflow_dispatch:
     inputs:
       kind:
@@ -62,7 +62,7 @@ jobs:
       INSTAGRAM_EXPECTED_USERNAME: sensai_teke
       SOCIAL_AUTOMATED_POSTING_ENABLED: 'true'
       SOCIAL_PLATFORMS: threads,instagram
-      SOCIAL_ORACLE_TIME: '07:00'
+      SOCIAL_ORACLE_TIME: '08:00'
       SOCIAL_PAID_CTA_MODE: soft
       SOCIAL_BOOTH_ENABLED: 'false'
       SOCIAL_UTM_CAMPAIGN: 202605_prerelease

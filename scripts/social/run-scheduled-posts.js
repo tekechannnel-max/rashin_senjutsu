@@ -221,8 +221,8 @@ function getSchedule() {
     {
       id: 'oracle',
       kind: 'oracle',
-      time: process.env.SOCIAL_ORACLE_TIME || '07:00',
-      minute: parseTimeToMinutes(process.env.SOCIAL_ORACLE_TIME, '07:00'),
+      time: process.env.SOCIAL_ORACLE_TIME || '08:00',
+      minute: parseTimeToMinutes(process.env.SOCIAL_ORACLE_TIME, '08:00'),
       days: null,
     },
     ...BIRTHDAY_MONTHLY_SLOTS.map(item => ({
