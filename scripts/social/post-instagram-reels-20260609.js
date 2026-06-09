@@ -6,6 +6,7 @@ const instagramClient = require('./instagram-client');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const DEFAULT_STATE_FILE = path.join(ROOT, 'data', 'social-posts', 'instagram-reels-20260609-state.json');
+const DEFAULT_REEL_PUBLIC_ORIGIN = 'https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/main';
 const POST_GRACE_MINUTES = Number(process.env.SOCIAL_REEL_POST_GRACE_MINUTES || process.env.SOCIAL_POST_GRACE_MINUTES || 59);
 
 const REELS = [
@@ -52,8 +53,8 @@ function parseArgs(argv) {
 }
 
 function getPublicOrigin() {
-  const origin = String(process.env.PUBLIC_ORIGIN || 'https://rashin-senjutsu.onrender.com').trim().replace(/\/+$/, '');
-  if (!origin) throw new Error('PUBLIC_ORIGIN is required for Instagram reel video URLs.');
+  const origin = String(process.env.SOCIAL_REEL_PUBLIC_ORIGIN || DEFAULT_REEL_PUBLIC_ORIGIN || process.env.PUBLIC_ORIGIN || 'https://rashin-senjutsu.onrender.com').trim().replace(/\/+$/, '');
+  if (!origin) throw new Error('SOCIAL_REEL_PUBLIC_ORIGIN or PUBLIC_ORIGIN is required for Instagram reel video URLs.');
   return origin;
 }
 
