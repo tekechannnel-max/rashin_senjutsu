@@ -1,0 +1,101 @@
+name: SNS image posts backup
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/sns-image-backup.yml
+      - scripts/social/run-scheduled-posts.js
+      - scripts/social/daily-oracle-post.js
+      - scripts/social/threads-client.js
+      - scripts/social/instagram-client.js
+  schedule:
+    # Backup ticks for 20:00, 21:00, 22:00, and 23:00 JST image posts.
+    # Main SNS social posts runs at the top of the hour; these later ticks
+    # catch missed/delayed image slots without touching Instagram Reels.
+    - cron: '32,47 11,12,13,14 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Run mode'
+        required: true
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - validate_only
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sns-image-posts-backup-${{ github.event.schedule || github.event.inputs.mode || 'manual' }}
+  cancel-in-progress: false
+
+jobs:
+  post-images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      PUBLIC_ORIGIN: https://rashin-senjutsu.onrender.com
+      THREADS_EXPECTED_USERNAME: sensai_teke
+      THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+      THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+      INSTAGRAM_ENABLED: 'true'
+      INSTAGRAM_USER_ID: ${{ secrets.INSTAGRAM_USER_ID }}
+      INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+      INSTAGRAM_EXPECTED_USERNAME: sensai_teke
+      SOCIAL_AUTOMATED_POSTING_ENABLED: 'true'
+      SOCIAL_PLATFORMS: threads,instagram
+      SOCIAL_STATELESS_MODE: 'true'
+      SOCIAL_POST_GRACE_MINUTES: '59'
+      SOCIAL_THREADS_IMAGE_FALLBACK_TEXT: 'true'
+      THREADS_CONTAINER_TIMEOUT_MS: '120000'
+      THREADS_POST_VERIFY_TIMEOUT_MS: '120000'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Check posting secrets
+        id: secrets
+        if: github.event_name != 'push'
+        shell: bash
+        run: |
+          if [ -z "$THREADS_ACCESS_TOKEN" ] || [ -z "$THREADS_USER_ID" ] || [ -z "$INSTAGRAM_ACCESS_TOKEN" ] || [ -z "$INSTAGRAM_USER_ID" ]; then
+            echo "::error::GitHub Secrets for Threads / Instagram are not set. Image backup posting cannot run."
+            exit 1
+          fi
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      - name: Validate scripts
+        if: github.event_name == 'push' || steps.secrets.outputs.ready == 'true'
+        run: npm run check
+
+      - name: Audit today's social draft
+        if: github.event_name == 'push' || steps.secrets.outputs.ready == 'true'
+        shell: bash
+        run: |
+          today="$(TZ=Asia/Tokyo date +%F)"
+          npm run social:audit -- --from="$today" --to="$today" --platforms=threads,instagram
+
+      - name: Confirm Threads token account
+        if: github.event_name != 'push' && steps.secrets.outputs.ready == 'true'
+        run: npm run threads:doctor
+
+      - name: Confirm Instagram token account
+        if: github.event_name != 'push' && steps.secrets.outputs.ready == 'true'
+        run: npm run instagram:doctor
+
+      - name: Dry-run due SNS image posts
+        if: github.event_name == 'push' || steps.secrets.outputs.ready == 'true'
+        run: node scripts/social/run-scheduled-posts.js --dry-run --only-kind=all
+
+      - name: Publish due SNS image posts
+        if: steps.secrets.outputs.ready == 'true' && github.event_name != 'push' && github.event.inputs.mode != 'validate_only'
+        run: node scripts/social/run-scheduled-posts.js --once --only-kind=all
