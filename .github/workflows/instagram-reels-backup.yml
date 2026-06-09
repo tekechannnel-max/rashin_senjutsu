@@ -1,6 +1,13 @@
 name: Instagram reels backup
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/instagram-reels-backup.yml
+      - scripts/social/post-instagram-reels-20260609.js
+      - scripts/social/daily-oracle-post.js
   schedule:
     # Backup ticks for Instagram Reels at 20:00, 21:00, 22:00, and 23:00 JST.
     # Run away from the top of the hour because GitHub scheduled workflows can
@@ -50,6 +57,7 @@ jobs:
 
       - name: Check Instagram posting secrets
         id: secrets
+        if: github.event_name != 'push'
         shell: bash
         run: |
           if [ -z "$INSTAGRAM_ACCESS_TOKEN" ] || [ -z "$INSTAGRAM_USER_ID" ]; then
@@ -59,13 +67,13 @@ jobs:
           echo "ready=true" >> "$GITHUB_OUTPUT"
 
       - name: Validate Instagram token account
-        if: steps.secrets.outputs.ready == 'true'
+        if: github.event_name != 'push' && steps.secrets.outputs.ready == 'true'
         run: npm run instagram:doctor
 
       - name: Dry-run due Instagram reels
-        if: steps.secrets.outputs.ready == 'true'
+        if: github.event_name == 'push' || steps.secrets.outputs.ready == 'true'
         run: node scripts/social/post-instagram-reels-20260609.js --dry-run
 
       - name: Publish due Instagram reels
-        if: steps.secrets.outputs.ready == 'true' && github.event.inputs.mode != 'validate_only'
+        if: steps.secrets.outputs.ready == 'true' && github.event_name != 'push' && github.event.inputs.mode != 'validate_only'
         run: node scripts/social/post-instagram-reels-20260609.js --post
