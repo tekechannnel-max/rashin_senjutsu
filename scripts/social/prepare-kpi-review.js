@@ -11,6 +11,8 @@ const SOCIAL_EXPANSION_START_DATE = process.env.SOCIAL_EXPANSION_START_DATE || '
 const KINDS = ['oracle', 'rashin_point', 'birthday_monthly', 'birthday_ranking'];
 const SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE = process.env.SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE || '2026-06-05';
 const SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE = process.env.SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE || '2026-07-01';
+const THURSDAY = 4;
+const THURSDAY_COMPARISON_SLOT = { id: 'rashin_point_thursday_20', kind: 'rashin_point', time: '20:00', days: [THURSDAY], startDate: '2026-06-11', platforms: 'threads,instagram' };
 const ONE_OFF_POSTS = [
   {
     id: 'rashin_point',
@@ -73,6 +75,41 @@ const ONE_OFF_POSTS = [
     date: '2026-06-09',
     time: '23:00',
     rankingSlug: 'buchigire_kowai',
+  },
+  {
+    id: 'birthday_ranking_akisho_level',
+    kind: 'birthday_ranking',
+    date: '2026-06-10',
+    time: '20:00',
+    rankingSlug: 'akisho_level',
+  },
+  {
+    id: 'birthday_ranking_majime',
+    kind: 'birthday_ranking',
+    date: '2026-06-10',
+    time: '21:00',
+    rankingSlug: 'majime',
+  },
+  {
+    id: 'birthday_ranking_uwaki_rate',
+    kind: 'birthday_ranking',
+    date: '2026-06-10',
+    time: '22:00',
+    rankingSlug: 'uwaki_rate',
+  },
+  {
+    id: 'birthday_ranking_nenimotsu_wasureru',
+    kind: 'birthday_ranking',
+    date: '2026-06-10',
+    time: '23:00',
+    rankingSlug: 'nenimotsu_wasureru',
+  },
+  {
+    id: 'birthday_ranking_chuunibyou',
+    kind: 'birthday_ranking',
+    date: '2026-06-11',
+    time: '21:00',
+    rankingSlug: 'chuunibyou',
   },
   {
     id: 'birthday_monthly_recovery_01_08',
@@ -229,8 +266,10 @@ function isBirthdayMonthlyDate(dateKey) {
 
 function isScheduledItemForDate(item, dateKey) {
   if (item.date && item.date !== dateKey) return false;
+  if (item.startDate && dateKey < item.startDate) return false;
   if (item.kind === 'birthday_monthly' && !item.date && !isBirthdayMonthlyDate(dateKey)) return false;
   if (item.kind !== 'oracle' && dateKey < SOCIAL_EXPANSION_START_DATE) return false;
+  if (Array.isArray(item.days)) return item.days.includes(getWeekday(dateKey));
   const weekdays = WEEKDAYS_BY_KIND[item.kind];
   return !Array.isArray(weekdays) || weekdays.includes(getWeekday(dateKey));
 }
@@ -239,6 +278,7 @@ function scheduledItemsForDate(dateKey) {
   return [
     { id: 'oracle', kind: 'oracle', time: `${process.env.SOCIAL_ORACLE_TIME || '08:00'} Asia/Tokyo` },
     ...BIRTHDAY_MONTHLY_SLOTS.map(item => ({ ...item, time: `${item.time} Asia/Tokyo` })),
+    { ...THURSDAY_COMPARISON_SLOT, time: `${THURSDAY_COMPARISON_SLOT.time} Asia/Tokyo Thursday` },
     ...ONE_OFF_POSTS.map(item => ({ ...item, time: `${item.time} Asia/Tokyo one-off ${item.date}` })),
   ].filter(item => KINDS.includes(item.kind) && isScheduledItemForDate(item, dateKey));
 }

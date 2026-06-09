@@ -160,7 +160,11 @@ function ensureCarouselMediaItems(mediaItems, altTexts = []) {
 }
 
 function ensureCarouselImageUrls(imageUrls) {
-  return ensureCarouselMediaItems(imageUrls).map(item => item.url);
+  const urls = ensureArray(imageUrls).map(url => ensurePublicImageUrl(url));
+  if (urls.length < 2 || urls.length > 10) {
+    throw new Error(`Instagram carousel requires 2-10 image URLs: ${urls.length}`);
+  }
+  return urls;
 }
 
 async function requestJson(url, options = {}) {

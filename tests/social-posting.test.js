@@ -699,7 +699,11 @@ function testKpiReviewTemplatePreservesManualMetrics() {
   assert.match(csv, /utm_content=birthdayranking_20260609_love_style/, 'KPI template should include the 2026-06-09 21:00 love style ranking lane');
   assert.match(csv, /utm_content=birthdayranking_20260609_amae_jouzu/, 'KPI template should include the 2026-06-09 22:00 amae ranking lane');
   assert.match(csv, /utm_content=birthdayranking_20260609_buchigire_kowai/, 'KPI template should include the 2026-06-09 23:00 anger ranking lane');
-  assert.doesNotMatch(csv, /birthdayranking_20260610|birthdayranking_20260611/, 'KPI template should not leave old 2026-06-10..11 ranking lanes');
+  assert.match(csv, /utm_content=birthdayranking_20260610_akisho_level/, 'KPI template should include the 2026-06-10 20:00 akisho ranking lane');
+  assert.match(csv, /utm_content=birthdayranking_20260610_majime/, 'KPI template should include the 2026-06-10 21:00 majime ranking lane');
+  assert.match(csv, /utm_content=birthdayranking_20260610_uwaki_rate/, 'KPI template should include the 2026-06-10 22:00 uwaki ranking lane');
+  assert.match(csv, /utm_content=birthdayranking_20260610_nenimotsu_wasureru/, 'KPI template should include the 2026-06-10 23:00 nenimotsu ranking lane');
+  assert.match(csv, /utm_content=birthdayranking_20260611_chuunibyou/, 'KPI template should include the 2026-06-11 21:00 chuunibyou ranking lane');
   assert.doesNotMatch(csv, /empathy_20260601_card\d{2}|difference_20260602_v\d{2}|freepaid_20260604_v\d{2}/, 'KPI template should not include held manual/comparison lanes');
   assert.match(csv, /paid_deep_reading_starts/, 'KPI template should include paid funnel columns');
   const lines = csv.trim().split(/\r?\n/);

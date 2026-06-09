@@ -44,6 +44,19 @@ on:
           - birthday_ranking_21
           - birthday_ranking_22
           - birthday_ranking_23
+          - birthday_ranking_love_at_first_sight
+          - birthday_ranking_money_luck
+          - birthday_ranking_horror_resistance
+          - birthday_ranking_weird
+          - birthday_ranking_idol_style
+          - birthday_ranking_love_style
+          - birthday_ranking_amae_jouzu
+          - birthday_ranking_buchigire_kowai
+          - birthday_ranking_akisho_level
+          - birthday_ranking_majime
+          - birthday_ranking_uwaki_rate
+          - birthday_ranking_nenimotsu_wasureru
+          - birthday_ranking_chuunibyou
 
 permissions:
   contents: read
@@ -142,7 +155,7 @@ jobs:
             node scripts/social/run-scheduled-posts.js --once --only-kind="$kind"
           fi
 
-      - name: Publish due Instagram reels for 2026-06-09
+      - name: Publish due Instagram birthday ranking reels
         if: steps.secrets.outputs.ready == 'true' && github.event_name != 'push' && github.event.inputs.kind != 'validate_only' && (github.event_name == 'schedule' || github.event.inputs.kind == 'auto' || github.event.inputs.kind == 'all')
         shell: bash
         env:

@@ -5,8 +5,8 @@ const { buildDraft } = require('./daily-oracle-post');
 const instagramClient = require('./instagram-client');
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const DEFAULT_STATE_FILE = path.join(ROOT, 'data', 'social-posts', 'instagram-reels-20260609-state.json');
 const DEFAULT_REEL_PUBLIC_ORIGIN = 'https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/main';
+const DEFAULT_STATE_FILE = path.join(ROOT, 'data', 'social-posts', 'instagram-birthday-ranking-reels-state.json');
 const POST_GRACE_MINUTES = Number(process.env.SOCIAL_REEL_POST_GRACE_MINUTES || process.env.SOCIAL_POST_GRACE_MINUTES || 59);
 
 const REELS = [
@@ -37,6 +37,41 @@ const REELS = [
     time: '23:00',
     slug: 'buchigire_kowai',
     videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-09/buchigire-kowai-reel-profile-emoji.mp4',
+  },
+  {
+    id: 'instagram_reel_20260610_20_akisho_level',
+    date: '2026-06-10',
+    time: '20:00',
+    slug: 'akisho_level',
+    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-10/akisho-level-reel-profile-emoji.mp4',
+  },
+  {
+    id: 'instagram_reel_20260610_21_majime',
+    date: '2026-06-10',
+    time: '21:00',
+    slug: 'majime',
+    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-10/majime-reel-profile-emoji.mp4',
+  },
+  {
+    id: 'instagram_reel_20260610_22_uwaki_rate',
+    date: '2026-06-10',
+    time: '22:00',
+    slug: 'uwaki_rate',
+    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-10/uwaki-rate-reel-profile-emoji.mp4',
+  },
+  {
+    id: 'instagram_reel_20260610_23_nenimotsu_wasureru',
+    date: '2026-06-10',
+    time: '23:00',
+    slug: 'nenimotsu_wasureru',
+    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-10/nenimotsu-wasureru-reel-profile-emoji.mp4',
+  },
+  {
+    id: 'instagram_reel_20260611_21_chuunibyou',
+    date: '2026-06-11',
+    time: '21:00',
+    slug: 'chuunibyou',
+    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-11/chuunibyou-reel-profile-emoji.mp4',
   },
 ];
 

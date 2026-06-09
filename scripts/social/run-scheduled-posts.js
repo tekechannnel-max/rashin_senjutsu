@@ -14,6 +14,15 @@ const SOCIAL_POST_KINDS = ['oracle', 'rashin_point', 'birthday_monthly', 'birthd
 const SOCIAL_EXPANSION_START_DATE = process.env.SOCIAL_EXPANSION_START_DATE || '2026-05-27';
 const SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE = process.env.SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE || '2026-06-05';
 const SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE = process.env.SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE || '2026-07-01';
+const THURSDAY = 4;
+const THURSDAY_COMPARISON_SLOT = {
+  id: 'rashin_point_thursday_20',
+  kind: 'rashin_point',
+  time: '20:00',
+  days: [THURSDAY],
+  startDate: '2026-06-11',
+  platforms: 'threads,instagram',
+};
 const ONE_OFF_POSTS = [
   {
     kind: 'rashin_point',
@@ -82,6 +91,46 @@ const ONE_OFF_POSTS = [
     date: '2026-06-09',
     time: '23:00',
     rankingSlug: 'buchigire_kowai',
+    platforms: 'threads,instagram',
+  },
+  {
+    id: 'birthday_ranking_akisho_level',
+    kind: 'birthday_ranking',
+    date: '2026-06-10',
+    time: '20:00',
+    rankingSlug: 'akisho_level',
+    platforms: 'threads,instagram',
+  },
+  {
+    id: 'birthday_ranking_majime',
+    kind: 'birthday_ranking',
+    date: '2026-06-10',
+    time: '21:00',
+    rankingSlug: 'majime',
+    platforms: 'threads,instagram',
+  },
+  {
+    id: 'birthday_ranking_uwaki_rate',
+    kind: 'birthday_ranking',
+    date: '2026-06-10',
+    time: '22:00',
+    rankingSlug: 'uwaki_rate',
+    platforms: 'threads,instagram',
+  },
+  {
+    id: 'birthday_ranking_nenimotsu_wasureru',
+    kind: 'birthday_ranking',
+    date: '2026-06-10',
+    time: '23:00',
+    rankingSlug: 'nenimotsu_wasureru',
+    platforms: 'threads,instagram',
+  },
+  {
+    id: 'birthday_ranking_chuunibyou',
+    kind: 'birthday_ranking',
+    date: '2026-06-11',
+    time: '21:00',
+    rankingSlug: 'chuunibyou',
     platforms: 'threads,instagram',
   },
   {
@@ -230,6 +279,10 @@ function getSchedule() {
       minute: parseTimeToMinutes(item.time, item.time),
       days: null,
     })),
+    {
+      ...THURSDAY_COMPARISON_SLOT,
+      minute: parseTimeToMinutes(THURSDAY_COMPARISON_SLOT.time, THURSDAY_COMPARISON_SLOT.time),
+    },
     ...ONE_OFF_POSTS.map(item => ({
       ...item,
       id: item.id || item.kind,
@@ -260,6 +313,7 @@ function isSkippedByEnv(kind, dateKey) {
 
 function isScheduledForDate(item, dateKey, weekday) {
   if (item.date && item.date !== dateKey) return false;
+  if (item.startDate && dateKey < item.startDate) return false;
   if (item.kind === 'birthday_monthly' && !item.date) {
     const monthlyStart = SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE;
     const isJuneKickoff = dateKey === SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE;

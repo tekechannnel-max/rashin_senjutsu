@@ -33,6 +33,8 @@ const REQUIRED_HASHTAGS_BY_KIND = {
 const SOCIAL_POST_KINDS = ['oracle', 'rashin_point', 'birthday_monthly', 'birthday_ranking'];
 const SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE = process.env.SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE || '2026-06-05';
 const SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE = process.env.SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE || '2026-07-01';
+const THURSDAY = 4;
+const THURSDAY_COMPARISON_SLOT = { id: 'rashin_point_thursday_20', kind: 'rashin_point', days: [THURSDAY], startDate: '2026-06-11', platforms: 'threads,instagram' };
 const ONE_OFF_POSTS = [
   { id: 'rashin_point', kind: 'rashin_point', date: '2026-06-04' },
   { id: 'birthday_ranking_love_at_first_sight', kind: 'birthday_ranking', date: '2026-06-08', rankingSlug: 'love_at_first_sight' },
@@ -43,6 +45,11 @@ const ONE_OFF_POSTS = [
   { id: 'birthday_ranking_love_style', kind: 'birthday_ranking', date: '2026-06-09', rankingSlug: 'love_style' },
   { id: 'birthday_ranking_amae_jouzu', kind: 'birthday_ranking', date: '2026-06-09', rankingSlug: 'amae_jouzu' },
   { id: 'birthday_ranking_buchigire_kowai', kind: 'birthday_ranking', date: '2026-06-09', rankingSlug: 'buchigire_kowai' },
+  { id: 'birthday_ranking_akisho_level', kind: 'birthday_ranking', date: '2026-06-10', rankingSlug: 'akisho_level' },
+  { id: 'birthday_ranking_majime', kind: 'birthday_ranking', date: '2026-06-10', rankingSlug: 'majime' },
+  { id: 'birthday_ranking_uwaki_rate', kind: 'birthday_ranking', date: '2026-06-10', rankingSlug: 'uwaki_rate' },
+  { id: 'birthday_ranking_nenimotsu_wasureru', kind: 'birthday_ranking', date: '2026-06-10', rankingSlug: 'nenimotsu_wasureru' },
+  { id: 'birthday_ranking_chuunibyou', kind: 'birthday_ranking', date: '2026-06-11', rankingSlug: 'chuunibyou' },
   { id: 'birthday_monthly_recovery_01_08', kind: 'birthday_monthly', date: '2026-06-07', birthdayDays: '1-8', platforms: 'instagram' },
   { id: 'birthday_monthly_recovery_09_16', kind: 'birthday_monthly', date: '2026-06-07', birthdayDays: '9-16', platforms: 'instagram' },
   { id: 'birthday_monthly_recovery_17_24', kind: 'birthday_monthly', date: '2026-06-07', birthdayDays: '17-24', platforms: 'instagram' },
@@ -156,7 +163,9 @@ function normalizeForRepeat(text) {
 }
 
 function shouldSkipDuplicateTextCheck(item, dateKey) {
-  return dateKey === '2026-06-07' && String(item.id || '').startsWith('birthday_monthly_recovery_');
+  const id = String(item.id || '');
+  return (dateKey === '2026-06-07' && id.startsWith('birthday_monthly_recovery_'))
+    || id === 'rashin_point_thursday_20';
 }
 
 function getReleasePhase(dateKey) {
@@ -177,8 +186,10 @@ function isBirthdayMonthlyDate(dateKey) {
 
 function isScheduledItemForDate(item, dateKey) {
   if (item.date && item.date !== dateKey) return false;
+  if (item.startDate && dateKey < item.startDate) return false;
   if (item.kind === 'birthday_monthly' && !item.date && !isBirthdayMonthlyDate(dateKey)) return false;
   if (item.kind !== 'oracle' && dateKey < SOCIAL_EXPANSION_START_DATE) return false;
+  if (Array.isArray(item.days)) return item.days.includes(getWeekday(dateKey));
   const weekdays = WEEKDAYS_BY_KIND[item.kind];
   return !Array.isArray(weekdays) || weekdays.includes(getWeekday(dateKey));
 }
@@ -187,6 +198,7 @@ function scheduledItemsForDate(dateKey) {
   return [
     { id: 'oracle', kind: 'oracle' },
     ...BIRTHDAY_MONTHLY_SLOTS,
+    THURSDAY_COMPARISON_SLOT,
     ...ONE_OFF_POSTS,
   ].filter(item => SOCIAL_POST_KINDS.includes(item.kind) && isScheduledItemForDate(item, dateKey));
 }
