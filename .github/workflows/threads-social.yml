@@ -27,7 +27,19 @@ on:
           - birthday_monthly_09_16
           - birthday_monthly_17_24
           - birthday_monthly_25_31
+          - birthday_monthly_recovery_01_08
+          - birthday_monthly_recovery_09_16
+          - birthday_monthly_recovery_17_24
+          - birthday_monthly_recovery_25_31
           - birthday_ranking
+          - birthday_ranking_love_at_first_sight
+          - birthday_ranking_money_luck
+          - birthday_ranking_horror_resistance
+          - birthday_ranking_weird
+          - birthday_ranking_idol_style
+          - birthday_ranking_love_style
+          - birthday_ranking_amae_jouzu
+          - birthday_ranking_buchigire_kowai
           - birthday_ranking_20
           - birthday_ranking_21
           - birthday_ranking_22

@@ -163,14 +163,6 @@ function ensureCarouselImageUrls(imageUrls) {
   return ensureCarouselMediaItems(imageUrls).map(item => item.url);
 }
 
-function ensureCarouselMediaItems(mediaItems, altTexts = []) {
-  return ensureCarouselImageUrls(mediaItems).map((url, index) => ({
-    type: 'IMAGE',
-    url,
-    altText: normalizeAltText(Array.isArray(altTexts) ? altTexts[index] || '' : ''),
-  }));
-}
-
 async function requestJson(url, options = {}) {
   const res = await fetch(url, options);
   const json = await res.json().catch(() => ({}));
