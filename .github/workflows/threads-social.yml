@@ -21,24 +21,17 @@ on:
           - all
           - oracle
           - rashin_point
+          - rashin_point_thursday_20
           - birthday_monthly
           - birthday_monthly_01_08
           - birthday_monthly_09_16
           - birthday_monthly_17_24
           - birthday_monthly_25_31
-          - birthday_monthly_recovery_01_08
-          - birthday_monthly_recovery_09_16
-          - birthday_monthly_recovery_17_24
-          - birthday_monthly_recovery_25_31
           - birthday_ranking
-          - birthday_ranking_love_at_first_sight
-          - birthday_ranking_money_luck
-          - birthday_ranking_horror_resistance
-          - birthday_ranking_weird
-          - birthday_ranking_idol_style
-          - birthday_ranking_love_style
-          - birthday_ranking_amae_jouzu
-          - birthday_ranking_buchigire_kowai
+          - birthday_ranking_20
+          - birthday_ranking_21
+          - birthday_ranking_22
+          - birthday_ranking_23
 
 permissions:
   contents: read
@@ -136,3 +129,11 @@ jobs:
           else
             node scripts/social/run-scheduled-posts.js --once --only-kind="$kind"
           fi
+
+      - name: Publish due Instagram reels for 2026-06-09
+        if: steps.secrets.outputs.ready == 'true' && github.event_name != 'push' && github.event.inputs.kind != 'validate_only' && (github.event_name == 'schedule' || github.event.inputs.kind == 'auto' || github.event.inputs.kind == 'all')
+        shell: bash
+        env:
+          SOCIAL_SCHEDULED_RUN: 'true'
+          SOCIAL_REEL_POST_GRACE_MINUTES: '59'
+        run: node scripts/social/post-instagram-reels-20260609.js --post
