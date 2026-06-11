@@ -20,6 +20,7 @@
     "social:instagram:post": "node scripts/social/daily-oracle-post.js --write --post --platforms=instagram",
     "social:instagram:assets": "node scripts/social/generate-instagram-assets.js",
     "social:instagram:birthday": "node scripts/social/generate-birthday-instagram-posts.js",
+    "social:instagram:birthday-aruaru-20260612": "node scripts/social/generate-birthday-aruaru-20260612.js",
     "social:kpi-template": "node scripts/social/prepare-kpi-review.js",
     "social:run-due": "node scripts/social/run-scheduled-posts.js --once",
     "social:instagram:reels:20260609": "node scripts/social/post-instagram-reels-20260609.js",

@@ -57,6 +57,10 @@ on:
           - birthday_ranking_uwaki_rate
           - birthday_ranking_nenimotsu_wasureru
           - birthday_ranking_chuunibyou
+          - birthday_ranking_birth_01_aruaru
+          - birthday_ranking_birth_02_aruaru
+          - birthday_ranking_birth_03_aruaru
+          - birthday_ranking_birth_04_aruaru
 
 permissions:
   contents: read

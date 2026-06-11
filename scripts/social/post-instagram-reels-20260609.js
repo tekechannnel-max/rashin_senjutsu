@@ -74,6 +74,34 @@ const REELS = [
     slug: 'chuunibyou',
     videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-11/chuunibyou-reel-profile-emoji.mp4',
   },
+  {
+    id: 'instagram_reel_20260612_20_birth_01_aruaru',
+    date: '2026-06-12',
+    time: '20:00',
+    slug: 'birth_01_aruaru',
+    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-12/birth-01-aruaru-reel-profile-emoji.mp4',
+  },
+  {
+    id: 'instagram_reel_20260612_21_birth_02_aruaru',
+    date: '2026-06-12',
+    time: '21:00',
+    slug: 'birth_02_aruaru',
+    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-12/birth-02-aruaru-reel-profile-emoji.mp4',
+  },
+  {
+    id: 'instagram_reel_20260612_22_birth_03_aruaru',
+    date: '2026-06-12',
+    time: '22:00',
+    slug: 'birth_03_aruaru',
+    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-12/birth-03-aruaru-reel-profile-emoji.mp4',
+  },
+  {
+    id: 'instagram_reel_20260612_23_birth_04_aruaru',
+    date: '2026-06-12',
+    time: '23:00',
+    slug: 'birth_04_aruaru',
+    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-12/birth-04-aruaru-reel-profile-emoji.mp4',
+  },
 ];
 
 function parseArgs(argv) {
