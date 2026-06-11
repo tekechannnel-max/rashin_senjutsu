@@ -8,6 +8,7 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const DEFAULT_REEL_PUBLIC_ORIGIN = 'https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/main';
 const DEFAULT_STATE_FILE = path.join(ROOT, 'data', 'social-posts', 'instagram-birthday-ranking-reels-state.json');
 const POST_GRACE_MINUTES = Number(process.env.SOCIAL_REEL_POST_GRACE_MINUTES || process.env.SOCIAL_POST_GRACE_MINUTES || 59);
+const CATCHUP_HOURS = Number(process.env.SOCIAL_REEL_CATCHUP_HOURS || 0);
 
 const REELS = [
   {
@@ -189,11 +190,21 @@ async function buildReelEntry(item) {
   };
 }
 
-function isDue(item, dateKey, nowMinute) {
-  if (item.date !== dateKey) return false;
+function getScheduledDate(item) {
+  const date = new Date(`${item.date}T${item.time}:00+09:00`);
+  if (Number.isNaN(date.getTime())) throw new Error(`Invalid reel schedule: ${item.date} ${item.time}`);
+  return date;
+}
+
+function isDue(item, dateKey, nowMinute, now = new Date()) {
   const scheduledMinute = parseTimeToMinutes(item.time);
-  const lateByMinutes = nowMinute - scheduledMinute;
-  return lateByMinutes >= 0 && lateByMinutes <= POST_GRACE_MINUTES;
+  if (item.date === dateKey) {
+    const lateByMinutes = nowMinute - scheduledMinute;
+    if (lateByMinutes >= 0 && lateByMinutes <= POST_GRACE_MINUTES) return true;
+  }
+  if (!Number.isFinite(CATCHUP_HOURS) || CATCHUP_HOURS <= 0) return false;
+  const lateByMs = now.getTime() - getScheduledDate(item).getTime();
+  return lateByMs >= 0 && lateByMs <= CATCHUP_HOURS * 60 * 60 * 1000;
 }
 
 async function main() {
@@ -217,7 +228,7 @@ async function main() {
     const entry = await buildReelEntry(item);
     entries.push({
       ...entry,
-      due: args.force || isDue(item, dateKey, nowMinute),
+      due: args.force || isDue(item, dateKey, nowMinute, now),
       alreadyPostedInState: Boolean(state[item.date]?.[item.id]),
     });
   }
@@ -225,6 +236,7 @@ async function main() {
   const report = {
     date: dateKey,
     nowMinute,
+    catchupHours: CATCHUP_HOURS,
     graceMinutes: POST_GRACE_MINUTES,
     platform: 'instagram',
     postType: 'reel',

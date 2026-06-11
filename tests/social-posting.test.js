@@ -741,8 +741,24 @@ function testStatelessScheduleKeepsRecoveryGraceWindow() {
   assert.deepEqual(expired.expired, ['oracle'], 'the 08:00 oracle should expire after the recovery window');
 }
 
+function reelScheduleReport(iso, env = {}) {
+  const result = runNode(['scripts/social/post-instagram-reels-20260609.js', '--dry-run'], {
+    env: {
+      SOCIAL_NOW_ISO: iso,
+      SOCIAL_REEL_PUBLIC_ORIGIN: 'https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/main',
+      ...env,
+    },
+  });
+  return JSON.parse(result.stdout);
+}
+
+function dueReelIds(report) {
+  return report.reels.filter(reel => reel.due).map(reel => reel.id);
+}
+
 function testWorkflowHasScheduledPostingBackup() {
   const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'threads-social.yml'), 'utf8');
+  const instagramReelsBackupWorkflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'instagram-reels-backup.yml'), 'utf8');
   const automationWorkflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'sns-automation.yml'), 'utf8');
   assert.match(workflow, /cron: '0 23,11,12,13,14 \* \* \*'/, 'Threads workflow should run backup ticks for 08:00 and 20:00-23:00 JST');
   assert.match(workflow, /SOCIAL_ORACLE_TIME: '08:00'/, 'Threads workflow should use the 08:00 JST oracle time');
@@ -753,12 +769,27 @@ function testWorkflowHasScheduledPostingBackup() {
   assert.match(workflow, /if: steps\.secrets\.outputs\.ready == 'true' && github\.event_name != 'push'/, 'workflow push events should validate without publishing due posts');
   assert.match(automationWorkflow, /if: steps\.secrets\.outputs\.ready == 'true' && github\.event_name != 'push'/, 'automation workflow push events should validate without publishing due posts');
   assert.match(workflow, /SOCIAL_POST_GRACE_MINUTES: '59'/, 'workflow should allow delayed scheduled runs to recover within the hour');
+  assert.match(workflow, /SOCIAL_REEL_CATCHUP_HOURS: '8'/, 'Threads workflow should let a later run recover missed same-night reels');
+  assert.match(instagramReelsBackupWorkflow, /SOCIAL_REEL_CATCHUP_HOURS: '8'/, 'Reels backup workflow should recover missed same-night reels');
   assert.match(workflow, /birthday_monthly_01_08/, 'workflow dispatch should allow forcing the 20:00 birthday monthly slot');
   assert.match(workflow, /birthday_monthly_recovery_25_31/, 'workflow dispatch should allow forcing the 23:00 birthday monthly recovery slot');
   assert.match(workflow, /birthday_ranking_love_at_first_sight/, 'workflow dispatch should allow forcing one-off birthday ranking slots');
   assert.match(workflow, /birthday_ranking_buchigire_kowai/, 'workflow dispatch should allow forcing 2026-06-09 birthday ranking slots');
   assert.match(workflow, /- validate_only/, 'workflow dispatch should support credential validation without publishing');
   assert.match(workflow, /github\.event\.inputs\.kind != 'validate_only'/, 'validate_only dispatch should run checks and doctors without publishing');
+}
+
+function testReelCatchupRecoversMissedSameNightSlots() {
+  const normal = reelScheduleReport('2026-06-10T14:47:00.000Z');
+  assert.deepEqual(dueReelIds(normal), ['instagram_reel_20260610_23_nenimotsu_wasureru'], 'without catchup, 23:47 JST should only post the 23:00 reel');
+
+  const catchup = reelScheduleReport('2026-06-10T14:47:00.000Z', { SOCIAL_REEL_CATCHUP_HOURS: '8' });
+  assert.deepEqual(dueReelIds(catchup), [
+    'instagram_reel_20260610_20_akisho_level',
+    'instagram_reel_20260610_21_majime',
+    'instagram_reel_20260610_22_uwaki_rate',
+    'instagram_reel_20260610_23_nenimotsu_wasureru',
+  ], 'catchup should recover every missed same-night reel at a later backup tick');
 }
 
 function testBroadSocialAuditPasses() {
@@ -788,6 +819,7 @@ testRealPostingRequiresExplicitYesOutsideScheduler();
 testScheduledPostsRespectJstWeekdays();
 testStatelessScheduleKeepsRecoveryGraceWindow();
 testWorkflowHasScheduledPostingBackup();
+testReelCatchupRecoversMissedSameNightSlots();
 testBroadSocialAuditPasses();
 testKpiReviewTemplatePreservesManualMetrics();
 
