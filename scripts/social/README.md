@@ -30,7 +30,7 @@ npm run check
 npm run social:audit -- --from=2026-06-13 --to=2026-06-13 --platforms=threads,instagram
 node scripts/social/run-scheduled-posts.js --once --dry-run --only-kind=oracle
 node scripts/social/post-daily-birthday-reels.js --dry-run --platforms=threads,instagram
-npm run social:cloud-run-due -- --dry-run
+npm run social:run-due -- --dry-run
 ```
 
 ## Render本番
@@ -39,7 +39,7 @@ Threads / Instagram本番投稿はRender Cron Job `rashin-threads-scheduler` が
 
 ```text
 SOCIAL_PLATFORMS=threads,instagram
-npm run social:cloud-run-due
+npm run social:run-due
 ```
 
 ローカルWindowsのTask Scheduler、常駐PowerShell、ローカルdaemonはSNS運用に使いません。
@@ -61,7 +61,7 @@ CI、Render Cron、確認済みの手動実行だけ `--yes` を使います。
 
 ```powershell
 npm run social:run-due
-npm run social:cloud-run-due -- --dry-run
+npm run social:run-due -- --dry-run
 ```
 
 種類を絞る例:

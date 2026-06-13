@@ -784,8 +784,9 @@ function testWorkflowHasScheduledPostingBackup() {
   assert.match(workflow, /only-kind=oracle/, 'scheduled SNS image step should only allow the morning oracle lane');
   assert.match(automationWorkflow, /npm run social:cloud-run-due/, 'SNS automation should use the combined cloud due runner');
   assert.match(packageJson, /"social:cloud-run-due": "node scripts\/social\/run-cloud-scheduled-posts\.js"/, 'package scripts should expose the combined cloud runner');
-  assert.match(runbook, /Render Cron Job `rashin-threads-scheduler` のコマンドが `npm run social:cloud-run-due`/, 'runbook should make the combined runner the Render cron command');
-  assert.match(scriptsReadme, /npm run social:cloud-run-due/, 'social README should document the combined cloud runner');
+  assert.match(packageJson, /"social:run-due": "node scripts\/social\/run-cloud-scheduled-posts\.js"/, 'legacy Render run-due command should use the combined cloud runner');
+  assert.match(runbook, /Render Cron Job `rashin-threads-scheduler` のコマンドが `npm run social:run-due`/, 'runbook should make the combined runner the Render cron command');
+  assert.match(scriptsReadme, /npm run social:run-due/, 'social README should document the combined cloud runner');
   assert.match(instagramReelsBackupWorkflow, /SOCIAL_REEL_CATCHUP_HOURS: '8'/, 'Reels backup workflow should recover missed same-night reels');
   assert.match(instagramReelsBackupWorkflow, /THREADS_ACCESS_TOKEN/, 'Reels backup workflow should also validate and post Threads videos');
   assert.match(instagramReelsBackupWorkflow, /post-daily-birthday-reels\.js --post --platforms=threads,instagram/, 'Reels backup should publish to both Threads and Instagram');

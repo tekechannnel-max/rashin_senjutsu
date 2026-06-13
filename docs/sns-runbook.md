@@ -58,7 +58,7 @@ THREADS_POST_VERIFY_TIMEOUT_MS=120000
 Render Cron Job `rashin-threads-scheduler` の実行コマンドは次にします。朝占いと夜リールを同じクラウド実行でdue確認します。
 
 ```text
-npm run social:cloud-run-due
+npm run social:run-due
 ```
 
 ## 投稿ルール
@@ -77,7 +77,7 @@ npm run check
 npm run social:audit -- --from=2026-06-13 --to=2026-06-13 --platforms=threads,instagram
 node scripts/social/run-scheduled-posts.js --dry-run --only-kind=oracle
 node scripts/social/post-daily-birthday-reels.js --dry-run --platforms=threads,instagram
-npm run social:cloud-run-due -- --dry-run
+npm run social:run-due -- --dry-run
 ```
 
 ## KPI
@@ -95,6 +95,6 @@ npm run social:kpi-template -- --from=2026-06-01 --to=2026-06-07 --platforms=thr
 - `npm run check` が通る。
 - 対象期間の `social:audit` が errors 0 / warnings 0。
 - 投稿予定時刻のdry-runで `due` が想定どおり。
-- Render Cron Job `rashin-threads-scheduler` のコマンドが `npm run social:cloud-run-due`。
+- Render Cron Job `rashin-threads-scheduler` のコマンドが `npm run social:run-due`。
 - Render環境変数がThreads / Instagramのみで揃っている。
 - 実投稿結果が `posted`、または重複防止の `existing_threads_post` / `existing_instagram_post` で確認できる。
