@@ -749,15 +749,30 @@ function dueReelIds(report) {
   return report.reels.filter(reel => reel.due).map(reel => reel.id);
 }
 
+function cloudScheduleReport(iso, env = {}) {
+  const result = runNode(['scripts/social/run-cloud-scheduled-posts.js', '--dry-run'], {
+    env: {
+      SOCIAL_NOW_ISO: iso,
+      SOCIAL_REEL_PUBLIC_ORIGIN: 'https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/main',
+      ...env,
+    },
+  });
+  return JSON.parse(result.stdout);
+}
+
 function testWorkflowHasScheduledPostingBackup() {
   const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'threads-social.yml'), 'utf8');
   const instagramReelsBackupWorkflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'instagram-reels-backup.yml'), 'utf8');
   const imageBackupWorkflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'sns-image-backup.yml'), 'utf8');
   const automationWorkflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'sns-automation.yml'), 'utf8');
-  assert.match(workflow, /cron: '0 23,11,12,13 \* \* \*'/, 'Threads workflow should run backup ticks for 08:00 and 20:00-22:00 JST');
-  assert.doesNotMatch(workflow, /cron: '0 23,11,12,13,14 \* \* \*'/, 'Threads workflow should not run a 23:00 JST night image/reel slot');
+  const packageJson = fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8');
+  const runbook = fs.readFileSync(path.join(ROOT, 'docs', 'sns-runbook.md'), 'utf8');
+  const scriptsReadme = fs.readFileSync(path.join(ROOT, 'scripts', 'social', 'README.md'), 'utf8');
+  assert.match(workflow, /cron: '5,20,35,50 23,11,12,13,14 \* \* \*'/, 'Threads workflow should run off-hour retries for 08:00, 20:00-22:00, and 23:00 recovery');
+  assert.match(instagramReelsBackupWorkflow, /cron: '7,17,27,37,47,57 11,12,13,14 \* \* \*'/, 'Reels backup should run frequent off-hour retry and recovery ticks');
   assert.match(workflow, /SOCIAL_ORACLE_TIME: '08:00'/, 'Threads workflow should use the 08:00 JST oracle time');
-  assert.doesNotMatch(workflow, /cron: '1 14 \* \* \*'/, 'Threads workflow should not run a 23:01 JST recovery tick');
+  assert.match(workflow, /SOCIAL_CLOUD_SCHEDULER: 'true'/, 'Threads workflow should mark cloud scheduled runs explicitly');
+  assert.match(instagramReelsBackupWorkflow, /SOCIAL_CLOUD_SCHEDULER: 'true'/, 'Reels backup should mark cloud scheduled runs explicitly');
   assert.doesNotMatch(workflow, /birthday_monthly_recovery_25_31/, 'workflow dispatch should not expose old 23:00 birthday monthly image slots');
   assert.match(workflow, /github\.event_name \}\}" = "push"[\s\S]*echo "ready=false"[\s\S]*exit 0/, 'Threads workflow push validation should not fail only because posting secrets are unavailable');
   assert.match(automationWorkflow, /github\.event_name \}\}" = "push"[\s\S]*echo "ready=false"[\s\S]*exit 0/, 'SNS automation push validation should not fail only because posting secrets are unavailable');
@@ -767,11 +782,13 @@ function testWorkflowHasScheduledPostingBackup() {
   assert.match(workflow, /SOCIAL_REEL_CATCHUP_HOURS: '8'/, 'Threads workflow should let a later run recover missed same-night reels');
   assert.match(workflow, /post-daily-birthday-reels\.js --post --platforms=threads,instagram/, 'Threads workflow should publish daily reels to both Threads and Instagram');
   assert.match(workflow, /only-kind=oracle/, 'scheduled SNS image step should only allow the morning oracle lane');
-  assert.match(automationWorkflow, /only-kind=oracle/, 'SNS automation should only publish the morning oracle lane');
+  assert.match(automationWorkflow, /npm run social:cloud-run-due/, 'SNS automation should use the combined cloud due runner');
+  assert.match(packageJson, /"social:cloud-run-due": "node scripts\/social\/run-cloud-scheduled-posts\.js"/, 'package scripts should expose the combined cloud runner');
+  assert.match(runbook, /Render Cron Job `rashin-threads-scheduler` のコマンドが `npm run social:cloud-run-due`/, 'runbook should make the combined runner the Render cron command');
+  assert.match(scriptsReadme, /npm run social:cloud-run-due/, 'social README should document the combined cloud runner');
   assert.match(instagramReelsBackupWorkflow, /SOCIAL_REEL_CATCHUP_HOURS: '8'/, 'Reels backup workflow should recover missed same-night reels');
   assert.match(instagramReelsBackupWorkflow, /THREADS_ACCESS_TOKEN/, 'Reels backup workflow should also validate and post Threads videos');
   assert.match(instagramReelsBackupWorkflow, /post-daily-birthday-reels\.js --post --platforms=threads,instagram/, 'Reels backup should publish to both Threads and Instagram');
-  assert.doesNotMatch(instagramReelsBackupWorkflow, /11,12,13,14/, 'Reels backup should not keep the old 23:00 JST slot');
   assert.doesNotMatch(imageBackupWorkflow, /^\s+schedule:/m, 'night image backup should not have a scheduled trigger');
   assert.match(imageBackupWorkflow, /Night image posting is disabled/, 'image backup workflow should not publish night image posts');
   assert.doesNotMatch(workflow, /birthday_monthly_01_08/, 'workflow dispatch should not expose old 20:00 birthday monthly image slots');
@@ -794,6 +811,32 @@ function testReelCatchupRecoversMissedSameNightSlots() {
 
   const oldNightSlot = reelScheduleReport('2026-06-13T14:01:00.000Z', { SOCIAL_REEL_CATCHUP_HOURS: '0' });
   assert.deepEqual(dueReelIds(oldNightSlot), [], '23:01 JST should not publish a reel under the new 20:00-22:00 rule');
+}
+
+function testCloudRunnerRecoversNightReelsAndBlocksLocalPosting() {
+  const report = cloudScheduleReport('2026-06-13T14:05:00.000Z');
+  assert.equal(report.dryRun, true, 'cloud runner dry-run should not publish');
+  assert.deepEqual(report.steps.map(step => step.id), ['oracle', 'daily_birthday_reels'], 'cloud runner should check oracle and reels together');
+  const reelsStep = report.steps.find(step => step.id === 'daily_birthday_reels');
+  assert.deepEqual(dueReelIds(reelsStep.report), [
+    'daily_reel_20260613_20_himitsu_mamorenai',
+    'daily_reel_20260613_21_mood_maker',
+    'daily_reel_20260613_22_creator_type',
+  ], '23:05 JST cloud recovery should catch every missed same-night reel');
+
+  const blocked = runNode(['scripts/social/run-cloud-scheduled-posts.js'], {
+    expectSuccess: false,
+    env: {
+      SOCIAL_AUTOMATED_POSTING_ENABLED: 'true',
+      SOCIAL_CLOUD_SCHEDULER: 'false',
+      SOCIAL_SCHEDULED_RUN: 'false',
+      GITHUB_ACTIONS: 'false',
+      RENDER: 'false',
+      RENDER_SERVICE_ID: '',
+    },
+  });
+  assert.notEqual(blocked.status, 0, 'local cloud runner without --dry-run or --yes must not post');
+  assert.match(blocked.stderr, /Real scheduled posting requires/, 'local posting block should explain the scheduler requirement');
 }
 
 function testBroadSocialAuditPasses() {
@@ -824,6 +867,7 @@ testScheduledPostsRespectJstWeekdays();
 testStatelessScheduleKeepsRecoveryGraceWindow();
 testWorkflowHasScheduledPostingBackup();
 testReelCatchupRecoversMissedSameNightSlots();
+testCloudRunnerRecoversNightReelsAndBlocksLocalPosting();
 testBroadSocialAuditPasses();
 testKpiReviewTemplatePreservesManualMetrics();
 

@@ -17,6 +17,7 @@ const syntaxTargets = [
   'scripts/social/content/free-paid-compare-posts.js',
   'scripts/social/daily-oracle-post.js',
   'scripts/social/run-scheduled-posts.js',
+  'scripts/social/run-cloud-scheduled-posts.js',
   'scripts/social/threads-client.js',
   'scripts/social/threads-tool.js',
   'scripts/social/instagram-client.js',

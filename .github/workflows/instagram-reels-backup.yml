@@ -11,9 +11,9 @@ on:
       - scripts/social/threads-client.js
   schedule:
     # Backup ticks for Instagram Reels and Threads videos at 20:00, 21:00, and 22:00 JST.
-    # Run away from the top of the hour because GitHub scheduled workflows can
+    # Include 23:00 JST recovery sweeps because GitHub scheduled workflows can
     # be delayed or skipped when the hourly queue is congested.
-    - cron: '17,32,47 11,12,13 * * *'
+    - cron: '7,17,27,37,47,57 11,12,13,14 * * *'
   workflow_dispatch:
     inputs:
       mode:
@@ -45,6 +45,7 @@ jobs:
       THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
       THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
       SOCIAL_AUTOMATED_POSTING_ENABLED: 'true'
+      SOCIAL_CLOUD_SCHEDULER: 'true'
       SOCIAL_SCHEDULED_RUN: 'true'
       SOCIAL_REEL_POST_GRACE_MINUTES: '59'
       SOCIAL_REEL_CATCHUP_HOURS: '8'

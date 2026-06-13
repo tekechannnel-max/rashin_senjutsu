@@ -53,6 +53,7 @@ jobs:
       SOCIAL_BOOTH_ENABLED: 'false'
       SOCIAL_UTM_CAMPAIGN: 202605_prerelease
       SOCIAL_STATELESS_MODE: 'true'
+      SOCIAL_CLOUD_SCHEDULER: 'true'
       SOCIAL_SKIP_ORACLE_DATES: '2026-05-12'
       SOCIAL_POST_GRACE_MINUTES: '59'
       SOCIAL_THREADS_IMAGE_FALLBACK_TEXT: 'true'
@@ -103,4 +104,4 @@ jobs:
       - name: Publish due SNS post
         if: steps.secrets.outputs.ready == 'true' && github.event_name != 'push'
         shell: bash
-        run: node scripts/social/run-scheduled-posts.js --once --only-kind=oracle
+        run: npm run social:cloud-run-due

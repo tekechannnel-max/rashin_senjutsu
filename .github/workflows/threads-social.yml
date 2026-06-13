@@ -5,9 +5,9 @@ on:
     branches:
       - main
   schedule:
-    # Backup scheduled posting ticks for 08:00, 20:00, 21:00, and 22:00 JST.
-    # GitHub schedule can start late, so run-scheduled-posts.js keeps a 59 minute grace window.
-    - cron: '0 23,11,12,13 * * *'
+    # Cloud backup ticks for 08:00 and 20:00-22:00 JST, plus 23:00 JST recovery sweeps.
+    # GitHub schedule can start late or drop individual ticks, so keep multiple off-hour retries.
+    - cron: '5,20,35,50 23,11,12,13,14 * * *'
   workflow_dispatch:
     inputs:
       kind:
@@ -50,6 +50,7 @@ jobs:
       SOCIAL_STATELESS_MODE: 'true'
       SOCIAL_SKIP_ORACLE_DATES: '2026-05-12'
       SOCIAL_POST_GRACE_MINUTES: '59'
+      SOCIAL_CLOUD_SCHEDULER: 'true'
       SOCIAL_THREADS_IMAGE_FALLBACK_TEXT: 'true'
       THREADS_CONTAINER_TIMEOUT_MS: '120000'
       THREADS_POST_VERIFY_TIMEOUT_MS: '120000'

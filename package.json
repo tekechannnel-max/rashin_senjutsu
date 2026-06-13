@@ -23,6 +23,7 @@
     "social:instagram:birthday-aruaru-20260612": "node scripts/social/generate-birthday-aruaru-20260612.js",
     "social:kpi-template": "node scripts/social/prepare-kpi-review.js",
     "social:run-due": "node scripts/social/run-scheduled-posts.js --once",
+    "social:cloud-run-due": "node scripts/social/run-cloud-scheduled-posts.js",
     "social:reels:daily": "node scripts/social/post-daily-birthday-reels.js",
     "social:reels:generate:20260613": "node scripts/social/generate-birthday-reels-20260613.js",
     "threads:doctor": "node scripts/social/threads-tool.js doctor",

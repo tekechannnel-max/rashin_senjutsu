@@ -12,8 +12,9 @@
 ## 主なスクリプト
 
 - `daily-oracle-post.js`: 投稿文、画像パス、alt text、UTM付きURLを生成します。
-- `run-scheduled-posts.js`: Render CronまたはGitHub Actionsから朝占い投稿だけを実行します。
-- `post-daily-birthday-reels.js`: GitHub Actionsから夜リール動画をThreads / Instagramに投稿します。
+- `run-cloud-scheduled-posts.js`: Render CronまたはGitHub Actionsから朝占いと夜リール動画をまとめてdue確認します。
+- `run-scheduled-posts.js`: 朝占い投稿だけを実行します。
+- `post-daily-birthday-reels.js`: 夜リール動画をThreads / Instagramに投稿します。
 - `generate-birthday-reels-20260613.js`: 2026-06-13分の夜リール動画を生成します。
 - `audit-social-drafts.js`: 投稿文、UTM、画像、alt text、ハッシュタグ、重複を検査します。
 - `prepare-kpi-review.js`: KPI確認用CSVを生成します。
@@ -29,6 +30,7 @@ npm run check
 npm run social:audit -- --from=2026-06-13 --to=2026-06-13 --platforms=threads,instagram
 node scripts/social/run-scheduled-posts.js --once --dry-run --only-kind=oracle
 node scripts/social/post-daily-birthday-reels.js --dry-run --platforms=threads,instagram
+npm run social:cloud-run-due -- --dry-run
 ```
 
 ## Render本番
@@ -37,7 +39,7 @@ Threads / Instagram本番投稿はRender Cron Job `rashin-threads-scheduler` が
 
 ```text
 SOCIAL_PLATFORMS=threads,instagram
-node scripts/social/run-scheduled-posts.js --once --only-kind=oracle
+npm run social:cloud-run-due
 ```
 
 ローカルWindowsのTask Scheduler、常駐PowerShell、ローカルdaemonはSNS運用に使いません。
@@ -59,6 +61,7 @@ CI、Render Cron、確認済みの手動実行だけ `--yes` を使います。
 
 ```powershell
 npm run social:run-due
+npm run social:cloud-run-due -- --dry-run
 ```
 
 種類を絞る例:
