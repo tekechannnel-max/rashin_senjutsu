@@ -10,6 +10,7 @@ const DEFAULT_STATE_FILE = path.join(ROOT, 'data', 'social-posts', 'daily-birthd
 const POST_GRACE_MINUTES = Number(process.env.SOCIAL_REEL_POST_GRACE_MINUTES || process.env.SOCIAL_POST_GRACE_MINUTES || 59);
 const CATCHUP_HOURS = Number(process.env.SOCIAL_REEL_CATCHUP_HOURS || 0);
 const THREADS_GRAPH_BASE = process.env.THREADS_GRAPH_BASE || 'https://graph.threads.net/v1.0';
+const DAILY_REELS_PAUSED = process.env.SOCIAL_DAILY_REELS_PAUSED === 'true';
 
 const REELS = [
   {
@@ -308,7 +309,7 @@ async function main() {
     const posted = stateEntry(state, entry);
     entries.push({
       ...entry,
-      due: args.force || isDue(entry, dateKey, nowMinute, now),
+      due: !DAILY_REELS_PAUSED && (args.force || isDue(entry, dateKey, nowMinute, now)),
       alreadyPosted: {
         instagram: Boolean(posted.instagram),
         threads: Boolean(posted.threads),
@@ -325,6 +326,7 @@ async function main() {
     postType: 'reel_video',
     dryRun: args.dryRun,
     force: args.force,
+    paused: DAILY_REELS_PAUSED,
     reels: entries.map(entry => ({
       id: entry.id,
       scheduledAt: `${entry.date} ${entry.time} Asia/Tokyo`,
