@@ -103,4 +103,4 @@ jobs:
       - name: Publish due SNS post
         if: steps.secrets.outputs.ready == 'true' && github.event_name != 'push'
         shell: bash
-        run: node scripts/social/run-scheduled-posts.js --once --only-kind=all
+        run: node scripts/social/run-scheduled-posts.js --once --only-kind=oracle

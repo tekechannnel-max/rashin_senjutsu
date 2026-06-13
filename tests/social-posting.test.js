@@ -649,27 +649,20 @@ function scheduleReport(nowIso, onlyKind = 'all') {
 }
 
 function testScheduledPostsRespectJstWeekdays() {
-  assert.deepEqual(scheduleReport('2026-06-04T11:01:00.000Z').due, ['rashin_point'], 'Thu 20:01 JST should post the one-off trust carousel');
-  assert.deepEqual(scheduleReport('2026-06-05T11:01:00.000Z').due, ['birthday_monthly_01_08'], 'Fri 20:01 JST should post birthday days 1-8 with a cover');
-  assert.deepEqual(scheduleReport('2026-06-05T11:29:00.000Z').due, ['birthday_monthly_01_08'], 'Fri 20:29 JST delayed scheduler should still post birthday days 1-8');
-  assert.deepEqual(scheduleReport('2026-06-05T12:01:00.000Z').due, ['birthday_monthly_09_16'], 'Fri 21:01 JST should post birthday days 9-16 with a cover');
-  assert.deepEqual(scheduleReport('2026-06-05T13:01:00.000Z').due, ['birthday_monthly_17_24'], 'Fri 22:01 JST should post birthday days 17-24 with a cover');
-  assert.deepEqual(scheduleReport('2026-06-05T14:01:00.000Z').due, ['birthday_monthly_25_31'], 'Fri 23:01 JST should post birthday days 25-31 with a cover');
-  assert.deepEqual(scheduleReport('2026-06-07T11:01:00.000Z').due, ['birthday_monthly_recovery_01_08'], 'Sun 20:01 JST should recover birthday monthly days 1-8 with a cover');
-  assert.deepEqual(scheduleReport('2026-06-07T12:01:00.000Z').due, ['birthday_monthly_recovery_09_16'], 'Sun 21:01 JST should recover birthday monthly days 9-16 with a cover');
-  assert.deepEqual(scheduleReport('2026-06-07T13:01:00.000Z').due, ['birthday_monthly_recovery_17_24'], 'Sun 22:01 JST should recover birthday monthly days 17-24 with a cover');
-  assert.deepEqual(scheduleReport('2026-06-07T14:00:00.000Z').due, ['birthday_monthly_recovery_25_31'], 'Sun 23:00 JST should recover birthday monthly days 25-31 with a cover');
-  assert.deepEqual(scheduleReport('2026-06-08T11:01:00.000Z').due, ['birthday_ranking_love_at_first_sight'], 'Mon 20:01 JST should post the one-off love-at-first-sight ranking');
-  assert.deepEqual(scheduleReport('2026-06-08T12:01:00.000Z').due, ['birthday_ranking_money_luck'], 'Mon 21:01 JST should post the one-off money luck ranking');
-  assert.deepEqual(scheduleReport('2026-06-08T13:01:00.000Z').due, ['birthday_ranking_horror_resistance'], 'Mon 22:01 JST should post the one-off horror resistance ranking');
-  assert.deepEqual(scheduleReport('2026-06-08T14:01:00.000Z').due, ['birthday_ranking_weird'], 'Mon 23:01 JST should post the one-off weird ranking');
-  assert.deepEqual(scheduleReport('2026-06-09T11:01:00.000Z').due, ['birthday_ranking_idol_style'], 'Tue 20:01 JST should post the one-off idol style ranking');
-  assert.deepEqual(scheduleReport('2026-06-09T12:01:00.000Z').due, ['birthday_ranking_love_style'], 'Tue 21:01 JST should post the one-off love style ranking');
-  assert.deepEqual(scheduleReport('2026-06-09T13:01:00.000Z').due, ['birthday_ranking_amae_jouzu'], 'Tue 22:01 JST should post the one-off amae ranking');
-  assert.deepEqual(scheduleReport('2026-06-09T14:01:00.000Z').due, ['birthday_ranking_buchigire_kowai'], 'Tue 23:01 JST should post the one-off anger ranking');
-  assert.deepEqual(scheduleReport('2026-07-01T11:01:00.000Z', 'birthday_monthly').due, ['birthday_monthly_01_08'], '2026-07-01 20:01 JST should start the monthly birthday carousel schedule');
-  assert.deepEqual(scheduleReport('2026-07-01T14:01:00.000Z', 'birthday_monthly').due, ['birthday_monthly_25_31'], '2026-07-01 23:01 JST should publish birthday days 25-31 with a cover');
-  assert.deepEqual(scheduleReport('2026-07-02T11:01:00.000Z', 'birthday_monthly').due, [], 'birthday monthly carousel should not repeat on the 2nd');
+  assert.deepEqual(scheduleReport('2026-06-13T11:01:00.000Z').due, [], '20:01 JST should not publish a scheduled image post');
+  assert.deepEqual(scheduleReport('2026-06-13T12:01:00.000Z').due, [], '21:01 JST should not publish a scheduled image post');
+  assert.deepEqual(scheduleReport('2026-06-13T13:01:00.000Z').due, [], '22:01 JST should not publish a scheduled image post');
+  assert.deepEqual(scheduleReport('2026-06-13T14:01:00.000Z').due, [], '23:01 JST should not publish a scheduled image post');
+  assert.deepEqual(scheduleReport('2026-06-13T23:01:00.000Z').due, ['oracle'], '08:01 JST should still publish the morning oracle');
+
+  const oldNightKind = runNode([
+    'scripts/social/run-scheduled-posts.js',
+    '--once',
+    '--dry-run',
+    '--only-kind=birthday_monthly',
+  ], { expectSuccess: false });
+  assert.notEqual(oldNightKind.status, 0, 'birthday_monthly should no longer be accepted by scheduled image posting');
+  assert.match(oldNightKind.stderr, /Invalid --only-kind: birthday_monthly/, 'old night image kinds should be rejected by the scheduler');
 }
 
 function testKpiReviewTemplatePreservesManualMetrics() {
@@ -742,7 +735,7 @@ function testStatelessScheduleKeepsRecoveryGraceWindow() {
 }
 
 function reelScheduleReport(iso, env = {}) {
-  const result = runNode(['scripts/social/post-instagram-reels-20260609.js', '--dry-run'], {
+  const result = runNode(['scripts/social/post-daily-birthday-reels.js', '--dry-run', '--platforms=threads,instagram'], {
     env: {
       SOCIAL_NOW_ISO: iso,
       SOCIAL_REEL_PUBLIC_ORIGIN: 'https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/main',
@@ -759,37 +752,48 @@ function dueReelIds(report) {
 function testWorkflowHasScheduledPostingBackup() {
   const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'threads-social.yml'), 'utf8');
   const instagramReelsBackupWorkflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'instagram-reels-backup.yml'), 'utf8');
+  const imageBackupWorkflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'sns-image-backup.yml'), 'utf8');
   const automationWorkflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'sns-automation.yml'), 'utf8');
-  assert.match(workflow, /cron: '0 23,11,12,13,14 \* \* \*'/, 'Threads workflow should run backup ticks for 08:00 and 20:00-23:00 JST');
+  assert.match(workflow, /cron: '0 23,11,12,13 \* \* \*'/, 'Threads workflow should run backup ticks for 08:00 and 20:00-22:00 JST');
+  assert.doesNotMatch(workflow, /cron: '0 23,11,12,13,14 \* \* \*'/, 'Threads workflow should not run a 23:00 JST night image/reel slot');
   assert.match(workflow, /SOCIAL_ORACLE_TIME: '08:00'/, 'Threads workflow should use the 08:00 JST oracle time');
   assert.doesNotMatch(workflow, /cron: '1 14 \* \* \*'/, 'Threads workflow should not run a 23:01 JST recovery tick');
-  assert.doesNotMatch(workflow, /kind="birthday_monthly_recovery_25_31"/, '23:00 JST workflow should allow all due posts, including 6/8 ranking');
+  assert.doesNotMatch(workflow, /birthday_monthly_recovery_25_31/, 'workflow dispatch should not expose old 23:00 birthday monthly image slots');
   assert.match(workflow, /github\.event_name \}\}" = "push"[\s\S]*echo "ready=false"[\s\S]*exit 0/, 'Threads workflow push validation should not fail only because posting secrets are unavailable');
   assert.match(automationWorkflow, /github\.event_name \}\}" = "push"[\s\S]*echo "ready=false"[\s\S]*exit 0/, 'SNS automation push validation should not fail only because posting secrets are unavailable');
   assert.match(workflow, /if: steps\.secrets\.outputs\.ready == 'true' && github\.event_name != 'push'/, 'workflow push events should validate without publishing due posts');
   assert.match(automationWorkflow, /if: steps\.secrets\.outputs\.ready == 'true' && github\.event_name != 'push'/, 'automation workflow push events should validate without publishing due posts');
   assert.match(workflow, /SOCIAL_POST_GRACE_MINUTES: '59'/, 'workflow should allow delayed scheduled runs to recover within the hour');
   assert.match(workflow, /SOCIAL_REEL_CATCHUP_HOURS: '8'/, 'Threads workflow should let a later run recover missed same-night reels');
+  assert.match(workflow, /post-daily-birthday-reels\.js --post --platforms=threads,instagram/, 'Threads workflow should publish daily reels to both Threads and Instagram');
+  assert.match(workflow, /only-kind=oracle/, 'scheduled SNS image step should only allow the morning oracle lane');
+  assert.match(automationWorkflow, /only-kind=oracle/, 'SNS automation should only publish the morning oracle lane');
   assert.match(instagramReelsBackupWorkflow, /SOCIAL_REEL_CATCHUP_HOURS: '8'/, 'Reels backup workflow should recover missed same-night reels');
-  assert.match(workflow, /birthday_monthly_01_08/, 'workflow dispatch should allow forcing the 20:00 birthday monthly slot');
-  assert.match(workflow, /birthday_monthly_recovery_25_31/, 'workflow dispatch should allow forcing the 23:00 birthday monthly recovery slot');
-  assert.match(workflow, /birthday_ranking_love_at_first_sight/, 'workflow dispatch should allow forcing one-off birthday ranking slots');
-  assert.match(workflow, /birthday_ranking_buchigire_kowai/, 'workflow dispatch should allow forcing 2026-06-09 birthday ranking slots');
+  assert.match(instagramReelsBackupWorkflow, /THREADS_ACCESS_TOKEN/, 'Reels backup workflow should also validate and post Threads videos');
+  assert.match(instagramReelsBackupWorkflow, /post-daily-birthday-reels\.js --post --platforms=threads,instagram/, 'Reels backup should publish to both Threads and Instagram');
+  assert.doesNotMatch(instagramReelsBackupWorkflow, /11,12,13,14/, 'Reels backup should not keep the old 23:00 JST slot');
+  assert.doesNotMatch(imageBackupWorkflow, /^\s+schedule:/m, 'night image backup should not have a scheduled trigger');
+  assert.match(imageBackupWorkflow, /Night image posting is disabled/, 'image backup workflow should not publish night image posts');
+  assert.doesNotMatch(workflow, /birthday_monthly_01_08/, 'workflow dispatch should not expose old 20:00 birthday monthly image slots');
+  assert.doesNotMatch(workflow, /birthday_ranking_love_at_first_sight/, 'workflow dispatch should not expose old birthday ranking image slots');
+  assert.doesNotMatch(workflow, /birthday_ranking_buchigire_kowai/, 'workflow dispatch should not expose old birthday ranking image slots');
   assert.match(workflow, /- validate_only/, 'workflow dispatch should support credential validation without publishing');
   assert.match(workflow, /github\.event\.inputs\.kind != 'validate_only'/, 'validate_only dispatch should run checks and doctors without publishing');
 }
 
 function testReelCatchupRecoversMissedSameNightSlots() {
-  const normal = reelScheduleReport('2026-06-10T14:47:00.000Z');
-  assert.deepEqual(dueReelIds(normal), ['instagram_reel_20260610_23_nenimotsu_wasureru'], 'without catchup, 23:47 JST should only post the 23:00 reel');
+  const normal = reelScheduleReport('2026-06-13T13:47:00.000Z');
+  assert.deepEqual(dueReelIds(normal), ['daily_reel_20260613_22_creator_type'], 'without catchup, 22:47 JST should only post the 22:00 reel');
 
-  const catchup = reelScheduleReport('2026-06-10T14:47:00.000Z', { SOCIAL_REEL_CATCHUP_HOURS: '8' });
+  const catchup = reelScheduleReport('2026-06-13T13:47:00.000Z', { SOCIAL_REEL_CATCHUP_HOURS: '8' });
   assert.deepEqual(dueReelIds(catchup), [
-    'instagram_reel_20260610_20_akisho_level',
-    'instagram_reel_20260610_21_majime',
-    'instagram_reel_20260610_22_uwaki_rate',
-    'instagram_reel_20260610_23_nenimotsu_wasureru',
+    'daily_reel_20260613_20_himitsu_mamorenai',
+    'daily_reel_20260613_21_mood_maker',
+    'daily_reel_20260613_22_creator_type',
   ], 'catchup should recover every missed same-night reel at a later backup tick');
+
+  const oldNightSlot = reelScheduleReport('2026-06-13T14:01:00.000Z', { SOCIAL_REEL_CATCHUP_HOURS: '0' });
+  assert.deepEqual(dueReelIds(oldNightSlot), [], '23:01 JST should not publish a reel under the new 20:00-22:00 rule');
 }
 
 function testBroadSocialAuditPasses() {

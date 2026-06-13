@@ -1,6 +1,6 @@
 # SNS運用 Runbook
 
-SNS投稿、投稿文生成、画像生成、予約投稿、自動投稿設定、削除、再投稿の前に、必ず `docs/sns-posting-absolute-rules.md` を先に読むこと。不明点、上限衝突、素材不足、投稿文未確定、外部操作の不可逆性がある場合は、推測で進めず停止して質問する。
+SNS投稿、投稿文生成、画像生成、動画生成、予約投稿、自動投稿設定、削除、再投稿の前に、必ず `docs/sns-posting-absolute-rules.md` を先に読むこと。不明点、上限衝突、素材不足、投稿文未確定、外部操作の不可逆性がある場合は、推測で進めず停止して質問する。
 
 このファイルを、羅針占術のThreads / Instagram自動投稿の正本にします。
 
@@ -16,29 +16,14 @@ SNS投稿、投稿文生成、画像生成、予約投稿、自動投稿設定�
 
 ```text
 08:00 JST: oracle
-20:00 JST: birthday_monthly_01_08 on monthly 1st from 2026-07-01
-21:00 JST: birthday_monthly_09_16 on monthly 1st from 2026-07-01
-22:00 JST: birthday_monthly_17_24 on monthly 1st from 2026-07-01
-23:00 JST: birthday_monthly_25_31 on monthly 1st from 2026-07-01
-20:00 JST: birthday_monthly_recovery_01_08 on 2026-06-07
-21:00 JST: birthday_monthly_recovery_09_16 on 2026-06-07
-22:00 JST: birthday_monthly_recovery_17_24 on 2026-06-07
-23:00 JST: birthday_monthly_recovery_25_31 on 2026-06-07
-20:00 JST: birthday_ranking_love_at_first_sight on 2026-06-08
-21:00 JST: birthday_ranking_money_luck on 2026-06-08
-22:00 JST: birthday_ranking_horror_resistance on 2026-06-08
-23:00 JST: birthday_ranking_weird on 2026-06-08
-20:00 JST: birthday_ranking_idol_style on 2026-06-09
-21:00 JST: birthday_ranking_love_style on 2026-06-09
-22:00 JST: birthday_ranking_amae_jouzu on 2026-06-09
-23:00 JST: birthday_ranking_buchigire_kowai on 2026-06-09
+20:00 JST: daily birthday reel video
+21:00 JST: daily birthday reel video
+22:00 JST: daily birthday reel video
 ```
 
-毎月1日以外の20:00「誕生日数あるある/ランキング」は、素材と投稿文が確定したものだけ一回限りで入れます。木曜20:00は比較系3種に差し替え、Threadsでは3枚画像投稿として扱います。同じ画像を毎週繰り返す設定にはしません。
+夜は画像投稿を一切しません。月初画像、木曜比較画像、ランキング画像、カルーセル画像は夜枠に入れません。
 
-毎月1日の月次カルーセル投稿と、毎月1日以外の20:00「誕生日数あるある/ランキング」は、絶対に同じ日に投稿しません。月次がある日は③の20:00投稿を入れず、月次がない日に③を入れます。
-
-毎週木曜20:00は③の通常投稿ではなく、比較系3種のカルーセル投稿に差し替えます。Threadsでは3枚画像投稿として扱います。
+夜のリール動画は `videos/social/instagram/【インスタ】あるある・ランキング系/` を正本にし、Threads / Instagramの両方に投稿します。リール動画内の文字隠し、中央隠し、スタンプ隠し、絵文字隠しは入れません。
 
 ## Render設定
 
@@ -56,8 +41,6 @@ SOCIAL_AUTOMATED_POSTING_ENABLED=true
 SOCIAL_PLATFORMS=threads,instagram
 SOCIAL_THREADS_HASHTAG=#占い師のつぶやき
 SOCIAL_ORACLE_TIME=08:00
-SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE=2026-06-05
-SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE=2026-07-01
 SOCIAL_PAID_CTA_MODE=soft
 SOCIAL_BOOTH_ENABLED=false
 SOCIAL_UTM_CAMPAIGN=202605_prerelease
@@ -71,10 +54,8 @@ THREADS_POST_VERIFY_TIMEOUT_MS=120000
 ## 投稿ルール
 
 - `oracle`: 毎朝8:00。画像は `images/social/instagram/oracle/NN.jpg`。Threads / Instagramの両方に投稿します。
-- `birthday_monthly`: 毎月1日。対象月の `images/social/instagram/誕生日数×ルノルマン/YYYY-MM/monthly/` だけを素材正本にします。投稿順は表紙→誕生日順です。表紙込みで1投稿あたり最大10枚のため、`1-8` / `9-16` / `17-24` / `25-31` に分けます。指定フォルダー外の表紙、導入画像、別フォルダー画像、manifest内の別パスは使いません。
-- `birthday_ranking`: 2026-06-08と2026-06-09の20:00〜23:00に4本連続の一回限り。素材は `images/social/instagram/【インスタ】あるある・ランキング系/` を正本にします。通常投稿は画像だけで、リール動画は混ぜません。ThreadsとInstagramに同じ趣旨で出し、ハッシュタグだけ分けます。
-- 木曜20:00は `birthday_ranking` / `birthday_aruaru` より比較系3種を優先します。Threadsは3枚画像投稿。
-- `empathy` / `difference` / `free_paid_compare` は手動投稿候補として残しますが、現行の自動投稿スケジュールには入れません。
+- `daily birthday reel video`: 毎日20:00 / 21:00 / 22:00。動画は `videos/social/instagram/【インスタ】あるある・ランキング系/`。Threads / Instagramの両方に投稿します。
+- `birthday_monthly` / `birthday_ranking` / `rashin_point` / `empathy` / `difference` / `free_paid_compare` は過去検証や手動素材確認用として残っていても、現行の自動投稿スケジュールには入れません。
 - Threadsはハッシュタグ1個。Instagramは投稿種別ごとに最大5個。
 - Instagram本文には長いURLを出さず、プロフィールリンク案内にします。
 - カード意味と占い読みの共通基準は `docs/card-reading-meaning-grounding.md`、SNS固有ルールは `docs/sns-card-meaning-grounding.md` に従います。
@@ -83,9 +64,9 @@ THREADS_POST_VERIFY_TIMEOUT_MS=120000
 
 ```powershell
 npm run check
-npm run social:audit -- --from=2026-06-01 --to=2026-07-01 --platforms=threads,instagram
-npm run social:draft -- --date=2026-06-08 --kind=birthday_ranking --birthday-ranking-slug=love_at_first_sight --platforms=threads,instagram
-node scripts/social/run-scheduled-posts.js --dry-run
+npm run social:audit -- --from=2026-06-13 --to=2026-06-13 --platforms=threads,instagram
+node scripts/social/run-scheduled-posts.js --dry-run --only-kind=oracle
+node scripts/social/post-daily-birthday-reels.js --dry-run --platforms=threads,instagram
 ```
 
 ## KPI
@@ -96,7 +77,7 @@ node scripts/social/run-scheduled-posts.js --dry-run
 npm run social:kpi-template -- --from=2026-06-01 --to=2026-06-07 --platforms=threads,instagram
 ```
 
-見る順番は `views`、`replies`、`reposts_or_shares`、`saves`、`profile_visits`、`new_follows`、`link_clicks`、`free_reading_starts`、`paid_deep_reading_starts`、`paid_completions`。`oracle` はリンククリック、`birthday_monthly` と `birthday_ranking` は保存とプロフィール訪問を主指標にします。
+見る順番は `views`、`replies`、`reposts_or_shares`、`saves`、`profile_visits`、`new_follows`、`link_clicks`、`free_reading_starts`、`paid_deep_reading_starts`、`paid_completions`。`oracle` はリンククリック、夜リールは再生数、保存、プロフィール訪問を主指標にします。
 
 ## 完了条件
 

@@ -10,11 +10,6 @@ on:
       - scripts/social/daily-oracle-post.js
       - scripts/social/threads-client.js
       - scripts/social/instagram-client.js
-  schedule:
-    # Backup ticks for 20:00, 21:00, 22:00, and 23:00 JST image posts.
-    # Main SNS social posts runs at the top of the hour; these later ticks
-    # catch missed/delayed image slots without touching Instagram Reels.
-    - cron: '32,47 11,12,13,14 * * *'
   workflow_dispatch:
     inputs:
       mode:
@@ -92,10 +87,10 @@ jobs:
         if: github.event_name != 'push' && steps.secrets.outputs.ready == 'true'
         run: npm run instagram:doctor
 
-      - name: Dry-run due SNS image posts
+      - name: Dry-run due oracle image post
         if: github.event_name == 'push' || steps.secrets.outputs.ready == 'true'
-        run: node scripts/social/run-scheduled-posts.js --dry-run --only-kind=all
+        run: node scripts/social/run-scheduled-posts.js --dry-run --only-kind=oracle
 
       - name: Publish due SNS image posts
         if: steps.secrets.outputs.ready == 'true' && github.event_name != 'push' && github.event.inputs.mode != 'validate_only'
-        run: node scripts/social/run-scheduled-posts.js --once --only-kind=all
+        run: echo "Night image posting is disabled. Use the daily reels workflow instead."

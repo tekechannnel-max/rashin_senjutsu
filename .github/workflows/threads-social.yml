@@ -5,9 +5,9 @@ on:
     branches:
       - main
   schedule:
-    # Backup scheduled posting ticks for 08:00, 20:00, 21:00, 22:00, and 23:00 JST.
+    # Backup scheduled posting ticks for 08:00, 20:00, 21:00, and 22:00 JST.
     # GitHub schedule can start late, so run-scheduled-posts.js keeps a 59 minute grace window.
-    - cron: '0 23,11,12,13,14 * * *'
+    - cron: '0 23,11,12,13 * * *'
   workflow_dispatch:
     inputs:
       kind:
@@ -20,47 +20,6 @@ on:
           - validate_only
           - all
           - oracle
-          - rashin_point
-          - rashin_point_thursday_20
-          - birthday_monthly
-          - birthday_monthly_01_08
-          - birthday_monthly_09_16
-          - birthday_monthly_17_24
-          - birthday_monthly_25_31
-          - birthday_monthly_recovery_01_08
-          - birthday_monthly_recovery_09_16
-          - birthday_monthly_recovery_17_24
-          - birthday_monthly_recovery_25_31
-          - birthday_ranking
-          - birthday_ranking_love_at_first_sight
-          - birthday_ranking_money_luck
-          - birthday_ranking_horror_resistance
-          - birthday_ranking_weird
-          - birthday_ranking_idol_style
-          - birthday_ranking_love_style
-          - birthday_ranking_amae_jouzu
-          - birthday_ranking_buchigire_kowai
-          - birthday_ranking_20
-          - birthday_ranking_21
-          - birthday_ranking_22
-          - birthday_ranking_23
-          - birthday_ranking_love_at_first_sight
-          - birthday_ranking_money_luck
-          - birthday_ranking_horror_resistance
-          - birthday_ranking_weird
-          - birthday_ranking_idol_style
-          - birthday_ranking_love_style
-          - birthday_ranking_amae_jouzu
-          - birthday_ranking_buchigire_kowai
-          - birthday_ranking_akisho_level
-          - birthday_ranking_majime
-          - birthday_ranking_uwaki_rate
-          - birthday_ranking_nenimotsu_wasureru
-          - birthday_ranking_chuunibyou
-          - birthday_ranking_birth_01_aruaru
-          - birthday_ranking_birth_02_aruaru
-          - birthday_ranking_birth_03_aruaru
-          - birthday_ranking_birth_04_aruaru
 
 permissions:
   contents: read
@@ -153,13 +112,17 @@ jobs:
         shell: bash
         run: |
           kind="${{ steps.pick.outputs.kind }}"
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "$kind" != "auto" ] && [ "$kind" != "all" ]; then
-            node scripts/social/run-scheduled-posts.js --force-kind="$kind"
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            node scripts/social/run-scheduled-posts.js --once --only-kind=oracle
+          elif [ "$kind" = "auto" ] || [ "$kind" = "all" ]; then
+            node scripts/social/run-scheduled-posts.js --once --only-kind=oracle
+          elif [ "$kind" = "oracle" ]; then
+            node scripts/social/run-scheduled-posts.js --force-kind=oracle
           else
-            node scripts/social/run-scheduled-posts.js --once --only-kind="$kind"
+            echo "Night image posting is disabled; skipped SNS image kind: $kind"
           fi
 
-      - name: Publish due Instagram birthday ranking reels
+      - name: Publish due birthday ranking reels
         if: steps.secrets.outputs.ready == 'true' && github.event_name != 'push' && github.event.inputs.kind != 'validate_only' && (github.event_name == 'schedule' || github.event.inputs.kind == 'auto' || github.event.inputs.kind == 'all')
         shell: bash
         env:
@@ -167,4 +130,4 @@ jobs:
           SOCIAL_REEL_POST_GRACE_MINUTES: '59'
           SOCIAL_REEL_CATCHUP_HOURS: '8'
           SOCIAL_REEL_PUBLIC_ORIGIN: https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/main
-        run: node scripts/social/post-instagram-reels-20260609.js --post
+        run: node scripts/social/post-daily-birthday-reels.js --post --platforms=threads,instagram
