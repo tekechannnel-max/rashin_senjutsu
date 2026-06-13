@@ -201,7 +201,7 @@ async function renderPoster(post, file) {
 }
 
 function ffmpegPath() {
-  return process.env.FFMPEG_BIN || process.env.FFMPEG_PATH || 'ffmpeg';
+  return process.env.FFMPEG_BIN || process.env.FFMPEG_PATH || require('ffmpeg-static') || 'ffmpeg';
 }
 
 function runFfmpeg(args) {
