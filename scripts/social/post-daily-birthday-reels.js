@@ -64,6 +64,33 @@ const REELS = [
     videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-16/rikei-tekisei-top5/rikei-tekisei-top5.mp4',
     videoUrl: 'https://files.catbox.moe/7d9z8l.mp4',
   },
+  {
+    id: 'daily_reel_20260617_20_choushi_notte_shippai',
+    date: '2026-06-17',
+    time: '20:00',
+    slug: 'choushi-notte-shippai-top5',
+    title: '調子のって失敗する生まれ日TOP5',
+    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-17/choushi-notte-shippai-top5/choushi-notte-shippai-top5.mp4',
+    videoUrl: 'https://files.catbox.moe/3ub4mk.mp4',
+  },
+  {
+    id: 'daily_reel_20260617_21_chokkan_sugureteru',
+    date: '2026-06-17',
+    time: '21:00',
+    slug: 'chokkan-sugureteru-top5',
+    title: '直観が優れてる生まれ日TOP5',
+    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-17/chokkan-sugureteru-top5/chokkan-sugureteru-top5.mp4',
+    videoUrl: 'https://files.catbox.moe/7f72cf.mp4',
+  },
+  {
+    id: 'daily_reel_20260617_22_kanchigai_sareyasui',
+    date: '2026-06-17',
+    time: '22:00',
+    slug: 'kanchigai-sareyasui-top5',
+    title: '勘違いされやすい生まれ日TOP5',
+    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-17/kanchigai-sareyasui-top5/kanchigai-sareyasui-top5.mp4',
+    videoUrl: 'https://files.catbox.moe/d3gilh.mp4',
+  },
 ];
 
 function parseArgs(argv) {
