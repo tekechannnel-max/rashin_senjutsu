@@ -37,6 +37,33 @@ const REELS = [
     title: 'クリエイター気質生まれ日TOP5',
     videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-13/creator-type/creator-type-reel-no-mask.mp4',
   },
+  {
+    id: 'daily_reel_20260616_20_leader_tekisei',
+    date: '2026-06-16',
+    time: '20:00',
+    slug: 'leader-tekisei-top5',
+    title: 'リーダー適正TOP5',
+    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-16/leader-tekisei-top5/leader-tekisei-top5.mp4',
+    videoUrl: 'https://files.catbox.moe/23258s.mp4',
+  },
+  {
+    id: 'daily_reel_20260616_21_mendoumi_ga_ii',
+    date: '2026-06-16',
+    time: '21:00',
+    slug: 'mendoumi-ga-ii-top5',
+    title: '面倒見がいい生まれ日TOP5',
+    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-16/mendoumi-ga-ii-top5/mendoumi-ga-ii-top5.mp4',
+    videoUrl: 'https://files.catbox.moe/xoiqsu.mp4',
+  },
+  {
+    id: 'daily_reel_20260616_22_rikei_tekisei',
+    date: '2026-06-16',
+    time: '22:00',
+    slug: 'rikei-tekisei-top5',
+    title: '理系適正TOP5',
+    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-16/rikei-tekisei-top5/rikei-tekisei-top5.mp4',
+    videoUrl: 'https://files.catbox.moe/7d9z8l.mp4',
+  },
 ];
 
 function parseArgs(argv) {
@@ -128,13 +155,13 @@ function normalizeText(text) {
 
 function instagramCaption(item) {
   return [
+    '＼無料占いはプロフィールURLから／',
+    '',
     item.title,
     '',
-    '当てはまったら保存',
-    '周りの人の誕生日も見てみて',
-    '何日生まれかコメントで教えてね',
-    '',
-    'プロフィールのリンクから無料占い',
+    '保存していつでも思い出してください。',
+    'もっと深く見たい方は羅針占術へ。',
+    '無料鑑定から、必要な方だけ深掘り鑑定できます。',
     '',
     '#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい',
   ].join('\n');
@@ -142,15 +169,15 @@ function instagramCaption(item) {
 
 function threadsText(item) {
   return [
-    '\\無料占いはプロフィールURLから/',
+    '無料占いはプロフィールURLから👀✨',
     '',
     item.title,
     '',
-    '当てはまったら保存',
-    '周りの人の誕生日も見てみて',
-    '何日生まれかコメントで教えてね',
+    '保存していつでも思い出してください。',
+    'もっと深く見たい方は羅針占術へ。',
+    '無料鑑定から、必要な方だけ深掘り鑑定できます。',
     '',
-    '占い師のつぶやき',
+    '#占い師のつぶやき',
   ].join('\n');
 }
 
@@ -260,7 +287,7 @@ async function buildReelEntry(item) {
     instagramText: instagramCaption(item),
     threadsText: threadsText(item),
     videoPath,
-    videoUrl: relativePathToPublicUrl(item.videoRelativePath),
+    videoUrl: item.videoUrl || relativePathToPublicUrl(item.videoRelativePath),
     altText: `${item.title}の縦型リール動画。ランキングと理由の文字を隠さず表示しています。`,
   };
 }
