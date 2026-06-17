@@ -50,8 +50,13 @@ jobs:
       SOCIAL_STATELESS_MODE: 'true'
       SOCIAL_SKIP_ORACLE_DATES: '2026-05-12'
       SOCIAL_POST_GRACE_MINUTES: '59'
+      SOCIAL_REEL_POST_GRACE_MINUTES: '59'
+      SOCIAL_REEL_CATCHUP_HOURS: '8'
+      SOCIAL_REEL_PUBLIC_ORIGIN: https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/main
       SOCIAL_CLOUD_SCHEDULER: 'true'
       SOCIAL_THREADS_IMAGE_FALLBACK_TEXT: 'true'
+      INSTAGRAM_CONTAINER_TIMEOUT_MS: '600000'
+      INSTAGRAM_CONTAINER_POLL_MS: '15000'
       THREADS_CONTAINER_TIMEOUT_MS: '120000'
       THREADS_POST_VERIFY_TIMEOUT_MS: '120000'
     steps:
@@ -113,22 +118,14 @@ jobs:
         shell: bash
         run: |
           kind="${{ steps.pick.outputs.kind }}"
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-            node scripts/social/run-scheduled-posts.js --once --only-kind=oracle
-          elif [ "$kind" = "auto" ] || [ "$kind" = "all" ]; then
-            node scripts/social/run-scheduled-posts.js --once --only-kind=oracle
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "$kind" = "auto" ] || [ "$kind" = "all" ]; then
+            npm run social:cloud-run-due
           elif [ "$kind" = "oracle" ]; then
             node scripts/social/run-scheduled-posts.js --force-kind=oracle
           else
             echo "Night image posting is disabled; skipped SNS image kind: $kind"
           fi
 
-      - name: Publish due birthday ranking reels
-        if: steps.secrets.outputs.ready == 'true' && github.event_name != 'push' && github.event.inputs.kind != 'validate_only' && (github.event_name == 'schedule' || github.event.inputs.kind == 'auto' || github.event.inputs.kind == 'all')
-        shell: bash
-        env:
-          SOCIAL_SCHEDULED_RUN: 'true'
-          SOCIAL_REEL_POST_GRACE_MINUTES: '59'
-          SOCIAL_REEL_CATCHUP_HOURS: '8'
-          SOCIAL_REEL_PUBLIC_ORIGIN: https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/main
-        run: node scripts/social/post-daily-birthday-reels.js --post --platforms=threads,instagram
+      - name: Verify due birthday reels
+        if: always() && steps.secrets.outputs.ready == 'true' && github.event_name != 'push' && github.event.inputs.kind != 'validate_only' && (github.event_name == 'schedule' || github.event.inputs.kind == 'auto' || github.event.inputs.kind == 'all')
+        run: node scripts/social/post-daily-birthday-reels.js --verify-only --platforms=threads,instagram

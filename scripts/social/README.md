@@ -12,9 +12,9 @@
 ## 主なスクリプト
 
 - `daily-oracle-post.js`: 投稿文、画像パス、alt text、UTM付きURLを生成します。
-- `run-cloud-scheduled-posts.js`: Render CronまたはGitHub Actionsから朝占いと夜リール動画をまとめてdue確認します。
+- `run-cloud-scheduled-posts.js`: Render Cronを主実行として、朝占いと夜リール動画をまとめてdue確認します。
 - `run-scheduled-posts.js`: 朝占い投稿だけを実行します。
-- `post-daily-birthday-reels.js`: 夜リール動画をThreads / Instagramに投稿します。
+- `post-daily-birthday-reels.js`: 夜リール動画をThreads / Instagramに投稿し、必要に応じてSNS側の存在確認もします。
 - `generate-birthday-reels-20260613.js`: 2026-06-13分の夜リール動画を生成します。
 - `audit-social-drafts.js`: 投稿文、UTM、画像、alt text、ハッシュタグ、重複を検査します。
 - `prepare-kpi-review.js`: KPI確認用CSVを生成します。
@@ -30,12 +30,13 @@ npm run check
 npm run social:audit -- --from=2026-06-13 --to=2026-06-13 --platforms=threads,instagram
 node scripts/social/run-scheduled-posts.js --once --dry-run --only-kind=oracle
 node scripts/social/post-daily-birthday-reels.js --dry-run --platforms=threads,instagram
+npm run social:reels:verify
 npm run social:run-due -- --dry-run
 ```
 
 ## Render本番
 
-Threads / Instagram本番投稿はRender Cron Job `rashin-threads-scheduler` が実行します。
+Threads / Instagram本番投稿はRender Cron Job `rashin-threads-scheduler` が5分おきに実行します。GitHub Actionsは補助確認とバックアップ実行に限ります。
 
 ```text
 SOCIAL_PLATFORMS=threads,instagram
@@ -51,6 +52,7 @@ npm run social:run-due
 ```powershell
 npm run social:draft -- --date=2026-06-13 --kind=oracle --platforms=threads,instagram
 node scripts/social/post-daily-birthday-reels.js --dry-run --platforms=threads,instagram
+npm run social:reels:verify
 ```
 
 CI、Render Cron、確認済みの手動実行だけ `--yes` を使います。
@@ -62,6 +64,7 @@ CI、Render Cron、確認済みの手動実行だけ `--yes` を使います。
 ```powershell
 npm run social:run-due
 npm run social:run-due -- --dry-run
+npm run social:reels:verify
 ```
 
 種類を絞る例:

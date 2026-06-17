@@ -89,3 +89,7 @@ jobs:
       - name: Publish due reels
         if: steps.secrets.outputs.ready == 'true' && github.event_name != 'push' && github.event.inputs.mode != 'validate_only'
         run: node scripts/social/post-daily-birthday-reels.js --post --platforms=threads,instagram
+
+      - name: Verify due reels exist
+        if: always() && steps.secrets.outputs.ready == 'true' && github.event_name != 'push' && github.event.inputs.mode != 'validate_only'
+        run: node scripts/social/post-daily-birthday-reels.js --verify-only --platforms=threads,instagram

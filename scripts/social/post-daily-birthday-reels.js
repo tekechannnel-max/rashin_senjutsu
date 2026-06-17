@@ -94,17 +94,19 @@ const REELS = [
 ];
 
 function parseArgs(argv) {
-  const args = { dryRun: false, post: false, yes: false, force: false, platforms: ['threads', 'instagram'] };
+  const args = { dryRun: false, post: false, verifyOnly: false, yes: false, force: false, platforms: ['threads', 'instagram'] };
   for (const arg of argv) {
     if (arg === '--dry-run') args.dryRun = true;
     else if (arg === '--post') args.post = true;
+    else if (arg === '--verify-only') args.verifyOnly = true;
     else if (arg === '--yes') args.yes = true;
     else if (arg === '--force') args.force = true;
     else if (arg.startsWith('--platforms=')) {
       args.platforms = arg.split('=')[1].split(',').map(item => item.trim()).filter(Boolean);
     }
   }
-  if (!args.post) args.dryRun = true;
+  if (args.post && args.verifyOnly) throw new Error('Use either --post or --verify-only, not both.');
+  if (!args.post && !args.verifyOnly) args.dryRun = true;
   const invalid = args.platforms.filter(platform => !['threads', 'instagram'].includes(platform));
   if (invalid.length) throw new Error(`Unsupported platforms: ${invalid.join(', ')}`);
   return args;
@@ -306,6 +308,126 @@ async function findExistingThreadByText(text) {
   return (recent.data || []).find(post => normalizeText(post.text) === expected) || null;
 }
 
+function summarizeInstagramPost(post) {
+  if (!post) return null;
+  return {
+    id: post.id,
+    permalink: post.permalink,
+    timestamp: post.timestamp,
+    media_type: post.media_type,
+  };
+}
+
+function summarizeThread(post) {
+  if (!post) return null;
+  return {
+    id: post.id,
+    permalink: post.permalink,
+    timestamp: post.timestamp,
+    media_type: post.media_type,
+  };
+}
+
+function serializeFailure(error) {
+  return {
+    message: error?.message || String(error),
+    name: error?.name || 'Error',
+  };
+}
+
+async function verifyInstagramEntry(entry) {
+  const existing = await findExistingInstagramReelByCaption(entry.instagramText);
+  if (!existing) {
+    return {
+      ok: false,
+      status: 'missing',
+      reason: 'missing_instagram_post',
+    };
+  }
+  return {
+    ok: true,
+    status: 'verified',
+    reason: 'existing_instagram_post',
+    ...summarizeInstagramPost(existing),
+  };
+}
+
+async function verifyThreadsEntry(entry) {
+  const existing = await findExistingThreadByText(entry.threadsText);
+  if (!existing) {
+    return {
+      ok: false,
+      status: 'missing',
+      reason: 'missing_threads_post',
+    };
+  }
+  return {
+    ok: true,
+    status: 'verified',
+    reason: 'existing_threads_post',
+    ...summarizeThread(existing),
+  };
+}
+
+async function publishInstagramEntry(entry) {
+  const existing = await findExistingInstagramReelByCaption(entry.instagramText);
+  if (existing) {
+    return {
+      ok: true,
+      status: 'existing',
+      reason: 'existing_instagram_post',
+      ...summarizeInstagramPost(existing),
+    };
+  }
+
+  const posted = await instagramClient.postReelToInstagram({
+    text: entry.instagramText,
+    videoUrl: entry.videoUrl,
+    shareToFeed: true,
+  });
+  if (!posted?.permalink || !posted?.verified) {
+    throw new Error(`Instagram reel published without verified permalink for ${entry.id}.`);
+  }
+  return {
+    ok: true,
+    status: 'posted',
+    verified: Boolean(posted.verified),
+    id: posted.id,
+    permalink: posted.permalink,
+    media_type: posted.media?.media_type,
+    reelContainer: posted.reelContainer,
+  };
+}
+
+async function publishThreadsEntry(entry) {
+  const existing = await findExistingThreadByText(entry.threadsText);
+  if (existing) {
+    return {
+      ok: true,
+      status: 'existing',
+      reason: 'existing_threads_post',
+      ...summarizeThread(existing),
+    };
+  }
+
+  const posted = await postVideoToThreads({
+    text: entry.threadsText,
+    videoUrl: entry.videoUrl,
+    altText: entry.altText,
+  });
+  if (!posted?.permalink || !posted?.verified) {
+    throw new Error(`Threads video published without verified permalink for ${entry.id}.`);
+  }
+  return {
+    ok: true,
+    status: 'posted',
+    verified: Boolean(posted.verified),
+    id: posted.id,
+    permalink: posted.permalink,
+    videoContainer: posted.videoContainer,
+  };
+}
+
 async function buildReelEntry(item) {
   const videoPath = path.join(ROOT, item.videoRelativePath);
   await fs.stat(videoPath);
@@ -394,61 +516,80 @@ async function main() {
       threadsText: entry.threadsText,
     })),
   };
-  console.log(JSON.stringify(report, null, 2));
 
-  if (args.dryRun || !args.post) return;
+  if (args.dryRun) {
+    console.log(JSON.stringify(report, null, 2));
+    return;
+  }
 
   const results = {};
+  const failures = [];
   for (const entry of entries.filter(candidate => candidate.due)) {
     const posted = stateEntry(state, entry);
     results[entry.id] = {};
 
-    if (args.platforms.includes('instagram') && !posted.instagram) {
-      const existing = await findExistingInstagramReelByCaption(entry.instagramText);
-      if (existing) {
-        results[entry.id].instagram = {
-          skipped: true,
-          reason: 'existing_instagram_reel',
-          id: existing.id,
-          permalink: existing.permalink,
-          timestamp: existing.timestamp,
-          media_type: existing.media_type,
+    if (args.platforms.includes('instagram')) {
+      try {
+        results[entry.id].instagram = args.verifyOnly
+          ? await verifyInstagramEntry(entry)
+          : await publishInstagramEntry(entry);
+        if (!results[entry.id].instagram.ok) {
+          failures.push({
+            reelId: entry.id,
+            platform: 'instagram',
+            reason: results[entry.id].instagram.reason,
+          });
+        } else if (!args.verifyOnly) {
+          posted.instagram = new Date().toISOString();
+          await writeJson(stateFile, state);
+        }
+      } catch (error) {
+        const failure = {
+          reelId: entry.id,
+          platform: 'instagram',
+          ...serializeFailure(error),
         };
-      } else {
-        results[entry.id].instagram = await instagramClient.postReelToInstagram({
-          text: entry.instagramText,
-          videoUrl: entry.videoUrl,
-          shareToFeed: true,
-        });
+        results[entry.id].instagram = { ok: false, status: 'failed', error: failure };
+        failures.push(failure);
       }
-      posted.instagram = new Date().toISOString();
-      await writeJson(stateFile, state);
     }
 
-    if (args.platforms.includes('threads') && !posted.threads) {
-      const existing = await findExistingThreadByText(entry.threadsText);
-      if (existing) {
-        results[entry.id].threads = {
-          skipped: true,
-          reason: 'existing_threads_post',
-          id: existing.id,
-          permalink: existing.permalink,
-          timestamp: existing.timestamp,
-          media_type: existing.media_type,
+    if (args.platforms.includes('threads')) {
+      try {
+        results[entry.id].threads = args.verifyOnly
+          ? await verifyThreadsEntry(entry)
+          : await publishThreadsEntry(entry);
+        if (!results[entry.id].threads.ok) {
+          failures.push({
+            reelId: entry.id,
+            platform: 'threads',
+            reason: results[entry.id].threads.reason,
+          });
+        } else if (!args.verifyOnly) {
+          posted.threads = new Date().toISOString();
+          await writeJson(stateFile, state);
+        }
+      } catch (error) {
+        const failure = {
+          reelId: entry.id,
+          platform: 'threads',
+          ...serializeFailure(error),
         };
-      } else {
-        results[entry.id].threads = await postVideoToThreads({
-          text: entry.threadsText,
-          videoUrl: entry.videoUrl,
-          altText: entry.altText,
-        });
+        results[entry.id].threads = { ok: false, status: 'failed', error: failure };
+        failures.push(failure);
       }
-      posted.threads = new Date().toISOString();
-      await writeJson(stateFile, state);
     }
   }
 
-  console.log(JSON.stringify({ posted: results }, null, 2));
+  const summary = {
+    ...report,
+    action: args.verifyOnly ? 'verify' : 'post',
+    ok: failures.length === 0,
+    results,
+    failures,
+  };
+  console.log(JSON.stringify(summary, null, 2));
+  if (failures.length) process.exitCode = 1;
 }
 
 main().catch(error => {

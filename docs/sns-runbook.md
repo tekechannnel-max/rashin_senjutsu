@@ -7,7 +7,8 @@ SNS投稿、投稿文生成、画像生成、動画生成、予約投稿、自�
 ## 現行方針
 
 - 本番自動投稿はThreads / Instagramのみ。
-- 実行はRender Cron Job `rashin-threads-scheduler`。
+- 主実行はRender Cron Job `rashin-threads-scheduler`。
+- GitHub Actionsは補助確認とバックアップ実行に限り、唯一の本番時計にしません。
 - 対象外媒体の再開前提手順は残しません。
 - ローカルWindowsのTask Scheduler、常駐PowerShell、daemon運用は使いません。
 - APIキー、アクセストークン、個人情報はGit管理ファイル、README、投稿台帳、ログに保存しません。
@@ -26,6 +27,8 @@ SNS投稿、投稿文生成、画像生成、動画生成、予約投稿、自�
 夜のリール動画は `videos/social/instagram/【インスタ】あるある・ランキング系/` を正本にし、Threads / Instagramの両方に投稿します。リール動画内の文字隠し、中央隠し、スタンプ隠し、絵文字隠しは入れません。
 
 ## Render設定
+
+Render Cron Job `rashin-threads-scheduler` は5分おきに実行します。GitHub Actionsのscheduleは遅延または欠落することがあるため、Renderを主時計にします。
 
 ```text
 PUBLIC_ORIGIN=https://rashin-senjutsu.onrender.com
@@ -53,6 +56,8 @@ SOCIAL_REEL_PUBLIC_ORIGIN=https://raw.githubusercontent.com/tekechannnel-max/ras
 SOCIAL_THREADS_IMAGE_FALLBACK_TEXT=true
 THREADS_CONTAINER_TIMEOUT_MS=120000
 THREADS_POST_VERIFY_TIMEOUT_MS=120000
+INSTAGRAM_CONTAINER_TIMEOUT_MS=600000
+INSTAGRAM_CONTAINER_POLL_MS=15000
 ```
 
 Render Cron Job `rashin-threads-scheduler` の実行コマンドは次にします。朝占いと夜リールを同じクラウド実行でdue確認します。
@@ -60,6 +65,15 @@ Render Cron Job `rashin-threads-scheduler` の実行コマンドは次にしま�
 ```text
 npm run social:run-due
 ```
+
+Render側で設定が必要な項目:
+
+- Cron schedule: 5分おき
+- Command: `npm run social:run-due`
+- Branch/commit: 最新の `main`
+- Environment: 上記のThreads / Instagram / SOCIAL系変数
+
+Render設定画面が確認できない場合は、完了報告で「Render実設定は未確認」と明記します。
 
 ## 投稿ルール
 
@@ -77,8 +91,11 @@ npm run check
 npm run social:audit -- --from=2026-06-13 --to=2026-06-13 --platforms=threads,instagram
 node scripts/social/run-scheduled-posts.js --dry-run --only-kind=oracle
 node scripts/social/post-daily-birthday-reels.js --dry-run --platforms=threads,instagram
+npm run social:reels:verify
 npm run social:run-due -- --dry-run
 ```
+
+`social:reels:verify` は、due対象の夜リールがInstagram / Threads側に本文一致で存在するか確認します。投稿後URLが未確認のまま成功扱いしません。
 
 ## KPI
 
@@ -96,5 +113,7 @@ npm run social:kpi-template -- --from=2026-06-01 --to=2026-06-07 --platforms=thr
 - 対象期間の `social:audit` が errors 0 / warnings 0。
 - 投稿予定時刻のdry-runで `due` が想定どおり。
 - Render Cron Job `rashin-threads-scheduler` のコマンドが `npm run social:run-due`。
+- Render Cron Job `rashin-threads-scheduler` が5分おきに実行される。
 - Render環境変数がThreads / Instagramのみで揃っている。
 - 実投稿結果が `posted`、または重複防止の `existing_threads_post` / `existing_instagram_post` で確認できる。
+- 投稿後に `npm run social:reels:verify` 相当のSNS側確認で公開URLを確認できる。

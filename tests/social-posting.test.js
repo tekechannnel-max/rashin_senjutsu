@@ -768,6 +768,7 @@ function testWorkflowHasScheduledPostingBackup() {
   const packageJson = fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8');
   const runbook = fs.readFileSync(path.join(ROOT, 'docs', 'sns-runbook.md'), 'utf8');
   const scriptsReadme = fs.readFileSync(path.join(ROOT, 'scripts', 'social', 'README.md'), 'utf8');
+  const reelsScript = fs.readFileSync(path.join(ROOT, 'scripts', 'social', 'post-daily-birthday-reels.js'), 'utf8');
   assert.match(workflow, /cron: '5,20,35,50 23,11,12,13,14 \* \* \*'/, 'Threads workflow should run off-hour retries for 08:00, 20:00-22:00, and 23:00 recovery');
   assert.match(instagramReelsBackupWorkflow, /cron: '7,17,27,37,47,57 11,12,13,14 \* \* \*'/, 'Reels backup should run frequent off-hour retry and recovery ticks');
   assert.match(workflow, /SOCIAL_ORACLE_TIME: '08:00'/, 'Threads workflow should use the 08:00 JST oracle time');
@@ -780,16 +781,25 @@ function testWorkflowHasScheduledPostingBackup() {
   assert.match(automationWorkflow, /if: steps\.secrets\.outputs\.ready == 'true' && github\.event_name != 'push'/, 'automation workflow push events should validate without publishing due posts');
   assert.match(workflow, /SOCIAL_POST_GRACE_MINUTES: '59'/, 'workflow should allow delayed scheduled runs to recover within the hour');
   assert.match(workflow, /SOCIAL_REEL_CATCHUP_HOURS: '8'/, 'Threads workflow should let a later run recover missed same-night reels');
-  assert.match(workflow, /post-daily-birthday-reels\.js --post --platforms=threads,instagram/, 'Threads workflow should publish daily reels to both Threads and Instagram');
-  assert.match(workflow, /only-kind=oracle/, 'scheduled SNS image step should only allow the morning oracle lane');
+  assert.match(workflow, /npm run social:cloud-run-due/, 'Threads workflow should use the combined cloud runner for due posts');
+  assert.match(workflow, /post-daily-birthday-reels\.js --verify-only --platforms=threads,instagram/, 'Threads workflow should verify due reels after the publish attempt');
+  assert.match(workflow, /run-scheduled-posts\.js --force-kind=oracle/, 'manual oracle dispatch should be the only forced image lane');
   assert.match(automationWorkflow, /npm run social:cloud-run-due/, 'SNS automation should use the combined cloud due runner');
   assert.match(packageJson, /"social:cloud-run-due": "node scripts\/social\/run-cloud-scheduled-posts\.js"/, 'package scripts should expose the combined cloud runner');
   assert.match(packageJson, /"social:run-due": "node scripts\/social\/run-cloud-scheduled-posts\.js"/, 'legacy Render run-due command should use the combined cloud runner');
+  assert.match(packageJson, /"social:reels:verify": "node scripts\/social\/post-daily-birthday-reels\.js --verify-only --platforms=threads,instagram"/, 'package scripts should expose the reel verification command');
   assert.match(runbook, /Render Cron Job `rashin-threads-scheduler` のコマンドが `npm run social:run-due`/, 'runbook should make the combined runner the Render cron command');
+  assert.match(runbook, /5分おき/, 'runbook should make Render Cron the frequent primary scheduler');
+  assert.match(runbook, /GitHub Actionsは補助確認とバックアップ実行/, 'runbook should not treat GitHub Actions as the only production clock');
   assert.match(scriptsReadme, /npm run social:run-due/, 'social README should document the combined cloud runner');
+  assert.match(scriptsReadme, /npm run social:reels:verify/, 'social README should document reel verification');
+  assert.match(reelsScript, /const failures = \[\];/, 'reel posting should collect failures instead of aborting the whole batch');
+  assert.match(reelsScript, /existing_instagram_post/, 'reel posting should use the standard Instagram duplicate reason');
+  assert.match(reelsScript, /--verify-only/, 'reel posting should support SNS-side verification without posting');
   assert.match(instagramReelsBackupWorkflow, /SOCIAL_REEL_CATCHUP_HOURS: '8'/, 'Reels backup workflow should recover missed same-night reels');
   assert.match(instagramReelsBackupWorkflow, /THREADS_ACCESS_TOKEN/, 'Reels backup workflow should also validate and post Threads videos');
   assert.match(instagramReelsBackupWorkflow, /post-daily-birthday-reels\.js --post --platforms=threads,instagram/, 'Reels backup should publish to both Threads and Instagram');
+  assert.match(instagramReelsBackupWorkflow, /post-daily-birthday-reels\.js --verify-only --platforms=threads,instagram/, 'Reels backup should verify due reels after publishing');
   assert.doesNotMatch(imageBackupWorkflow, /^\s+schedule:/m, 'night image backup should not have a scheduled trigger');
   assert.match(imageBackupWorkflow, /Night image posting is disabled/, 'image backup workflow should not publish night image posts');
   assert.doesNotMatch(workflow, /birthday_monthly_01_08/, 'workflow dispatch should not expose old 20:00 birthday monthly image slots');
@@ -812,6 +822,20 @@ function testReelCatchupRecoversMissedSameNightSlots() {
 
   const oldNightSlot = reelScheduleReport('2026-06-13T14:01:00.000Z', { SOCIAL_REEL_CATCHUP_HOURS: '0' });
   assert.deepEqual(dueReelIds(oldNightSlot), [], '23:01 JST should not publish a reel under the new 20:00-22:00 rule');
+}
+
+function testReelVerifyOnlyHasNoPostingSideEffectWhenNothingIsDue() {
+  const result = runNode(['scripts/social/post-daily-birthday-reels.js', '--verify-only', '--platforms=threads,instagram'], {
+    env: {
+      SOCIAL_NOW_ISO: '2026-06-12T00:00:00.000Z',
+      SOCIAL_REEL_PUBLIC_ORIGIN: 'https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/main',
+    },
+  });
+  const report = JSON.parse(result.stdout);
+  assert.equal(report.action, 'verify', 'verify-only should report verification action');
+  assert.equal(report.ok, true, 'verify-only should pass when no due reels exist');
+  assert.deepEqual(report.failures, [], 'verify-only should not report failures when no due reels exist');
+  assert.deepEqual(Object.keys(report.results), [], 'verify-only should not call platform APIs when no reels are due');
 }
 
 function testCloudRunnerRecoversNightReelsAndBlocksLocalPosting() {
@@ -868,6 +892,7 @@ testScheduledPostsRespectJstWeekdays();
 testStatelessScheduleKeepsRecoveryGraceWindow();
 testWorkflowHasScheduledPostingBackup();
 testReelCatchupRecoversMissedSameNightSlots();
+testReelVerifyOnlyHasNoPostingSideEffectWhenNothingIsDue();
 testCloudRunnerRecoversNightReelsAndBlocksLocalPosting();
 testBroadSocialAuditPasses();
 testKpiReviewTemplatePreservesManualMetrics();
