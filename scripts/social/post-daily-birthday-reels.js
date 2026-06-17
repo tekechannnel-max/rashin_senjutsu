@@ -182,6 +182,10 @@ function normalizeText(text) {
   return String(text || '').replace(/\r\n/g, '\n').trim();
 }
 
+function normalizeThreadsPostText(text) {
+  return normalizeText(text).replace(/(^|\s)#(?=\S)/gu, '$1');
+}
+
 function instagramCaption(item) {
   return [
     '＼無料占いはプロフィールURLから／',
@@ -303,9 +307,9 @@ async function postVideoToThreads({ text, videoUrl, altText }) {
 }
 
 async function findExistingThreadByText(text) {
-  const expected = normalizeText(text);
+  const expected = normalizeThreadsPostText(text);
   const recent = await threadsClient.listThreads({ limit: Number(process.env.THREADS_DUPLICATE_LOOKBACK || 50) });
-  return (recent.data || []).find(post => normalizeText(post.text) === expected) || null;
+  return (recent.data || []).find(post => normalizeThreadsPostText(post.text) === expected) || null;
 }
 
 function summarizeInstagramPost(post) {
@@ -592,7 +596,14 @@ async function main() {
   if (failures.length) process.exitCode = 1;
 }
 
-main().catch(error => {
-  console.error(error?.stack || error?.message || String(error));
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch(error => {
+    console.error(error?.stack || error?.message || String(error));
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  normalizeText,
+  normalizeThreadsPostText,
+};

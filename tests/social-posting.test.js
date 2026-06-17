@@ -839,6 +839,25 @@ function testReelVerifyOnlyHasNoPostingSideEffectWhenNothingIsDue() {
   assert.deepEqual(Object.keys(report.results), [], 'verify-only should not call platform APIs when no reels are due');
 }
 
+function testThreadsReelDuplicateMatchingIgnoresHashtagMarker() {
+  const { normalizeThreadsPostText } = require('../scripts/social/post-daily-birthday-reels.js');
+  const authored = [
+    '無料占いはプロフィールURLから👀✨',
+    '',
+    '調子のって失敗する生まれ日TOP5',
+    '',
+    '保存していつでも思い出してください。',
+    '',
+    '#占い師のつぶやき',
+  ].join('\n');
+  const apiText = authored.replace('#占い師のつぶやき', '占い師のつぶやき');
+  assert.equal(
+    normalizeThreadsPostText(authored),
+    normalizeThreadsPostText(apiText),
+    'Threads duplicate matching should tolerate API text dropping the hashtag marker'
+  );
+}
+
 function testCloudRunnerRecoversNightReelsAndBlocksLocalPosting() {
   const report = cloudScheduleReport('2026-06-13T14:05:00.000Z');
   assert.equal(report.dryRun, true, 'cloud runner dry-run should not publish');
@@ -894,6 +913,7 @@ testStatelessScheduleKeepsRecoveryGraceWindow();
 testWorkflowHasScheduledPostingBackup();
 testReelCatchupRecoversMissedSameNightSlots();
 testReelVerifyOnlyHasNoPostingSideEffectWhenNothingIsDue();
+testThreadsReelDuplicateMatchingIgnoresHashtagMarker();
 testCloudRunnerRecoversNightReelsAndBlocksLocalPosting();
 testBroadSocialAuditPasses();
 testKpiReviewTemplatePreservesManualMetrics();
