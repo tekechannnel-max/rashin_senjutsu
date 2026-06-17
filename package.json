@@ -26,6 +26,7 @@
     "social:run-oracle-due": "node scripts/social/run-scheduled-posts.js --once",
     "social:cloud-run-due": "node scripts/social/run-cloud-scheduled-posts.js",
     "social:reels:daily": "node scripts/social/post-daily-birthday-reels.js",
+    "social:reels:verify": "node scripts/social/post-daily-birthday-reels.js --verify-only --platforms=threads,instagram",
     "social:reels:generate:20260613": "node scripts/social/generate-birthday-reels-20260613.js",
     "threads:doctor": "node scripts/social/threads-tool.js doctor",
     "threads:auth-url": "node scripts/social/threads-tool.js auth-url",
