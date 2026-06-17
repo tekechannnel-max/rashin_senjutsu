@@ -739,6 +739,7 @@ function reelScheduleReport(iso, env = {}) {
     env: {
       SOCIAL_NOW_ISO: iso,
       SOCIAL_REEL_PUBLIC_ORIGIN: 'https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/main',
+      SOCIAL_REEL_CATCHUP_HOURS: '0',
       ...env,
     },
   });
