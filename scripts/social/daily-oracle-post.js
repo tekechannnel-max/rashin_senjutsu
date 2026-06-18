@@ -2388,6 +2388,7 @@ function hasPublicUrl(text) {
 function normalizeDuplicateText(text) {
   return String(text || '')
     .replace(/https?:\/\/\S+/gi, '')
+    .replace(/(^|\s)#(?=\S)/gu, '$1')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -2395,7 +2396,7 @@ function normalizeDuplicateText(text) {
 async function findExistingThreadsPost({ marker = null, text = '' } = {}) {
   if (process.env.SOCIAL_ALLOW_DUPLICATE_POSTS === 'true') return null;
   if (!marker && !text) throw new Error('Missing duplicate protection marker or text.');
-  const recent = await threadsClient.listThreads({ limit: Number(process.env.THREADS_DUPLICATE_LOOKBACK || 25) });
+  const recent = await threadsClient.listThreads({ limit: Number(process.env.THREADS_DUPLICATE_LOOKBACK || 200) });
   const normalizedText = normalizeDuplicateText(text);
   return (recent.data || []).find(post => {
     const postText = String(post.text || '');

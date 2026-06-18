@@ -839,6 +839,20 @@ function testReelVerifyOnlyHasNoPostingSideEffectWhenNothingIsDue() {
   assert.deepEqual(Object.keys(report.results), [], 'verify-only should not call platform APIs when no reels are due');
 }
 
+function testMorningOracleDuplicateLookbackSurvivesReelFlood() {
+  const posterSource = fs.readFileSync(path.join(ROOT, 'scripts', 'social', 'daily-oracle-post.js'), 'utf8');
+  assert.match(
+    posterSource,
+    /THREADS_DUPLICATE_LOOKBACK \|\| 200/,
+    'morning oracle duplicate detection must look past a same-hour reel flood'
+  );
+  assert.match(
+    posterSource,
+    /\.replace\(\/\(\^\|\\s\)#\(\?=\\S\)\/gu, '\$1'\)/,
+    'morning oracle duplicate detection should tolerate Threads dropping the hashtag marker'
+  );
+}
+
 function testThreadsReelDuplicateMatchingIgnoresHashtagMarker() {
   const { normalizeThreadsPostText } = require('../scripts/social/post-daily-birthday-reels.js');
   const authored = [
@@ -913,6 +927,7 @@ testStatelessScheduleKeepsRecoveryGraceWindow();
 testWorkflowHasScheduledPostingBackup();
 testReelCatchupRecoversMissedSameNightSlots();
 testReelVerifyOnlyHasNoPostingSideEffectWhenNothingIsDue();
+testMorningOracleDuplicateLookbackSurvivesReelFlood();
 testThreadsReelDuplicateMatchingIgnoresHashtagMarker();
 testCloudRunnerRecoversNightReelsAndBlocksLocalPosting();
 testBroadSocialAuditPasses();
