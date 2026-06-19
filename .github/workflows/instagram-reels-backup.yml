@@ -55,6 +55,7 @@ jobs:
       INSTAGRAM_CONTAINER_POLL_MS: '15000'
       THREADS_CONTAINER_TIMEOUT_MS: '120000'
       THREADS_POST_VERIFY_TIMEOUT_MS: '120000'
+      POST_20260617_18: ${{ (github.event_name == 'push' && contains(github.event.head_commit.message, '[post-20260617-18]')) || github.event.inputs.mode == 'post_20260617_18' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -66,9 +67,12 @@ jobs:
 
       - name: Check posting secrets
         id: secrets
-        if: github.event_name != 'push'
         shell: bash
         run: |
+          if [ "${{ github.event_name }}" = "push" ] && [ "$POST_20260617_18" != "true" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [ -z "$INSTAGRAM_ACCESS_TOKEN" ] || [ -z "$INSTAGRAM_USER_ID" ] || [ -z "$THREADS_ACCESS_TOKEN" ] || [ -z "$THREADS_USER_ID" ]; then
             echo "::error::GitHub Secrets for Instagram / Threads are not set. Reels backup posting cannot run."
             exit 1
@@ -89,25 +93,31 @@ jobs:
         run: |
           if [ "${{ github.event.inputs.mode }}" = "post_20260617_18" ]; then
             node scripts/social/post-daily-birthday-reels.js --dry-run --force --ids=daily_reel_20260617_20_choushi_notte_shippai,daily_reel_20260617_21_chokkan_sugureteru,daily_reel_20260617_22_kanchigai_sareyasui,daily_reel_20260618_20_kuuki_yomisugiru,daily_reel_20260618_21_hitori_hanseikai,daily_reel_20260618_22_birth_05_aruaru --platforms=threads,instagram
+          elif [ "$POST_20260617_18" = "true" ]; then
+            node scripts/social/post-daily-birthday-reels.js --dry-run --force --ids=daily_reel_20260617_20_choushi_notte_shippai,daily_reel_20260617_21_chokkan_sugureteru,daily_reel_20260617_22_kanchigai_sareyasui,daily_reel_20260618_20_kuuki_yomisugiru,daily_reel_20260618_21_hitori_hanseikai,daily_reel_20260618_22_birth_05_aruaru --platforms=threads,instagram
           else
             node scripts/social/post-daily-birthday-reels.js --dry-run --platforms=threads,instagram
           fi
 
       - name: Publish due reels
-        if: steps.secrets.outputs.ready == 'true' && github.event_name != 'push' && github.event.inputs.mode != 'validate_only'
+        if: steps.secrets.outputs.ready == 'true' && github.event.inputs.mode != 'validate_only'
         shell: bash
         run: |
           if [ "${{ github.event.inputs.mode }}" = "post_20260617_18" ]; then
+            node scripts/social/post-daily-birthday-reels.js --post --force --ids=daily_reel_20260617_20_choushi_notte_shippai,daily_reel_20260617_21_chokkan_sugureteru,daily_reel_20260617_22_kanchigai_sareyasui,daily_reel_20260618_20_kuuki_yomisugiru,daily_reel_20260618_21_hitori_hanseikai,daily_reel_20260618_22_birth_05_aruaru --platforms=threads,instagram
+          elif [ "$POST_20260617_18" = "true" ]; then
             node scripts/social/post-daily-birthday-reels.js --post --force --ids=daily_reel_20260617_20_choushi_notte_shippai,daily_reel_20260617_21_chokkan_sugureteru,daily_reel_20260617_22_kanchigai_sareyasui,daily_reel_20260618_20_kuuki_yomisugiru,daily_reel_20260618_21_hitori_hanseikai,daily_reel_20260618_22_birth_05_aruaru --platforms=threads,instagram
           else
             node scripts/social/post-daily-birthday-reels.js --post --platforms=threads,instagram
           fi
 
       - name: Verify due reels exist
-        if: always() && steps.secrets.outputs.ready == 'true' && github.event_name != 'push' && github.event.inputs.mode != 'validate_only'
+        if: always() && steps.secrets.outputs.ready == 'true' && github.event.inputs.mode != 'validate_only'
         shell: bash
         run: |
           if [ "${{ github.event.inputs.mode }}" = "post_20260617_18" ]; then
+            node scripts/social/post-daily-birthday-reels.js --verify-only --force --ids=daily_reel_20260617_20_choushi_notte_shippai,daily_reel_20260617_21_chokkan_sugureteru,daily_reel_20260617_22_kanchigai_sareyasui,daily_reel_20260618_20_kuuki_yomisugiru,daily_reel_20260618_21_hitori_hanseikai,daily_reel_20260618_22_birth_05_aruaru --platforms=threads,instagram
+          elif [ "$POST_20260617_18" = "true" ]; then
             node scripts/social/post-daily-birthday-reels.js --verify-only --force --ids=daily_reel_20260617_20_choushi_notte_shippai,daily_reel_20260617_21_chokkan_sugureteru,daily_reel_20260617_22_kanchigai_sareyasui,daily_reel_20260618_20_kuuki_yomisugiru,daily_reel_20260618_21_hitori_hanseikai,daily_reel_20260618_22_birth_05_aruaru --platforms=threads,instagram
           else
             node scripts/social/post-daily-birthday-reels.js --verify-only --platforms=threads,instagram
