@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "updatedAt": "2026-06-20",
+  "accounts": [
+    {
+      "platform": "instagram",
+      "handle": "uranai.kitsune",
+      "url": "https://www.instagram.com/uranai.kitsune/",
+      "role": "primary_reference",
+      "ttpAllowed": [
+        "theme_pattern",
+        "ranking_format",
+        "saveable_self_diagnosis_angle"
+      ],
+      "ttpForbidden": [
+        "copy_caption",
+        "copy_ranking_order",
+        "copy_visual_asset",
+        "screenshot_repost"
+      ],
+      "notes": "Use as a pattern source only. Rebuild every topic as original birthday-number content before review."
+    },
+    {
+      "platform": "instagram",
+      "handle": "costarastrology",
+      "url": "https://www.instagram.com/costarastrology/",
+      "role": "secondary_reference",
+      "ttpAllowed": [
+        "compact_astrology_framing",
+        "shareable_wording_density",
+        "commentable_topic_angle"
+      ],
+      "ttpForbidden": [
+        "copy_caption",
+        "copy_visual_asset",
+        "brand_style_clone"
+      ],
+      "notes": "Use only for density and angle study. Do not copy brand tone or graphics."
+    }
+  ]
+}

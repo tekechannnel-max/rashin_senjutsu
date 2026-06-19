@@ -111,15 +111,16 @@ assert.ok(
   'BOOTH modal must include inline Rashin-code input below the order-number field'
 );
 
-assert.ok(
-  boothModalBody.includes('id="booth-order-error">BOOTH注文番号を入力してください。</div>\n        </div>\n        <div class="booth-reference-row booth-rashin-code-row">'),
+assert.match(
+  boothModalBody,
+  /id="booth-order-error">BOOTH注文番号を入力してください。<\/div>\r?\n\s*<\/div>\r?\n\s*<div class="booth-reference-row booth-rashin-code-row">/,
   'BOOTH modal must close the order-number row before rendering the inline Rashin-code row'
 );
 
 assert.ok(
-  boothModalBody.includes('finish(value);\n    };\n    const submitCode=()=>{') &&
+  /finish\(value\);\r?\n\s*};\r?\n\s*const submitCode=\(\)=>{/.test(boothModalBody) &&
     boothModalBody.includes('input?.addEventListener(\'keydown\',event=>') &&
-    boothModalBody.includes('    });\n    codeInput?.addEventListener(\'input\',()=>{'),
+    /\s*}\);\r?\n\s*codeInput\?\.addEventListener\('input',\(\)=>{/.test(boothModalBody),
   'BOOTH modal must keep submitCode and code input listeners outside the order-number submit handler'
 );
 

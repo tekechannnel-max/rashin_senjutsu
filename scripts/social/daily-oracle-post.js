@@ -29,7 +29,6 @@ const DEFAULT_INSTAGRAM_HASHTAGS_BY_KIND = Object.freeze({
   difference: ['#羅針占術', '#AI占い', '#無料占い', '#占い師のつぶやき', '#悩み相談'],
   free_paid_compare: ['#羅針占術', '#無料占い', '#占い師のつぶやき', '#ルノルマンカード', '#AI占い'],
   rashin_point: ['#羅針占術', '#AI占い', '#無料占い', '#占い師', '#悩み相談'],
-  birthday_ranking: ['#羅針占術', '#誕生日占い', '#数秘', '#誕生日数', '#占い好きな人と繋がりたい'],
   midday: ['#羅針占術', '#AI占い', '#無料占い', '#悩み相談', '#占い好きな人と繋がりたい'],
   concept: ['#羅針占術', '#AI占い', '#無料占い', '#占い師のつぶやき', '#悩み相談'],
 });
@@ -48,19 +47,18 @@ const RELEASE_DATE = PRERELEASE_START_DATE;
 const CARD_CYCLE_START_DATE = '2026-05-12';
 const SOCIAL_EXPANSION_START_DATE = process.env.SOCIAL_EXPANSION_START_DATE || '2026-05-27';
 const CONTENT_CYCLE_START_DATE = process.env.SOCIAL_CONTENT_CYCLE_START_DATE || SOCIAL_EXPANSION_START_DATE;
-const SOCIAL_BIRTHDAY_MONTHLY_START_DATE = process.env.SOCIAL_BIRTHDAY_MONTHLY_START_DATE || '2026-06-05';
+const SOCIAL_BIRTHDAY_MONTHLY_START_DATE = process.env.SOCIAL_BIRTHDAY_MONTHLY_START_DATE || '2026-06-01';
 const ORACLE_CARD_CYCLE_LENGTH = 33;
 const SOCIAL_PAID_CTA_MODES = new Set(['off', 'soft', 'active']);
 const SOCIAL_RELEASE_MODES = new Set(['auto', 'prelaunch', 'prerelease', 'fix', 'release', 'launch', 'postrelease']);
 const SOCIAL_POST_KINDS = ['oracle'];
-const LEGACY_SOCIAL_POST_KINDS = ['rashin_point', 'birthday_monthly', 'birthday_ranking', 'empathy', 'difference', 'free_paid_compare', 'midday', 'concept'];
+const LEGACY_SOCIAL_POST_KINDS = ['rashin_point', 'birthday_monthly', 'empathy', 'difference', 'free_paid_compare', 'midday', 'concept'];
 const DRAFT_POST_KINDS = [...SOCIAL_POST_KINDS, ...LEGACY_SOCIAL_POST_KINDS];
 const THREADS_MATCHED_PLATFORM_KINDS = new Set(['oracle', 'birthday_monthly', 'empathy', 'difference', 'free_paid_compare']);
 const RESULT_SUFFIX_BY_KIND = {
   oracle: 'Oracle',
   rashin_point: 'RashinPoint',
   birthday_monthly: 'BirthdayMonthly',
-  birthday_ranking: 'BirthdayRanking',
   empathy: 'Empathy',
   difference: 'Difference',
   free_paid_compare: 'FreePaidCompare',
@@ -74,83 +72,6 @@ const FREE_PAID_COMPARE_WEEKDAYS = [4];
 const BIRTHDAY_MONTHLY_ROOT = path.join(ROOT, 'images', 'social', 'instagram', '誕生日数×ルノルマン');
 const BIRTHDAY_MONTHLY_RELATIVE_ROOT = ['images', 'social', 'instagram', '誕生日数×ルノルマン'];
 const BIRTHDAY_MONTHLY_MAX_CAROUSEL_MEDIA = 10;
-const BIRTHDAY_RANKING_SLUG_BY_DATE = {
-  '2026-06-08': 'love_at_first_sight',
-};
-const BIRTHDAY_RANKING_POSTS = {
-  love_at_first_sight: {
-    slug: 'love_at_first_sight',
-    title: '一目惚れしやすい生まれ日TOP5',
-    emoji: '💘',
-    file: 'images/social/instagram/【インスタ】あるある・ランキング系/love-at-first-sight-top5.jpg',
-    lead: '恋のスイッチが入りやすい生まれ日を、誕生日数の傾向でまとめました。',
-    note: 'ノリ・会話・雰囲気で一気に惹かれやすいタイプが上位です。',
-    altText: '一目惚れしやすい生まれ日TOP5のランキング画像。5日、3日、11日、15日、29日生まれの特徴をミニキャラ付きで紹介している。',
-  },
-  money_luck: {
-    slug: 'money_luck',
-    title: '金運が強い生まれ日TOP5',
-    emoji: '💰',
-    file: 'images/social/instagram/【インスタ】あるある・ランキング系/money-luck-top5.jpg',
-    lead: 'お金との縁が強く出やすい生まれ日を、誕生日数の傾向でまとめました。',
-    note: '稼ぐ力、守る力、人との縁から金運が育つタイプを見ています。',
-    altText: '金運が強い生まれ日TOP5のランキング画像。8日、22日、17日、26日、4日生まれの特徴を金貨とゴールド背景で紹介している。',
-  },
-  horror_resistance: {
-    slug: 'horror_resistance',
-    title: 'ホラー耐性のある生まれ日TOP5',
-    emoji: '👻',
-    file: 'images/social/instagram/【インスタ】あるある・ランキング系/horror-resistance-top5.jpg',
-    lead: '怖いものをどう受け止めやすいかを、誕生日数の傾向でまとめました。',
-    note: '怖がらない理由は、鈍感さではなく見方のクセかもしれません。',
-    altText: 'ホラー耐性のある生まれ日TOP5のランキング画像。7日、8日、5日、16日、22日生まれの特徴を暗めのホラー風背景で紹介している。',
-  },
-  weird: {
-    slug: 'weird',
-    title: '変人に見られやすい生まれ日TOP5',
-    emoji: '🪐',
-    file: 'images/social/instagram/【インスタ】あるある・ランキング系/weird-top5.jpg',
-    lead: '独特に見られやすい生まれ日を、誕生日数の傾向でまとめました。',
-    note: '変わっていることは弱点ではなく、使いどころで魅力になります。',
-    altText: '変人に見られやすい生まれ日TOP5のランキング画像。11日、7日、22日、5日、29日生まれの特徴をミニキャラ付きで紹介している。',
-  },
-  idol_style: {
-    slug: 'idol_style',
-    title: 'アイドルになったら大体こんな感じ',
-    emoji: '',
-    file: 'images/social/instagram/【インスタ】あるある・ランキング系/idol-style-4class.jpg',
-    lead: '',
-    note: '',
-    altText: 'アイドルになったら大体こんな感じの4分類画像。センター・カリスマ型、愛されファンサ型、世界観・沼らせ型、職人・クセ強パフォーマー型を誕生日ごとに紹介している。',
-  },
-  love_style: {
-    slug: 'love_style',
-    title: '恋愛スタイル4分類',
-    emoji: '',
-    file: 'images/social/instagram/【インスタ】あるある・ランキング系/love-style-4class.jpg',
-    lead: '',
-    note: '',
-    altText: '恋愛スタイル4分類の画像。追いかける主導権型、愛されたい・尽くしたい型、ときめき・自由恋愛型、慎重・深愛・内面重視型を誕生日ごとに紹介している。',
-  },
-  amae_jouzu: {
-    slug: 'amae_jouzu',
-    title: '甘え上手ランキングtop5',
-    emoji: '',
-    file: 'images/social/instagram/【インスタ】あるある・ランキング系/amae-jouzu-top5.jpg',
-    lead: '',
-    note: '',
-    altText: '甘え上手ランキングtop5の画像。2日、6日、15日、3日、20日生まれの甘え方をミニキャラ付きで紹介している。',
-  },
-  buchigire_kowai: {
-    slug: 'buchigire_kowai',
-    title: 'ブチギレると怖い生まれ日TOP5はこちらです。',
-    emoji: '',
-    file: 'images/social/instagram/【インスタ】あるある・ランキング系/buchigire-kowai-top5.jpg',
-    lead: '',
-    note: '',
-    altText: 'ブチギレると怖い生まれ日TOP5の画像。8日、1日、16日、22日、5日生まれの怒り方をミニキャラ付きで紹介している。',
-  },
-};
 const CARD_OVERRIDES_BY_DATE = {
   '2026-05-12': 8,
   '2026-05-13': 8,
@@ -187,11 +108,11 @@ const SOCIAL_CONTENT_IMAGES = {
   },
   rashin_point: {
     file: 'rashin_point.jpg',
-    slides: ['difference.jpg', 'rashin_point.jpg', 'free-paid-compare.jpg'],
+    slides: ['difference.jpg', 'free-paid-compare.jpg', 'rashin_point.jpg'],
     altTexts: [
       '羅針占術とほかのAI占いの違いを比較する画像。',
-      '羅針占術の鑑定で見える本質、本音、現実、次の一手を示す画像。',
       '羅針占術の無料鑑定と深掘り鑑定の違いを比較する画像。',
+      '羅針占術の鑑定で見える本質、本音、現実、次の一手を示す画像。',
     ],
     altText: '羅針占術の信頼導線カルーセル。ほかのAI占いとの違い、鑑定で見えること、無料と有料の違いを3枚で示している。',
   },
@@ -509,8 +430,6 @@ function parseArgs(argv) {
     else if (arg.startsWith('--oracle-card-mode=')) args.oracleCardMode = arg.split('=')[1];
     else if (arg === '--birthday-days') args.birthdayDays = argv[++i];
     else if (arg.startsWith('--birthday-days=')) args.birthdayDays = arg.split('=')[1];
-    else if (arg === '--birthday-ranking-slug') args.birthdayRankingSlug = argv[++i];
-    else if (arg.startsWith('--birthday-ranking-slug=')) args.birthdayRankingSlug = arg.split('=')[1];
   }
   if (!['all', ...DRAFT_POST_KINDS].includes(args.kind)) {
     throw new Error(`Invalid --kind: ${args.kind}`);
@@ -890,10 +809,6 @@ function buildBirthdayMonthlyUtmContent(item, dateKey) {
   return `birthdaymonthly_${compactDate(dateKey)}_birth${pad2(item.day)}`;
 }
 
-function buildBirthdayRankingUtmContent(item, dateKey) {
-  return `birthdayranking_${compactDate(dateKey)}_${item.slug}`;
-}
-
 function buildQuestionUtmContent(item, dateKey) {
   return `question_${compactDate(dateKey)}_v${pad2(item.version)}`;
 }
@@ -916,10 +831,6 @@ function buildEmpathyTrackedUrl(item, dateKey, publicOrigin, config) {
 
 function buildBirthdayMonthlyTrackedUrl(item, dateKey, publicOrigin, config) {
   return buildTrackedUrl(publicOrigin, '/', buildUtmParams(config, buildBirthdayMonthlyUtmContent(item, dateKey)));
-}
-
-function buildBirthdayRankingTrackedUrl(item, dateKey, publicOrigin, config) {
-  return buildTrackedUrl(publicOrigin, '/', buildUtmParams(config, buildBirthdayRankingUtmContent(item, dateKey)));
 }
 
 function buildQuestionTrackedUrl(item, dateKey, publicOrigin, config) {
@@ -1027,7 +938,7 @@ function getTrackedUrlForPlatform(entry, platform) {
 function validateDraft(draft, args) {
   const platforms = Array.isArray(args.platforms) ? args.platforms : ['threads'];
   const kinds = selectedKindsFromArgs(args);
-  const requiresVisibleUrl = kind => kind !== 'birthday_ranking';
+  const requiresVisibleUrl = kind => kind !== 'birthday_monthly';
   if (platforms.includes('threads')) {
     const preRelease = isPreReleasePosting(draft.date, draft.meta?.socialConfig || {});
     for (const kind of kinds) {
@@ -1210,26 +1121,6 @@ function publicRepoImageUrl(publicOrigin, repoRelativeFile) {
     .join('/')}`;
 }
 
-function publicRepoAssetUrl(publicOrigin, repoRelativeFile) {
-  return publicRepoImageUrl(publicOrigin, repoRelativeFile);
-}
-
-function birthdayRankingMediaPaths(item, imagePath) {
-  const paths = [imagePath].filter(Boolean);
-  if (item?.videoFile) paths.push(path.resolve(ROOT, item.videoFile));
-  return paths;
-}
-
-function birthdayRankingMediaUrls(item, imageUrl, publicOrigin) {
-  const urls = [imageUrl].filter(Boolean);
-  if (item?.videoFile) urls.push(publicRepoAssetUrl(publicOrigin, item.videoFile));
-  return urls;
-}
-
-function birthdayRankingAltTexts(item) {
-  return item?.videoFile ? [item.altText, item.altText] : [];
-}
-
 function positiveModulo(value, divisor) {
   return ((value % divisor) + divisor) % divisor;
 }
@@ -1249,28 +1140,28 @@ function readJsonSync(file) {
 
 function birthdayMonthlyManifestPath(dateKey) {
   const requestedMonth = String(process.env.SOCIAL_BIRTHDAY_MONTHLY_MONTH || dateKey.slice(0, 7)).trim();
-  const requested = path.join(BIRTHDAY_MONTHLY_ROOT, requestedMonth, 'monthly', 'manifest.json');
+  const requested = path.join(BIRTHDAY_MONTHLY_ROOT, requestedMonth, 'manifest.json');
   if (fsSync.existsSync(requested)) return requested;
   throw new Error(`Birthday monthly manifest was not found for ${requestedMonth}: ${requested}`);
 }
 
 function birthdayMonthlyPartKeyForDay(day) {
-  if (day >= 1 && day <= 10) return '01-10';
-  if (day >= 11 && day <= 20) return '11-20';
-  if (day >= 21 && day <= 31) return '21-31';
+  if (day >= 1 && day <= 8) return '01-08';
+  if (day >= 9 && day <= 16) return '09-16';
+  if (day >= 17 && day <= 24) return '17-24';
+  if (day >= 25 && day <= 31) return '25-31';
   throw new Error(`Invalid birthday monthly day: ${day}`);
 }
 
 function birthdayMonthlyStrictRelativeFile(month, day) {
   const normalizedDay = Number(day);
-  const partKey = birthdayMonthlyPartKeyForDay(normalizedDay);
   const fileName = `${pad2(normalizedDay)}-birth-${pad2(normalizedDay)}.jpg`;
-  return path.posix.join(...BIRTHDAY_MONTHLY_RELATIVE_ROOT, month, 'monthly', partKey, fileName);
+  return path.posix.join(...BIRTHDAY_MONTHLY_RELATIVE_ROOT, month, birthdayMonthlyPartKeyForDay(normalizedDay), fileName);
 }
 
 function birthdayMonthlyCoverRelativeFile(month, days) {
   const rangeKey = formatBirthdayMonthlyDayRangeKey(days).replace('_', '-');
-  return path.posix.join(...BIRTHDAY_MONTHLY_RELATIVE_ROOT, month, 'monthly', `cover-${rangeKey}.jpg`);
+  return path.posix.join(...BIRTHDAY_MONTHLY_RELATIVE_ROOT, month, rangeKey, `0_cover-${rangeKey}.jpg`);
 }
 
 function assertBirthdayMonthlySelection(days, manifestFile, options = {}) {
@@ -1417,22 +1308,6 @@ function pickBirthdayMonthlyPost(dateKey, args = {}) {
 function birthdayMonthLabel(month) {
   const value = Number(String(month || '').slice(5, 7));
   return Number.isFinite(value) && value > 0 ? `${value}月` : '今月';
-}
-
-function pickBirthdayRankingPost(dateKey, args = {}) {
-  const slug = String(args.birthdayRankingSlug || process.env.SOCIAL_BIRTHDAY_RANKING_SLUG || BIRTHDAY_RANKING_SLUG_BY_DATE[dateKey] || '').trim();
-  const item = BIRTHDAY_RANKING_POSTS[slug];
-  if (!item) {
-    throw new Error(`Birthday ranking post is not scheduled for ${dateKey}${slug ? ` / ${slug}` : ''}.`);
-  }
-  const imagePath = path.resolve(ROOT, item.file);
-  if (!fsSync.existsSync(imagePath)) {
-    throw new Error(`Birthday ranking image was not found: ${imagePath}`);
-  }
-  return {
-    ...item,
-    imagePath,
-  };
 }
 
 function deterministicCardId(ids, dateKey) {
@@ -1746,41 +1621,6 @@ function buildBirthdayMonthlyText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_O
   ], getPostLimitForConfig(config));
 }
 
-function buildBirthdayRankingParts(item) {
-  return [
-    item.title,
-    item.lead,
-    item.note,
-    '気になる生まれ日があったら、画像でチェックしてみてください。',
-  ];
-}
-
-function buildBirthdayRankingText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['threads'] })) {
-  return fitPostText([
-    '\\無料占いはプロフィールURLから/',
-    `${item.title}${item.emoji || ''}`,
-    [
-      '🌸当てはまったら保存',
-      '🦦周りの人の誕生日も見てみて',
-      '🪭何日生まれかコメントで教えてね',
-    ].join('\n'),
-    config.defaultHashtag || DEFAULT_HASHTAG,
-  ], getPostLimitForConfig(config));
-}
-
-function buildInstagramBirthdayRankingText(item, dateKey, publicOrigin = DEFAULT_PUBLIC_ORIGIN, config = getSocialConfig({ platforms: ['instagram'] })) {
-  return fitPostText([
-    '\\無料占いはプロフィールURLから/',
-    `${item.title}${item.emoji || ''}`,
-    [
-      '🌸当てはまったら保存',
-      '🦦周りの人の誕生日も見てみて',
-      '🪭何日生まれかコメントで教えてね',
-    ].join('\n'),
-    config.defaultHashtag || DEFAULT_HASHTAG,
-  ], getPostLimitForConfig(config));
-}
-
 function buildBirthdayMonthlyPostParts(item) {
   const monthLabel = birthdayMonthLabel(item.month);
   const dayLabel = item.dayEnd && item.dayEnd !== item.day ? `${item.day}-${item.dayEnd}` : `${item.day}`;
@@ -1933,7 +1773,6 @@ async function buildDraft(args) {
   const instagramOracleConfig = withInstagramKind(config, 'oracle');
   const instagramRashinPointConfig = withInstagramKind(config, 'rashin_point');
   const instagramBirthdayMonthlyConfig = withInstagramKind(config, 'birthday_monthly');
-  const instagramBirthdayRankingConfig = withInstagramKind(config, 'birthday_ranking');
   const instagramEmpathyConfig = withInstagramKind(config, 'empathy');
   const instagramDifferenceConfig = withInstagramKind(config, 'difference');
   const instagramFreePaidCompareConfig = withInstagramKind(config, 'free_paid_compare');
@@ -1942,12 +1781,10 @@ async function buildDraft(args) {
   const selectedKinds = selectedKindsFromArgs(args);
   const shouldBuildRashinPoint = selectedKinds.includes('rashin_point');
   const shouldBuildBirthdayMonthly = selectedKinds.includes('birthday_monthly');
-  const shouldBuildBirthdayRanking = selectedKinds.includes('birthday_ranking');
   const calendar = getCalendarEntry(dateKey);
   const paidCta = resolvePaidCta(calendar, config);
   const conceptImage = pickConceptImage(calendar, dateKey);
   const birthdayMonthlyPost = shouldBuildBirthdayMonthly ? pickBirthdayMonthlyPost(dateKey, args) : null;
-  const birthdayRankingPost = shouldBuildBirthdayRanking ? pickBirthdayRankingPost(dateKey, args) : null;
   const empathyPost = pickEmpathyPost(dateKey);
   const differencePost = pickDifferencePost(dateKey);
   const freePaidComparePost = pickFreePaidComparePost(dateKey);
@@ -1967,11 +1804,6 @@ async function buildDraft(args) {
   const blueskyMiddayImagePath = path.join(ROOT, 'images', 'ui', blueskyMiddayImage.file);
   const birthdayMonthlyImagePath = birthdayMonthlyPost ? path.resolve(ROOT, birthdayMonthlyPost.file) : null;
   const birthdayMonthlyImageUrl = birthdayMonthlyPost ? publicRepoImageUrl(publicOrigin, birthdayMonthlyPost.file) : null;
-  const birthdayRankingImagePath = birthdayRankingPost ? birthdayRankingPost.imagePath : null;
-  const birthdayRankingImageUrl = birthdayRankingPost ? publicRepoImageUrl(publicOrigin, birthdayRankingPost.file) : null;
-  const birthdayRankingMediaPathsValue = birthdayRankingPost ? birthdayRankingMediaPaths(birthdayRankingPost, birthdayRankingImagePath) : [];
-  const birthdayRankingMediaUrlsValue = birthdayRankingPost ? birthdayRankingMediaUrls(birthdayRankingPost, birthdayRankingImageUrl, publicOrigin) : [];
-  const birthdayRankingAltTextsValue = birthdayRankingPost ? birthdayRankingAltTexts(birthdayRankingPost) : [];
   const birthdayMonthlyImagePaths = birthdayMonthlyPost?.files
     ? birthdayMonthlyPost.files.map(file => path.resolve(ROOT, file))
     : [];
@@ -2008,9 +1840,8 @@ async function buildDraft(args) {
     date: dateKey,
     schedule: {
       oracle: `${process.env.SOCIAL_ORACLE_TIME || '08:00'} Asia/Tokyo`,
-      rashin_point: '20:00 Asia/Tokyo one-off 2026-06-04',
-      birthday_monthly: '2026-06-05 20:00/21:00/22:00/23:00 Asia/Tokyo, then monthly on the 1st from 2026-07-01',
-      birthday_ranking: '20:00/21:00/22:00/23:00 Asia/Tokyo one-off on 2026-06-08 and 2026-06-09, Threads/Instagram',
+      rashin_point: 'Thursday 20:00 Asia/Tokyo',
+      birthday_monthly: 'Monthly 1st 20:00/21:00/22:00/23:00 Asia/Tokyo, Threads/Instagram',
       empathy: 'manual only',
       difference: 'hold: weekly comparison timing undecided',
       free_paid_compare: 'hold: weekly comparison timing undecided',
@@ -2037,7 +1868,7 @@ async function buildDraft(args) {
       content: {
         slideFiles: rashinPointImage.slides,
         carousel: true,
-        oneOffDate: '2026-06-04',
+        schedule: 'Thursday 20:00 Asia/Tokyo',
       },
       imagePath: rashinPointImagePaths[0],
       imageUrl: rashinPointImageUrls[0],
@@ -2090,31 +1921,6 @@ async function buildDraft(args) {
       instagramImageUrl: birthdayMonthlyImageUrl,
       instagramImagePaths: birthdayMonthlyImagePaths,
       instagramImageUrls: birthdayMonthlyImageUrls,
-    } } : {}),
-    ...(birthdayRankingPost ? { birthday_ranking: {
-      content: {
-        slug: birthdayRankingPost.slug,
-        title: birthdayRankingPost.title,
-        oneOffDate: dateKey,
-      },
-      imagePath: birthdayRankingImagePath,
-      imageUrl: birthdayRankingImageUrl,
-      imagePaths: birthdayRankingMediaPathsValue,
-      imageUrls: birthdayRankingMediaUrlsValue,
-      altText: birthdayRankingPost.altText,
-      altTexts: birthdayRankingAltTextsValue,
-      text: buildBirthdayRankingText(birthdayRankingPost, dateKey, publicOrigin, threadsConfig),
-      trackedUrl: buildBirthdayRankingTrackedUrl(birthdayRankingPost, dateKey, publicOrigin, threadsConfig),
-      blueskyText: buildBirthdayRankingText(birthdayRankingPost, dateKey, publicOrigin, blueskyConfig),
-      blueskyTrackedUrl: buildBirthdayRankingTrackedUrl(birthdayRankingPost, dateKey, publicOrigin, blueskyConfig),
-      blueskyImagePath: birthdayRankingImagePath,
-      blueskyImageUrl: birthdayRankingImageUrl,
-      instagramText: buildInstagramBirthdayRankingText(birthdayRankingPost, dateKey, publicOrigin, instagramBirthdayRankingConfig),
-      instagramTrackedUrl: buildBirthdayRankingTrackedUrl(birthdayRankingPost, dateKey, publicOrigin, instagramBirthdayRankingConfig),
-      instagramImagePath: birthdayRankingImagePath,
-      instagramImageUrl: birthdayRankingImageUrl,
-      instagramImagePaths: birthdayRankingMediaPathsValue,
-      instagramImageUrls: birthdayRankingMediaUrlsValue,
     } } : {}),
     empathy: {
       card: {

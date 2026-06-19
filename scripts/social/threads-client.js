@@ -100,13 +100,13 @@ function ensureThreadsText(text) {
 
 function ensurePublicMediaUrl(imageUrl) {
   const value = String(imageUrl || '').trim();
-  if (!value) throw new Error('Threads image_url is empty.');
+  if (!value) throw new Error('Threads media URL is empty.');
   const parsed = new URL(value);
   if (!['http:', 'https:'].includes(parsed.protocol)) {
-    throw new Error(`Threads image_url must be http or https: ${value}`);
+    throw new Error(`Threads media URL must be http or https: ${value}`);
   }
   if (LOCAL_MEDIA_HOSTS.has(parsed.hostname)) {
-    throw new Error(`Threads cannot fetch local image URLs. Set PUBLIC_ORIGIN to a public HTTPS site: ${value}`);
+    throw new Error(`Threads cannot fetch local media URLs. Set PUBLIC_ORIGIN to a public HTTPS site: ${value}`);
   }
   return value;
 }
@@ -115,24 +115,58 @@ function normalizeThreadsAltText(altText) {
   return String(altText || '').trim();
 }
 
-function ensureCarouselMediaUrls(imageUrls) {
-  const urls = Array.isArray(imageUrls) ? imageUrls : [];
-  if (urls.length < 2 || urls.length > 10) {
-    throw new Error(`Threads carousel requires 2-10 images: ${urls.length}`);
+function inferMediaTypeFromUrl(url) {
+  const pathname = new URL(String(url || '').trim()).pathname;
+  if (/\.(mp4|mov)$/i.test(pathname)) return 'VIDEO';
+  return 'IMAGE';
+}
+
+function normalizeCarouselMediaItems(mediaItems, altTexts = []) {
+  if (Array.isArray(mediaItems) && mediaItems.length) {
+    return mediaItems.map((item, index) => {
+      if (typeof item === 'string') {
+        return {
+          type: inferMediaTypeFromUrl(item),
+          url: item,
+          altText: Array.isArray(altTexts) ? altTexts[index] || '' : '',
+        };
+      }
+      const url = item.url || item.imageUrl || item.videoUrl || '';
+      return {
+        type: String(item.type || item.mediaType || inferMediaTypeFromUrl(url)).toUpperCase(),
+        url,
+        altText: item.altText || (Array.isArray(altTexts) ? altTexts[index] || '' : ''),
+      };
+    });
   }
-  return urls.map(ensurePublicMediaUrl);
+  return [];
 }
 
 function ensureCarouselMediaItems(mediaItems, altTexts = []) {
-  return ensureCarouselMediaUrls(mediaItems).map((url, index) => ({
-    type: 'IMAGE',
-    url,
-    altText: normalizeThreadsAltText(Array.isArray(altTexts) ? altTexts[index] || '' : ''),
-  }));
+  const items = normalizeCarouselMediaItems(mediaItems, altTexts);
+  if (items.length < 2 || items.length > 10) {
+    throw new Error(`Threads carousel requires 2-10 media items: ${items.length}`);
+  }
+  return items.map(item => {
+    if (!['IMAGE', 'VIDEO'].includes(item.type)) throw new Error(`Unsupported Threads carousel media type: ${item.type}`);
+    return { ...item, url: ensurePublicMediaUrl(item.url) };
+  });
+}
+
+function ensureCarouselMediaUrls(imageUrls) {
+  return ensureCarouselMediaItems(imageUrls).map(item => item.url);
+}
+
+function getHttpTimeoutMs(options = {}) {
+  return Number(options.timeoutMs || process.env.SOCIAL_HTTP_TIMEOUT_MS || 60000);
 }
 
 async function requestJson(url, options = {}) {
-  const res = await fetch(url, options);
+  const { timeoutMs: _timeoutMs, ...requestOptions } = options;
+  const res = await fetch(url, {
+    ...requestOptions,
+    signal: requestOptions.signal || AbortSignal.timeout(getHttpTimeoutMs(options)),
+  });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
     const message = json?.error?.message || JSON.stringify(json);
@@ -289,6 +323,11 @@ async function createThreadsContainer({ mediaType, text, imageUrl, altText = '',
     const normalizedAltText = normalizeThreadsAltText(altText);
     if (normalizedAltText) body.set('alt_text', normalizedAltText);
   }
+  if (media === 'VIDEO') {
+    body.set('video_url', ensurePublicMediaUrl(imageUrl));
+    const normalizedAltText = normalizeThreadsAltText(altText);
+    if (normalizedAltText) body.set('alt_text', normalizedAltText);
+  }
   if (isCarouselItem) body.set('is_carousel_item', 'true');
   if (media === 'CAROUSEL') {
     const childIds = Array.isArray(children) ? children.map(String).filter(Boolean) : [];
@@ -297,7 +336,7 @@ async function createThreadsContainer({ mediaType, text, imageUrl, altText = '',
     }
     body.set('children', childIds.join(','));
   }
-  if (!['TEXT', 'IMAGE', 'CAROUSEL'].includes(media)) throw new Error(`Unsupported Threads media_type: ${media}`);
+  if (!['TEXT', 'IMAGE', 'VIDEO', 'CAROUSEL'].includes(media)) throw new Error(`Unsupported Threads media_type: ${media}`);
   return requestJson(`${GRAPH_BASE}/${encodeURIComponent(creds.userId)}/threads`, { method: 'POST', body });
 }
 
@@ -342,18 +381,36 @@ async function postImageToThreads({ text, imageUrl, altText = '', waitMs = null,
   return { ...published, permalink: verified.permalink, verified: true };
 }
 
-async function postCarouselToThreads({ text, imageUrls, altTexts = [], waitMs = null, credentials = null }) {
+async function postVideoToThreads({ text, videoUrl, altText = '', waitMs = null, credentials = null }) {
   const creds = credentials || await getThreadsCredentials();
   await assertExpectedThreadsAccount(creds);
-  const urls = ensureCarouselMediaUrls(imageUrls);
+  const created = await createThreadsContainer({ mediaType: 'VIDEO', text, imageUrl: videoUrl, altText, credentials: creds });
+  await waitForThreadsContainer(created.id, {
+    credentials: creds,
+    timeoutMs: waitMs === null ? Number(process.env.THREADS_CONTAINER_TIMEOUT_MS || 90000) : Number(waitMs),
+    intervalMs: Number(process.env.THREADS_CONTAINER_POLL_MS || 5000),
+  });
+  const published = await publishThreadsContainer(created.id, creds);
+  const verified = await verifyPublishedThread(published.id, {
+    credentials: creds,
+    timeoutMs: Number(process.env.THREADS_POST_VERIFY_TIMEOUT_MS || 90000),
+    intervalMs: Number(process.env.THREADS_POST_VERIFY_INTERVAL_MS || 10000),
+  });
+  return { ...published, permalink: verified.permalink, verified: true };
+}
+
+async function postCarouselToThreads({ text, imageUrls, mediaItems = [], altTexts = [], waitMs = null, credentials = null }) {
+  const creds = credentials || await getThreadsCredentials();
+  await assertExpectedThreadsAccount(creds);
+  const items = ensureCarouselMediaItems(mediaItems.length ? mediaItems : imageUrls, altTexts);
   const timeoutMs = waitMs === null ? Number(process.env.THREADS_CONTAINER_TIMEOUT_MS || 90000) : Number(waitMs);
   const intervalMs = Number(process.env.THREADS_CONTAINER_POLL_MS || 5000);
   const children = [];
-  for (let index = 0; index < urls.length; index += 1) {
+  for (let index = 0; index < items.length; index += 1) {
     const created = await createThreadsContainer({
-      mediaType: 'IMAGE',
-      imageUrl: urls[index],
-      altText: Array.isArray(altTexts) ? altTexts[index] || '' : '',
+      mediaType: items[index].type,
+      imageUrl: items[index].url,
+      altText: items[index].altText || '',
       isCarouselItem: true,
       credentials: creds,
     });
@@ -395,6 +452,7 @@ module.exports = {
   saveStoredToken,
   postTextToThreads,
   postImageToThreads,
+  postVideoToThreads,
   postCarouselToThreads,
   sanitizeTokenResult,
   ensureThreadsText,

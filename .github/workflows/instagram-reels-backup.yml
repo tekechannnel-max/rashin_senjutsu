@@ -1,0 +1,65 @@
+name: Instagram reels backup guard
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_due_approved:
+        description: 'Publish currently due approved reels'
+        required: true
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+  schedule:
+    - cron: '5,35 11,12,13,14 * * *'
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run social:guard
+      - name: Dry-run approved reels only
+        run: node scripts/social/post-approved-reels.js --dry-run --once --platforms=threads,instagram
+        env:
+          PUBLIC_ORIGIN: ${{ secrets.PUBLIC_ORIGIN }}
+          SOCIAL_PLATFORMS: threads,instagram
+
+  publish-due-approved:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_due_approved == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: guard
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Publish approved due reels
+        run: node scripts/social/post-approved-reels.js --post --once --platforms=threads,instagram
+        env:
+          PUBLIC_ORIGIN: ${{ secrets.PUBLIC_ORIGIN }}
+          SOCIAL_AUTOMATED_POSTING_ENABLED: ${{ secrets.SOCIAL_AUTOMATED_POSTING_ENABLED }}
+          SOCIAL_PLATFORMS: threads,instagram
+          SOCIAL_SCHEDULED_RUN: 'true'
+          INSTAGRAM_ENABLED: ${{ secrets.INSTAGRAM_ENABLED }}
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_API_VERSION: ${{ secrets.INSTAGRAM_API_VERSION }}
+          INSTAGRAM_EXPECTED_USERNAME: ${{ secrets.INSTAGRAM_EXPECTED_USERNAME }}
+          INSTAGRAM_USER_ID: ${{ secrets.INSTAGRAM_USER_ID }}
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+          THREADS_EXPECTED_USERNAME: ${{ secrets.THREADS_EXPECTED_USERNAME }}
+          THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
