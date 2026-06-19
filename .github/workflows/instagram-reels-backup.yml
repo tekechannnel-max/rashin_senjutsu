@@ -24,6 +24,7 @@ on:
         options:
           - auto
           - validate_only
+          - post_20260617_18
 
 permissions:
   contents: read
@@ -84,12 +85,30 @@ jobs:
 
       - name: Dry-run due reels
         if: github.event_name == 'push' || steps.secrets.outputs.ready == 'true'
-        run: node scripts/social/post-daily-birthday-reels.js --dry-run --platforms=threads,instagram
+        shell: bash
+        run: |
+          if [ "${{ github.event.inputs.mode }}" = "post_20260617_18" ]; then
+            node scripts/social/post-daily-birthday-reels.js --dry-run --force --ids=daily_reel_20260617_20_choushi_notte_shippai,daily_reel_20260617_21_chokkan_sugureteru,daily_reel_20260617_22_kanchigai_sareyasui,daily_reel_20260618_20_kuuki_yomisugiru,daily_reel_20260618_21_hitori_hanseikai,daily_reel_20260618_22_birth_05_aruaru --platforms=threads,instagram
+          else
+            node scripts/social/post-daily-birthday-reels.js --dry-run --platforms=threads,instagram
+          fi
 
       - name: Publish due reels
         if: steps.secrets.outputs.ready == 'true' && github.event_name != 'push' && github.event.inputs.mode != 'validate_only'
-        run: node scripts/social/post-daily-birthday-reels.js --post --platforms=threads,instagram
+        shell: bash
+        run: |
+          if [ "${{ github.event.inputs.mode }}" = "post_20260617_18" ]; then
+            node scripts/social/post-daily-birthday-reels.js --post --force --ids=daily_reel_20260617_20_choushi_notte_shippai,daily_reel_20260617_21_chokkan_sugureteru,daily_reel_20260617_22_kanchigai_sareyasui,daily_reel_20260618_20_kuuki_yomisugiru,daily_reel_20260618_21_hitori_hanseikai,daily_reel_20260618_22_birth_05_aruaru --platforms=threads,instagram
+          else
+            node scripts/social/post-daily-birthday-reels.js --post --platforms=threads,instagram
+          fi
 
       - name: Verify due reels exist
         if: always() && steps.secrets.outputs.ready == 'true' && github.event_name != 'push' && github.event.inputs.mode != 'validate_only'
-        run: node scripts/social/post-daily-birthday-reels.js --verify-only --platforms=threads,instagram
+        shell: bash
+        run: |
+          if [ "${{ github.event.inputs.mode }}" = "post_20260617_18" ]; then
+            node scripts/social/post-daily-birthday-reels.js --verify-only --force --ids=daily_reel_20260617_20_choushi_notte_shippai,daily_reel_20260617_21_chokkan_sugureteru,daily_reel_20260617_22_kanchigai_sareyasui,daily_reel_20260618_20_kuuki_yomisugiru,daily_reel_20260618_21_hitori_hanseikai,daily_reel_20260618_22_birth_05_aruaru --platforms=threads,instagram
+          else
+            node scripts/social/post-daily-birthday-reels.js --verify-only --platforms=threads,instagram
+          fi

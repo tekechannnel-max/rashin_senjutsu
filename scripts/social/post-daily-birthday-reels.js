@@ -91,16 +91,43 @@ const REELS = [
     videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-17/kanchigai-sareyasui-top5/kanchigai-sareyasui-top5.mp4',
     videoUrl: 'https://files.catbox.moe/d3gilh.mp4',
   },
+  {
+    id: 'daily_reel_20260618_20_kuuki_yomisugiru',
+    date: '2026-06-18',
+    time: '20:00',
+    slug: 'kuuki-yomisugiru-top5',
+    title: '空気を読みすぎる生まれ日TOP5',
+    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-18/kuuki-yomisugiru-top5/kuuki-yomisugiru-top5.mp4',
+  },
+  {
+    id: 'daily_reel_20260618_21_hitori_hanseikai',
+    date: '2026-06-18',
+    time: '21:00',
+    slug: 'hitori-hanseikai-top5',
+    title: 'ひとり反省会しがちな生まれ日TOP5',
+    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-18/hitori-hanseikai-top5/hitori-hanseikai-top5.mp4',
+  },
+  {
+    id: 'daily_reel_20260618_22_birth_05_aruaru',
+    date: '2026-06-18',
+    time: '22:00',
+    slug: 'birth-05-aruaru',
+    title: '5日生まれあるある5選',
+    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-18/birth-05-aruaru/birth-05-aruaru.mp4',
+  },
 ];
 
 function parseArgs(argv) {
-  const args = { dryRun: false, post: false, verifyOnly: false, yes: false, force: false, platforms: ['threads', 'instagram'] };
+  const args = { dryRun: false, post: false, verifyOnly: false, yes: false, force: false, ids: [], platforms: ['threads', 'instagram'] };
   for (const arg of argv) {
     if (arg === '--dry-run') args.dryRun = true;
     else if (arg === '--post') args.post = true;
     else if (arg === '--verify-only') args.verifyOnly = true;
     else if (arg === '--yes') args.yes = true;
     else if (arg === '--force') args.force = true;
+    else if (arg.startsWith('--ids=')) {
+      args.ids = arg.split('=')[1].split(',').map(item => item.trim()).filter(Boolean);
+    }
     else if (arg.startsWith('--platforms=')) {
       args.platforms = arg.split('=')[1].split(',').map(item => item.trim()).filter(Boolean);
     }
@@ -484,7 +511,12 @@ async function main() {
   const state = await readJson(stateFile, {});
 
   const entries = [];
-  for (const item of REELS) {
+  const selectedIds = new Set(args.ids);
+  const selectedReels = selectedIds.size ? REELS.filter(item => selectedIds.has(item.id)) : REELS;
+  const missingIds = args.ids.filter(id => !REELS.some(item => item.id === id));
+  if (missingIds.length) throw new Error(`Unknown reel ids: ${missingIds.join(', ')}`);
+
+  for (const item of selectedReels) {
     const entry = await buildReelEntry(item);
     const posted = stateEntry(state, entry);
     entries.push({
@@ -506,6 +538,7 @@ async function main() {
     postType: 'reel_video',
     dryRun: args.dryRun,
     force: args.force,
+    ids: args.ids,
     paused: DAILY_REELS_PAUSED,
     reels: entries.map(entry => ({
       id: entry.id,
