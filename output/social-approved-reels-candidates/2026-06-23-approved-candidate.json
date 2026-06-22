@@ -1,0 +1,118 @@
+{
+  "approvalStatus": "draft",
+  "approvedBy": "",
+  "approvedAt": "",
+  "approvalText": "",
+  "approvalScope": "threads,instagram",
+  "note": "User review required. Do not move this file into data/social-posts/approved-reels until the post approval gate is approved.",
+  "posts": [
+    {
+      "id": "birthday_reel_20260623_2000_yowane_misenikui_top5",
+      "kind": "birthday_reel",
+      "date": "2026-06-23",
+      "time": "20:00",
+      "title": "人前で弱音を見せにくい生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-23/yowane-misenikui-top5/yowane-misenikui-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n人前で弱音を見せにくい生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n人前で弱音を見せにくい生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-23/yowane-misenikui-top5/yowane-misenikui-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-23/yowane-misenikui-top5/yowane-misenikui-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      }
+    },
+    {
+      "id": "birthday_reel_20260623_2100_ba_no_ondo_totonoeru_top5",
+      "kind": "birthday_reel",
+      "date": "2026-06-23",
+      "time": "21:00",
+      "title": "場の温度を整えがちな生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-23/ba-no-ondo-totonoeru-top5/ba-no-ondo-totonoeru-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n場の温度を整えがちな生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n場の温度を整えがちな生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-23/ba-no-ondo-totonoeru-top5/ba-no-ondo-totonoeru-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-23/ba-no-ondo-totonoeru-top5/ba-no-ondo-totonoeru-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      }
+    },
+    {
+      "id": "birthday_reel_20260623_2200_funiki_hikitsukeru_top5",
+      "kind": "birthday_reel",
+      "date": "2026-06-23",
+      "time": "22:00",
+      "title": "雰囲気で惹きつける生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-23/funiki-hikitsukeru-top5/funiki-hikitsukeru-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n雰囲気で惹きつける生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n雰囲気で惹きつける生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-23/funiki-hikitsukeru-top5/funiki-hikitsukeru-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-23/funiki-hikitsukeru-top5/funiki-hikitsukeru-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      }
+    },
+    {
+      "id": "birthday_reel_20260623_2300_nakayoku_naruto_kawaru_top5",
+      "kind": "birthday_reel",
+      "date": "2026-06-23",
+      "time": "23:00",
+      "title": "仲良くなると印象が変わる生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-23/nakayoku-naruto-kawaru-top5/nakayoku-naruto-kawaru-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n仲良くなると印象が変わる生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n仲良くなると印象が変わる生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-23/nakayoku-naruto-kawaru-top5/nakayoku-naruto-kawaru-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-23/nakayoku-naruto-kawaru-top5/nakayoku-naruto-kawaru-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      }
+    }
+  ]
+}

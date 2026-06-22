@@ -1,0 +1,413 @@
+{
+  "date": "2026-06-22",
+  "status": "draft_for_user_review",
+  "postingAction": "none",
+  "generatedAt": "2026-06-22T02:51:50.235Z",
+  "sourceNotes": [
+    {
+      "sourceAccount": "@uranai.kitsune",
+      "sourceUrl": "https://kitsuneuranai.com/profile/",
+      "observedPattern": "12星座の性格や毎日の運勢を、キャラクター性のある保存向け投稿にする",
+      "usedAs": "羅針占術では星座ではなく生まれ日TOP5の保存向け自己理解に変換",
+      "transformationNote": "外部投稿の本文、順位、画像は使わず、投稿構成の型だけ参照。",
+      "duplicateCheck": "既存の誕生日数あるある、フットワーク軽い、本音を隠しがちなテーマとは別軸にする。"
+    },
+    {
+      "sourceAccount": "@uranai.kitsune",
+      "sourceUrl": "https://www.instagram.com/reel/DN7DItHk8z0/",
+      "observedPattern": "12星座別、どれくらいで心を開くか",
+      "usedAs": "心を開くまで慎重な生まれ日ランキングへ再構成",
+      "transformationNote": "人見知り煽りにせず、距離の詰め方の自己理解として表現。",
+      "duplicateCheck": "既存の人見知り・本音隠しテーマと重ならないよう、心を開く速度だけに限定。"
+    },
+    {
+      "sourceAccount": "@uranai.kitsune",
+      "sourceUrl": "https://www.instagram.com/reel/DQQfcQTEw_L/",
+      "observedPattern": "好きな人の前で甘えモードに入る星座別あるある",
+      "usedAs": "返信待ちでそわそわしやすい生まれ日TOP5へ変換",
+      "transformationNote": "恋愛依存や不安煽りではなく、反応待ちのかわいい癖として扱う。",
+      "duplicateCheck": "2026-06-20の甘え下手と重ならないよう、甘え方ではなく返信待ちの反応にする。"
+    },
+    {
+      "sourceAccount": "@uranai.kitsune",
+      "sourceUrl": "https://www.instagram.com/p/DZzOfrUqMPs/",
+      "observedPattern": "一度嫌いになると一生許さない星座系の強めフック",
+      "usedAs": "一度決めたら引かない生まれ日TOP5へやわらかく再構成",
+      "transformationNote": "断罪表現を避け、意志の強さと切り替えの遅さとして説明。",
+      "duplicateCheck": "リーダー適正や秘密系とは別に、決めた後の粘りに絞る。"
+    }
+  ],
+  "avoidedTopics": [
+    "秘密守れない生まれ日TOP5",
+    "ムードメーカー生まれ日TOP5",
+    "クリエイター気質生まれ日TOP5",
+    "リーダー適正TOP5",
+    "面倒見がいい生まれ日TOP5",
+    "理系適正TOP5",
+    "調子のって失敗する生まれ日TOP5",
+    "直観が優れてる生まれ日TOP5",
+    "勘違いされやすい生まれ日TOP5",
+    "空気を読みすぎる生まれ日TOP5",
+    "ひとり反省会しがちな生まれ日TOP5",
+    "5日生まれあるある5選",
+    "うっかり忘れがちな生まれ日TOP5",
+    "フットワーク軽い生まれ日TOP5",
+    "本音を隠しがちな生まれ日TOP5",
+    "勢いで予定を決めがちな生まれ日TOP5",
+    "甘え下手な生まれ日TOP5",
+    "限界まで助けを呼ばない生まれ日TOP5",
+    "本当は希望があるのに合わせがちな生まれ日TOP5"
+  ],
+  "rulesApplied": [
+    "No posting, scheduling, deletion, reposting, or public URL creation before the post approval gate.",
+    "Research source is used only as a topic pattern source, not as copied caption, ranking, image, or video.",
+    "Night lane outputs are MP4 videos for Instagram Reels and Threads video.",
+    "Threads captions use exactly one hashtag.",
+    "Mini character family is selected only by birthday-mini-family.js.",
+    "Main text stays inside the 1080x1920 safe area and does not overlap mini characters."
+  ],
+  "allContact": "D:\\株式会社 天仙\\羅針占術\\output\\social-reels-review\\2026-06-22\\2026-06-22-all-contact.jpg",
+  "researchPath": "D:\\株式会社 天仙\\羅針占術\\output\\social-reels-review\\2026-06-22\\research-and-captions.md",
+  "posts": [
+    {
+      "time": "20:00",
+      "title": "心を開くまで慎重な生まれ日TOP5",
+      "slug": "kokoro-hiraku-shinchou-top5",
+      "sourceUrl": "https://www.instagram.com/reel/DN7DItHk8z0/",
+      "video": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\kokoro-hiraku-shinchou-top5\\kokoro-hiraku-shinchou-top5.mp4",
+      "poster": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\kokoro-hiraku-shinchou-top5\\kokoro-hiraku-shinchou-top5-poster.jpg",
+      "preview": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\kokoro-hiraku-shinchou-top5\\kokoro-hiraku-shinchou-top5-preview.jpg",
+      "contact": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\kokoro-hiraku-shinchou-top5\\kokoro-hiraku-shinchou-top5-contact.jpg",
+      "frames": [
+        {
+          "label": "0s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\kokoro-hiraku-shinchou-top5\\kokoro-hiraku-shinchou-top5-frame-0s.jpg"
+        },
+        {
+          "label": "3s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\kokoro-hiraku-shinchou-top5\\kokoro-hiraku-shinchou-top5-frame-3s.jpg"
+        },
+        {
+          "label": "6s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\kokoro-hiraku-shinchou-top5\\kokoro-hiraku-shinchou-top5-frame-6s.jpg"
+        },
+        {
+          "label": "9s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\kokoro-hiraku-shinchou-top5\\kokoro-hiraku-shinchou-top5-frame-9s.jpg"
+        },
+        {
+          "label": "11s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\kokoro-hiraku-shinchou-top5\\kokoro-hiraku-shinchou-top5-frame-11s.jpg"
+        }
+      ],
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n心を開くまで慎重な生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n心を開くまで慎重な生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 7,
+          "reason": "相手をよく見てから距離を縮めます。信頼できるまで本音は少しずつです。",
+          "miniFamily": 7
+        },
+        {
+          "rank": 2,
+          "day": 16,
+          "reason": "明るく見えても内側は繊細。安心できる相手か静かに確かめます。",
+          "miniFamily": 7
+        },
+        {
+          "rank": 3,
+          "day": 4,
+          "reason": "礼儀や約束を大事にします。雑に近づかれると一歩引きやすいです。",
+          "miniFamily": 4
+        },
+        {
+          "rank": 4,
+          "day": 25,
+          "reason": "観察力が強く、言葉より行動で相手を判断しやすいタイプです。",
+          "miniFamily": 7
+        },
+        {
+          "rank": 5,
+          "day": 31,
+          "reason": "責任感があり、軽く見せながらも人間関係は丁寧に選びます。",
+          "miniFamily": 4
+        }
+      ],
+      "metadata": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "width": 1080,
+            "height": 1920,
+            "pix_fmt": "yuv420p",
+            "avg_frame_rate": "30/1"
+          }
+        ],
+        "format": {
+          "duration": "12.000000",
+          "size": "420075"
+        }
+      }
+    },
+    {
+      "time": "21:00",
+      "title": "返信待ちでそわそわする生まれ日TOP5",
+      "slug": "henshin-machi-sowasowa-top5",
+      "sourceUrl": "https://www.instagram.com/reel/DQQfcQTEw_L/",
+      "video": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\henshin-machi-sowasowa-top5\\henshin-machi-sowasowa-top5.mp4",
+      "poster": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\henshin-machi-sowasowa-top5\\henshin-machi-sowasowa-top5-poster.jpg",
+      "preview": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\henshin-machi-sowasowa-top5\\henshin-machi-sowasowa-top5-preview.jpg",
+      "contact": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\henshin-machi-sowasowa-top5\\henshin-machi-sowasowa-top5-contact.jpg",
+      "frames": [
+        {
+          "label": "0s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\henshin-machi-sowasowa-top5\\henshin-machi-sowasowa-top5-frame-0s.jpg"
+        },
+        {
+          "label": "3s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\henshin-machi-sowasowa-top5\\henshin-machi-sowasowa-top5-frame-3s.jpg"
+        },
+        {
+          "label": "6s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\henshin-machi-sowasowa-top5\\henshin-machi-sowasowa-top5-frame-6s.jpg"
+        },
+        {
+          "label": "9s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\henshin-machi-sowasowa-top5\\henshin-machi-sowasowa-top5-frame-9s.jpg"
+        },
+        {
+          "label": "11s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\henshin-machi-sowasowa-top5\\henshin-machi-sowasowa-top5-frame-11s.jpg"
+        }
+      ],
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n返信待ちでそわそわする生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n返信待ちでそわそわする生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 2,
+          "reason": "相手の反応を大切にするぶん、返事の間にいろいろ考えやすいです。",
+          "miniFamily": 2
+        },
+        {
+          "rank": 2,
+          "day": 11,
+          "reason": "感受性が高く、短い既読の間にも空気を読もうとしがちです。",
+          "miniFamily": 2
+        },
+        {
+          "rank": 3,
+          "day": 20,
+          "reason": "気配り上手で、返事の温度から相手の気持ちを探りやすいです。",
+          "miniFamily": 2
+        },
+        {
+          "rank": 4,
+          "day": 29,
+          "reason": "感じ取る力が強く、待っている間ほど想像がふくらみやすいタイプです。",
+          "miniFamily": 2
+        },
+        {
+          "rank": 5,
+          "day": 6,
+          "reason": "好きな人や大事な相手ほど、返事の有無が気になりやすいです。",
+          "miniFamily": 6
+        }
+      ],
+      "metadata": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "width": 1080,
+            "height": 1920,
+            "pix_fmt": "yuv420p",
+            "avg_frame_rate": "30/1"
+          }
+        ],
+        "format": {
+          "duration": "12.000000",
+          "size": "403691"
+        }
+      }
+    },
+    {
+      "time": "22:00",
+      "title": "私生活が謎に見られがちな生まれ日TOP5",
+      "slug": "shiseikatsu-nazo-top5",
+      "sourceUrl": "https://www.facebook.com/uranai.kitsune/videos/%E5%80%8B%E4%BA%BA%E9%91%91%E5%AE%9A%E3%81%AF%E3%83%97%E3%83%AD%E3%83%95%E3%82%A3%E3%83%BC%E3%83%ABurl%E3%81%8B%E3%82%89-12%E6%98%9F%E5%BA%A7%E7%9D%80%E3%81%90%E3%82%8B%E3%81%BFline%E3%82%B9%E3%82%BF%E3%83%B3%E3%83%97%E3%82%82%E8%B2%A9%E5%A3%B2%E4%B8%AD%E0%BC%B312%E6%98%9F%E5%BA%A7%E3%81%AE%E5%8F%8B%E9%81%94%E3%81%8B%E3%82%89%E6%81%8B%E4%BA%BA%E3%81%AB%E3%81%AA%E3%82%8B%E7%A2%BA%E7%8E%87%E5%8D%A0%E3%81%84-%E9%81%8B%E5%8B%A2-%E6%98%9F%E5%BA%A7-%E5%80%8B%E4%BA%BA%E9%91%91%E5%AE%9A-%E6%81%8B%E6%84%9B/1149894200350720/",
+      "video": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\shiseikatsu-nazo-top5\\shiseikatsu-nazo-top5.mp4",
+      "poster": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\shiseikatsu-nazo-top5\\shiseikatsu-nazo-top5-poster.jpg",
+      "preview": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\shiseikatsu-nazo-top5\\shiseikatsu-nazo-top5-preview.jpg",
+      "contact": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\shiseikatsu-nazo-top5\\shiseikatsu-nazo-top5-contact.jpg",
+      "frames": [
+        {
+          "label": "0s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\shiseikatsu-nazo-top5\\shiseikatsu-nazo-top5-frame-0s.jpg"
+        },
+        {
+          "label": "3s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\shiseikatsu-nazo-top5\\shiseikatsu-nazo-top5-frame-3s.jpg"
+        },
+        {
+          "label": "6s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\shiseikatsu-nazo-top5\\shiseikatsu-nazo-top5-frame-6s.jpg"
+        },
+        {
+          "label": "9s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\shiseikatsu-nazo-top5\\shiseikatsu-nazo-top5-frame-9s.jpg"
+        },
+        {
+          "label": "11s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\shiseikatsu-nazo-top5\\shiseikatsu-nazo-top5-frame-11s.jpg"
+        }
+      ],
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n私生活が謎に見られがちな生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n私生活が謎に見られがちな生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 7,
+          "reason": "必要なことだけ話すタイプ。近くにいても自分の時間はしっかり守ります。",
+          "miniFamily": 7
+        },
+        {
+          "rank": 2,
+          "day": 22,
+          "reason": "大きなことを考えていて、日常の細かい話をあまり出さないことがあります。",
+          "miniFamily": 4
+        },
+        {
+          "rank": 3,
+          "day": 13,
+          "reason": "淡々として見えやすく、何をしているか読まれにくい雰囲気があります。",
+          "miniFamily": 4
+        },
+        {
+          "rank": 4,
+          "day": 9,
+          "reason": "人に合わせられる分、自分の本拠地はあえて見せすぎません。",
+          "miniFamily": 9
+        },
+        {
+          "rank": 5,
+          "day": 18,
+          "reason": "明るさの奥にひとり時間があります。全部を話さない余白が魅力です。",
+          "miniFamily": 9
+        }
+      ],
+      "metadata": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "width": 1080,
+            "height": 1920,
+            "pix_fmt": "yuv420p",
+            "avg_frame_rate": "30/1"
+          }
+        ],
+        "format": {
+          "duration": "12.000000",
+          "size": "410187"
+        }
+      }
+    },
+    {
+      "time": "23:00",
+      "title": "一度決めたら引かない生まれ日TOP5",
+      "slug": "kimetara-hikanai-top5",
+      "sourceUrl": "https://www.instagram.com/p/DZzOfrUqMPs/",
+      "video": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\kimetara-hikanai-top5\\kimetara-hikanai-top5.mp4",
+      "poster": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\kimetara-hikanai-top5\\kimetara-hikanai-top5-poster.jpg",
+      "preview": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\kimetara-hikanai-top5\\kimetara-hikanai-top5-preview.jpg",
+      "contact": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\kimetara-hikanai-top5\\kimetara-hikanai-top5-contact.jpg",
+      "frames": [
+        {
+          "label": "0s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\kimetara-hikanai-top5\\kimetara-hikanai-top5-frame-0s.jpg"
+        },
+        {
+          "label": "3s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\kimetara-hikanai-top5\\kimetara-hikanai-top5-frame-3s.jpg"
+        },
+        {
+          "label": "6s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\kimetara-hikanai-top5\\kimetara-hikanai-top5-frame-6s.jpg"
+        },
+        {
+          "label": "9s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\kimetara-hikanai-top5\\kimetara-hikanai-top5-frame-9s.jpg"
+        },
+        {
+          "label": "11s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-22\\kimetara-hikanai-top5\\kimetara-hikanai-top5-frame-11s.jpg"
+        }
+      ],
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n一度決めたら引かない生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n一度決めたら引かない生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 8,
+          "reason": "目標が決まると強いタイプ。簡単には曲げず、結果まで見に行きます。",
+          "miniFamily": 8
+        },
+        {
+          "rank": 2,
+          "day": 1,
+          "reason": "最初の一歩を自分で決めたい人。納得したことには勢いがあります。",
+          "miniFamily": 1
+        },
+        {
+          "rank": 3,
+          "day": 17,
+          "reason": "現実を見る力があり、勝ち筋を決めたら粘り強く進めます。",
+          "miniFamily": 8
+        },
+        {
+          "rank": 4,
+          "day": 26,
+          "reason": "守りたいものがあるほど強くなります。途中で投げ出しにくいです。",
+          "miniFamily": 8
+        },
+        {
+          "rank": 5,
+          "day": 10,
+          "reason": "流れを切り替える力があります。決めた後の集中力が高いタイプです。",
+          "miniFamily": 1
+        }
+      ],
+      "metadata": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "width": 1080,
+            "height": 1920,
+            "pix_fmt": "yuv420p",
+            "avg_frame_rate": "30/1"
+          }
+        ],
+        "format": {
+          "duration": "12.000000",
+          "size": "448025"
+        }
+      }
+    }
+  ]
+}

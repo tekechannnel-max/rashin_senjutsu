@@ -13,6 +13,24 @@ const DURATION = 12;
 const RECORD_SECONDS = 12.35;
 const QUALITY = 94;
 
+function readConfigPath() {
+  const flagIndex = process.argv.indexOf('--config');
+  if (flagIndex >= 0 && process.argv[flagIndex + 1]) return process.argv[flagIndex + 1];
+  return process.env.SOCIAL_REELS_CONFIG || '';
+}
+
+function loadExternalConfig() {
+  const configPath = readConfigPath();
+  if (!configPath) return {};
+  const resolved = path.resolve(process.cwd(), configPath);
+  return JSON.parse(fsSync.readFileSync(resolved, 'utf8'));
+}
+
+const CONFIG = loadExternalConfig();
+const TARGET_DATE = CONFIG.date || '2026-06-20';
+const COMPACT_DATE = TARGET_DATE.replaceAll('-', '');
+const REVIEW_TITLE = CONFIG.reviewTitle || `${TARGET_DATE} 遅延投稿候補`;
+
 const MINI_ROOT = path.join(ROOT, 'images', 'social', 'instagram', 'birthday-mini');
 const OUT_ROOT = path.join(
   ROOT,
@@ -20,14 +38,14 @@ const OUT_ROOT = path.join(
   'social',
   'instagram',
   '【インスタ】あるある・ランキング系',
-  '2026-06-20',
+  TARGET_DATE,
 );
-const REVIEW_ROOT = path.join(ROOT, 'output', 'social-reels-review', '2026-06-20');
+const REVIEW_ROOT = path.join(ROOT, 'output', 'social-reels-review', TARGET_DATE);
 const DRAFT_MANIFEST_ROOT = path.join(ROOT, 'output', 'social-approved-reels-candidates');
 const FFMPEG = process.env.FFMPEG_PATH || 'D:\\remotion-video\\node_modules\\@remotion\\compositor-win32-x64-msvc\\ffmpeg.exe';
 const FFPROBE = process.env.FFPROBE_PATH || 'D:\\remotion-video\\node_modules\\@remotion\\compositor-win32-x64-msvc\\ffprobe.exe';
 
-const SOURCE_NOTES = [
+const DEFAULT_SOURCE_NOTES = [
   {
     sourceAccount: '@uranai.kitsune',
     sourceUrl: 'https://www.instagram.com/p/DZv5cN-qRot/',
@@ -62,7 +80,7 @@ const SOURCE_NOTES = [
   },
 ];
 
-const AVOIDED_TOPICS = [
+const DEFAULT_AVOIDED_TOPICS = [
   '秘密守れない生まれ日TOP5',
   'ムードメーカー生まれ日TOP5',
   'クリエイター気質生まれ日TOP5',
@@ -80,14 +98,14 @@ const AVOIDED_TOPICS = [
   '本音を隠しがちな生まれ日TOP5',
 ];
 
-const POSTS = [
+const DEFAULT_POSTS = [
   {
     time: '20:00',
     slug: 'yotei-kimeru-karui-top5',
     title: '勢いで予定を決めがちな生まれ日TOP5',
     titleLines: ['勢いで予定を', '決めがちな生まれ日TOP5'],
     lead: '楽しそうと思うと、先に日程を入れてから考えるタイプ',
-    sourceUrl: SOURCE_NOTES[0].sourceUrl,
+    sourceUrl: DEFAULT_SOURCE_NOTES[0].sourceUrl,
     theme: {
       accent: '#1f7a64',
       accent2: '#c06435',
@@ -112,7 +130,7 @@ const POSTS = [
     title: '甘え下手な生まれ日TOP5',
     titleLines: ['甘え下手な', '生まれ日TOP5'],
     lead: '頼りたい気持ちはあるのに、つい平気な顔をしやすいタイプ',
-    sourceUrl: SOURCE_NOTES[1].sourceUrl,
+    sourceUrl: DEFAULT_SOURCE_NOTES[1].sourceUrl,
     theme: {
       accent: '#8d5a9e',
       accent2: '#2c7c8c',
@@ -137,7 +155,7 @@ const POSTS = [
     title: '限界まで助けを呼ばない生まれ日TOP5',
     titleLines: ['限界まで助けを', '呼ばない生まれ日TOP5'],
     lead: '自分で何とかしようとして、相談のタイミングが遅れやすいタイプ',
-    sourceUrl: SOURCE_NOTES[2].sourceUrl,
+    sourceUrl: DEFAULT_SOURCE_NOTES[2].sourceUrl,
     theme: {
       accent: '#b95a3f',
       accent2: '#246f7d',
@@ -162,7 +180,7 @@ const POSTS = [
     title: '本当は希望があるのに合わせがちな生まれ日TOP5',
     titleLines: ['本当は希望があるのに', '合わせがちな生まれ日TOP5'],
     lead: '「どっちでもいい」と言いながら、内側ではちゃんと選びたいタイプ',
-    sourceUrl: SOURCE_NOTES[3].sourceUrl,
+    sourceUrl: DEFAULT_SOURCE_NOTES[3].sourceUrl,
     theme: {
       accent: '#4269aa',
       accent2: '#a45f30',
@@ -182,6 +200,10 @@ const POSTS = [
     summary: '合わせがちな日は、希望がないのではなく、言う順番を探しているだけです。',
   },
 ];
+
+const SOURCE_NOTES = Array.isArray(CONFIG.sourceNotes) ? CONFIG.sourceNotes : DEFAULT_SOURCE_NOTES;
+const AVOIDED_TOPICS = Array.isArray(CONFIG.avoidedTopics) ? CONFIG.avoidedTopics : DEFAULT_AVOIDED_TOPICS;
+const POSTS = Array.isArray(CONFIG.posts) ? CONFIG.posts : DEFAULT_POSTS;
 
 function miniPath(family) {
   return path.join(MINI_ROOT, `birthday-family-${family}-chibi.png`);
@@ -344,7 +366,7 @@ function allContactHtml(outputs) {
 </head>
 <body>
   <div class="all">
-    <h1>2026-06-20 遅延投稿候補 4本</h1>
+    <h1>${escapeHtml(REVIEW_TITLE)} ${outputs.length}本</h1>
     <section>${cells}</section>
     <p>キツネ占いは型だけ参照 / 誕生日数向けに再構成 / 投稿・予約・公開URL化は未実行</p>
   </div>
@@ -414,7 +436,7 @@ ${item.captions.threads}
 \`\`\`
 `;
   }).join('\n');
-  return `# 2026-06-20 遅延投稿候補
+  return `# ${REVIEW_TITLE}
 
 このファイルは確認用です。投稿、予約投稿、公開URL化、削除、再投稿は未実行です。
 
@@ -438,9 +460,9 @@ function draftApprovedManifest(outputs) {
     approvalScope: 'threads,instagram',
     note: 'User review required. Do not move this file into data/social-posts/approved-reels until the post approval gate is approved.',
     posts: outputs.map(item => ({
-      id: `birthday_reel_20260620_${item.time.replace(':', '')}_${item.slug.replaceAll('-', '_')}`,
+      id: `birthday_reel_${COMPACT_DATE}_${item.time.replace(':', '')}_${item.slug.replaceAll('-', '_')}`,
       kind: 'birthday_reel',
-      date: '2026-06-20',
+      date: TARGET_DATE,
       time: item.time,
       title: item.title,
       videoPath: rel(item.video),
@@ -848,14 +870,14 @@ async function main() {
       });
     }
 
-    const allContact = path.join(REVIEW_ROOT, '2026-06-20-all-contact.jpg');
+    const allContact = path.join(REVIEW_ROOT, `${TARGET_DATE}-all-contact.jpg`);
     await writeShot(page, allContactHtml(outputs), allContact, 1880, 1480);
 
     const researchPath = path.join(REVIEW_ROOT, 'research-and-captions.md');
     await fs.writeFile(researchPath, researchMarkdown(outputs), 'utf8');
 
     const manifest = {
-      date: '2026-06-20',
+      date: TARGET_DATE,
       status: 'draft_for_user_review',
       postingAction: 'none',
       generatedAt: new Date().toISOString(),
@@ -876,7 +898,7 @@ async function main() {
     const manifestPath = path.join(OUT_ROOT, 'manifest.json');
     await fs.writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
 
-    const draftApprovalPath = path.join(DRAFT_MANIFEST_ROOT, '2026-06-20-approved-candidate.json');
+    const draftApprovalPath = path.join(DRAFT_MANIFEST_ROOT, `${TARGET_DATE}-approved-candidate.json`);
     await fs.writeFile(draftApprovalPath, `${JSON.stringify(draftApprovedManifest(outputs), null, 2)}\n`, 'utf8');
 
     console.log(JSON.stringify({
