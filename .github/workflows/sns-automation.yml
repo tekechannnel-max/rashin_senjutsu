@@ -1,6 +1,9 @@
 name: SNS automation
 
 on:
+  schedule:
+    - cron: '0 23 * * *' # 08:00 JST
+    - cron: '0 11-14 * * *' # 20:00-23:00 JST
   push:
     branches:
       - main
@@ -14,6 +17,7 @@ on:
       - 'package-lock.json'
       - 'OPERATIONS.md'
       - 'docs/sns-*.md'
+      - 'data/social-posts/approved-reels/**'
   workflow_dispatch:
     inputs:
       mode:
@@ -35,7 +39,7 @@ concurrency:
 
 jobs:
   threads:
-    if: github.event_name != 'schedule' && (github.event_name != 'workflow_dispatch' || github.event.inputs.mode == 'auto' || github.event.inputs.mode == 'all' || github.event.inputs.mode == 'threads')
+    if: github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.mode == 'auto' || github.event.inputs.mode == 'all' || github.event.inputs.mode == 'threads'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -49,6 +53,7 @@ jobs:
       INSTAGRAM_EXPECTED_USERNAME: sensai_teke
       SOCIAL_AUTOMATED_POSTING_ENABLED: 'true'
       SOCIAL_PLATFORMS: threads,instagram
+      SOCIAL_ORACLE_TIME: '08:00'
       SOCIAL_PAID_CTA_MODE: soft
       SOCIAL_BOOTH_ENABLED: 'false'
       SOCIAL_UTM_CAMPAIGN: 202605_prerelease

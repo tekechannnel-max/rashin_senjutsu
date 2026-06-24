@@ -1,0 +1,230 @@
+{
+  "date": "2026-06-24",
+  "reviewTitle": "2026-06-24 夜枠 誕生日リール候補",
+  "sourceNotes": [
+    {
+      "sourceAccount": "羅針占術 internal",
+      "sourceUrl": "data/social-posts/reel-plans/2026-06-22-birthday-reels.json",
+      "observedPattern": "承認済み誕生日リールのTOP5構成、保存CTA、ミニキャラ導線",
+      "usedAs": "既存の羅針占術SNS文体と動画構成を保った追加テーマの設計基準",
+      "transformationNote": "既存テーマをコピーせず、ユーザーが保存しやすい自己理解系の新規テーマに置き換え",
+      "duplicateCheck": "6/20、6/22、6/23の承認済み夜枠テーマと完全一致しないタイトルだけを採用"
+    },
+    {
+      "sourceAccount": "羅針占術 internal",
+      "sourceUrl": "docs/sns-birthday-number-content-guide.md",
+      "observedPattern": "誕生日数に応じたミニキャラ選定と、断定しすぎない心理傾向表現",
+      "usedAs": "順位別の理由文とミニキャラ証跡の根拠",
+      "transformationNote": "不安を煽る表現を避け、保存後に読み返しやすい短文へ調整",
+      "duplicateCheck": "各投稿内で生まれ日の重複がないことを生成スクリプトで検証"
+    }
+  ],
+  "avoidedTopics": [
+    "勢いで予定を決めがちな生まれ日TOP5",
+    "甘え下手な生まれ日TOP5",
+    "限界まで助けを呼ばない生まれ日TOP5",
+    "本当は希望があるのに合わせがちな生まれ日TOP5",
+    "心を開くまで慎重な生まれ日TOP5",
+    "返信待ちでそわそわする生まれ日TOP5",
+    "私生活が謎に見られがちな生まれ日TOP5",
+    "一度決めたら引かない生まれ日TOP5",
+    "人前で弱音を見せにくい生まれ日TOP5",
+    "場の温度を整えがちな生まれ日TOP5",
+    "雰囲気で惹きつける生まれ日TOP5",
+    "仲良くなると印象が変わる生まれ日TOP5"
+  ],
+  "posts": [
+    {
+      "time": "20:00",
+      "slug": "kimochi-kirikae-hayai-top5",
+      "title": "気持ちの切り替えが早い生まれ日TOP5",
+      "titleLines": [
+        "気持ちの切り替えが",
+        "早い生まれ日TOP5"
+      ],
+      "lead": "落ち込んでも、次の楽しみを見つけると戻りやすいタイプ",
+      "sourceUrl": "data/social-posts/reel-plans/2026-06-22-birthday-reels.json",
+      "theme": {
+        "accent": "#2f7d62",
+        "accent2": "#c45d45",
+        "ink": "#18352d",
+        "bg1": "#eef8f2",
+        "bg2": "#fffdf8",
+        "bg3": "#e5eef6",
+        "glow": "#ffe58a"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 5,
+          "reason": "気持ちが動くと、次の楽しみへ向かえます。落ち込みを長く抱えすぎません。"
+        },
+        {
+          "rank": 2,
+          "day": 14,
+          "reason": "変化に強く、予定が崩れても別の流れを見つけるのが上手です。"
+        },
+        {
+          "rank": 3,
+          "day": 23,
+          "reason": "人との会話で気分が戻りやすく、空気を明るく変えられます。"
+        },
+        {
+          "rank": 4,
+          "day": 1,
+          "reason": "決め直す力があります。止まるより次の一手へ意識が向きます。"
+        },
+        {
+          "rank": 5,
+          "day": 10,
+          "reason": "切り替えのスイッチが入りやすく、流れを作り直すのが得意です。"
+        }
+      ],
+      "summary": "切り替えが早い日は、忘れっぽいのではなく、未来へ目を向ける力があります。"
+    },
+    {
+      "time": "21:00",
+      "slug": "kotoba-yori-kodo-top5",
+      "title": "言葉より行動で示す生まれ日TOP5",
+      "titleLines": [
+        "言葉より行動で",
+        "示す生まれ日TOP5"
+      ],
+      "lead": "多くを語らなくても、やることで気持ちを伝えようとするタイプ",
+      "sourceUrl": "data/social-posts/reel-plans/2026-06-23-birthday-reels.json",
+      "theme": {
+        "accent": "#7b5aa6",
+        "accent2": "#287b88",
+        "ink": "#2b2440",
+        "bg1": "#f5f1fb",
+        "bg2": "#fffdf8",
+        "bg3": "#e3f1ef",
+        "glow": "#ffd7a8"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 8,
+          "reason": "結果で信頼を作ろうとします。口約束より、動いて見せる方が自然です。"
+        },
+        {
+          "rank": 2,
+          "day": 4,
+          "reason": "言葉を盛るより、約束を守ることを大切にします。誠実さが行動に出ます。"
+        },
+        {
+          "rank": 3,
+          "day": 22,
+          "reason": "背負う力があり、必要だと思うと静かに手を貸します。"
+        },
+        {
+          "rank": 4,
+          "day": 13,
+          "reason": "淡々として見えても、細かな実務で相手を支えるタイプです。"
+        },
+        {
+          "rank": 5,
+          "day": 31,
+          "reason": "責任感が強く、言う前に整えておきたい気持ちが出やすいです。"
+        }
+      ],
+      "summary": "行動で示す日は、無口なのではなく、信頼を形にして届けようとしています。"
+    },
+    {
+      "time": "22:00",
+      "slug": "jitsu-wa-tere-ya-top5",
+      "title": "実は照れ屋な生まれ日TOP5",
+      "titleLines": [
+        "実は照れ屋な",
+        "生まれ日TOP5"
+      ],
+      "lead": "平気そうに見えても、褒められると内側でかなり照れているタイプ",
+      "sourceUrl": "data/social-posts/reel-plans/2026-06-23-birthday-reels.json",
+      "theme": {
+        "accent": "#b6536b",
+        "accent2": "#2b7a70",
+        "ink": "#3b1f2a",
+        "bg1": "#fff1f5",
+        "bg2": "#fffdf8",
+        "bg3": "#e6f2ef",
+        "glow": "#ffe7b3"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 2,
+          "reason": "感情が細やかで、嬉しいほど反応を隠したくなるところがあります。"
+        },
+        {
+          "rank": 2,
+          "day": 11,
+          "reason": "本音は繊細です。まっすぐ褒められると、表情より先に心が動きます。"
+        },
+        {
+          "rank": 3,
+          "day": 16,
+          "reason": "明るく返せても、内側ではかなり照れています。距離が近いほど出やすいです。"
+        },
+        {
+          "rank": 4,
+          "day": 6,
+          "reason": "優しく受け取れるぶん、好意を向けられると少し照れが出ます。"
+        },
+        {
+          "rank": 5,
+          "day": 20,
+          "reason": "気持ちを受け取る力が強く、褒め言葉を軽く流せないタイプです。"
+        }
+      ],
+      "summary": "照れ屋な日は、冷たいのではなく、大事な言葉ほど丁寧に受け取っています。"
+    },
+    {
+      "time": "23:00",
+      "slug": "hitori-jikan-kaifuku-top5",
+      "title": "ひとり時間で回復する生まれ日TOP5",
+      "titleLines": [
+        "ひとり時間で",
+        "回復する生まれ日TOP5"
+      ],
+      "lead": "人が嫌いなのではなく、自分に戻る時間があると整いやすいタイプ",
+      "sourceUrl": "data/social-posts/reel-plans/2026-06-22-birthday-reels.json",
+      "theme": {
+        "accent": "#3d6fa4",
+        "accent2": "#a56a35",
+        "ink": "#1e2d44",
+        "bg1": "#eef4ff",
+        "bg2": "#fffdf8",
+        "bg3": "#f0eadc",
+        "glow": "#d8f0ff"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 7,
+          "reason": "考える時間が必要です。ひとりで整理すると、本来の落ち着きが戻ります。"
+        },
+        {
+          "rank": 2,
+          "day": 25,
+          "reason": "周りをよく見ているぶん、静かな時間で感情をほどきやすいです。"
+        },
+        {
+          "rank": 3,
+          "day": 9,
+          "reason": "人の気持ちを受け取りやすく、自分だけの時間で境界線を戻します。"
+        },
+        {
+          "rank": 4,
+          "day": 18,
+          "reason": "頼られることが多いぶん、何もしない時間が心の回復になります。"
+        },
+        {
+          "rank": 5,
+          "day": 4,
+          "reason": "きちんとしたい気持ちが強く、静かな環境でペースを整えます。"
+        }
+      ],
+      "summary": "ひとり時間で回復する日は、人を避けたいのではなく、また優しく戻る準備をしています。"
+    }
+  ]
+}

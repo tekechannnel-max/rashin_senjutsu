@@ -31,7 +31,39 @@
           "noTextPatternOverlap": true,
           "saveCue": true,
           "minicharaByNumber": true
-        }
+        },
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 4,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 8,
+            "family": 8,
+            "asset": "birthday-family-8-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 7,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 22,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 13,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png"
+          }
+        ]
       },
       "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-23/yowane-misenikui-top5/yowane-misenikui-top5.mp4"
     },
@@ -59,7 +91,39 @@
           "noTextPatternOverlap": true,
           "saveCue": true,
           "minicharaByNumber": true
-        }
+        },
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 6,
+            "family": 6,
+            "asset": "birthday-family-6-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 2,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 24,
+            "family": 6,
+            "asset": "birthday-family-6-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 11,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 20,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png"
+          }
+        ]
       },
       "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-23/ba-no-ondo-totonoeru-top5/ba-no-ondo-totonoeru-top5.mp4"
     },
@@ -87,7 +151,39 @@
           "noTextPatternOverlap": true,
           "saveCue": true,
           "minicharaByNumber": true
-        }
+        },
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 9,
+            "family": 9,
+            "asset": "birthday-family-9-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 11,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 3,
+            "family": 3,
+            "asset": "birthday-family-3-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 18,
+            "family": 9,
+            "asset": "birthday-family-9-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 27,
+            "family": 9,
+            "asset": "birthday-family-9-chibi.png"
+          }
+        ]
       },
       "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-23/funiki-hikitsukeru-top5/funiki-hikitsukeru-top5.mp4"
     },
@@ -115,7 +211,39 @@
           "noTextPatternOverlap": true,
           "saveCue": true,
           "minicharaByNumber": true
-        }
+        },
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 16,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 7,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 25,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 5,
+            "family": 5,
+            "asset": "birthday-family-5-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 14,
+            "family": 5,
+            "asset": "birthday-family-5-chibi.png"
+          }
+        ]
       },
       "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-23/nakayoku-naruto-kawaru-top5/nakayoku-naruto-kawaru-top5.mp4"
     }
