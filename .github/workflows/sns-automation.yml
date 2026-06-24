@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      PUBLIC_ORIGIN: https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/main
+      PUBLIC_ORIGIN: https://rashin-senjutsu.onrender.com
       SOCIAL_AUTOMATED_POSTING_ENABLED: 'false'
       SOCIAL_PLATFORMS: threads,instagram
       SOCIAL_POST_GRACE_MINUTES: '59'
@@ -76,7 +76,7 @@ jobs:
     env:
       FFMPEG_PATH: /usr/bin/ffmpeg
       FFPROBE_PATH: /usr/bin/ffprobe
-      PUBLIC_ORIGIN: https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/main
+      PUBLIC_ORIGIN: https://rashin-senjutsu.onrender.com
       SOCIAL_AUTOMATION_BRANCH: main
       SOCIAL_PLATFORMS: threads,instagram
       SOCIAL_POST_GRACE_MINUTES: '59'
@@ -119,7 +119,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      PUBLIC_ORIGIN: https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/main
+      PUBLIC_ORIGIN: https://rashin-senjutsu.onrender.com
       THREADS_EXPECTED_USERNAME: sensai_teke
       THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
       THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}

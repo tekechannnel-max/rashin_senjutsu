@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      PUBLIC_ORIGIN: https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/main
+      PUBLIC_ORIGIN: https://rashin-senjutsu.onrender.com
       SOCIAL_AUTOMATED_POSTING_ENABLED: 'false'
       SOCIAL_PLATFORMS: threads,instagram
       SOCIAL_POST_GRACE_MINUTES: '59'
