@@ -22,6 +22,7 @@
     "social:instagram:birthday": "node scripts/social/generate-birthday-instagram-posts.js",
     "social:kpi-template": "node scripts/social/prepare-kpi-review.js",
     "social:run-due": "node scripts/social/run-scheduled-posts.js --once",
+    "social:auto-prepare-reels": "node scripts/social/auto-prepare-approved-reels.js",
     "social:guard": "node scripts/social/validate-social-pipeline-guardrails.js",
     "threads:doctor": "node scripts/social/threads-tool.js doctor",
     "threads:auth-url": "node scripts/social/threads-tool.js auth-url",
