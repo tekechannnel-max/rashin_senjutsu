@@ -1,4 +1,4 @@
-name: Instagram reels backup
+name: Instagram reels backup validation
 
 on:
   push:
@@ -6,55 +6,30 @@ on:
       - main
     paths:
       - .github/workflows/instagram-reels-backup.yml
-      - scripts/social/post-daily-birthday-reels.js
-      - scripts/social/instagram-client.js
-      - scripts/social/threads-client.js
-  schedule:
-    # Backup ticks for Instagram Reels and Threads videos at 20:00, 21:00, and 22:00 JST.
-    # Include 23:00 JST recovery sweeps because GitHub scheduled workflows can
-    # be delayed or skipped when the hourly queue is congested.
-    - cron: '7,17,27,37,47,57 11,12,13,14 * * *'
+      - .github/workflows/sns-automation.yml
+      - data/social-posts/approved-reels/**
+      - scripts/social/**
+      - package.json
+      - package-lock.json
   workflow_dispatch:
-    inputs:
-      mode:
-        description: 'Run mode'
-        required: true
-        default: 'auto'
-        type: choice
-        options:
-          - auto
-          - validate_only
-          - post_20260617_18
 
 permissions:
   contents: read
 
 concurrency:
-  group: instagram-reels-backup-${{ github.event.schedule || github.event.inputs.mode || 'manual' }}
+  group: instagram-reels-backup-validation
   cancel-in-progress: false
 
 jobs:
-  post-reels:
+  validate-approved-reels:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 10
     env:
-      INSTAGRAM_ENABLED: 'true'
-      INSTAGRAM_USER_ID: ${{ secrets.INSTAGRAM_USER_ID }}
-      INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
-      INSTAGRAM_EXPECTED_USERNAME: sensai_teke
-      THREADS_EXPECTED_USERNAME: sensai_teke
-      THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
-      THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
-      SOCIAL_AUTOMATED_POSTING_ENABLED: 'true'
-      SOCIAL_CLOUD_SCHEDULER: 'true'
-      SOCIAL_SCHEDULED_RUN: 'true'
-      SOCIAL_REEL_POST_GRACE_MINUTES: '59'
-      SOCIAL_REEL_CATCHUP_HOURS: '8'
-      SOCIAL_REEL_PUBLIC_ORIGIN: https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/main
-      INSTAGRAM_CONTAINER_TIMEOUT_MS: '600000'
-      INSTAGRAM_CONTAINER_POLL_MS: '15000'
-      THREADS_CONTAINER_TIMEOUT_MS: '120000'
-      THREADS_POST_VERIFY_TIMEOUT_MS: '120000'
+      PUBLIC_ORIGIN: https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/main
+      SOCIAL_AUTOMATED_POSTING_ENABLED: 'false'
+      SOCIAL_PLATFORMS: threads,instagram
+      SOCIAL_POST_GRACE_MINUTES: '59'
+      SOCIAL_STATELESS_MODE: 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -64,51 +39,13 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Check posting secrets
-        id: secrets
-        if: github.event_name != 'push'
-        shell: bash
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate application and SNS guardrails
         run: |
-          if [ -z "$INSTAGRAM_ACCESS_TOKEN" ] || [ -z "$INSTAGRAM_USER_ID" ] || [ -z "$THREADS_ACCESS_TOKEN" ] || [ -z "$THREADS_USER_ID" ]; then
-            echo "::error::GitHub Secrets for Instagram / Threads are not set. Reels backup posting cannot run."
-            exit 1
-          fi
-          echo "ready=true" >> "$GITHUB_OUTPUT"
+          npm run check
+          npm run social:guard
 
-      - name: Validate Instagram token account
-        if: github.event_name != 'push' && steps.secrets.outputs.ready == 'true'
-        run: npm run instagram:doctor
-
-      - name: Validate Threads token account
-        if: github.event_name != 'push' && steps.secrets.outputs.ready == 'true'
-        run: npm run threads:doctor
-
-      - name: Dry-run due reels
-        if: github.event_name == 'push' || steps.secrets.outputs.ready == 'true'
-        shell: bash
-        run: |
-          if [ "${{ github.event.inputs.mode }}" = "post_20260617_18" ]; then
-            node scripts/social/post-daily-birthday-reels.js --dry-run --force --ids=daily_reel_20260617_20_choushi_notte_shippai,daily_reel_20260617_21_chokkan_sugureteru,daily_reel_20260617_22_kanchigai_sareyasui,daily_reel_20260618_20_kuuki_yomisugiru,daily_reel_20260618_21_hitori_hanseikai,daily_reel_20260618_22_birth_05_aruaru --platforms=threads,instagram
-          else
-            node scripts/social/post-daily-birthday-reels.js --dry-run --platforms=threads,instagram
-          fi
-
-      - name: Publish due reels
-        if: steps.secrets.outputs.ready == 'true' && github.event_name != 'push' && github.event.inputs.mode != 'validate_only'
-        shell: bash
-        run: |
-          if [ "${{ github.event.inputs.mode }}" = "post_20260617_18" ]; then
-            node scripts/social/post-daily-birthday-reels.js --post --force --ids=daily_reel_20260617_20_choushi_notte_shippai,daily_reel_20260617_21_chokkan_sugureteru,daily_reel_20260617_22_kanchigai_sareyasui,daily_reel_20260618_20_kuuki_yomisugiru,daily_reel_20260618_21_hitori_hanseikai,daily_reel_20260618_22_birth_05_aruaru --platforms=threads,instagram
-          else
-            node scripts/social/post-daily-birthday-reels.js --post --platforms=threads,instagram
-          fi
-
-      - name: Verify due reels exist
-        if: always() && steps.secrets.outputs.ready == 'true' && github.event_name != 'push' && github.event.inputs.mode != 'validate_only'
-        shell: bash
-        run: |
-          if [ "${{ github.event.inputs.mode }}" = "post_20260617_18" ]; then
-            node scripts/social/post-daily-birthday-reels.js --verify-only --force --ids=daily_reel_20260617_20_choushi_notte_shippai,daily_reel_20260617_21_chokkan_sugureteru,daily_reel_20260617_22_kanchigai_sareyasui,daily_reel_20260618_20_kuuki_yomisugiru,daily_reel_20260618_21_hitori_hanseikai,daily_reel_20260618_22_birth_05_aruaru --platforms=threads,instagram
-          else
-            node scripts/social/post-daily-birthday-reels.js --verify-only --platforms=threads,instagram
-          fi
+      - name: Dry-run approved birthday reels
+        run: npm run social:run-due -- --dry-run --only-kind=birthday_reel

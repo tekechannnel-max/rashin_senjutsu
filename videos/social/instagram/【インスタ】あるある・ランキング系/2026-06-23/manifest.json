@@ -1,0 +1,417 @@
+{
+  "date": "2026-06-23",
+  "status": "draft_for_user_review",
+  "postingAction": "none",
+  "generatedAt": "2026-06-22T02:53:03.217Z",
+  "sourceNotes": [
+    {
+      "sourceAccount": "@uranai.kitsune",
+      "sourceUrl": "https://www.instagram.com/uranai.kitsune/?hl=ja",
+      "observedPattern": "毎日運勢と12星座のあるあるを短尺で継続投稿するプロフィール構成",
+      "usedAs": "明日分も夜4枠の生まれ日TOP5として継続できる型に変換",
+      "transformationNote": "外部投稿の画像、順位、星座本文は使わず、保存されやすいテーマ設計だけ参照。",
+      "duplicateCheck": "2026-06-20と2026-06-22のタイトル、既存の誕生日数ランキングとは重複させない。"
+    },
+    {
+      "sourceAccount": "@uranai.kitsune",
+      "sourceUrl": "https://www.threads.com/@uranai.kitsune/post/DZmO3ZNCag6/12%E6%98%9F%E5%BA%A7%E3%81%AE%E5%8A%A9%E3%81%91%E3%81%AE%E6%B1%82%E3%82%81%E6%96%B9/",
+      "observedPattern": "12星座の助けの求め方",
+      "usedAs": "人前で弱音を見せにくい生まれ日TOP5へ再構成",
+      "transformationNote": "孤立や不安を煽らず、助けを求める手前の癖として説明。",
+      "duplicateCheck": "2026-06-20の限界まで助けを呼ばないテーマと重ならないよう、人前での見せ方に限定。"
+    },
+    {
+      "sourceAccount": "@uranai.kitsune",
+      "sourceUrl": "https://www.instagram.com/p/DW3da2IFNvE/",
+      "observedPattern": "12星座のオーラカラー",
+      "usedAs": "無意識の雰囲気で惹きつける生まれ日TOP5へ変換",
+      "transformationNote": "色の一覧を写さず、周囲に与える印象の話として羅針向けに再設計。",
+      "duplicateCheck": "ムードメーカーやリーダー適正と重ならないよう、目立つ力ではなく雰囲気の残り方にする。"
+    },
+    {
+      "sourceAccount": "@uranai.kitsune",
+      "sourceUrl": "https://www.instagram.com/p/DXOogXIlMCF/",
+      "observedPattern": "人見知りな星座ランキング",
+      "usedAs": "仲良くなると印象が変わる生まれ日TOP5へ再構成",
+      "transformationNote": "人見知りの順位は使わず、距離が縮まった後の変化を主題にする。",
+      "duplicateCheck": "2026-06-22の心を開くまで慎重と重ならないよう、開くまでではなく開いた後に絞る。"
+    }
+  ],
+  "avoidedTopics": [
+    "秘密守れない生まれ日TOP5",
+    "ムードメーカー生まれ日TOP5",
+    "クリエイター気質生まれ日TOP5",
+    "リーダー適正TOP5",
+    "面倒見がいい生まれ日TOP5",
+    "理系適正TOP5",
+    "調子のって失敗する生まれ日TOP5",
+    "直観が優れてる生まれ日TOP5",
+    "勘違いされやすい生まれ日TOP5",
+    "空気を読みすぎる生まれ日TOP5",
+    "ひとり反省会しがちな生まれ日TOP5",
+    "5日生まれあるある5選",
+    "うっかり忘れがちな生まれ日TOP5",
+    "フットワーク軽い生まれ日TOP5",
+    "本音を隠しがちな生まれ日TOP5",
+    "勢いで予定を決めがちな生まれ日TOP5",
+    "甘え下手な生まれ日TOP5",
+    "限界まで助けを呼ばない生まれ日TOP5",
+    "本当は希望があるのに合わせがちな生まれ日TOP5",
+    "心を開くまで慎重な生まれ日TOP5",
+    "返信待ちでそわそわする生まれ日TOP5",
+    "私生活が謎に見られがちな生まれ日TOP5",
+    "一度決めたら引かない生まれ日TOP5"
+  ],
+  "rulesApplied": [
+    "No posting, scheduling, deletion, reposting, or public URL creation before the post approval gate.",
+    "Research source is used only as a topic pattern source, not as copied caption, ranking, image, or video.",
+    "Night lane outputs are MP4 videos for Instagram Reels and Threads video.",
+    "Threads captions use exactly one hashtag.",
+    "Mini character family is selected only by birthday-mini-family.js.",
+    "Main text stays inside the 1080x1920 safe area and does not overlap mini characters."
+  ],
+  "allContact": "D:\\株式会社 天仙\\羅針占術\\output\\social-reels-review\\2026-06-23\\2026-06-23-all-contact.jpg",
+  "researchPath": "D:\\株式会社 天仙\\羅針占術\\output\\social-reels-review\\2026-06-23\\research-and-captions.md",
+  "posts": [
+    {
+      "time": "20:00",
+      "title": "人前で弱音を見せにくい生まれ日TOP5",
+      "slug": "yowane-misenikui-top5",
+      "sourceUrl": "https://www.threads.com/@uranai.kitsune/post/DZmO3ZNCag6/12%E6%98%9F%E5%BA%A7%E3%81%AE%E5%8A%A9%E3%81%91%E3%81%AE%E6%B1%82%E3%82%81%E6%96%B9/",
+      "video": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\yowane-misenikui-top5\\yowane-misenikui-top5.mp4",
+      "poster": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\yowane-misenikui-top5\\yowane-misenikui-top5-poster.jpg",
+      "preview": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\yowane-misenikui-top5\\yowane-misenikui-top5-preview.jpg",
+      "contact": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\yowane-misenikui-top5\\yowane-misenikui-top5-contact.jpg",
+      "frames": [
+        {
+          "label": "0s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\yowane-misenikui-top5\\yowane-misenikui-top5-frame-0s.jpg"
+        },
+        {
+          "label": "3s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\yowane-misenikui-top5\\yowane-misenikui-top5-frame-3s.jpg"
+        },
+        {
+          "label": "6s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\yowane-misenikui-top5\\yowane-misenikui-top5-frame-6s.jpg"
+        },
+        {
+          "label": "9s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\yowane-misenikui-top5\\yowane-misenikui-top5-frame-9s.jpg"
+        },
+        {
+          "label": "11s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\yowane-misenikui-top5\\yowane-misenikui-top5-frame-11s.jpg"
+        }
+      ],
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n人前で弱音を見せにくい生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n人前で弱音を見せにくい生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 4,
+          "reason": "しっかりして見られたい気持ちが強く、弱音を出す前に整えようとします。",
+          "miniFamily": 4
+        },
+        {
+          "rank": 2,
+          "day": 8,
+          "reason": "強く見えるぶん、困っている時ほど表情に出しにくいタイプです。",
+          "miniFamily": 8
+        },
+        {
+          "rank": 3,
+          "day": 7,
+          "reason": "感情をすぐ言葉にせず、ひとりで整理してから話そうとします。",
+          "miniFamily": 7
+        },
+        {
+          "rank": 4,
+          "day": 22,
+          "reason": "背負える器があるため、助けての一言が少し遅くなりやすいです。",
+          "miniFamily": 4
+        },
+        {
+          "rank": 5,
+          "day": 13,
+          "reason": "淡々と進める力があり、限界手前でも普通に見えやすいです。",
+          "miniFamily": 4
+        }
+      ],
+      "metadata": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "width": 1080,
+            "height": 1920,
+            "pix_fmt": "yuv420p",
+            "avg_frame_rate": "30/1"
+          }
+        ],
+        "format": {
+          "duration": "12.000000",
+          "size": "415560"
+        }
+      }
+    },
+    {
+      "time": "21:00",
+      "title": "場の温度を整えがちな生まれ日TOP5",
+      "slug": "ba-no-ondo-totonoeru-top5",
+      "sourceUrl": "https://www.instagram.com/p/DXOogXIlMCF/",
+      "video": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\ba-no-ondo-totonoeru-top5\\ba-no-ondo-totonoeru-top5.mp4",
+      "poster": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\ba-no-ondo-totonoeru-top5\\ba-no-ondo-totonoeru-top5-poster.jpg",
+      "preview": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\ba-no-ondo-totonoeru-top5\\ba-no-ondo-totonoeru-top5-preview.jpg",
+      "contact": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\ba-no-ondo-totonoeru-top5\\ba-no-ondo-totonoeru-top5-contact.jpg",
+      "frames": [
+        {
+          "label": "0s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\ba-no-ondo-totonoeru-top5\\ba-no-ondo-totonoeru-top5-frame-0s.jpg"
+        },
+        {
+          "label": "3s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\ba-no-ondo-totonoeru-top5\\ba-no-ondo-totonoeru-top5-frame-3s.jpg"
+        },
+        {
+          "label": "6s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\ba-no-ondo-totonoeru-top5\\ba-no-ondo-totonoeru-top5-frame-6s.jpg"
+        },
+        {
+          "label": "9s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\ba-no-ondo-totonoeru-top5\\ba-no-ondo-totonoeru-top5-frame-9s.jpg"
+        },
+        {
+          "label": "11s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\ba-no-ondo-totonoeru-top5\\ba-no-ondo-totonoeru-top5-frame-11s.jpg"
+        }
+      ],
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n場の温度を整えがちな生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n場の温度を整えがちな生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 6,
+          "reason": "人の気持ちに気づきやすく、場が荒れないよう自然に動けます。",
+          "miniFamily": 6
+        },
+        {
+          "rank": 2,
+          "day": 2,
+          "reason": "相手の温度に合わせる力があり、間に入るのが上手なタイプです。",
+          "miniFamily": 2
+        },
+        {
+          "rank": 3,
+          "day": 24,
+          "reason": "全体のバランスを見て、誰かが浮かないように配慮できます。",
+          "miniFamily": 6
+        },
+        {
+          "rank": 4,
+          "day": 11,
+          "reason": "空気の違和感を早く拾います。言葉にする前に雰囲気を整えます。",
+          "miniFamily": 2
+        },
+        {
+          "rank": 5,
+          "day": 20,
+          "reason": "やさしい受け止め方ができ、場に安心感を戻しやすいです。",
+          "miniFamily": 2
+        }
+      ],
+      "metadata": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "width": 1080,
+            "height": 1920,
+            "pix_fmt": "yuv420p",
+            "avg_frame_rate": "30/1"
+          }
+        ],
+        "format": {
+          "duration": "12.000000",
+          "size": "396654"
+        }
+      }
+    },
+    {
+      "time": "22:00",
+      "title": "雰囲気で惹きつける生まれ日TOP5",
+      "slug": "funiki-hikitsukeru-top5",
+      "sourceUrl": "https://www.instagram.com/p/DW3da2IFNvE/",
+      "video": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\funiki-hikitsukeru-top5\\funiki-hikitsukeru-top5.mp4",
+      "poster": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\funiki-hikitsukeru-top5\\funiki-hikitsukeru-top5-poster.jpg",
+      "preview": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\funiki-hikitsukeru-top5\\funiki-hikitsukeru-top5-preview.jpg",
+      "contact": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\funiki-hikitsukeru-top5\\funiki-hikitsukeru-top5-contact.jpg",
+      "frames": [
+        {
+          "label": "0s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\funiki-hikitsukeru-top5\\funiki-hikitsukeru-top5-frame-0s.jpg"
+        },
+        {
+          "label": "3s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\funiki-hikitsukeru-top5\\funiki-hikitsukeru-top5-frame-3s.jpg"
+        },
+        {
+          "label": "6s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\funiki-hikitsukeru-top5\\funiki-hikitsukeru-top5-frame-6s.jpg"
+        },
+        {
+          "label": "9s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\funiki-hikitsukeru-top5\\funiki-hikitsukeru-top5-frame-9s.jpg"
+        },
+        {
+          "label": "11s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\funiki-hikitsukeru-top5\\funiki-hikitsukeru-top5-frame-11s.jpg"
+        }
+      ],
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n雰囲気で惹きつける生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n雰囲気で惹きつける生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 9,
+          "reason": "包み込むような空気があり、会った後に余韻が残りやすいです。",
+          "miniFamily": 9
+        },
+        {
+          "rank": 2,
+          "day": 11,
+          "reason": "独特の感性が表情や言葉に出ます。静かでも印象に残るタイプです。",
+          "miniFamily": 2
+        },
+        {
+          "rank": 3,
+          "day": 3,
+          "reason": "明るさと表現力が自然に出て、場の記憶に残りやすいです。",
+          "miniFamily": 3
+        },
+        {
+          "rank": 4,
+          "day": 18,
+          "reason": "親しみやすさの奥に芯があります。話すほど魅力が増します。",
+          "miniFamily": 9
+        },
+        {
+          "rank": 5,
+          "day": 27,
+          "reason": "人の気持ちを受け取る力があり、やわらかい存在感が出やすいです。",
+          "miniFamily": 9
+        }
+      ],
+      "metadata": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "width": 1080,
+            "height": 1920,
+            "pix_fmt": "yuv420p",
+            "avg_frame_rate": "30/1"
+          }
+        ],
+        "format": {
+          "duration": "12.000000",
+          "size": "411990"
+        }
+      }
+    },
+    {
+      "time": "23:00",
+      "title": "仲良くなると印象が変わる生まれ日TOP5",
+      "slug": "nakayoku-naruto-kawaru-top5",
+      "sourceUrl": "https://www.instagram.com/p/DXOogXIlMCF/",
+      "video": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\nakayoku-naruto-kawaru-top5\\nakayoku-naruto-kawaru-top5.mp4",
+      "poster": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\nakayoku-naruto-kawaru-top5\\nakayoku-naruto-kawaru-top5-poster.jpg",
+      "preview": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\nakayoku-naruto-kawaru-top5\\nakayoku-naruto-kawaru-top5-preview.jpg",
+      "contact": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\nakayoku-naruto-kawaru-top5\\nakayoku-naruto-kawaru-top5-contact.jpg",
+      "frames": [
+        {
+          "label": "0s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\nakayoku-naruto-kawaru-top5\\nakayoku-naruto-kawaru-top5-frame-0s.jpg"
+        },
+        {
+          "label": "3s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\nakayoku-naruto-kawaru-top5\\nakayoku-naruto-kawaru-top5-frame-3s.jpg"
+        },
+        {
+          "label": "6s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\nakayoku-naruto-kawaru-top5\\nakayoku-naruto-kawaru-top5-frame-6s.jpg"
+        },
+        {
+          "label": "9s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\nakayoku-naruto-kawaru-top5\\nakayoku-naruto-kawaru-top5-frame-9s.jpg"
+        },
+        {
+          "label": "11s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-23\\nakayoku-naruto-kawaru-top5\\nakayoku-naruto-kawaru-top5-frame-11s.jpg"
+        }
+      ],
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n仲良くなると印象が変わる生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n仲良くなると印象が変わる生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 16,
+          "reason": "最初は落ち着いて見えますが、安心すると繊細な本音が見えてきます。",
+          "miniFamily": 7
+        },
+        {
+          "rank": 2,
+          "day": 7,
+          "reason": "距離が縮まるほど、深い話や独自の考えを出してくれるタイプです。",
+          "miniFamily": 7
+        },
+        {
+          "rank": 3,
+          "day": 25,
+          "reason": "観察してから開くため、仲良くなるほど会話の温度が変わります。",
+          "miniFamily": 7
+        },
+        {
+          "rank": 4,
+          "day": 5,
+          "reason": "自由で軽く見えても、近づくと人懐っこい一面が出やすいです。",
+          "miniFamily": 5
+        },
+        {
+          "rank": 5,
+          "day": 14,
+          "reason": "慣れるまでは様子見。安心すると動きやすく、表情も明るくなります。",
+          "miniFamily": 5
+        }
+      ],
+      "metadata": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "width": 1080,
+            "height": 1920,
+            "pix_fmt": "yuv420p",
+            "avg_frame_rate": "30/1"
+          }
+        ],
+        "format": {
+          "duration": "12.000000",
+          "size": "431104"
+        }
+      }
+    }
+  ]
+}

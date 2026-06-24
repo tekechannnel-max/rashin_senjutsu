@@ -1,0 +1,165 @@
+{
+  "date": "2026-06-23",
+  "reviewTitle": "2026-06-23 夜投稿候補",
+  "sourceNotes": [
+    {
+      "sourceAccount": "@uranai.kitsune",
+      "sourceUrl": "https://www.instagram.com/uranai.kitsune/?hl=ja",
+      "observedPattern": "毎日運勢と12星座のあるあるを短尺で継続投稿するプロフィール構成",
+      "usedAs": "明日分も夜4枠の生まれ日TOP5として継続できる型に変換",
+      "transformationNote": "外部投稿の画像、順位、星座本文は使わず、保存されやすいテーマ設計だけ参照。",
+      "duplicateCheck": "2026-06-20と2026-06-22のタイトル、既存の誕生日数ランキングとは重複させない。"
+    },
+    {
+      "sourceAccount": "@uranai.kitsune",
+      "sourceUrl": "https://www.threads.com/@uranai.kitsune/post/DZmO3ZNCag6/12%E6%98%9F%E5%BA%A7%E3%81%AE%E5%8A%A9%E3%81%91%E3%81%AE%E6%B1%82%E3%82%81%E6%96%B9/",
+      "observedPattern": "12星座の助けの求め方",
+      "usedAs": "人前で弱音を見せにくい生まれ日TOP5へ再構成",
+      "transformationNote": "孤立や不安を煽らず、助けを求める手前の癖として説明。",
+      "duplicateCheck": "2026-06-20の限界まで助けを呼ばないテーマと重ならないよう、人前での見せ方に限定。"
+    },
+    {
+      "sourceAccount": "@uranai.kitsune",
+      "sourceUrl": "https://www.instagram.com/p/DW3da2IFNvE/",
+      "observedPattern": "12星座のオーラカラー",
+      "usedAs": "無意識の雰囲気で惹きつける生まれ日TOP5へ変換",
+      "transformationNote": "色の一覧を写さず、周囲に与える印象の話として羅針向けに再設計。",
+      "duplicateCheck": "ムードメーカーやリーダー適正と重ならないよう、目立つ力ではなく雰囲気の残り方にする。"
+    },
+    {
+      "sourceAccount": "@uranai.kitsune",
+      "sourceUrl": "https://www.instagram.com/p/DXOogXIlMCF/",
+      "observedPattern": "人見知りな星座ランキング",
+      "usedAs": "仲良くなると印象が変わる生まれ日TOP5へ再構成",
+      "transformationNote": "人見知りの順位は使わず、距離が縮まった後の変化を主題にする。",
+      "duplicateCheck": "2026-06-22の心を開くまで慎重と重ならないよう、開くまでではなく開いた後に絞る。"
+    }
+  ],
+  "avoidedTopics": [
+    "秘密守れない生まれ日TOP5",
+    "ムードメーカー生まれ日TOP5",
+    "クリエイター気質生まれ日TOP5",
+    "リーダー適正TOP5",
+    "面倒見がいい生まれ日TOP5",
+    "理系適正TOP5",
+    "調子のって失敗する生まれ日TOP5",
+    "直観が優れてる生まれ日TOP5",
+    "勘違いされやすい生まれ日TOP5",
+    "空気を読みすぎる生まれ日TOP5",
+    "ひとり反省会しがちな生まれ日TOP5",
+    "5日生まれあるある5選",
+    "うっかり忘れがちな生まれ日TOP5",
+    "フットワーク軽い生まれ日TOP5",
+    "本音を隠しがちな生まれ日TOP5",
+    "勢いで予定を決めがちな生まれ日TOP5",
+    "甘え下手な生まれ日TOP5",
+    "限界まで助けを呼ばない生まれ日TOP5",
+    "本当は希望があるのに合わせがちな生まれ日TOP5",
+    "心を開くまで慎重な生まれ日TOP5",
+    "返信待ちでそわそわする生まれ日TOP5",
+    "私生活が謎に見られがちな生まれ日TOP5",
+    "一度決めたら引かない生まれ日TOP5"
+  ],
+  "posts": [
+    {
+      "time": "20:00",
+      "slug": "yowane-misenikui-top5",
+      "title": "人前で弱音を見せにくい生まれ日TOP5",
+      "titleLines": ["人前で弱音を", "見せにくい生まれ日TOP5"],
+      "lead": "つらい時ほど、いつも通りに見せようとしてしまうタイプ",
+      "sourceUrl": "https://www.threads.com/@uranai.kitsune/post/DZmO3ZNCag6/12%E6%98%9F%E5%BA%A7%E3%81%AE%E5%8A%A9%E3%81%91%E3%81%AE%E6%B1%82%E3%82%81%E6%96%B9/",
+      "theme": {
+        "accent": "#855b9b",
+        "accent2": "#2d7a73",
+        "ink": "#2c2338",
+        "bg1": "#f7f1fb",
+        "bg2": "#fffdf8",
+        "bg3": "#e4f2ef",
+        "glow": "#ffe3a3"
+      },
+      "rows": [
+        { "rank": 1, "day": 4, "reason": "しっかりして見られたい気持ちが強く、弱音を出す前に整えようとします。" },
+        { "rank": 2, "day": 8, "reason": "強く見えるぶん、困っている時ほど表情に出しにくいタイプです。" },
+        { "rank": 3, "day": 7, "reason": "感情をすぐ言葉にせず、ひとりで整理してから話そうとします。" },
+        { "rank": 4, "day": 22, "reason": "背負える器があるため、助けての一言が少し遅くなりやすいです。" },
+        { "rank": 5, "day": 13, "reason": "淡々と進める力があり、限界手前でも普通に見えやすいです。" }
+      ],
+      "summary": "弱音を見せにくい日は、強いのではなく、崩れ方を人に見せるのが苦手です。"
+    },
+    {
+      "time": "21:00",
+      "slug": "ba-no-ondo-totonoeru-top5",
+      "title": "場の温度を整えがちな生まれ日TOP5",
+      "titleLines": ["場の温度を", "整えがちな生まれ日TOP5"],
+      "lead": "誰かが無理していないか、空気の変化に先に気づきやすいタイプ",
+      "sourceUrl": "https://www.instagram.com/p/DXOogXIlMCF/",
+      "theme": {
+        "accent": "#3b7d69",
+        "accent2": "#b86a45",
+        "ink": "#1d352e",
+        "bg1": "#eef9f3",
+        "bg2": "#fffdf8",
+        "bg3": "#f0eadc",
+        "glow": "#dff7bf"
+      },
+      "rows": [
+        { "rank": 1, "day": 6, "reason": "人の気持ちに気づきやすく、場が荒れないよう自然に動けます。" },
+        { "rank": 2, "day": 2, "reason": "相手の温度に合わせる力があり、間に入るのが上手なタイプです。" },
+        { "rank": 3, "day": 24, "reason": "全体のバランスを見て、誰かが浮かないように配慮できます。" },
+        { "rank": 4, "day": 11, "reason": "空気の違和感を早く拾います。言葉にする前に雰囲気を整えます。" },
+        { "rank": 5, "day": 20, "reason": "やさしい受け止め方ができ、場に安心感を戻しやすいです。" }
+      ],
+      "summary": "場を整える日は、目立たなくても周囲の安心を支える力があります。"
+    },
+    {
+      "time": "22:00",
+      "slug": "funiki-hikitsukeru-top5",
+      "title": "雰囲気で惹きつける生まれ日TOP5",
+      "titleLines": ["雰囲気で惹きつける", "生まれ日TOP5"],
+      "lead": "派手に動かなくても、なぜか印象に残りやすいタイプ",
+      "sourceUrl": "https://www.instagram.com/p/DW3da2IFNvE/",
+      "theme": {
+        "accent": "#c0822f",
+        "accent2": "#416fa8",
+        "ink": "#352912",
+        "bg1": "#fff6df",
+        "bg2": "#fffdf8",
+        "bg3": "#e7eef8",
+        "glow": "#fff0a6"
+      },
+      "rows": [
+        { "rank": 1, "day": 9, "reason": "包み込むような空気があり、会った後に余韻が残りやすいです。" },
+        { "rank": 2, "day": 11, "reason": "独特の感性が表情や言葉に出ます。静かでも印象に残るタイプです。" },
+        { "rank": 3, "day": 3, "reason": "明るさと表現力が自然に出て、場の記憶に残りやすいです。" },
+        { "rank": 4, "day": 18, "reason": "親しみやすさの奥に芯があります。話すほど魅力が増します。" },
+        { "rank": 5, "day": 27, "reason": "人の気持ちを受け取る力があり、やわらかい存在感が出やすいです。" }
+      ],
+      "summary": "惹きつける日は、目立つ強さより、余韻として残る魅力が出ています。"
+    },
+    {
+      "time": "23:00",
+      "slug": "nakayoku-naruto-kawaru-top5",
+      "title": "仲良くなると印象が変わる生まれ日TOP5",
+      "titleLines": ["仲良くなると", "印象が変わる生まれ日TOP5"],
+      "lead": "最初は控えめでも、安心すると一気に本来の魅力が出るタイプ",
+      "sourceUrl": "https://www.instagram.com/p/DXOogXIlMCF/",
+      "theme": {
+        "accent": "#4f6fb4",
+        "accent2": "#b75b55",
+        "ink": "#1f2945",
+        "bg1": "#edf3ff",
+        "bg2": "#fffdf8",
+        "bg3": "#f3e6e2",
+        "glow": "#d6edff"
+      },
+      "rows": [
+        { "rank": 1, "day": 16, "reason": "最初は落ち着いて見えますが、安心すると繊細な本音が見えてきます。" },
+        { "rank": 2, "day": 7, "reason": "距離が縮まるほど、深い話や独自の考えを出してくれるタイプです。" },
+        { "rank": 3, "day": 25, "reason": "観察してから開くため、仲良くなるほど会話の温度が変わります。" },
+        { "rank": 4, "day": 5, "reason": "自由で軽く見えても、近づくと人懐っこい一面が出やすいです。" },
+        { "rank": 5, "day": 14, "reason": "慣れるまでは様子見。安心すると動きやすく、表情も明るくなります。" }
+      ],
+      "summary": "印象が変わる日は、最初に全部を見せず、信頼と一緒に魅力が開きます。"
+    }
+  ]
+}

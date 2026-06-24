@@ -1,0 +1,390 @@
+{
+  "date": "2026-06-24",
+  "status": "draft_for_user_review",
+  "postingAction": "none",
+  "generatedAt": "2026-06-24T07:23:22.352Z",
+  "sourceNotes": [
+    {
+      "sourceAccount": "羅針占術 internal",
+      "sourceUrl": "data/social-posts/reel-plans/2026-06-22-birthday-reels.json",
+      "observedPattern": "承認済み誕生日リールのTOP5構成、保存CTA、ミニキャラ導線",
+      "usedAs": "既存の羅針占術SNS文体と動画構成を保った追加テーマの設計基準",
+      "transformationNote": "既存テーマをコピーせず、ユーザーが保存しやすい自己理解系の新規テーマに置き換え",
+      "duplicateCheck": "6/20、6/22、6/23の承認済み夜枠テーマと完全一致しないタイトルだけを採用"
+    },
+    {
+      "sourceAccount": "羅針占術 internal",
+      "sourceUrl": "docs/sns-birthday-number-content-guide.md",
+      "observedPattern": "誕生日数に応じたミニキャラ選定と、断定しすぎない心理傾向表現",
+      "usedAs": "順位別の理由文とミニキャラ証跡の根拠",
+      "transformationNote": "不安を煽る表現を避け、保存後に読み返しやすい短文へ調整",
+      "duplicateCheck": "各投稿内で生まれ日の重複がないことを生成スクリプトで検証"
+    }
+  ],
+  "avoidedTopics": [
+    "勢いで予定を決めがちな生まれ日TOP5",
+    "甘え下手な生まれ日TOP5",
+    "限界まで助けを呼ばない生まれ日TOP5",
+    "本当は希望があるのに合わせがちな生まれ日TOP5",
+    "心を開くまで慎重な生まれ日TOP5",
+    "返信待ちでそわそわする生まれ日TOP5",
+    "私生活が謎に見られがちな生まれ日TOP5",
+    "一度決めたら引かない生まれ日TOP5",
+    "人前で弱音を見せにくい生まれ日TOP5",
+    "場の温度を整えがちな生まれ日TOP5",
+    "雰囲気で惹きつける生まれ日TOP5",
+    "仲良くなると印象が変わる生まれ日TOP5"
+  ],
+  "rulesApplied": [
+    "No posting, scheduling, deletion, reposting, or public URL creation before the post approval gate.",
+    "Research source is used only as a topic pattern source, not as copied caption, ranking, image, or video.",
+    "Night lane outputs are MP4 videos for Instagram Reels and Threads video.",
+    "Threads captions use exactly one hashtag.",
+    "Mini character family is selected only by birthday-mini-family.js.",
+    "Main text stays inside the 1080x1920 safe area and does not overlap mini characters."
+  ],
+  "allContact": "D:\\株式会社 天仙\\羅針占術\\output\\social-reels-review\\2026-06-24\\2026-06-24-all-contact.jpg",
+  "researchPath": "D:\\株式会社 天仙\\羅針占術\\output\\social-reels-review\\2026-06-24\\research-and-captions.md",
+  "posts": [
+    {
+      "time": "20:00",
+      "title": "気持ちの切り替えが早い生まれ日TOP5",
+      "slug": "kimochi-kirikae-hayai-top5",
+      "sourceUrl": "data/social-posts/reel-plans/2026-06-22-birthday-reels.json",
+      "video": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\kimochi-kirikae-hayai-top5\\kimochi-kirikae-hayai-top5.mp4",
+      "poster": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\kimochi-kirikae-hayai-top5\\kimochi-kirikae-hayai-top5-poster.jpg",
+      "preview": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\kimochi-kirikae-hayai-top5\\kimochi-kirikae-hayai-top5-preview.jpg",
+      "contact": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\kimochi-kirikae-hayai-top5\\kimochi-kirikae-hayai-top5-contact.jpg",
+      "frames": [
+        {
+          "label": "0s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\kimochi-kirikae-hayai-top5\\kimochi-kirikae-hayai-top5-frame-0s.jpg"
+        },
+        {
+          "label": "3s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\kimochi-kirikae-hayai-top5\\kimochi-kirikae-hayai-top5-frame-3s.jpg"
+        },
+        {
+          "label": "6s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\kimochi-kirikae-hayai-top5\\kimochi-kirikae-hayai-top5-frame-6s.jpg"
+        },
+        {
+          "label": "9s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\kimochi-kirikae-hayai-top5\\kimochi-kirikae-hayai-top5-frame-9s.jpg"
+        },
+        {
+          "label": "11s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\kimochi-kirikae-hayai-top5\\kimochi-kirikae-hayai-top5-frame-11s.jpg"
+        }
+      ],
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n気持ちの切り替えが早い生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n気持ちの切り替えが早い生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 5,
+          "reason": "気持ちが動くと、次の楽しみへ向かえます。落ち込みを長く抱えすぎません。",
+          "miniFamily": 5
+        },
+        {
+          "rank": 2,
+          "day": 14,
+          "reason": "変化に強く、予定が崩れても別の流れを見つけるのが上手です。",
+          "miniFamily": 5
+        },
+        {
+          "rank": 3,
+          "day": 23,
+          "reason": "人との会話で気分が戻りやすく、空気を明るく変えられます。",
+          "miniFamily": 5
+        },
+        {
+          "rank": 4,
+          "day": 1,
+          "reason": "決め直す力があります。止まるより次の一手へ意識が向きます。",
+          "miniFamily": 1
+        },
+        {
+          "rank": 5,
+          "day": 10,
+          "reason": "切り替えのスイッチが入りやすく、流れを作り直すのが得意です。",
+          "miniFamily": 1
+        }
+      ],
+      "metadata": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "width": 1080,
+            "height": 1920,
+            "pix_fmt": "yuv420p",
+            "avg_frame_rate": "30/1"
+          }
+        ],
+        "format": {
+          "duration": "12.000000",
+          "size": "462071"
+        }
+      }
+    },
+    {
+      "time": "21:00",
+      "title": "言葉より行動で示す生まれ日TOP5",
+      "slug": "kotoba-yori-kodo-top5",
+      "sourceUrl": "data/social-posts/reel-plans/2026-06-23-birthday-reels.json",
+      "video": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\kotoba-yori-kodo-top5\\kotoba-yori-kodo-top5.mp4",
+      "poster": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\kotoba-yori-kodo-top5\\kotoba-yori-kodo-top5-poster.jpg",
+      "preview": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\kotoba-yori-kodo-top5\\kotoba-yori-kodo-top5-preview.jpg",
+      "contact": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\kotoba-yori-kodo-top5\\kotoba-yori-kodo-top5-contact.jpg",
+      "frames": [
+        {
+          "label": "0s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\kotoba-yori-kodo-top5\\kotoba-yori-kodo-top5-frame-0s.jpg"
+        },
+        {
+          "label": "3s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\kotoba-yori-kodo-top5\\kotoba-yori-kodo-top5-frame-3s.jpg"
+        },
+        {
+          "label": "6s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\kotoba-yori-kodo-top5\\kotoba-yori-kodo-top5-frame-6s.jpg"
+        },
+        {
+          "label": "9s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\kotoba-yori-kodo-top5\\kotoba-yori-kodo-top5-frame-9s.jpg"
+        },
+        {
+          "label": "11s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\kotoba-yori-kodo-top5\\kotoba-yori-kodo-top5-frame-11s.jpg"
+        }
+      ],
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n言葉より行動で示す生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n言葉より行動で示す生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 8,
+          "reason": "結果で信頼を作ろうとします。口約束より、動いて見せる方が自然です。",
+          "miniFamily": 8
+        },
+        {
+          "rank": 2,
+          "day": 4,
+          "reason": "言葉を盛るより、約束を守ることを大切にします。誠実さが行動に出ます。",
+          "miniFamily": 4
+        },
+        {
+          "rank": 3,
+          "day": 22,
+          "reason": "背負う力があり、必要だと思うと静かに手を貸します。",
+          "miniFamily": 4
+        },
+        {
+          "rank": 4,
+          "day": 13,
+          "reason": "淡々として見えても、細かな実務で相手を支えるタイプです。",
+          "miniFamily": 4
+        },
+        {
+          "rank": 5,
+          "day": 31,
+          "reason": "責任感が強く、言う前に整えておきたい気持ちが出やすいです。",
+          "miniFamily": 4
+        }
+      ],
+      "metadata": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "width": 1080,
+            "height": 1920,
+            "pix_fmt": "yuv420p",
+            "avg_frame_rate": "30/1"
+          }
+        ],
+        "format": {
+          "duration": "12.000000",
+          "size": "435771"
+        }
+      }
+    },
+    {
+      "time": "22:00",
+      "title": "実は照れ屋な生まれ日TOP5",
+      "slug": "jitsu-wa-tere-ya-top5",
+      "sourceUrl": "data/social-posts/reel-plans/2026-06-23-birthday-reels.json",
+      "video": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\jitsu-wa-tere-ya-top5\\jitsu-wa-tere-ya-top5.mp4",
+      "poster": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\jitsu-wa-tere-ya-top5\\jitsu-wa-tere-ya-top5-poster.jpg",
+      "preview": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\jitsu-wa-tere-ya-top5\\jitsu-wa-tere-ya-top5-preview.jpg",
+      "contact": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\jitsu-wa-tere-ya-top5\\jitsu-wa-tere-ya-top5-contact.jpg",
+      "frames": [
+        {
+          "label": "0s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\jitsu-wa-tere-ya-top5\\jitsu-wa-tere-ya-top5-frame-0s.jpg"
+        },
+        {
+          "label": "3s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\jitsu-wa-tere-ya-top5\\jitsu-wa-tere-ya-top5-frame-3s.jpg"
+        },
+        {
+          "label": "6s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\jitsu-wa-tere-ya-top5\\jitsu-wa-tere-ya-top5-frame-6s.jpg"
+        },
+        {
+          "label": "9s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\jitsu-wa-tere-ya-top5\\jitsu-wa-tere-ya-top5-frame-9s.jpg"
+        },
+        {
+          "label": "11s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\jitsu-wa-tere-ya-top5\\jitsu-wa-tere-ya-top5-frame-11s.jpg"
+        }
+      ],
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n実は照れ屋な生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n実は照れ屋な生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 2,
+          "reason": "感情が細やかで、嬉しいほど反応を隠したくなるところがあります。",
+          "miniFamily": 2
+        },
+        {
+          "rank": 2,
+          "day": 11,
+          "reason": "本音は繊細です。まっすぐ褒められると、表情より先に心が動きます。",
+          "miniFamily": 2
+        },
+        {
+          "rank": 3,
+          "day": 16,
+          "reason": "明るく返せても、内側ではかなり照れています。距離が近いほど出やすいです。",
+          "miniFamily": 7
+        },
+        {
+          "rank": 4,
+          "day": 6,
+          "reason": "優しく受け取れるぶん、好意を向けられると少し照れが出ます。",
+          "miniFamily": 6
+        },
+        {
+          "rank": 5,
+          "day": 20,
+          "reason": "気持ちを受け取る力が強く、褒め言葉を軽く流せないタイプです。",
+          "miniFamily": 2
+        }
+      ],
+      "metadata": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "width": 1080,
+            "height": 1920,
+            "pix_fmt": "yuv420p",
+            "avg_frame_rate": "30/1"
+          }
+        ],
+        "format": {
+          "duration": "12.000000",
+          "size": "414344"
+        }
+      }
+    },
+    {
+      "time": "23:00",
+      "title": "ひとり時間で回復する生まれ日TOP5",
+      "slug": "hitori-jikan-kaifuku-top5",
+      "sourceUrl": "data/social-posts/reel-plans/2026-06-22-birthday-reels.json",
+      "video": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\hitori-jikan-kaifuku-top5\\hitori-jikan-kaifuku-top5.mp4",
+      "poster": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\hitori-jikan-kaifuku-top5\\hitori-jikan-kaifuku-top5-poster.jpg",
+      "preview": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\hitori-jikan-kaifuku-top5\\hitori-jikan-kaifuku-top5-preview.jpg",
+      "contact": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\hitori-jikan-kaifuku-top5\\hitori-jikan-kaifuku-top5-contact.jpg",
+      "frames": [
+        {
+          "label": "0s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\hitori-jikan-kaifuku-top5\\hitori-jikan-kaifuku-top5-frame-0s.jpg"
+        },
+        {
+          "label": "3s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\hitori-jikan-kaifuku-top5\\hitori-jikan-kaifuku-top5-frame-3s.jpg"
+        },
+        {
+          "label": "6s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\hitori-jikan-kaifuku-top5\\hitori-jikan-kaifuku-top5-frame-6s.jpg"
+        },
+        {
+          "label": "9s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\hitori-jikan-kaifuku-top5\\hitori-jikan-kaifuku-top5-frame-9s.jpg"
+        },
+        {
+          "label": "11s",
+          "path": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-24\\hitori-jikan-kaifuku-top5\\hitori-jikan-kaifuku-top5-frame-11s.jpg"
+        }
+      ],
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\nひとり時間で回復する生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\nひとり時間で回復する生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 7,
+          "reason": "考える時間が必要です。ひとりで整理すると、本来の落ち着きが戻ります。",
+          "miniFamily": 7
+        },
+        {
+          "rank": 2,
+          "day": 25,
+          "reason": "周りをよく見ているぶん、静かな時間で感情をほどきやすいです。",
+          "miniFamily": 7
+        },
+        {
+          "rank": 3,
+          "day": 9,
+          "reason": "人の気持ちを受け取りやすく、自分だけの時間で境界線を戻します。",
+          "miniFamily": 9
+        },
+        {
+          "rank": 4,
+          "day": 18,
+          "reason": "頼られることが多いぶん、何もしない時間が心の回復になります。",
+          "miniFamily": 9
+        },
+        {
+          "rank": 5,
+          "day": 4,
+          "reason": "きちんとしたい気持ちが強く、静かな環境でペースを整えます。",
+          "miniFamily": 4
+        }
+      ],
+      "metadata": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "width": 1080,
+            "height": 1920,
+            "pix_fmt": "yuv420p",
+            "avg_frame_rate": "30/1"
+          }
+        ],
+        "format": {
+          "duration": "12.000000",
+          "size": "426825"
+        }
+      }
+    }
+  ]
+}

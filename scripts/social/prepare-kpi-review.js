@@ -8,9 +8,9 @@ const DAILY_SCRIPT = path.join(__dirname, 'daily-oracle-post.js');
 const OUT_DIR = path.join(ROOT, 'data', 'social-posts', 'kpi-review');
 const SUPPORTED_PLATFORMS = new Set(['threads', 'instagram']);
 const SOCIAL_EXPANSION_START_DATE = process.env.SOCIAL_EXPANSION_START_DATE || '2026-05-27';
-const KINDS = ['oracle', 'rashin_point', 'birthday_monthly', 'birthday_ranking'];
-const SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE = process.env.SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE || '2026-06-05';
+const KINDS = ['oracle', 'rashin_point', 'birthday_monthly'];
 const SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE = process.env.SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE || '2026-07-01';
+const SOCIAL_BIRTHDAY_MONTHLY_INITIAL_DATE = '2026-06-01';
 const THURSDAY = 4;
 const THURSDAY_COMPARISON_SLOT = { id: 'rashin_point_thursday_20', kind: 'rashin_point', time: '20:00', days: [THURSDAY], startDate: '2026-06-11', platforms: 'threads,instagram' };
 const ONE_OFF_POSTS = [
@@ -20,163 +20,12 @@ const ONE_OFF_POSTS = [
     date: '2026-06-04',
     time: '20:00',
   },
-  {
-    id: 'birthday_ranking_love_at_first_sight',
-    kind: 'birthday_ranking',
-    date: '2026-06-08',
-    time: '20:00',
-    rankingSlug: 'love_at_first_sight',
-  },
-  {
-    id: 'birthday_ranking_money_luck',
-    kind: 'birthday_ranking',
-    date: '2026-06-08',
-    time: '21:00',
-    rankingSlug: 'money_luck',
-  },
-  {
-    id: 'birthday_ranking_horror_resistance',
-    kind: 'birthday_ranking',
-    date: '2026-06-08',
-    time: '22:00',
-    rankingSlug: 'horror_resistance',
-  },
-  {
-    id: 'birthday_ranking_weird',
-    kind: 'birthday_ranking',
-    date: '2026-06-08',
-    time: '23:00',
-    rankingSlug: 'weird',
-  },
-  {
-    id: 'birthday_ranking_idol_style',
-    kind: 'birthday_ranking',
-    date: '2026-06-09',
-    time: '20:00',
-    rankingSlug: 'idol_style',
-  },
-  {
-    id: 'birthday_ranking_love_style',
-    kind: 'birthday_ranking',
-    date: '2026-06-09',
-    time: '21:00',
-    rankingSlug: 'love_style',
-  },
-  {
-    id: 'birthday_ranking_amae_jouzu',
-    kind: 'birthday_ranking',
-    date: '2026-06-09',
-    time: '22:00',
-    rankingSlug: 'amae_jouzu',
-  },
-  {
-    id: 'birthday_ranking_buchigire_kowai',
-    kind: 'birthday_ranking',
-    date: '2026-06-09',
-    time: '23:00',
-    rankingSlug: 'buchigire_kowai',
-  },
-  {
-    id: 'birthday_ranking_akisho_level',
-    kind: 'birthday_ranking',
-    date: '2026-06-10',
-    time: '20:00',
-    rankingSlug: 'akisho_level',
-  },
-  {
-    id: 'birthday_ranking_majime',
-    kind: 'birthday_ranking',
-    date: '2026-06-10',
-    time: '21:00',
-    rankingSlug: 'majime',
-  },
-  {
-    id: 'birthday_ranking_uwaki_rate',
-    kind: 'birthday_ranking',
-    date: '2026-06-10',
-    time: '22:00',
-    rankingSlug: 'uwaki_rate',
-  },
-  {
-    id: 'birthday_ranking_nenimotsu_wasureru',
-    kind: 'birthday_ranking',
-    date: '2026-06-10',
-    time: '23:00',
-    rankingSlug: 'nenimotsu_wasureru',
-  },
-  {
-    id: 'birthday_ranking_chuunibyou',
-    kind: 'birthday_ranking',
-    date: '2026-06-11',
-    time: '21:00',
-    rankingSlug: 'chuunibyou',
-  },
-  {
-    id: 'birthday_ranking_birth_01_aruaru',
-    kind: 'birthday_ranking',
-    date: '2026-06-12',
-    time: '20:00',
-    rankingSlug: 'birth_01_aruaru',
-  },
-  {
-    id: 'birthday_ranking_birth_02_aruaru',
-    kind: 'birthday_ranking',
-    date: '2026-06-12',
-    time: '21:00',
-    rankingSlug: 'birth_02_aruaru',
-  },
-  {
-    id: 'birthday_ranking_birth_03_aruaru',
-    kind: 'birthday_ranking',
-    date: '2026-06-12',
-    time: '22:00',
-    rankingSlug: 'birth_03_aruaru',
-  },
-  {
-    id: 'birthday_ranking_birth_04_aruaru',
-    kind: 'birthday_ranking',
-    date: '2026-06-12',
-    time: '23:00',
-    rankingSlug: 'birth_04_aruaru',
-  },
-  {
-    id: 'birthday_monthly_recovery_01_08',
-    kind: 'birthday_monthly',
-    date: '2026-06-07',
-    time: '20:00',
-    birthdayDays: '1-8',
-    platforms: 'instagram',
-  },
-  {
-    id: 'birthday_monthly_recovery_09_16',
-    kind: 'birthday_monthly',
-    date: '2026-06-07',
-    time: '21:00',
-    birthdayDays: '9-16',
-    platforms: 'instagram',
-  },
-  {
-    id: 'birthday_monthly_recovery_17_24',
-    kind: 'birthday_monthly',
-    date: '2026-06-07',
-    time: '22:00',
-    birthdayDays: '17-24',
-    platforms: 'instagram',
-  },
-  {
-    id: 'birthday_monthly_recovery_25_31',
-    kind: 'birthday_monthly',
-    date: '2026-06-07',
-    time: '23:00',
-    birthdayDays: '25-31',
-    platforms: 'instagram',
-  },
 ];
 const BIRTHDAY_MONTHLY_SLOTS = [
-  { id: 'birthday_monthly_01_08', kind: 'birthday_monthly', time: '20:00', birthdayDays: '1-8', platforms: 'instagram' },
-  { id: 'birthday_monthly_09_16', kind: 'birthday_monthly', time: '21:00', birthdayDays: '9-16', platforms: 'instagram' },
-  { id: 'birthday_monthly_17_24', kind: 'birthday_monthly', time: '22:00', birthdayDays: '17-24', platforms: 'instagram' },
-  { id: 'birthday_monthly_25_31', kind: 'birthday_monthly', time: '23:00', birthdayDays: '25-31', platforms: 'instagram' },
+  { id: 'birthday_monthly_01_08', kind: 'birthday_monthly', time: '20:00', birthdayDays: '1-8', platforms: 'threads,instagram' },
+  { id: 'birthday_monthly_09_16', kind: 'birthday_monthly', time: '21:00', birthdayDays: '9-16', platforms: 'threads,instagram' },
+  { id: 'birthday_monthly_17_24', kind: 'birthday_monthly', time: '22:00', birthdayDays: '17-24', platforms: 'threads,instagram' },
+  { id: 'birthday_monthly_25_31', kind: 'birthday_monthly', time: '23:00', birthdayDays: '25-31', platforms: 'threads,instagram' },
 ];
 const WEEKDAYS_BY_KIND = {
   oracle: null,
@@ -185,7 +34,6 @@ const KPI_FOCUS_BY_KIND = {
   oracle: 'habit_link_clicks',
   rashin_point: 'trust_paid_flow_clicks',
   birthday_monthly: 'saves_profile_visits',
-  birthday_ranking: 'saves_profile_visits',
 };
 
 const COLUMNS = [
@@ -288,7 +136,7 @@ function getWeekday(dateKey) {
 }
 
 function isBirthdayMonthlyDate(dateKey) {
-  return dateKey === SOCIAL_BIRTHDAY_MONTHLY_JUNE_DATE
+  return dateKey === SOCIAL_BIRTHDAY_MONTHLY_INITIAL_DATE
     || (dateKey >= SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE && dateKey.endsWith('-01'));
 }
 

@@ -1,0 +1,251 @@
+{
+  "approvalStatus": "approved",
+  "approvedBy": "user",
+  "approvedAt": "2026-06-22T02:39:19.948Z",
+  "approvalText": "投稿されてないもの投稿して。必要なら改善・アップデートしなさい。",
+  "approvalScope": "threads,instagram",
+  "sourceCandidate": "output/social-approved-reels-candidates/2026-06-20-approved-candidate.json",
+  "approvalNote": "Latest direct user instruction approved posting previously generated but unposted 2026-06-20 reels as catch-up.",
+  "posts": [
+    {
+      "id": "birthday_reel_20260620_2000_yotei_kimeru_karui_top5",
+      "kind": "birthday_reel",
+      "date": "2026-06-20",
+      "time": "20:00",
+      "title": "勢いで予定を決めがちな生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-20/yotei-kimeru-karui-top5/yotei-kimeru-karui-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n勢いで予定を決めがちな生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n勢いで予定を決めがちな生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-20/yotei-kimeru-karui-top5/yotei-kimeru-karui-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-20/yotei-kimeru-karui-top5/yotei-kimeru-karui-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        },
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 5,
+            "family": 5,
+            "asset": "birthday-family-5-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 23,
+            "family": 5,
+            "asset": "birthday-family-5-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 14,
+            "family": 5,
+            "asset": "birthday-family-5-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 3,
+            "family": 3,
+            "asset": "birthday-family-3-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 1,
+            "family": 1,
+            "asset": "birthday-family-1-chibi.png"
+          }
+        ]
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/main/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-20/yotei-kimeru-karui-top5/yotei-kimeru-karui-top5.mp4"
+    },
+    {
+      "id": "birthday_reel_20260620_2100_amae_beta_top5",
+      "kind": "birthday_reel",
+      "date": "2026-06-20",
+      "time": "21:00",
+      "title": "甘え下手な生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-20/amae-beta-top5/amae-beta-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n甘え下手な生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n甘え下手な生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-20/amae-beta-top5/amae-beta-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-20/amae-beta-top5/amae-beta-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        },
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 7,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 4,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 22,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 8,
+            "family": 8,
+            "asset": "birthday-family-8-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 16,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png"
+          }
+        ]
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/main/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-20/amae-beta-top5/amae-beta-top5.mp4"
+    },
+    {
+      "id": "birthday_reel_20260620_2200_tasuke_yobu_osoi_top5",
+      "kind": "birthday_reel",
+      "date": "2026-06-20",
+      "time": "22:00",
+      "title": "限界まで助けを呼ばない生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-20/tasuke-yobu-osoi-top5/tasuke-yobu-osoi-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n限界まで助けを呼ばない生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n限界まで助けを呼ばない生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-20/tasuke-yobu-osoi-top5/tasuke-yobu-osoi-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-20/tasuke-yobu-osoi-top5/tasuke-yobu-osoi-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        },
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 4,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 8,
+            "family": 8,
+            "asset": "birthday-family-8-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 13,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 31,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 7,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png"
+          }
+        ]
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/main/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-20/tasuke-yobu-osoi-top5/tasuke-yobu-osoi-top5.mp4"
+    },
+    {
+      "id": "birthday_reel_20260620_2300_honto_wa_kibou_aru_top5",
+      "kind": "birthday_reel",
+      "date": "2026-06-20",
+      "time": "23:00",
+      "title": "本当は希望があるのに合わせがちな生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-20/honto-wa-kibou-aru-top5/honto-wa-kibou-aru-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n本当は希望があるのに合わせがちな生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n本当は希望があるのに合わせがちな生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-20/honto-wa-kibou-aru-top5/honto-wa-kibou-aru-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-20/honto-wa-kibou-aru-top5/honto-wa-kibou-aru-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        },
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 2,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 6,
+            "family": 6,
+            "asset": "birthday-family-6-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 11,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 24,
+            "family": 6,
+            "asset": "birthday-family-6-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 29,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png"
+          }
+        ]
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/main/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-20/honto-wa-kibou-aru-top5/honto-wa-kibou-aru-top5.mp4"
+    }
+  ]
+}

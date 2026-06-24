@@ -48,12 +48,12 @@ const RELEASE_DATE = PRERELEASE_START_DATE;
 const CARD_CYCLE_START_DATE = '2026-05-12';
 const SOCIAL_EXPANSION_START_DATE = process.env.SOCIAL_EXPANSION_START_DATE || '2026-05-27';
 const CONTENT_CYCLE_START_DATE = process.env.SOCIAL_CONTENT_CYCLE_START_DATE || SOCIAL_EXPANSION_START_DATE;
-const SOCIAL_BIRTHDAY_MONTHLY_START_DATE = process.env.SOCIAL_BIRTHDAY_MONTHLY_START_DATE || '2026-06-05';
+const SOCIAL_BIRTHDAY_MONTHLY_START_DATE = process.env.SOCIAL_BIRTHDAY_MONTHLY_START_DATE || '2026-06-01';
 const ORACLE_CARD_CYCLE_LENGTH = 33;
 const SOCIAL_PAID_CTA_MODES = new Set(['off', 'soft', 'active']);
 const SOCIAL_RELEASE_MODES = new Set(['auto', 'prelaunch', 'prerelease', 'fix', 'release', 'launch', 'postrelease']);
 const SOCIAL_POST_KINDS = ['oracle'];
-const LEGACY_SOCIAL_POST_KINDS = ['rashin_point', 'birthday_monthly', 'birthday_ranking', 'empathy', 'difference', 'free_paid_compare', 'midday', 'concept'];
+const LEGACY_SOCIAL_POST_KINDS = ['rashin_point', 'birthday_monthly', 'empathy', 'difference', 'free_paid_compare', 'midday', 'concept'];
 const DRAFT_POST_KINDS = [...SOCIAL_POST_KINDS, ...LEGACY_SOCIAL_POST_KINDS];
 const THREADS_MATCHED_PLATFORM_KINDS = new Set(['oracle', 'birthday_monthly', 'empathy', 'difference', 'free_paid_compare']);
 const RESULT_SUFFIX_BY_KIND = {
@@ -268,11 +268,11 @@ const SOCIAL_CONTENT_IMAGES = {
   },
   rashin_point: {
     file: 'rashin_point.jpg',
-    slides: ['difference.jpg', 'rashin_point.jpg', 'free-paid-compare.jpg'],
+    slides: ['difference.jpg', 'free-paid-compare.jpg', 'rashin_point.jpg'],
     altTexts: [
       '羅針占術とほかのAI占いの違いを比較する画像。',
-      '羅針占術の鑑定で見える本質、本音、現実、次の一手を示す画像。',
       '羅針占術の無料鑑定と深掘り鑑定の違いを比較する画像。',
+      '羅針占術の鑑定で見える本質、本音、現実、次の一手を示す画像。',
     ],
     altText: '羅針占術の信頼導線カルーセル。ほかのAI占いとの違い、鑑定で見えること、無料と有料の違いを3枚で示している。',
   },
@@ -1108,7 +1108,7 @@ function getTrackedUrlForPlatform(entry, platform) {
 function validateDraft(draft, args) {
   const platforms = Array.isArray(args.platforms) ? args.platforms : ['threads'];
   const kinds = selectedKindsFromArgs(args);
-  const requiresVisibleUrl = kind => kind !== 'birthday_ranking';
+  const requiresVisibleUrl = kind => !['birthday_ranking', 'birthday_monthly'].includes(kind);
   if (platforms.includes('threads')) {
     const preRelease = isPreReleasePosting(draft.date, draft.meta?.socialConfig || {});
     for (const kind of kinds) {
@@ -1330,15 +1330,18 @@ function readJsonSync(file) {
 
 function birthdayMonthlyManifestPath(dateKey) {
   const requestedMonth = String(process.env.SOCIAL_BIRTHDAY_MONTHLY_MONTH || dateKey.slice(0, 7)).trim();
-  const requested = path.join(BIRTHDAY_MONTHLY_ROOT, requestedMonth, 'monthly', 'manifest.json');
+  const requested = path.join(BIRTHDAY_MONTHLY_ROOT, requestedMonth, 'manifest.json');
   if (fsSync.existsSync(requested)) return requested;
+  const legacy = path.join(BIRTHDAY_MONTHLY_ROOT, requestedMonth, 'monthly', 'manifest.json');
+  if (fsSync.existsSync(legacy)) return legacy;
   throw new Error(`Birthday monthly manifest was not found for ${requestedMonth}: ${requested}`);
 }
 
 function birthdayMonthlyPartKeyForDay(day) {
-  if (day >= 1 && day <= 10) return '01-10';
-  if (day >= 11 && day <= 20) return '11-20';
-  if (day >= 21 && day <= 31) return '21-31';
+  if (day >= 1 && day <= 8) return '01-08';
+  if (day >= 9 && day <= 16) return '09-16';
+  if (day >= 17 && day <= 24) return '17-24';
+  if (day >= 25 && day <= 31) return '25-31';
   throw new Error(`Invalid birthday monthly day: ${day}`);
 }
 
@@ -1346,12 +1349,12 @@ function birthdayMonthlyStrictRelativeFile(month, day) {
   const normalizedDay = Number(day);
   const partKey = birthdayMonthlyPartKeyForDay(normalizedDay);
   const fileName = `${pad2(normalizedDay)}-birth-${pad2(normalizedDay)}.jpg`;
-  return path.posix.join(...BIRTHDAY_MONTHLY_RELATIVE_ROOT, month, 'monthly', partKey, fileName);
+  return path.posix.join(...BIRTHDAY_MONTHLY_RELATIVE_ROOT, month, partKey, fileName);
 }
 
 function birthdayMonthlyCoverRelativeFile(month, days) {
   const rangeKey = formatBirthdayMonthlyDayRangeKey(days).replace('_', '-');
-  return path.posix.join(...BIRTHDAY_MONTHLY_RELATIVE_ROOT, month, 'monthly', `cover-${rangeKey}.jpg`);
+  return path.posix.join(...BIRTHDAY_MONTHLY_RELATIVE_ROOT, month, rangeKey, `0_cover-${rangeKey}.jpg`);
 }
 
 function assertBirthdayMonthlySelection(days, manifestFile, options = {}) {
@@ -2090,7 +2093,7 @@ async function buildDraft(args) {
     schedule: {
       oracle: `${process.env.SOCIAL_ORACLE_TIME || '08:00'} Asia/Tokyo`,
       rashin_point: '20:00 Asia/Tokyo one-off 2026-06-04',
-      birthday_monthly: '2026-06-05 20:00/21:00/22:00/23:00 Asia/Tokyo, then monthly on the 1st from 2026-07-01',
+      birthday_monthly: '2026-06-01 20:00/21:00/22:00/23:00 Asia/Tokyo, then monthly on the 1st from 2026-07-01',
       birthday_ranking: '20:00/21:00/22:00/23:00 Asia/Tokyo one-off birthday posts, Threads/Instagram',
       empathy: 'manual only',
       difference: 'hold: weekly comparison timing undecided',

@@ -1,642 +1,70 @@
-const fs = require('fs/promises');
-const path = require('path');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 
-const instagramClient = require('./instagram-client');
-const threadsClient = require('./threads-client');
-
-const ROOT = path.resolve(__dirname, '..', '..');
-const DEFAULT_REEL_PUBLIC_ORIGIN = 'https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/main';
-const DEFAULT_STATE_FILE = path.join(ROOT, 'data', 'social-posts', 'daily-birthday-reels-state.json');
-const POST_GRACE_MINUTES = Number(process.env.SOCIAL_REEL_POST_GRACE_MINUTES || process.env.SOCIAL_POST_GRACE_MINUTES || 59);
-const CATCHUP_HOURS = Number(process.env.SOCIAL_REEL_CATCHUP_HOURS || 0);
-const THREADS_GRAPH_BASE = process.env.THREADS_GRAPH_BASE || 'https://graph.threads.net/v1.0';
-const DAILY_REELS_PAUSED = process.env.SOCIAL_DAILY_REELS_PAUSED === 'true';
-
-const REELS = [
-  {
-    id: 'daily_reel_20260613_20_himitsu_mamorenai',
-    date: '2026-06-13',
-    time: '20:00',
-    slug: 'himitsu-mamorenai',
-    title: '秘密守れない生まれ日TOP5',
-    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-13/himitsu-mamorenai/himitsu-mamorenai-reel-no-mask.mp4',
-  },
-  {
-    id: 'daily_reel_20260613_21_mood_maker',
-    date: '2026-06-13',
-    time: '21:00',
-    slug: 'mood-maker',
-    title: 'ムードメーカー生まれ日TOP5',
-    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-13/mood-maker/mood-maker-reel-no-mask.mp4',
-  },
-  {
-    id: 'daily_reel_20260613_22_creator_type',
-    date: '2026-06-13',
-    time: '22:00',
-    slug: 'creator-type',
-    title: 'クリエイター気質生まれ日TOP5',
-    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-13/creator-type/creator-type-reel-no-mask.mp4',
-  },
-  {
-    id: 'daily_reel_20260616_20_leader_tekisei',
-    date: '2026-06-16',
-    time: '20:00',
-    slug: 'leader-tekisei-top5',
-    title: 'リーダー適正TOP5',
-    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-16/leader-tekisei-top5/leader-tekisei-top5.mp4',
-    videoUrl: 'https://files.catbox.moe/23258s.mp4',
-  },
-  {
-    id: 'daily_reel_20260616_21_mendoumi_ga_ii',
-    date: '2026-06-16',
-    time: '21:00',
-    slug: 'mendoumi-ga-ii-top5',
-    title: '面倒見がいい生まれ日TOP5',
-    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-16/mendoumi-ga-ii-top5/mendoumi-ga-ii-top5.mp4',
-    videoUrl: 'https://files.catbox.moe/xoiqsu.mp4',
-  },
-  {
-    id: 'daily_reel_20260616_22_rikei_tekisei',
-    date: '2026-06-16',
-    time: '22:00',
-    slug: 'rikei-tekisei-top5',
-    title: '理系適正TOP5',
-    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-16/rikei-tekisei-top5/rikei-tekisei-top5.mp4',
-    videoUrl: 'https://files.catbox.moe/7d9z8l.mp4',
-  },
-  {
-    id: 'daily_reel_20260617_20_choushi_notte_shippai',
-    date: '2026-06-17',
-    time: '20:00',
-    slug: 'choushi-notte-shippai-top5',
-    title: '調子のって失敗する生まれ日TOP5',
-    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-17/choushi-notte-shippai-top5/choushi-notte-shippai-top5.mp4',
-    videoUrl: 'https://files.catbox.moe/3ub4mk.mp4',
-  },
-  {
-    id: 'daily_reel_20260617_21_chokkan_sugureteru',
-    date: '2026-06-17',
-    time: '21:00',
-    slug: 'chokkan-sugureteru-top5',
-    title: '直観が優れてる生まれ日TOP5',
-    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-17/chokkan-sugureteru-top5/chokkan-sugureteru-top5.mp4',
-    videoUrl: 'https://files.catbox.moe/7f72cf.mp4',
-  },
-  {
-    id: 'daily_reel_20260617_22_kanchigai_sareyasui',
-    date: '2026-06-17',
-    time: '22:00',
-    slug: 'kanchigai-sareyasui-top5',
-    title: '勘違いされやすい生まれ日TOP5',
-    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-17/kanchigai-sareyasui-top5/kanchigai-sareyasui-top5.mp4',
-    videoUrl: 'https://files.catbox.moe/d3gilh.mp4',
-  },
-  {
-    id: 'daily_reel_20260618_20_kuuki_yomisugiru',
-    date: '2026-06-18',
-    time: '20:00',
-    slug: 'kuuki-yomisugiru-top5',
-    title: '空気を読みすぎる生まれ日TOP5',
-    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-18/kuuki-yomisugiru-top5/kuuki-yomisugiru-top5.mp4',
-  },
-  {
-    id: 'daily_reel_20260618_21_hitori_hanseikai',
-    date: '2026-06-18',
-    time: '21:00',
-    slug: 'hitori-hanseikai-top5',
-    title: 'ひとり反省会しがちな生まれ日TOP5',
-    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-18/hitori-hanseikai-top5/hitori-hanseikai-top5.mp4',
-  },
-  {
-    id: 'daily_reel_20260618_22_birth_05_aruaru',
-    date: '2026-06-18',
-    time: '22:00',
-    slug: 'birth-05-aruaru',
-    title: '5日生まれあるある5選',
-    videoRelativePath: 'videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-18/birth-05-aruaru/birth-05-aruaru.mp4',
-  },
-];
+const APPROVED_REELS_SCRIPT = path.join(__dirname, 'post-approved-reels.js');
 
 function parseArgs(argv) {
-  const args = { dryRun: false, post: false, verifyOnly: false, yes: false, force: false, ids: [], platforms: ['threads', 'instagram'] };
+  const out = {
+    post: false,
+    dryRun: false,
+    list: false,
+    onlyId: '',
+    platforms: '',
+  };
   for (const arg of argv) {
-    if (arg === '--dry-run') args.dryRun = true;
-    else if (arg === '--post') args.post = true;
-    else if (arg === '--verify-only') args.verifyOnly = true;
-    else if (arg === '--yes') args.yes = true;
-    else if (arg === '--force') args.force = true;
-    else if (arg.startsWith('--ids=')) {
-      args.ids = arg.split('=')[1].split(',').map(item => item.trim()).filter(Boolean);
+    if (arg === '--post') out.post = true;
+    else if (arg === '--dry-run') out.dryRun = true;
+    else if (arg === '--list') out.list = true;
+    else if (arg === '--yes') continue;
+    else if (arg === '--verify-only') {
+      out.list = true;
+      out.dryRun = true;
+    } else if (arg === '--force') {
+      throw new Error('post-daily-birthday-reels.js is deprecated and does not support --force. Use approved manifests and due-window posting.');
+    } else if (arg.startsWith('--ids=')) {
+      const ids = arg.slice('--ids='.length).split(',').map(item => item.trim()).filter(Boolean);
+      if (ids.length > 1) {
+        throw new Error('Multiple --ids are not supported by the approved-manifest compatibility shim.');
+      }
+      out.onlyId = ids[0] || '';
+    } else if (arg.startsWith('--only-id=')) {
+      out.onlyId = arg.slice('--only-id='.length);
+    } else if (arg.startsWith('--platforms=')) {
+      out.platforms = arg.slice('--platforms='.length);
+    } else {
+      throw new Error(`Unknown argument for deprecated daily reel shim: ${arg}`);
     }
-    else if (arg.startsWith('--platforms=')) {
-      args.platforms = arg.split('=')[1].split(',').map(item => item.trim()).filter(Boolean);
-    }
   }
-  if (args.post && args.verifyOnly) throw new Error('Use either --post or --verify-only, not both.');
-  if (!args.post && !args.verifyOnly) args.dryRun = true;
-  const invalid = args.platforms.filter(platform => !['threads', 'instagram'].includes(platform));
-  if (invalid.length) throw new Error(`Unsupported platforms: ${invalid.join(', ')}`);
-  return args;
+  if (!out.post) out.dryRun = true;
+  return out;
 }
 
-function getPublicOrigin() {
-  const origin = String(process.env.SOCIAL_REEL_PUBLIC_ORIGIN || DEFAULT_REEL_PUBLIC_ORIGIN || process.env.PUBLIC_ORIGIN || '').trim().replace(/\/+$/, '');
-  if (!origin) throw new Error('SOCIAL_REEL_PUBLIC_ORIGIN or PUBLIC_ORIGIN is required for reel video URLs.');
-  return origin;
+function buildApprovedArgs(args) {
+  const next = [];
+  if (args.post) next.push('--post');
+  if (args.dryRun) next.push('--dry-run');
+  if (args.list) next.push('--list');
+  if (args.onlyId) next.push(`--only-id=${args.onlyId}`);
+  if (args.platforms) next.push(`--platforms=${args.platforms}`);
+  return next;
 }
 
-function relativePathToPublicUrl(relativePath) {
-  const encodedPath = relativePath
-    .split(/[\\/]+/)
-    .map(segment => encodeURIComponent(segment))
-    .join('/');
-  return `${getPublicOrigin()}/${encodedPath}`;
-}
-
-function getNow() {
-  const override = String(process.env.SOCIAL_NOW_ISO || '').trim();
-  if (!override) return new Date();
-  const date = new Date(override);
-  if (Number.isNaN(date.getTime())) throw new Error(`Invalid SOCIAL_NOW_ISO: ${override}`);
-  return date;
-}
-
-function getJstParts(date = new Date()) {
-  return new Intl.DateTimeFormat('sv-SE', {
-    timeZone: 'Asia/Tokyo',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).formatToParts(date).reduce((acc, part) => {
-    acc[part.type] = part.value;
-    return acc;
-  }, {});
-}
-
-function getJstDateKey(date = new Date()) {
-  const parts = getJstParts(date);
-  return `${parts.year}-${parts.month}-${parts.day}`;
-}
-
-function getJstMinutes(date = new Date()) {
-  const parts = getJstParts(date);
-  return Number(parts.hour) * 60 + Number(parts.minute);
-}
-
-function parseTimeToMinutes(value) {
-  const match = String(value || '').trim().match(/^(\d{1,2}):(\d{2})$/);
-  if (!match) throw new Error(`Invalid time: ${value}`);
-  return Number(match[1]) * 60 + Number(match[2]);
-}
-
-async function readJson(file, fallback) {
-  try {
-    return JSON.parse(await fs.readFile(file, 'utf8'));
-  } catch (_error) {
-    return fallback;
-  }
-}
-
-async function writeJson(file, value) {
-  await fs.mkdir(path.dirname(file), { recursive: true });
-  await fs.writeFile(file, `${JSON.stringify(value, null, 2)}\n`);
-}
-
-function normalizeText(text) {
-  return String(text || '').replace(/\r\n/g, '\n').trim();
-}
-
-function normalizeThreadsPostText(text) {
-  return normalizeText(text).replace(/(^|\s)#(?=\S)/gu, '$1');
-}
-
-function instagramCaption(item) {
-  return [
-    '＼無料占いはプロフィールURLから／',
-    '',
-    item.title,
-    '',
-    '保存していつでも思い出してください。',
-    'もっと深く見たい方は羅針占術へ。',
-    '無料鑑定から、必要な方だけ深掘り鑑定できます。',
-    '',
-    '#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい',
-  ].join('\n');
-}
-
-function threadsText(item) {
-  return [
-    '無料占いはプロフィールURLから👀✨',
-    '',
-    item.title,
-    '',
-    '保存していつでも思い出してください。',
-    'もっと深く見たい方は羅針占術へ。',
-    '無料鑑定から、必要な方だけ深掘り鑑定できます。',
-    '',
-    '#占い師のつぶやき',
-  ].join('\n');
-}
-
-async function findExistingInstagramReelByCaption(text) {
-  const expected = normalizeText(text);
-  const recent = await instagramClient.listInstagramMedia({ limit: Number(process.env.INSTAGRAM_REEL_DUPLICATE_LOOKBACK || 50) });
-  return (recent.data || []).find(post => {
-    const mediaType = String(post.media_type || '').toUpperCase();
-    if (!['VIDEO', 'REELS'].includes(mediaType)) return false;
-    return normalizeText(post.caption) === expected;
-  }) || null;
-}
-
-async function requestThreadsJson(url, options = {}) {
-  const res = await fetch(url, options);
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const message = json?.error?.message || JSON.stringify(json);
-    throw new Error(`Threads API request failed: ${res.status} ${message}`);
-  }
-  return json;
-}
-
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function assertExpectedThreadsAccount(credentials = null) {
-  const expected = threadsClient.normalizeUsername(process.env.THREADS_EXPECTED_USERNAME);
-  if (!expected) {
-    if (process.env.THREADS_ALLOW_ANY_ACCOUNT === 'true') return null;
-    throw new Error('Set THREADS_EXPECTED_USERNAME=sensai_teke before real Threads posting.');
-  }
-  const me = await threadsClient.getThreadsMe(credentials);
-  const actual = threadsClient.normalizeUsername(me.username);
-  if (actual !== expected) {
-    throw new Error(`Threads token belongs to @${actual || 'unknown'}, expected @${expected}.`);
-  }
-  return me;
-}
-
-async function getThreadsContainerStatus(containerId, credentials) {
-  const params = new URLSearchParams({
-    fields: 'id,status,error_message',
-    access_token: credentials.accessToken,
-  });
-  return requestThreadsJson(`${THREADS_GRAPH_BASE}/${encodeURIComponent(containerId)}?${params.toString()}`);
-}
-
-async function waitForThreadsContainer(containerId, credentials) {
-  const timeoutMs = Number(process.env.THREADS_CONTAINER_TIMEOUT_MS || 120000);
-  const intervalMs = Number(process.env.THREADS_CONTAINER_POLL_MS || 5000);
-  const started = Date.now();
-  let last = null;
-  while (Date.now() - started <= timeoutMs) {
-    last = await getThreadsContainerStatus(containerId, credentials);
-    const status = String(last.status || '').toUpperCase();
-    if (['FINISHED', 'READY', 'PUBLISHED'].includes(status)) return last;
-    if (['ERROR', 'EXPIRED'].includes(status)) {
-      throw new Error(`Threads video container ${containerId} failed with status ${status}: ${last.error_message || 'no error_message'}`);
-    }
-    await sleep(intervalMs);
-  }
-  throw new Error(`Threads video container ${containerId} was not ready within ${timeoutMs}ms. Last status: ${JSON.stringify(last)}`);
-}
-
-async function postVideoToThreads({ text, videoUrl, altText }) {
-  const credentials = await threadsClient.getThreadsCredentials();
-  await assertExpectedThreadsAccount(credentials);
-  threadsClient.ensureThreadsText(text);
-  threadsClient.ensurePublicMediaUrl(videoUrl);
-  const body = new URLSearchParams({
-    media_type: 'VIDEO',
-    video_url: videoUrl,
-    text,
-    access_token: credentials.accessToken,
-  });
-  if (altText) body.set('alt_text', altText);
-  const created = await requestThreadsJson(`${THREADS_GRAPH_BASE}/${encodeURIComponent(credentials.userId)}/threads`, { method: 'POST', body });
-  await waitForThreadsContainer(created.id, credentials);
-  const published = await requestThreadsJson(`${THREADS_GRAPH_BASE}/${encodeURIComponent(credentials.userId)}/threads_publish`, {
-    method: 'POST',
-    body: new URLSearchParams({
-      creation_id: created.id,
-      access_token: credentials.accessToken,
-    }),
-  });
-  const verified = await threadsClient.verifyPublishedThread(published.id, {
-    credentials,
-    timeoutMs: Number(process.env.THREADS_POST_VERIFY_TIMEOUT_MS || 120000),
-    intervalMs: Number(process.env.THREADS_POST_VERIFY_INTERVAL_MS || 10000),
-  });
-  return { ...published, permalink: verified.permalink, verified: true, videoContainer: created.id };
-}
-
-async function findExistingThreadByText(text) {
-  const expected = normalizeThreadsPostText(text);
-  const recent = await threadsClient.listThreads({ limit: Number(process.env.THREADS_DUPLICATE_LOOKBACK || 50) });
-  return (recent.data || []).find(post => normalizeThreadsPostText(post.text) === expected) || null;
-}
-
-function summarizeInstagramPost(post) {
-  if (!post) return null;
-  return {
-    id: post.id,
-    permalink: post.permalink,
-    timestamp: post.timestamp,
-    media_type: post.media_type,
-  };
-}
-
-function summarizeThread(post) {
-  if (!post) return null;
-  return {
-    id: post.id,
-    permalink: post.permalink,
-    timestamp: post.timestamp,
-    media_type: post.media_type,
-  };
-}
-
-function serializeFailure(error) {
-  return {
-    message: error?.message || String(error),
-    name: error?.name || 'Error',
-  };
-}
-
-async function verifyInstagramEntry(entry) {
-  const existing = await findExistingInstagramReelByCaption(entry.instagramText);
-  if (!existing) {
-    return {
-      ok: false,
-      status: 'missing',
-      reason: 'missing_instagram_post',
-    };
-  }
-  return {
-    ok: true,
-    status: 'verified',
-    reason: 'existing_instagram_post',
-    ...summarizeInstagramPost(existing),
-  };
-}
-
-async function verifyThreadsEntry(entry) {
-  const existing = await findExistingThreadByText(entry.threadsText);
-  if (!existing) {
-    return {
-      ok: false,
-      status: 'missing',
-      reason: 'missing_threads_post',
-    };
-  }
-  return {
-    ok: true,
-    status: 'verified',
-    reason: 'existing_threads_post',
-    ...summarizeThread(existing),
-  };
-}
-
-async function publishInstagramEntry(entry) {
-  const existing = await findExistingInstagramReelByCaption(entry.instagramText);
-  if (existing) {
-    return {
-      ok: true,
-      status: 'existing',
-      reason: 'existing_instagram_post',
-      ...summarizeInstagramPost(existing),
-    };
-  }
-
-  const posted = await instagramClient.postReelToInstagram({
-    text: entry.instagramText,
-    videoUrl: entry.videoUrl,
-    shareToFeed: true,
-  });
-  if (!posted?.permalink || !posted?.verified) {
-    throw new Error(`Instagram reel published without verified permalink for ${entry.id}.`);
-  }
-  return {
-    ok: true,
-    status: 'posted',
-    verified: Boolean(posted.verified),
-    id: posted.id,
-    permalink: posted.permalink,
-    media_type: posted.media?.media_type,
-    reelContainer: posted.reelContainer,
-  };
-}
-
-async function publishThreadsEntry(entry) {
-  const existing = await findExistingThreadByText(entry.threadsText);
-  if (existing) {
-    return {
-      ok: true,
-      status: 'existing',
-      reason: 'existing_threads_post',
-      ...summarizeThread(existing),
-    };
-  }
-
-  const posted = await postVideoToThreads({
-    text: entry.threadsText,
-    videoUrl: entry.videoUrl,
-    altText: entry.altText,
-  });
-  if (!posted?.permalink || !posted?.verified) {
-    throw new Error(`Threads video published without verified permalink for ${entry.id}.`);
-  }
-  return {
-    ok: true,
-    status: 'posted',
-    verified: Boolean(posted.verified),
-    id: posted.id,
-    permalink: posted.permalink,
-    videoContainer: posted.videoContainer,
-  };
-}
-
-async function buildReelEntry(item) {
-  const videoPath = path.join(ROOT, item.videoRelativePath);
-  await fs.stat(videoPath);
-  return {
-    ...item,
-    instagramText: instagramCaption(item),
-    threadsText: threadsText(item),
-    videoPath,
-    videoUrl: item.videoUrl || relativePathToPublicUrl(item.videoRelativePath),
-    altText: `${item.title}の縦型リール動画。ランキングと理由の文字を隠さず表示しています。`,
-  };
-}
-
-function getScheduledDate(item) {
-  const date = new Date(`${item.date}T${item.time}:00+09:00`);
-  if (Number.isNaN(date.getTime())) throw new Error(`Invalid reel schedule: ${item.date} ${item.time}`);
-  return date;
-}
-
-function isDue(item, dateKey, nowMinute, now = new Date()) {
-  const scheduledMinute = parseTimeToMinutes(item.time);
-  if (item.date === dateKey) {
-    const lateByMinutes = nowMinute - scheduledMinute;
-    if (lateByMinutes >= 0 && lateByMinutes <= POST_GRACE_MINUTES) return true;
-  }
-  if (!Number.isFinite(CATCHUP_HOURS) || CATCHUP_HOURS <= 0) return false;
-  const lateByMs = now.getTime() - getScheduledDate(item).getTime();
-  return lateByMs >= 0 && lateByMs <= CATCHUP_HOURS * 60 * 60 * 1000;
-}
-
-function stateEntry(state, item) {
-  state[item.date] = state[item.date] || {};
-  state[item.date][item.id] = state[item.date][item.id] || {};
-  return state[item.date][item.id];
-}
-
-async function main() {
+function main() {
   const args = parseArgs(process.argv.slice(2));
-  if (args.post && !args.yes && process.env.SOCIAL_SCHEDULED_RUN !== 'true') {
-    throw new Error('Real reel posting requires --yes, or SOCIAL_SCHEDULED_RUN=true in the cloud scheduler.');
-  }
-  if (args.post && process.env.SOCIAL_AUTOMATED_POSTING_ENABLED !== 'true') {
-    throw new Error('Set SOCIAL_AUTOMATED_POSTING_ENABLED=true before real automated reel posting.');
-  }
-
-  const now = getNow();
-  const dateKey = getJstDateKey(now);
-  const nowMinute = getJstMinutes(now);
-  const stateFile = process.env.SOCIAL_REEL_STATE_FILE || DEFAULT_STATE_FILE;
-  const state = await readJson(stateFile, {});
-
-  const entries = [];
-  const selectedIds = new Set(args.ids);
-  const selectedReels = selectedIds.size ? REELS.filter(item => selectedIds.has(item.id)) : REELS;
-  const missingIds = args.ids.filter(id => !REELS.some(item => item.id === id));
-  if (missingIds.length) throw new Error(`Unknown reel ids: ${missingIds.join(', ')}`);
-
-  for (const item of selectedReels) {
-    const entry = await buildReelEntry(item);
-    const posted = stateEntry(state, entry);
-    entries.push({
-      ...entry,
-      due: !DAILY_REELS_PAUSED && (args.force || isDue(entry, dateKey, nowMinute, now)),
-      alreadyPosted: {
-        instagram: Boolean(posted.instagram),
-        threads: Boolean(posted.threads),
-      },
-    });
-  }
-
-  const report = {
-    date: dateKey,
-    nowMinute,
-    catchupHours: CATCHUP_HOURS,
-    graceMinutes: POST_GRACE_MINUTES,
-    platforms: args.platforms,
-    postType: 'reel_video',
-    dryRun: args.dryRun,
-    force: args.force,
-    ids: args.ids,
-    paused: DAILY_REELS_PAUSED,
-    reels: entries.map(entry => ({
-      id: entry.id,
-      scheduledAt: `${entry.date} ${entry.time} Asia/Tokyo`,
-      slug: entry.slug,
-      title: entry.title,
-      videoPath: entry.videoPath,
-      videoUrl: entry.videoUrl,
-      due: entry.due,
-      alreadyPosted: entry.alreadyPosted,
-      instagramCaption: entry.instagramText,
-      threadsText: entry.threadsText,
-    })),
-  };
-
-  if (args.dryRun) {
-    console.log(JSON.stringify(report, null, 2));
-    return;
-  }
-
-  const results = {};
-  const failures = [];
-  for (const entry of entries.filter(candidate => candidate.due)) {
-    const posted = stateEntry(state, entry);
-    results[entry.id] = {};
-
-    if (args.platforms.includes('instagram')) {
-      try {
-        results[entry.id].instagram = args.verifyOnly
-          ? await verifyInstagramEntry(entry)
-          : await publishInstagramEntry(entry);
-        if (!results[entry.id].instagram.ok) {
-          failures.push({
-            reelId: entry.id,
-            platform: 'instagram',
-            reason: results[entry.id].instagram.reason,
-          });
-        } else if (!args.verifyOnly) {
-          posted.instagram = new Date().toISOString();
-          await writeJson(stateFile, state);
-        }
-      } catch (error) {
-        const failure = {
-          reelId: entry.id,
-          platform: 'instagram',
-          ...serializeFailure(error),
-        };
-        results[entry.id].instagram = { ok: false, status: 'failed', error: failure };
-        failures.push(failure);
-      }
-    }
-
-    if (args.platforms.includes('threads')) {
-      try {
-        results[entry.id].threads = args.verifyOnly
-          ? await verifyThreadsEntry(entry)
-          : await publishThreadsEntry(entry);
-        if (!results[entry.id].threads.ok) {
-          failures.push({
-            reelId: entry.id,
-            platform: 'threads',
-            reason: results[entry.id].threads.reason,
-          });
-        } else if (!args.verifyOnly) {
-          posted.threads = new Date().toISOString();
-          await writeJson(stateFile, state);
-        }
-      } catch (error) {
-        const failure = {
-          reelId: entry.id,
-          platform: 'threads',
-          ...serializeFailure(error),
-        };
-        results[entry.id].threads = { ok: false, status: 'failed', error: failure };
-        failures.push(failure);
-      }
-    }
-  }
-
-  const summary = {
-    ...report,
-    action: args.verifyOnly ? 'verify' : 'post',
-    ok: failures.length === 0,
-    results,
-    failures,
-  };
-  console.log(JSON.stringify(summary, null, 2));
-  if (failures.length) process.exitCode = 1;
+  const result = spawnSync(process.execPath, [APPROVED_REELS_SCRIPT, ...buildApprovedArgs(args)], {
+    cwd: path.resolve(__dirname, '..', '..'),
+    env: process.env,
+    stdio: 'inherit',
+  });
+  if (result.error) throw result.error;
+  process.exit(result.status || 0);
 }
 
 if (require.main === module) {
-  main().catch(error => {
+  try {
+    main();
+  } catch (error) {
     console.error(error?.stack || error?.message || String(error));
     process.exit(1);
-  });
+  }
 }
-
-module.exports = {
-  normalizeText,
-  normalizeThreadsPostText,
-};

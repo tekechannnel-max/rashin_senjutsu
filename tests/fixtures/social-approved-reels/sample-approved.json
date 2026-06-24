@@ -1,0 +1,68 @@
+{
+  "approvalStatus": "approved",
+  "approvedBy": "user",
+  "approvedAt": "2026-06-20T15:00:00+09:00",
+  "approvalText": "承認します",
+  "approvalScope": "threads,instagram",
+  "posts": [
+    {
+      "id": "birthday_reel_20260620_20_fixture",
+      "kind": "birthday_reel",
+      "date": "2026-06-20",
+      "time": "20:00",
+      "title": "検証用TOP5",
+      "videoPath": "tests/fixtures/social-approved-reels/sample-video.mp4",
+      "videoUrl": "https://example.com/social-approved-reels/sample-video.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "無料占いはプロフィールURLから\n\n検証用TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n\n#羅針占術 #誕生日占い",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n検証用TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "tests/fixtures/social-approved-reels/representative-frame.png"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 1,
+            "family": 1,
+            "asset": "birthday-family-1-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 2,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 3,
+            "family": 3,
+            "asset": "birthday-family-3-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 4,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 5,
+            "family": 5,
+            "asset": "birthday-family-5-chibi.png"
+          }
+        ],
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      }
+    }
+  ]
+}

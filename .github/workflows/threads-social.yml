@@ -5,9 +5,8 @@ on:
     branches:
       - main
   schedule:
-    # Cloud backup ticks for 08:00 and 20:00-22:00 JST, plus 23:00 JST recovery sweeps.
-    # GitHub schedule can start late or drop individual ticks, so keep multiple off-hour retries.
-    - cron: '5,20,35,50 23,11,12,13,14 * * *'
+    # Cloud backup ticks for 08:00 and 20:00-23:00 JST.
+    - cron: '0 23,11,12,13,14 * * *'
   workflow_dispatch:
     inputs:
       kind:
@@ -20,6 +19,13 @@ on:
           - validate_only
           - all
           - oracle
+          - birthday_monthly
+          - birthday_monthly_01_08
+          - birthday_monthly_09_16
+          - birthday_monthly_17_24
+          - birthday_monthly_25_31
+          - rashin_point
+          - rashin_point_thursday_20
 
 permissions:
   contents: read
@@ -50,9 +56,6 @@ jobs:
       SOCIAL_STATELESS_MODE: 'true'
       SOCIAL_SKIP_ORACLE_DATES: '2026-05-12'
       SOCIAL_POST_GRACE_MINUTES: '59'
-      SOCIAL_REEL_POST_GRACE_MINUTES: '59'
-      SOCIAL_REEL_CATCHUP_HOURS: '8'
-      SOCIAL_REEL_PUBLIC_ORIGIN: https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/main
       SOCIAL_CLOUD_SCHEDULER: 'true'
       SOCIAL_THREADS_IMAGE_FALLBACK_TEXT: 'true'
       INSTAGRAM_CONTAINER_TIMEOUT_MS: '600000'
@@ -67,6 +70,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Check posting secrets
         id: secrets
@@ -119,13 +125,15 @@ jobs:
         run: |
           kind="${{ steps.pick.outputs.kind }}"
           if [ "${{ github.event_name }}" = "schedule" ] || [ "$kind" = "auto" ] || [ "$kind" = "all" ]; then
-            npm run social:cloud-run-due
+            npm run social:run-due -- --only-kind=oracle
+            npm run social:run-due -- --only-kind=birthday_monthly
+            npm run social:run-due -- --only-kind=rashin_point
           elif [ "$kind" = "oracle" ]; then
-            node scripts/social/run-scheduled-posts.js --force-kind=oracle
+            npm run social:run-due -- --only-kind=oracle
+          elif [ "$kind" = "birthday_monthly" ] || [ "$kind" = "rashin_point" ]; then
+            npm run social:run-due -- --only-kind="$kind"
+          elif [[ "$kind" == birthday_monthly_* ]] || [ "$kind" = "rashin_point_thursday_20" ]; then
+            npm run social:run-due -- --only-kind="$kind"
           else
-            echo "Night image posting is disabled; skipped SNS image kind: $kind"
+            echo "Unsupported backup SNS kind: $kind"
           fi
-
-      - name: Verify due birthday reels
-        if: always() && steps.secrets.outputs.ready == 'true' && github.event_name != 'push' && github.event.inputs.kind != 'validate_only' && (github.event_name == 'schedule' || github.event.inputs.kind == 'auto' || github.event.inputs.kind == 'all')
-        run: node scripts/social/post-daily-birthday-reels.js --verify-only --platforms=threads,instagram

@@ -1,16 +1,74 @@
 const { spawnSync } = require('child_process');
+const fsSync = require('fs');
 const fs = require('fs/promises');
 const path = require('path');
 require('./threads-client');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const OUT_DIR = path.join(ROOT, 'data', 'social-posts');
+function resolveConfiguredPath(envName, fallback) {
+  const configured = String(process.env[envName] || '').trim();
+  if (!configured) return fallback;
+  return path.isAbsolute(configured) ? configured : path.resolve(ROOT, configured);
+}
+
+const APPROVED_REELS_DIR = resolveConfiguredPath('SOCIAL_APPROVED_REELS_DIR', path.join(OUT_DIR, 'approved-reels'));
 const DEFAULT_STATE_FILE = path.join(OUT_DIR, 'scheduled-post-state.json');
 const DAILY_SCRIPT = path.join(__dirname, 'daily-oracle-post.js');
+const BIRTHDAY_REELS_SCRIPT = path.join(__dirname, 'post-approved-reels.js');
 const DEFAULT_SOCIAL_PLATFORMS = 'threads,instagram';
 const DEFAULT_POST_GRACE_MINUTES = 59;
 const MAX_STATELESS_POST_GRACE_MINUTES = 59;
-const SOCIAL_POST_KINDS = ['oracle'];
+const SOCIAL_POST_KINDS = ['oracle', 'rashin_point', 'birthday_monthly', 'birthday_reel'];
+const SOCIAL_EXPANSION_START_DATE = process.env.SOCIAL_EXPANSION_START_DATE || '2026-05-27';
+const SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE = process.env.SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE || '2026-07-01';
+const SOCIAL_BIRTHDAY_MONTHLY_INITIAL_DATE = '2026-06-01';
+const SOCIAL_RASHIN_POINT_START_DATE = process.env.SOCIAL_RASHIN_POINT_START_DATE || '2026-06-08';
+const THURSDAY = 4;
+const THURSDAY_COMPARISON_SLOT = {
+  id: 'rashin_point_thursday_20',
+  kind: 'rashin_point',
+  time: '20:00',
+  days: [THURSDAY],
+  platforms: 'threads,instagram',
+};
+const BIRTHDAY_MONTHLY_SLOTS = [
+  { id: 'birthday_monthly_01_08', kind: 'birthday_monthly', time: '20:00', birthdayDays: '1-8', platforms: 'threads,instagram' },
+  { id: 'birthday_monthly_09_16', kind: 'birthday_monthly', time: '21:00', birthdayDays: '9-16', platforms: 'threads,instagram' },
+  { id: 'birthday_monthly_17_24', kind: 'birthday_monthly', time: '22:00', birthdayDays: '17-24', platforms: 'threads,instagram' },
+  { id: 'birthday_monthly_25_31', kind: 'birthday_monthly', time: '23:00', birthdayDays: '25-31', platforms: 'threads,instagram' },
+];
+
+function readApprovedReelScheduleSync() {
+  if (!fsSync.existsSync(APPROVED_REELS_DIR)) return [];
+  const files = [];
+  const walk = dir => {
+    for (const entry of fsSync.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (/\.json$/i.test(entry.name)) files.push(full);
+    }
+  };
+  walk(APPROVED_REELS_DIR);
+  const slots = [];
+  for (const file of files.sort()) {
+    const manifest = JSON.parse(fsSync.readFileSync(file, 'utf8'));
+    if (manifest.approvalStatus !== 'approved') continue;
+    for (const post of manifest.posts || []) {
+      if (!post.id || !post.date || !post.time) {
+        throw new Error(`Approved reel schedule entry is missing id/date/time in ${path.relative(ROOT, file)}`);
+      }
+      slots.push({
+        id: post.id,
+        kind: post.kind || 'birthday_reel',
+        date: post.date,
+        time: post.time,
+        platforms: post.platforms || manifest.approvalScope || DEFAULT_SOCIAL_PLATFORMS,
+      });
+    }
+  }
+  return slots;
+}
 
 function parseArgs(argv) {
   const args = { once: false, dryRun: false, forceKind: '', onlyKind: '' };
@@ -104,6 +162,17 @@ function parseTimeToMinutes(value, fallback) {
   return hour * 60 + minute;
 }
 
+function addDays(dateKey, days) {
+  const date = new Date(`${dateKey}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function isBirthdayMonthlyDate(dateKey) {
+  return dateKey === SOCIAL_BIRTHDAY_MONTHLY_INITIAL_DATE
+    || (dateKey >= SOCIAL_BIRTHDAY_MONTHLY_MONTHLY_START_DATE && dateKey.endsWith('-01'));
+}
+
 function getSchedule() {
   return [
     {
@@ -112,6 +181,20 @@ function getSchedule() {
       time: process.env.SOCIAL_ORACLE_TIME || '08:00',
       minute: parseTimeToMinutes(process.env.SOCIAL_ORACLE_TIME, '08:00'),
       days: null,
+    },
+    ...BIRTHDAY_MONTHLY_SLOTS.map(item => ({
+      ...item,
+      minute: parseTimeToMinutes(item.time, item.time),
+      days: null,
+    })),
+    ...readApprovedReelScheduleSync().map(item => ({
+      ...item,
+      minute: parseTimeToMinutes(item.time, item.time),
+      days: null,
+    })),
+    {
+      ...THURSDAY_COMPARISON_SLOT,
+      minute: parseTimeToMinutes(THURSDAY_COMPARISON_SLOT.time, THURSDAY_COMPARISON_SLOT.time),
     },
   ];
 }
@@ -137,7 +220,14 @@ function isSkippedByEnv(kind, dateKey) {
 
 function isScheduledForDate(item, dateKey, weekday) {
   if (item.date && item.date !== dateKey) return false;
-  if (item.startDate && dateKey < item.startDate) return false;
+  if (item.kind === 'birthday_monthly' && !item.date) {
+    if (!isBirthdayMonthlyDate(dateKey)) return false;
+  }
+  if (item.kind === 'rashin_point') {
+    if (dateKey < SOCIAL_RASHIN_POINT_START_DATE) return false;
+    if (isBirthdayMonthlyDate(dateKey)) return false;
+  }
+  if (item.kind !== 'oracle' && dateKey < SOCIAL_EXPANSION_START_DATE) return false;
   return !Array.isArray(item.days) || item.days.includes(weekday);
 }
 
@@ -162,6 +252,30 @@ function requirePostingEnabled() {
 
 function runPost(item, dateKey) {
   const platforms = item.platforms || process.env.SOCIAL_PLATFORMS || DEFAULT_SOCIAL_PLATFORMS;
+  if (item.kind === 'birthday_reel') {
+    const result = spawnSync(process.execPath, [
+      BIRTHDAY_REELS_SCRIPT,
+      '--post',
+      '--once',
+      `--only-id=${item.id}`,
+      `--platforms=${platforms}`,
+    ], {
+      cwd: ROOT,
+      env: {
+        ...process.env,
+        SOCIAL_SCHEDULED_RUN: 'true',
+      },
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    if (result.stdout) process.stdout.write(result.stdout);
+    if (result.stderr) process.stderr.write(result.stderr);
+    if (result.status !== 0) {
+      throw new Error(`Scheduled ${item.id || item.kind} post failed with exit code ${result.status}`);
+    }
+    return;
+  }
+
   const result = spawnSync(process.execPath, [
     DAILY_SCRIPT,
     '--write',
@@ -170,14 +284,12 @@ function runPost(item, dateKey) {
     `--date=${dateKey}`,
     `--platforms=${platforms}`,
     ...(item.birthdayDays ? [`--birthday-days=${item.birthdayDays}`] : []),
-    ...(item.rankingSlug ? [`--birthday-ranking-slug=${item.rankingSlug}`] : []),
   ], {
     cwd: ROOT,
     env: {
       ...process.env,
       SOCIAL_SCHEDULED_RUN: 'true',
       ...(item.birthdayDays ? { SOCIAL_BIRTHDAY_MONTHLY_DAYS: item.birthdayDays } : {}),
-      ...(item.rankingSlug ? { SOCIAL_BIRTHDAY_RANKING_SLUG: item.rankingSlug } : {}),
     },
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -221,7 +333,7 @@ async function runDue(args) {
     graceMinutes,
     configuredGraceMinutes: gracePolicy.configuredMinutes,
     graceCappedForStateless: gracePolicy.cappedForStateless,
-    schedule: schedule.map(item => ({ id: item.id || item.kind, kind: item.kind, time: item.time, days: item.days, birthdayDays: item.birthdayDays || null, rankingSlug: item.rankingSlug || null, platforms: item.platforms || null, skipAuto: Boolean(item.skipAuto), skipReason: item.skipReason || null })),
+    schedule: schedule.map(item => ({ id: item.id || item.kind, kind: item.kind, time: item.time, days: item.days, birthdayDays: item.birthdayDays || null, platforms: item.platforms || null, skipAuto: Boolean(item.skipAuto), skipReason: item.skipReason || null })),
     scheduledToday: scheduledToday.map(item => item.id || item.kind),
     skippedAutoToday: scheduledToday.filter(item => item.skipAuto).map(item => ({ id: item.id || item.kind, reason: item.skipReason || 'skip_auto' })),
     onlyKind: args.onlyKind || null,

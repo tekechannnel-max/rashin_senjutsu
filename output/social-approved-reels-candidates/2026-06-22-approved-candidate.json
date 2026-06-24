@@ -1,0 +1,118 @@
+{
+  "approvalStatus": "draft",
+  "approvedBy": "",
+  "approvedAt": "",
+  "approvalText": "",
+  "approvalScope": "threads,instagram",
+  "note": "User review required. Do not move this file into data/social-posts/approved-reels until the post approval gate is approved.",
+  "posts": [
+    {
+      "id": "birthday_reel_20260622_2000_kokoro_hiraku_shinchou_top5",
+      "kind": "birthday_reel",
+      "date": "2026-06-22",
+      "time": "20:00",
+      "title": "心を開くまで慎重な生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-22/kokoro-hiraku-shinchou-top5/kokoro-hiraku-shinchou-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n心を開くまで慎重な生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n心を開くまで慎重な生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-22/kokoro-hiraku-shinchou-top5/kokoro-hiraku-shinchou-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-22/kokoro-hiraku-shinchou-top5/kokoro-hiraku-shinchou-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      }
+    },
+    {
+      "id": "birthday_reel_20260622_2100_henshin_machi_sowasowa_top5",
+      "kind": "birthday_reel",
+      "date": "2026-06-22",
+      "time": "21:00",
+      "title": "返信待ちでそわそわする生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-22/henshin-machi-sowasowa-top5/henshin-machi-sowasowa-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n返信待ちでそわそわする生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n返信待ちでそわそわする生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-22/henshin-machi-sowasowa-top5/henshin-machi-sowasowa-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-22/henshin-machi-sowasowa-top5/henshin-machi-sowasowa-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      }
+    },
+    {
+      "id": "birthday_reel_20260622_2200_shiseikatsu_nazo_top5",
+      "kind": "birthday_reel",
+      "date": "2026-06-22",
+      "time": "22:00",
+      "title": "私生活が謎に見られがちな生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-22/shiseikatsu-nazo-top5/shiseikatsu-nazo-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n私生活が謎に見られがちな生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n私生活が謎に見られがちな生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-22/shiseikatsu-nazo-top5/shiseikatsu-nazo-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-22/shiseikatsu-nazo-top5/shiseikatsu-nazo-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      }
+    },
+    {
+      "id": "birthday_reel_20260622_2300_kimetara_hikanai_top5",
+      "kind": "birthday_reel",
+      "date": "2026-06-22",
+      "time": "23:00",
+      "title": "一度決めたら引かない生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-22/kimetara-hikanai-top5/kimetara-hikanai-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n一度決めたら引かない生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n一度決めたら引かない生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-22/kimetara-hikanai-top5/kimetara-hikanai-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-22/kimetara-hikanai-top5/kimetara-hikanai-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      }
+    }
+  ]
+}

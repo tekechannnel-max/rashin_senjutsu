@@ -3,6 +3,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const crypto = require('crypto');
 const { chromium } = require('playwright');
+const { birthdayMiniFamilyForDay } = require('./birthday-mini-family');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const WIDTH = 1080;
@@ -465,9 +466,7 @@ function currentMonth() {
 }
 
 function familyOf(day) {
-  let n = day;
-  while (n > 9) n = String(n).split('').reduce((sum, digit) => sum + Number(digit), 0);
-  return n;
+  return birthdayMiniFamilyForDay(day);
 }
 
 function cardPath(no) {
