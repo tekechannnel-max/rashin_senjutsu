@@ -1,0 +1,74 @@
+{
+  "ok": true,
+  "status": "live",
+  "collectedAt": "2026-06-25T12:00:00.000Z",
+  "from": "2026-06-24",
+  "to": "2026-06-24",
+  "platforms": [
+    "threads",
+    "instagram"
+  ],
+  "records": [
+    {
+      "key": "2026-06-24:birthday_reel_20260624_2000_graph:instagram",
+      "status": "collected",
+      "date": "2026-06-24",
+      "time": "20:00",
+      "platform": "instagram",
+      "mediaId": "18000000000000001",
+      "postId": "birthday_reel_20260624_2000_graph",
+      "title": "生まれ日グラフ 1日〜31日",
+      "topicType": "birthday_graph_1_31",
+      "permalink": "https://www.instagram.com/reel/PDCA_GRAPH/",
+      "metrics": {
+        "views": 1800,
+        "saved": 120,
+        "shares": 42,
+        "comments": 18,
+        "likes": 240,
+        "profile_visits": 28,
+        "total_interactions": 448
+      }
+    },
+    {
+      "key": "2026-06-24:birthday_reel_20260624_2100_top5:instagram",
+      "status": "collected",
+      "date": "2026-06-24",
+      "time": "21:00",
+      "platform": "instagram",
+      "mediaId": "18000000000000002",
+      "postId": "birthday_reel_20260624_2100_top5",
+      "title": "空気を読む生まれ日TOP5",
+      "topicType": "birthday_top5",
+      "permalink": "https://www.instagram.com/reel/PDCA_TOP5/",
+      "metrics": {
+        "views": 1400,
+        "saved": 28,
+        "shares": 8,
+        "comments": 7,
+        "likes": 160,
+        "profile_visits": 5,
+        "total_interactions": 208
+      }
+    },
+    {
+      "key": "2026-06-24:birthday_reel_20260624_2200_manual:threads",
+      "status": "collected",
+      "date": "2026-06-24",
+      "time": "22:00",
+      "platform": "threads",
+      "mediaId": "18000000000000003",
+      "postId": "birthday_reel_20260624_2200_manual",
+      "title": "8日生まれ取説5選",
+      "topicType": "birthday_day_manual",
+      "permalink": "https://www.threads.com/@sensai_teke/post/PDCA_MANUAL",
+      "metrics": {
+        "views": 900,
+        "replies": 6,
+        "reposts": 4,
+        "likes": 90,
+        "shares": 5
+      }
+    }
+  ]
+}

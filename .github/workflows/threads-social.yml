@@ -5,7 +5,8 @@ on:
     branches:
       - main
   schedule:
-    # Backup scheduled posting ticks for 08:00, 20:00, 21:00, 22:00, and 23:00 JST.
+    # Backup scheduled posting ticks for 08:00 and 20:00-22:00 JST daily reels.
+    # 23:00 JST is kept only for the monthly birthday carousel 25-31 lane.
     # GitHub schedule can start late, so run-scheduled-posts.js keeps a 59 minute grace window.
     - cron: '0 23,11,12,13,14 * * *'
   workflow_dispatch:
@@ -27,11 +28,10 @@ on:
           - birthday_monthly_09_16
           - birthday_monthly_17_24
           - birthday_monthly_25_31
-          - birthday_ranking
-          - birthday_ranking_20
-          - birthday_ranking_21
-          - birthday_ranking_22
-          - birthday_ranking_23
+          - birthday_reel
+          - birthday_reel_20260618_21_quick_action_top5
+          - birthday_reel_20260618_22_hidden_feelings_top5
+          - birthday_reel_20260619_20_forgetful_top5
 
 permissions:
   contents: read
@@ -62,6 +62,11 @@ jobs:
       SOCIAL_STATELESS_MODE: 'true'
       SOCIAL_SKIP_ORACLE_DATES: '2026-05-12'
       SOCIAL_POST_GRACE_MINUTES: '59'
+      SOCIAL_VIDEO_PDCA_AUTOMATION: 'true'
+      SOCIAL_VIDEO_PDCA_APPLY: 'true'
+      SOCIAL_VIDEO_INSIGHTS_SINCE_DAYS: '14'
+      SOCIAL_VIDEO_INSIGHT_PLATFORMS: threads,instagram
+      SOCIAL_INSIGHTS_COLLECTION_ENABLED: ${{ vars.SOCIAL_INSIGHTS_COLLECTION_ENABLED || 'false' }}
       SOCIAL_THREADS_IMAGE_FALLBACK_TEXT: 'true'
       THREADS_CONTAINER_TIMEOUT_MS: '120000'
       THREADS_POST_VERIFY_TIMEOUT_MS: '120000'
@@ -129,11 +134,3 @@ jobs:
           else
             node scripts/social/run-scheduled-posts.js --once --only-kind="$kind"
           fi
-
-      - name: Publish due Instagram reels for 2026-06-09
-        if: steps.secrets.outputs.ready == 'true' && github.event_name != 'push' && github.event.inputs.kind != 'validate_only' && (github.event_name == 'schedule' || github.event.inputs.kind == 'auto' || github.event.inputs.kind == 'all')
-        shell: bash
-        env:
-          SOCIAL_SCHEDULED_RUN: 'true'
-          SOCIAL_REEL_POST_GRACE_MINUTES: '59'
-        run: node scripts/social/post-instagram-reels-20260609.js --post

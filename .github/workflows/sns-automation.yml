@@ -3,7 +3,7 @@ name: SNS automation
 on:
   schedule:
     - cron: '0 23 * * *' # 08:00 JST
-    - cron: '0 11-14 * * *' # 20:00-23:00 JST
+    - cron: '0 11-14 * * *' # 20:00-22:00 JST daily reels; 23:00 JST monthly birthday carousel only
   push:
     branches:
       - main
@@ -60,6 +60,11 @@ jobs:
       SOCIAL_STATELESS_MODE: 'true'
       SOCIAL_SKIP_ORACLE_DATES: '2026-05-12'
       SOCIAL_POST_GRACE_MINUTES: '59'
+      SOCIAL_VIDEO_PDCA_AUTOMATION: 'true'
+      SOCIAL_VIDEO_PDCA_APPLY: 'true'
+      SOCIAL_VIDEO_INSIGHTS_SINCE_DAYS: '14'
+      SOCIAL_VIDEO_INSIGHT_PLATFORMS: threads,instagram
+      SOCIAL_INSIGHTS_COLLECTION_ENABLED: ${{ vars.SOCIAL_INSIGHTS_COLLECTION_ENABLED || 'false' }}
       SOCIAL_THREADS_IMAGE_FALLBACK_TEXT: 'true'
       THREADS_CONTAINER_TIMEOUT_MS: '120000'
       THREADS_POST_VERIFY_TIMEOUT_MS: '120000'

@@ -12,7 +12,7 @@ on:
           - 'false'
           - 'true'
   schedule:
-    - cron: '5,35 11,12,13,14 * * *'
+    - cron: '5,35 11,12,13 * * *'
 
 jobs:
   guard:
@@ -62,4 +62,17 @@ jobs:
           INSTAGRAM_USER_ID: ${{ secrets.INSTAGRAM_USER_ID }}
           THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
           THREADS_EXPECTED_USERNAME: ${{ secrets.THREADS_EXPECTED_USERNAME }}
+          THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+      - name: Collect video insights and update PDCA feedback
+        run: |
+          npm run social:video-insights -- --live --since-days=14 --write-latest --platforms=threads,instagram
+          npm run social:video-pdca -- --write-feedback
+        env:
+          SOCIAL_INSIGHTS_COLLECTION_ENABLED: ${{ vars.SOCIAL_INSIGHTS_COLLECTION_ENABLED || 'false' }}
+          SOCIAL_VIDEO_INSIGHTS_SINCE_DAYS: '14'
+          SOCIAL_VIDEO_INSIGHT_PLATFORMS: threads,instagram
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_API_VERSION: ${{ secrets.INSTAGRAM_API_VERSION }}
+          INSTAGRAM_USER_ID: ${{ secrets.INSTAGRAM_USER_ID }}
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
           THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}

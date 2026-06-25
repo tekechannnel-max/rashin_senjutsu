@@ -7,9 +7,9 @@ SNS投稿、投稿文生成、画像生成、予約投稿、自動投稿設定�
 ## 現行方針
 
 - 本番自動投稿はThreads / Instagramのみ。
-- 実行はRender Cron JobまたはGitHub Actionsのクラウド実行だけ。
+- 実行はRender Cron Job / GitHub Actionsのクラウド実行、またはユーザーが許可したローカルCodex常駐 / 予約実行。
 - 対象外媒体の再開前提手順は残さない。
-- ローカルWindowsのTask Scheduler、常駐PowerShell、daemon運用は使わない。
+- ローカルCodex常駐 / 予約実行は正式経路として許可する。実行時は `SOCIAL_LOCAL_CODEX_AUTOMATION=true` または `SOCIAL_CODEX_RESERVATION_ACTIVE=true` を明示する。
 - APIキー、アクセストークン、個人情報はGit管理ファイル、README、投稿台帳、ログに保存しない。
 - 夜の通常枠は動画を標準にし、InstagramはReels、Threadsは同じ動画の動画投稿として扱う。
 - 誕生日数SNSのミニキャラは `docs/sns-birthday-number-content-guide.md` と `scripts/social/birthday-mini-family.js` だけを正本にする。
@@ -38,7 +38,7 @@ SNS投稿、投稿文生成、画像生成、動画生成、予約投稿、自�
   oracle
   素材: images/social/instagram/oracle/
 
-20:00 / 21:00 / 22:00 / 23:00 JST:
+20:00 / 21:00 / 22:00 JST:
   あるある・ランキング系の動画投稿
   対象: Threads / Instagram
   Instagram: Reels
@@ -62,7 +62,7 @@ SNS投稿、投稿文生成、画像生成、動画生成、予約投稿、自�
 
 毎月1日の夜4枠を最優先にします。毎月1日は、夜の通常投稿と木曜日20:00の比較系投稿を入れません。
 
-木曜日20:00は比較系3枚カルーセルを優先します。木曜日21:00 / 22:00 / 23:00は通常のあるある・ランキング系枠です。
+木曜日20:00は比較系3枚カルーセルを優先します。木曜日21:00 / 22:00は通常の生まれ日リール枠です。木曜日20:00に日次リールを入れず、23:00の日次リールも作りません。
 
 ## Render / GitHub Actions設定
 
@@ -77,6 +77,8 @@ INSTAGRAM_ACCESS_TOKEN=<クラウドSecretにだけ保存する>
 INSTAGRAM_EXPECTED_USERNAME=sensai_teke
 INSTAGRAM_API_VERSION=v23.0
 SOCIAL_AUTOMATED_POSTING_ENABLED=true
+SOCIAL_LOCAL_CODEX_AUTOMATION=true
+SOCIAL_CODEX_RESERVATION_ACTIVE=true
 SOCIAL_PLATFORMS=threads,instagram
 SOCIAL_THREADS_HASHTAG=#占い師のつぶやき
 SOCIAL_ORACLE_TIME=08:00
@@ -86,6 +88,14 @@ SOCIAL_BOOTH_ENABLED=false
 SOCIAL_UTM_CAMPAIGN=202605_prerelease
 SOCIAL_STATELESS_MODE=true
 SOCIAL_POST_GRACE_MINUTES=59
+SOCIAL_INSIGHTS_COLLECTION_ENABLED=false
+SOCIAL_VIDEO_PDCA_AUTOMATION=false
+SOCIAL_VIDEO_PDCA_APPLY=true
+SOCIAL_VIDEO_INSIGHTS_SINCE_DAYS=14
+SOCIAL_VIDEO_INSIGHT_PLATFORMS=threads,instagram
+SOCIAL_VIDEO_PDCA_FEEDBACK_FILE=data/social-posts/pdca/video-insights-feedback.json
+INSTAGRAM_REELS_INSIGHT_METRICS=views,reach,likes,comments,saved,shares,total_interactions
+THREADS_INSIGHT_METRICS=views,likes,replies,reposts,quotes,shares
 SOCIAL_THREADS_IMAGE_FALLBACK_TEXT=true
 THREADS_CONTAINER_TIMEOUT_MS=120000
 THREADS_POST_VERIFY_TIMEOUT_MS=120000
@@ -95,7 +105,7 @@ THREADS_POST_VERIFY_TIMEOUT_MS=120000
 
 - `oracle`: 毎朝8:00。画像は `images/social/instagram/oracle/NN.jpg`。Threads / Instagramの両方に投稿します。
 - `birthday_monthly`: 毎月1日。対象月の `images/social/instagram/誕生日数×ルノルマン/YYYY-MM/monthly/` だけを素材正本にします。投稿順は表紙→誕生日順です。表紙込みで1投稿あたり最大10枚のため、`1-8` / `9-16` / `17-24` / `25-31` に分けます。指定フォルダー外の表紙、導入画像、別フォルダー画像、manifest内の別パスは使いません。
-- 夜のあるある・ランキング系動画: 夜20:00 / 21:00 / 22:00 / 23:00。素材は `videos/social/instagram/【インスタ】あるある・ランキング系/` を正本にします。InstagramはReels、Threadsは動画投稿として扱います。ThreadsとInstagramに同じ趣旨で出し、ハッシュタグだけ分けます。
+- 夜の生まれ日動画: 夜20:00 / 21:00 / 22:00。素材は `videos/social/instagram/【インスタ】あるある・ランキング系/` を正本にします。InstagramはReels、Threadsは動画投稿として扱います。ThreadsとInstagramに同じ趣旨で出し、ハッシュタグだけ分けます。自動リサーチ対象は `生まれ日あるある/取説`、`生まれ日グラフ(1〜31日全て網羅)`、`○○な生まれ日TOP5` です。
 - 木曜20:00は夜の通常動画より比較系3種を優先します。Threadsは3枚画像投稿。
 - `empathy` / `difference` / `free_paid_compare` は手動投稿候補として残しますが、現行の自動投稿スケジュールには入れません。
 - Threadsはハッシュタグ1個。Instagramは投稿種別ごとに最大5個。
@@ -109,10 +119,12 @@ THREADS_POST_VERIFY_TIMEOUT_MS=120000
 2. ミニキャラが出る場合は、必ず `scripts/social/birthday-mini-family.js` の `birthdayMiniFamilyForDay(day)` で1〜9系へ還元します。
 3. 11日、22日、29日などの本文でマスターナンバーに触れる場合でも、ミニキャラは1桁還元後の系にします。
 4. 生成スクリプト側で独自のミニキャラ計算、手入力の系指定、テーマや順位によるキャラ選定をしません。
-5. 動画の保存CTAは「保存していつでも思い出してください。」を基本にします。
-6. 羅針占術への誘導は保存CTAの後に置き、無料鑑定から必要な方だけ深掘り鑑定へ進める導線にします。
-7. 生成後に、タイトル、順位、生まれ日、理由、保存CTA、羅針占術誘導が読めることをスクリーンショットまたは動画フレームで確認します。
-8. 文字と模様、背景、ミニキャラ、装飾が重なって読みにくい場合は不合格にします。
+5. 承認済みリールJSONの `designReview.miniCharacters` に、各順位の `day`、還元後の `family`、使用アセット名を残します。
+6. `minicharaByNumber: true` だけでは確認済みにしません。投稿スクリプトと `npm run social:guard` が `birthday-mini-family.js` で照合できる状態にします。
+7. 動画の保存CTAは「保存していつでも思い出してください。」を基本にします。
+8. 羅針占術への誘導は保存CTAの後に置き、無料鑑定から必要な方だけ深掘り鑑定へ進める導線にします。
+9. 生成後に、タイトル、順位、生まれ日、理由、保存CTA、羅針占術誘導が読めることをスクリーンショットまたは動画フレームで確認します。
+10. 文字と模様、背景、ミニキャラ、装飾が重なって読みにくい場合は不合格にします。
 
 ## 投稿前承認ゲート
 
@@ -140,6 +152,8 @@ platform:
 npm run check
 npm run social:audit -- --from=2026-06-08 --to=2026-06-15 --platforms=threads,instagram
 node scripts/social/run-scheduled-posts.js --once --dry-run --only-kind=all
+npm run social:video-insights -- --dry-run --since-days=14 --platforms=threads,instagram
+npm run social:video-pdca -- --write-feedback
 node tests/social-posting.test.js
 ```
 
@@ -152,6 +166,26 @@ npm run social:kpi-template -- --from=2026-06-08 --to=2026-06-14 --platforms=thr
 ```
 
 見る順番は `views`、`replies`、`reposts_or_shares`、`saves`、`profile_visits`、`new_follows`、`link_clicks`、`free_reading_starts`、`paid_deep_reading_starts`、`paid_completions`。`oracle` はリンククリック、夜投稿と月次投稿は保存とプロフィール訪問を主指標にします。
+
+## 動画インサイトPDCA
+
+夜の動画投稿は、投稿結果 `data/social-posts/approved-reels-results.json` の投稿IDを起点に、Instagram Reels / Threads動画のインサイトを収集します。実API取得は外部読み取りなので、`SOCIAL_INSIGHTS_COLLECTION_ENABLED=true` が明示されていない場合はスキップします。
+
+```powershell
+npm run social:video-insights -- --dry-run --since-days=14 --platforms=threads,instagram
+$env:SOCIAL_INSIGHTS_COLLECTION_ENABLED='true'; npm run social:video-insights -- --live --since-days=14 --write-latest
+npm run social:video-pdca -- --write-feedback
+```
+
+PDCA分析は、保存、シェア、返信/コメント、プロフィール訪問、再生/表示をスコア化し、`data/social-posts/pdca/video-insights-feedback.json` に次回用の改善指示を保存します。`scripts/social/auto-prepare-approved-reels.js` はこのフィードバックを読み、必須3系統（生まれ日あるある/取説、生まれ日グラフ、TOP5）を維持したまま、強かったネタ型を早い夜枠へ優先配置します。
+
+ローカルCodex常駐/予約で投稿後PDCAまで自動化する場合は、投稿用の `SOCIAL_AUTOMATED_POSTING_ENABLED=true` に加えて、次を明示します。
+
+```text
+SOCIAL_LOCAL_CODEX_AUTOMATION=true
+SOCIAL_VIDEO_PDCA_AUTOMATION=true
+SOCIAL_INSIGHTS_COLLECTION_ENABLED=true
+```
 
 ## 完了条件
 

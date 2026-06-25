@@ -18,6 +18,8 @@ assert.equal(typeof approvedReels.run, 'function', 'approved reel publisher must
 assert.equal(typeof approvedReels.loadApprovedPosts, 'function', 'approved reel publisher must export loadApprovedPosts');
 assert.match(approvedPublisher, /data['"], ['"]social-posts['"], ['"]approved-reels/, 'approved reel publisher must read the approved-reels directory');
 assert.match(approvedPublisher, /designReview/, 'approved reel publisher must require visual design review evidence');
+assert.match(approvedPublisher, /birthdayMiniFamilyForDay/, 'approved reel publisher must verify mini character families from birth days');
+assert.match(approvedPublisher, /designReview\.miniCharacters/, 'approved reel publisher must require per-day mini character proof');
 assert.match(approvedPublisher, /postVideoToThreads/, 'approved reel publisher must support Threads video posting through the shared client');
 assert.doesNotMatch(approvedPublisher, /videos[\\/]+social[\\/]+instagram[\s\S]*manifest\.json/, 'approved reel publisher must not read draft video manifests');
 
@@ -38,7 +40,29 @@ for (const relativePath of [
 const scheduler = read('scripts/social/run-scheduled-posts.js');
 assert.match(scheduler, /post-approved-reels\.js/, 'scheduler must call the approved reel publisher');
 assert.match(scheduler, /readApprovedReelScheduleSync/, 'scheduler must load reel schedule from approved manifests');
+assert.match(scheduler, /SOCIAL_LOCAL_CODEX_AUTOMATION/, 'scheduler must allow explicit local Codex automation mode');
+assert.match(scheduler, /SOCIAL_CODEX_RESERVATION_ACTIVE/, 'scheduler must allow explicit local Codex reservation mode');
+assert.doesNotMatch(scheduler, /Local daemon mode is disabled/, 'scheduler must not reject local Codex daemon mode outright');
 assert.doesNotMatch(scheduler, /BIRTHDAY_REEL_SLOTS\s*=\s*\[/, 'scheduler must not keep hardcoded birthday reel slots');
+
+const autoPrepare = read('scripts/social/auto-prepare-approved-reels.js');
+assert.match(autoPrepare, /\['20:00', '21:00', '22:00'\]/, 'auto prepare must keep daily reels to 20:00, 21:00, and 22:00');
+assert.doesNotMatch(autoPrepare, /\['20:00', '21:00', '22:00', '23:00'\]/, 'auto prepare must not create a 23:00 daily reel slot');
+assert.match(autoPrepare, /birthday_day_aruaru/, 'auto prepare must generate single-day aruaru topics');
+assert.match(autoPrepare, /birthday_day_manual/, 'auto prepare must generate single-day manual topics');
+assert.match(autoPrepare, /birthday_graph_1_31/, 'auto prepare must generate all-days birthday graph topics');
+assert.match(autoPrepare, /video-insights-feedback\.json/, 'auto prepare must read video PDCA feedback for next research priority');
+
+const videoInsights = read('scripts/social/collect-video-insights.js');
+assert.match(videoInsights, /SOCIAL_INSIGHTS_COLLECTION_ENABLED/, 'video insight collection must require an explicit live collection gate');
+assert.match(videoInsights, /approved-reels-results\.json/, 'video insight collection must start from posted approved reel results');
+assert.match(videoInsights, /getInstagramMediaInsights/, 'video insight collection must support Instagram media insights');
+assert.match(videoInsights, /getThreadInsights/, 'video insight collection must support Threads media insights');
+
+const videoPdca = read('scripts/social/analyze-video-pdca.js');
+assert.match(videoPdca, /video-insights-feedback\.json/, 'video PDCA analysis must write feedback for later automation');
+assert.match(videoPdca, /preferredTopicTypes/, 'video PDCA analysis must rank topic types');
+assert.match(scheduler, /SOCIAL_VIDEO_PDCA_AUTOMATION/, 'scheduler must be able to run video insight PDCA after approved reel posting');
 
 const backupWorkflow = read('.github/workflows/instagram-reels-backup.yml');
 assert.doesNotMatch(backupWorkflow, /--post\s+--force/, 'backup workflow must not publish with --post --force');
@@ -50,10 +74,22 @@ const guard = read('scripts/social/validate-social-pipeline-guardrails.js');
 assert.match(guard, /NO_POST_FORCE_IN_WORKFLOW/, 'social guard must block workflow --post --force');
 assert.match(guard, /POST_SCRIPT_HARDCODES_REELS/, 'social guard must block hardcoded reel arrays');
 assert.match(guard, /APPROVED_POST_MISSING_DESIGN_CHECK/, 'social guard must require approved reel design checks');
+assert.match(guard, /APPROVED_POST_MISSING_MINICHARA_SELECTION/, 'social guard must require per-day mini character selections');
+assert.match(guard, /APPROVED_POST_INVALID_MINICHARA_SELECTION/, 'social guard must reject mini character selections that do not match birthday-mini-family');
+assert.match(guard, /APPROVED_DAILY_REEL_23_SLOT/, 'social guard must reject deleted 23:00 daily birthday reel slots');
 
 const approvedPosts = approvedReels.loadApprovedPosts();
 assert.equal(approvedPosts.length, 1, 'fixture approved manifest should load one approved post');
 assert.equal(approvedPosts[0].id, 'birthday_reel_20260620_20_fixture');
+assert.deepEqual(
+  approvedPosts[0].designReview.miniCharacters.map(entry => [entry.day, entry.family, entry.asset]),
+  [
+    [11, 2, 'birthday-family-2-chibi.png'],
+    [22, 4, 'birthday-family-4-chibi.png'],
+    [29, 2, 'birthday-family-2-chibi.png'],
+  ],
+  'fixture approved manifest should preserve reduced 1-9 mini character proof'
+);
 assert.equal(approvedReels.isDue(approvedPosts[0], new Date(process.env.SOCIAL_NOW_ISO)), true, 'fixture post should be due at 20:05 JST');
 
 (async () => {

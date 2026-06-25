@@ -16,6 +16,8 @@ const APPROVED_REELS_DIR = resolveConfiguredPath('SOCIAL_APPROVED_REELS_DIR', pa
 const DEFAULT_STATE_FILE = path.join(OUT_DIR, 'scheduled-post-state.json');
 const DAILY_SCRIPT = path.join(__dirname, 'daily-oracle-post.js');
 const BIRTHDAY_REELS_SCRIPT = path.join(__dirname, 'post-approved-reels.js');
+const VIDEO_INSIGHTS_SCRIPT = path.join(__dirname, 'collect-video-insights.js');
+const VIDEO_PDCA_SCRIPT = path.join(__dirname, 'analyze-video-pdca.js');
 const DEFAULT_SOCIAL_PLATFORMS = 'threads,instagram';
 const DEFAULT_POST_GRACE_MINUTES = 59;
 const MAX_STATELESS_POST_GRACE_MINUTES = 59;
@@ -70,20 +72,19 @@ function readApprovedReelScheduleSync() {
 }
 
 function parseArgs(argv) {
-  const args = { once: false, dryRun: false, forceKind: '', onlyKind: '' };
+  const args = { once: false, daemon: false, dryRun: false, forceKind: '', onlyKind: '' };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--once') args.once = true;
-    else if (arg === '--daemon') {
-      throw new Error('Local daemon mode is disabled. Threads automation must run from Render Cron Job, not a local PC process.');
-    }
+    else if (arg === '--daemon') args.daemon = true;
     else if (arg === '--dry-run') args.dryRun = true;
     else if (arg === '--force-kind') args.forceKind = argv[++i] || '';
     else if (arg.startsWith('--force-kind=')) args.forceKind = arg.split('=')[1] || '';
     else if (arg === '--only-kind') args.onlyKind = argv[++i] || '';
     else if (arg.startsWith('--only-kind=')) args.onlyKind = arg.split('=')[1] || '';
   }
-  if (!args.once && !args.forceKind) args.once = true;
+  if (args.daemon && args.forceKind) throw new Error('--daemon cannot be combined with --force-kind.');
+  if (!args.once && !args.daemon && !args.forceKind) args.once = true;
   return args;
 }
 
@@ -197,6 +198,29 @@ function getSchedule() {
   ];
 }
 
+function isLocalCodexAutomationEnabled() {
+  return process.env.SOCIAL_LOCAL_CODEX_AUTOMATION === 'true'
+    || process.env.SOCIAL_CODEX_RESERVATION_ACTIVE === 'true';
+}
+
+function getDaemonIntervalMs() {
+  const raw = String(process.env.SOCIAL_DAEMON_INTERVAL_MS || '60000').trim();
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value < 15000) throw new Error(`Invalid SOCIAL_DAEMON_INTERVAL_MS: ${raw}`);
+  return value;
+}
+
+function requireLocalCodexAutomationForDaemon(args) {
+  if (!args.daemon) return;
+  if (!isLocalCodexAutomationEnabled()) {
+    throw new Error('Set SOCIAL_LOCAL_CODEX_AUTOMATION=true or SOCIAL_CODEX_RESERVATION_ACTIVE=true before running local Codex daemon mode.');
+  }
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function filterScheduleByKind(schedule, onlyKind) {
   if (!onlyKind || onlyKind === 'all') return schedule;
   const hasKindOrId = SOCIAL_POST_KINDS.includes(onlyKind) || schedule.some(item => item.id === onlyKind);
@@ -299,6 +323,42 @@ function runPost(item, dateKey) {
   }
 }
 
+function runChildScript(script, args, label) {
+  const result = spawnSync(process.execPath, [script, ...args], {
+    cwd: ROOT,
+    env: {
+      ...process.env,
+      SOCIAL_SCHEDULED_RUN: 'true',
+    },
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  if (result.stdout) process.stdout.write(result.stdout);
+  if (result.stderr) process.stderr.write(result.stderr);
+  if (result.status !== 0) {
+    throw new Error(`${label} failed with exit code ${result.status}`);
+  }
+}
+
+function shouldRunVideoPdcaAfterPosting(postedItems) {
+  return process.env.SOCIAL_VIDEO_PDCA_AUTOMATION === 'true'
+    && postedItems.some(item => item.kind === 'birthday_reel');
+}
+
+function runVideoPdcaCycle() {
+  const sinceDays = String(process.env.SOCIAL_VIDEO_INSIGHTS_SINCE_DAYS || '14');
+  runChildScript(
+    VIDEO_INSIGHTS_SCRIPT,
+    ['--live', `--since-days=${sinceDays}`, '--write-latest'],
+    'Scheduled video insights collection'
+  );
+  runChildScript(
+    VIDEO_PDCA_SCRIPT,
+    ['--write-feedback'],
+    'Scheduled video PDCA analysis'
+  );
+}
+
 async function runDue(args) {
   const now = getNow();
   const dateKey = getJstDateKey(now);
@@ -331,6 +391,7 @@ async function runDue(args) {
     graceMinutes,
     configuredGraceMinutes: gracePolicy.configuredMinutes,
     graceCappedForStateless: gracePolicy.cappedForStateless,
+    localCodexAutomation: isLocalCodexAutomationEnabled(),
     schedule: schedule.map(item => ({ id: item.id || item.kind, kind: item.kind, time: item.time, days: item.days, birthdayDays: item.birthdayDays || null, platforms: item.platforms || null, skipAuto: Boolean(item.skipAuto), skipReason: item.skipReason || null })),
     scheduledToday: scheduledToday.map(item => item.id || item.kind),
     skippedAutoToday: scheduledToday.filter(item => item.skipAuto).map(item => ({ id: item.id || item.kind, reason: item.skipReason || 'skip_auto' })),
@@ -345,16 +406,28 @@ async function runDue(args) {
   if (args.dryRun || !dueAfterSkips.length) return;
   requirePostingEnabled();
 
+  const postedItems = [];
   for (const item of dueAfterSkips) {
     runPost(item, dateKey);
+    postedItems.push(item);
     state[dateKey][item.id || item.kind] = new Date().toISOString();
     await writeJson(stateFile, state);
   }
+  if (shouldRunVideoPdcaAfterPosting(postedItems)) runVideoPdcaCycle();
 }
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  await runDue(args);
+  requireLocalCodexAutomationForDaemon(args);
+  if (!args.daemon) {
+    await runDue(args);
+    return;
+  }
+  const intervalMs = getDaemonIntervalMs();
+  while (true) {
+    await runDue({ ...args, once: true });
+    await sleep(intervalMs);
+  }
 }
 
 main().catch(error => {

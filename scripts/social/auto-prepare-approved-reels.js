@@ -12,6 +12,15 @@ const CANDIDATE_DIR = path.join(ROOT, 'output', 'social-approved-reels-candidate
 const REVIEW_DIR = path.join(ROOT, 'output', 'social-reels-review');
 const GENERATOR = path.join(ROOT, 'scripts', 'social', 'generate-birthday-reels-20260620.js');
 const DEFAULT_PLATFORMS = 'threads,instagram';
+const DEFAULT_PDCA_FEEDBACK_FILE = path.join(ROOT, 'data', 'social-posts', 'pdca', 'video-insights-feedback.json');
+
+function resolveConfiguredPath(envName, fallback) {
+  const configured = String(process.env[envName] || '').trim();
+  if (!configured) return fallback;
+  return path.isAbsolute(configured) ? configured : path.resolve(ROOT, configured);
+}
+
+const PDCA_FEEDBACK_FILE = resolveConfiguredPath('SOCIAL_VIDEO_PDCA_FEEDBACK_FILE', DEFAULT_PDCA_FEEDBACK_FILE);
 
 const THEMES = [
   { accent: '#2d6f86', accent2: '#b76a3b', ink: '#17323c', bg1: '#eef7fb', bg2: '#fffdf8', bg3: '#e8ecd8', glow: '#d7efff' },
@@ -402,6 +411,79 @@ const TOPIC_BANK = [
   },
 ];
 
+const SINGLE_DAY_TYPES = [
+  {
+    topicType: 'birthday_day_aruaru',
+    slugPrefix: 'birthday-day-aruaru',
+    titleSuffix: '日生まれあるある5選',
+    leadPrefix: 'その日に生まれた人が出しやすい反応を、保存しやすい5つのあるあるに整理します。',
+    summaryPrefix: 'この日の人は、無理に目立つよりも自分の反応の癖を知るほど動きやすくなります。',
+  },
+  {
+    topicType: 'birthday_day_manual',
+    slugPrefix: 'birthday-day-manual',
+    titleSuffix: '日生まれ取説5選',
+    leadPrefix: '接し方、休ませ方、力の出し方を1日分だけに絞って取扱説明書にします。',
+    summaryPrefix: 'この日の人は、扱い方のポイントを先に知ると関係も予定も整えやすくなります。',
+  },
+];
+
+const SINGLE_DAY_POINT_BANK = [
+  '最初は静かでも、納得すると一気に動きます。',
+  '急かされるより、選べる余白があるほど本音が出ます。',
+  '気にしていないふりをして、細かい空気の変化を見ています。',
+  '頼られると強いですが、雑に任されると急に距離を置きます。',
+  '予定変更には弱く見えても、理由がわかると切り替えが早いです。',
+  '好きなことには集中が深く、時間の感覚が薄くなりやすいです。',
+  '感謝は言葉より行動で返そうとする傾向があります。',
+  '大事な人ほど遠慮して、あとから気持ちを出すことがあります。',
+  'ひとりの時間で回復してから、人に優しく戻ります。',
+  '違和感には早く気づきますが、すぐには言葉にしません。',
+];
+
+const GRAPH_LABELS = [
+  '直感',
+  '行動',
+  '安心',
+  '集中',
+  '調整',
+  '共感',
+  '挑戦',
+];
+
+function singleDayForDate(dateKey, seed, slotIndex) {
+  const dayOfMonth = Number(dateKey.slice(-2));
+  return ((dayOfMonth + seed + slotIndex * 7) % 31) + 1;
+}
+
+function singleDayType(seed, slotIndex) {
+  return SINGLE_DAY_TYPES[(seed + slotIndex) % SINGLE_DAY_TYPES.length];
+}
+
+function buildSingleDayPoints(day, seed) {
+  const rotated = rotate(SINGLE_DAY_POINT_BANK, (seed + day) % SINGLE_DAY_POINT_BANK.length);
+  return rotated.slice(0, 5).map((text, index) => ({
+    rank: index + 1,
+    text,
+  }));
+}
+
+function graphScore(day, seed) {
+  return 38 + ((seed + day * 17 + (day % 9) * 11) % 61);
+}
+
+function buildGraphDays(seed) {
+  return Array.from({ length: 31 }, (_, index) => {
+    const day = index + 1;
+    birthdayMiniFamilyForDay(day);
+    return {
+      day,
+      score: graphScore(day, seed),
+      label: GRAPH_LABELS[(seed + day) % GRAPH_LABELS.length],
+    };
+  });
+}
+
 function parseArgs(argv) {
   const args = {
     date: '',
@@ -517,7 +599,58 @@ function rotate(array, amount) {
 }
 
 function postTimesForDate(dateKey) {
-  return dayOfWeek(dateKey) === 4 ? ['21:00', '22:00', '23:00'] : ['20:00', '21:00', '22:00', '23:00'];
+  return dayOfWeek(dateKey) === 4 ? ['21:00', '22:00'] : ['20:00', '21:00', '22:00'];
+}
+
+function loadPdcaFeedback() {
+  if (process.env.SOCIAL_VIDEO_PDCA_APPLY === 'false') return null;
+  if (!fs.existsSync(PDCA_FEEDBACK_FILE)) return null;
+  const feedback = readJson(PDCA_FEEDBACK_FILE);
+  if (!feedback || typeof feedback !== 'object') return null;
+  return feedback;
+}
+
+function topicKindFromTopicType(topicType) {
+  const value = String(topicType || '');
+  if (value === 'birthday_top5') return 'top5';
+  if (value === 'birthday_graph_1_31') return 'graph';
+  if (value === 'birthday_day_aruaru' || value === 'birthday_day_manual') return 'single_day';
+  return '';
+}
+
+function topicKindWeight(kind, feedback) {
+  const weights = feedback?.topicTypeWeights || {};
+  if (kind === 'top5') return Number(weights.birthday_top5 || 1);
+  if (kind === 'graph') return Number(weights.birthday_graph_1_31 || 1);
+  if (kind === 'single_day') {
+    return Math.max(Number(weights.birthday_day_aruaru || 1), Number(weights.birthday_day_manual || 1));
+  }
+  return 1;
+}
+
+function orderTopicKinds(baseOrder, feedback) {
+  if (!feedback) return baseOrder;
+  const preferred = [];
+  for (const topicType of feedback.preferredTopicTypes || []) {
+    const kind = topicKindFromTopicType(topicType);
+    if (kind && baseOrder.includes(kind) && !preferred.includes(kind)) preferred.push(kind);
+  }
+  const remaining = baseOrder
+    .filter(kind => !preferred.includes(kind))
+    .sort((a, b) => topicKindWeight(b, feedback) - topicKindWeight(a, feedback));
+  return [...preferred, ...remaining];
+}
+
+function pdcaFeedbackSummary(feedback) {
+  if (!feedback) return null;
+  return {
+    updatedAt: feedback.updatedAt || '',
+    sourceReport: feedback.sourceReport || '',
+    preferredTopicTypes: feedback.preferredTopicTypes || [],
+    preferredTimes: feedback.preferredTimes || [],
+    topicTypeWeights: feedback.topicTypeWeights || {},
+    nextResearchDirectives: feedback.nextResearchDirectives || [],
+  };
 }
 
 function sourceNotesForDate(dateKey) {
@@ -543,8 +676,16 @@ function sourceNotesForDate(dateKey) {
       sourceUrl: 'docs/sns-runbook.md',
       observedPattern: 'Threads + Instagram、InstagramはReels、Threadsは動画投稿。木曜20:00は比較カルーセル優先。',
       usedAs: `${dateKey} の投稿時刻と媒体制約`,
-      transformationNote: '木曜は21:00以降だけ、他曜日は20:00から23:00の承認済みリールにする。',
+      transformationNote: '木曜20:00は比較カルーセル優先。日次リールは木曜21:00/22:00、他曜日20:00/21:00/22:00だけにする。',
       duplicateCheck: '承認済みmanifestと投稿済みledgerの既存タイトルを避ける。',
+    },
+    {
+      sourceAccount: '羅針占術 video insights PDCA',
+      sourceUrl: 'data/social-posts/pdca/video-insights-feedback.json',
+      observedPattern: '投稿済み動画の保存・シェア・返信/コメント・プロフィール訪問をスコア化し、次回のリサーチ候補順へ反映する。',
+      usedAs: `${dateKey} のネタ型と投稿時刻の改善材料`,
+      transformationNote: '必須3系統は維持し、強かったネタ型を早い枠へ寄せる。',
+      duplicateCheck: 'PDCAは型と時刻の優先度だけに使い、本文・順位・画像・動画はコピーしない。',
     },
   ];
 }
@@ -568,7 +709,7 @@ function buildRows(topic, seed, topicIndex) {
   });
 }
 
-function selectTopics(dateKey, count) {
+function selectTop5Topics(dateKey, count) {
   const existing = collectExistingTopics();
   const seed = hashString(dateKey);
   const rotated = rotate(TOPIC_BANK, seed % TOPIC_BANK.length);
@@ -585,29 +726,96 @@ function selectTopics(dateKey, count) {
   return selected;
 }
 
-function buildPlan(dateKey) {
+function slotsForDate(dateKey, pdcaFeedback = loadPdcaFeedback()) {
   const times = postTimesForDate(dateKey);
+  if (dayOfWeek(dateKey) === 4) {
+    const topicOrder = orderTopicKinds(['single_day', 'graph'], pdcaFeedback);
+    return times.map((time, index) => ({ time, topicKind: topicOrder[index] }));
+  }
+  const topicOrder = orderTopicKinds(['top5', 'single_day', 'graph'], pdcaFeedback);
+  return times.map((time, index) => ({ time, topicKind: topicOrder[index] }));
+}
+
+function buildTop5Post(topic, slot, seed, index) {
+  return {
+    time: slot.time,
+    topicType: 'birthday_top5',
+    researchTarget: 'birthday_top5',
+    slug: topic.slug,
+    title: topic.title,
+    titleLines: topic.titleLines,
+    lead: topic.lead,
+    sourceUrl: 'https://www.instagram.com/uranai.kitsune/?hl=ja',
+    theme: THEMES[(seed + index) % THEMES.length],
+    rows: buildRows(topic, seed, index),
+    summary: topic.summary,
+  };
+}
+
+function buildSingleDayPost(dateKey, slot, seed, index) {
+  const day = singleDayForDate(dateKey, seed, index);
+  const type = singleDayType(seed, index);
+  const title = `${day}${type.titleSuffix}`;
+  return {
+    time: slot.time,
+    topicType: type.topicType,
+    researchTarget: 'birthday_day_aruaru_manual',
+    slug: `${type.slugPrefix}-${String(day).padStart(2, '0')}-${dateKey.replaceAll('-', '')}`,
+    title,
+    titleLines: [`${day}日生まれ`, type.topicType === 'birthday_day_manual' ? '取説5選' : 'あるある5選'],
+    lead: type.leadPrefix,
+    sourceUrl: 'https://www.instagram.com/uranai.kitsune/?hl=ja',
+    theme: THEMES[(seed + index) % THEMES.length],
+    day,
+    points: buildSingleDayPoints(day, seed + index),
+    summary: type.summaryPrefix,
+  };
+}
+
+function buildGraphPost(dateKey, slot, seed, index) {
+  return {
+    time: slot.time,
+    topicType: 'birthday_graph_1_31',
+    researchTarget: 'birthday_graph_all_days',
+    slug: `birthday-graph-1-31-${dateKey.replaceAll('-', '')}`,
+    title: '生まれ日グラフ 1日〜31日',
+    titleLines: ['生まれ日グラフ', '1日〜31日ぜんぶ'],
+    lead: '1日から31日までを1本で見られるように、保存向けのグラフ動画にします。',
+    sourceUrl: 'https://www.instagram.com/uranai.kitsune/?hl=ja',
+    theme: THEMES[(seed + index) % THEMES.length],
+    graphDays: buildGraphDays(seed + index),
+    summary: '全日を一度に見られる投稿にして、自分と周りの生まれ日を探しやすくします。',
+  };
+}
+
+function buildPlan(dateKey) {
   const seed = hashString(dateKey);
-  const topics = selectTopics(dateKey, times.length);
+  const pdcaFeedback = loadPdcaFeedback();
+  const slots = slotsForDate(dateKey, pdcaFeedback);
+  const top5Topics = selectTop5Topics(dateKey, slots.filter(slot => slot.topicKind === 'top5').length);
   const avoidedTopics = [...collectExistingTopics().titles].slice(-80);
+  let top5Index = 0;
   return {
     date: dateKey,
     reviewTitle: `${dateKey} 夜枠 誕生日リール自動生成候補`,
     sourceNotes: sourceNotesForDate(dateKey),
+    pdcaFeedback: pdcaFeedbackSummary(pdcaFeedback),
+    requiredResearchTargets: [
+      '生まれ日あるある/取説: 1日〜31日のいずれかを毎日自動選定',
+      '生まれ日グラフ: 1日〜31日を毎回すべて網羅',
+      '○○な生まれ日TOP5: 木曜20時以外の20時枠で自動選定',
+    ],
     avoidedTopics,
-    posts: topics.map((topic, index) => ({
-      time: times[index],
-      slug: topic.slug,
-      title: topic.title,
-      titleLines: topic.titleLines,
-      lead: topic.lead,
-      sourceUrl: index < 2
-        ? 'https://creators.instagram.com/grow/algorithms-and-ranking?locale=en_GB'
-        : 'docs/sns-runbook.md',
-      theme: THEMES[(seed + index) % THEMES.length],
-      rows: buildRows(topic, seed, index),
-      summary: topic.summary,
-    })),
+    posts: slots.map((slot, index) => {
+      if (slot.topicKind === 'top5') {
+        const post = buildTop5Post(top5Topics[top5Index], slot, seed, index);
+        top5Index += 1;
+        return post;
+      }
+      if (slot.topicKind === 'single_day') return buildSingleDayPost(dateKey, slot, seed, index);
+      if (slot.topicKind === 'graph') return buildGraphPost(dateKey, slot, seed, index);
+      throw new Error(`Unknown topic kind: ${slot.topicKind}`);
+    }),
   };
 }
 
@@ -743,7 +951,19 @@ async function main() {
       status: 'dry_run',
       date: dateKey,
       planPath: rel(planPath),
-      posts: plan.posts.map(post => ({ time: post.time, slug: post.slug, title: post.title, rows: post.rows })),
+      pdcaFeedbackApplied: Boolean(plan.pdcaFeedback),
+      pdcaFeedback: plan.pdcaFeedback,
+      posts: plan.posts.map(post => ({
+        time: post.time,
+        topicType: post.topicType,
+        researchTarget: post.researchTarget,
+        slug: post.slug,
+        title: post.title,
+        day: post.day || null,
+        rows: post.rows || null,
+        pointCount: Array.isArray(post.points) ? post.points.length : null,
+        graphDayCount: Array.isArray(post.graphDays) ? post.graphDays.length : null,
+      })),
     }, null, 2));
     return;
   }
@@ -767,8 +987,16 @@ async function main() {
     planPath: rel(planPath),
     approvedPath: approval ? rel(approval.approvedPath) : '',
     approvalSkipped: approval ? approval.skipped : false,
+    pdcaFeedbackApplied: Boolean(plan.pdcaFeedback),
+    pdcaFeedback: plan.pdcaFeedback,
     publishToGit: git,
-    posts: plan.posts.map(post => ({ time: post.time, slug: post.slug, title: post.title })),
+    posts: plan.posts.map(post => ({
+      time: post.time,
+      topicType: post.topicType,
+      researchTarget: post.researchTarget,
+      slug: post.slug,
+      title: post.title,
+    })),
   }, null, 2));
 }
 

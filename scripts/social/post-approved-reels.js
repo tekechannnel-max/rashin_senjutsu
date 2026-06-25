@@ -4,6 +4,10 @@ const path = require('node:path');
 
 const instagram = require('./instagram-client');
 const threads = require('./threads-client');
+const {
+  birthdayMiniAssetNameForDay,
+  birthdayMiniFamilyForDay,
+} = require('./birthday-mini-family');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 function resolveConfiguredPath(envName, fallback) {
@@ -162,6 +166,41 @@ function countHashtags(text) {
   return (String(text || '').match(/#[^\s#]+/g) || []).length;
 }
 
+function normalizeBirthDay(value, label) {
+  const day = Number(value);
+  if (!Number.isInteger(day) || day < 1 || day > 31) {
+    throw new Error(`${label} must be an integer from 1 to 31: ${value}`);
+  }
+  return day;
+}
+
+function ensureMiniCharacterReview(post, label, review) {
+  if ((post.kind || 'birthday_reel') !== 'birthday_reel') return;
+  const entries = Array.isArray(review.miniCharacters)
+    ? review.miniCharacters
+    : Array.isArray(post.miniCharacters)
+      ? post.miniCharacters
+      : [];
+  if (!entries.length) {
+    throw new Error(`${label} designReview.miniCharacters must list rank, day, family, and asset for every mini character.`);
+  }
+  const seenDays = new Set();
+  for (const [index, entry] of entries.entries()) {
+    const entryLabel = `${label} designReview.miniCharacters[${index}]`;
+    const day = normalizeBirthDay(entry?.day, `${entryLabel}.day`);
+    if (seenDays.has(day)) throw new Error(`${entryLabel}.day duplicates ${day}.`);
+    seenDays.add(day);
+    const expectedFamily = birthdayMiniFamilyForDay(day);
+    const expectedAsset = birthdayMiniAssetNameForDay(day);
+    if (Number(entry.family) !== expectedFamily) {
+      throw new Error(`${entryLabel}.family must be ${expectedFamily} for ${day}日生まれ.`);
+    }
+    if (String(entry.asset || '').trim() !== expectedAsset) {
+      throw new Error(`${entryLabel}.asset must be ${expectedAsset} for ${day}日生まれ.`);
+    }
+  }
+}
+
 function ensureDesignReview(post, label) {
   const review = post.designReview || post.review || {};
   const checks = review.checks || {};
@@ -193,6 +232,7 @@ function ensureDesignReview(post, label) {
   if (!saveCueText.includes(REQUIRED_SAVE_CUE)) {
     throw new Error(`${label} must include the save cue "${REQUIRED_SAVE_CUE}" in designReview.saveCueText.`);
   }
+  ensureMiniCharacterReview(post, label, review);
 }
 
 function ensureApprovedManifest(manifest, file) {

@@ -2,6 +2,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
+const {
+  birthdayMiniAssetNameForDay,
+  birthdayMiniFamilyForDay,
+} = require('./birthday-mini-family');
+
 const ROOT = path.resolve(__dirname, '..', '..');
 
 function pathExists(filePath) {
@@ -38,6 +43,64 @@ function parseJson(filePath) {
     return JSON.parse(readText(filePath));
   } catch (error) {
     return { __parseError: error.message };
+  }
+}
+
+function normalizeBirthDay(value) {
+  const day = Number(value);
+  return Number.isInteger(day) && day >= 1 && day <= 31 ? day : null;
+}
+
+function validateApprovedMiniCharacters(file, index, post, designReview) {
+  if ((post.kind || 'birthday_reel') !== 'birthday_reel') return;
+  const entries = Array.isArray(designReview.miniCharacters)
+    ? designReview.miniCharacters
+    : Array.isArray(post.miniCharacters)
+      ? post.miniCharacters
+      : [];
+  if (!entries.length) {
+    addViolation(
+      'APPROVED_POST_MISSING_MINICHARA_SELECTION',
+      file,
+      `posts[${index}] must include designReview.miniCharacters with rank, day, family, and asset.`
+    );
+    return;
+  }
+  const seenDays = new Set();
+  for (const [entryIndex, entry] of entries.entries()) {
+    const day = normalizeBirthDay(entry?.day);
+    if (!day) {
+      addViolation(
+        'APPROVED_POST_INVALID_MINICHARA_SELECTION',
+        file,
+        `posts[${index}].designReview.miniCharacters[${entryIndex}].day must be an integer from 1 to 31.`
+      );
+      continue;
+    }
+    if (seenDays.has(day)) {
+      addViolation(
+        'APPROVED_POST_INVALID_MINICHARA_SELECTION',
+        file,
+        `posts[${index}].designReview.miniCharacters[${entryIndex}] duplicates ${day}日生まれ.`
+      );
+    }
+    seenDays.add(day);
+    const expectedFamily = birthdayMiniFamilyForDay(day);
+    const expectedAsset = birthdayMiniAssetNameForDay(day);
+    if (Number(entry.family) !== expectedFamily) {
+      addViolation(
+        'APPROVED_POST_INVALID_MINICHARA_SELECTION',
+        file,
+        `posts[${index}].designReview.miniCharacters[${entryIndex}].family must be ${expectedFamily} for ${day}日生まれ.`
+      );
+    }
+    if (String(entry.asset || '').trim() !== expectedAsset) {
+      addViolation(
+        'APPROVED_POST_INVALID_MINICHARA_SELECTION',
+        file,
+        `posts[${index}].designReview.miniCharacters[${entryIndex}].asset must be ${expectedAsset} for ${day}日生まれ.`
+      );
+    }
   }
 }
 
@@ -245,6 +308,9 @@ for (const file of approvedManifestFiles) {
         addViolation('APPROVED_POST_MISSING_FIELD', file, `posts[${index}] is missing ${key}.`);
       }
     }
+    if ((post.kind || 'birthday_reel') === 'birthday_reel' && post.time === '23:00') {
+      addViolation('APPROVED_DAILY_REEL_23_SLOT', file, `posts[${index}] is a deleted 23:00 daily birthday reel slot.`);
+    }
     if (!post.captions?.instagram || !post.captions?.threads) {
       addViolation('APPROVED_POST_MISSING_CAPTIONS', file, `posts[${index}] must include captions.instagram and captions.threads.`);
     }
@@ -258,6 +324,7 @@ for (const file of approvedManifestFiles) {
     if (!Array.isArray(designReview.screenshots) || designReview.screenshots.length === 0) {
       addViolation('APPROVED_POST_MISSING_SCREENSHOT_PROOF', file, `posts[${index}] must include designReview.screenshots.`);
     }
+    validateApprovedMiniCharacters(file, index, post, designReview);
   }
 }
 

@@ -23,6 +23,26 @@
           "tests/fixtures/social-approved-reels/representative-frame.png"
         ],
         "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 11,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 22,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 29,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png"
+          }
+        ],
         "checks": {
           "safeArea": true,
           "readability": true,

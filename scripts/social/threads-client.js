@@ -30,7 +30,7 @@ loadLocalEnv();
 const GRAPH_BASE = process.env.THREADS_GRAPH_BASE || 'https://graph.threads.net/v1.0';
 const TOKEN_BASE = process.env.THREADS_TOKEN_BASE || 'https://graph.threads.net';
 const AUTH_URL = process.env.THREADS_AUTH_URL || 'https://threads.net/oauth/authorize';
-const DEFAULT_SCOPES = ['threads_basic', 'threads_content_publish'];
+const DEFAULT_SCOPES = ['threads_basic', 'threads_content_publish', 'threads_manage_insights'];
 const LOCAL_MEDIA_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '0.0.0.0']);
 
 function splitScopes(value) {
@@ -256,6 +256,26 @@ async function getThreadPost(threadId, credentials = null) {
   return requestJson(`${GRAPH_BASE}/${encodeURIComponent(threadId)}?${params.toString()}`);
 }
 
+function normalizeMetricList(metrics, fallback) {
+  const source = Array.isArray(metrics) ? metrics : String(metrics || fallback || '').split(',');
+  return source.map(metric => String(metric || '').trim()).filter(Boolean);
+}
+
+async function getThreadInsights(threadId, { metrics = null, credentials = null } = {}) {
+  const creds = credentials || await getThreadsCredentials();
+  requireThreadsCredentials(creds);
+  const metricList = normalizeMetricList(
+    metrics,
+    process.env.THREADS_INSIGHT_METRICS || 'views,likes,replies,reposts,quotes,shares'
+  );
+  if (!metricList.length) throw new Error('Threads insight metrics are empty.');
+  const params = new URLSearchParams({
+    metric: metricList.join(','),
+    access_token: creds.accessToken,
+  });
+  return requestJson(`${GRAPH_BASE}/${encodeURIComponent(threadId)}/insights?${params.toString()}`);
+}
+
 async function getThreadsContainerStatus(containerId, credentials = null) {
   const creds = credentials || await getThreadsCredentials();
   requireThreadsCredentials(creds);
@@ -446,6 +466,7 @@ module.exports = {
   getThreadsMe,
   listThreads,
   getThreadPost,
+  getThreadInsights,
   getThreadsContainerStatus,
   waitForThreadsContainer,
   verifyPublishedThread,

@@ -595,6 +595,7 @@ function testBirthdayGeneratorsUseSharedMiniFamilyMapping() {
     'scripts/social/generate-birthday-oneoff-images.js',
     'scripts/social/generate-designed-top5-videos.js',
     'scripts/social/generate-static-top5-videos.js',
+    'scripts/social/generate-birthday-reels-20260620.js',
   ].forEach((relativeFile) => {
     const source = fs.readFileSync(path.join(ROOT, relativeFile), 'utf8');
     assert.match(source, /birthdayMiniFamilyForDay/, `${relativeFile} should use the shared 1-9 mini character mapping`);
@@ -758,10 +759,49 @@ function testStatelessScheduleKeepsRecoveryGraceWindow() {
   assert.deepEqual(expired.expired, ['oracle'], 'the 08:00 oracle should expire after the schedule grace window');
 }
 
+function autoPrepareReelsReport(date) {
+  const result = runNode([
+    'scripts/social/auto-prepare-approved-reels.js',
+    '--dry-run',
+    `--date=${date}`,
+  ], {
+    env: {
+      SOCIAL_VIDEO_PDCA_FEEDBACK_FILE: path.join(ROOT, 'output', 'missing-video-pdca-feedback.json'),
+    },
+  });
+  return JSON.parse(result.stdout);
+}
+
+function testAutoPrepareReelsUsesDailyBirthdayResearchTypes() {
+  const normal = autoPrepareReelsReport('2026-06-29');
+  assert.deepEqual(normal.posts.map(post => post.time), ['20:00', '21:00', '22:00'], 'normal daily reels must only use 20:00, 21:00, and 22:00');
+  assert.deepEqual(
+    normal.posts.map(post => post.topicType),
+    ['birthday_top5', 'birthday_day_manual', 'birthday_graph_1_31'],
+    'normal daily reels must include TOP5, single-day aruaru/manual, and all-days graph lanes'
+  );
+  assert.equal(normal.posts[1].researchTarget, 'birthday_day_aruaru_manual', 'single-day aruaru/manual must be a daily research target');
+  assert.equal(normal.posts[1].pointCount, 5, 'single-day aruaru/manual posts must generate five points');
+  assert.equal(normal.posts[2].researchTarget, 'birthday_graph_all_days', 'graph post must be a daily research target');
+  assert.equal(normal.posts[2].graphDayCount, 31, 'graph post must cover all 1-31 days');
+
+  const thursday = autoPrepareReelsReport('2026-07-02');
+  assert.deepEqual(thursday.posts.map(post => post.time), ['21:00', '22:00'], 'Thursday 20:00 must stay reserved for the comparison carousel');
+  assert.deepEqual(
+    thursday.posts.map(post => post.topicType),
+    ['birthday_day_aruaru', 'birthday_graph_1_31'],
+    'Thursday daily reels must still include single-day aruaru/manual and all-days graph lanes'
+  );
+}
+
 function testWorkflowHasScheduledPostingBackup() {
   const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'threads-social.yml'), 'utf8');
   const automationWorkflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'sns-automation.yml'), 'utf8');
-  assert.match(workflow, /cron: '0 23,11,12,13,14 \* \* \*'/, 'Threads workflow should run backup ticks for 08:00 and 20:00-23:00 JST');
+  const reelsBackupWorkflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'instagram-reels-backup.yml'), 'utf8');
+  assert.match(workflow, /cron: '0 23,11,12,13,14 \* \* \*'/, 'Threads workflow should run backup ticks for 08:00, 20:00-22:00 JST, and monthly 23:00 JST');
+  assert.match(workflow, /23:00 JST is kept only for the monthly birthday carousel 25-31 lane/, 'Threads workflow must document that 23:00 is not a daily reel lane');
+  assert.match(automationWorkflow, /23:00 JST monthly birthday carousel only/, 'SNS automation workflow must document that 23:00 is not a daily reel lane');
+  assert.match(reelsBackupWorkflow, /cron: '5,35 11,12,13 \* \* \*'/, 'Instagram reels backup must not run the deleted 23:00 daily reel slot');
   assert.match(workflow, /SOCIAL_ORACLE_TIME: '08:00'/, 'Threads workflow should use the 08:00 JST oracle time');
   assert.doesNotMatch(workflow, /cron: '1 14 \* \* \*'/, 'Threads workflow should not run a separate 23:01 JST tick');
   assert.doesNotMatch(workflow, /birthday_monthly_recovery/, 'workflow should not keep old birthday monthly recovery slots');
@@ -770,6 +810,9 @@ function testWorkflowHasScheduledPostingBackup() {
   assert.match(workflow, /if: steps\.secrets\.outputs\.ready == 'true' && github\.event_name != 'push'/, 'workflow push events should validate without publishing due posts');
   assert.match(automationWorkflow, /if: steps\.secrets\.outputs\.ready == 'true' && github\.event_name != 'push'/, 'automation workflow push events should validate without publishing due posts');
   assert.match(workflow, /SOCIAL_POST_GRACE_MINUTES: '59'/, 'workflow should allow delayed scheduled runs to recover within the hour');
+  assert.match(workflow, /SOCIAL_VIDEO_PDCA_AUTOMATION: 'true'/, 'workflow should run the video PDCA hook after approved reel posting');
+  assert.match(automationWorkflow, /SOCIAL_VIDEO_PDCA_AUTOMATION: 'true'/, 'automation workflow should run the video PDCA hook after approved reel posting');
+  assert.match(workflow, /SOCIAL_INSIGHTS_COLLECTION_ENABLED: \$\{\{ vars\.SOCIAL_INSIGHTS_COLLECTION_ENABLED \|\| 'false' \}\}/, 'video insight collection must be explicitly enabled for live cloud reads');
   assert.match(workflow, /birthday_monthly_01_08/, 'workflow dispatch should allow forcing the 20:00 birthday monthly slot');
   assert.match(workflow, /birthday_monthly_25_31/, 'workflow dispatch should allow forcing the 23:00 birthday monthly slot');
   assert.match(workflow, /rashin_point_thursday_20/, 'workflow dispatch should allow forcing the Thursday 20:00 comparison slot');
@@ -806,6 +849,7 @@ testPostsLedgerWriteIsTraceableAndSecretSafe();
 testRealPostingRequiresExplicitYesOutsideScheduler();
 testScheduledPostsRespectJstWeekdays();
 testStatelessScheduleKeepsRecoveryGraceWindow();
+testAutoPrepareReelsUsesDailyBirthdayResearchTypes();
 testWorkflowHasScheduledPostingBackup();
 testBroadSocialAuditPasses();
 testKpiReviewTemplatePreservesManualMetrics();

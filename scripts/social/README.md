@@ -22,9 +22,11 @@ SNS投稿、投稿文生成、画像生成、動画生成、予約投稿、自�
 ## 主なスクリプト
 
 - `daily-oracle-post.js`: 朝投稿、月次カルーセル、木曜比較投稿の投稿文、画像パス、alt text、UTM付きURLを生成します。
-- `run-scheduled-posts.js`: Render Cronから対象時刻の投稿だけを実行します。
+- `run-scheduled-posts.js`: Render Cron / GitHub Actions / 許可済みローカルCodex常駐から対象時刻の投稿だけを実行します。
 - `audit-social-drafts.js`: 投稿文、UTM、画像、alt text、ハッシュタグ、重複を検査します。
 - `prepare-kpi-review.js`: KPI確認用CSVを生成します。
+- `collect-video-insights.js`: 投稿済み動画のInstagram / Threadsインサイトを収集し、スナップショットとして保存します。実API取得は `SOCIAL_INSIGHTS_COLLECTION_ENABLED=true` が必要です。
+- `analyze-video-pdca.js`: 動画インサイトを保存、シェア、返信/コメント、プロフィール訪問、再生/表示で評価し、次回の自動リサーチ用フィードバックを作ります。
 - `threads-tool.js`: Threadsの接続確認と手動テスト用です。
 - `instagram-client.js`: Instagram投稿APIの共通処理です。
 - `post-approved-reels.js`: 承認済みReels manifestだけを投稿対象にする唯一の動画投稿入口です。
@@ -40,18 +42,26 @@ SNS投稿、投稿文生成、画像生成、動画生成、予約投稿、自�
 npm run check
 npm run social:audit -- --from=2026-06-06 --to=2026-06-10 --platforms=threads,instagram
 node scripts/social/run-scheduled-posts.js --once --dry-run --only-kind=all
+npm run social:video-insights -- --dry-run --since-days=14 --platforms=threads,instagram
+npm run social:video-pdca -- --write-feedback
 ```
 
 ## Render本番
 
-Threads / Instagram本番投稿はRender Cron JobまたはGitHub Actionsのクラウド実行だけで行います。現在のジョブ名、workflow名、実行時刻は `docs/sns-runbook.md` とクラウド設定で確認します。
+Threads / Instagram本番投稿はRender Cron Job、GitHub Actions、または許可済みローカルCodex常駐 / 予約実行で行います。現在のジョブ名、workflow名、実行時刻は `docs/sns-runbook.md` と実行環境設定で確認します。
 
 ```text
 SOCIAL_PLATFORMS=threads,instagram
 node scripts/social/run-scheduled-posts.js --once --only-kind=all
 ```
 
-ローカルWindowsのTask Scheduler、常駐PowerShell、ローカルdaemon、Codex実行中の一時プロセスはSNS運用に使いません。
+ローカルCodex常駐 / 予約は正式な自動投稿経路として許可します。実行時は `SOCIAL_LOCAL_CODEX_AUTOMATION=true` または `SOCIAL_CODEX_RESERVATION_ACTIVE=true` を明示し、実投稿には `SOCIAL_AUTOMATED_POSTING_ENABLED=true` も必要です。
+
+```powershell
+$env:SOCIAL_LOCAL_CODEX_AUTOMATION="true"
+$env:SOCIAL_AUTOMATED_POSTING_ENABLED="true"
+node scripts/social/run-scheduled-posts.js --daemon --only-kind=all
+```
 
 ## 手動投稿とプレビュー
 

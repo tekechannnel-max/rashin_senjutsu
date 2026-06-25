@@ -3,7 +3,10 @@ const fs = require('fs/promises');
 const path = require('path');
 const { spawn } = require('child_process');
 const { chromium } = require('playwright');
-const { birthdayMiniFamilyForDay } = require('./birthday-mini-family');
+const {
+  birthdayMiniAssetNameForDay,
+  birthdayMiniFamilyForDay,
+} = require('./birthday-mini-family');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const WIDTH = 1080;
@@ -203,7 +206,7 @@ const DEFAULT_POSTS = [
 
 const SOURCE_NOTES = Array.isArray(CONFIG.sourceNotes) ? CONFIG.sourceNotes : DEFAULT_SOURCE_NOTES;
 const AVOIDED_TOPICS = Array.isArray(CONFIG.avoidedTopics) ? CONFIG.avoidedTopics : DEFAULT_AVOIDED_TOPICS;
-const POSTS = Array.isArray(CONFIG.posts) ? CONFIG.posts : DEFAULT_POSTS;
+const POSTS = Array.isArray(CONFIG.posts) ? CONFIG.posts : DEFAULT_POSTS.filter(post => post.time !== '23:00');
 
 function miniPath(family) {
   return path.join(MINI_ROOT, `birthday-family-${family}-chibi.png`);
@@ -451,6 +454,35 @@ ${avoided}
 ${posts}`;
 }
 
+function topicTypeOf(post) {
+  return post.topicType || 'birthday_top5';
+}
+
+function normalizeBirthDay(value) {
+  const day = Number(value);
+  return Number.isInteger(day) && day >= 1 && day <= 31 ? day : null;
+}
+
+function miniCharacterEntry(day, rank) {
+  return {
+    rank,
+    day,
+    family: birthdayMiniFamilyForDay(day),
+    asset: birthdayMiniAssetNameForDay(day),
+  };
+}
+
+function miniCharacterReview(post) {
+  const type = topicTypeOf(post);
+  if (type === 'birthday_graph_1_31') {
+    return (post.graphDays || []).map((item, index) => miniCharacterEntry(item.day, index + 1));
+  }
+  if (type === 'birthday_day_aruaru' || type === 'birthday_day_manual') {
+    return [miniCharacterEntry(post.day, 1)];
+  }
+  return (post.rows || []).map(row => miniCharacterEntry(row.day, row.rank));
+}
+
 function draftApprovedManifest(outputs) {
   return {
     approvalStatus: 'draft',
@@ -464,6 +496,8 @@ function draftApprovedManifest(outputs) {
       kind: 'birthday_reel',
       date: TARGET_DATE,
       time: item.time,
+      topicType: item.topicType,
+      researchTarget: item.researchTarget,
       title: item.title,
       videoPath: rel(item.video),
       platforms: 'threads,instagram',
@@ -471,6 +505,7 @@ function draftApprovedManifest(outputs) {
       designReview: {
         screenshots: [rel(item.poster), rel(item.contact)],
         saveCueText: '保存していつでも思い出してください。',
+        miniCharacters: item.miniCharacters,
         checks: {
           safeArea: true,
           readability: true,
@@ -485,20 +520,48 @@ function draftApprovedManifest(outputs) {
 
 function validatePostData(post) {
   if (AVOIDED_TOPICS.includes(post.title)) throw new Error(`Duplicate topic blocked: ${post.title}`);
-  if (post.rows.length !== 5) throw new Error(`${post.title} must have 5 rows.`);
+  const type = topicTypeOf(post);
+  if (type === 'birthday_day_aruaru' || type === 'birthday_day_manual') {
+    const day = normalizeBirthDay(post.day);
+    if (!day) throw new Error(`${post.title} must set day from 1 to 31.`);
+    if (!Array.isArray(post.points) || post.points.length !== 5) throw new Error(`${post.title} must have 5 points.`);
+    birthdayMiniFamilyForDay(day);
+    return;
+  }
+  if (type === 'birthday_graph_1_31') {
+    if (!Array.isArray(post.graphDays) || post.graphDays.length !== 31) throw new Error(`${post.title} must cover all 31 graph days.`);
+    const days = post.graphDays.map(item => item.day);
+    for (let day = 1; day <= 31; day += 1) {
+      if (!days.includes(day)) throw new Error(`${post.title} graph is missing day ${day}.`);
+      birthdayMiniFamilyForDay(day);
+    }
+    return;
+  }
+  if (!Array.isArray(post.rows) || post.rows.length !== 5) throw new Error(`${post.title} must have 5 rows.`);
   const days = new Set();
   for (const row of post.rows) {
-    if (days.has(row.day)) throw new Error(`${post.title} has duplicate day: ${row.day}`);
-    days.add(row.day);
-    const family = birthdayMiniFamilyForDay(row.day);
-    if (family < 1 || family > 9) throw new Error(`${post.title} invalid mini family for ${row.day}`);
+    const day = normalizeBirthDay(row.day);
+    if (!day) throw new Error(`${post.title} has invalid day: ${row.day}`);
+    if (days.has(day)) throw new Error(`${post.title} has duplicate day: ${day}`);
+    days.add(day);
+    const family = birthdayMiniFamilyForDay(day);
+    if (family < 1 || family > 9) throw new Error(`${post.title} invalid mini family for ${day}`);
   }
 }
 
 async function recordPostVideo(page, post, miniAssets) {
+  const type = topicTypeOf(post);
   const renderPost = {
     ...post,
-    rows: post.rows.map(row => ({ ...row, miniFamily: birthdayMiniFamilyForDay(row.day) })),
+    topicType: type,
+    rows: Array.isArray(post.rows)
+      ? post.rows.map(row => ({ ...row, miniFamily: birthdayMiniFamilyForDay(row.day) }))
+      : [],
+    points: Array.isArray(post.points) ? post.points : [],
+    graphDays: Array.isArray(post.graphDays)
+      ? post.graphDays.map(item => ({ ...item, miniFamily: birthdayMiniFamilyForDay(item.day) }))
+      : [],
+    miniFamily: normalizeBirthDay(post.day) ? birthdayMiniFamilyForDay(post.day) : null,
   };
   return page.evaluate(async ({ post, miniAssets, width, height, fps, duration, recordSeconds }) => {
     const loadImage = src => new Promise((resolve, reject) => {
@@ -640,8 +703,13 @@ async function recordPostVideo(page, post, miniAssets) {
       ctx.fillRect(0, 0, width, height);
     }
 
-    function activeRank(t) {
-      return Math.min(5, Math.max(1, Math.floor((t % duration) / 2.25) + 1));
+    function topicType() {
+      return post.topicType || 'birthday_top5';
+    }
+
+    function activeRank(t, count = 5) {
+      const step = duration / Math.max(1, count);
+      return Math.min(count, Math.max(1, Math.floor((t % duration) / step) + 1));
     }
 
     function drawMini(image, x, y, w, h, t, intensity) {
@@ -663,7 +731,33 @@ async function recordPostVideo(page, post, miniAssets) {
       fillRound(760, 60, 262, 46, 8, 'rgba(255,255,255,.78)', { color: 'rgba(21,45,42,.10)', blur: 14, y: 7 });
       text('保存用 誕生日数', 805, 72, 23, '900', theme.ink, 190);
       fillRound(58, 132, 112, 48, 8, theme.ink, { color: 'rgba(21,45,42,.15)', blur: 16, y: 8 });
-      text('TOP5', 86, 144, 24, '900', '#fff', 82);
+      const chromeLabel = topicType() === 'birthday_graph_1_31'
+        ? '1-31'
+        : topicType() === 'birthday_day_manual'
+          ? 'GUIDE'
+          : topicType() === 'birthday_day_aruaru'
+            ? 'DAY'
+            : 'TOP5';
+      text(chromeLabel, 76, 144, 22, '900', '#fff', 92);
+      fillRound(192, 126, 390, 62, 8, 'rgba(255,255,255,.84)', { color: 'rgba(21,45,42,.12)', blur: 15, y: 8 });
+      text('自分の誕生日ある？', 218, 144, 30, '900', theme.ink, 330);
+      const chromeRows = topicType() === 'birthday_graph_1_31'
+        ? post.graphDays.slice(0, 5).map(item => ({ ...item, rank: item.day }))
+        : topicType() === 'birthday_day_aruaru' || topicType() === 'birthday_day_manual'
+          ? [{ rank: 1, day: post.day }]
+          : post.rows;
+      chromeRows.forEach((row, index) => {
+        const x = 612 + index * 78;
+        const active = activeRank(t) === row.rank || (topicType() !== 'birthday_top5' && index === 0);
+        const lift = Math.sin(t * 2.2 + index * 0.62) * 2;
+        fillRound(x, 126 + lift, 62, 62, 8, color(theme.accent, active ? 0.98 : 0.82), {
+          color: color(theme.accent, active ? 0.36 : 0.18),
+          blur: active ? 22 : 12,
+          y: 7,
+        });
+        text(String(row.day), x + (row.day >= 10 ? 9 : 17), 138 + lift, 29, '900', '#fff', 34);
+        text('日', x + 39, 144 + lift, 19, '900', '#fff', 18);
+      });
       const progress = Math.min(1, Math.max(0, t / duration));
       fillRound(104, 1628, 872, 5, 3, color(theme.ink, 0.12));
       fillRound(104, 1628, 872 * progress, 5, 3, color(theme.accent, 0.96));
@@ -689,7 +783,7 @@ async function recordPostVideo(page, post, miniAssets) {
 
     function drawTopCard(row, t) {
       const theme = post.theme;
-      const y = 470;
+      const y = 456;
       const pulse = 0.5 + Math.sin(t * 2.4) * 0.5;
       fillRound(58, y, 964, 210, 8, 'rgba(255,255,255,.94)', { color: 'rgba(21,45,42,.16)', blur: 24, y: 13 });
       strokeRound(58, y, 964, 210, 8, color(theme.accent, 0.72), 4);
@@ -704,7 +798,7 @@ async function recordPostVideo(page, post, miniAssets) {
     function drawCompactCard(row, index, t) {
       const theme = post.theme;
       const active = activeRank(t) === row.rank;
-      const y = 710 + index * 146;
+      const y = 696 + index * 142;
       fillRound(78, y, 924, 132, 8, 'rgba(255,255,255,.92)', { color: 'rgba(21,45,42,.11)', blur: 18, y: 8 });
       strokeRound(78, y, 924, 132, 8, color(theme.accent, active ? 0.62 : 0.14), active ? 3 : 1.4);
       if (active) fillRound(86, y + 8, 908, 7, 4, color(theme.accent, 0.74));
@@ -715,9 +809,63 @@ async function recordPostVideo(page, post, miniAssets) {
       wrapped(row.reason, 280, y + 66, 660, 21, '850', '#203e50', 28, 2);
     }
 
+    function drawTop5Content(t) {
+      drawTopCard(post.rows[0], t);
+      post.rows.slice(1).forEach((row, index) => drawCompactCard(row, index, t));
+    }
+
+    function drawSingleDayContent(t) {
+      const theme = post.theme;
+      const day = post.day;
+      const family = post.miniFamily || 1;
+      fillRound(58, 456, 964, 256, 8, 'rgba(255,255,255,.94)', { color: 'rgba(21,45,42,.16)', blur: 24, y: 13 });
+      strokeRound(58, 456, 964, 256, 8, color(theme.accent, 0.64), 4);
+      fillRound(92, 488, 176, 176, 8, color(theme.accent, 0.96), { color: color(theme.accent, 0.30), blur: 24, y: 8 });
+      text(String(day).padStart(2, '0'), 119, 518, 76, '900', '#fff', 120);
+      text('DAY', 134, 604, 27, '900', '#fff', 84);
+      drawMini(images[family], 316, 484, 150, 190, t, 1.05);
+      wrapped(post.lead, 500, 506, 450, 31, '900', '#1f3740', 44, 3);
+      post.points.forEach((point, index) => {
+        const active = activeRank(t) === point.rank;
+        const y = 724 + index * 102;
+        fillRound(78, y, 924, 96, 8, 'rgba(255,255,255,.92)', { color: 'rgba(21,45,42,.10)', blur: 14, y: 7 });
+        strokeRound(78, y, 924, 96, 8, color(theme.accent, active ? 0.58 : 0.14), active ? 3 : 1.2);
+        fillRound(104, y + 20, 58, 58, 8, color(theme.accent, 0.94));
+        text(String(point.rank), 123, y + 34, 26, '900', '#fff', 30);
+        wrapped(point.text, 192, y + 22, 740, 25, '900', '#203e50', 33, 2);
+      });
+    }
+
+    function drawGraphContent(t) {
+      const theme = post.theme;
+      const days = post.graphDays || [];
+      fillRound(58, 456, 964, 830, 8, 'rgba(255,255,255,.94)', { color: 'rgba(21,45,42,.14)', blur: 22, y: 12 });
+      strokeRound(58, 456, 964, 830, 8, color(theme.accent, 0.38), 3);
+      const cols = 4;
+      const cellW = 220;
+      const cellH = 90;
+      const startX = 88;
+      const startY = 494;
+      days.forEach((item, index) => {
+        const col = index % cols;
+        const row = Math.floor(index / cols);
+        const x = startX + col * 232;
+        const y = startY + row * cellH;
+        const active = activeRank(t, 31) === item.day;
+        fillRound(x, y, cellW, 72, 8, active ? color(theme.accent, 0.12) : 'rgba(255,255,255,.72)');
+        text(String(item.day).padStart(2, '0'), x + 12, y + 12, 27, '900', theme.accent, 44);
+        text('日', x + 52, y + 18, 17, '900', color(theme.ink, 0.64), 22);
+        fillRound(x + 82, y + 18, 108, 12, 6, color(theme.ink, 0.10));
+        fillRound(x + 82, y + 18, Math.max(18, item.score), 12, 6, color(theme.accent2, active ? 0.95 : 0.72));
+        text(item.label, x + 82, y + 38, 19, '900', color(theme.ink, 0.78), 106);
+      });
+      fillRound(82, 1218, 916, 42, 8, color(theme.ink, 0.94));
+      text('1日〜31日を全件表示。自分と周りの生まれ日を探して保存。', 118, 1228, 23, '900', '#fff', 820);
+    }
+
     function drawSummary() {
       const theme = post.theme;
-      const y = 1316;
+      const y = 1282;
       fillRound(58, y, 964, 124, 8, color(theme.ink, 0.98), { color: 'rgba(21,45,42,.21)', blur: 24, y: 12 });
       fillRound(82, y + 28, 112, 68, 8, color(theme.glow, 0.18));
       text('一言で', 105, y + 39, 24, '900', '#ffe89d', 82);
@@ -727,7 +875,7 @@ async function recordPostVideo(page, post, miniAssets) {
 
     function drawSaveCue() {
       const theme = post.theme;
-      const y = 1472;
+      const y = 1434;
       fillRound(78, y, 924, 128, 8, 'rgba(255,255,255,.98)', { color: 'rgba(21,45,42,.15)', blur: 18, y: 9 });
       strokeRound(78, y, 924, 128, 8, color(theme.accent, 0.28));
       fillRound(120, y + 28, 56, 70, 8, color(theme.accent, 0.96));
@@ -754,8 +902,13 @@ async function recordPostVideo(page, post, miniAssets) {
       drawBackground(t);
       drawChrome(t);
       drawTitle(t);
-      drawTopCard(post.rows[0], t);
-      post.rows.slice(1).forEach((row, index) => drawCompactCard(row, index, t));
+      if (topicType() === 'birthday_graph_1_31') {
+        drawGraphContent(t);
+      } else if (topicType() === 'birthday_day_aruaru' || topicType() === 'birthday_day_manual') {
+        drawSingleDayContent(t);
+      } else {
+        drawTop5Content(t);
+      }
       drawSummary();
       drawSaveCue();
       text('Instagram Reels 9:16', 812, 1668, 21, '900', 'rgba(21,45,42,.45)', 220);
@@ -851,18 +1004,25 @@ async function main() {
       await writeShot(page, contactHtml(post.title, frames), contact, 1900, 1180);
       const metadata = await inspectVideo(video);
       const captions = captionsFor(post);
+      const miniCharacters = miniCharacterReview(post);
       outputs.push({
         time: post.time,
+        topicType: topicTypeOf(post),
+        researchTarget: post.researchTarget || '',
         title: post.title,
         slug: post.slug,
         sourceUrl: post.sourceUrl,
+        day: post.day || null,
+        points: post.points || [],
+        graphDays: post.graphDays || [],
         video,
         poster,
         preview,
         contact,
         frames,
         captions,
-        rows: post.rows.map(row => ({
+        miniCharacters,
+        rows: (post.rows || []).map(row => ({
           ...row,
           miniFamily: birthdayMiniFamilyForDay(row.day),
         })),
@@ -886,6 +1046,7 @@ async function main() {
       rulesApplied: [
         'No posting, scheduling, deletion, reposting, or public URL creation before the post approval gate.',
         'Research source is used only as a topic pattern source, not as copied caption, ranking, image, or video.',
+        'Daily night reel topics cover birthday_day_aruaru/manual, birthday_graph_1_31, and birthday_top5 without a 23:00 daily reel slot.',
         'Night lane outputs are MP4 videos for Instagram Reels and Threads video.',
         'Threads captions use exactly one hashtag.',
         'Mini character family is selected only by birthday-mini-family.js.',

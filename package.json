@@ -21,6 +21,8 @@
     "social:instagram:assets": "node scripts/social/generate-instagram-assets.js",
     "social:instagram:birthday": "node scripts/social/generate-birthday-instagram-posts.js",
     "social:kpi-template": "node scripts/social/prepare-kpi-review.js",
+    "social:video-insights": "node scripts/social/collect-video-insights.js",
+    "social:video-pdca": "node scripts/social/analyze-video-pdca.js",
     "social:run-due": "node scripts/social/run-scheduled-posts.js --once",
     "social:auto-prepare-reels": "node scripts/social/auto-prepare-approved-reels.js",
     "social:guard": "node scripts/social/validate-social-pipeline-guardrails.js",

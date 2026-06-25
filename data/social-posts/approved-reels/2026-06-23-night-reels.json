@@ -186,66 +186,6 @@
         ]
       },
       "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-23/funiki-hikitsukeru-top5/funiki-hikitsukeru-top5.mp4"
-    },
-    {
-      "id": "birthday_reel_20260623_2300_nakayoku_naruto_kawaru_top5",
-      "kind": "birthday_reel",
-      "date": "2026-06-23",
-      "time": "23:00",
-      "title": "仲良くなると印象が変わる生まれ日TOP5",
-      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-23/nakayoku-naruto-kawaru-top5/nakayoku-naruto-kawaru-top5.mp4",
-      "platforms": "threads,instagram",
-      "captions": {
-        "instagram": "＼無料占いはプロフィールURLから／\n\n仲良くなると印象が変わる生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
-        "threads": "無料占いはプロフィールURLから👀✨\n\n仲良くなると印象が変わる生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
-      },
-      "designReview": {
-        "screenshots": [
-          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-23/nakayoku-naruto-kawaru-top5/nakayoku-naruto-kawaru-top5-poster.jpg",
-          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-23/nakayoku-naruto-kawaru-top5/nakayoku-naruto-kawaru-top5-contact.jpg"
-        ],
-        "saveCueText": "保存していつでも思い出してください。",
-        "checks": {
-          "safeArea": true,
-          "readability": true,
-          "noTextPatternOverlap": true,
-          "saveCue": true,
-          "minicharaByNumber": true
-        },
-        "miniCharacters": [
-          {
-            "rank": 1,
-            "day": 16,
-            "family": 7,
-            "asset": "birthday-family-7-chibi.png"
-          },
-          {
-            "rank": 2,
-            "day": 7,
-            "family": 7,
-            "asset": "birthday-family-7-chibi.png"
-          },
-          {
-            "rank": 3,
-            "day": 25,
-            "family": 7,
-            "asset": "birthday-family-7-chibi.png"
-          },
-          {
-            "rank": 4,
-            "day": 5,
-            "family": 5,
-            "asset": "birthday-family-5-chibi.png"
-          },
-          {
-            "rank": 5,
-            "day": 14,
-            "family": 5,
-            "asset": "birthday-family-5-chibi.png"
-          }
-        ]
-      },
-      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-23/nakayoku-naruto-kawaru-top5/nakayoku-naruto-kawaru-top5.mp4"
     }
   ]
 }

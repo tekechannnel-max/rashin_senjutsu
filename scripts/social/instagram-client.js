@@ -163,16 +163,16 @@ function ensureCarouselImageUrls(imageUrls) {
   return ensureCarouselMediaItems(imageUrls).map(item => item.url);
 }
 
-function ensureCarouselMediaItems(mediaItems, altTexts = []) {
-  return ensureCarouselImageUrls(mediaItems).map((url, index) => ({
-    type: 'IMAGE',
-    url,
-    altText: normalizeAltText(Array.isArray(altTexts) ? altTexts[index] || '' : ''),
-  }));
+function getHttpTimeoutMs(options = {}) {
+  return Number(options.timeoutMs || process.env.SOCIAL_HTTP_TIMEOUT_MS || 60000);
 }
 
 async function requestJson(url, options = {}) {
-  const res = await fetch(url, options);
+  const { timeoutMs: _timeoutMs, ...requestOptions } = options;
+  const res = await fetch(url, {
+    ...requestOptions,
+    signal: requestOptions.signal || AbortSignal.timeout(getHttpTimeoutMs(options)),
+  });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
     const message = json?.error?.message || json?.message || JSON.stringify(json);
@@ -223,6 +223,28 @@ async function getInstagramMedia(mediaId, credentials = null) {
     access_token: creds.accessToken,
   });
   return requestJson(`${creds.graphBase}/${encodeURIComponent(mediaId)}?${params.toString()}`);
+}
+
+function normalizeMetricList(metrics, fallback) {
+  const source = Array.isArray(metrics) ? metrics : String(metrics || fallback || '').split(',');
+  return source.map(metric => String(metric || '').trim()).filter(Boolean);
+}
+
+async function getInstagramMediaInsights(mediaId, { metrics = null, period = '', credentials = null } = {}) {
+  const creds = credentials || getInstagramCredentials();
+  requireInstagramCredentials(creds);
+  const metricList = normalizeMetricList(
+    metrics,
+    process.env.INSTAGRAM_REELS_INSIGHT_METRICS || 'views,reach,likes,comments,saved,shares,total_interactions'
+  );
+  if (!metricList.length) throw new Error('Instagram insight metrics are empty.');
+  const params = new URLSearchParams({
+    metric: metricList.join(','),
+    access_token: creds.accessToken,
+  });
+  const normalizedPeriod = String(period || process.env.INSTAGRAM_REELS_INSIGHT_PERIOD || '').trim();
+  if (normalizedPeriod) params.set('period', normalizedPeriod);
+  return requestJson(`${creds.graphBase}/${encodeURIComponent(mediaId)}/insights?${params.toString()}`);
 }
 
 async function getInstagramContainerStatus(containerId, credentials = null) {
@@ -420,6 +442,7 @@ module.exports = {
   getInstagramMe,
   listInstagramMedia,
   getInstagramMedia,
+  getInstagramMediaInsights,
   getInstagramContainerStatus,
   waitForInstagramContainer,
   assertExpectedInstagramAccount,
