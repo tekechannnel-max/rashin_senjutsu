@@ -1,0 +1,249 @@
+{
+  "date": "2026-06-27",
+  "reviewTitle": "2026-06-27 夜枠 誕生日リール自動生成候補",
+  "sourceNotes": [
+    {
+      "sourceAccount": "Instagram Creators / Meta",
+      "sourceUrl": "https://creators.instagram.com/grow/algorithms-and-ranking?locale=en_GB",
+      "observedPattern": "Instagramのランキングは視聴維持・反応・シェアされやすさを強く見るため、短く分かる1テーマ構成にする。",
+      "usedAs": "毎日リールの設計原則",
+      "transformationNote": "広告色を強めず、保存したくなる自己理解Top5として再構成する。",
+      "duplicateCheck": "外部投稿本文・画像・ランキングはコピーせず、羅針占術の誕生日数Top5へ変換する。"
+    },
+    {
+      "sourceAccount": "Meta Transparency Center",
+      "sourceUrl": "https://transparency.meta.com/features/explaining-ranking/ig-reels-chaining/",
+      "observedPattern": "Reels面は次に見たい可能性が高い動画を予測して並べるため、冒頭で内容がすぐ分かる構成を優先する。",
+      "usedAs": "タイトル・リードの設計根拠",
+      "transformationNote": "1枚目で「自分の誕生日があるか」を即確認できる見出しにする。",
+      "duplicateCheck": "トレンド音源や他者動画素材には依存しない。"
+    },
+    {
+      "sourceAccount": "羅針占術 internal",
+      "sourceUrl": "docs/sns-runbook.md",
+      "observedPattern": "Threads + Instagram、InstagramはReels、Threadsは動画投稿。木曜20:00は比較カルーセル優先。",
+      "usedAs": "2026-06-27 の投稿時刻と媒体制約",
+      "transformationNote": "木曜は21:00以降だけ、他曜日は20:00から23:00の承認済みリールにする。",
+      "duplicateCheck": "承認済みmanifestと投稿済みledgerの既存タイトルを避ける。"
+    }
+  ],
+  "avoidedTopics": [
+    "心を開くまで慎重な生まれ日TOP5",
+    "返信待ちでそわそわする生まれ日TOP5",
+    "私生活が謎に見られがちな生まれ日TOP5",
+    "一度決めたら引かない生まれ日TOP5",
+    "人前で弱音を見せにくい生まれ日TOP5",
+    "場の温度を整えがちな生まれ日TOP5",
+    "雰囲気で惹きつける生まれ日TOP5",
+    "仲良くなると印象が変わる生まれ日TOP5",
+    "気持ちの切り替えが早い生まれ日TOP5",
+    "言葉より行動で示す生まれ日TOP5",
+    "実は照れ屋な生まれ日TOP5",
+    "ひとり時間で回復する生まれ日TOP5",
+    "距離感を大切にする生まれ日TOP5",
+    "頼られると燃える生まれ日TOP5",
+    "褒められると伸びる生まれ日TOP5",
+    "変化の前に静かになる生まれ日TOP5",
+    "直感で危険を避ける生まれ日TOP5",
+    "大事な人ほど遠慮する生まれ日TOP5",
+    "急にスイッチが入る生まれ日TOP5",
+    "勢いで予定を決めがちな生まれ日TOP5",
+    "甘え下手な生まれ日TOP5",
+    "限界まで助けを呼ばない生まれ日TOP5",
+    "本当は希望があるのに合わせがちな生まれ日TOP5"
+  ],
+  "posts": [
+    {
+      "time": "20:00",
+      "slug": "honne-materu-top5",
+      "title": "相手の本音を待てる生まれ日TOP5",
+      "titleLines": [
+        "相手の本音を待てる",
+        "生まれ日TOP5"
+      ],
+      "lead": "急かさずに、話せるタイミングまで待つことができるタイプ",
+      "sourceUrl": "https://creators.instagram.com/grow/algorithms-and-ranking?locale=en_GB",
+      "theme": {
+        "accent": "#2d6f86",
+        "accent2": "#b76a3b",
+        "ink": "#17323c",
+        "bg1": "#eef7fb",
+        "bg2": "#fffdf8",
+        "bg3": "#e8ecd8",
+        "glow": "#d7efff"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 7,
+          "reason": "急かさず待てる余裕が特に出やすい日です。相手が迷っている場面でも、相手のタイミングを大切にできます。"
+        },
+        {
+          "rank": 2,
+          "day": 16,
+          "reason": "一見ゆっくりでも観察は細かいです。必要な時だけ、待つことで支える流れを作れます。"
+        },
+        {
+          "rank": 3,
+          "day": 25,
+          "reason": "無理に目立たなくても伝わります。近くの人ほど、あとから話しやすさが効いてきます。"
+        },
+        {
+          "rank": 4,
+          "day": 4,
+          "reason": "気持ちを整理してから動くタイプです。勢いより、相手のタイミングを大切にします。"
+        },
+        {
+          "rank": 5,
+          "day": 22,
+          "reason": "表では控えめでも芯があります。大事な場面で待つことで支える力が出やすい日です。"
+        }
+      ],
+      "summary": "本音を待てる日は、聞き出すよりも話したくなる空気を作ります。"
+    },
+    {
+      "time": "21:00",
+      "slug": "pressure-shuchu-agaru-top5",
+      "title": "プレッシャーで集中力が上がる生まれ日TOP5",
+      "titleLines": [
+        "プレッシャーで集中力が上がる",
+        "生まれ日TOP5"
+      ],
+      "lead": "追い込まれるほど、余計な迷いが消えて力を出しやすいタイプ",
+      "sourceUrl": "https://creators.instagram.com/grow/algorithms-and-ranking?locale=en_GB",
+      "theme": {
+        "accent": "#7a4f2b",
+        "accent2": "#2f7f63",
+        "ink": "#2b2118",
+        "bg1": "#fff7ec",
+        "bg2": "#f8fbef",
+        "bg3": "#e4f0ec",
+        "glow": "#ffe6a8"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 6,
+          "reason": "重さを力に変える集中力が特に出やすい日です。期限や期待が近い場面でも、集中の深さを大切にできます。"
+        },
+        {
+          "rank": 2,
+          "day": 24,
+          "reason": "一見ゆっくりでも観察は細かいです。必要な時だけ、必要なことに絞る流れを作れます。"
+        },
+        {
+          "rank": 3,
+          "day": 1,
+          "reason": "無理に目立たなくても伝わります。近くの人ほど、あとからやり切る力が効いてきます。"
+        },
+        {
+          "rank": 4,
+          "day": 31,
+          "reason": "気持ちを整理してから動くタイプです。勢いより、集中の深さを大切にします。"
+        },
+        {
+          "rank": 5,
+          "day": 8,
+          "reason": "表では控えめでも芯があります。大事な場面で必要なことに絞る力が出やすい日です。"
+        }
+      ],
+      "summary": "プレッシャーに強い日は、重さを力に変える集中の入り方ができます。"
+    },
+    {
+      "time": "22:00",
+      "slug": "iinizurai-maruku-tsutaeru-top5",
+      "title": "言いにくいことを丸く伝える生まれ日TOP5",
+      "titleLines": [
+        "言いにくいことを丸く伝える",
+        "生まれ日TOP5"
+      ],
+      "lead": "正直さを失わず、相手が受け取りやすい形に整えるタイプ",
+      "sourceUrl": "docs/sns-runbook.md",
+      "theme": {
+        "accent": "#315f7d",
+        "accent2": "#b65b5b",
+        "ink": "#172a3a",
+        "bg1": "#eef6ff",
+        "bg2": "#fffaf5",
+        "bg3": "#ece8f6",
+        "glow": "#dceeff"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 23,
+          "reason": "角を立てない言葉選びが特に出やすい日です。本音を伝える必要がある場面でも、関係を守る正直さを大切にできます。"
+        },
+        {
+          "rank": 2,
+          "day": 9,
+          "reason": "一見ゆっくりでも観察は細かいです。必要な時だけ、言葉を整える流れを作れます。"
+        },
+        {
+          "rank": 3,
+          "day": 18,
+          "reason": "無理に目立たなくても伝わります。近くの人ほど、あとから受け取りやすさが効いてきます。"
+        },
+        {
+          "rank": 4,
+          "day": 5,
+          "reason": "気持ちを整理してから動くタイプです。勢いより、関係を守る正直さを大切にします。"
+        },
+        {
+          "rank": 5,
+          "day": 14,
+          "reason": "表では控えめでも芯があります。大事な場面で言葉を整える力が出やすい日です。"
+        }
+      ],
+      "summary": "丸く伝える日は、遠回しではなく関係を壊さない言葉選びができます。"
+    },
+    {
+      "time": "23:00",
+      "slug": "kitai-nerareru-top5",
+      "title": "期待されると粘れる生まれ日TOP5",
+      "titleLines": [
+        "期待されると粘れる",
+        "生まれ日TOP5"
+      ],
+      "lead": "見られていると緊張しながらも、最後まで踏ん張れるタイプ",
+      "sourceUrl": "docs/sns-runbook.md",
+      "theme": {
+        "accent": "#596c2f",
+        "accent2": "#b85f40",
+        "ink": "#202816",
+        "bg1": "#f5faec",
+        "bg2": "#fffdf7",
+        "bg3": "#e8f0f6",
+        "glow": "#ecf7b7"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 30,
+          "reason": "期待を力にする粘りが特に出やすい日です。任された場面でも、信頼に応えることを大切にできます。"
+        },
+        {
+          "rank": 2,
+          "day": 10,
+          "reason": "一見ゆっくりでも観察は細かいです。必要な時だけ、もう一歩粘る流れを作れます。"
+        },
+        {
+          "rank": 3,
+          "day": 3,
+          "reason": "無理に目立たなくても伝わります。近くの人ほど、あとから最後まで整える力が効いてきます。"
+        },
+        {
+          "rank": 4,
+          "day": 12,
+          "reason": "気持ちを整理してから動くタイプです。勢いより、信頼に応えることを大切にします。"
+        },
+        {
+          "rank": 5,
+          "day": 21,
+          "reason": "表では控えめでも芯があります。大事な場面でもう一歩粘る力が出やすい日です。"
+        }
+      ],
+      "summary": "期待で粘れる日は、重く受け止めすぎず力に変えるほど伸びます。"
+    }
+  ]
+}
