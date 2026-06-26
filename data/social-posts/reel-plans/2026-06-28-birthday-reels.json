@@ -1,0 +1,349 @@
+{
+  "date": "2026-06-28",
+  "reviewTitle": "2026-06-28 夜枠 誕生日リール自動生成候補",
+  "sourceNotes": [
+    {
+      "sourceAccount": "Instagram Creators / Meta",
+      "sourceUrl": "https://creators.instagram.com/grow/algorithms-and-ranking?locale=en_GB",
+      "observedPattern": "Instagramのランキングは視聴維持・反応・シェアされやすさを強く見るため、短く分かる1テーマ構成にする。",
+      "usedAs": "毎日リールの設計原則",
+      "transformationNote": "広告色を強めず、保存したくなる自己理解Top5として再構成する。",
+      "duplicateCheck": "外部投稿本文・画像・ランキングはコピーせず、羅針占術の誕生日数Top5へ変換する。"
+    },
+    {
+      "sourceAccount": "Meta Transparency Center",
+      "sourceUrl": "https://transparency.meta.com/features/explaining-ranking/ig-reels-chaining/",
+      "observedPattern": "Reels面は次に見たい可能性が高い動画を予測して並べるため、冒頭で内容がすぐ分かる構成を優先する。",
+      "usedAs": "タイトル・リードの設計根拠",
+      "transformationNote": "1枚目で「自分の誕生日があるか」を即確認できる見出しにする。",
+      "duplicateCheck": "トレンド音源や他者動画素材には依存しない。"
+    },
+    {
+      "sourceAccount": "羅針占術 internal",
+      "sourceUrl": "docs/sns-runbook.md",
+      "observedPattern": "Threads + Instagram、InstagramはReels、Threadsは動画投稿。木曜20:00は比較カルーセル優先。",
+      "usedAs": "2026-06-28 の投稿時刻と媒体制約",
+      "transformationNote": "木曜20:00は比較カルーセル優先。日次リールは木曜21:00/22:00、他曜日20:00/21:00/22:00だけにする。",
+      "duplicateCheck": "承認済みmanifestと投稿済みledgerの既存タイトルを避ける。"
+    },
+    {
+      "sourceAccount": "羅針占術 video insights PDCA",
+      "sourceUrl": "data/social-posts/pdca/video-insights-feedback.json",
+      "observedPattern": "投稿済み動画の保存・シェア・返信/コメント・プロフィール訪問をスコア化し、次回のリサーチ候補順へ反映する。",
+      "usedAs": "2026-06-28 のネタ型と投稿時刻の改善材料",
+      "transformationNote": "必須3系統は維持し、強かったネタ型を早い枠へ寄せる。",
+      "duplicateCheck": "PDCAは型と時刻の優先度だけに使い、本文・順位・画像・動画はコピーしない。"
+    }
+  ],
+  "pdcaFeedback": null,
+  "requiredResearchTargets": [
+    "生まれ日あるある/取説: 1日〜31日のいずれかを毎日自動選定",
+    "生まれ日グラフ: 1日〜31日を毎回すべて網羅",
+    "○○な生まれ日TOP5: 木曜20時以外の20時枠で自動選定"
+  ],
+  "avoidedTopics": [
+    "心を開くまで慎重な生まれ日TOP5",
+    "返信待ちでそわそわする生まれ日TOP5",
+    "私生活が謎に見られがちな生まれ日TOP5",
+    "一度決めたら引かない生まれ日TOP5",
+    "人前で弱音を見せにくい生まれ日TOP5",
+    "場の温度を整えがちな生まれ日TOP5",
+    "雰囲気で惹きつける生まれ日TOP5",
+    "仲良くなると印象が変わる生まれ日TOP5",
+    "気持ちの切り替えが早い生まれ日TOP5",
+    "言葉より行動で示す生まれ日TOP5",
+    "実は照れ屋な生まれ日TOP5",
+    "ひとり時間で回復する生まれ日TOP5",
+    "距離感を大切にする生まれ日TOP5",
+    "頼られると燃える生まれ日TOP5",
+    "褒められると伸びる生まれ日TOP5",
+    "変化の前に静かになる生まれ日TOP5",
+    "直感で危険を避ける生まれ日TOP5",
+    "大事な人ほど遠慮する生まれ日TOP5",
+    "急にスイッチが入る生まれ日TOP5",
+    "相手の本音を待てる生まれ日TOP5",
+    "12日生まれ取説5選",
+    "生まれ日グラフ1日〜31日",
+    "勢いで予定を決めがちな生まれ日TOP5",
+    "甘え下手な生まれ日TOP5",
+    "限界まで助けを呼ばない生まれ日TOP5"
+  ],
+  "posts": [
+    {
+      "time": "20:00",
+      "topicType": "birthday_top5",
+      "researchTarget": "birthday_top5",
+      "slug": "samishisa-egao-kakusu-top5",
+      "title": "寂しさを笑顔で隠す生まれ日TOP5",
+      "titleLines": [
+        "寂しさを笑顔で隠す",
+        "生まれ日TOP5"
+      ],
+      "lead": "平気な顔で場を保ちながら、本当は少し寄り添ってほしいタイプ",
+      "sourceUrl": "https://www.instagram.com/uranai.kitsune/?hl=ja",
+      "theme": {
+        "accent": "#3c6d58",
+        "accent2": "#8f5b2d",
+        "ink": "#17281f",
+        "bg1": "#eef9f2",
+        "bg2": "#fffaf1",
+        "bg3": "#e7edf7",
+        "glow": "#d9f3dd"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 6,
+          "reason": "強がりの奥にある素直さが特に出やすい日です。本当は寂しい場面でも、気づいてくれる人を大切にできます。"
+        },
+        {
+          "rank": 2,
+          "day": 15,
+          "reason": "一見ゆっくりでも観察は細かいです。必要な時だけ、笑顔で場を保つ流れを作れます。"
+        },
+        {
+          "rank": 3,
+          "day": 24,
+          "reason": "無理に目立たなくても伝わります。近くの人ほど、あとから気づいてほしいサインが効いてきます。"
+        },
+        {
+          "rank": 4,
+          "day": 2,
+          "reason": "気持ちを整理してから動くタイプです。勢いより、気づいてくれる人を大切にします。"
+        },
+        {
+          "rank": 5,
+          "day": 11,
+          "reason": "表では控えめでも芯があります。大事な場面で笑顔で場を保つ力が出やすい日です。"
+        }
+      ],
+      "summary": "寂しさを隠す日は、強がりの奥に気づいてくれる人を大切にします。"
+    },
+    {
+      "time": "21:00",
+      "topicType": "birthday_day_aruaru",
+      "researchTarget": "birthday_day_aruaru_manual",
+      "slug": "birthday-day-aruaru-05-20260628",
+      "title": "5日生まれあるある5選",
+      "titleLines": [
+        "5日生まれ",
+        "あるある5選"
+      ],
+      "lead": "その日に生まれた人が出しやすい反応を、保存しやすい5つのあるあるに整理します。",
+      "sourceUrl": "https://www.instagram.com/uranai.kitsune/?hl=ja",
+      "theme": {
+        "accent": "#6b5f2b",
+        "accent2": "#3e7893",
+        "ink": "#292612",
+        "bg1": "#fbf8e8",
+        "bg2": "#fffdf7",
+        "bg3": "#e5f1f6",
+        "glow": "#fff0aa"
+      },
+      "day": 5,
+      "points": [
+        {
+          "rank": 1,
+          "text": "頼られると強いですが、雑に任されると急に距離を置きます。"
+        },
+        {
+          "rank": 2,
+          "text": "予定変更には弱く見えても、理由がわかると切り替えが早いです。"
+        },
+        {
+          "rank": 3,
+          "text": "好きなことには集中が深く、時間の感覚が薄くなりやすいです。"
+        },
+        {
+          "rank": 4,
+          "text": "感謝は言葉より行動で返そうとする傾向があります。"
+        },
+        {
+          "rank": 5,
+          "text": "大事な人ほど遠慮して、あとから気持ちを出すことがあります。"
+        }
+      ],
+      "summary": "この日の人は、無理に目立つよりも自分の反応の癖を知るほど動きやすくなります。"
+    },
+    {
+      "time": "22:00",
+      "topicType": "birthday_graph_1_31",
+      "researchTarget": "birthday_graph_all_days",
+      "slug": "birthday-graph-1-31-20260628",
+      "title": "生まれ日グラフ 1日〜31日",
+      "titleLines": [
+        "生まれ日グラフ",
+        "1日〜31日ぜんぶ"
+      ],
+      "lead": "1日から31日までを1本で見られるように、保存向けのグラフ動画にします。",
+      "sourceUrl": "https://www.instagram.com/uranai.kitsune/?hl=ja",
+      "theme": {
+        "accent": "#7a3f50",
+        "accent2": "#406f34",
+        "ink": "#2d1920",
+        "bg1": "#fff0f2",
+        "bg2": "#fffdf7",
+        "bg3": "#edf5e8",
+        "glow": "#ffd6dc"
+      },
+      "graphDays": [
+        {
+          "day": 1,
+          "score": 84,
+          "label": "直感"
+        },
+        {
+          "day": 2,
+          "score": 51,
+          "label": "行動"
+        },
+        {
+          "day": 3,
+          "score": 79,
+          "label": "安心"
+        },
+        {
+          "day": 4,
+          "score": 46,
+          "label": "集中"
+        },
+        {
+          "day": 5,
+          "score": 74,
+          "label": "調整"
+        },
+        {
+          "day": 6,
+          "score": 41,
+          "label": "共感"
+        },
+        {
+          "day": 7,
+          "score": 69,
+          "label": "挑戦"
+        },
+        {
+          "day": 8,
+          "score": 97,
+          "label": "直感"
+        },
+        {
+          "day": 9,
+          "score": 87,
+          "label": "行動"
+        },
+        {
+          "day": 10,
+          "score": 54,
+          "label": "安心"
+        },
+        {
+          "day": 11,
+          "score": 82,
+          "label": "集中"
+        },
+        {
+          "day": 12,
+          "score": 49,
+          "label": "調整"
+        },
+        {
+          "day": 13,
+          "score": 77,
+          "label": "共感"
+        },
+        {
+          "day": 14,
+          "score": 44,
+          "label": "挑戦"
+        },
+        {
+          "day": 15,
+          "score": 72,
+          "label": "直感"
+        },
+        {
+          "day": 16,
+          "score": 39,
+          "label": "行動"
+        },
+        {
+          "day": 17,
+          "score": 67,
+          "label": "安心"
+        },
+        {
+          "day": 18,
+          "score": 57,
+          "label": "集中"
+        },
+        {
+          "day": 19,
+          "score": 85,
+          "label": "調整"
+        },
+        {
+          "day": 20,
+          "score": 52,
+          "label": "共感"
+        },
+        {
+          "day": 21,
+          "score": 80,
+          "label": "挑戦"
+        },
+        {
+          "day": 22,
+          "score": 47,
+          "label": "直感"
+        },
+        {
+          "day": 23,
+          "score": 75,
+          "label": "行動"
+        },
+        {
+          "day": 24,
+          "score": 42,
+          "label": "安心"
+        },
+        {
+          "day": 25,
+          "score": 70,
+          "label": "集中"
+        },
+        {
+          "day": 26,
+          "score": 98,
+          "label": "調整"
+        },
+        {
+          "day": 27,
+          "score": 88,
+          "label": "共感"
+        },
+        {
+          "day": 28,
+          "score": 55,
+          "label": "挑戦"
+        },
+        {
+          "day": 29,
+          "score": 83,
+          "label": "直感"
+        },
+        {
+          "day": 30,
+          "score": 50,
+          "label": "行動"
+        },
+        {
+          "day": 31,
+          "score": 78,
+          "label": "安心"
+        }
+      ],
+      "summary": "全日を一度に見られる投稿にして、自分と周りの生まれ日を探しやすくします。"
+    }
+  ]
+}
