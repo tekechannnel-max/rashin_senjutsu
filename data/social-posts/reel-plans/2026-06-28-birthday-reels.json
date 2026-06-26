@@ -1,0 +1,253 @@
+{
+  "date": "2026-06-28",
+  "reviewTitle": "2026-06-28 夜枠 誕生日リール自動生成候補",
+  "sourceNotes": [
+    {
+      "sourceAccount": "Instagram Creators / Meta",
+      "sourceUrl": "https://creators.instagram.com/grow/algorithms-and-ranking?locale=en_GB",
+      "observedPattern": "Instagramのランキングは視聴維持・反応・シェアされやすさを強く見るため、短く分かる1テーマ構成にする。",
+      "usedAs": "毎日リールの設計原則",
+      "transformationNote": "広告色を強めず、保存したくなる自己理解Top5として再構成する。",
+      "duplicateCheck": "外部投稿本文・画像・ランキングはコピーせず、羅針占術の誕生日数Top5へ変換する。"
+    },
+    {
+      "sourceAccount": "Meta Transparency Center",
+      "sourceUrl": "https://transparency.meta.com/features/explaining-ranking/ig-reels-chaining/",
+      "observedPattern": "Reels面は次に見たい可能性が高い動画を予測して並べるため、冒頭で内容がすぐ分かる構成を優先する。",
+      "usedAs": "タイトル・リードの設計根拠",
+      "transformationNote": "1枚目で「自分の誕生日があるか」を即確認できる見出しにする。",
+      "duplicateCheck": "トレンド音源や他者動画素材には依存しない。"
+    },
+    {
+      "sourceAccount": "羅針占術 internal",
+      "sourceUrl": "docs/sns-runbook.md",
+      "observedPattern": "Threads + Instagram、InstagramはReels、Threadsは動画投稿。木曜20:00は比較カルーセル優先。",
+      "usedAs": "2026-06-28 の投稿時刻と媒体制約",
+      "transformationNote": "木曜は21:00以降だけ、他曜日は20:00から23:00の承認済みリールにする。",
+      "duplicateCheck": "承認済みmanifestと投稿済みledgerの既存タイトルを避ける。"
+    }
+  ],
+  "avoidedTopics": [
+    "心を開くまで慎重な生まれ日TOP5",
+    "返信待ちでそわそわする生まれ日TOP5",
+    "私生活が謎に見られがちな生まれ日TOP5",
+    "一度決めたら引かない生まれ日TOP5",
+    "人前で弱音を見せにくい生まれ日TOP5",
+    "場の温度を整えがちな生まれ日TOP5",
+    "雰囲気で惹きつける生まれ日TOP5",
+    "仲良くなると印象が変わる生まれ日TOP5",
+    "気持ちの切り替えが早い生まれ日TOP5",
+    "言葉より行動で示す生まれ日TOP5",
+    "実は照れ屋な生まれ日TOP5",
+    "ひとり時間で回復する生まれ日TOP5",
+    "距離感を大切にする生まれ日TOP5",
+    "頼られると燃える生まれ日TOP5",
+    "褒められると伸びる生まれ日TOP5",
+    "変化の前に静かになる生まれ日TOP5",
+    "直感で危険を避ける生まれ日TOP5",
+    "大事な人ほど遠慮する生まれ日TOP5",
+    "急にスイッチが入る生まれ日TOP5",
+    "相手の本音を待てる生まれ日TOP5",
+    "プレッシャーで集中力が上がる生まれ日TOP5",
+    "言いにくいことを丸く伝える生まれ日TOP5",
+    "期待されると粘れる生まれ日TOP5",
+    "勢いで予定を決めがちな生まれ日TOP5",
+    "甘え下手な生まれ日TOP5",
+    "限界まで助けを呼ばない生まれ日TOP5",
+    "本当は希望があるのに合わせがちな生まれ日TOP5"
+  ],
+  "posts": [
+    {
+      "time": "20:00",
+      "slug": "samishisa-egao-kakusu-top5",
+      "title": "寂しさを笑顔で隠す生まれ日TOP5",
+      "titleLines": [
+        "寂しさを笑顔で隠す",
+        "生まれ日TOP5"
+      ],
+      "lead": "平気な顔で場を保ちながら、本当は少し寄り添ってほしいタイプ",
+      "sourceUrl": "https://creators.instagram.com/grow/algorithms-and-ranking?locale=en_GB",
+      "theme": {
+        "accent": "#3c6d58",
+        "accent2": "#8f5b2d",
+        "ink": "#17281f",
+        "bg1": "#eef9f2",
+        "bg2": "#fffaf1",
+        "bg3": "#e7edf7",
+        "glow": "#d9f3dd"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 6,
+          "reason": "強がりの奥にある素直さが特に出やすい日です。本当は寂しい場面でも、気づいてくれる人を大切にできます。"
+        },
+        {
+          "rank": 2,
+          "day": 15,
+          "reason": "一見ゆっくりでも観察は細かいです。必要な時だけ、笑顔で場を保つ流れを作れます。"
+        },
+        {
+          "rank": 3,
+          "day": 24,
+          "reason": "無理に目立たなくても伝わります。近くの人ほど、あとから気づいてほしいサインが効いてきます。"
+        },
+        {
+          "rank": 4,
+          "day": 2,
+          "reason": "気持ちを整理してから動くタイプです。勢いより、気づいてくれる人を大切にします。"
+        },
+        {
+          "rank": 5,
+          "day": 11,
+          "reason": "表では控えめでも芯があります。大事な場面で笑顔で場を保つ力が出やすい日です。"
+        }
+      ],
+      "summary": "寂しさを隠す日は、強がりの奥に気づいてくれる人を大切にします。"
+    },
+    {
+      "time": "21:00",
+      "slug": "isogashii-hodo-dandori-top5",
+      "title": "忙しいほど段取りが光る生まれ日TOP5",
+      "titleLines": [
+        "忙しいほど段取りが光る",
+        "生まれ日TOP5"
+      ],
+      "lead": "やることが多い時ほど、順番を整理して前に進めるタイプ",
+      "sourceUrl": "https://creators.instagram.com/grow/algorithms-and-ranking?locale=en_GB",
+      "theme": {
+        "accent": "#6b5f2b",
+        "accent2": "#3e7893",
+        "ink": "#292612",
+        "bg1": "#fbf8e8",
+        "bg2": "#fffdf7",
+        "bg3": "#e5f1f6",
+        "glow": "#fff0aa"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 25,
+          "reason": "混雑を整理する段取り力が特に出やすい日です。やることが重なる場面でも、焦らない整理を大切にできます。"
+        },
+        {
+          "rank": 2,
+          "day": 7,
+          "reason": "一見ゆっくりでも観察は細かいです。必要な時だけ、順番を整える流れを作れます。"
+        },
+        {
+          "rank": 3,
+          "day": 21,
+          "reason": "無理に目立たなくても伝わります。近くの人ほど、あとから進めやすさが効いてきます。"
+        },
+        {
+          "rank": 4,
+          "day": 30,
+          "reason": "気持ちを整理してから動くタイプです。勢いより、焦らない整理を大切にします。"
+        },
+        {
+          "rank": 5,
+          "day": 16,
+          "reason": "表では控えめでも芯があります。大事な場面で順番を整える力が出やすい日です。"
+        }
+      ],
+      "summary": "忙しいほど段取りが光る日は、焦りを整理に変えて着実に進めます。"
+    },
+    {
+      "time": "22:00",
+      "slug": "arigatou-koudou-kaesu-top5",
+      "title": "ありがとうを行動で返す生まれ日TOP5",
+      "titleLines": [
+        "ありがとうを行動で返す",
+        "生まれ日TOP5"
+      ],
+      "lead": "感謝を言葉だけで終わらせず、次の行動で返したくなるタイプ",
+      "sourceUrl": "docs/sns-runbook.md",
+      "theme": {
+        "accent": "#7a3f50",
+        "accent2": "#406f34",
+        "ink": "#2d1920",
+        "bg1": "#fff0f2",
+        "bg2": "#fffdf7",
+        "bg3": "#edf5e8",
+        "glow": "#ffd6dc"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 2,
+          "reason": "感謝を返す行動力が特に出やすい日です。助けてもらった後でも、受け取った気持ちを大切にできます。"
+        },
+        {
+          "rank": 2,
+          "day": 13,
+          "reason": "一見ゆっくりでも観察は細かいです。必要な時だけ、行動で返す流れを作れます。"
+        },
+        {
+          "rank": 3,
+          "day": 31,
+          "reason": "無理に目立たなくても伝わります。近くの人ほど、あとからやさしさの循環が効いてきます。"
+        },
+        {
+          "rank": 4,
+          "day": 20,
+          "reason": "気持ちを整理してから動くタイプです。勢いより、受け取った気持ちを大切にします。"
+        },
+        {
+          "rank": 5,
+          "day": 29,
+          "reason": "表では控えめでも芯があります。大事な場面で行動で返す力が出やすい日です。"
+        }
+      ],
+      "summary": "ありがとうを行動で返す日は、受け取った優しさを別の形で循環させます。"
+    },
+    {
+      "time": "23:00",
+      "slug": "henshin-osokutemo-taisetsu-top5",
+      "title": "返信が遅くても大切にしてる生まれ日TOP5",
+      "titleLines": [
+        "返信が遅くても",
+        "大切にしてる生まれ日TOP5"
+      ],
+      "lead": "すぐ返せない時ほど、ちゃんと考えてから向き合うタイプ",
+      "sourceUrl": "docs/sns-runbook.md",
+      "theme": {
+        "accent": "#2d6f86",
+        "accent2": "#b76a3b",
+        "ink": "#17323c",
+        "bg1": "#eef7fb",
+        "bg2": "#fffdf8",
+        "bg3": "#e8ecd8",
+        "glow": "#d7efff"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 4,
+          "reason": "相手を雑に扱わない慎重さが特に出やすい日です。連絡の間が空いた時でも、誠実さを大切にできます。"
+        },
+        {
+          "rank": 2,
+          "day": 22,
+          "reason": "一見ゆっくりでも観察は細かいです。必要な時だけ、言葉を選んで返す流れを作れます。"
+        },
+        {
+          "rank": 3,
+          "day": 7,
+          "reason": "無理に目立たなくても伝わります。近くの人ほど、あとから安心感が効いてきます。"
+        },
+        {
+          "rank": 4,
+          "day": 16,
+          "reason": "気持ちを整理してから動くタイプです。勢いより、誠実さを大切にします。"
+        },
+        {
+          "rank": 5,
+          "day": 25,
+          "reason": "表では控えめでも芯があります。大事な場面で言葉を選んで返す力が出やすい日です。"
+        }
+      ],
+      "summary": "返信が遅い日は、冷たいのではなく言葉を雑にしたくない慎重さが出やすいです。"
+    }
+  ]
+}
