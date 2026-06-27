@@ -1,0 +1,251 @@
+{
+  "approvalStatus": "approved",
+  "approvedBy": "automation",
+  "approvedAt": "2026-06-27T16:38:19.762Z",
+  "approvalText": "User requested fully automated SNS research, production, approval-manifest preparation, and scheduled posting. Target date: 2026-06-29.",
+  "approvalScope": "threads,instagram",
+  "note": "Auto-approved by Rashin SNS automation. Posting remains limited to due windows and approved birthday_reel manifests.",
+  "posts": [
+    {
+      "id": "birthday_reel_20260629_2000_chiisana_iwakan_kizuku_top5",
+      "kind": "birthday_reel",
+      "date": "2026-06-29",
+      "time": "20:00",
+      "title": "小さな違和感に気づく生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-29/chiisana-iwakan-kizuku-top5/chiisana-iwakan-kizuku-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n小さな違和感に気づく生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n小さな違和感に気づく生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-29/chiisana-iwakan-kizuku-top5/chiisana-iwakan-kizuku-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-29/chiisana-iwakan-kizuku-top5/chiisana-iwakan-kizuku-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 16,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 25,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 7,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 21,
+            "family": 3,
+            "asset": "birthday-family-3-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 30,
+            "family": 3,
+            "asset": "birthday-family-3-chibi.png"
+          }
+        ],
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/main/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-29/chiisana-iwakan-kizuku-top5/chiisana-iwakan-kizuku-top5.mp4"
+    },
+    {
+      "id": "birthday_reel_20260629_2100_muri_shisouna_hito_minuku_top5",
+      "kind": "birthday_reel",
+      "date": "2026-06-29",
+      "time": "21:00",
+      "title": "無理しそうな人を見抜く生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-29/muri-shisouna-hito-minuku-top5/muri-shisouna-hito-minuku-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n無理しそうな人を見抜く生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n無理しそうな人を見抜く生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-29/muri-shisouna-hito-minuku-top5/muri-shisouna-hito-minuku-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-29/muri-shisouna-hito-minuku-top5/muri-shisouna-hito-minuku-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 29,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 2,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 13,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 31,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 20,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png"
+          }
+        ],
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/main/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-29/muri-shisouna-hito-minuku-top5/muri-shisouna-hito-minuku-top5.mp4"
+    },
+    {
+      "id": "birthday_reel_20260629_2200_waratteru_kedo_fukai_top5",
+      "kind": "birthday_reel",
+      "date": "2026-06-29",
+      "time": "22:00",
+      "title": "笑ってるけど考え深い生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-29/waratteru-kedo-fukai-top5/waratteru-kedo-fukai-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n笑ってるけど考え深い生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n笑ってるけど考え深い生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-29/waratteru-kedo-fukai-top5/waratteru-kedo-fukai-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-29/waratteru-kedo-fukai-top5/waratteru-kedo-fukai-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 25,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 4,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 22,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 7,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 16,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png"
+          }
+        ],
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/main/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-29/waratteru-kedo-fukai-top5/waratteru-kedo-fukai-top5.mp4"
+    },
+    {
+      "id": "birthday_reel_20260629_2300_soudan_honki_naru_top5",
+      "kind": "birthday_reel",
+      "date": "2026-06-29",
+      "time": "23:00",
+      "title": "相談されると本気になる生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-29/soudan-honki-naru-top5/soudan-honki-naru-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n相談されると本気になる生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n相談されると本気になる生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-29/soudan-honki-naru-top5/soudan-honki-naru-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-29/soudan-honki-naru-top5/soudan-honki-naru-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 1,
+            "family": 1,
+            "asset": "birthday-family-1-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 31,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 8,
+            "family": 8,
+            "asset": "birthday-family-8-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 6,
+            "family": 6,
+            "asset": "birthday-family-6-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 24,
+            "family": 6,
+            "asset": "birthday-family-6-chibi.png"
+          }
+        ],
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/main/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-29/soudan-honki-naru-top5/soudan-honki-naru-top5.mp4"
+    }
+  ],
+  "sourceCandidate": "output/social-approved-reels-candidates/2026-06-29-approved-candidate.json"
+}
