@@ -109,6 +109,10 @@ assert.match(guard, /APPROVED_POST_MINICHARA_CONTENT_MISMATCH/, 'social guard mu
 assert.match(guard, /APPROVED_DAILY_REEL_SLOT_MISMATCH/, 'social guard must reject daily birthday reel slots outside the shared schedule rule');
 assert.match(opsAudit, /OPS_DAILY_REEL_COUNT_OR_TIME_MISMATCH/, 'operations audit must verify daily reel counts and times');
 assert.match(opsAudit, /OPS_MINICHARA_MISMATCH/, 'operations audit must verify mini character selection');
+assert.match(opsAudit, /OPS_STALE_REEL_PLAN_23_SLOT/, 'operations audit must reject stale 23:00 daily reel plans');
+assert.match(opsAudit, /OPS_REEL_PLAN_TOP5_DUPLICATE_MINICHARA/, 'operations audit must reject duplicate mini character families in TOP5 plans');
+assert.match(opsAudit, /OPS_REEL_PLAN_GRAPH_SHAPE/, 'operations audit must require XY-style four-axis graph plans');
+assert.match(opsAudit, /OPS_REEL_PLAN_GRAPH_DAYS/, 'operations audit must require graph plans to cover all 31 birth days');
 
 const approvedPosts = approvedReels.loadApprovedPosts();
 assert.equal(approvedPosts.length, 1, 'fixture approved manifest should load one approved post');

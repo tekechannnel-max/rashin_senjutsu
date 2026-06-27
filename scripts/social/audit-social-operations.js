@@ -9,6 +9,9 @@ const {
 const {
   validateMiniCharactersForPost,
 } = require('./birthday-mini-review');
+const {
+  birthdayMiniFamilyForDay,
+} = require('./birthday-mini-family');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 
@@ -153,6 +156,95 @@ function checkApprovedManifests(args, issues, warnings) {
   }
 }
 
+function dateFromPlanFile(file) {
+  const match = path.basename(file).match(/^(\d{4}-\d{2}-\d{2})-/);
+  return match ? match[1] : '';
+}
+
+function checkTop5PlanRows(issues, file, postIndex, post) {
+  if (post.topicType !== 'birthday_top5' && post.researchTarget !== 'birthday_top5') return;
+  const rows = Array.isArray(post.rows) ? post.rows : [];
+  if (rows.length !== 5) {
+    addIssue(issues, 'OPS_REEL_PLAN_TOP5_ROW_COUNT', file, `posts[${postIndex}] TOP5 plan must contain exactly five rows.`);
+    return;
+  }
+  const seenFamilies = new Set();
+  for (const [rowIndex, row] of rows.entries()) {
+    const day = Number(row.day);
+    if (!Number.isInteger(day) || day < 1 || day > 31) {
+      addIssue(issues, 'OPS_REEL_PLAN_TOP5_INVALID_DAY', file, `posts[${postIndex}].rows[${rowIndex}].day must be a birth day from 1 to 31.`);
+      continue;
+    }
+    const family = Number.isInteger(Number(row.miniFamily))
+      ? Number(row.miniFamily)
+      : birthdayMiniFamilyForDay(day);
+    if (seenFamilies.has(family)) {
+      addIssue(
+        issues,
+        'OPS_REEL_PLAN_TOP5_DUPLICATE_MINICHARA',
+        file,
+        `posts[${postIndex}].rows[${rowIndex}] duplicates mini character family ${family}; TOP5 plan rows must use five distinct families.`
+      );
+    }
+    seenFamilies.add(family);
+  }
+}
+
+function checkGraphPlan(issues, file, postIndex, post) {
+  if (post.topicType !== 'birthday_graph_1_31' && post.researchTarget !== 'birthday_graph_all_days') return;
+  if (post.graphShape !== 'xy_four_axis') {
+    addIssue(issues, 'OPS_REEL_PLAN_GRAPH_SHAPE', file, `posts[${postIndex}] graphShape must be xy_four_axis.`);
+  }
+  const graphDays = Array.isArray(post.graphDays) ? post.graphDays : [];
+  const days = graphDays.map(item => Number(item.day)).sort((a, b) => a - b);
+  const expected = Array.from({ length: 31 }, (_value, index) => index + 1);
+  if (JSON.stringify(days) !== JSON.stringify(expected)) {
+    addIssue(issues, 'OPS_REEL_PLAN_GRAPH_DAYS', file, `posts[${postIndex}] birthday graph must include every birth day from 1 to 31.`);
+  }
+}
+
+function checkReelPlans(args, issues) {
+  const planDir = path.join(ROOT, 'data', 'social-posts', 'reel-plans');
+  const files = walk(planDir, file => /\.json$/i.test(file));
+  for (const file of files) {
+    let plan;
+    try {
+      plan = readJson(file);
+    } catch (error) {
+      addIssue(issues, 'OPS_INVALID_REEL_PLAN_JSON', file, error.message);
+      continue;
+    }
+    const dateKey = String(plan.date || dateFromPlanFile(file)).trim();
+    const posts = Array.isArray(plan.posts) ? plan.posts : [];
+    for (const [index, post] of posts.entries()) {
+      const time = String(post.time || '').trim();
+      if (time === '23:00') {
+        addIssue(
+          issues,
+          'OPS_STALE_REEL_PLAN_23_SLOT',
+          file,
+          `posts[${index}] uses 23:00, but daily birthday reels must not use 23:00. 23:00 is monthly carousel only.`
+        );
+      }
+      checkTop5PlanRows(issues, file, index, post);
+      checkGraphPlan(issues, file, index, post);
+    }
+    if (!dateKey || !inRange(dateKey, args)) continue;
+    const expected = dailyBirthdayReelTimesForDate(dateKey);
+    const actual = posts.map(post => String(post.time || '').trim()).filter(Boolean).sort();
+    const expectedSorted = [...expected].sort();
+    if (JSON.stringify(actual) !== JSON.stringify(expectedSorted)) {
+      addIssue(
+        issues,
+        'OPS_REEL_PLAN_COUNT_OR_TIME_MISMATCH',
+        file,
+        `${dateKey} daily reel plan must be exactly ${expectedSorted.join(', ')}.`,
+        { actual }
+      );
+    }
+  }
+}
+
 function checkStaleRuleText(issues) {
   const stalePatterns = [
     { code: 'OPS_STALE_DAILY_23_RULE_TEXT', pattern: /20:00 \/ 21:00 \/ 23:00.*(?:\u65e5\u6b21|\u591c|\u6295\u7a3f\u30ea\u30ba\u30e0)|(?:\u65e5\u6b21|\u591c|\u6295\u7a3f\u30ea\u30ba\u30e0).*20:00 \/ 21:00 \/ 23:00|20:00, 21:00, and 23:00 JST daily reels|23:00 JST daily reels/i },
@@ -190,6 +282,7 @@ async function run(argv = process.argv.slice(2)) {
   const issues = [];
   const warnings = [];
   checkApprovedManifests(args, issues, warnings);
+  checkReelPlans(args, issues);
   checkStaleRuleText(issues);
   return {
     ok: issues.length === 0,
