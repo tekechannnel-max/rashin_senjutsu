@@ -7,6 +7,9 @@ const threads = require('./threads-client');
 const {
   validateMiniCharactersForPost,
 } = require('./birthday-mini-review');
+const {
+  validateDailyBirthdayReelSchedule,
+} = require('./social-schedule-rules');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 function resolveConfiguredPath(envName, fallback) {
@@ -239,6 +242,11 @@ function ensureDesignReview(post, label) {
   ensureVisualInspection(post, label, review);
 }
 
+function ensureDailyBirthdayReelSchedule(post, label) {
+  const errors = validateDailyBirthdayReelSchedule(post, label);
+  if (errors.length) throw new Error(errors[0]);
+}
+
 function ensureApprovedManifest(manifest, file) {
   if (!manifest || typeof manifest !== 'object') throw new Error(`${rel(file)} is not a JSON object.`);
   if (manifest.approvalStatus !== 'approved') throw new Error(`${rel(file)} approvalStatus must be "approved".`);
@@ -255,6 +263,7 @@ function normalizePost(manifest, post, index, file) {
   for (const key of ['id', 'date', 'time', 'title', 'videoPath']) {
     if (!post[key]) throw new Error(`${label} is missing ${key}.`);
   }
+  ensureDailyBirthdayReelSchedule(post, label);
   const videoPath = resolvePathFromRoot(post.videoPath);
   if (!fsSync.existsSync(videoPath)) throw new Error(`${label} videoPath does not exist: ${rel(videoPath)}`);
   const captions = post.captions || {};

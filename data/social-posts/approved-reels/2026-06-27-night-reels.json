@@ -74,12 +74,12 @@
           "status": "passed",
           "method": "generated_video_poster_contact_sheet_review",
           "checkedBy": "codex_visual_review",
-          "checkedAt": "2026-06-27T02:15:28.279Z",
+          "checkedAt": "2026-06-27T02:36:01.065Z",
           "reviewArtifacts": [
             "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/honne-materu-top5/honne-materu-top5-poster.jpg",
             "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/honne-materu-top5/honne-materu-top5-contact.jpg"
           ],
-          "note": "Contact sheet opened and visually checked in Codex on 2026-06-27."
+          "note": "Regenerated contact sheet opened and visually checked in Codex after 23:00 schedule update on 2026-06-27."
         }
       },
       "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-27/honne-materu-top5/honne-materu-top5.mp4",
@@ -131,12 +131,12 @@
           "status": "passed",
           "method": "generated_video_poster_contact_sheet_review",
           "checkedBy": "codex_visual_review",
-          "checkedAt": "2026-06-27T02:15:28.279Z",
+          "checkedAt": "2026-06-27T02:36:01.065Z",
           "reviewArtifacts": [
             "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/birthday-day-manual-12-20260627/birthday-day-manual-12-20260627-poster.jpg",
             "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/birthday-day-manual-12-20260627/birthday-day-manual-12-20260627-contact.jpg"
           ],
-          "note": "Contact sheet opened and visually checked in Codex on 2026-06-27."
+          "note": "Regenerated contact sheet opened and visually checked in Codex after 23:00 schedule update on 2026-06-27."
         }
       },
       "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-27/birthday-day-manual-12-20260627/birthday-day-manual-12-20260627.mp4",
@@ -145,10 +145,10 @@
       ]
     },
     {
-      "id": "birthday_reel_20260627_2200_birthday_graph_1_31_20260627",
+      "id": "birthday_reel_20260627_2300_birthday_graph_1_31_20260627",
       "kind": "birthday_reel",
       "date": "2026-06-27",
-      "time": "22:00",
+      "time": "23:00",
       "topicType": "birthday_graph_1_31",
       "researchTarget": "birthday_graph_all_days",
       "title": "生まれ日グラフ 1日〜31日",
@@ -394,12 +394,12 @@
           "status": "passed",
           "method": "generated_video_poster_contact_sheet_review",
           "checkedBy": "codex_visual_review",
-          "checkedAt": "2026-06-27T02:15:28.279Z",
+          "checkedAt": "2026-06-27T02:36:01.065Z",
           "reviewArtifacts": [
             "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/birthday-graph-1-31-20260627/birthday-graph-1-31-20260627-poster.jpg",
             "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/birthday-graph-1-31-20260627/birthday-graph-1-31-20260627-contact.jpg"
           ],
-          "note": "Contact sheet opened and visually checked in Codex on 2026-06-27."
+          "note": "Regenerated contact sheet opened and visually checked in Codex after 23:00 schedule update on 2026-06-27."
         }
       },
       "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-27/birthday-graph-1-31-20260627/birthday-graph-1-31-20260627.mp4",

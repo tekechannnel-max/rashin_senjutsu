@@ -9,6 +9,7 @@ const {
   birthdayMiniFamilyForDay,
 } = require('./birthday-mini-family');
 const { contentDaysForPost } = require('./birthday-mini-review');
+const { dailyBirthdayReelTimesForDate } = require('./social-schedule-rules');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const WIDTH = 1080;
@@ -208,7 +209,9 @@ const DEFAULT_POSTS = [
 
 const SOURCE_NOTES = Array.isArray(CONFIG.sourceNotes) ? CONFIG.sourceNotes : DEFAULT_SOURCE_NOTES;
 const AVOIDED_TOPICS = Array.isArray(CONFIG.avoidedTopics) ? CONFIG.avoidedTopics : DEFAULT_AVOIDED_TOPICS;
-const POSTS = Array.isArray(CONFIG.posts) ? CONFIG.posts : DEFAULT_POSTS.filter(post => post.time !== '23:00');
+const POSTS = Array.isArray(CONFIG.posts)
+  ? CONFIG.posts
+  : DEFAULT_POSTS.filter(post => dailyBirthdayReelTimesForDate(TARGET_DATE).includes(post.time));
 
 function miniPath(family) {
   return path.join(MINI_ROOT, `birthday-family-${family}-chibi.png`);
@@ -1057,7 +1060,7 @@ async function main() {
       rulesApplied: [
         'No posting, scheduling, deletion, reposting, or public URL creation before the post approval gate.',
         'Research source is used only as a topic pattern source, not as copied caption, ranking, image, or video.',
-        'Daily night reel topics cover birthday_day_aruaru/manual, birthday_graph_1_31, and birthday_top5 without a 23:00 daily reel slot.',
+        'Daily night reel topics cover birthday_day_aruaru/manual, birthday_graph_1_31, and birthday_top5 in the 20:00/21:00/23:00 daily reel slots.',
         'Night lane outputs are MP4 videos for Instagram Reels and Threads video.',
         'Threads captions use exactly one hashtag.',
         'Mini character family is selected only by birthday-mini-family.js.',

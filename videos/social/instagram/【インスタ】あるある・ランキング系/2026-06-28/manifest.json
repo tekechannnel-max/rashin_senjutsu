@@ -2,7 +2,7 @@
   "date": "2026-06-28",
   "status": "draft_for_user_review",
   "postingAction": "none",
-  "generatedAt": "2026-06-26T17:50:21.174Z",
+  "generatedAt": "2026-06-27T02:35:04.229Z",
   "sourceNotes": [
     {
       "sourceAccount": "Instagram Creators / Meta",
@@ -25,7 +25,7 @@
       "sourceUrl": "docs/sns-runbook.md",
       "observedPattern": "Threads + Instagram、InstagramはReels、Threadsは動画投稿。木曜20:00は比較カルーセル優先。",
       "usedAs": "2026-06-28 の投稿時刻と媒体制約",
-      "transformationNote": "木曜20:00は比較カルーセル優先。日次リールは木曜21:00/22:00、他曜日20:00/21:00/22:00だけにする。",
+      "transformationNote": "木曜20:00は比較カルーセル優先。日次リールは木曜21:00/23:00、他曜日20:00/21:00/23:00だけにする。",
       "duplicateCheck": "承認済みmanifestと投稿済みledgerの既存タイトルを避ける。"
     },
     {
@@ -67,7 +67,7 @@
   "rulesApplied": [
     "No posting, scheduling, deletion, reposting, or public URL creation before the post approval gate.",
     "Research source is used only as a topic pattern source, not as copied caption, ranking, image, or video.",
-    "Daily night reel topics cover birthday_day_aruaru/manual, birthday_graph_1_31, and birthday_top5 without a 23:00 daily reel slot.",
+    "Daily night reel topics cover birthday_day_aruaru/manual, birthday_graph_1_31, and birthday_top5 in the 20:00/21:00/23:00 daily reel slots.",
     "Night lane outputs are MP4 videos for Instagram Reels and Threads video.",
     "Threads captions use exactly one hashtag.",
     "Mini character family is selected only by birthday-mini-family.js.",
@@ -121,31 +121,36 @@
           "rank": 1,
           "day": 6,
           "family": 6,
-          "asset": "birthday-family-6-chibi.png"
+          "asset": "birthday-family-6-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
         },
         {
           "rank": 2,
           "day": 15,
           "family": 6,
-          "asset": "birthday-family-6-chibi.png"
+          "asset": "birthday-family-6-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
         },
         {
           "rank": 3,
           "day": 24,
           "family": 6,
-          "asset": "birthday-family-6-chibi.png"
+          "asset": "birthday-family-6-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
         },
         {
           "rank": 4,
           "day": 2,
           "family": 2,
-          "asset": "birthday-family-2-chibi.png"
+          "asset": "birthday-family-2-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
         },
         {
           "rank": 5,
           "day": 11,
           "family": 2,
-          "asset": "birthday-family-2-chibi.png"
+          "asset": "birthday-family-2-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
         }
       ],
       "rows": [
@@ -194,7 +199,7 @@
         ],
         "format": {
           "duration": "12.000000",
-          "size": "450569"
+          "size": "471441"
         }
       }
     },
@@ -264,7 +269,8 @@
           "rank": 1,
           "day": 5,
           "family": 5,
-          "asset": "birthday-family-5-chibi.png"
+          "asset": "birthday-family-5-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
         }
       ],
       "rows": [],
@@ -281,13 +287,13 @@
           }
         ],
         "format": {
-          "duration": "11.966667",
-          "size": "368712"
+          "duration": "12.000000",
+          "size": "378268"
         }
       }
     },
     {
-      "time": "22:00",
+      "time": "23:00",
       "topicType": "birthday_graph_1_31",
       "researchTarget": "birthday_graph_all_days",
       "title": "生まれ日グラフ 1日〜31日",
@@ -487,187 +493,218 @@
           "rank": 1,
           "day": 1,
           "family": 1,
-          "asset": "birthday-family-1-chibi.png"
+          "asset": "birthday-family-1-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
         },
         {
           "rank": 2,
           "day": 2,
           "family": 2,
-          "asset": "birthday-family-2-chibi.png"
+          "asset": "birthday-family-2-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
         },
         {
           "rank": 3,
           "day": 3,
           "family": 3,
-          "asset": "birthday-family-3-chibi.png"
+          "asset": "birthday-family-3-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-3-chibi.png"
         },
         {
           "rank": 4,
           "day": 4,
           "family": 4,
-          "asset": "birthday-family-4-chibi.png"
+          "asset": "birthday-family-4-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
         },
         {
           "rank": 5,
           "day": 5,
           "family": 5,
-          "asset": "birthday-family-5-chibi.png"
+          "asset": "birthday-family-5-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
         },
         {
           "rank": 6,
           "day": 6,
           "family": 6,
-          "asset": "birthday-family-6-chibi.png"
+          "asset": "birthday-family-6-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
         },
         {
           "rank": 7,
           "day": 7,
           "family": 7,
-          "asset": "birthday-family-7-chibi.png"
+          "asset": "birthday-family-7-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
         },
         {
           "rank": 8,
           "day": 8,
           "family": 8,
-          "asset": "birthday-family-8-chibi.png"
+          "asset": "birthday-family-8-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-8-chibi.png"
         },
         {
           "rank": 9,
           "day": 9,
           "family": 9,
-          "asset": "birthday-family-9-chibi.png"
+          "asset": "birthday-family-9-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-9-chibi.png"
         },
         {
           "rank": 10,
           "day": 10,
           "family": 1,
-          "asset": "birthday-family-1-chibi.png"
+          "asset": "birthday-family-1-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
         },
         {
           "rank": 11,
           "day": 11,
           "family": 2,
-          "asset": "birthday-family-2-chibi.png"
+          "asset": "birthday-family-2-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
         },
         {
           "rank": 12,
           "day": 12,
           "family": 3,
-          "asset": "birthday-family-3-chibi.png"
+          "asset": "birthday-family-3-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-3-chibi.png"
         },
         {
           "rank": 13,
           "day": 13,
           "family": 4,
-          "asset": "birthday-family-4-chibi.png"
+          "asset": "birthday-family-4-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
         },
         {
           "rank": 14,
           "day": 14,
           "family": 5,
-          "asset": "birthday-family-5-chibi.png"
+          "asset": "birthday-family-5-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
         },
         {
           "rank": 15,
           "day": 15,
           "family": 6,
-          "asset": "birthday-family-6-chibi.png"
+          "asset": "birthday-family-6-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
         },
         {
           "rank": 16,
           "day": 16,
           "family": 7,
-          "asset": "birthday-family-7-chibi.png"
+          "asset": "birthday-family-7-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
         },
         {
           "rank": 17,
           "day": 17,
           "family": 8,
-          "asset": "birthday-family-8-chibi.png"
+          "asset": "birthday-family-8-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-8-chibi.png"
         },
         {
           "rank": 18,
           "day": 18,
           "family": 9,
-          "asset": "birthday-family-9-chibi.png"
+          "asset": "birthday-family-9-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-9-chibi.png"
         },
         {
           "rank": 19,
           "day": 19,
           "family": 1,
-          "asset": "birthday-family-1-chibi.png"
+          "asset": "birthday-family-1-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
         },
         {
           "rank": 20,
           "day": 20,
           "family": 2,
-          "asset": "birthday-family-2-chibi.png"
+          "asset": "birthday-family-2-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
         },
         {
           "rank": 21,
           "day": 21,
           "family": 3,
-          "asset": "birthday-family-3-chibi.png"
+          "asset": "birthday-family-3-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-3-chibi.png"
         },
         {
           "rank": 22,
           "day": 22,
           "family": 4,
-          "asset": "birthday-family-4-chibi.png"
+          "asset": "birthday-family-4-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
         },
         {
           "rank": 23,
           "day": 23,
           "family": 5,
-          "asset": "birthday-family-5-chibi.png"
+          "asset": "birthday-family-5-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
         },
         {
           "rank": 24,
           "day": 24,
           "family": 6,
-          "asset": "birthday-family-6-chibi.png"
+          "asset": "birthday-family-6-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
         },
         {
           "rank": 25,
           "day": 25,
           "family": 7,
-          "asset": "birthday-family-7-chibi.png"
+          "asset": "birthday-family-7-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
         },
         {
           "rank": 26,
           "day": 26,
           "family": 8,
-          "asset": "birthday-family-8-chibi.png"
+          "asset": "birthday-family-8-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-8-chibi.png"
         },
         {
           "rank": 27,
           "day": 27,
           "family": 9,
-          "asset": "birthday-family-9-chibi.png"
+          "asset": "birthday-family-9-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-9-chibi.png"
         },
         {
           "rank": 28,
           "day": 28,
           "family": 1,
-          "asset": "birthday-family-1-chibi.png"
+          "asset": "birthday-family-1-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
         },
         {
           "rank": 29,
           "day": 29,
           "family": 2,
-          "asset": "birthday-family-2-chibi.png"
+          "asset": "birthday-family-2-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
         },
         {
           "rank": 30,
           "day": 30,
           "family": 3,
-          "asset": "birthday-family-3-chibi.png"
+          "asset": "birthday-family-3-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-3-chibi.png"
         },
         {
           "rank": 31,
           "day": 31,
           "family": 4,
-          "asset": "birthday-family-4-chibi.png"
+          "asset": "birthday-family-4-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
         }
       ],
       "rows": [],
@@ -685,7 +722,7 @@
         ],
         "format": {
           "duration": "12.000000",
-          "size": "346093"
+          "size": "356358"
         }
       }
     }

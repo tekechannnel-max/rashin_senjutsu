@@ -20,7 +20,7 @@
   sourceUrl: docs/sns-runbook.md
   observedPattern: Threads + Instagram、InstagramはReels、Threadsは動画投稿。木曜20:00は比較カルーセル優先。
   usedAs: 2026-06-28 の投稿時刻と媒体制約
-  transformationNote: 木曜20:00は比較カルーセル優先。日次リールは木曜21:00/22:00、他曜日20:00/21:00/22:00だけにする。
+  transformationNote: 木曜20:00は比較カルーセル優先。日次リールは木曜21:00/23:00、他曜日20:00/21:00/23:00だけにする。
   duplicateCheck: 承認済みmanifestと投稿済みledgerの既存タイトルを避ける。
 - sourceAccount: 羅針占術 video insights PDCA
   sourceUrl: data/social-posts/pdca/video-insights-feedback.json
@@ -121,7 +121,7 @@ Threads:
 #誕生日占い
 ```
 
-## 22:00 生まれ日グラフ 1日〜31日
+## 23:00 生まれ日グラフ 1日〜31日
 
 MP4: D:\株式会社 天仙\羅針占術\videos\social\instagram\【インスタ】あるある・ランキング系\2026-06-28\birthday-graph-1-31-20260628\birthday-graph-1-31-20260628.mp4
 代表フレーム: D:\株式会社 天仙\羅針占術\videos\social\instagram\【インスタ】あるある・ランキング系\2026-06-28\birthday-graph-1-31-20260628\birthday-graph-1-31-20260628-poster.jpg

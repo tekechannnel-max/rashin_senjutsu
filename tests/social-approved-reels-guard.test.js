@@ -16,11 +16,14 @@ function read(relativePath) {
 
 const approvedPublisher = read('scripts/social/post-approved-reels.js');
 const miniReview = read('scripts/social/birthday-mini-review.js');
+const opsAudit = read('scripts/social/audit-social-operations.js');
 const packageJson = JSON.parse(read('package.json'));
 assert.equal(typeof approvedReels.run, 'function', 'approved reel publisher must export run');
 assert.equal(typeof approvedReels.loadApprovedPosts, 'function', 'approved reel publisher must export loadApprovedPosts');
 assert.equal(typeof visualReview.run, 'function', 'visual review script must export run');
 assert.equal(packageJson.scripts['social:visual-review'], 'node scripts/social/verify-approved-reels-visuals.js', 'package scripts must expose the visual review command');
+assert.equal(packageJson.scripts['social:ops-audit'], 'node scripts/social/audit-social-operations.js', 'package scripts must expose the operations audit command');
+assert.match(packageJson.scripts['social:guard'], /audit-social-operations\.js/, 'social guard must include the operations audit');
 assert.match(approvedPublisher, /data['"], ['"]social-posts['"], ['"]approved-reels/, 'approved reel publisher must read the approved-reels directory');
 assert.match(approvedPublisher, /designReview/, 'approved reel publisher must require visual design review evidence');
 assert.match(miniReview, /birthdayMiniFamilyForDay/, 'approved reel publisher must verify mini character families from birth days');
@@ -46,6 +49,7 @@ for (const relativePath of [
 }
 
 const scheduler = read('scripts/social/run-scheduled-posts.js');
+const scheduleRules = read('scripts/social/social-schedule-rules.js');
 assert.match(scheduler, /post-approved-reels\.js/, 'scheduler must call the approved reel publisher');
 assert.match(scheduler, /readApprovedReelScheduleSync/, 'scheduler must load reel schedule from approved manifests');
 assert.match(scheduler, /SOCIAL_LOCAL_CODEX_AUTOMATION/, 'scheduler must allow explicit local Codex automation mode');
@@ -59,8 +63,10 @@ assert.match(localAutoPost, /--only-kind=all/, 'local Codex scheduled posting wr
 assert.doesNotMatch(localAutoPost, /--only-kind=birthday_reel/, 'local Codex scheduled posting wrapper must not skip Thursday 20:00 comparison by filtering to birthday reels');
 
 const autoPrepare = read('scripts/social/auto-prepare-approved-reels.js');
-assert.match(autoPrepare, /\['20:00', '21:00', '22:00'\]/, 'auto prepare must keep daily reels to 20:00, 21:00, and 22:00');
-assert.doesNotMatch(autoPrepare, /\['20:00', '21:00', '22:00', '23:00'\]/, 'auto prepare must not create a 23:00 daily reel slot');
+assert.match(autoPrepare, /dailyBirthdayReelTimesForDate/, 'auto prepare must use the shared daily reel schedule rules');
+assert.match(scheduleRules, /DAILY_BIRTHDAY_REEL_TIMES = \['20:00', '21:00', '23:00'\]/, 'latest daily reel schedule must be 20:00, 21:00, and 23:00');
+assert.match(scheduleRules, /THURSDAY_DAILY_BIRTHDAY_REEL_TIMES = \['21:00', '23:00'\]/, 'Thursday daily reels must keep 20:00 reserved for comparison carousel');
+assert.match(scheduleRules, /DAILY_BIRTHDAY_REEL_RULE_EFFECTIVE_DATE = '2026-06-27'/, 'daily reel schedule switch must be date-bounded');
 assert.match(autoPrepare, /birthday_day_aruaru/, 'auto prepare must generate single-day aruaru topics');
 assert.match(autoPrepare, /birthday_day_manual/, 'auto prepare must generate single-day manual topics');
 assert.match(autoPrepare, /birthday_graph_1_31/, 'auto prepare must generate all-days birthday graph topics');
@@ -91,11 +97,13 @@ assert.match(guard, /APPROVED_POST_MISSING_VISUAL_INSPECTION/, 'social guard mus
 assert.match(guard, /APPROVED_POST_MISSING_MINICHARA_SELECTION/, 'social guard must require per-day mini character selections');
 assert.match(guard, /APPROVED_POST_INVALID_MINICHARA_SELECTION/, 'social guard must reject mini character selections that do not match birthday-mini-family');
 assert.match(guard, /APPROVED_POST_MINICHARA_CONTENT_MISMATCH/, 'social guard must reject mini character proof that does not match reel content days');
-assert.match(guard, /APPROVED_DAILY_REEL_23_SLOT/, 'social guard must reject deleted 23:00 daily birthday reel slots');
+assert.match(guard, /APPROVED_DAILY_REEL_SLOT_MISMATCH/, 'social guard must reject daily birthday reel slots outside the shared schedule rule');
+assert.match(opsAudit, /OPS_DAILY_REEL_COUNT_OR_TIME_MISMATCH/, 'operations audit must verify daily reel counts and times');
+assert.match(opsAudit, /OPS_MINICHARA_MISMATCH/, 'operations audit must verify mini character selection');
 
 const approvedPosts = approvedReels.loadApprovedPosts();
 assert.equal(approvedPosts.length, 1, 'fixture approved manifest should load one approved post');
-assert.equal(approvedPosts[0].id, 'birthday_reel_20260620_20_fixture');
+assert.equal(approvedPosts[0].id, 'birthday_reel_20260620_2000_fixture');
 assert.deepEqual(
   approvedPosts[0].designReview.miniCharacters.map(entry => [entry.day, entry.family, entry.asset]),
   [

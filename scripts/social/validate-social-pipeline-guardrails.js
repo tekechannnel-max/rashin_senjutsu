@@ -5,6 +5,9 @@ const { spawnSync } = require('node:child_process');
 const {
   validateMiniCharactersForPost,
 } = require('./birthday-mini-review');
+const {
+  validateDailyBirthdayReelSchedule,
+} = require('./social-schedule-rules');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 
@@ -304,8 +307,8 @@ for (const file of approvedManifestFiles) {
         addViolation('APPROVED_POST_MISSING_FIELD', file, `posts[${index}] is missing ${key}.`);
       }
     }
-    if ((post.kind || 'birthday_reel') === 'birthday_reel' && post.time === '23:00') {
-      addViolation('APPROVED_DAILY_REEL_23_SLOT', file, `posts[${index}] is a deleted 23:00 daily birthday reel slot.`);
+    for (const error of validateDailyBirthdayReelSchedule(post, `posts[${index}]`)) {
+      addViolation('APPROVED_DAILY_REEL_SLOT_MISMATCH', file, error);
     }
     if (!post.captions?.instagram || !post.captions?.threads) {
       addViolation('APPROVED_POST_MISSING_CAPTIONS', file, `posts[${index}] must include captions.instagram and captions.threads.`);

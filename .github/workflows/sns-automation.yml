@@ -3,7 +3,7 @@ name: SNS automation
 on:
   schedule:
     - cron: '0 23 * * *' # 08:00 JST
-    - cron: '0 11-14 * * *' # 20:00-22:00 JST daily reels; 23:00 JST monthly birthday carousel only
+    - cron: '0 11-14 * * *' # 20:00, 21:00, and 23:00 JST daily reels; 22:00 JST monthly carousel only
   push:
     branches:
       - main

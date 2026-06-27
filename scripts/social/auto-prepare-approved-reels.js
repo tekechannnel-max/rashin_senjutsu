@@ -4,6 +4,7 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const { birthdayMiniFamilyForDay } = require('./birthday-mini-family');
+const { dailyBirthdayReelTimesForDate } = require('./social-schedule-rules');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const PLAN_DIR = path.join(ROOT, 'data', 'social-posts', 'reel-plans');
@@ -599,7 +600,7 @@ function rotate(array, amount) {
 }
 
 function postTimesForDate(dateKey) {
-  return dayOfWeek(dateKey) === 4 ? ['21:00', '22:00'] : ['20:00', '21:00', '22:00'];
+  return dailyBirthdayReelTimesForDate(dateKey);
 }
 
 function loadPdcaFeedback() {
@@ -676,7 +677,7 @@ function sourceNotesForDate(dateKey) {
       sourceUrl: 'docs/sns-runbook.md',
       observedPattern: 'Threads + Instagram、InstagramはReels、Threadsは動画投稿。木曜20:00は比較カルーセル優先。',
       usedAs: `${dateKey} の投稿時刻と媒体制約`,
-      transformationNote: '木曜20:00は比較カルーセル優先。日次リールは木曜21:00/22:00、他曜日20:00/21:00/22:00だけにする。',
+      transformationNote: '木曜20:00は比較カルーセル優先。日次リールは木曜21:00/23:00、他曜日20:00/21:00/23:00だけにする。',
       duplicateCheck: '承認済みmanifestと投稿済みledgerの既存タイトルを避ける。',
     },
     {
@@ -798,6 +799,10 @@ function buildPlan(dateKey) {
   return {
     date: dateKey,
     reviewTitle: `${dateKey} 夜枠 誕生日リール自動生成候補`,
+    schedulePolicy: {
+      dailyBirthdayReelTimes: postTimesForDate(dateKey),
+      thursdayComparisonTime: '20:00',
+    },
     sourceNotes: sourceNotesForDate(dateKey),
     pdcaFeedback: pdcaFeedbackSummary(pdcaFeedback),
     requiredResearchTargets: [
@@ -938,6 +943,10 @@ async function main() {
       status: 'skipped_existing_approved_manifest',
       date: dateKey,
       approvedPath: rel(approvedPath),
+      schedulePolicy: {
+        dailyBirthdayReelTimes: postTimesForDate(dateKey),
+        thursdayComparisonTime: '20:00',
+      },
       publishToGit: git,
       posts: (existingApproved.posts || []).map(post => ({ id: post.id, time: post.time, title: post.title })),
     }, null, 2));
@@ -951,6 +960,7 @@ async function main() {
       status: 'dry_run',
       date: dateKey,
       planPath: rel(planPath),
+      schedulePolicy: plan.schedulePolicy,
       pdcaFeedbackApplied: Boolean(plan.pdcaFeedback),
       pdcaFeedback: plan.pdcaFeedback,
       posts: plan.posts.map(post => ({
@@ -987,6 +997,7 @@ async function main() {
     planPath: rel(planPath),
     approvedPath: approval ? rel(approval.approvedPath) : '',
     approvalSkipped: approval ? approval.skipped : false,
+    schedulePolicy: plan.schedulePolicy,
     pdcaFeedbackApplied: Boolean(plan.pdcaFeedback),
     pdcaFeedback: plan.pdcaFeedback,
     publishToGit: git,
