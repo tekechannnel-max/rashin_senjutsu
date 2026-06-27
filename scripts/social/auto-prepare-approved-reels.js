@@ -677,7 +677,7 @@ function sourceNotesForDate(dateKey) {
       sourceUrl: 'docs/sns-runbook.md',
       observedPattern: 'Threads + Instagram、InstagramはReels、Threadsは動画投稿。木曜20:00は比較カルーセル優先。',
       usedAs: `${dateKey} の投稿時刻と媒体制約`,
-      transformationNote: '木曜20:00は比較カルーセル優先。日次リールは木曜21:00/23:00、他曜日20:00/21:00/23:00だけにする。',
+      transformationNote: '木曜20:00は比較カルーセル優先。日次リールは木曜21:00/22:00、他曜日20:00/21:00/22:00だけにする。',
       duplicateCheck: '承認済みmanifestと投稿済みledgerの既存タイトルを避ける。',
     },
     {

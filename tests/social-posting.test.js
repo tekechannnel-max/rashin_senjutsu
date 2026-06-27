@@ -774,8 +774,8 @@ function autoPrepareReelsReport(date) {
 
 function testAutoPrepareReelsUsesDailyBirthdayResearchTypes() {
   const normal = autoPrepareReelsReport('2026-06-29');
-  assert.deepEqual(normal.posts.map(post => post.time), ['20:00', '21:00', '23:00'], 'normal daily reels must only use 20:00, 21:00, and 23:00');
-  assert.deepEqual(normal.schedulePolicy.dailyBirthdayReelTimes, ['20:00', '21:00', '23:00'], 'auto prepare must expose the shared daily reel schedule policy');
+  assert.deepEqual(normal.posts.map(post => post.time), ['20:00', '21:00', '22:00'], 'normal daily reels must only use 20:00, 21:00, and 22:00');
+  assert.deepEqual(normal.schedulePolicy.dailyBirthdayReelTimes, ['20:00', '21:00', '22:00'], 'auto prepare must expose the shared daily reel schedule policy');
   assert.deepEqual(
     normal.posts.map(post => post.topicType),
     ['birthday_top5', 'birthday_day_manual', 'birthday_graph_1_31'],
@@ -787,7 +787,7 @@ function testAutoPrepareReelsUsesDailyBirthdayResearchTypes() {
   assert.equal(normal.posts[2].graphDayCount, 31, 'graph post must cover all 1-31 days');
 
   const thursday = autoPrepareReelsReport('2026-07-02');
-  assert.deepEqual(thursday.posts.map(post => post.time), ['21:00', '23:00'], 'Thursday 20:00 must stay reserved for the comparison carousel');
+  assert.deepEqual(thursday.posts.map(post => post.time), ['21:00', '22:00'], 'Thursday 20:00 must stay reserved for the comparison carousel');
   assert.deepEqual(
     thursday.posts.map(post => post.topicType),
     ['birthday_day_aruaru', 'birthday_graph_1_31'],
@@ -799,10 +799,10 @@ function testWorkflowHasScheduledPostingBackup() {
   const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'threads-social.yml'), 'utf8');
   const automationWorkflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'sns-automation.yml'), 'utf8');
   const reelsBackupWorkflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'instagram-reels-backup.yml'), 'utf8');
-  assert.match(workflow, /cron: '0 23,11,12,13,14 \* \* \*'/, 'Threads workflow should run backup ticks for 08:00, 20:00, 21:00, monthly 22:00, and 23:00 JST');
-  assert.match(workflow, /20:00, 21:00, and 23:00 JST daily reels/, 'Threads workflow must document the latest daily reel lanes');
-  assert.match(automationWorkflow, /20:00, 21:00, and 23:00 JST daily reels/, 'SNS automation workflow must document the latest daily reel lanes');
-  assert.match(reelsBackupWorkflow, /cron: '5,35 11,12,14 \* \* \*'/, 'Instagram reels backup must run the 20:00, 21:00, and 23:00 daily reel slots');
+  assert.match(workflow, /cron: '0 23,11,12,13,14 \* \* \*'/, 'Threads workflow should run backup ticks for 08:00, 20:00, 21:00, 22:00, and monthly 23:00 JST');
+  assert.match(workflow, /20:00, 21:00, and 22:00 JST daily reels/, 'Threads workflow must document the latest daily reel lanes');
+  assert.match(automationWorkflow, /20:00, 21:00, and 22:00 JST daily reels/, 'SNS automation workflow must document the latest daily reel lanes');
+  assert.match(reelsBackupWorkflow, /cron: '5,35 11,12,13 \* \* \*'/, 'Instagram reels backup must run the 20:00, 21:00, and 22:00 daily reel slots');
   assert.match(workflow, /SOCIAL_ORACLE_TIME: '08:00'/, 'Threads workflow should use the 08:00 JST oracle time');
   assert.doesNotMatch(workflow, /cron: '1 14 \* \* \*'/, 'Threads workflow should not run a separate 23:01 JST tick');
   assert.doesNotMatch(workflow, /birthday_monthly_recovery/, 'workflow should not keep old birthday monthly recovery slots');

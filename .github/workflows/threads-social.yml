@@ -5,8 +5,8 @@ on:
     branches:
       - main
   schedule:
-    # Backup scheduled posting ticks for 08:00, 20:00, 21:00, and 23:00 JST daily reels.
-    # 22:00 JST remains available only for monthly birthday carousel 17-24 on the 1st.
+    # Backup scheduled posting ticks for 08:00, 20:00, 21:00, and 22:00 JST daily reels.
+    # 23:00 JST remains available only for monthly birthday carousel 25-31 on the 1st.
     # GitHub schedule can start late, so run-scheduled-posts.js keeps a 59 minute grace window.
     - cron: '0 23,11,12,13,14 * * *'
   workflow_dispatch:

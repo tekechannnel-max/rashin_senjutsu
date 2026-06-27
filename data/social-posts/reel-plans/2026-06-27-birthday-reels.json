@@ -23,7 +23,7 @@
       "sourceUrl": "docs/sns-runbook.md",
       "observedPattern": "Threads + Instagram、InstagramはReels、Threadsは動画投稿。木曜20:00は比較カルーセル優先。",
       "usedAs": "2026-06-27 の投稿時刻と媒体制約",
-      "transformationNote": "木曜20:00は比較カルーセル優先。日次リールは木曜21:00/23:00、他曜日20:00/21:00/23:00だけにする。",
+      "transformationNote": "木曜20:00は比較カルーセル優先。日次リールは木曜21:00/22:00、他曜日20:00/21:00/22:00だけにする。",
       "duplicateCheck": "承認済みmanifestと投稿済みledgerの既存タイトルを避ける。"
     },
     {
@@ -163,7 +163,7 @@
       "summary": "この日の人は、扱い方のポイントを先に知ると関係も予定も整えやすくなります。"
     },
     {
-      "time": "23:00",
+      "time": "22:00",
       "topicType": "birthday_graph_1_31",
       "researchTarget": "birthday_graph_all_days",
       "slug": "birthday-graph-1-31-20260627",

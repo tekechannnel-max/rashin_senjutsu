@@ -180,31 +180,6 @@ const DEFAULT_POSTS = [
     ],
     summary: '助けを呼ぶのが遅い日は、頑張れる力と抱え込みが同時に出やすいです。',
   },
-  {
-    time: '23:00',
-    slug: 'honto-wa-kibou-aru-top5',
-    title: '本当は希望があるのに合わせがちな生まれ日TOP5',
-    titleLines: ['本当は希望があるのに', '合わせがちな生まれ日TOP5'],
-    lead: '「どっちでもいい」と言いながら、内側ではちゃんと選びたいタイプ',
-    sourceUrl: DEFAULT_SOURCE_NOTES[3].sourceUrl,
-    theme: {
-      accent: '#4269aa',
-      accent2: '#a45f30',
-      ink: '#1f2a43',
-      bg1: '#edf3ff',
-      bg2: '#fffdf8',
-      bg3: '#f0e8d8',
-      glow: '#d9f0ff',
-    },
-    rows: [
-      { rank: 1, day: 2, reason: '相手に合わせるのが上手。自分の希望を後ろに置きやすいです。' },
-      { rank: 2, day: 6, reason: '場を丸くしたくて、先に人の気持ちを優先しやすいです。' },
-      { rank: 3, day: 11, reason: '空気を読みすぎて、本音を出す前に相手の反応を見ます。' },
-      { rank: 4, day: 24, reason: '優しさが強く、選びたい気持ちより調和を先にしがちです。' },
-      { rank: 5, day: 29, reason: '感じ取る力が強いぶん、自分の希望を言う前に迷いやすいです。' },
-    ],
-    summary: '合わせがちな日は、希望がないのではなく、言う順番を探しているだけです。',
-  },
 ];
 
 const SOURCE_NOTES = Array.isArray(CONFIG.sourceNotes) ? CONFIG.sourceNotes : DEFAULT_SOURCE_NOTES;
@@ -534,6 +509,11 @@ function draftApprovedManifest(outputs) {
 
 function validatePostData(post) {
   if (AVOIDED_TOPICS.includes(post.title)) throw new Error(`Duplicate topic blocked: ${post.title}`);
+  const allowedTimes = dailyBirthdayReelTimesForDate(TARGET_DATE);
+  const time = String(post.time || '').trim();
+  if (!allowedTimes.includes(time)) {
+    throw new Error(`${post.title} time ${time} is not allowed for ${TARGET_DATE}. Allowed daily reel times: ${allowedTimes.join(', ')}.`);
+  }
   const type = topicTypeOf(post);
   if (type === 'birthday_day_aruaru' || type === 'birthday_day_manual') {
     const day = normalizeBirthDay(post.day);
@@ -1060,7 +1040,7 @@ async function main() {
       rulesApplied: [
         'No posting, scheduling, deletion, reposting, or public URL creation before the post approval gate.',
         'Research source is used only as a topic pattern source, not as copied caption, ranking, image, or video.',
-        'Daily night reel topics cover birthday_day_aruaru/manual, birthday_graph_1_31, and birthday_top5 in the 20:00/21:00/23:00 daily reel slots.',
+        'Daily night reel topics cover birthday_day_aruaru/manual, birthday_graph_1_31, and birthday_top5 in the 20:00/21:00/22:00 daily reel slots.',
         'Night lane outputs are MP4 videos for Instagram Reels and Threads video.',
         'Threads captions use exactly one hashtag.',
         'Mini character family is selected only by birthday-mini-family.js.',

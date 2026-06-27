@@ -155,9 +155,9 @@ function checkApprovedManifests(args, issues, warnings) {
 
 function checkStaleRuleText(issues) {
   const stalePatterns = [
-    { code: 'OPS_STALE_23_BAN_TEXT', pattern: /23:00の日次リールは作|23:00の日次リールも作|without a 23:00 daily reel slot|23:00 JST is kept only for the monthly/i },
-    { code: 'OPS_STALE_DAILY_22_RULE_TEXT', pattern: /20:00 \/ 21:00 \/ 22:00(?!\s*\/\s*23:00).*(?:\u65e5\u6b21|\u591c|\u6295\u7a3f\u30ea\u30ba\u30e0)|(?:\u65e5\u6b21|\u591c|\u6295\u7a3f\u30ea\u30ba\u30e0).*20:00 \/ 21:00 \/ 22:00(?!\s*\/\s*23:00)|20:00-22:00 JST daily reels/i },
-    { code: 'OPS_STALE_AUTOPREPARE_TIMES', pattern: /\['20:00', '21:00', '22:00'\]/ },
+    { code: 'OPS_STALE_DAILY_23_RULE_TEXT', pattern: /20:00 \/ 21:00 \/ 23:00.*(?:\u65e5\u6b21|\u591c|\u6295\u7a3f\u30ea\u30ba\u30e0)|(?:\u65e5\u6b21|\u591c|\u6295\u7a3f\u30ea\u30ba\u30e0).*20:00 \/ 21:00 \/ 23:00|20:00, 21:00, and 23:00 JST daily reels|23:00 JST daily reels/i },
+    { code: 'OPS_STALE_22_BAN_TEXT', pattern: /22:00\u306e\u65e5\u6b21\u30ea\u30fc\u30eb\u306f.*(?:\u4f5c\u3089\u306a\u3044|\u7981\u6b62)|22:00 JST (?:monthly|is kept only)|without a 22:00 daily reel slot/i },
+    { code: 'OPS_STALE_AUTOPREPARE_TIMES', pattern: /\['20:00', '21:00', '23:00'\]/ },
   ];
   const files = [
     'docs/sns-posting-absolute-rules.md',
@@ -171,6 +171,7 @@ function checkStaleRuleText(issues) {
     'scripts/social/auto-prepare-approved-reels.js',
     'scripts/social/generate-birthday-reels-20260620.js',
     'tests/social-approved-reels-guard.test.js',
+    'tests/social-schedule-rules.test.js',
     'tests/social-posting.test.js',
   ].map(file => path.join(ROOT, file)).filter(pathExists);
 

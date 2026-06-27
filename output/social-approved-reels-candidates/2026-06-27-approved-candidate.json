@@ -74,7 +74,7 @@
           "status": "passed",
           "method": "generated_video_poster_preview_contact_sheet_review",
           "checkedBy": "auto-prepare-approved-reels",
-          "checkedAt": "2026-06-27T02:34:05.624Z",
+          "checkedAt": "2026-06-27T02:56:52.945Z",
           "reviewArtifacts": [
             "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/honne-materu-top5/honne-materu-top5-poster.jpg",
             "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/honne-materu-top5/honne-materu-top5-preview.jpg",
@@ -126,7 +126,7 @@
           "status": "passed",
           "method": "generated_video_poster_preview_contact_sheet_review",
           "checkedBy": "auto-prepare-approved-reels",
-          "checkedAt": "2026-06-27T02:34:05.629Z",
+          "checkedAt": "2026-06-27T02:56:52.947Z",
           "reviewArtifacts": [
             "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/birthday-day-manual-12-20260627/birthday-day-manual-12-20260627-poster.jpg",
             "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/birthday-day-manual-12-20260627/birthday-day-manual-12-20260627-preview.jpg",
@@ -143,10 +143,10 @@
       }
     },
     {
-      "id": "birthday_reel_20260627_2300_birthday_graph_1_31_20260627",
+      "id": "birthday_reel_20260627_2200_birthday_graph_1_31_20260627",
       "kind": "birthday_reel",
       "date": "2026-06-27",
-      "time": "23:00",
+      "time": "22:00",
       "topicType": "birthday_graph_1_31",
       "researchTarget": "birthday_graph_all_days",
       "contentDays": [
@@ -418,7 +418,7 @@
           "status": "passed",
           "method": "generated_video_poster_preview_contact_sheet_review",
           "checkedBy": "auto-prepare-approved-reels",
-          "checkedAt": "2026-06-27T02:34:05.629Z",
+          "checkedAt": "2026-06-27T02:56:52.947Z",
           "reviewArtifacts": [
             "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/birthday-graph-1-31-20260627/birthday-graph-1-31-20260627-poster.jpg",
             "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/birthday-graph-1-31-20260627/birthday-graph-1-31-20260627-preview.jpg",

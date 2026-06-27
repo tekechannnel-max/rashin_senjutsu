@@ -74,7 +74,7 @@
           "status": "passed",
           "method": "generated_video_poster_preview_contact_sheet_review",
           "checkedBy": "auto-prepare-approved-reels",
-          "checkedAt": "2026-06-27T02:35:04.239Z",
+          "checkedAt": "2026-06-27T02:57:49.087Z",
           "reviewArtifacts": [
             "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-28/samishisa-egao-kakusu-top5/samishisa-egao-kakusu-top5-poster.jpg",
             "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-28/samishisa-egao-kakusu-top5/samishisa-egao-kakusu-top5-preview.jpg",
@@ -126,7 +126,7 @@
           "status": "passed",
           "method": "generated_video_poster_preview_contact_sheet_review",
           "checkedBy": "auto-prepare-approved-reels",
-          "checkedAt": "2026-06-27T02:35:04.240Z",
+          "checkedAt": "2026-06-27T02:57:49.088Z",
           "reviewArtifacts": [
             "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-28/birthday-day-aruaru-05-20260628/birthday-day-aruaru-05-20260628-poster.jpg",
             "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-28/birthday-day-aruaru-05-20260628/birthday-day-aruaru-05-20260628-preview.jpg",
@@ -143,10 +143,10 @@
       }
     },
     {
-      "id": "birthday_reel_20260628_2300_birthday_graph_1_31_20260628",
+      "id": "birthday_reel_20260628_2200_birthday_graph_1_31_20260628",
       "kind": "birthday_reel",
       "date": "2026-06-28",
-      "time": "23:00",
+      "time": "22:00",
       "topicType": "birthday_graph_1_31",
       "researchTarget": "birthday_graph_all_days",
       "contentDays": [
@@ -418,7 +418,7 @@
           "status": "passed",
           "method": "generated_video_poster_preview_contact_sheet_review",
           "checkedBy": "auto-prepare-approved-reels",
-          "checkedAt": "2026-06-27T02:35:04.240Z",
+          "checkedAt": "2026-06-27T02:57:49.088Z",
           "reviewArtifacts": [
             "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-28/birthday-graph-1-31-20260628/birthday-graph-1-31-20260628-poster.jpg",
             "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-28/birthday-graph-1-31-20260628/birthday-graph-1-31-20260628-preview.jpg",

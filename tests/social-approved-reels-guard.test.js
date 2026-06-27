@@ -64,8 +64,8 @@ assert.doesNotMatch(localAutoPost, /--only-kind=birthday_reel/, 'local Codex sch
 
 const autoPrepare = read('scripts/social/auto-prepare-approved-reels.js');
 assert.match(autoPrepare, /dailyBirthdayReelTimesForDate/, 'auto prepare must use the shared daily reel schedule rules');
-assert.match(scheduleRules, /DAILY_BIRTHDAY_REEL_TIMES = \['20:00', '21:00', '23:00'\]/, 'latest daily reel schedule must be 20:00, 21:00, and 23:00');
-assert.match(scheduleRules, /THURSDAY_DAILY_BIRTHDAY_REEL_TIMES = \['21:00', '23:00'\]/, 'Thursday daily reels must keep 20:00 reserved for comparison carousel');
+assert.match(scheduleRules, /DAILY_BIRTHDAY_REEL_TIMES = \['20:00', '21:00', '22:00'\]/, 'latest daily reel schedule must be 20:00, 21:00, and 22:00');
+assert.match(scheduleRules, /THURSDAY_DAILY_BIRTHDAY_REEL_TIMES = \['21:00', '22:00'\]/, 'Thursday daily reels must keep 20:00 reserved for comparison carousel');
 assert.match(scheduleRules, /DAILY_BIRTHDAY_REEL_RULE_EFFECTIVE_DATE = '2026-06-27'/, 'daily reel schedule switch must be date-bounded');
 assert.match(autoPrepare, /birthday_day_aruaru/, 'auto prepare must generate single-day aruaru topics');
 assert.match(autoPrepare, /birthday_day_manual/, 'auto prepare must generate single-day manual topics');
