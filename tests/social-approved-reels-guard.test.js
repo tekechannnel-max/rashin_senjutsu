@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 
 const ROOT = path.resolve(__dirname, '..');
 process.env.SOCIAL_APPROVED_REELS_DIR = path.join(ROOT, 'tests', 'fixtures', 'social-approved-reels');
@@ -64,6 +65,8 @@ assert.doesNotMatch(localAutoPost, /--only-kind=birthday_reel/, 'local Codex sch
 
 const autoPrepare = read('scripts/social/auto-prepare-approved-reels.js');
 assert.match(autoPrepare, /dailyBirthdayReelTimesForDate/, 'auto prepare must use the shared daily reel schedule rules');
+assert.match(autoPrepare, /SOCIAL_REEL_PREP_BLOCKLIST_FILE/, 'auto prepare must support blocking rejected reel prep dates');
+assert.match(autoPrepare, /skipped_blocked_date/, 'auto prepare must skip blocked prep dates before generation');
 assert.match(scheduleRules, /DAILY_BIRTHDAY_REEL_TIMES = \['20:00', '21:00', '22:00'\]/, 'latest daily reel schedule must be 20:00, 21:00, and 22:00');
 assert.match(scheduleRules, /THURSDAY_DAILY_BIRTHDAY_REEL_TIMES = \['21:00', '22:00'\]/, 'Thursday daily reels must keep 20:00 reserved for comparison carousel');
 assert.match(scheduleRules, /DAILY_BIRTHDAY_REEL_RULE_EFFECTIVE_DATE = '2026-06-27'/, 'daily reel schedule switch must be date-bounded');
@@ -142,6 +145,31 @@ assert.equal(approvedReels.isDue(approvedPosts[0], new Date(process.env.SOCIAL_N
   assert.equal(usage.posts[0].miniCharacters[0].assetPath, 'images/social/instagram/birthday-mini/birthday-family-2-chibi.png', 'usage ledger should remember the exact mini character asset path');
   fs.rmSync(visualOutDir, { recursive: true, force: true });
   fs.rmSync(usageFile, { force: true });
+
+  const prepBlocklist = path.join(ROOT, 'output', 'test-reel-prep-blocklist.json');
+  fs.mkdirSync(path.dirname(prepBlocklist), { recursive: true });
+  fs.writeFileSync(prepBlocklist, `${JSON.stringify({
+    blockedDates: [
+      { date: '2099-01-02', reason: 'test block' },
+    ],
+  }, null, 2)}\n`);
+  const blockedPrepare = spawnSync(process.execPath, [
+    'scripts/social/auto-prepare-approved-reels.js',
+    '--date=2099-01-02',
+    '--dry-run',
+  ], {
+    cwd: ROOT,
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      SOCIAL_REEL_PREP_BLOCKLIST_FILE: prepBlocklist,
+    },
+  });
+  assert.equal(blockedPrepare.status, 0, blockedPrepare.stderr);
+  const blockedPrepareReport = JSON.parse(blockedPrepare.stdout);
+  assert.equal(blockedPrepareReport.status, 'skipped_blocked_date', 'auto prepare should not generate blocked dates');
+  assert.equal(blockedPrepareReport.reason, 'test block', 'auto prepare should report the block reason');
+  fs.rmSync(prepBlocklist, { force: true });
 })().catch(error => {
   console.error(error?.stack || error?.message || String(error));
   process.exit(1);

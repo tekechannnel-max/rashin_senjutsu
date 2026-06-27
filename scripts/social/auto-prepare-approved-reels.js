@@ -14,6 +14,7 @@ const REVIEW_DIR = path.join(ROOT, 'output', 'social-reels-review');
 const GENERATOR = path.join(ROOT, 'scripts', 'social', 'generate-birthday-reels-20260620.js');
 const DEFAULT_PLATFORMS = 'threads,instagram';
 const DEFAULT_PDCA_FEEDBACK_FILE = path.join(ROOT, 'data', 'social-posts', 'pdca', 'video-insights-feedback.json');
+const DEFAULT_PREP_BLOCKLIST_FILE = path.join(ROOT, 'data', 'social-posts', 'reel-prep-blocklist.json');
 
 function resolveConfiguredPath(envName, fallback) {
   const configured = String(process.env[envName] || '').trim();
@@ -22,6 +23,7 @@ function resolveConfiguredPath(envName, fallback) {
 }
 
 const PDCA_FEEDBACK_FILE = resolveConfiguredPath('SOCIAL_VIDEO_PDCA_FEEDBACK_FILE', DEFAULT_PDCA_FEEDBACK_FILE);
+const PREP_BLOCKLIST_FILE = resolveConfiguredPath('SOCIAL_REEL_PREP_BLOCKLIST_FILE', DEFAULT_PREP_BLOCKLIST_FILE);
 
 const THEMES = [
   { accent: '#2d6f86', accent2: '#b76a3b', ink: '#17323c', bg1: '#eef7fb', bg2: '#fffdf8', bg3: '#e8ecd8', glow: '#d7efff' },
@@ -548,6 +550,21 @@ function readJson(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 
+function findBlockedPrepDate(dateKey) {
+  if (!fs.existsSync(PREP_BLOCKLIST_FILE)) return null;
+  const data = readJson(PREP_BLOCKLIST_FILE);
+  const blockedDates = Array.isArray(data) ? data : data.blockedDates || [];
+  for (const entry of blockedDates) {
+    if (typeof entry === 'string' && entry === dateKey) {
+      return { date: dateKey, reason: 'blocked' };
+    }
+    if (entry && entry.date === dateKey && entry.enabled !== false) {
+      return entry;
+    }
+  }
+  return null;
+}
+
 function walkJson(dir) {
   if (!fs.existsSync(dir)) return [];
   const files = [];
@@ -932,6 +949,22 @@ async function approveCandidate(dateKey, options) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const dateKey = validateDateKey(args.date || targetDateFromDaysAhead(args.daysAhead));
+  const blockedPrepDate = findBlockedPrepDate(dateKey);
+  if (blockedPrepDate) {
+    console.log(JSON.stringify({
+      status: 'skipped_blocked_date',
+      date: dateKey,
+      blocklistPath: rel(PREP_BLOCKLIST_FILE),
+      reason: blockedPrepDate.reason || '',
+      unblockCondition: blockedPrepDate.unblockCondition || '',
+      schedulePolicy: {
+        dailyBirthdayReelTimes: postTimesForDate(dateKey),
+        thursdayComparisonTime: '20:00',
+      },
+    }, null, 2));
+    return;
+  }
+
   const approvedPath = path.join(APPROVED_DIR, `${dateKey}-night-reels.json`);
   const existingApproved = fs.existsSync(approvedPath) ? readJson(approvedPath) : null;
   if (!args.overwrite && existingApproved?.approvalStatus === 'approved') {

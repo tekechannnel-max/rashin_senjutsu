@@ -1,0 +1,17 @@
+{
+  "updatedAt": "2026-06-27T03:10:00.000Z",
+  "blockedDates": [
+    {
+      "date": "2026-06-27",
+      "reason": "User rejected the prepared mini character selection before posting.",
+      "blockedBy": "codex",
+      "unblockCondition": "Regenerate only after the corrected mini character mapping is fixed and visually verified."
+    },
+    {
+      "date": "2026-06-28",
+      "reason": "User rejected the prepared mini character selection before posting.",
+      "blockedBy": "codex",
+      "unblockCondition": "Regenerate only after the corrected mini character mapping is fixed and visually verified."
+    }
+  ]
+}
