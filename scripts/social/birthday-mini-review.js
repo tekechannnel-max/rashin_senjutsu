@@ -8,6 +8,7 @@ const {
 } = require('./birthday-mini-family');
 
 const ROOT = path.resolve(__dirname, '..', '..');
+const TOP5_UNIQUE_FAMILY_RULE_EFFECTIVE_DATE = '2026-06-27';
 
 function normalizeBirthDay(value) {
   const day = Number(value);
@@ -75,6 +76,21 @@ function parseSingleDay(post = {}) {
 
 function graphDays() {
   return Array.from({ length: 31 }, (_value, index) => index + 1);
+}
+
+function postDateKey(post = {}) {
+  const raw = String(post.date || post.scheduledDate || post.approvedDate || '').trim();
+  const direct = raw.match(/^\d{4}-\d{2}-\d{2}/);
+  if (direct) return direct[0];
+  const text = [post.id, post.slug, post.videoPath].map(value => String(value || '')).join(' ');
+  const compact = text.match(/(20\d{2})(\d{2})(\d{2})/);
+  if (compact) return `${compact[1]}-${compact[2]}-${compact[3]}`;
+  return '';
+}
+
+function top5UniqueFamilyRuleApplies(post = {}) {
+  const dateKey = postDateKey(post);
+  return !dateKey || dateKey >= TOP5_UNIQUE_FAMILY_RULE_EFFECTIVE_DATE;
 }
 
 function expectedMiniCharacterDaysForPost(post = {}) {
@@ -152,6 +168,19 @@ function validateMiniCharactersForPost(post, entries, label = 'post') {
     });
   } else if (expected.requiredCount && entries.length !== expected.requiredCount) {
     errors.push(`${label} designReview.miniCharacters must list exactly ${expected.requiredCount} entries for ${expected.source}.`);
+  }
+
+  if (topicKind(post) === 'top5' && top5UniqueFamilyRuleApplies(post)) {
+    const seenFamilies = new Set();
+    entries.forEach((entry, index) => {
+      const day = normalizeBirthDay(entry?.day);
+      if (!day) return;
+      const family = birthdayMiniFamilyForDay(day);
+      if (seenFamilies.has(family)) {
+        errors.push(`${label} designReview.miniCharacters[${index}].family duplicates ${family}; TOP5 mini character families must be unique.`);
+      }
+      seenFamilies.add(family);
+    });
   }
 
   return errors;

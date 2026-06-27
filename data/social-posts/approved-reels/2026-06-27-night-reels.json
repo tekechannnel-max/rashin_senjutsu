@@ -1,7 +1,7 @@
 {
   "approvalStatus": "approved",
   "approvedBy": "automation",
-  "approvedAt": "2026-06-27T03:28:45.012Z",
+  "approvedAt": "2026-06-27T04:10:30.403Z",
   "approvalText": "User requested fully automated SNS research, production, approval-manifest preparation, and scheduled posting on 2026-06-25.",
   "approvalScope": "threads,instagram",
   "note": "Auto-approved by local Rashin SNS automation. Posting remains limited to due windows and approved birthday_reel manifests.",
@@ -15,11 +15,14 @@
       "researchTarget": "birthday_top5",
       "contentDays": [
         7,
-        16,
-        25,
         4,
-        22
+        9,
+        10,
+        11
       ],
+      "graphShape": null,
+      "graphAxes": null,
+      "graphDays": [],
       "title": "相手の本音を待てる生まれ日TOP5",
       "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/honne-materu-top5/honne-materu-top5.mp4",
       "platforms": "threads,instagram",
@@ -43,38 +46,38 @@
           },
           {
             "rank": 2,
-            "day": 16,
-            "family": 7,
-            "asset": "birthday-family-7-chibi.png",
-            "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
-          },
-          {
-            "rank": 3,
-            "day": 25,
-            "family": 7,
-            "asset": "birthday-family-7-chibi.png",
-            "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
-          },
-          {
-            "rank": 4,
             "day": 4,
             "family": 4,
             "asset": "birthday-family-4-chibi.png",
             "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
           },
           {
+            "rank": 3,
+            "day": 9,
+            "family": 9,
+            "asset": "birthday-family-9-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-9-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 10,
+            "family": 1,
+            "asset": "birthday-family-1-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
+          },
+          {
             "rank": 5,
-            "day": 22,
-            "family": 4,
-            "asset": "birthday-family-4-chibi.png",
-            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+            "day": 11,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
           }
         ],
         "visualInspection": {
           "status": "passed",
           "method": "generated_video_poster_preview_contact_sheet_review",
           "checkedBy": "auto-prepare-approved-reels",
-          "checkedAt": "2026-06-27T03:28:43.366Z",
+          "checkedAt": "2026-06-27T04:10:28.702Z",
           "reviewArtifacts": [
             "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/honne-materu-top5/honne-materu-top5-poster.jpg",
             "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/honne-materu-top5/honne-materu-top5-preview.jpg",
@@ -101,6 +104,9 @@
       "contentDays": [
         12
       ],
+      "graphShape": null,
+      "graphAxes": null,
+      "graphDays": [],
       "title": "12日生まれ取説5選",
       "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/birthday-day-manual-12-20260627/birthday-day-manual-12-20260627.mp4",
       "platforms": "threads,instagram",
@@ -127,7 +133,7 @@
           "status": "passed",
           "method": "generated_video_poster_preview_contact_sheet_review",
           "checkedBy": "auto-prepare-approved-reels",
-          "checkedAt": "2026-06-27T03:28:43.366Z",
+          "checkedAt": "2026-06-27T04:10:28.703Z",
           "reviewArtifacts": [
             "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/birthday-day-manual-12-20260627/birthday-day-manual-12-20260627-poster.jpg",
             "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/birthday-day-manual-12-20260627/birthday-day-manual-12-20260627-preview.jpg",
@@ -183,6 +189,263 @@
         29,
         30,
         31
+      ],
+      "graphShape": "xy_four_axis",
+      "graphAxes": {
+        "xNegative": "内省",
+        "xPositive": "行動",
+        "yNegative": "安定",
+        "yPositive": "直感"
+      },
+      "graphDays": [
+        {
+          "day": 1,
+          "score": 83,
+          "x": 0.519,
+          "y": -0.281,
+          "quadrant": "right_bottom",
+          "label": "安心"
+        },
+        {
+          "day": 2,
+          "score": 50,
+          "x": -0.111,
+          "y": 0.321,
+          "quadrant": "left_top",
+          "label": "集中"
+        },
+        {
+          "day": 3,
+          "score": 78,
+          "x": -0.227,
+          "y": -0.523,
+          "quadrant": "left_bottom",
+          "label": "調整"
+        },
+        {
+          "day": 4,
+          "score": 45,
+          "x": 0.731,
+          "y": 0.326,
+          "quadrant": "right_top",
+          "label": "共感"
+        },
+        {
+          "day": 5,
+          "score": 73,
+          "x": -0.522,
+          "y": 0.174,
+          "quadrant": "left_top",
+          "label": "挑戦"
+        },
+        {
+          "day": 6,
+          "score": 40,
+          "x": 0.379,
+          "y": -0.682,
+          "quadrant": "right_bottom",
+          "label": "直感"
+        },
+        {
+          "day": 7,
+          "score": 68,
+          "x": 0.123,
+          "y": 0.515,
+          "quadrant": "right_top",
+          "label": "行動"
+        },
+        {
+          "day": 8,
+          "score": 96,
+          "x": -0.63,
+          "y": -0.426,
+          "quadrant": "left_bottom",
+          "label": "安心"
+        },
+        {
+          "day": 9,
+          "score": 86,
+          "x": 0.504,
+          "y": -0.075,
+          "quadrant": "right_bottom",
+          "label": "集中"
+        },
+        {
+          "day": 10,
+          "score": 53,
+          "x": -0.466,
+          "y": 0.574,
+          "quadrant": "left_top",
+          "label": "調整"
+        },
+        {
+          "day": 11,
+          "score": 81,
+          "x": -0.029,
+          "y": -0.489,
+          "quadrant": "left_bottom",
+          "label": "共感"
+        },
+        {
+          "day": 12,
+          "score": 48,
+          "x": 0.517,
+          "y": 0.501,
+          "quadrant": "right_top",
+          "label": "挑戦"
+        },
+        {
+          "day": 13,
+          "score": 76,
+          "x": -0.47,
+          "y": -0.013,
+          "quadrant": "left_bottom",
+          "label": "直感"
+        },
+        {
+          "day": 14,
+          "score": 43,
+          "x": 0.529,
+          "y": -0.458,
+          "quadrant": "right_bottom",
+          "label": "行動"
+        },
+        {
+          "day": 15,
+          "score": 71,
+          "x": -0.052,
+          "y": 0.447,
+          "quadrant": "left_top",
+          "label": "安心"
+        },
+        {
+          "day": 16,
+          "score": 38,
+          "x": -0.398,
+          "y": -0.551,
+          "quadrant": "left_bottom",
+          "label": "集中"
+        },
+        {
+          "day": 17,
+          "score": 66,
+          "x": 0.421,
+          "y": 0.087,
+          "quadrant": "right_top",
+          "label": "調整"
+        },
+        {
+          "day": 18,
+          "score": 56,
+          "x": -0.567,
+          "y": 0.339,
+          "quadrant": "left_top",
+          "label": "共感"
+        },
+        {
+          "day": 19,
+          "score": 84,
+          "x": 0.117,
+          "y": -0.393,
+          "quadrant": "right_bottom",
+          "label": "挑戦"
+        },
+        {
+          "day": 20,
+          "score": 51,
+          "x": 0.279,
+          "y": 0.576,
+          "quadrant": "right_top",
+          "label": "直感"
+        },
+        {
+          "day": 21,
+          "score": 79,
+          "x": -0.362,
+          "y": -0.144,
+          "quadrant": "left_bottom",
+          "label": "行動"
+        },
+        {
+          "day": 22,
+          "score": 46,
+          "x": 0.579,
+          "y": -0.22,
+          "quadrant": "right_bottom",
+          "label": "安心"
+        },
+        {
+          "day": 23,
+          "score": 74,
+          "x": -0.166,
+          "y": 0.331,
+          "quadrant": "left_top",
+          "label": "集中"
+        },
+        {
+          "day": 24,
+          "score": 41,
+          "x": -0.163,
+          "y": -0.577,
+          "quadrant": "left_bottom",
+          "label": "調整"
+        },
+        {
+          "day": 25,
+          "score": 69,
+          "x": 0.298,
+          "y": 0.184,
+          "quadrant": "right_top",
+          "label": "共感"
+        },
+        {
+          "day": 26,
+          "score": 97,
+          "x": -0.57,
+          "y": 0.109,
+          "quadrant": "left_top",
+          "label": "挑戦"
+        },
+        {
+          "day": 27,
+          "score": 87,
+          "x": 0.484,
+          "y": -0.649,
+          "quadrant": "right_bottom",
+          "label": "直感"
+        },
+        {
+          "day": 28,
+          "score": 54,
+          "x": 0.056,
+          "y": 0.557,
+          "quadrant": "right_top",
+          "label": "行動"
+        },
+        {
+          "day": 29,
+          "score": 82,
+          "x": -0.59,
+          "y": -0.526,
+          "quadrant": "left_bottom",
+          "label": "安心"
+        },
+        {
+          "day": 30,
+          "score": 49,
+          "x": 0.54,
+          "y": -0.007,
+          "quadrant": "right_bottom",
+          "label": "集中"
+        },
+        {
+          "day": 31,
+          "score": 77,
+          "x": -0.561,
+          "y": 0.528,
+          "quadrant": "left_top",
+          "label": "調整"
+        }
       ],
       "title": "生まれ日グラフ 1日〜31日",
       "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/birthday-graph-1-31-20260627/birthday-graph-1-31-20260627.mp4",
@@ -420,7 +683,7 @@
           "status": "passed",
           "method": "generated_video_poster_preview_contact_sheet_review",
           "checkedBy": "auto-prepare-approved-reels",
-          "checkedAt": "2026-06-27T03:28:43.366Z",
+          "checkedAt": "2026-06-27T04:10:28.703Z",
           "reviewArtifacts": [
             "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/birthday-graph-1-31-20260627/birthday-graph-1-31-20260627-poster.jpg",
             "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/birthday-graph-1-31-20260627/birthday-graph-1-31-20260627-preview.jpg",

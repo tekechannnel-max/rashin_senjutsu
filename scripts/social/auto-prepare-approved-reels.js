@@ -51,6 +51,8 @@ const DAY_SETS = [
   [20, 29, 2, 13, 31],
 ];
 
+const ALL_BIRTHDAYS = Array.from({ length: 31 }, (_value, index) => index + 1);
+
 const TOPIC_BANK = [
   {
     slug: 'henshin-osokutemo-taisetsu-top5',
@@ -475,13 +477,36 @@ function graphScore(day, seed) {
   return 38 + ((seed + day * 17 + (day % 9) * 11) % 61);
 }
 
+const GRAPH_AXES = {
+  xNegative: '内省',
+  xPositive: '行動',
+  yNegative: '安定',
+  yPositive: '直感',
+};
+
+function graphPoint(day, seed) {
+  const angle = (((day * 137.508) + (seed % 360)) % 360) * Math.PI / 180;
+  const radius = 0.34 + (((seed + day * 23) % 48) / 100);
+  const x = Math.cos(angle) * radius;
+  const y = Math.sin(angle) * radius;
+  return {
+    x: Number(x.toFixed(3)),
+    y: Number(y.toFixed(3)),
+    quadrant: `${x >= 0 ? 'right' : 'left'}_${y >= 0 ? 'top' : 'bottom'}`,
+  };
+}
+
 function buildGraphDays(seed) {
   return Array.from({ length: 31 }, (_, index) => {
     const day = index + 1;
     birthdayMiniFamilyForDay(day);
+    const point = graphPoint(day, seed);
     return {
       day,
       score: graphScore(day, seed),
+      x: point.x,
+      y: point.y,
+      quadrant: point.quadrant,
       label: GRAPH_LABELS[(seed + day) % GRAPH_LABELS.length],
     };
   });
@@ -709,7 +734,20 @@ function sourceNotesForDate(dateKey) {
 }
 
 function buildRows(topic, seed, topicIndex) {
-  const days = rotate(DAY_SETS[(seed + topicIndex) % DAY_SETS.length], topicIndex % 5);
+  const primary = rotate(DAY_SETS[(seed + topicIndex) % DAY_SETS.length], topicIndex % 5);
+  const fallback = rotate(ALL_BIRTHDAYS, (seed + topicIndex * 7) % ALL_BIRTHDAYS.length);
+  const days = [];
+  const families = new Set();
+  for (const day of [...primary, ...fallback]) {
+    const family = birthdayMiniFamilyForDay(day);
+    if (families.has(family)) continue;
+    families.add(family);
+    days.push(day);
+    if (days.length === 5) break;
+  }
+  if (days.length !== 5) {
+    throw new Error(`Could not build a TOP5 with five unique mini character families for ${topic.slug}.`);
+  }
   const patterns = [
     `${topic.trait}が特に出やすい日です。${topic.moment}でも、${topic.value}を大切にできます。`,
     `一見ゆっくりでも観察は細かいです。必要な時だけ、${topic.action}流れを作れます。`,
@@ -718,10 +756,11 @@ function buildRows(topic, seed, topicIndex) {
     `表では控えめでも芯があります。大事な場面で${topic.action}力が出やすい日です。`,
   ];
   return days.map((day, index) => {
-    birthdayMiniFamilyForDay(day);
+    const miniFamily = birthdayMiniFamilyForDay(day);
     return {
       rank: index + 1,
       day,
+      miniFamily,
       reason: patterns[index],
     };
   });
@@ -801,6 +840,8 @@ function buildGraphPost(dateKey, slot, seed, index) {
     lead: '1日から31日までを1本で見られるように、保存向けのグラフ動画にします。',
     sourceUrl: 'https://www.instagram.com/uranai.kitsune/?hl=ja',
     theme: THEMES[(seed + index) % THEMES.length],
+    graphShape: 'xy_four_axis',
+    graphAxes: GRAPH_AXES,
     graphDays: buildGraphDays(seed + index),
     summary: '全日を一度に見られる投稿にして、自分と周りの生まれ日を探しやすくします。',
   };
@@ -1005,6 +1046,8 @@ async function main() {
         day: post.day || null,
         rows: post.rows || null,
         pointCount: Array.isArray(post.points) ? post.points.length : null,
+        graphShape: post.graphShape || null,
+        graphAxes: post.graphAxes || null,
         graphDayCount: Array.isArray(post.graphDays) ? post.graphDays.length : null,
       })),
     }, null, 2));

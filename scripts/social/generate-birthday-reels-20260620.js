@@ -480,6 +480,9 @@ function draftApprovedManifest(outputs) {
       topicType: item.topicType,
       researchTarget: item.researchTarget,
       contentDays: contentDaysForPost(item),
+      graphShape: item.graphShape || null,
+      graphAxes: item.graphAxes || null,
+      graphDays: item.graphDays || [],
       title: item.title,
       videoPath: rel(item.video),
       platforms: 'threads,instagram',
@@ -508,7 +511,9 @@ function draftApprovedManifest(outputs) {
 }
 
 function validatePostData(post) {
-  if (AVOIDED_TOPICS.includes(post.title)) throw new Error(`Duplicate topic blocked: ${post.title}`);
+  if (topicTypeOf(post) === 'birthday_top5' && DEFAULT_AVOIDED_TOPICS.includes(post.title)) {
+    throw new Error(`Duplicate topic blocked: ${post.title}`);
+  }
   const allowedTimes = dailyBirthdayReelTimesForDate(TARGET_DATE);
   const time = String(post.time || '').trim();
   if (!allowedTimes.includes(time)) {
@@ -533,12 +538,15 @@ function validatePostData(post) {
   }
   if (!Array.isArray(post.rows) || post.rows.length !== 5) throw new Error(`${post.title} must have 5 rows.`);
   const days = new Set();
+  const families = new Set();
   for (const row of post.rows) {
     const day = normalizeBirthDay(row.day);
     if (!day) throw new Error(`${post.title} has invalid day: ${row.day}`);
     if (days.has(day)) throw new Error(`${post.title} has duplicate day: ${day}`);
     days.add(day);
     const family = birthdayMiniFamilyForDay(day);
+    if (families.has(family)) throw new Error(`${post.title} has duplicate mini character family: ${family}`);
+    families.add(family);
     if (family < 1 || family > 9) throw new Error(`${post.title} invalid mini family for ${day}`);
   }
 }
@@ -835,23 +843,86 @@ async function recordPostVideo(page, post, miniAssets) {
       const days = post.graphDays || [];
       fillRound(58, 456, 964, 830, 8, 'rgba(255,255,255,.94)', { color: 'rgba(21,45,42,.14)', blur: 22, y: 12 });
       strokeRound(58, 456, 964, 830, 8, color(theme.accent, 0.38), 3);
-      const cols = 4;
-      const cellW = 220;
-      const cellH = 90;
-      const startX = 88;
-      const startY = 494;
+      const axes = post.graphAxes || {};
+      const chart = { x: 118, y: 538, w: 844, h: 612 };
+      const cx = chart.x + chart.w / 2;
+      const cy = chart.y + chart.h / 2;
+      ctx.save();
+      ctx.fillStyle = color(theme.accent, 0.055);
+      ctx.fillRect(chart.x, chart.y, chart.w / 2, chart.h / 2);
+      ctx.fillStyle = color(theme.accent2, 0.055);
+      ctx.fillRect(cx, chart.y, chart.w / 2, chart.h / 2);
+      ctx.fillStyle = color(theme.accent2, 0.045);
+      ctx.fillRect(chart.x, cy, chart.w / 2, chart.h / 2);
+      ctx.fillStyle = color(theme.accent, 0.045);
+      ctx.fillRect(cx, cy, chart.w / 2, chart.h / 2);
+      ctx.strokeStyle = color(theme.ink, 0.14);
+      ctx.lineWidth = 2;
+      for (let step = 1; step <= 3; step += 1) {
+        const gridX = chart.x + (chart.w / 4) * step;
+        const gridY = chart.y + (chart.h / 4) * step;
+        ctx.beginPath();
+        ctx.moveTo(gridX, chart.y);
+        ctx.lineTo(gridX, chart.y + chart.h);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(chart.x, gridY);
+        ctx.lineTo(chart.x + chart.w, gridY);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = color(theme.ink, 0.70);
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(chart.x, cy);
+      ctx.lineTo(chart.x + chart.w, cy);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(cx, chart.y);
+      ctx.lineTo(cx, chart.y + chart.h);
+      ctx.stroke();
+      ctx.fillStyle = color(theme.ink, 0.70);
+      ctx.beginPath();
+      ctx.moveTo(chart.x + chart.w + 12, cy);
+      ctx.lineTo(chart.x + chart.w - 8, cy - 10);
+      ctx.lineTo(chart.x + chart.w - 8, cy + 10);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(cx, chart.y - 12);
+      ctx.lineTo(cx - 10, chart.y + 8);
+      ctx.lineTo(cx + 10, chart.y + 8);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      text(axes.yPositive || '直感', cx - 46, chart.y - 52, 31, '900', color(theme.ink, 0.88), 100);
+      text(axes.yNegative || '安定', cx - 46, chart.y + chart.h + 22, 31, '900', color(theme.ink, 0.88), 100);
+      text(axes.xNegative || '内省', chart.x - 26, cy - 48, 31, '900', color(theme.ink, 0.88), 100);
+      text(axes.xPositive || '行動', chart.x + chart.w - 72, cy - 48, 31, '900', color(theme.ink, 0.88), 100);
       days.forEach((item, index) => {
-        const col = index % cols;
-        const row = Math.floor(index / cols);
-        const x = startX + col * 232;
-        const y = startY + row * cellH;
         const active = activeRank(t, 31) === item.day;
-        fillRound(x, y, cellW, 72, 8, active ? color(theme.accent, 0.12) : 'rgba(255,255,255,.72)');
-        text(String(item.day).padStart(2, '0'), x + 12, y + 12, 27, '900', theme.accent, 44);
-        text('日', x + 52, y + 18, 17, '900', color(theme.ink, 0.64), 22);
-        fillRound(x + 82, y + 18, 108, 12, 6, color(theme.ink, 0.10));
-        fillRound(x + 82, y + 18, Math.max(18, item.score), 12, 6, color(theme.accent2, active ? 0.95 : 0.72));
-        text(item.label, x + 82, y + 38, 19, '900', color(theme.ink, 0.78), 106);
+        const rawX = Number.isFinite(Number(item.x)) ? Number(item.x) : (((item.day % 9) - 4) / 5);
+        const rawY = Number.isFinite(Number(item.y)) ? Number(item.y) : (((Math.floor(item.day / 3) % 9) - 4) / 5);
+        const px = cx + Math.max(-0.92, Math.min(0.92, rawX)) * (chart.w / 2 - 42);
+        const py = cy - Math.max(-0.92, Math.min(0.92, rawY)) * (chart.h / 2 - 42);
+        const r = active ? 24 : 18;
+        ctx.save();
+        ctx.shadowColor = color(theme.accent, active ? 0.38 : 0.18);
+        ctx.shadowBlur = active ? 18 : 9;
+        ctx.shadowOffsetY = 3;
+        ctx.fillStyle = index % 2 ? color(theme.accent2, active ? 0.98 : 0.82) : color(theme.accent, active ? 0.98 : 0.82);
+        ctx.beginPath();
+        ctx.arc(px, py, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255,255,255,.92)';
+        ctx.lineWidth = active ? 4 : 2.5;
+        ctx.beginPath();
+        ctx.arc(px, py, r, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+        const label = String(item.day).padStart(2, '0');
+        text(label, px - 17, py - 13, 22, '900', '#fff', 42);
       });
       fillRound(82, 1218, 916, 42, 8, color(theme.ink, 0.94));
       text('1日〜31日を全件表示。自分と周りの生まれ日を探して保存。', 118, 1228, 23, '900', '#fff', 820);
@@ -1008,6 +1079,8 @@ async function main() {
         sourceUrl: post.sourceUrl,
         day: post.day || null,
         points: post.points || [],
+        graphShape: post.graphShape || null,
+        graphAxes: post.graphAxes || null,
         graphDays: post.graphDays || [],
         video,
         poster,

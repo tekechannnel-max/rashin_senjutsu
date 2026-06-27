@@ -17,9 +17,9 @@
       "contentDays": [
         11,
         22,
-        29,
+        3,
         5,
-        14
+        6
       ],
       "captions": {
         "instagram": "無料占いはプロフィールURLから\n\n検証用TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n\n#羅針占術 #誕生日占い",
@@ -47,10 +47,10 @@
           },
           {
             "rank": 3,
-            "day": 29,
-            "family": 2,
-            "asset": "birthday-family-2-chibi.png",
-            "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
+            "day": 3,
+            "family": 3,
+            "asset": "birthday-family-3-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-3-chibi.png"
           },
           {
             "rank": 4,
@@ -61,10 +61,10 @@
           },
           {
             "rank": 5,
-            "day": 14,
-            "family": 5,
-            "asset": "birthday-family-5-chibi.png",
-            "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
+            "day": 6,
+            "family": 6,
+            "asset": "birthday-family-6-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
           }
         ],
         "visualInspection": {

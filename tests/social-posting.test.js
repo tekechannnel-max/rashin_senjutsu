@@ -784,7 +784,10 @@ function testAutoPrepareReelsUsesDailyBirthdayResearchTypes() {
   assert.equal(normal.posts[1].researchTarget, 'birthday_day_aruaru_manual', 'single-day aruaru/manual must be a daily research target');
   assert.equal(normal.posts[1].pointCount, 5, 'single-day aruaru/manual posts must generate five points');
   assert.equal(normal.posts[2].researchTarget, 'birthday_graph_all_days', 'graph post must be a daily research target');
+  assert.equal(normal.posts[2].graphShape, 'xy_four_axis', 'graph post must be an XY-style four-axis chart, not a bar chart');
   assert.equal(normal.posts[2].graphDayCount, 31, 'graph post must cover all 1-31 days');
+  const top5Families = normal.posts[0].rows.map(row => birthdayMiniFamilyForDay(row.day));
+  assert.equal(new Set(top5Families).size, 5, 'TOP5 rows must use five distinct mini character families');
 
   const thursday = autoPrepareReelsReport('2026-07-02');
   assert.deepEqual(thursday.posts.map(post => post.time), ['21:00', '22:00'], 'Thursday 20:00 must stay reserved for the comparison carousel');

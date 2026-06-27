@@ -30,6 +30,8 @@ assert.match(approvedPublisher, /designReview/, 'approved reel publisher must re
 assert.match(miniReview, /birthdayMiniFamilyForDay/, 'approved reel publisher must verify mini character families from birth days');
 assert.match(miniReview, /assetPath/, 'mini character proof must remember the exact source asset path');
 assert.match(miniReview, /designReview\.miniCharacters/, 'approved reel publisher must require per-day mini character proof');
+assert.match(miniReview, /TOP5 mini character families must be unique/, 'TOP5 approved reels must reject duplicate mini character families');
+assert.match(miniReview, /TOP5_UNIQUE_FAMILY_RULE_EFFECTIVE_DATE = '2026-06-27'/, 'TOP5 unique mini family rule must be active for current daily reel operations');
 assert.match(approvedPublisher, /validateMiniCharactersForPost/, 'approved reel publisher must compare mini character proof with reel content days');
 assert.match(approvedPublisher, /visualInspection/, 'approved reel publisher must require visual inspection proof before posting');
 assert.match(approvedPublisher, /postVideoToThreads/, 'approved reel publisher must support Threads video posting through the shared client');
@@ -64,6 +66,7 @@ assert.match(localAutoPost, /--only-kind=all/, 'local Codex scheduled posting wr
 assert.doesNotMatch(localAutoPost, /--only-kind=birthday_reel/, 'local Codex scheduled posting wrapper must not skip Thursday 20:00 comparison by filtering to birthday reels');
 
 const autoPrepare = read('scripts/social/auto-prepare-approved-reels.js');
+const reelGenerator = read('scripts/social/generate-birthday-reels-20260620.js');
 assert.match(autoPrepare, /dailyBirthdayReelTimesForDate/, 'auto prepare must use the shared daily reel schedule rules');
 assert.match(autoPrepare, /SOCIAL_REEL_PREP_BLOCKLIST_FILE/, 'auto prepare must support blocking rejected reel prep dates');
 assert.match(autoPrepare, /skipped_blocked_date/, 'auto prepare must skip blocked prep dates before generation');
@@ -74,6 +77,9 @@ assert.match(autoPrepare, /birthday_day_aruaru/, 'auto prepare must generate sin
 assert.match(autoPrepare, /birthday_day_manual/, 'auto prepare must generate single-day manual topics');
 assert.match(autoPrepare, /birthday_graph_1_31/, 'auto prepare must generate all-days birthday graph topics');
 assert.match(autoPrepare, /video-insights-feedback\.json/, 'auto prepare must read video PDCA feedback for next research priority');
+assert.match(autoPrepare, /graphShape:\s*'xy_four_axis'/, 'auto prepare must mark all-days graph reels as XY-style four-axis charts');
+assert.match(reelGenerator, /graphShape:\s*item\.graphShape/, 'approved reel manifests must preserve graph shape evidence');
+assert.doesNotMatch(reelGenerator, /fillRound\(x \+ 82, y \+ 18/, 'graph reel renderer must not keep legacy horizontal bar drawing');
 
 const videoInsights = read('scripts/social/collect-video-insights.js');
 assert.match(videoInsights, /SOCIAL_INSIGHTS_COLLECTION_ENABLED/, 'video insight collection must require an explicit live collection gate');
@@ -112,11 +118,11 @@ assert.deepEqual(
   [
     [11, 2, 'birthday-family-2-chibi.png'],
     [22, 4, 'birthday-family-4-chibi.png'],
-    [29, 2, 'birthday-family-2-chibi.png'],
+    [3, 3, 'birthday-family-3-chibi.png'],
     [5, 5, 'birthday-family-5-chibi.png'],
-    [14, 5, 'birthday-family-5-chibi.png'],
+    [6, 6, 'birthday-family-6-chibi.png'],
   ],
-  'fixture approved manifest should preserve reduced 1-9 mini character proof'
+  'fixture approved manifest should preserve reduced 1-9 mini character proof without TOP5 family duplicates'
 );
 assert.equal(approvedReels.isDue(approvedPosts[0], new Date(process.env.SOCIAL_NOW_ISO)), true, 'fixture post should be due at 20:05 JST');
 

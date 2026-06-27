@@ -2,7 +2,7 @@
   "date": "2026-06-28",
   "status": "draft_for_user_review",
   "postingAction": "none",
-  "generatedAt": "2026-06-27T03:29:34.911Z",
+  "generatedAt": "2026-06-27T04:11:26.396Z",
   "sourceNotes": [
     {
       "sourceAccount": "Instagram Creators / Meta",
@@ -60,6 +60,8 @@
     "相手の本音を待てる生まれ日TOP5",
     "12日生まれ取説5選",
     "生まれ日グラフ1日〜31日",
+    "忙しいほど段取りが光る生まれ日TOP5",
+    "5日生まれあるある5選",
     "勢いで予定を決めがちな生まれ日TOP5",
     "甘え下手な生まれ日TOP5",
     "限界まで助けを呼ばない生まれ日TOP5"
@@ -85,6 +87,8 @@
       "sourceUrl": "https://www.instagram.com/uranai.kitsune/?hl=ja",
       "day": null,
       "points": [],
+      "graphShape": null,
+      "graphAxes": null,
       "graphDays": [],
       "video": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-28\\samishisa-egao-kakusu-top5\\samishisa-egao-kakusu-top5.mp4",
       "poster": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-28\\samishisa-egao-kakusu-top5\\samishisa-egao-kakusu-top5-poster.jpg",
@@ -126,63 +130,63 @@
         },
         {
           "rank": 2,
-          "day": 15,
-          "family": 6,
-          "asset": "birthday-family-6-chibi.png",
-          "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
-        },
-        {
-          "rank": 3,
-          "day": 24,
-          "family": 6,
-          "asset": "birthday-family-6-chibi.png",
-          "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
-        },
-        {
-          "rank": 4,
           "day": 2,
           "family": 2,
           "asset": "birthday-family-2-chibi.png",
           "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
         },
         {
+          "rank": 3,
+          "day": 1,
+          "family": 1,
+          "asset": "birthday-family-1-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
+        },
+        {
+          "rank": 4,
+          "day": 3,
+          "family": 3,
+          "asset": "birthday-family-3-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-3-chibi.png"
+        },
+        {
           "rank": 5,
-          "day": 11,
-          "family": 2,
-          "asset": "birthday-family-2-chibi.png",
-          "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
+          "day": 4,
+          "family": 4,
+          "asset": "birthday-family-4-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
         }
       ],
       "rows": [
         {
           "rank": 1,
           "day": 6,
-          "reason": "強がりの奥にある素直さが特に出やすい日です。本当は寂しい場面でも、気づいてくれる人を大切にできます。",
-          "miniFamily": 6
+          "miniFamily": 6,
+          "reason": "強がりの奥にある素直さが特に出やすい日です。本当は寂しい場面でも、気づいてくれる人を大切にできます。"
         },
         {
           "rank": 2,
-          "day": 15,
-          "reason": "一見ゆっくりでも観察は細かいです。必要な時だけ、笑顔で場を保つ流れを作れます。",
-          "miniFamily": 6
+          "day": 2,
+          "miniFamily": 2,
+          "reason": "一見ゆっくりでも観察は細かいです。必要な時だけ、笑顔で場を保つ流れを作れます。"
         },
         {
           "rank": 3,
-          "day": 24,
-          "reason": "無理に目立たなくても伝わります。近くの人ほど、あとから気づいてほしいサインが効いてきます。",
-          "miniFamily": 6
+          "day": 1,
+          "miniFamily": 1,
+          "reason": "無理に目立たなくても伝わります。近くの人ほど、あとから気づいてほしいサインが効いてきます。"
         },
         {
           "rank": 4,
-          "day": 2,
-          "reason": "気持ちを整理してから動くタイプです。勢いより、気づいてくれる人を大切にします。",
-          "miniFamily": 2
+          "day": 3,
+          "miniFamily": 3,
+          "reason": "気持ちを整理してから動くタイプです。勢いより、気づいてくれる人を大切にします。"
         },
         {
           "rank": 5,
-          "day": 11,
-          "reason": "表では控えめでも芯があります。大事な場面で笑顔で場を保つ力が出やすい日です。",
-          "miniFamily": 2
+          "day": 4,
+          "miniFamily": 4,
+          "reason": "表では控えめでも芯があります。大事な場面で笑顔で場を保つ力が出やすい日です。"
         }
       ],
       "metadata": {
@@ -199,7 +203,7 @@
         ],
         "format": {
           "duration": "12.000000",
-          "size": "661435"
+          "size": "516006"
         }
       }
     },
@@ -233,6 +237,8 @@
           "text": "大事な人ほど遠慮して、あとから気持ちを出すことがあります。"
         }
       ],
+      "graphShape": null,
+      "graphAxes": null,
       "graphDays": [],
       "video": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-28\\birthday-day-aruaru-05-20260628\\birthday-day-aruaru-05-20260628.mp4",
       "poster": "D:\\株式会社 天仙\\羅針占術\\videos\\social\\instagram\\【インスタ】あるある・ランキング系\\2026-06-28\\birthday-day-aruaru-05-20260628\\birthday-day-aruaru-05-20260628-poster.jpg",
@@ -288,7 +294,7 @@
         ],
         "format": {
           "duration": "12.000000",
-          "size": "657336"
+          "size": "380450"
         }
       }
     },
@@ -301,160 +307,260 @@
       "sourceUrl": "https://www.instagram.com/uranai.kitsune/?hl=ja",
       "day": null,
       "points": [],
+      "graphShape": "xy_four_axis",
+      "graphAxes": {
+        "xNegative": "内省",
+        "xPositive": "行動",
+        "yNegative": "安定",
+        "yPositive": "直感"
+      },
       "graphDays": [
         {
           "day": 1,
           "score": 84,
+          "x": -0.406,
+          "y": 0.385,
+          "quadrant": "left_top",
           "label": "直感"
         },
         {
           "day": 2,
           "score": 51,
+          "x": 0.055,
+          "y": -0.788,
+          "quadrant": "right_bottom",
           "label": "行動"
         },
         {
           "day": 3,
           "score": 79,
+          "x": 0.336,
+          "y": 0.423,
+          "quadrant": "right_top",
           "label": "安心"
         },
         {
           "day": 4,
           "score": 46,
+          "x": -0.76,
+          "y": -0.121,
+          "quadrant": "left_bottom",
           "label": "集中"
         },
         {
           "day": 5,
           "score": 74,
+          "x": 0.434,
+          "y": -0.287,
+          "quadrant": "right_bottom",
           "label": "調整"
         },
         {
           "day": 6,
           "score": 41,
+          "x": -0.182,
+          "y": 0.728,
+          "quadrant": "left_top",
           "label": "共感"
         },
         {
           "day": 7,
           "score": 69,
+          "x": -0.238,
+          "y": -0.44,
+          "quadrant": "left_bottom",
           "label": "挑戦"
         },
         {
           "day": 8,
           "score": 97,
+          "x": 0.69,
+          "y": 0.238,
+          "quadrant": "right_top",
           "label": "直感"
         },
         {
           "day": 9,
           "score": 87,
+          "x": -0.44,
+          "y": 0.191,
+          "quadrant": "left_top",
           "label": "行動"
         },
         {
           "day": 10,
           "score": 54,
+          "x": 0.29,
+          "y": -0.648,
+          "quadrant": "right_bottom",
           "label": "安心"
         },
         {
           "day": 11,
           "score": 82,
+          "x": 0.145,
+          "y": 0.436,
+          "quadrant": "right_top",
           "label": "集中"
         },
         {
           "day": 12,
           "score": 49,
+          "x": -0.603,
+          "y": -0.336,
+          "quadrant": "left_bottom",
           "label": "調整"
         },
         {
           "day": 13,
           "score": 77,
+          "x": 0.428,
+          "y": -0.102,
+          "quadrant": "right_bottom",
           "label": "共感"
         },
         {
           "day": 14,
           "score": 44,
+          "x": -0.376,
+          "y": 0.555,
+          "quadrant": "left_top",
           "label": "挑戦"
         },
         {
           "day": 15,
           "score": 72,
+          "x": -0.061,
+          "y": -0.416,
+          "quadrant": "left_bottom",
           "label": "直感"
         },
         {
           "day": 16,
           "score": 39,
+          "x": 0.504,
+          "y": 0.41,
+          "quadrant": "right_top",
           "label": "行動"
         },
         {
           "day": 17,
           "score": 67,
+          "x": -0.399,
+          "y": 0.023,
+          "quadrant": "left_top",
           "label": "安心"
         },
         {
           "day": 18,
           "score": 57,
+          "x": 0.439,
+          "y": -0.452,
+          "quadrant": "right_bottom",
           "label": "集中"
         },
         {
           "day": 19,
           "score": 85,
+          "x": -0.011,
+          "y": 0.38,
+          "quadrant": "left_top",
           "label": "調整"
         },
         {
           "day": 20,
           "score": 52,
+          "x": -0.399,
+          "y": -0.461,
+          "quadrant": "left_bottom",
           "label": "共感"
         },
         {
           "day": 21,
           "score": 80,
+          "x": 0.358,
+          "y": 0.042,
+          "quadrant": "right_top",
           "label": "挑戦"
         },
         {
           "day": 22,
           "score": 47,
+          "x": -0.478,
+          "y": 0.345,
+          "quadrant": "left_top",
           "label": "直感"
         },
         {
           "day": 23,
           "score": 75,
+          "x": 0.069,
+          "y": -0.333,
+          "quadrant": "right_bottom",
           "label": "行動"
         },
         {
           "day": 24,
           "score": 42,
+          "x": 0.292,
+          "y": 0.49,
+          "quadrant": "right_top",
           "label": "安心"
         },
         {
           "day": 25,
           "score": 70,
+          "x": -0.766,
+          "y": -0.23,
+          "quadrant": "left_bottom",
           "label": "集中"
         },
         {
           "day": 26,
           "score": 98,
+          "x": 0.495,
+          "y": -0.239,
+          "quadrant": "right_bottom",
           "label": "調整"
         },
         {
           "day": 27,
           "score": 88,
+          "x": -0.289,
+          "y": 0.725,
+          "quadrant": "left_top",
           "label": "共感"
         },
         {
           "day": 28,
           "score": 55,
+          "x": -0.188,
+          "y": -0.496,
+          "quadrant": "left_bottom",
           "label": "挑戦"
         },
         {
           "day": 29,
           "score": 83,
+          "x": 0.679,
+          "y": 0.342,
+          "quadrant": "right_top",
           "label": "直感"
         },
         {
           "day": 30,
           "score": 50,
+          "x": -0.491,
+          "y": 0.139,
+          "quadrant": "left_top",
           "label": "行動"
         },
         {
           "day": 31,
           "score": 78,
+          "x": 0.389,
+          "y": -0.629,
+          "quadrant": "right_bottom",
           "label": "安心"
         }
       ],
@@ -722,7 +828,7 @@
         ],
         "format": {
           "duration": "12.000000",
-          "size": "504903"
+          "size": "328531"
         }
       }
     }
