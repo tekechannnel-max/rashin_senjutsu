@@ -37,17 +37,22 @@ const TARGET_DATE = CONFIG.date || '2026-06-20';
 const COMPACT_DATE = TARGET_DATE.replaceAll('-', '');
 const REVIEW_TITLE = CONFIG.reviewTitle || `${TARGET_DATE} 遅延投稿候補`;
 
+function resolveConfigPath(value, fallback) {
+  if (!value) return fallback;
+  return path.isAbsolute(value) ? value : path.resolve(ROOT, value);
+}
+
 const MINI_ROOT = path.join(ROOT, 'images', 'social', 'instagram', 'birthday-mini');
-const OUT_ROOT = path.join(
+const OUT_ROOT = resolveConfigPath(CONFIG.outRoot, path.join(
   ROOT,
   'videos',
   'social',
   'instagram',
   '【インスタ】あるある・ランキング系',
   TARGET_DATE,
-);
-const REVIEW_ROOT = path.join(ROOT, 'output', 'social-reels-review', TARGET_DATE);
-const DRAFT_MANIFEST_ROOT = path.join(ROOT, 'output', 'social-approved-reels-candidates');
+));
+const REVIEW_ROOT = resolveConfigPath(CONFIG.reviewRoot, path.join(ROOT, 'output', 'social-reels-review', TARGET_DATE));
+const DRAFT_MANIFEST_ROOT = resolveConfigPath(CONFIG.draftManifestRoot, path.join(ROOT, 'output', 'social-approved-reels-candidates'));
 const FFMPEG = process.env.FFMPEG_PATH || 'D:\\remotion-video\\node_modules\\@remotion\\compositor-win32-x64-msvc\\ffmpeg.exe';
 const FFPROBE = process.env.FFPROBE_PATH || 'D:\\remotion-video\\node_modules\\@remotion\\compositor-win32-x64-msvc\\ffprobe.exe';
 
