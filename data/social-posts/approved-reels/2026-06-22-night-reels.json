@@ -37,35 +37,57 @@
             "rank": 1,
             "day": 7,
             "family": 7,
-            "asset": "birthday-family-7-chibi.png"
+            "asset": "birthday-family-7-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
           },
           {
             "rank": 2,
             "day": 16,
             "family": 7,
-            "asset": "birthday-family-7-chibi.png"
+            "asset": "birthday-family-7-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
           },
           {
             "rank": 3,
             "day": 4,
             "family": 4,
-            "asset": "birthday-family-4-chibi.png"
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
           },
           {
             "rank": 4,
             "day": 25,
             "family": 7,
-            "asset": "birthday-family-7-chibi.png"
+            "asset": "birthday-family-7-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
           },
           {
             "rank": 5,
             "day": 31,
             "family": 4,
-            "asset": "birthday-family-4-chibi.png"
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
           }
-        ]
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_contact_sheet_review",
+          "checkedBy": "codex_manifest_backfill",
+          "checkedAt": "2026-06-22T02:54:40.537Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-22/kokoro-hiraku-shinchou-top5/kokoro-hiraku-shinchou-top5-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-22/kokoro-hiraku-shinchou-top5/kokoro-hiraku-shinchou-top5-contact.jpg"
+          ]
+        }
       },
-      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-22/kokoro-hiraku-shinchou-top5/kokoro-hiraku-shinchou-top5.mp4"
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-22/kokoro-hiraku-shinchou-top5/kokoro-hiraku-shinchou-top5.mp4",
+      "contentDays": [
+        7,
+        16,
+        4,
+        25,
+        31
+      ]
     },
     {
       "id": "birthday_reel_20260622_2100_henshin_machi_sowasowa_top5",
@@ -97,35 +119,57 @@
             "rank": 1,
             "day": 2,
             "family": 2,
-            "asset": "birthday-family-2-chibi.png"
+            "asset": "birthday-family-2-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
           },
           {
             "rank": 2,
             "day": 11,
             "family": 2,
-            "asset": "birthday-family-2-chibi.png"
+            "asset": "birthday-family-2-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
           },
           {
             "rank": 3,
             "day": 20,
             "family": 2,
-            "asset": "birthday-family-2-chibi.png"
+            "asset": "birthday-family-2-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
           },
           {
             "rank": 4,
             "day": 29,
             "family": 2,
-            "asset": "birthday-family-2-chibi.png"
+            "asset": "birthday-family-2-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
           },
           {
             "rank": 5,
             "day": 6,
             "family": 6,
-            "asset": "birthday-family-6-chibi.png"
+            "asset": "birthday-family-6-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
           }
-        ]
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_contact_sheet_review",
+          "checkedBy": "codex_manifest_backfill",
+          "checkedAt": "2026-06-22T02:54:40.537Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-22/henshin-machi-sowasowa-top5/henshin-machi-sowasowa-top5-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-22/henshin-machi-sowasowa-top5/henshin-machi-sowasowa-top5-contact.jpg"
+          ]
+        }
       },
-      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-22/henshin-machi-sowasowa-top5/henshin-machi-sowasowa-top5.mp4"
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-22/henshin-machi-sowasowa-top5/henshin-machi-sowasowa-top5.mp4",
+      "contentDays": [
+        2,
+        11,
+        20,
+        29,
+        6
+      ]
     },
     {
       "id": "birthday_reel_20260622_2200_shiseikatsu_nazo_top5",
@@ -157,35 +201,57 @@
             "rank": 1,
             "day": 7,
             "family": 7,
-            "asset": "birthday-family-7-chibi.png"
+            "asset": "birthday-family-7-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
           },
           {
             "rank": 2,
             "day": 22,
             "family": 4,
-            "asset": "birthday-family-4-chibi.png"
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
           },
           {
             "rank": 3,
             "day": 13,
             "family": 4,
-            "asset": "birthday-family-4-chibi.png"
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
           },
           {
             "rank": 4,
             "day": 9,
             "family": 9,
-            "asset": "birthday-family-9-chibi.png"
+            "asset": "birthday-family-9-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-9-chibi.png"
           },
           {
             "rank": 5,
             "day": 18,
             "family": 9,
-            "asset": "birthday-family-9-chibi.png"
+            "asset": "birthday-family-9-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-9-chibi.png"
           }
-        ]
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_contact_sheet_review",
+          "checkedBy": "codex_manifest_backfill",
+          "checkedAt": "2026-06-22T02:54:40.537Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-22/shiseikatsu-nazo-top5/shiseikatsu-nazo-top5-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-22/shiseikatsu-nazo-top5/shiseikatsu-nazo-top5-contact.jpg"
+          ]
+        }
       },
-      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-22/shiseikatsu-nazo-top5/shiseikatsu-nazo-top5.mp4"
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-22/shiseikatsu-nazo-top5/shiseikatsu-nazo-top5.mp4",
+      "contentDays": [
+        7,
+        22,
+        13,
+        9,
+        18
+      ]
     }
   ]
 }

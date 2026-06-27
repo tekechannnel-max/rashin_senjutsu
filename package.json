@@ -23,6 +23,7 @@
     "social:kpi-template": "node scripts/social/prepare-kpi-review.js",
     "social:video-insights": "node scripts/social/collect-video-insights.js",
     "social:video-pdca": "node scripts/social/analyze-video-pdca.js",
+    "social:visual-review": "node scripts/social/verify-approved-reels-visuals.js",
     "social:run-due": "node scripts/social/run-scheduled-posts.js --once",
     "social:auto-prepare-reels": "node scripts/social/auto-prepare-approved-reels.js",
     "social:guard": "node scripts/social/validate-social-pipeline-guardrails.js",

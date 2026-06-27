@@ -14,6 +14,13 @@
       "videoPath": "tests/fixtures/social-approved-reels/sample-video.mp4",
       "videoUrl": "https://example.com/social-approved-reels/sample-video.mp4",
       "platforms": "threads,instagram",
+      "contentDays": [
+        11,
+        22,
+        29,
+        5,
+        14
+      ],
       "captions": {
         "instagram": "無料占いはプロフィールURLから\n\n検証用TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n\n#羅針占術 #誕生日占い",
         "threads": "無料占いはプロフィールURLから👀✨\n\n検証用TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n\n#誕生日占い"
@@ -28,21 +35,48 @@
             "rank": 1,
             "day": 11,
             "family": 2,
-            "asset": "birthday-family-2-chibi.png"
+            "asset": "birthday-family-2-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
           },
           {
             "rank": 2,
             "day": 22,
             "family": 4,
-            "asset": "birthday-family-4-chibi.png"
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
           },
           {
             "rank": 3,
             "day": 29,
             "family": 2,
-            "asset": "birthday-family-2-chibi.png"
+            "asset": "birthday-family-2-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 5,
+            "family": 5,
+            "asset": "birthday-family-5-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 14,
+            "family": 5,
+            "asset": "birthday-family-5-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
           }
         ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "fixture_contact_sheet_review",
+          "checkedBy": "test",
+          "checkedAt": "2026-06-20T15:05:00+09:00",
+          "reviewArtifacts": [
+            "tests/fixtures/social-approved-reels/representative-frame.png",
+            "tests/fixtures/social-approved-reels/representative-contact.png"
+          ]
+        },
         "checks": {
           "safeArea": true,
           "readability": true,

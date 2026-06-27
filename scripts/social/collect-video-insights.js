@@ -10,6 +10,7 @@ const DEFAULT_RESULTS_FILE = path.join(ROOT, 'data', 'social-posts', 'approved-r
 const DEFAULT_APPROVED_DIR = path.join(ROOT, 'data', 'social-posts', 'approved-reels');
 const DEFAULT_OUT_DIR = path.join(ROOT, 'data', 'social-posts', 'video-insights');
 const DEFAULT_LATEST_FILE = path.join(DEFAULT_OUT_DIR, 'latest.json');
+const DEFAULT_DELETED_POSTS_FILE = path.join(ROOT, 'data', 'social-posts', 'deleted-posts.json');
 const DEFAULT_PLATFORMS = 'threads,instagram';
 const DEFAULT_SINCE_DAYS = 14;
 const DEFAULT_MAX_POSTS = 80;
@@ -26,6 +27,7 @@ const RESULT_FILE = resolveConfiguredPath('SOCIAL_APPROVED_REELS_RESULTS_FILE', 
 const APPROVED_DIR = resolveConfiguredPath('SOCIAL_APPROVED_REELS_DIR', DEFAULT_APPROVED_DIR);
 const OUT_DIR = resolveConfiguredPath('SOCIAL_VIDEO_INSIGHTS_DIR', DEFAULT_OUT_DIR);
 const LATEST_FILE = resolveConfiguredPath('SOCIAL_VIDEO_INSIGHTS_LATEST_FILE', DEFAULT_LATEST_FILE);
+const DELETED_POSTS_FILE = resolveConfiguredPath('SOCIAL_DELETED_POSTS_FILE', DEFAULT_DELETED_POSTS_FILE);
 
 function parseArgs(argv) {
   const today = getJstDateKey();
@@ -136,6 +138,57 @@ function readJsonSync(file, fallback = null) {
   }
 }
 
+function addRegistryValue(set, value) {
+  const text = String(value || '').trim();
+  if (text) set.add(text);
+}
+
+function buildDeletedPostRegistry(raw = null) {
+  const registry = {
+    keys: new Set(),
+    mediaIds: new Set(),
+    postIds: new Set(),
+    permalinks: new Set(),
+    sourceFiles: new Set(),
+    dates: new Set(),
+  };
+  const addItem = item => {
+    if (!item) return;
+    if (typeof item === 'string') {
+      addRegistryValue(registry.keys, item);
+      addRegistryValue(registry.mediaIds, item);
+      addRegistryValue(registry.postIds, item);
+      return;
+    }
+    addRegistryValue(registry.keys, item.key || item.resultKey);
+    addRegistryValue(registry.mediaIds, item.mediaId || item.id);
+    addRegistryValue(registry.postIds, item.postId);
+    addRegistryValue(registry.permalinks, item.permalink || item.url);
+    addRegistryValue(registry.sourceFiles, item.sourceFile);
+    addRegistryValue(registry.dates, item.date);
+  };
+  const items = Array.isArray(raw)
+    ? raw
+    : [
+      ...(Array.isArray(raw?.deleted) ? raw.deleted : []),
+      ...(Array.isArray(raw?.posts) ? raw.posts : []),
+    ];
+  for (const item of items) addItem(item);
+  for (const key of ['keys', 'mediaIds', 'postIds', 'permalinks', 'sourceFiles', 'dates']) {
+    for (const value of raw?.[key] || []) addRegistryValue(registry[key], value);
+  }
+  return registry;
+}
+
+function loadDeletedPostRegistry() {
+  return buildDeletedPostRegistry(readJsonSync(DELETED_POSTS_FILE, null));
+}
+
+function registryHas(set, value) {
+  const text = String(value || '').trim();
+  return Boolean(text && set.has(text));
+}
+
 async function writeJson(file, value) {
   await fsp.mkdir(path.dirname(file), { recursive: true });
   await fsp.writeFile(file, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
@@ -198,7 +251,20 @@ function dateFromResultKey(key, result) {
   return String(result?.at || '').slice(0, 10);
 }
 
-function selectTargets(results, approvedIndex, args) {
+function isDeletedPostResult(key, result, approved = {}, registry = buildDeletedPostRegistry()) {
+  const status = String(result?.status || '').toLowerCase();
+  if (['deleted', 'user_deleted', 'deleted_user_reported', 'removed'].includes(status)) return true;
+  if (result?.deleted === true || result?.userDeleted === true || result?.deletedAt) return true;
+  const date = dateFromResultKey(key, result);
+  return registryHas(registry.keys, key)
+    || registryHas(registry.mediaIds, result?.id || result?.mediaId)
+    || registryHas(registry.postIds, result?.postId || approved.id)
+    || registryHas(registry.permalinks, result?.permalink)
+    || registryHas(registry.sourceFiles, result?.sourceFile || approved.sourceFile)
+    || registryHas(registry.dates, date);
+}
+
+function selectTargets(results, approvedIndex, args, deletedRegistry = loadDeletedPostRegistry()) {
   const targets = [];
   for (const [key, result] of Object.entries(results || {})) {
     if (!result || result.status !== 'posted') continue;
@@ -208,6 +274,7 @@ function selectTargets(results, approvedIndex, args) {
     const date = dateFromResultKey(key, result);
     if (!date || date < args.from || date > args.to) continue;
     const approved = approvedIndex.get(result.postId) || {};
+    if (isDeletedPostResult(key, result, approved, deletedRegistry)) continue;
     targets.push({
       key,
       date,
@@ -299,12 +366,14 @@ function collectionEnabled() {
 async function run(args = parseArgs(process.argv.slice(2))) {
   const approvedIndex = loadApprovedPostIndex();
   const results = readJsonSync(RESULT_FILE, {});
-  const targets = selectTargets(results, approvedIndex, args);
+  const deletedRegistry = loadDeletedPostRegistry();
+  const targets = selectTargets(results, approvedIndex, args, deletedRegistry);
   const baseReport = {
     ok: true,
     status: args.dryRun ? 'dry_run' : 'live',
     collectedAt: new Date().toISOString(),
     sourceResultFile: rel(RESULT_FILE),
+    deletedPostRegistry: fs.existsSync(DELETED_POSTS_FILE) ? rel(DELETED_POSTS_FILE) : '',
     approvedManifestDir: rel(APPROVED_DIR),
     from: args.from,
     to: args.to,
@@ -355,6 +424,9 @@ if (require.main === module) {
 }
 
 module.exports = {
+  buildDeletedPostRegistry,
+  isDeletedPostResult,
+  loadDeletedPostRegistry,
   parseArgs,
   run,
   selectTargets,

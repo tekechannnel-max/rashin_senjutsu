@@ -1,3 +1,8 @@
+const path = require('node:path');
+
+const ROOT = path.resolve(__dirname, '..', '..');
+const BIRTHDAY_MINI_ASSET_DIR = path.join(ROOT, 'images', 'social', 'instagram', 'birthday-mini');
+
 const BIRTHDAY_MINI_FAMILY_DAYS = Object.freeze({
   1: Object.freeze([1, 10, 19, 28]),
   2: Object.freeze([2, 11, 20, 29]),
@@ -26,8 +31,21 @@ function birthdayMiniAssetNameForDay(day) {
   return `birthday-family-${birthdayMiniFamilyForDay(day)}-chibi.png`;
 }
 
+function birthdayMiniAssetPathForDay(day, options = {}) {
+  const relativePath = path.join(
+    'images',
+    'social',
+    'instagram',
+    'birthday-mini',
+    birthdayMiniAssetNameForDay(day)
+  ).replace(/\\/g, '/');
+  return options.absolute ? path.join(ROOT, relativePath) : relativePath;
+}
+
 module.exports = {
+  BIRTHDAY_MINI_ASSET_DIR,
   BIRTHDAY_MINI_FAMILY_DAYS,
   birthdayMiniAssetNameForDay,
+  birthdayMiniAssetPathForDay,
   birthdayMiniFamilyForDay,
 };

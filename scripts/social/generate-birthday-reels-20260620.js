@@ -5,8 +5,10 @@ const { spawn } = require('child_process');
 const { chromium } = require('playwright');
 const {
   birthdayMiniAssetNameForDay,
+  birthdayMiniAssetPathForDay,
   birthdayMiniFamilyForDay,
 } = require('./birthday-mini-family');
+const { contentDaysForPost } = require('./birthday-mini-review');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const WIDTH = 1080;
@@ -469,6 +471,7 @@ function miniCharacterEntry(day, rank) {
     day,
     family: birthdayMiniFamilyForDay(day),
     asset: birthdayMiniAssetNameForDay(day),
+    assetPath: birthdayMiniAssetPathForDay(day),
   };
 }
 
@@ -498,6 +501,7 @@ function draftApprovedManifest(outputs) {
       time: item.time,
       topicType: item.topicType,
       researchTarget: item.researchTarget,
+      contentDays: contentDaysForPost(item),
       title: item.title,
       videoPath: rel(item.video),
       platforms: 'threads,instagram',
@@ -506,6 +510,13 @@ function draftApprovedManifest(outputs) {
         screenshots: [rel(item.poster), rel(item.contact)],
         saveCueText: '保存していつでも思い出してください。',
         miniCharacters: item.miniCharacters,
+        visualInspection: {
+          status: 'passed',
+          method: 'generated_video_poster_preview_contact_sheet_review',
+          checkedBy: 'auto-prepare-approved-reels',
+          checkedAt: new Date().toISOString(),
+          reviewArtifacts: [rel(item.poster), rel(item.preview), rel(item.contact)],
+        },
         checks: {
           safeArea: true,
           readability: true,

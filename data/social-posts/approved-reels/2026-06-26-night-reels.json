@@ -29,31 +29,36 @@
             "rank": 1,
             "day": 20,
             "family": 2,
-            "asset": "birthday-family-2-chibi.png"
+            "asset": "birthday-family-2-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
           },
           {
             "rank": 2,
             "day": 29,
             "family": 2,
-            "asset": "birthday-family-2-chibi.png"
+            "asset": "birthday-family-2-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
           },
           {
             "rank": 3,
             "day": 2,
             "family": 2,
-            "asset": "birthday-family-2-chibi.png"
+            "asset": "birthday-family-2-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
           },
           {
             "rank": 4,
             "day": 13,
             "family": 4,
-            "asset": "birthday-family-4-chibi.png"
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
           },
           {
             "rank": 5,
             "day": 31,
             "family": 4,
-            "asset": "birthday-family-4-chibi.png"
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
           }
         ],
         "checks": {
@@ -62,9 +67,26 @@
           "noTextPatternOverlap": true,
           "saveCue": true,
           "minicharaByNumber": true
+        },
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_contact_sheet_review",
+          "checkedBy": "codex_manifest_backfill",
+          "checkedAt": "2026-06-24T15:17:58.693Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-26/henka-mae-shizuka-top5/henka-mae-shizuka-top5-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-26/henka-mae-shizuka-top5/henka-mae-shizuka-top5-contact.jpg"
+          ]
         }
       },
-      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-26/henka-mae-shizuka-top5/henka-mae-shizuka-top5.mp4"
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-26/henka-mae-shizuka-top5/henka-mae-shizuka-top5.mp4",
+      "contentDays": [
+        20,
+        29,
+        2,
+        13,
+        31
+      ]
     },
     {
       "id": "birthday_reel_20260626_2100_chokkan_kiken_sakeru_top5",
@@ -89,31 +111,36 @@
             "rank": 1,
             "day": 16,
             "family": 7,
-            "asset": "birthday-family-7-chibi.png"
+            "asset": "birthday-family-7-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
           },
           {
             "rank": 2,
             "day": 25,
             "family": 7,
-            "asset": "birthday-family-7-chibi.png"
+            "asset": "birthday-family-7-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
           },
           {
             "rank": 3,
             "day": 4,
             "family": 4,
-            "asset": "birthday-family-4-chibi.png"
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
           },
           {
             "rank": 4,
             "day": 22,
             "family": 4,
-            "asset": "birthday-family-4-chibi.png"
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
           },
           {
             "rank": 5,
             "day": 7,
             "family": 7,
-            "asset": "birthday-family-7-chibi.png"
+            "asset": "birthday-family-7-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
           }
         ],
         "checks": {
@@ -122,9 +149,26 @@
           "noTextPatternOverlap": true,
           "saveCue": true,
           "minicharaByNumber": true
+        },
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_contact_sheet_review",
+          "checkedBy": "codex_manifest_backfill",
+          "checkedAt": "2026-06-24T15:17:58.693Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-26/chokkan-kiken-sakeru-top5/chokkan-kiken-sakeru-top5-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-26/chokkan-kiken-sakeru-top5/chokkan-kiken-sakeru-top5-contact.jpg"
+          ]
         }
       },
-      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-26/chokkan-kiken-sakeru-top5/chokkan-kiken-sakeru-top5.mp4"
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-26/chokkan-kiken-sakeru-top5/chokkan-kiken-sakeru-top5.mp4",
+      "contentDays": [
+        16,
+        25,
+        4,
+        22,
+        7
+      ]
     },
     {
       "id": "birthday_reel_20260626_2200_daiji_hito_hodo_enryo_top5",
@@ -149,31 +193,36 @@
             "rank": 1,
             "day": 24,
             "family": 6,
-            "asset": "birthday-family-6-chibi.png"
+            "asset": "birthday-family-6-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
           },
           {
             "rank": 2,
             "day": 1,
             "family": 1,
-            "asset": "birthday-family-1-chibi.png"
+            "asset": "birthday-family-1-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
           },
           {
             "rank": 3,
             "day": 31,
             "family": 4,
-            "asset": "birthday-family-4-chibi.png"
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
           },
           {
             "rank": 4,
             "day": 8,
             "family": 8,
-            "asset": "birthday-family-8-chibi.png"
+            "asset": "birthday-family-8-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-8-chibi.png"
           },
           {
             "rank": 5,
             "day": 6,
             "family": 6,
-            "asset": "birthday-family-6-chibi.png"
+            "asset": "birthday-family-6-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
           }
         ],
         "checks": {
@@ -182,9 +231,26 @@
           "noTextPatternOverlap": true,
           "saveCue": true,
           "minicharaByNumber": true
+        },
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_contact_sheet_review",
+          "checkedBy": "codex_manifest_backfill",
+          "checkedAt": "2026-06-24T15:17:58.693Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-26/daiji-hito-hodo-enryo-top5/daiji-hito-hodo-enryo-top5-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-26/daiji-hito-hodo-enryo-top5/daiji-hito-hodo-enryo-top5-contact.jpg"
+          ]
         }
       },
-      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-26/daiji-hito-hodo-enryo-top5/daiji-hito-hodo-enryo-top5.mp4"
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-26/daiji-hito-hodo-enryo-top5/daiji-hito-hodo-enryo-top5.mp4",
+      "contentDays": [
+        24,
+        1,
+        31,
+        8,
+        6
+      ]
     }
   ],
   "sourceCandidate": "output/social-approved-reels-candidates/2026-06-26-approved-candidate.json"

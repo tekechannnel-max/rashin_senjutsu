@@ -27,6 +27,7 @@ SNS投稿、投稿文生成、画像生成、動画生成、予約投稿、自�
 - `prepare-kpi-review.js`: KPI確認用CSVを生成します。
 - `collect-video-insights.js`: 投稿済み動画のInstagram / Threadsインサイトを収集し、スナップショットとして保存します。実API取得は `SOCIAL_INSIGHTS_COLLECTION_ENABLED=true` が必要です。
 - `analyze-video-pdca.js`: 動画インサイトを保存、シェア、返信/コメント、プロフィール訪問、再生/表示で評価し、次回の自動リサーチ用フィードバックを作ります。
+- `verify-approved-reels-visuals.js`: 承認済みReelsの動画、poster/contact、使用ミニキャラ画像パスを同じHTMLで確認できるようにし、ミニキャラ使用台帳を更新します。
 - `threads-tool.js`: Threadsの接続確認と手動テスト用です。
 - `instagram-client.js`: Instagram投稿APIの共通処理です。
 - `post-approved-reels.js`: 承認済みReels manifestだけを投稿対象にする唯一の動画投稿入口です。
@@ -44,6 +45,7 @@ npm run social:audit -- --from=2026-06-06 --to=2026-06-10 --platforms=threads,in
 node scripts/social/run-scheduled-posts.js --once --dry-run --only-kind=all
 npm run social:video-insights -- --dry-run --since-days=14 --platforms=threads,instagram
 npm run social:video-pdca -- --write-feedback
+npm run social:visual-review -- --date=2026-06-27 --write-review --write-usage
 ```
 
 ## Render本番

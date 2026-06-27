@@ -3,9 +3,8 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
 const {
-  birthdayMiniAssetNameForDay,
-  birthdayMiniFamilyForDay,
-} = require('./birthday-mini-family');
+  validateMiniCharactersForPost,
+} = require('./birthday-mini-review');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 
@@ -46,11 +45,6 @@ function parseJson(filePath) {
   }
 }
 
-function normalizeBirthDay(value) {
-  const day = Number(value);
-  return Number.isInteger(day) && day >= 1 && day <= 31 ? day : null;
-}
-
 function validateApprovedMiniCharacters(file, index, post, designReview) {
   if ((post.kind || 'birthday_reel') !== 'birthday_reel') return;
   const entries = Array.isArray(designReview.miniCharacters)
@@ -66,40 +60,42 @@ function validateApprovedMiniCharacters(file, index, post, designReview) {
     );
     return;
   }
-  const seenDays = new Set();
-  for (const [entryIndex, entry] of entries.entries()) {
-    const day = normalizeBirthDay(entry?.day);
-    if (!day) {
-      addViolation(
-        'APPROVED_POST_INVALID_MINICHARA_SELECTION',
-        file,
-        `posts[${index}].designReview.miniCharacters[${entryIndex}].day must be an integer from 1 to 31.`
-      );
-      continue;
+  const label = `posts[${index}]`;
+  for (const error of validateMiniCharactersForPost(post, entries, label)) {
+    addViolation(
+      /exactly|must be \d+ for/.test(error)
+        ? 'APPROVED_POST_MINICHARA_CONTENT_MISMATCH'
+        : 'APPROVED_POST_INVALID_MINICHARA_SELECTION',
+      file,
+      error
+    );
+  }
+}
+
+function validateVisualInspection(file, index, designReview) {
+  const visual = designReview.visualInspection || {};
+  if (visual.status !== 'passed') {
+    addViolation('APPROVED_POST_MISSING_VISUAL_INSPECTION', file, `posts[${index}] must set designReview.visualInspection.status=passed.`);
+  }
+  for (const key of ['method', 'checkedBy', 'checkedAt']) {
+    if (!String(visual[key] || '').trim()) {
+      addViolation('APPROVED_POST_MISSING_VISUAL_INSPECTION', file, `posts[${index}] must set designReview.visualInspection.${key}.`);
     }
-    if (seenDays.has(day)) {
-      addViolation(
-        'APPROVED_POST_INVALID_MINICHARA_SELECTION',
-        file,
-        `posts[${index}].designReview.miniCharacters[${entryIndex}] duplicates ${day}日生まれ.`
-      );
-    }
-    seenDays.add(day);
-    const expectedFamily = birthdayMiniFamilyForDay(day);
-    const expectedAsset = birthdayMiniAssetNameForDay(day);
-    if (Number(entry.family) !== expectedFamily) {
-      addViolation(
-        'APPROVED_POST_INVALID_MINICHARA_SELECTION',
-        file,
-        `posts[${index}].designReview.miniCharacters[${entryIndex}].family must be ${expectedFamily} for ${day}日生まれ.`
-      );
-    }
-    if (String(entry.asset || '').trim() !== expectedAsset) {
-      addViolation(
-        'APPROVED_POST_INVALID_MINICHARA_SELECTION',
-        file,
-        `posts[${index}].designReview.miniCharacters[${entryIndex}].asset must be ${expectedAsset} for ${day}日生まれ.`
-      );
+  }
+  const artifacts = Array.isArray(visual.reviewArtifacts) ? visual.reviewArtifacts : [];
+  if (!artifacts.length) {
+    addViolation('APPROVED_POST_MISSING_VISUAL_INSPECTION', file, `posts[${index}] must include designReview.visualInspection.reviewArtifacts.`);
+    return;
+  }
+  if (!artifacts.some(artifact => /contact/i.test(String(artifact)))) {
+    addViolation('APPROVED_POST_MISSING_VISUAL_INSPECTION', file, `posts[${index}] visual inspection must include a contact sheet artifact.`);
+  }
+  for (const artifact of artifacts) {
+    const value = String(artifact || '').trim();
+    if (!value || /^https?:\/\//i.test(value)) continue;
+    const artifactPath = path.resolve(ROOT, value);
+    if (!pathExists(artifactPath)) {
+      addViolation('APPROVED_POST_MISSING_VISUAL_ARTIFACT', file, `posts[${index}] visual review artifact does not exist: ${rel(artifactPath)}.`);
     }
   }
 }
@@ -325,6 +321,7 @@ for (const file of approvedManifestFiles) {
       addViolation('APPROVED_POST_MISSING_SCREENSHOT_PROOF', file, `posts[${index}] must include designReview.screenshots.`);
     }
     validateApprovedMiniCharacters(file, index, post, designReview);
+    validateVisualInspection(file, index, designReview);
   }
 }
 

@@ -17,7 +17,7 @@ AI職場側の調査資料や一時出力は参考にしない。羅針占術の
 
 実装上の正本は `scripts/social/birthday-mini-family.js`。生成スクリプトごとの独自計算、手入力の系指定、テーマ・順位・背景色・本文の雰囲気によるキャラ選定をしない。
 
-承認済みリールのJSONには、`designReview.miniCharacters` として各順位の `day`、還元後の `family`、使用アセット名を残す。投稿前ガードでこの表を `scripts/social/birthday-mini-family.js` と照合できない場合は、`minicharaByNumber: true` があっても不合格にする。
+承認済みリールのJSONには、`designReview.miniCharacters` として各順位の `day`、還元後の `family`、使用アセット名、`assetPath` を残す。投稿前ガードでこの表を `scripts/social/birthday-mini-family.js` と照合できない場合は、`minicharaByNumber: true` があっても不合格にする。使用したミニキャラ画像は `images/social/instagram/birthday-mini/birthday-family-N-chibi.png` まで記録する。
 
 | ミニキャラ | 該当する生まれ日 |
 | --- | --- |
@@ -96,6 +96,7 @@ videos/social/instagram/【インスタ】あるある・ランキング系/
 - 保存CTAは「保存していつでも思い出してください。」を基本にすること。
 - 羅針占術誘導は、保存CTAの後に自然につなげること。
 - 生成後にスクリーンショット、プレビュー、または動画フレームで読みにくさを確認すること。
+- 承認前に `npm run social:visual-review -- --date=YYYY-MM-DD --write-review --write-usage` を実行し、動画、contact sheet、ミニキャラ画像パス、使用日を同じレビューHTMLで確認すること。
 - 読みにくい、重なっている、誘導が弱い、ミニキャラがずれている場合は不合格にすること。
 
 ## 投稿案の置き場所

@@ -125,6 +125,7 @@ THREADS_POST_VERIFY_TIMEOUT_MS=120000
 8. 羅針占術への誘導は保存CTAの後に置き、無料鑑定から必要な方だけ深掘り鑑定へ進める導線にします。
 9. 生成後に、タイトル、順位、生まれ日、理由、保存CTA、羅針占術誘導が読めることをスクリーンショットまたは動画フレームで確認します。
 10. 文字と模様、背景、ミニキャラ、装飾が重なって読みにくい場合は不合格にします。
+11. 承認済みmanifestには `designReview.visualInspection.status=passed`、`reviewArtifacts`、`miniCharacters[].assetPath`、`contentDays` を残します。`npm run social:visual-review -- --date=YYYY-MM-DD --write-review --write-usage` でレビューHTMLと `data/social-posts/mini-character-usage.json` を更新します。
 
 ## 投稿前承認ゲート
 
@@ -154,6 +155,7 @@ npm run social:audit -- --from=2026-06-08 --to=2026-06-15 --platforms=threads,in
 node scripts/social/run-scheduled-posts.js --once --dry-run --only-kind=all
 npm run social:video-insights -- --dry-run --since-days=14 --platforms=threads,instagram
 npm run social:video-pdca -- --write-feedback
+npm run social:visual-review -- --date=2026-06-27 --write-review --write-usage
 node tests/social-posting.test.js
 ```
 

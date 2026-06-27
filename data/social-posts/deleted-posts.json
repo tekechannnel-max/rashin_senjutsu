@@ -1,0 +1,5 @@
+{
+  "updatedAt": "2026-06-27T00:00:00+09:00",
+  "note": "User-reported deleted SNS posts are recorded here so video insights and PDCA do not treat deleted media as successful posts. Add exact result keys, mediaIds, postIds, permalinks, sourceFiles, or dates after external deletion is confirmed.",
+  "deleted": []
+}

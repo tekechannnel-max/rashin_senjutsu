@@ -37,35 +37,57 @@
             "rank": 1,
             "day": 5,
             "family": 5,
-            "asset": "birthday-family-5-chibi.png"
+            "asset": "birthday-family-5-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
           },
           {
             "rank": 2,
             "day": 23,
             "family": 5,
-            "asset": "birthday-family-5-chibi.png"
+            "asset": "birthday-family-5-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
           },
           {
             "rank": 3,
             "day": 14,
             "family": 5,
-            "asset": "birthday-family-5-chibi.png"
+            "asset": "birthday-family-5-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
           },
           {
             "rank": 4,
             "day": 3,
             "family": 3,
-            "asset": "birthday-family-3-chibi.png"
+            "asset": "birthday-family-3-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-3-chibi.png"
           },
           {
             "rank": 5,
             "day": 1,
             "family": 1,
-            "asset": "birthday-family-1-chibi.png"
+            "asset": "birthday-family-1-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
           }
-        ]
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_contact_sheet_review",
+          "checkedBy": "codex_manifest_backfill",
+          "checkedAt": "2026-06-22T02:39:19.948Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-20/yotei-kimeru-karui-top5/yotei-kimeru-karui-top5-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-20/yotei-kimeru-karui-top5/yotei-kimeru-karui-top5-contact.jpg"
+          ]
+        }
       },
-      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-20/yotei-kimeru-karui-top5/yotei-kimeru-karui-top5.mp4"
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-20/yotei-kimeru-karui-top5/yotei-kimeru-karui-top5.mp4",
+      "contentDays": [
+        5,
+        23,
+        14,
+        3,
+        1
+      ]
     },
     {
       "id": "birthday_reel_20260620_2100_amae_beta_top5",
@@ -97,35 +119,57 @@
             "rank": 1,
             "day": 7,
             "family": 7,
-            "asset": "birthday-family-7-chibi.png"
+            "asset": "birthday-family-7-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
           },
           {
             "rank": 2,
             "day": 4,
             "family": 4,
-            "asset": "birthday-family-4-chibi.png"
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
           },
           {
             "rank": 3,
             "day": 22,
             "family": 4,
-            "asset": "birthday-family-4-chibi.png"
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
           },
           {
             "rank": 4,
             "day": 8,
             "family": 8,
-            "asset": "birthday-family-8-chibi.png"
+            "asset": "birthday-family-8-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-8-chibi.png"
           },
           {
             "rank": 5,
             "day": 16,
             "family": 7,
-            "asset": "birthday-family-7-chibi.png"
+            "asset": "birthday-family-7-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
           }
-        ]
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_contact_sheet_review",
+          "checkedBy": "codex_manifest_backfill",
+          "checkedAt": "2026-06-22T02:39:19.948Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-20/amae-beta-top5/amae-beta-top5-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-20/amae-beta-top5/amae-beta-top5-contact.jpg"
+          ]
+        }
       },
-      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-20/amae-beta-top5/amae-beta-top5.mp4"
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-20/amae-beta-top5/amae-beta-top5.mp4",
+      "contentDays": [
+        7,
+        4,
+        22,
+        8,
+        16
+      ]
     },
     {
       "id": "birthday_reel_20260620_2200_tasuke_yobu_osoi_top5",
@@ -157,35 +201,57 @@
             "rank": 1,
             "day": 4,
             "family": 4,
-            "asset": "birthday-family-4-chibi.png"
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
           },
           {
             "rank": 2,
             "day": 8,
             "family": 8,
-            "asset": "birthday-family-8-chibi.png"
+            "asset": "birthday-family-8-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-8-chibi.png"
           },
           {
             "rank": 3,
             "day": 13,
             "family": 4,
-            "asset": "birthday-family-4-chibi.png"
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
           },
           {
             "rank": 4,
             "day": 31,
             "family": 4,
-            "asset": "birthday-family-4-chibi.png"
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
           },
           {
             "rank": 5,
             "day": 7,
             "family": 7,
-            "asset": "birthday-family-7-chibi.png"
+            "asset": "birthday-family-7-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
           }
-        ]
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_contact_sheet_review",
+          "checkedBy": "codex_manifest_backfill",
+          "checkedAt": "2026-06-22T02:39:19.948Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-20/tasuke-yobu-osoi-top5/tasuke-yobu-osoi-top5-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-20/tasuke-yobu-osoi-top5/tasuke-yobu-osoi-top5-contact.jpg"
+          ]
+        }
       },
-      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-20/tasuke-yobu-osoi-top5/tasuke-yobu-osoi-top5.mp4"
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-06-20/tasuke-yobu-osoi-top5/tasuke-yobu-osoi-top5.mp4",
+      "contentDays": [
+        4,
+        8,
+        13,
+        31,
+        7
+      ]
     }
   ]
 }

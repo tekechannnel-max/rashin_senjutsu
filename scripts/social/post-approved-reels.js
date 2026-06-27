@@ -5,9 +5,8 @@ const path = require('node:path');
 const instagram = require('./instagram-client');
 const threads = require('./threads-client');
 const {
-  birthdayMiniAssetNameForDay,
-  birthdayMiniFamilyForDay,
-} = require('./birthday-mini-family');
+  validateMiniCharactersForPost,
+} = require('./birthday-mini-review');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 function resolveConfiguredPath(envName, fallback) {
@@ -166,14 +165,6 @@ function countHashtags(text) {
   return (String(text || '').match(/#[^\s#]+/g) || []).length;
 }
 
-function normalizeBirthDay(value, label) {
-  const day = Number(value);
-  if (!Number.isInteger(day) || day < 1 || day > 31) {
-    throw new Error(`${label} must be an integer from 1 to 31: ${value}`);
-  }
-  return day;
-}
-
 function ensureMiniCharacterReview(post, label, review) {
   if ((post.kind || 'birthday_reel') !== 'birthday_reel') return;
   const entries = Array.isArray(review.miniCharacters)
@@ -181,23 +172,35 @@ function ensureMiniCharacterReview(post, label, review) {
     : Array.isArray(post.miniCharacters)
       ? post.miniCharacters
       : [];
-  if (!entries.length) {
-    throw new Error(`${label} designReview.miniCharacters must list rank, day, family, and asset for every mini character.`);
+  const errors = validateMiniCharactersForPost(post, entries, label);
+  if (errors.length) throw new Error(errors[0]);
+}
+
+function ensureVisualInspection(post, label, review) {
+  const visual = review.visualInspection || {};
+  if (visual.status !== 'passed') {
+    throw new Error(`${label} designReview.visualInspection.status must be "passed" before posting.`);
   }
-  const seenDays = new Set();
-  for (const [index, entry] of entries.entries()) {
-    const entryLabel = `${label} designReview.miniCharacters[${index}]`;
-    const day = normalizeBirthDay(entry?.day, `${entryLabel}.day`);
-    if (seenDays.has(day)) throw new Error(`${entryLabel}.day duplicates ${day}.`);
-    seenDays.add(day);
-    const expectedFamily = birthdayMiniFamilyForDay(day);
-    const expectedAsset = birthdayMiniAssetNameForDay(day);
-    if (Number(entry.family) !== expectedFamily) {
-      throw new Error(`${entryLabel}.family must be ${expectedFamily} for ${day}日生まれ.`);
+  for (const key of ['method', 'checkedBy', 'checkedAt']) {
+    if (!String(visual[key] || '').trim()) {
+      throw new Error(`${label} designReview.visualInspection.${key} is required before posting.`);
     }
-    if (String(entry.asset || '').trim() !== expectedAsset) {
-      throw new Error(`${entryLabel}.asset must be ${expectedAsset} for ${day}日生まれ.`);
+  }
+  const artifacts = Array.isArray(visual.reviewArtifacts) ? visual.reviewArtifacts : [];
+  if (!artifacts.length) {
+    throw new Error(`${label} designReview.visualInspection.reviewArtifacts must include visual review paths.`);
+  }
+  for (const artifact of artifacts) {
+    const value = String(artifact || '').trim();
+    if (!value) throw new Error(`${label} designReview.visualInspection.reviewArtifacts must not contain empty paths.`);
+    if (/^https?:\/\//i.test(value)) continue;
+    const artifactPath = resolvePathFromRoot(value);
+    if (!fsSync.existsSync(artifactPath)) {
+      throw new Error(`${label} visual review artifact does not exist: ${rel(artifactPath)}`);
     }
+  }
+  if (!artifacts.some(artifact => /contact/i.test(String(artifact)))) {
+    throw new Error(`${label} designReview.visualInspection.reviewArtifacts must include a contact sheet.`);
   }
 }
 
@@ -233,6 +236,7 @@ function ensureDesignReview(post, label) {
     throw new Error(`${label} must include the save cue "${REQUIRED_SAVE_CUE}" in designReview.saveCueText.`);
   }
   ensureMiniCharacterReview(post, label, review);
+  ensureVisualInspection(post, label, review);
 }
 
 function ensureApprovedManifest(manifest, file) {

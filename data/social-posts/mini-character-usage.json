@@ -1,0 +1,619 @@
+{
+  "updatedAt": "2026-06-27T02:15:45.582Z",
+  "posts": [
+    {
+      "id": "birthday_reel_20260627_2000_honne_materu_top5",
+      "date": "2026-06-27",
+      "time": "20:00",
+      "title": "相手の本音を待てる生まれ日TOP5",
+      "topicType": "birthday_top5",
+      "researchTarget": "birthday_top5",
+      "sourceFile": "data/social-posts/approved-reels/2026-06-27-night-reels.json",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/honne-materu-top5/honne-materu-top5.mp4",
+      "reviewArtifacts": [
+        "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/honne-materu-top5/honne-materu-top5-poster.jpg",
+        "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/honne-materu-top5/honne-materu-top5-contact.jpg"
+      ],
+      "miniCharacters": [
+        {
+          "rank": 1,
+          "day": 7,
+          "family": 7,
+          "asset": "birthday-family-7-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
+        },
+        {
+          "rank": 2,
+          "day": 16,
+          "family": 7,
+          "asset": "birthday-family-7-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
+        },
+        {
+          "rank": 3,
+          "day": 25,
+          "family": 7,
+          "asset": "birthday-family-7-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
+        },
+        {
+          "rank": 4,
+          "day": 4,
+          "family": 4,
+          "asset": "birthday-family-4-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+        },
+        {
+          "rank": 5,
+          "day": 22,
+          "family": 4,
+          "asset": "birthday-family-4-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+        }
+      ]
+    },
+    {
+      "id": "birthday_reel_20260627_2100_birthday_day_manual_12_20260627",
+      "date": "2026-06-27",
+      "time": "21:00",
+      "title": "12日生まれ取説5選",
+      "topicType": "birthday_day_manual",
+      "researchTarget": "birthday_day_aruaru_manual",
+      "sourceFile": "data/social-posts/approved-reels/2026-06-27-night-reels.json",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/birthday-day-manual-12-20260627/birthday-day-manual-12-20260627.mp4",
+      "reviewArtifacts": [
+        "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/birthday-day-manual-12-20260627/birthday-day-manual-12-20260627-poster.jpg",
+        "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/birthday-day-manual-12-20260627/birthday-day-manual-12-20260627-contact.jpg"
+      ],
+      "miniCharacters": [
+        {
+          "rank": 1,
+          "day": 12,
+          "family": 3,
+          "asset": "birthday-family-3-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-3-chibi.png"
+        }
+      ]
+    },
+    {
+      "id": "birthday_reel_20260627_2200_birthday_graph_1_31_20260627",
+      "date": "2026-06-27",
+      "time": "22:00",
+      "title": "生まれ日グラフ 1日〜31日",
+      "topicType": "birthday_graph_1_31",
+      "researchTarget": "birthday_graph_all_days",
+      "sourceFile": "data/social-posts/approved-reels/2026-06-27-night-reels.json",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/birthday-graph-1-31-20260627/birthday-graph-1-31-20260627.mp4",
+      "reviewArtifacts": [
+        "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/birthday-graph-1-31-20260627/birthday-graph-1-31-20260627-poster.jpg",
+        "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-27/birthday-graph-1-31-20260627/birthday-graph-1-31-20260627-contact.jpg"
+      ],
+      "miniCharacters": [
+        {
+          "rank": 1,
+          "day": 1,
+          "family": 1,
+          "asset": "birthday-family-1-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
+        },
+        {
+          "rank": 2,
+          "day": 2,
+          "family": 2,
+          "asset": "birthday-family-2-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
+        },
+        {
+          "rank": 3,
+          "day": 3,
+          "family": 3,
+          "asset": "birthday-family-3-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-3-chibi.png"
+        },
+        {
+          "rank": 4,
+          "day": 4,
+          "family": 4,
+          "asset": "birthday-family-4-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+        },
+        {
+          "rank": 5,
+          "day": 5,
+          "family": 5,
+          "asset": "birthday-family-5-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
+        },
+        {
+          "rank": 6,
+          "day": 6,
+          "family": 6,
+          "asset": "birthday-family-6-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
+        },
+        {
+          "rank": 7,
+          "day": 7,
+          "family": 7,
+          "asset": "birthday-family-7-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
+        },
+        {
+          "rank": 8,
+          "day": 8,
+          "family": 8,
+          "asset": "birthday-family-8-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-8-chibi.png"
+        },
+        {
+          "rank": 9,
+          "day": 9,
+          "family": 9,
+          "asset": "birthday-family-9-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-9-chibi.png"
+        },
+        {
+          "rank": 10,
+          "day": 10,
+          "family": 1,
+          "asset": "birthday-family-1-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
+        },
+        {
+          "rank": 11,
+          "day": 11,
+          "family": 2,
+          "asset": "birthday-family-2-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
+        },
+        {
+          "rank": 12,
+          "day": 12,
+          "family": 3,
+          "asset": "birthday-family-3-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-3-chibi.png"
+        },
+        {
+          "rank": 13,
+          "day": 13,
+          "family": 4,
+          "asset": "birthday-family-4-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+        },
+        {
+          "rank": 14,
+          "day": 14,
+          "family": 5,
+          "asset": "birthday-family-5-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
+        },
+        {
+          "rank": 15,
+          "day": 15,
+          "family": 6,
+          "asset": "birthday-family-6-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
+        },
+        {
+          "rank": 16,
+          "day": 16,
+          "family": 7,
+          "asset": "birthday-family-7-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
+        },
+        {
+          "rank": 17,
+          "day": 17,
+          "family": 8,
+          "asset": "birthday-family-8-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-8-chibi.png"
+        },
+        {
+          "rank": 18,
+          "day": 18,
+          "family": 9,
+          "asset": "birthday-family-9-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-9-chibi.png"
+        },
+        {
+          "rank": 19,
+          "day": 19,
+          "family": 1,
+          "asset": "birthday-family-1-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
+        },
+        {
+          "rank": 20,
+          "day": 20,
+          "family": 2,
+          "asset": "birthday-family-2-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
+        },
+        {
+          "rank": 21,
+          "day": 21,
+          "family": 3,
+          "asset": "birthday-family-3-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-3-chibi.png"
+        },
+        {
+          "rank": 22,
+          "day": 22,
+          "family": 4,
+          "asset": "birthday-family-4-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+        },
+        {
+          "rank": 23,
+          "day": 23,
+          "family": 5,
+          "asset": "birthday-family-5-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
+        },
+        {
+          "rank": 24,
+          "day": 24,
+          "family": 6,
+          "asset": "birthday-family-6-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
+        },
+        {
+          "rank": 25,
+          "day": 25,
+          "family": 7,
+          "asset": "birthday-family-7-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
+        },
+        {
+          "rank": 26,
+          "day": 26,
+          "family": 8,
+          "asset": "birthday-family-8-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-8-chibi.png"
+        },
+        {
+          "rank": 27,
+          "day": 27,
+          "family": 9,
+          "asset": "birthday-family-9-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-9-chibi.png"
+        },
+        {
+          "rank": 28,
+          "day": 28,
+          "family": 1,
+          "asset": "birthday-family-1-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
+        },
+        {
+          "rank": 29,
+          "day": 29,
+          "family": 2,
+          "asset": "birthday-family-2-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
+        },
+        {
+          "rank": 30,
+          "day": 30,
+          "family": 3,
+          "asset": "birthday-family-3-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-3-chibi.png"
+        },
+        {
+          "rank": 31,
+          "day": 31,
+          "family": 4,
+          "asset": "birthday-family-4-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+        }
+      ]
+    },
+    {
+      "id": "birthday_reel_20260628_2000_samishisa_egao_kakusu_top5",
+      "date": "2026-06-28",
+      "time": "20:00",
+      "title": "寂しさを笑顔で隠す生まれ日TOP5",
+      "topicType": "birthday_top5",
+      "researchTarget": "birthday_top5",
+      "sourceFile": "data/social-posts/approved-reels/2026-06-28-night-reels.json",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-28/samishisa-egao-kakusu-top5/samishisa-egao-kakusu-top5.mp4",
+      "reviewArtifacts": [
+        "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-28/samishisa-egao-kakusu-top5/samishisa-egao-kakusu-top5-poster.jpg",
+        "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-28/samishisa-egao-kakusu-top5/samishisa-egao-kakusu-top5-contact.jpg"
+      ],
+      "miniCharacters": [
+        {
+          "rank": 1,
+          "day": 6,
+          "family": 6,
+          "asset": "birthday-family-6-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
+        },
+        {
+          "rank": 2,
+          "day": 15,
+          "family": 6,
+          "asset": "birthday-family-6-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
+        },
+        {
+          "rank": 3,
+          "day": 24,
+          "family": 6,
+          "asset": "birthday-family-6-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
+        },
+        {
+          "rank": 4,
+          "day": 2,
+          "family": 2,
+          "asset": "birthday-family-2-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
+        },
+        {
+          "rank": 5,
+          "day": 11,
+          "family": 2,
+          "asset": "birthday-family-2-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
+        }
+      ]
+    },
+    {
+      "id": "birthday_reel_20260628_2100_birthday_day_aruaru_05_20260628",
+      "date": "2026-06-28",
+      "time": "21:00",
+      "title": "5日生まれあるある5選",
+      "topicType": "birthday_day_aruaru",
+      "researchTarget": "birthday_day_aruaru_manual",
+      "sourceFile": "data/social-posts/approved-reels/2026-06-28-night-reels.json",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-28/birthday-day-aruaru-05-20260628/birthday-day-aruaru-05-20260628.mp4",
+      "reviewArtifacts": [
+        "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-28/birthday-day-aruaru-05-20260628/birthday-day-aruaru-05-20260628-poster.jpg",
+        "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-28/birthday-day-aruaru-05-20260628/birthday-day-aruaru-05-20260628-contact.jpg"
+      ],
+      "miniCharacters": [
+        {
+          "rank": 1,
+          "day": 5,
+          "family": 5,
+          "asset": "birthday-family-5-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
+        }
+      ]
+    },
+    {
+      "id": "birthday_reel_20260628_2200_birthday_graph_1_31_20260628",
+      "date": "2026-06-28",
+      "time": "22:00",
+      "title": "生まれ日グラフ 1日〜31日",
+      "topicType": "birthday_graph_1_31",
+      "researchTarget": "birthday_graph_all_days",
+      "sourceFile": "data/social-posts/approved-reels/2026-06-28-night-reels.json",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-28/birthday-graph-1-31-20260628/birthday-graph-1-31-20260628.mp4",
+      "reviewArtifacts": [
+        "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-28/birthday-graph-1-31-20260628/birthday-graph-1-31-20260628-poster.jpg",
+        "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-28/birthday-graph-1-31-20260628/birthday-graph-1-31-20260628-contact.jpg"
+      ],
+      "miniCharacters": [
+        {
+          "rank": 1,
+          "day": 1,
+          "family": 1,
+          "asset": "birthday-family-1-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
+        },
+        {
+          "rank": 2,
+          "day": 2,
+          "family": 2,
+          "asset": "birthday-family-2-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
+        },
+        {
+          "rank": 3,
+          "day": 3,
+          "family": 3,
+          "asset": "birthday-family-3-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-3-chibi.png"
+        },
+        {
+          "rank": 4,
+          "day": 4,
+          "family": 4,
+          "asset": "birthday-family-4-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+        },
+        {
+          "rank": 5,
+          "day": 5,
+          "family": 5,
+          "asset": "birthday-family-5-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
+        },
+        {
+          "rank": 6,
+          "day": 6,
+          "family": 6,
+          "asset": "birthday-family-6-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
+        },
+        {
+          "rank": 7,
+          "day": 7,
+          "family": 7,
+          "asset": "birthday-family-7-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
+        },
+        {
+          "rank": 8,
+          "day": 8,
+          "family": 8,
+          "asset": "birthday-family-8-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-8-chibi.png"
+        },
+        {
+          "rank": 9,
+          "day": 9,
+          "family": 9,
+          "asset": "birthday-family-9-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-9-chibi.png"
+        },
+        {
+          "rank": 10,
+          "day": 10,
+          "family": 1,
+          "asset": "birthday-family-1-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
+        },
+        {
+          "rank": 11,
+          "day": 11,
+          "family": 2,
+          "asset": "birthday-family-2-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
+        },
+        {
+          "rank": 12,
+          "day": 12,
+          "family": 3,
+          "asset": "birthday-family-3-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-3-chibi.png"
+        },
+        {
+          "rank": 13,
+          "day": 13,
+          "family": 4,
+          "asset": "birthday-family-4-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+        },
+        {
+          "rank": 14,
+          "day": 14,
+          "family": 5,
+          "asset": "birthday-family-5-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
+        },
+        {
+          "rank": 15,
+          "day": 15,
+          "family": 6,
+          "asset": "birthday-family-6-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
+        },
+        {
+          "rank": 16,
+          "day": 16,
+          "family": 7,
+          "asset": "birthday-family-7-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
+        },
+        {
+          "rank": 17,
+          "day": 17,
+          "family": 8,
+          "asset": "birthday-family-8-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-8-chibi.png"
+        },
+        {
+          "rank": 18,
+          "day": 18,
+          "family": 9,
+          "asset": "birthday-family-9-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-9-chibi.png"
+        },
+        {
+          "rank": 19,
+          "day": 19,
+          "family": 1,
+          "asset": "birthday-family-1-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
+        },
+        {
+          "rank": 20,
+          "day": 20,
+          "family": 2,
+          "asset": "birthday-family-2-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
+        },
+        {
+          "rank": 21,
+          "day": 21,
+          "family": 3,
+          "asset": "birthday-family-3-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-3-chibi.png"
+        },
+        {
+          "rank": 22,
+          "day": 22,
+          "family": 4,
+          "asset": "birthday-family-4-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+        },
+        {
+          "rank": 23,
+          "day": 23,
+          "family": 5,
+          "asset": "birthday-family-5-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
+        },
+        {
+          "rank": 24,
+          "day": 24,
+          "family": 6,
+          "asset": "birthday-family-6-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
+        },
+        {
+          "rank": 25,
+          "day": 25,
+          "family": 7,
+          "asset": "birthday-family-7-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
+        },
+        {
+          "rank": 26,
+          "day": 26,
+          "family": 8,
+          "asset": "birthday-family-8-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-8-chibi.png"
+        },
+        {
+          "rank": 27,
+          "day": 27,
+          "family": 9,
+          "asset": "birthday-family-9-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-9-chibi.png"
+        },
+        {
+          "rank": 28,
+          "day": 28,
+          "family": 1,
+          "asset": "birthday-family-1-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
+        },
+        {
+          "rank": 29,
+          "day": 29,
+          "family": 2,
+          "asset": "birthday-family-2-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
+        },
+        {
+          "rank": 30,
+          "day": 30,
+          "family": 3,
+          "asset": "birthday-family-3-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-3-chibi.png"
+        },
+        {
+          "rank": 31,
+          "day": 31,
+          "family": 4,
+          "asset": "birthday-family-4-chibi.png",
+          "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+        }
+      ]
+    }
+  ]
+}
