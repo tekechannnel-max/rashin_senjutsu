@@ -1,0 +1,246 @@
+{
+  "approvalStatus": "draft",
+  "approvedBy": "",
+  "approvedAt": "",
+  "approvalText": "",
+  "approvalScope": "threads,instagram",
+  "note": "User review required. Do not move this file into data/social-posts/approved-reels until the post approval gate is approved.",
+  "posts": [
+    {
+      "id": "birthday_reel_20260630_2000_sarigenai_yasashisa_nokoru_top5",
+      "kind": "birthday_reel",
+      "date": "2026-06-30",
+      "time": "20:00",
+      "title": "さりげない優しさが残る生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-30/sarigenai-yasashisa-nokoru-top5/sarigenai-yasashisa-nokoru-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\nさりげない優しさが残る生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\nさりげない優しさが残る生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-30/sarigenai-yasashisa-nokoru-top5/sarigenai-yasashisa-nokoru-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-30/sarigenai-yasashisa-nokoru-top5/sarigenai-yasashisa-nokoru-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 9,
+            "family": 9,
+            "asset": "birthday-family-9-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 18,
+            "family": 9,
+            "asset": "birthday-family-9-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 27,
+            "family": 9,
+            "asset": "birthday-family-9-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 3,
+            "family": 3,
+            "asset": "birthday-family-3-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 12,
+            "family": 3,
+            "asset": "birthday-family-3-chibi.png"
+          }
+        ],
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      }
+    },
+    {
+      "id": "birthday_reel_20260630_2100_nigate_demo_saigo_made_top5",
+      "kind": "birthday_reel",
+      "date": "2026-06-30",
+      "time": "21:00",
+      "title": "苦手でも最後まで整える生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-30/nigate-demo-saigo-made-top5/nigate-demo-saigo-made-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n苦手でも最後まで整える生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n苦手でも最後まで整える生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-30/nigate-demo-saigo-made-top5/nigate-demo-saigo-made-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-30/nigate-demo-saigo-made-top5/nigate-demo-saigo-made-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 15,
+            "family": 6,
+            "asset": "birthday-family-6-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 24,
+            "family": 6,
+            "asset": "birthday-family-6-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 2,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 11,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 6,
+            "family": 6,
+            "asset": "birthday-family-6-chibi.png"
+          }
+        ],
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      }
+    },
+    {
+      "id": "birthday_reel_20260630_2200_jibun_pace_mamoru_top5",
+      "kind": "birthday_reel",
+      "date": "2026-06-30",
+      "time": "22:00",
+      "title": "自分のペースを守る生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-30/jibun-pace-mamoru-top5/jibun-pace-mamoru-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n自分のペースを守る生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n自分のペースを守る生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-30/jibun-pace-mamoru-top5/jibun-pace-mamoru-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-30/jibun-pace-mamoru-top5/jibun-pace-mamoru-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 7,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 21,
+            "family": 3,
+            "asset": "birthday-family-3-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 30,
+            "family": 3,
+            "asset": "birthday-family-3-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 16,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 25,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png"
+          }
+        ],
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      }
+    },
+    {
+      "id": "birthday_reel_20260630_2300_kuuki_omoi_toki_tasukeru_top5",
+      "kind": "birthday_reel",
+      "date": "2026-06-30",
+      "time": "23:00",
+      "title": "空気が重い時に助ける生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-30/kuuki-omoi-toki-tasukeru-top5/kuuki-omoi-toki-tasukeru-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n空気が重い時に助ける生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n空気が重い時に助ける生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-30/kuuki-omoi-toki-tasukeru-top5/kuuki-omoi-toki-tasukeru-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-06-30/kuuki-omoi-toki-tasukeru-top5/kuuki-omoi-toki-tasukeru-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 13,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 31,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 20,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 29,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 2,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png"
+          }
+        ],
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      }
+    }
+  ]
+}
