@@ -1,0 +1,251 @@
+{
+  "approvalStatus": "approved",
+  "approvedBy": "automation",
+  "approvedAt": "2026-06-29T17:59:16.737Z",
+  "approvalText": "User requested fully automated SNS research, production, approval-manifest preparation, and scheduled posting. Target date: 2026-07-01.",
+  "approvalScope": "threads,instagram",
+  "note": "Auto-approved by Rashin SNS automation. Posting remains limited to due windows and approved birthday_reel manifests.",
+  "posts": [
+    {
+      "id": "birthday_reel_20260701_2000_shotaimen_kuuki_yomu_top5",
+      "kind": "birthday_reel",
+      "date": "2026-07-01",
+      "time": "20:00",
+      "title": "初対面で空気を読む生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-07-01/shotaimen-kuuki-yomu-top5/shotaimen-kuuki-yomu-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n初対面で空気を読む生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n初対面で空気を読む生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-07-01/shotaimen-kuuki-yomu-top5/shotaimen-kuuki-yomu-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-07-01/shotaimen-kuuki-yomu-top5/shotaimen-kuuki-yomu-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 13,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 22,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 31,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 6,
+            "family": 6,
+            "asset": "birthday-family-6-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 15,
+            "family": 6,
+            "asset": "birthday-family-6-chibi.png"
+          }
+        ],
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/main/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-07-01/shotaimen-kuuki-yomu-top5/shotaimen-kuuki-yomu-top5.mp4"
+    },
+    {
+      "id": "birthday_reel_20260701_2100_suki_koto_kyuuni_shuchu_top5",
+      "kind": "birthday_reel",
+      "date": "2026-07-01",
+      "time": "21:00",
+      "title": "好きなことは急に集中する生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-07-01/suki-koto-kyuuni-shuchu-top5/suki-koto-kyuuni-shuchu-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n好きなことは急に集中する生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n好きなことは急に集中する生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-07-01/suki-koto-kyuuni-shuchu-top5/suki-koto-kyuuni-shuchu-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-07-01/suki-koto-kyuuni-shuchu-top5/suki-koto-kyuuni-shuchu-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 8,
+            "family": 8,
+            "asset": "birthday-family-8-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 26,
+            "family": 8,
+            "asset": "birthday-family-8-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 19,
+            "family": 1,
+            "asset": "birthday-family-1-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 27,
+            "family": 9,
+            "asset": "birthday-family-9-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 4,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png"
+          }
+        ],
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/main/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-07-01/suki-koto-kyuuni-shuchu-top5/suki-koto-kyuuni-shuchu-top5.mp4"
+    },
+    {
+      "id": "birthday_reel_20260701_2200_kidoku_yori_taido_top5",
+      "kind": "birthday_reel",
+      "date": "2026-07-01",
+      "time": "22:00",
+      "title": "既読より態度で伝える生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-07-01/kidoku-yori-taido-top5/kidoku-yori-taido-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n既読より態度で伝える生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n既読より態度で伝える生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-07-01/kidoku-yori-taido-top5/kidoku-yori-taido-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-07-01/kidoku-yori-taido-top5/kidoku-yori-taido-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 28,
+            "family": 1,
+            "asset": "birthday-family-1-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 5,
+            "family": 5,
+            "asset": "birthday-family-5-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 14,
+            "family": 5,
+            "asset": "birthday-family-5-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 1,
+            "family": 1,
+            "asset": "birthday-family-1-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 10,
+            "family": 1,
+            "asset": "birthday-family-1-chibi.png"
+          }
+        ],
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/main/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-07-01/kidoku-yori-taido-top5/kidoku-yori-taido-top5.mp4"
+    },
+    {
+      "id": "birthday_reel_20260701_2300_yotei_henkou_tsuyoi_top5",
+      "kind": "birthday_reel",
+      "date": "2026-07-01",
+      "time": "23:00",
+      "title": "予定変更に強い生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-07-01/yotei-henkou-tsuyoi-top5/yotei-henkou-tsuyoi-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n予定変更に強い生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n予定変更に強い生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-07-01/yotei-henkou-tsuyoi-top5/yotei-henkou-tsuyoi-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-07-01/yotei-henkou-tsuyoi-top5/yotei-henkou-tsuyoi-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 3,
+            "family": 3,
+            "asset": "birthday-family-3-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 12,
+            "family": 3,
+            "asset": "birthday-family-3-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 9,
+            "family": 9,
+            "asset": "birthday-family-9-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 18,
+            "family": 9,
+            "asset": "birthday-family-9-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 27,
+            "family": 9,
+            "asset": "birthday-family-9-chibi.png"
+          }
+        ],
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/main/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-07-01/yotei-henkou-tsuyoi-top5/yotei-henkou-tsuyoi-top5.mp4"
+    }
+  ],
+  "sourceCandidate": "output/social-approved-reels-candidates/2026-07-01-approved-candidate.json"
+}
