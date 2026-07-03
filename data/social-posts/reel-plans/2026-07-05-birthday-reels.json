@@ -1,0 +1,470 @@
+{
+  "date": "2026-07-05",
+  "reviewTitle": "2026-07-05 夜枠 誕生日リール自動生成候補",
+  "schedulePolicy": {
+    "dailyBirthdayReelTimes": [
+      "20:00",
+      "21:00",
+      "22:00"
+    ],
+    "thursdayComparisonTime": "20:00"
+  },
+  "sourceNotes": [
+    {
+      "sourceAccount": "Instagram Creators / Meta",
+      "sourceUrl": "https://creators.instagram.com/grow/algorithms-and-ranking?locale=en_GB",
+      "observedPattern": "Instagramのランキングは視聴維持・反応・シェアされやすさを強く見るため、短く分かる1テーマ構成にする。",
+      "usedAs": "毎日リールの設計原則",
+      "transformationNote": "広告色を強めず、保存したくなる自己理解Top5として再構成する。",
+      "duplicateCheck": "外部投稿本文・画像・ランキングはコピーせず、羅針占術の誕生日数Top5へ変換する。"
+    },
+    {
+      "sourceAccount": "Meta Transparency Center",
+      "sourceUrl": "https://transparency.meta.com/features/explaining-ranking/ig-reels-chaining/",
+      "observedPattern": "Reels面は次に見たい可能性が高い動画を予測して並べるため、冒頭で内容がすぐ分かる構成を優先する。",
+      "usedAs": "タイトル・リードの設計根拠",
+      "transformationNote": "1枚目で「自分の誕生日があるか」を即確認できる見出しにする。",
+      "duplicateCheck": "トレンド音源や他者動画素材には依存しない。"
+    },
+    {
+      "sourceAccount": "羅針占術 internal",
+      "sourceUrl": "docs/sns-runbook.md",
+      "observedPattern": "Threads + Instagram、InstagramはReels、Threadsは動画投稿。木曜20:00は比較カルーセル優先。",
+      "usedAs": "2026-07-05 の投稿時刻と媒体制約",
+      "transformationNote": "木曜20:00は比較カルーセル優先。日次リールは木曜21:00/22:00、他曜日20:00/21:00/22:00だけにする。",
+      "duplicateCheck": "承認済みmanifestと投稿済みledgerの既存タイトルを避ける。"
+    },
+    {
+      "sourceAccount": "羅針占術 video insights PDCA",
+      "sourceUrl": "data/social-posts/pdca/video-insights-feedback.json",
+      "observedPattern": "投稿済み動画の保存・シェア・返信/コメント・プロフィール訪問をスコア化し、次回のリサーチ候補順へ反映する。",
+      "usedAs": "2026-07-05 のネタ型と投稿時刻の改善材料",
+      "transformationNote": "必須3系統は維持し、強かったネタ型を早い枠へ寄せる。",
+      "duplicateCheck": "PDCAは型と時刻の優先度だけに使い、本文・順位・画像・動画はコピーしない。"
+    }
+  ],
+  "pdcaFeedback": null,
+  "requiredResearchTargets": [
+    "生まれ日あるある/取説: 1日〜31日のいずれかを毎日自動選定",
+    "生まれ日グラフ: 1日〜31日を毎回すべて網羅",
+    "○○な生まれ日TOP5: 木曜20時以外の20時枠で自動選定"
+  ],
+  "avoidedTopics": [
+    "相手の本音を待てる生まれ日TOP5",
+    "12日生まれ取説5選",
+    "生まれ日グラフ1日〜31日",
+    "寂しさを笑顔で隠す生まれ日TOP5",
+    "5日生まれあるある5選",
+    "忙しいほど段取りが光る生まれ日TOP5",
+    "21日生まれ取説5選",
+    "急にスイッチが入る生まれ日TOP5",
+    "29日生まれ取説5選",
+    "ありがとうを行動で返す生まれ日TOP5",
+    "25日生まれあるある5選",
+    "2日生まれあるある5選",
+    "小さな違和感に気づく生まれ日TOP5",
+    "26日生まれあるある5選",
+    "相談されると本気になる生まれ日TOP5",
+    "10日生まれ取説5選",
+    "勢いで予定を決めがちな生まれ日TOP5",
+    "甘え下手な生まれ日TOP5",
+    "限界まで助けを呼ばない生まれ日TOP5",
+    "心を開くまで慎重な生まれ日TOP5",
+    "返信待ちでそわそわする生まれ日TOP5",
+    "私生活が謎に見られがちな生まれ日TOP5",
+    "人前で弱音を見せにくい生まれ日TOP5",
+    "場の温度を整えがちな生まれ日TOP5",
+    "雰囲気で惹きつける生まれ日TOP5",
+    "気持ちの切り替えが早い生まれ日TOP5",
+    "言葉より行動で示す生まれ日TOP5",
+    "実は照れ屋な生まれ日TOP5",
+    "距離感を大切にする生まれ日TOP5",
+    "頼られると燃える生まれ日TOP5",
+    "変化の前に静かになる生まれ日TOP5",
+    "直感で危険を避ける生まれ日TOP5",
+    "大事な人ほど遠慮する生まれ日TOP5"
+  ],
+  "posts": [
+    {
+      "time": "20:00",
+      "topicType": "birthday_top5",
+      "researchTarget": "birthday_top5",
+      "slug": "waratteru-kedo-fukai-top5",
+      "title": "笑ってるけど考え深い生まれ日TOP5",
+      "titleLines": [
+        "笑ってるけど考え深い",
+        "生まれ日TOP5"
+      ],
+      "lead": "軽く見えても、内側ではかなり深く受け止めているタイプ",
+      "sourceUrl": "https://www.instagram.com/uranai.kitsune/?hl=ja",
+      "theme": {
+        "accent": "#7a4f2b",
+        "accent2": "#2f7f63",
+        "ink": "#2b2118",
+        "bg1": "#fff7ec",
+        "bg2": "#f8fbef",
+        "bg3": "#e4f0ec",
+        "glow": "#ffe6a8"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 6,
+          "miniFamily": 6,
+          "reason": "明るさの奥にある思慮深さが特に出やすい日です。場を和ませたい時でも、空気の守り方を大切にできます。"
+        },
+        {
+          "rank": 2,
+          "day": 2,
+          "miniFamily": 2,
+          "reason": "一見ゆっくりでも観察は細かいです。必要な時だけ、重い話を軽く受け止める流れを作れます。"
+        },
+        {
+          "rank": 3,
+          "day": 16,
+          "miniFamily": 7,
+          "reason": "無理に目立たなくても伝わります。近くの人ほど、あとからやわらかい安心が効いてきます。"
+        },
+        {
+          "rank": 4,
+          "day": 17,
+          "miniFamily": 8,
+          "reason": "気持ちを整理してから動くタイプです。勢いより、空気の守り方を大切にします。"
+        },
+        {
+          "rank": 5,
+          "day": 18,
+          "miniFamily": 9,
+          "reason": "表では控えめでも芯があります。大事な場面で重い話を軽く受け止める力が出やすい日です。"
+        }
+      ],
+      "summary": "笑っている日は、場を暗くしない強さと、深く考える静けさを両方持っています。"
+    },
+    {
+      "time": "21:00",
+      "topicType": "birthday_day_aruaru",
+      "researchTarget": "birthday_day_aruaru_manual",
+      "slug": "birthday-day-aruaru-27-20260705",
+      "title": "27日生まれあるある5選",
+      "titleLines": [
+        "27日生まれ",
+        "あるある5選"
+      ],
+      "lead": "その日に生まれた人が出しやすい反応を、保存しやすい5つのあるあるに整理します。",
+      "sourceUrl": "https://www.instagram.com/uranai.kitsune/?hl=ja",
+      "theme": {
+        "accent": "#315f7d",
+        "accent2": "#b65b5b",
+        "ink": "#172a3a",
+        "bg1": "#eef6ff",
+        "bg2": "#fffaf5",
+        "bg3": "#ece8f6",
+        "glow": "#dceeff"
+      },
+      "day": 27,
+      "points": [
+        {
+          "rank": 1,
+          "text": "急かされるより、選べる余白があるほど本音が出ます。"
+        },
+        {
+          "rank": 2,
+          "text": "気にしていないふりをして、細かい空気の変化を見ています。"
+        },
+        {
+          "rank": 3,
+          "text": "頼られると強いですが、雑に任されると急に距離を置きます。"
+        },
+        {
+          "rank": 4,
+          "text": "予定変更には弱く見えても、理由がわかると切り替えが早いです。"
+        },
+        {
+          "rank": 5,
+          "text": "好きなことには集中が深く、時間の感覚が薄くなりやすいです。"
+        }
+      ],
+      "summary": "この日の人は、無理に目立つよりも自分の反応の癖を知るほど動きやすくなります。"
+    },
+    {
+      "time": "22:00",
+      "topicType": "birthday_graph_1_31",
+      "researchTarget": "birthday_graph_all_days",
+      "slug": "birthday-graph-1-31-20260705",
+      "title": "生まれ日グラフ 1日〜31日",
+      "titleLines": [
+        "生まれ日グラフ",
+        "1日〜31日ぜんぶ"
+      ],
+      "lead": "1日から31日までを1本で見られるように、保存向けのグラフ動画にします。",
+      "sourceUrl": "https://www.instagram.com/uranai.kitsune/?hl=ja",
+      "theme": {
+        "accent": "#596c2f",
+        "accent2": "#b85f40",
+        "ink": "#202816",
+        "bg1": "#f5faec",
+        "bg2": "#fffdf7",
+        "bg3": "#e8f0f6",
+        "glow": "#ecf7b7"
+      },
+      "graphShape": "xy_four_axis",
+      "graphAxes": {
+        "xNegative": "内省",
+        "xPositive": "行動",
+        "yNegative": "安定",
+        "yPositive": "直感"
+      },
+      "graphDays": [
+        {
+          "day": 1,
+          "score": 77,
+          "x": 0.414,
+          "y": 0.54,
+          "quadrant": "right_top",
+          "label": "安心"
+        },
+        {
+          "day": 2,
+          "score": 44,
+          "x": -0.423,
+          "y": -0.075,
+          "quadrant": "left_bottom",
+          "label": "集中"
+        },
+        {
+          "day": 3,
+          "score": 72,
+          "x": 0.557,
+          "y": -0.354,
+          "quadrant": "right_bottom",
+          "label": "調整"
+        },
+        {
+          "day": 4,
+          "score": 39,
+          "x": -0.106,
+          "y": 0.396,
+          "quadrant": "left_top",
+          "label": "共感"
+        },
+        {
+          "day": 5,
+          "score": 67,
+          "x": -0.295,
+          "y": -0.568,
+          "quadrant": "left_bottom",
+          "label": "挑戦"
+        },
+        {
+          "day": 6,
+          "score": 95,
+          "x": 0.366,
+          "y": 0.134,
+          "quadrant": "right_top",
+          "label": "直感"
+        },
+        {
+          "day": 7,
+          "score": 62,
+          "x": -0.573,
+          "y": 0.237,
+          "quadrant": "left_top",
+          "label": "行動"
+        },
+        {
+          "day": 8,
+          "score": 90,
+          "x": 0.157,
+          "y": -0.335,
+          "quadrant": "right_bottom",
+          "label": "安心"
+        },
+        {
+          "day": 9,
+          "score": 80,
+          "x": 0.18,
+          "y": 0.572,
+          "quadrant": "right_top",
+          "label": "集中"
+        },
+        {
+          "day": 10,
+          "score": 47,
+          "x": -0.303,
+          "y": -0.175,
+          "quadrant": "left_bottom",
+          "label": "調整"
+        },
+        {
+          "day": 11,
+          "score": 75,
+          "x": 0.566,
+          "y": -0.125,
+          "quadrant": "right_bottom",
+          "label": "共感"
+        },
+        {
+          "day": 12,
+          "score": 42,
+          "x": -0.466,
+          "y": 0.663,
+          "quadrant": "left_top",
+          "label": "挑戦"
+        },
+        {
+          "day": 13,
+          "score": 70,
+          "x": -0.072,
+          "y": -0.555,
+          "quadrant": "left_bottom",
+          "label": "直感"
+        },
+        {
+          "day": 14,
+          "score": 98,
+          "x": 0.604,
+          "y": 0.509,
+          "quadrant": "right_top",
+          "label": "行動"
+        },
+        {
+          "day": 15,
+          "score": 65,
+          "x": -0.54,
+          "y": 0.022,
+          "quadrant": "left_top",
+          "label": "安心"
+        },
+        {
+          "day": 16,
+          "score": 93,
+          "x": 0.546,
+          "y": -0.543,
+          "quadrant": "right_bottom",
+          "label": "集中"
+        },
+        {
+          "day": 17,
+          "score": 60,
+          "x": -0.024,
+          "y": 0.519,
+          "quadrant": "left_top",
+          "label": "調整"
+        },
+        {
+          "day": 18,
+          "score": 50,
+          "x": -0.481,
+          "y": -0.576,
+          "quadrant": "left_bottom",
+          "label": "共感"
+        },
+        {
+          "day": 19,
+          "score": 78,
+          "x": 0.496,
+          "y": 0.067,
+          "quadrant": "right_top",
+          "label": "挑戦"
+        },
+        {
+          "day": 20,
+          "score": 45,
+          "x": -0.599,
+          "y": 0.417,
+          "quadrant": "left_top",
+          "label": "直感"
+        },
+        {
+          "day": 21,
+          "score": 73,
+          "x": 0.105,
+          "y": -0.468,
+          "quadrant": "right_bottom",
+          "label": "行動"
+        },
+        {
+          "day": 22,
+          "score": 40,
+          "x": 0.353,
+          "y": 0.616,
+          "quadrant": "right_top",
+          "label": "安心"
+        },
+        {
+          "day": 23,
+          "score": 68,
+          "x": -0.438,
+          "y": -0.14,
+          "quadrant": "left_bottom",
+          "label": "集中"
+        },
+        {
+          "day": 24,
+          "score": 96,
+          "x": 0.626,
+          "y": -0.29,
+          "quadrant": "right_bottom",
+          "label": "調整"
+        },
+        {
+          "day": 25,
+          "score": 63,
+          "x": -0.17,
+          "y": 0.406,
+          "quadrant": "left_top",
+          "label": "共感"
+        },
+        {
+          "day": 26,
+          "score": 91,
+          "x": -0.227,
+          "y": -0.63,
+          "quadrant": "left_bottom",
+          "label": "挑戦"
+        },
+        {
+          "day": 27,
+          "score": 81,
+          "x": 0.372,
+          "y": 0.195,
+          "quadrant": "right_top",
+          "label": "直感"
+        },
+        {
+          "day": 28,
+          "score": 48,
+          "x": -0.629,
+          "y": 0.166,
+          "quadrant": "left_top",
+          "label": "行動"
+        },
+        {
+          "day": 29,
+          "score": 76,
+          "x": 0.216,
+          "y": -0.336,
+          "quadrant": "right_bottom",
+          "label": "安心"
+        },
+        {
+          "day": 30,
+          "score": 43,
+          "x": 0.107,
+          "y": 0.621,
+          "quadrant": "right_top",
+          "label": "集中"
+        },
+        {
+          "day": 31,
+          "score": 71,
+          "x": -0.3,
+          "y": -0.233,
+          "quadrant": "left_bottom",
+          "label": "調整"
+        }
+      ],
+      "summary": "全日を一度に見られる投稿にして、自分と周りの生まれ日を探しやすくします。"
+    }
+  ]
+}
