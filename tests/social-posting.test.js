@@ -761,17 +761,20 @@ function testStatelessScheduleKeepsRecoveryGraceWindow() {
 function testWorkflowHasScheduledPostingBackup() {
   const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'threads-social.yml'), 'utf8');
   const automationWorkflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'sns-automation.yml'), 'utf8');
-  assert.match(workflow, /cron: '0 23,11,12,13,14 \* \* \*'/, 'Threads workflow should run backup ticks for 08:00 and 20:00-23:00 JST');
+  assert.match(workflow, /cron: '0 23,9,10,11,12 \* \* \*'/, 'Threads workflow should validate 08:00 and 18:00-21:00 JST lanes');
+  assert.match(automationWorkflow, /cron: '0 9-12 \* \* \*'/, 'SNS automation should validate 18:00-21:00 JST lanes');
+  assert.match(workflow, /Scheduled cloud ticks are validation-only/, 'Threads scheduled cloud runs must be documented as validation-only');
   assert.match(workflow, /SOCIAL_ORACLE_TIME: '08:00'/, 'Threads workflow should use the 08:00 JST oracle time');
   assert.doesNotMatch(workflow, /cron: '1 14 \* \* \*'/, 'Threads workflow should not run a separate 23:01 JST tick');
   assert.doesNotMatch(workflow, /birthday_monthly_recovery/, 'workflow should not keep old birthday monthly recovery slots');
   assert.match(workflow, /github\.event_name \}\}" = "push"[\s\S]*echo "ready=false"[\s\S]*exit 0/, 'Threads workflow push validation should not fail only because posting secrets are unavailable');
   assert.match(automationWorkflow, /github\.event_name \}\}" = "push"[\s\S]*echo "ready=false"[\s\S]*exit 0/, 'SNS automation push validation should not fail only because posting secrets are unavailable');
-  assert.match(workflow, /if: steps\.secrets\.outputs\.ready == 'true' && github\.event_name != 'push'/, 'workflow push events should validate without publishing due posts');
-  assert.match(automationWorkflow, /if: steps\.secrets\.outputs\.ready == 'true' && github\.event_name != 'push'/, 'automation workflow push events should validate without publishing due posts');
+  assert.match(workflow, /github\.event_name == 'schedule'[\s\S]*--dry-run/, 'scheduled Threads workflow runs must preview without publishing');
+  assert.match(automationWorkflow, /Dry-run due approved birthday reels[\s\S]*--dry-run[\s\S]*Publish due approved birthday reels on explicit manual runs[\s\S]*github\.event_name == 'workflow_dispatch'/, 'scheduled SNS automation runs must remain dry-run and manual dispatch must gate publishing');
+  assert.match(workflow, /Publish due SNS post on explicit manual runs[\s\S]*github\.event_name == 'workflow_dispatch'/, 'Threads workflow must require explicit manual dispatch for cloud publishing');
   assert.match(workflow, /SOCIAL_POST_GRACE_MINUTES: '59'/, 'workflow should allow delayed scheduled runs to recover within the hour');
-  assert.match(workflow, /birthday_monthly_01_08/, 'workflow dispatch should allow forcing the 20:00 birthday monthly slot');
-  assert.match(workflow, /birthday_monthly_25_31/, 'workflow dispatch should allow forcing the 23:00 birthday monthly slot');
+  assert.match(workflow, /birthday_monthly_01_08/, 'workflow dispatch should allow forcing the 18:00 birthday monthly slot');
+  assert.match(workflow, /birthday_monthly_25_31/, 'workflow dispatch should allow forcing the 21:00 birthday monthly slot');
   assert.match(workflow, /rashin_point_thursday_20/, 'workflow dispatch should allow forcing the Thursday 20:00 comparison slot');
   assert.doesNotMatch(workflow, /birthday_ranking/, 'workflow dispatch should not expose the old image ranking lane');
   assert.match(workflow, /- validate_only/, 'workflow dispatch should support credential validation without publishing');
