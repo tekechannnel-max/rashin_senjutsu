@@ -3,7 +3,7 @@ name: SNS automation
 on:
   schedule:
     - cron: '30 15 * * *' # 00:30 JST, prepare next-day approved reels.
-    - cron: '5 11-14 * * *' # 20:05-23:05 JST, post due approved reels.
+    - cron: '0 9-12 * * *' # 18:00-21:00 JST, validation only; Windows is the sole automatic publisher.
   push:
     branches:
       - main
@@ -185,6 +185,6 @@ jobs:
         if: steps.secrets.outputs.ready == 'true' && github.event_name != 'push'
         run: npm run social:run-due -- --dry-run --only-kind=birthday_reel
 
-      - name: Publish due approved birthday reels
-        if: steps.secrets.outputs.ready == 'true' && github.event_name != 'push'
+      - name: Publish due approved birthday reels on explicit manual runs
+        if: steps.secrets.outputs.ready == 'true' && github.event_name == 'workflow_dispatch'
         run: npm run social:run-due -- --only-kind=birthday_reel
