@@ -5,8 +5,9 @@ on:
     branches:
       - main
   schedule:
-    # Cloud backup ticks for 08:00 and 20:00-23:00 JST.
-    - cron: '0 23,11,12,13,14 * * *'
+    # Scheduled cloud ticks are validation-only; hidden Windows tasks are the sole automatic publisher.
+    # Validate 08:00 plus 18:00-21:00 JST lanes.
+    - cron: '0 23,9,10,11,12 * * *'
   workflow_dispatch:
     inputs:
       kind:
@@ -119,8 +120,16 @@ jobs:
           fi
           echo "kind=$kind" >> "$GITHUB_OUTPUT"
 
-      - name: Publish due SNS post
-        if: steps.secrets.outputs.ready == 'true' && github.event_name != 'push' && github.event.inputs.kind != 'validate_only'
+      - name: Preview due SNS post on scheduled cloud runs
+        if: steps.secrets.outputs.ready == 'true' && github.event_name == 'schedule'
+        shell: bash
+        run: |
+          npm run social:run-due -- --dry-run --only-kind=oracle
+          npm run social:run-due -- --dry-run --only-kind=birthday_monthly
+          npm run social:run-due -- --dry-run --only-kind=rashin_point
+
+      - name: Publish due SNS post on explicit manual runs
+        if: steps.secrets.outputs.ready == 'true' && github.event_name == 'workflow_dispatch' && github.event.inputs.kind != 'validate_only'
         shell: bash
         run: |
           kind="${{ steps.pick.outputs.kind }}"
