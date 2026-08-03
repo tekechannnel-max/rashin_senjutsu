@@ -1,0 +1,211 @@
+{
+  "approvalStatus": "approved",
+  "approvedBy": "automation",
+  "approvedAt": "2026-08-03T15:31:00.276Z",
+  "approvalText": "User requested fully automated SNS research, production, approval-manifest preparation, and scheduled posting on 2026-06-25.",
+  "approvalScope": "threads,instagram",
+  "note": "Auto-approved by local Rashin SNS automation. Posting remains limited to due windows and approved birthday_reel manifests.",
+  "posts": [
+    {
+      "id": "birthday_reel_20260804_1800_mimamoru_chikara_tsuyoi_top5",
+      "kind": "birthday_reel",
+      "date": "2026-08-04",
+      "time": "18:00",
+      "topicType": "birthday_top5",
+      "researchTarget": "birthday_top5",
+      "contentDays": [
+        6,
+        2,
+        25,
+        26,
+        27
+      ],
+      "graphShape": null,
+      "graphAxes": null,
+      "graphDays": [],
+      "title": "見守る力が強い生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-04/mimamoru-chikara-tsuyoi-top5/mimamoru-chikara-tsuyoi-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n見守る力が強い生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n見守る力が強い生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-04/mimamoru-chikara-tsuyoi-top5/mimamoru-chikara-tsuyoi-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-04/mimamoru-chikara-tsuyoi-top5/mimamoru-chikara-tsuyoi-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 6,
+            "family": 6,
+            "asset": "birthday-family-6-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 2,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 25,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 26,
+            "family": 8,
+            "asset": "birthday-family-8-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-8-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 27,
+            "family": 9,
+            "asset": "birthday-family-9-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-9-chibi.png"
+          }
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_preview_contact_sheet_review",
+          "checkedBy": "auto-prepare-approved-reels",
+          "checkedAt": "2026-08-03T15:30:59.481Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-04/mimamoru-chikara-tsuyoi-top5/mimamoru-chikara-tsuyoi-top5-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-04/mimamoru-chikara-tsuyoi-top5/mimamoru-chikara-tsuyoi-top5-preview.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-04/mimamoru-chikara-tsuyoi-top5/mimamoru-chikara-tsuyoi-top5-contact.jpg"
+          ]
+        },
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-08-04/mimamoru-chikara-tsuyoi-top5/mimamoru-chikara-tsuyoi-top5.mp4"
+    },
+    {
+      "id": "birthday_reel_20260804_1900_birthday_day_aruaru_04_20260804",
+      "kind": "birthday_reel",
+      "date": "2026-08-04",
+      "time": "19:00",
+      "topicType": "birthday_day_aruaru",
+      "researchTarget": "birthday_day_aruaru_manual",
+      "contentDays": [
+        4
+      ],
+      "graphShape": null,
+      "graphAxes": null,
+      "graphDays": [],
+      "title": "4日生まれあるある5選",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-04/birthday-day-aruaru-04-20260804/birthday-day-aruaru-04-20260804.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n4日生まれあるある5選\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n4日生まれあるある5選\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-04/birthday-day-aruaru-04-20260804/birthday-day-aruaru-04-20260804-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-04/birthday-day-aruaru-04-20260804/birthday-day-aruaru-04-20260804-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 4,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+          }
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_preview_contact_sheet_review",
+          "checkedBy": "auto-prepare-approved-reels",
+          "checkedAt": "2026-08-03T15:30:59.482Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-04/birthday-day-aruaru-04-20260804/birthday-day-aruaru-04-20260804-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-04/birthday-day-aruaru-04-20260804/birthday-day-aruaru-04-20260804-preview.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-04/birthday-day-aruaru-04-20260804/birthday-day-aruaru-04-20260804-contact.jpg"
+          ]
+        },
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-08-04/birthday-day-aruaru-04-20260804/birthday-day-aruaru-04-20260804.mp4"
+    },
+    {
+      "id": "birthday_reel_20260804_2000_birthday_day_manual_11_20260804",
+      "kind": "birthday_reel",
+      "date": "2026-08-04",
+      "time": "20:00",
+      "topicType": "birthday_day_manual",
+      "researchTarget": "birthday_day_aruaru_manual",
+      "contentDays": [
+        11
+      ],
+      "graphShape": null,
+      "graphAxes": null,
+      "graphDays": [],
+      "title": "11日生まれ取説5選",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-04/birthday-day-manual-11-20260804/birthday-day-manual-11-20260804.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n11日生まれ取説5選\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n11日生まれ取説5選\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-04/birthday-day-manual-11-20260804/birthday-day-manual-11-20260804-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-04/birthday-day-manual-11-20260804/birthday-day-manual-11-20260804-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 11,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
+          }
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_preview_contact_sheet_review",
+          "checkedBy": "auto-prepare-approved-reels",
+          "checkedAt": "2026-08-03T15:30:59.482Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-04/birthday-day-manual-11-20260804/birthday-day-manual-11-20260804-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-04/birthday-day-manual-11-20260804/birthday-day-manual-11-20260804-preview.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-04/birthday-day-manual-11-20260804/birthday-day-manual-11-20260804-contact.jpg"
+          ]
+        },
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-08-04/birthday-day-manual-11-20260804/birthday-day-manual-11-20260804.mp4"
+    }
+  ],
+  "sourceCandidate": "output/social-approved-reels-candidates/2026-08-04-approved-candidate.json"
+}
