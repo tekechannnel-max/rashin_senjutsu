@@ -202,10 +202,10 @@
       "time": "19:00",
       "topicType": "birthday_day_manual",
       "researchTarget": "birthday_day_aruaru_manual",
-      "slug": "birthday-day-manual-11-20260814",
-      "title": "11日生まれ取説5選",
+      "slug": "birthday-day-manual-13-20260814",
+      "title": "13日生まれ取説5選",
       "titleLines": [
-        "11日生まれ",
+        "13日生まれ",
         "取説5選"
       ],
       "lead": "接し方、休ませ方、力の出し方を1日分だけに絞って取扱説明書にします。",
@@ -219,7 +219,7 @@
         "bg3": "#e4f0ec",
         "glow": "#ffe6a8"
       },
-      "day": 11,
+      "day": 13,
       "points": [
         {
           "rank": 1,
@@ -248,10 +248,10 @@
       "time": "20:00",
       "topicType": "birthday_day_aruaru",
       "researchTarget": "birthday_day_aruaru_manual",
-      "slug": "birthday-day-aruaru-18-20260814",
-      "title": "18日生まれあるある5選",
+      "slug": "birthday-day-aruaru-24-20260814",
+      "title": "24日生まれあるある5選",
       "titleLines": [
-        "18日生まれ",
+        "24日生まれ",
         "あるある5選"
       ],
       "lead": "その日に生まれた人が出しやすい反応を、保存しやすい5つのあるあるに整理します。",
@@ -265,7 +265,7 @@
         "bg3": "#ece8f6",
         "glow": "#dceeff"
       },
-      "day": 18,
+      "day": 24,
       "points": [
         {
           "rank": 1,

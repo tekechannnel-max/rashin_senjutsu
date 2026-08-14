@@ -144,17 +144,17 @@ Threads:
 #誕生日占い
 ```
 
-## 19:00 11日生まれ取説5選
+## 19:00 13日生まれ取説5選
 
-MP4: D:\株式会社 天仙\羅針占術\videos\social\instagram\【インスタ】あるある・ランキング系\2026-08-14\birthday-day-manual-11-20260814\birthday-day-manual-11-20260814.mp4
-代表フレーム: D:\株式会社 天仙\羅針占術\videos\social\instagram\【インスタ】あるある・ランキング系\2026-08-14\birthday-day-manual-11-20260814\birthday-day-manual-11-20260814-poster.jpg
-確認シート: D:\株式会社 天仙\羅針占術\videos\social\instagram\【インスタ】あるある・ランキング系\2026-08-14\birthday-day-manual-11-20260814\birthday-day-manual-11-20260814-contact.jpg
+MP4: D:\株式会社 天仙\羅針占術\videos\social\instagram\【インスタ】あるある・ランキング系\2026-08-14\birthday-day-manual-13-20260814\birthday-day-manual-13-20260814.mp4
+代表フレーム: D:\株式会社 天仙\羅針占術\videos\social\instagram\【インスタ】あるある・ランキング系\2026-08-14\birthday-day-manual-13-20260814\birthday-day-manual-13-20260814-poster.jpg
+確認シート: D:\株式会社 天仙\羅針占術\videos\social\instagram\【インスタ】あるある・ランキング系\2026-08-14\birthday-day-manual-13-20260814\birthday-day-manual-13-20260814-contact.jpg
 
 Instagram:
 ```text
 ＼無料占いはプロフィールURLから／
 
-11日生まれ取説5選
+13日生まれ取説5選
 
 保存していつでも思い出してください。
 もっと深く見たい方は羅針占術へ。
@@ -167,7 +167,7 @@ Threads:
 ```text
 無料占いはプロフィールURLから👀✨
 
-11日生まれ取説5選
+13日生まれ取説5選
 
 保存していつでも思い出してください。
 もっと深く見たい方は羅針占術へ。
@@ -176,17 +176,17 @@ Threads:
 #誕生日占い
 ```
 
-## 20:00 18日生まれあるある5選
+## 20:00 24日生まれあるある5選
 
-MP4: D:\株式会社 天仙\羅針占術\videos\social\instagram\【インスタ】あるある・ランキング系\2026-08-14\birthday-day-aruaru-18-20260814\birthday-day-aruaru-18-20260814.mp4
-代表フレーム: D:\株式会社 天仙\羅針占術\videos\social\instagram\【インスタ】あるある・ランキング系\2026-08-14\birthday-day-aruaru-18-20260814\birthday-day-aruaru-18-20260814-poster.jpg
-確認シート: D:\株式会社 天仙\羅針占術\videos\social\instagram\【インスタ】あるある・ランキング系\2026-08-14\birthday-day-aruaru-18-20260814\birthday-day-aruaru-18-20260814-contact.jpg
+MP4: D:\株式会社 天仙\羅針占術\videos\social\instagram\【インスタ】あるある・ランキング系\2026-08-14\birthday-day-aruaru-24-20260814\birthday-day-aruaru-24-20260814.mp4
+代表フレーム: D:\株式会社 天仙\羅針占術\videos\social\instagram\【インスタ】あるある・ランキング系\2026-08-14\birthday-day-aruaru-24-20260814\birthday-day-aruaru-24-20260814-poster.jpg
+確認シート: D:\株式会社 天仙\羅針占術\videos\social\instagram\【インスタ】あるある・ランキング系\2026-08-14\birthday-day-aruaru-24-20260814\birthday-day-aruaru-24-20260814-contact.jpg
 
 Instagram:
 ```text
 ＼無料占いはプロフィールURLから／
 
-18日生まれあるある5選
+24日生まれあるある5選
 
 保存していつでも思い出してください。
 もっと深く見たい方は羅針占術へ。
@@ -199,7 +199,7 @@ Threads:
 ```text
 無料占いはプロフィールURLから👀✨
 
-18日生まれあるある5選
+24日生まれあるある5選
 
 保存していつでも思い出してください。
 もっと深く見たい方は羅針占術へ。
