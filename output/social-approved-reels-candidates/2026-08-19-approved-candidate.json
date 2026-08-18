@@ -1,0 +1,239 @@
+{
+  "approvalStatus": "draft",
+  "approvedBy": "",
+  "approvedAt": "",
+  "approvalText": "",
+  "approvalScope": "threads,instagram",
+  "note": "User review required. Do not move this file into data/social-posts/approved-reels until the post approval gate is approved.",
+  "posts": [
+    {
+      "id": "birthday_reel_20260819_1800_mukuchi_demo_yasashisa_tsutawaru_top5",
+      "kind": "birthday_reel",
+      "date": "2026-08-19",
+      "time": "18:00",
+      "topicType": "birthday_top5",
+      "researchTarget": "birthday_top5",
+      "contentDays": [
+        3,
+        10,
+        13,
+        14,
+        15
+      ],
+      "graphShape": null,
+      "graphAxes": null,
+      "graphDays": [],
+      "title": "無口でも優しさが伝わる生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-19/mukuchi-demo-yasashisa-tsutawaru-top5/mukuchi-demo-yasashisa-tsutawaru-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n無口でも優しさが伝わる生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n無口でも優しさが伝わる生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-19/mukuchi-demo-yasashisa-tsutawaru-top5/mukuchi-demo-yasashisa-tsutawaru-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-19/mukuchi-demo-yasashisa-tsutawaru-top5/mukuchi-demo-yasashisa-tsutawaru-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 3,
+            "family": 3,
+            "asset": "birthday-family-3-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-3-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 10,
+            "family": 1,
+            "asset": "birthday-family-1-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 13,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 14,
+            "family": 5,
+            "asset": "birthday-family-5-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 15,
+            "family": 6,
+            "asset": "birthday-family-6-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
+          }
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_preview_contact_sheet_review",
+          "checkedBy": "auto-prepare-approved-reels",
+          "checkedAt": "2026-08-18T15:31:04.746Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-19/mukuchi-demo-yasashisa-tsutawaru-top5/mukuchi-demo-yasashisa-tsutawaru-top5-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-19/mukuchi-demo-yasashisa-tsutawaru-top5/mukuchi-demo-yasashisa-tsutawaru-top5-preview.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-19/mukuchi-demo-yasashisa-tsutawaru-top5/mukuchi-demo-yasashisa-tsutawaru-top5-contact.jpg"
+          ]
+        },
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      }
+    },
+    {
+      "id": "birthday_reel_20260819_1900_birthday_day_aruaru_07_20260819",
+      "kind": "birthday_reel",
+      "date": "2026-08-19",
+      "time": "19:00",
+      "topicType": "birthday_day_aruaru",
+      "researchTarget": "birthday_day_aruaru_manual",
+      "contentDays": [
+        7
+      ],
+      "graphShape": null,
+      "graphAxes": null,
+      "graphDays": [],
+      "title": "7日生まれあるある5選",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-19/birthday-day-aruaru-07-20260819/birthday-day-aruaru-07-20260819.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n7日生まれあるある5選\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n7日生まれあるある5選\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-19/birthday-day-aruaru-07-20260819/birthday-day-aruaru-07-20260819-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-19/birthday-day-aruaru-07-20260819/birthday-day-aruaru-07-20260819-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 7,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
+          }
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_preview_contact_sheet_review",
+          "checkedBy": "auto-prepare-approved-reels",
+          "checkedAt": "2026-08-18T15:31:04.747Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-19/birthday-day-aruaru-07-20260819/birthday-day-aruaru-07-20260819-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-19/birthday-day-aruaru-07-20260819/birthday-day-aruaru-07-20260819-preview.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-19/birthday-day-aruaru-07-20260819/birthday-day-aruaru-07-20260819-contact.jpg"
+          ]
+        },
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      }
+    },
+    {
+      "id": "birthday_reel_20260819_2000_aitai_hito_ni_sunao_top5",
+      "kind": "birthday_reel",
+      "date": "2026-08-19",
+      "time": "20:00",
+      "topicType": "birthday_top5",
+      "researchTarget": "birthday_top5",
+      "contentDays": [
+        31,
+        6,
+        26,
+        27,
+        28
+      ],
+      "graphShape": null,
+      "graphAxes": null,
+      "graphDays": [],
+      "title": "会いたい人に素直になれる生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-19/aitai-hito-ni-sunao-top5/aitai-hito-ni-sunao-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n会いたい人に素直になれる生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n会いたい人に素直になれる生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-19/aitai-hito-ni-sunao-top5/aitai-hito-ni-sunao-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-19/aitai-hito-ni-sunao-top5/aitai-hito-ni-sunao-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 31,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 6,
+            "family": 6,
+            "asset": "birthday-family-6-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 26,
+            "family": 8,
+            "asset": "birthday-family-8-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-8-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 27,
+            "family": 9,
+            "asset": "birthday-family-9-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-9-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 28,
+            "family": 1,
+            "asset": "birthday-family-1-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
+          }
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_preview_contact_sheet_review",
+          "checkedBy": "auto-prepare-approved-reels",
+          "checkedAt": "2026-08-18T15:31:04.747Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-19/aitai-hito-ni-sunao-top5/aitai-hito-ni-sunao-top5-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-19/aitai-hito-ni-sunao-top5/aitai-hito-ni-sunao-top5-preview.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-19/aitai-hito-ni-sunao-top5/aitai-hito-ni-sunao-top5-contact.jpg"
+          ]
+        },
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      }
+    }
+  ]
+}

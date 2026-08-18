@@ -1,0 +1,303 @@
+{
+  "date": "2026-08-19",
+  "reviewTitle": "2026-08-19 夜枠 誕生日リール自動生成候補",
+  "schedulePolicy": {
+    "dailyBirthdayReelTimes": [
+      "18:00",
+      "19:00",
+      "20:00"
+    ],
+    "thursdayComparisonTime": "20:00",
+    "birthdayGraph": {
+      "effectiveDate": "2026-07-23",
+      "daysOfMonth": [
+        7,
+        17,
+        27
+      ],
+      "maxPerMonth": 3,
+      "scheduledForDate": false,
+      "nonGraphReplacement": "○○な生まれ日TOP5 または 特定の生まれ日あるある/取説5選"
+    }
+  },
+  "sourceNotes": [
+    {
+      "sourceAccount": "Instagram Creators / Meta",
+      "sourceUrl": "https://creators.instagram.com/grow/algorithms-and-ranking?locale=en_GB",
+      "observedPattern": "Instagramのランキングは視聴維持・反応・シェアされやすさを強く見るため、短く分かる1テーマ構成にする。",
+      "usedAs": "毎日リールの設計原則",
+      "transformationNote": "広告色を強めず、保存したくなる自己理解Top5として再構成する。",
+      "duplicateCheck": "外部投稿本文・画像・ランキングはコピーせず、羅針占術の誕生日数Top5へ変換する。"
+    },
+    {
+      "sourceAccount": "Meta Transparency Center",
+      "sourceUrl": "https://transparency.meta.com/features/explaining-ranking/ig-reels-chaining/",
+      "observedPattern": "Reels面は次に見たい可能性が高い動画を予測して並べるため、冒頭で内容がすぐ分かる構成を優先する。",
+      "usedAs": "タイトル・リードの設計根拠",
+      "transformationNote": "1枚目で「自分の誕生日があるか」を即確認できる見出しにする。",
+      "duplicateCheck": "トレンド音源や他者動画素材には依存しない。"
+    },
+    {
+      "sourceAccount": "羅針占術 internal",
+      "sourceUrl": "docs/sns-runbook.md",
+      "observedPattern": "Threads + Instagram、InstagramはReels、Threadsは動画投稿。木曜20:00は比較カルーセル優先。",
+      "usedAs": "2026-08-19 の投稿時刻と媒体制約",
+      "transformationNote": "木曜20:00は比較カルーセル優先。日次リールは木曜18:00/19:00、他曜日18:00/19:00/20:00だけにする。",
+      "duplicateCheck": "承認済みmanifestと投稿済みledgerの既存タイトルを避ける。"
+    },
+    {
+      "sourceAccount": "羅針占術 video insights PDCA",
+      "sourceUrl": "data/social-posts/pdca/video-insights-feedback.json",
+      "observedPattern": "投稿済み動画の保存・シェア・返信/コメント・プロフィール訪問をスコア化し、次回のリサーチ候補順へ反映する。",
+      "usedAs": "2026-08-19 のネタ型と投稿時刻の改善材料",
+      "transformationNote": "月内では3系統を維持し、グラフは月3回上限の指定日だけ、強かったネタ型は残りの枠内で優先する。",
+      "duplicateCheck": "PDCAは型と時刻の優先度だけに使い、本文・順位・画像・動画はコピーしない。"
+    }
+  ],
+  "pdcaFeedback": null,
+  "requiredResearchTargets": [
+    "生まれ日あるある/取説: 1日〜31日のいずれかを毎日自動選定",
+    "生まれ日グラフ: 毎月7日・17日・27日の月3回まで、1日〜31日をすべて網羅",
+    "グラフなし日の代替: ○○な生まれ日TOP5 または 特定の生まれ日あるある/取説5選"
+  ],
+  "avoidedTopics": [
+    "30日生まれ取説5選",
+    "返信が遅くても大切にしてる生まれ日TOP5",
+    "21日生まれあるある5選",
+    "大切な約束を忘れにくい生まれ日TOP5",
+    "23日生まれ取説5選",
+    "深く考えてから動く生まれ日TOP5",
+    "15日生まれ取説5選",
+    "既読より態度で伝える生まれ日TOP5",
+    "予定変更に強い生まれ日TOP5",
+    "仲直りのきっかけを作る生まれ日TOP5",
+    "ひそかに努力を続ける生まれ日TOP5",
+    "6日生まれあるある5選",
+    "プレッシャーで集中力が上がる生まれ日TOP5",
+    "2日生まれ取説5選",
+    "言いにくいことを丸く伝える生まれ日TOP5",
+    "期待されると粘れる生まれ日TOP5",
+    "26日生まれ取説5選",
+    "さりげない優しさが残る生まれ日TOP5",
+    "12日生まれあるある5選",
+    "苦手でも最後まで整える生まれ日TOP5",
+    "自分のペースを守る生まれ日TOP5",
+    "突然のチャンスに強い生まれ日TOP5",
+    "15日生まれあるある5選",
+    "無理しそうな人を見抜く生まれ日TOP5",
+    "1日生まれ取説5選",
+    "8日生まれあるある5選",
+    "人のいい所を見つける生まれ日TOP5",
+    "18日生まれあるある5選",
+    "優しく線引きできる生まれ日TOP5",
+    "落ち込む前に立て直す生まれ日TOP5",
+    "人知れず支える生まれ日TOP5",
+    "18日生まれ取説5選",
+    "きめ細かい配慮が光る生まれ日TOP5",
+    "迷った人を導ける生まれ日TOP5",
+    "3日生まれあるある5選",
+    "本気になる前に静かになる生まれ日TOP5",
+    "19日生まれ取説5選",
+    "言葉少なくても伝わる生まれ日TOP5",
+    "見守る力が強い生まれ日TOP5",
+    "4日生まれあるある5選",
+    "無口でもちゃんと気づいている生まれ日TOP5",
+    "関係を長く続けるのが上手な生まれ日TOP5",
+    "気持ちの切り替えがうまい生まれ日TOP5",
+    "本音をゆっくり出す生まれ日TOP5",
+    "夜になるほど気持ちが整う生まれ日TOP5",
+    "保存したくなる自分メモが多い生まれ日TOP5",
+    "人に合わせても疲れを溜めにくい生まれ日TOP5",
+    "9日生まれ取説5選",
+    "16日生まれあるある5選",
+    "大事なことほど丁寧に口に出す生まれ日TOP5",
+    "静かに気づかいができる生まれ日TOP5",
+    "恋の小さなサインを見逃しにくい生まれ日TOP5",
+    "19日生まれあるある5選",
+    "22日生まれ取説5選",
+    "昨日より心が軽くなりやすい生まれ日TOP5",
+    "縁のある人に自然と戻りやすい生まれ日TOP5",
+    "13日生まれ取説5選",
+    "24日生まれあるある5選",
+    "自分を責める前に整える生まれ日TOP5",
+    "14日生まれ取説5選",
+    "そっと本音を拾える生まれ日TOP5",
+    "31日生まれあるある5選",
+    "気持ちの片づけが上手な生まれ日TOP5",
+    "勢いで予定を決めがちな生まれ日TOP5",
+    "甘え下手な生まれ日TOP5",
+    "限界まで助けを呼ばない生まれ日TOP5",
+    "心を開くまで慎重な生まれ日TOP5",
+    "返信待ちでそわそわする生まれ日TOP5",
+    "私生活が謎に見られがちな生まれ日TOP5",
+    "人前で弱音を見せにくい生まれ日TOP5",
+    "場の温度を整えがちな生まれ日TOP5",
+    "雰囲気で惹きつける生まれ日TOP5",
+    "気持ちの切り替えが早い生まれ日TOP5",
+    "言葉より行動で示す生まれ日TOP5",
+    "実は照れ屋な生まれ日TOP5",
+    "距離感を大切にする生まれ日TOP5",
+    "頼られると燃える生まれ日TOP5",
+    "変化の前に静かになる生まれ日TOP5",
+    "直感で危険を避ける生まれ日TOP5",
+    "大事な人ほど遠慮する生まれ日TOP5"
+  ],
+  "posts": [
+    {
+      "time": "18:00",
+      "topicType": "birthday_top5",
+      "researchTarget": "birthday_top5",
+      "slug": "mukuchi-demo-yasashisa-tsutawaru-top5",
+      "title": "無口でも優しさが伝わる生まれ日TOP5",
+      "titleLines": [
+        "無口でも優しさが伝わる",
+        "生まれ日TOP5"
+      ],
+      "lead": "言葉が少なくても、行動や間合いに思いやりが出やすいタイプです。",
+      "sourceUrl": "https://www.instagram.com/uranai.kitsune/?hl=ja",
+      "theme": {
+        "accent": "#7a3f50",
+        "accent2": "#406f34",
+        "ink": "#2d1920",
+        "bg1": "#fff0f2",
+        "bg2": "#fffdf7",
+        "bg3": "#edf5e8",
+        "glow": "#ffd6dc"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 3,
+          "miniFamily": 3,
+          "reason": "行動に出る思いやりが特に出やすい日です。言葉にしにくい場面でも、言葉以外の優しさを大切にできます。"
+        },
+        {
+          "rank": 2,
+          "day": 10,
+          "miniFamily": 1,
+          "reason": "一見ゆっくりでも観察は細かいです。必要な時だけ、必要なことを行動で示す流れを作れます。"
+        },
+        {
+          "rank": 3,
+          "day": 13,
+          "miniFamily": 4,
+          "reason": "無理に目立たなくても伝わります。近くの人ほど、あとから静かな安心が効いてきます。"
+        },
+        {
+          "rank": 4,
+          "day": 14,
+          "miniFamily": 5,
+          "reason": "気持ちを整理してから動くタイプです。勢いより、言葉以外の優しさを大切にします。"
+        },
+        {
+          "rank": 5,
+          "day": 15,
+          "miniFamily": 6,
+          "reason": "表では控えめでも芯があります。大事な場面で必要なことを行動で示す力が出やすい日です。"
+        }
+      ],
+      "summary": "優しさが伝わる日は、説明よりも一貫した行動で近くの人を安心させやすいです。"
+    },
+    {
+      "time": "19:00",
+      "topicType": "birthday_day_aruaru",
+      "researchTarget": "birthday_day_aruaru_manual",
+      "slug": "birthday-day-aruaru-07-20260819",
+      "title": "7日生まれあるある5選",
+      "titleLines": [
+        "7日生まれ",
+        "あるある5選"
+      ],
+      "lead": "その日に生まれた人が出しやすい反応を、保存しやすい5つのあるあるに整理します。",
+      "sourceUrl": "https://www.instagram.com/uranai.kitsune/?hl=ja",
+      "theme": {
+        "accent": "#2d6f86",
+        "accent2": "#b76a3b",
+        "ink": "#17323c",
+        "bg1": "#eef7fb",
+        "bg2": "#fffdf8",
+        "bg3": "#e8ecd8",
+        "glow": "#d7efff"
+      },
+      "day": 7,
+      "points": [
+        {
+          "rank": 1,
+          "text": "大事な人ほど遠慮して、あとから気持ちを出すことがあります。"
+        },
+        {
+          "rank": 2,
+          "text": "ひとりの時間で回復してから、人に優しく戻ります。"
+        },
+        {
+          "rank": 3,
+          "text": "違和感には早く気づきますが、すぐには言葉にしません。"
+        },
+        {
+          "rank": 4,
+          "text": "最初は静かでも、納得すると一気に動きます。"
+        },
+        {
+          "rank": 5,
+          "text": "急かされるより、選べる余白があるほど本音が出ます。"
+        }
+      ],
+      "summary": "この日の人は、無理に目立つよりも自分の反応の癖を知るほど動きやすくなります。"
+    },
+    {
+      "time": "20:00",
+      "topicType": "birthday_top5",
+      "researchTarget": "birthday_top5",
+      "slug": "aitai-hito-ni-sunao-top5",
+      "title": "会いたい人に素直になれる生まれ日TOP5",
+      "titleLines": [
+        "会いたい人に素直になれる",
+        "生まれ日TOP5"
+      ],
+      "lead": "強がりよりも、会いたい気持ちをやわらかく出しやすいタイプです。",
+      "sourceUrl": "https://www.instagram.com/uranai.kitsune/?hl=ja",
+      "theme": {
+        "accent": "#7a4f2b",
+        "accent2": "#2f7f63",
+        "ink": "#2b2118",
+        "bg1": "#fff7ec",
+        "bg2": "#f8fbef",
+        "bg3": "#e4f0ec",
+        "glow": "#ffe6a8"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 31,
+          "miniFamily": 4,
+          "reason": "やわらかく気持ちを出す力が特に出やすい日です。大切な人を思い出す時でも、会いたい気持ちの扱い方を大切にできます。"
+        },
+        {
+          "rank": 2,
+          "day": 6,
+          "miniFamily": 6,
+          "reason": "一見ゆっくりでも観察は細かいです。必要な時だけ、短く素直に伝える流れを作れます。"
+        },
+        {
+          "rank": 3,
+          "day": 26,
+          "miniFamily": 8,
+          "reason": "無理に目立たなくても伝わります。近くの人ほど、あとから距離を縮める一言が効いてきます。"
+        },
+        {
+          "rank": 4,
+          "day": 27,
+          "miniFamily": 9,
+          "reason": "気持ちを整理してから動くタイプです。勢いより、会いたい気持ちの扱い方を大切にします。"
+        },
+        {
+          "rank": 5,
+          "day": 28,
+          "miniFamily": 1,
+          "reason": "表では控えめでも芯があります。大事な場面で短く素直に伝える力が出やすい日です。"
+        }
+      ],
+      "summary": "素直になれる日は、追いかけすぎず気持ちを伝えることで、関係の温度が整いやすいです。"
+    }
+  ]
+}
