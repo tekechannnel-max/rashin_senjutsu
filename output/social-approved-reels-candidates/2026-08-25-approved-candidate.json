@@ -1,0 +1,239 @@
+{
+  "approvalStatus": "draft",
+  "approvedBy": "",
+  "approvedAt": "",
+  "approvalText": "",
+  "approvalScope": "threads,instagram",
+  "note": "User review required. Do not move this file into data/social-posts/approved-reels until the post approval gate is approved.",
+  "posts": [
+    {
+      "id": "birthday_reel_20260825_1800_atarashii_basho_ibasho_mitsukeru_top5",
+      "kind": "birthday_reel",
+      "date": "2026-08-25",
+      "time": "18:00",
+      "topicType": "birthday_top5",
+      "researchTarget": "birthday_top5",
+      "contentDays": [
+        7,
+        4,
+        17,
+        18,
+        19
+      ],
+      "graphShape": null,
+      "graphAxes": null,
+      "graphDays": [],
+      "title": "新しい場所で居場所を見つける生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-25/atarashii-basho-ibasho-mitsukeru-top5/atarashii-basho-ibasho-mitsukeru-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n新しい場所で居場所を見つける生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n新しい場所で居場所を見つける生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-25/atarashii-basho-ibasho-mitsukeru-top5/atarashii-basho-ibasho-mitsukeru-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-25/atarashii-basho-ibasho-mitsukeru-top5/atarashii-basho-ibasho-mitsukeru-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 7,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 4,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 17,
+            "family": 8,
+            "asset": "birthday-family-8-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-8-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 18,
+            "family": 9,
+            "asset": "birthday-family-9-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-9-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 19,
+            "family": 1,
+            "asset": "birthday-family-1-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
+          }
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_preview_contact_sheet_review",
+          "checkedBy": "auto-prepare-approved-reels",
+          "checkedAt": "2026-08-20T02:06:31.977Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-25/atarashii-basho-ibasho-mitsukeru-top5/atarashii-basho-ibasho-mitsukeru-top5-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-25/atarashii-basho-ibasho-mitsukeru-top5/atarashii-basho-ibasho-mitsukeru-top5-preview.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-25/atarashii-basho-ibasho-mitsukeru-top5/atarashii-basho-ibasho-mitsukeru-top5-contact.jpg"
+          ]
+        },
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      }
+    },
+    {
+      "id": "birthday_reel_20260825_1900_birthday_day_manual_27_20260825",
+      "kind": "birthday_reel",
+      "date": "2026-08-25",
+      "time": "19:00",
+      "topicType": "birthday_day_manual",
+      "researchTarget": "birthday_day_aruaru_manual",
+      "contentDays": [
+        27
+      ],
+      "graphShape": null,
+      "graphAxes": null,
+      "graphDays": [],
+      "title": "27日生まれ取説5選",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-25/birthday-day-manual-27-20260825/birthday-day-manual-27-20260825.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n27日生まれ取説5選\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n27日生まれ取説5選\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-25/birthday-day-manual-27-20260825/birthday-day-manual-27-20260825-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-25/birthday-day-manual-27-20260825/birthday-day-manual-27-20260825-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 27,
+            "family": 9,
+            "asset": "birthday-family-9-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-9-chibi.png"
+          }
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_preview_contact_sheet_review",
+          "checkedBy": "auto-prepare-approved-reels",
+          "checkedAt": "2026-08-20T02:06:31.978Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-25/birthday-day-manual-27-20260825/birthday-day-manual-27-20260825-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-25/birthday-day-manual-27-20260825/birthday-day-manual-27-20260825-preview.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-25/birthday-day-manual-27-20260825/birthday-day-manual-27-20260825-contact.jpg"
+          ]
+        },
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      }
+    },
+    {
+      "id": "birthday_reel_20260825_2000_chiisana_tassei_yorokoberu_top5",
+      "kind": "birthday_reel",
+      "date": "2026-08-25",
+      "time": "20:00",
+      "topicType": "birthday_top5",
+      "researchTarget": "birthday_top5",
+      "contentDays": [
+        23,
+        9,
+        30,
+        31,
+        1
+      ],
+      "graphShape": null,
+      "graphAxes": null,
+      "graphDays": [],
+      "title": "小さな達成をちゃんと喜べる生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-25/chiisana-tassei-yorokoberu-top5/chiisana-tassei-yorokoberu-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n小さな達成をちゃんと喜べる生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n小さな達成をちゃんと喜べる生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-25/chiisana-tassei-yorokoberu-top5/chiisana-tassei-yorokoberu-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-25/chiisana-tassei-yorokoberu-top5/chiisana-tassei-yorokoberu-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 23,
+            "family": 5,
+            "asset": "birthday-family-5-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 9,
+            "family": 9,
+            "asset": "birthday-family-9-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-9-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 30,
+            "family": 3,
+            "asset": "birthday-family-3-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-3-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 31,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 1,
+            "family": 1,
+            "asset": "birthday-family-1-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
+          }
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_preview_contact_sheet_review",
+          "checkedBy": "auto-prepare-approved-reels",
+          "checkedAt": "2026-08-20T02:06:31.981Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-25/chiisana-tassei-yorokoberu-top5/chiisana-tassei-yorokoberu-top5-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-25/chiisana-tassei-yorokoberu-top5/chiisana-tassei-yorokoberu-top5-preview.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-25/chiisana-tassei-yorokoberu-top5/chiisana-tassei-yorokoberu-top5-contact.jpg"
+          ]
+        },
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      }
+    }
+  ]
+}
