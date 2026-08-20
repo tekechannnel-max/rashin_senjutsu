@@ -1,0 +1,211 @@
+{
+  "approvalStatus": "approved",
+  "approvedBy": "automation",
+  "approvedAt": "2026-08-20T02:03:14.858Z",
+  "approvalText": "User requested fully automated SNS research, production, approval-manifest preparation, and scheduled posting on 2026-06-25.",
+  "approvalScope": "threads,instagram",
+  "note": "Auto-approved by local Rashin SNS automation. Posting remains limited to due windows and approved birthday_reel manifests.",
+  "posts": [
+    {
+      "id": "birthday_reel_20260822_1800_shoshin_ni_modoru_hayai_top5",
+      "kind": "birthday_reel",
+      "date": "2026-08-22",
+      "time": "18:00",
+      "topicType": "birthday_top5",
+      "researchTarget": "birthday_top5",
+      "contentDays": [
+        13,
+        6,
+        5,
+        7,
+        8
+      ],
+      "graphShape": null,
+      "graphAxes": null,
+      "graphDays": [],
+      "title": "初心に戻るのが早い生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-22/shoshin-ni-modoru-hayai-top5/shoshin-ni-modoru-hayai-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n初心に戻るのが早い生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n初心に戻るのが早い生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-22/shoshin-ni-modoru-hayai-top5/shoshin-ni-modoru-hayai-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-22/shoshin-ni-modoru-hayai-top5/shoshin-ni-modoru-hayai-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 13,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 6,
+            "family": 6,
+            "asset": "birthday-family-6-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 5,
+            "family": 5,
+            "asset": "birthday-family-5-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 7,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 8,
+            "family": 8,
+            "asset": "birthday-family-8-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-8-chibi.png"
+          }
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_preview_contact_sheet_review",
+          "checkedBy": "auto-prepare-approved-reels",
+          "checkedAt": "2026-08-20T02:03:13.220Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-22/shoshin-ni-modoru-hayai-top5/shoshin-ni-modoru-hayai-top5-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-22/shoshin-ni-modoru-hayai-top5/shoshin-ni-modoru-hayai-top5-preview.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-22/shoshin-ni-modoru-hayai-top5/shoshin-ni-modoru-hayai-top5-contact.jpg"
+          ]
+        },
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-08-22/shoshin-ni-modoru-hayai-top5/shoshin-ni-modoru-hayai-top5.mp4"
+    },
+    {
+      "id": "birthday_reel_20260822_1900_birthday_day_aruaru_09_20260822",
+      "kind": "birthday_reel",
+      "date": "2026-08-22",
+      "time": "19:00",
+      "topicType": "birthday_day_aruaru",
+      "researchTarget": "birthday_day_aruaru_manual",
+      "contentDays": [
+        9
+      ],
+      "graphShape": null,
+      "graphAxes": null,
+      "graphDays": [],
+      "title": "9日生まれあるある5選",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-22/birthday-day-aruaru-09-20260822/birthday-day-aruaru-09-20260822.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n9日生まれあるある5選\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n9日生まれあるある5選\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-22/birthday-day-aruaru-09-20260822/birthday-day-aruaru-09-20260822-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-22/birthday-day-aruaru-09-20260822/birthday-day-aruaru-09-20260822-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 9,
+            "family": 9,
+            "asset": "birthday-family-9-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-9-chibi.png"
+          }
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_preview_contact_sheet_review",
+          "checkedBy": "auto-prepare-approved-reels",
+          "checkedAt": "2026-08-20T02:03:13.221Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-22/birthday-day-aruaru-09-20260822/birthday-day-aruaru-09-20260822-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-22/birthday-day-aruaru-09-20260822/birthday-day-aruaru-09-20260822-preview.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-22/birthday-day-aruaru-09-20260822/birthday-day-aruaru-09-20260822-contact.jpg"
+          ]
+        },
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-08-22/birthday-day-aruaru-09-20260822/birthday-day-aruaru-09-20260822.mp4"
+    },
+    {
+      "id": "birthday_reel_20260822_2000_birthday_day_manual_17_20260822",
+      "kind": "birthday_reel",
+      "date": "2026-08-22",
+      "time": "20:00",
+      "topicType": "birthday_day_manual",
+      "researchTarget": "birthday_day_aruaru_manual",
+      "contentDays": [
+        17
+      ],
+      "graphShape": null,
+      "graphAxes": null,
+      "graphDays": [],
+      "title": "17日生まれ取説5選",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-22/birthday-day-manual-17-20260822/birthday-day-manual-17-20260822.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n17日生まれ取説5選\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n17日生まれ取説5選\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-22/birthday-day-manual-17-20260822/birthday-day-manual-17-20260822-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-22/birthday-day-manual-17-20260822/birthday-day-manual-17-20260822-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 17,
+            "family": 8,
+            "asset": "birthday-family-8-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-8-chibi.png"
+          }
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_preview_contact_sheet_review",
+          "checkedBy": "auto-prepare-approved-reels",
+          "checkedAt": "2026-08-20T02:03:13.221Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-22/birthday-day-manual-17-20260822/birthday-day-manual-17-20260822-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-22/birthday-day-manual-17-20260822/birthday-day-manual-17-20260822-preview.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-22/birthday-day-manual-17-20260822/birthday-day-manual-17-20260822-contact.jpg"
+          ]
+        },
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-08-22/birthday-day-manual-17-20260822/birthday-day-manual-17-20260822.mp4"
+    }
+  ],
+  "sourceCandidate": "output/social-approved-reels-candidates/2026-08-22-approved-candidate.json"
+}
