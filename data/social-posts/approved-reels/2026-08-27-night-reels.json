@@ -1,0 +1,617 @@
+{
+  "approvalStatus": "approved",
+  "approvedBy": "automation",
+  "approvedAt": "2026-08-26T15:30:50.142Z",
+  "approvalText": "User requested fully automated SNS research, production, approval-manifest preparation, and scheduled posting on 2026-06-25.",
+  "approvalScope": "threads,instagram",
+  "note": "Auto-approved by local Rashin SNS automation. Posting remains limited to due windows and approved birthday_reel manifests.",
+  "posts": [
+    {
+      "id": "birthday_reel_20260827_1800_birthday_day_aruaru_13_20260827",
+      "kind": "birthday_reel",
+      "date": "2026-08-27",
+      "time": "18:00",
+      "topicType": "birthday_day_aruaru",
+      "researchTarget": "birthday_day_aruaru_manual",
+      "contentDays": [
+        13
+      ],
+      "graphShape": null,
+      "graphAxes": null,
+      "graphDays": [],
+      "title": "13日生まれあるある5選",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-27/birthday-day-aruaru-13-20260827/birthday-day-aruaru-13-20260827.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n13日生まれあるある5選\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n13日生まれあるある5選\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-27/birthday-day-aruaru-13-20260827/birthday-day-aruaru-13-20260827-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-27/birthday-day-aruaru-13-20260827/birthday-day-aruaru-13-20260827-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 13,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+          }
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_preview_contact_sheet_review",
+          "checkedBy": "auto-prepare-approved-reels",
+          "checkedAt": "2026-08-26T15:30:47.978Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-27/birthday-day-aruaru-13-20260827/birthday-day-aruaru-13-20260827-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-27/birthday-day-aruaru-13-20260827/birthday-day-aruaru-13-20260827-preview.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-27/birthday-day-aruaru-13-20260827/birthday-day-aruaru-13-20260827-contact.jpg"
+          ]
+        },
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-08-27/birthday-day-aruaru-13-20260827/birthday-day-aruaru-13-20260827.mp4"
+    },
+    {
+      "id": "birthday_reel_20260827_1900_birthday_graph_1_31_20260827",
+      "kind": "birthday_reel",
+      "date": "2026-08-27",
+      "time": "19:00",
+      "topicType": "birthday_graph_1_31",
+      "researchTarget": "birthday_graph_all_days",
+      "contentDays": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31
+      ],
+      "graphShape": "xy_four_axis",
+      "graphAxes": {
+        "xNegative": "内省",
+        "xPositive": "行動",
+        "yNegative": "安定",
+        "yPositive": "直感"
+      },
+      "graphDays": [
+        {
+          "day": 1,
+          "score": 49,
+          "x": -0.492,
+          "y": -0.267,
+          "quadrant": "left_bottom",
+          "label": "安心"
+        },
+        {
+          "day": 2,
+          "score": 77,
+          "x": 0.767,
+          "y": -0.191,
+          "quadrant": "right_bottom",
+          "label": "集中"
+        },
+        {
+          "day": 3,
+          "score": 44,
+          "x": -0.298,
+          "y": 0.45,
+          "quadrant": "left_top",
+          "label": "調整"
+        },
+        {
+          "day": 4,
+          "score": 72,
+          "x": -0.12,
+          "y": -0.761,
+          "quadrant": "left_bottom",
+          "label": "共感"
+        },
+        {
+          "day": 5,
+          "score": 39,
+          "x": 0.407,
+          "y": 0.324,
+          "quadrant": "right_top",
+          "label": "挑戦"
+        },
+        {
+          "day": 6,
+          "score": 67,
+          "x": -0.748,
+          "y": 0.052,
+          "quadrant": "left_top",
+          "label": "直感"
+        },
+        {
+          "day": 7,
+          "score": 95,
+          "x": 0.345,
+          "y": -0.362,
+          "quadrant": "right_bottom",
+          "label": "行動"
+        },
+        {
+          "day": 8,
+          "score": 62,
+          "x": -0.014,
+          "y": 0.73,
+          "quadrant": "left_top",
+          "label": "安心"
+        },
+        {
+          "day": 9,
+          "score": 52,
+          "x": -0.318,
+          "y": -0.36,
+          "quadrant": "left_bottom",
+          "label": "集中"
+        },
+        {
+          "day": 10,
+          "score": 80,
+          "x": 0.706,
+          "y": 0.075,
+          "quadrant": "right_top",
+          "label": "調整"
+        },
+        {
+          "day": 11,
+          "score": 47,
+          "x": -0.37,
+          "y": 0.273,
+          "quadrant": "left_top",
+          "label": "共感"
+        },
+        {
+          "day": 12,
+          "score": 75,
+          "x": 0.133,
+          "y": -0.677,
+          "quadrant": "right_bottom",
+          "label": "挑戦"
+        },
+        {
+          "day": 13,
+          "score": 42,
+          "x": 0.229,
+          "y": 0.376,
+          "quadrant": "right_top",
+          "label": "直感"
+        },
+        {
+          "day": 14,
+          "score": 70,
+          "x": -0.644,
+          "y": -0.186,
+          "quadrant": "left_bottom",
+          "label": "行動"
+        },
+        {
+          "day": 15,
+          "score": 98,
+          "x": 0.376,
+          "y": -0.187,
+          "quadrant": "right_bottom",
+          "label": "安心"
+        },
+        {
+          "day": 16,
+          "score": 65,
+          "x": -0.234,
+          "y": 0.606,
+          "quadrant": "left_top",
+          "label": "集中"
+        },
+        {
+          "day": 17,
+          "score": 93,
+          "x": -0.146,
+          "y": -0.373,
+          "quadrant": "left_bottom",
+          "label": "調整"
+        },
+        {
+          "day": 18,
+          "score": 83,
+          "x": 0.566,
+          "y": 0.278,
+          "quadrant": "right_top",
+          "label": "共感"
+        },
+        {
+          "day": 19,
+          "score": 50,
+          "x": -0.365,
+          "y": 0.107,
+          "quadrant": "left_top",
+          "label": "挑戦"
+        },
+        {
+          "day": 20,
+          "score": 78,
+          "x": 0.316,
+          "y": -0.522,
+          "quadrant": "right_bottom",
+          "label": "直感"
+        },
+        {
+          "day": 21,
+          "score": 45,
+          "x": 0.071,
+          "y": 0.353,
+          "quadrant": "right_top",
+          "label": "行動"
+        },
+        {
+          "day": 22,
+          "score": 73,
+          "x": -0.476,
+          "y": -0.348,
+          "quadrant": "left_bottom",
+          "label": "安心"
+        },
+        {
+          "day": 23,
+          "score": 40,
+          "x": 0.338,
+          "y": -0.037,
+          "quadrant": "right_bottom",
+          "label": "集中"
+        },
+        {
+          "day": 24,
+          "score": 68,
+          "x": -0.375,
+          "y": 0.429,
+          "quadrant": "left_top",
+          "label": "調整"
+        },
+        {
+          "day": 25,
+          "score": 96,
+          "x": -0.018,
+          "y": -0.8,
+          "quadrant": "left_bottom",
+          "label": "共感"
+        },
+        {
+          "day": 26,
+          "score": 63,
+          "x": 0.381,
+          "y": 0.397,
+          "quadrant": "right_top",
+          "label": "挑戦"
+        },
+        {
+          "day": 27,
+          "score": 53,
+          "x": -0.778,
+          "y": -0.051,
+          "quadrant": "left_bottom",
+          "label": "直感"
+        },
+        {
+          "day": 28,
+          "score": 81,
+          "x": 0.413,
+          "y": -0.332,
+          "quadrant": "right_bottom",
+          "label": "行動"
+        },
+        {
+          "day": 29,
+          "score": 48,
+          "x": -0.115,
+          "y": 0.751,
+          "quadrant": "left_top",
+          "label": "安心"
+        },
+        {
+          "day": 30,
+          "score": 76,
+          "x": -0.283,
+          "y": -0.424,
+          "quadrant": "left_bottom",
+          "label": "集中"
+        },
+        {
+          "day": 31,
+          "score": 43,
+          "x": 0.719,
+          "y": 0.176,
+          "quadrant": "right_top",
+          "label": "調整"
+        }
+      ],
+      "title": "生まれ日グラフ 1日〜31日",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-27/birthday-graph-1-31-20260827/birthday-graph-1-31-20260827.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n生まれ日グラフ 1日〜31日\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n生まれ日グラフ 1日〜31日\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-27/birthday-graph-1-31-20260827/birthday-graph-1-31-20260827-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-27/birthday-graph-1-31-20260827/birthday-graph-1-31-20260827-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 1,
+            "family": 1,
+            "asset": "birthday-family-1-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 2,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 3,
+            "family": 3,
+            "asset": "birthday-family-3-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-3-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 4,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 5,
+            "family": 5,
+            "asset": "birthday-family-5-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
+          },
+          {
+            "rank": 6,
+            "day": 6,
+            "family": 6,
+            "asset": "birthday-family-6-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
+          },
+          {
+            "rank": 7,
+            "day": 7,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
+          },
+          {
+            "rank": 8,
+            "day": 8,
+            "family": 8,
+            "asset": "birthday-family-8-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-8-chibi.png"
+          },
+          {
+            "rank": 9,
+            "day": 9,
+            "family": 9,
+            "asset": "birthday-family-9-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-9-chibi.png"
+          },
+          {
+            "rank": 10,
+            "day": 10,
+            "family": 1,
+            "asset": "birthday-family-1-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
+          },
+          {
+            "rank": 11,
+            "day": 11,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
+          },
+          {
+            "rank": 12,
+            "day": 12,
+            "family": 3,
+            "asset": "birthday-family-3-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-3-chibi.png"
+          },
+          {
+            "rank": 13,
+            "day": 13,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 14,
+            "day": 14,
+            "family": 5,
+            "asset": "birthday-family-5-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
+          },
+          {
+            "rank": 15,
+            "day": 15,
+            "family": 6,
+            "asset": "birthday-family-6-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
+          },
+          {
+            "rank": 16,
+            "day": 16,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
+          },
+          {
+            "rank": 17,
+            "day": 17,
+            "family": 8,
+            "asset": "birthday-family-8-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-8-chibi.png"
+          },
+          {
+            "rank": 18,
+            "day": 18,
+            "family": 9,
+            "asset": "birthday-family-9-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-9-chibi.png"
+          },
+          {
+            "rank": 19,
+            "day": 19,
+            "family": 1,
+            "asset": "birthday-family-1-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
+          },
+          {
+            "rank": 20,
+            "day": 20,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
+          },
+          {
+            "rank": 21,
+            "day": 21,
+            "family": 3,
+            "asset": "birthday-family-3-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-3-chibi.png"
+          },
+          {
+            "rank": 22,
+            "day": 22,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 23,
+            "day": 23,
+            "family": 5,
+            "asset": "birthday-family-5-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
+          },
+          {
+            "rank": 24,
+            "day": 24,
+            "family": 6,
+            "asset": "birthday-family-6-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
+          },
+          {
+            "rank": 25,
+            "day": 25,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
+          },
+          {
+            "rank": 26,
+            "day": 26,
+            "family": 8,
+            "asset": "birthday-family-8-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-8-chibi.png"
+          },
+          {
+            "rank": 27,
+            "day": 27,
+            "family": 9,
+            "asset": "birthday-family-9-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-9-chibi.png"
+          },
+          {
+            "rank": 28,
+            "day": 28,
+            "family": 1,
+            "asset": "birthday-family-1-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
+          },
+          {
+            "rank": 29,
+            "day": 29,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
+          },
+          {
+            "rank": 30,
+            "day": 30,
+            "family": 3,
+            "asset": "birthday-family-3-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-3-chibi.png"
+          },
+          {
+            "rank": 31,
+            "day": 31,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+          }
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_preview_contact_sheet_review",
+          "checkedBy": "auto-prepare-approved-reels",
+          "checkedAt": "2026-08-26T15:30:47.978Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-27/birthday-graph-1-31-20260827/birthday-graph-1-31-20260827-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-27/birthday-graph-1-31-20260827/birthday-graph-1-31-20260827-preview.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-08-27/birthday-graph-1-31-20260827/birthday-graph-1-31-20260827-contact.jpg"
+          ]
+        },
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-08-27/birthday-graph-1-31-20260827/birthday-graph-1-31-20260827.mp4"
+    }
+  ],
+  "sourceCandidate": "output/social-approved-reels-candidates/2026-08-27-approved-candidate.json"
+}
