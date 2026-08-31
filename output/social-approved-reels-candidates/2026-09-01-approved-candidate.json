@@ -1,0 +1,9 @@
+{
+  "approvalStatus": "draft",
+  "approvedBy": "",
+  "approvedAt": "",
+  "approvalText": "",
+  "approvalScope": "threads,instagram",
+  "note": "User review required. Do not move this file into data/social-posts/approved-reels until the post approval gate is approved.",
+  "posts": []
+}

@@ -1,0 +1,10 @@
+{
+  "approvalStatus": "approved",
+  "approvedBy": "automation",
+  "approvedAt": "2026-08-31T15:30:15.598Z",
+  "approvalText": "User requested fully automated SNS research, production, approval-manifest preparation, and scheduled posting on 2026-06-25.",
+  "approvalScope": "threads,instagram",
+  "note": "Auto-approved by local Rashin SNS automation. Posting remains limited to due windows and approved birthday_reel manifests.",
+  "posts": [],
+  "sourceCandidate": "output/social-approved-reels-candidates/2026-09-01-approved-candidate.json"
+}
