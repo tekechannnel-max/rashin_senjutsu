@@ -1,0 +1,211 @@
+{
+  "approvalStatus": "approved",
+  "approvedBy": "automation",
+  "approvedAt": "2026-09-05T15:31:02.696Z",
+  "approvalText": "User requested fully automated SNS research, production, approval-manifest preparation, and scheduled posting on 2026-06-25.",
+  "approvalScope": "threads,instagram",
+  "note": "Auto-approved by local Rashin SNS automation. Posting remains limited to due windows and approved birthday_reel manifests.",
+  "posts": [
+    {
+      "id": "birthday_reel_20260906_1800_birthday_day_aruaru_22_20260906",
+      "kind": "birthday_reel",
+      "date": "2026-09-06",
+      "time": "18:00",
+      "topicType": "birthday_day_aruaru",
+      "researchTarget": "birthday_day_aruaru_manual",
+      "contentDays": [
+        22
+      ],
+      "graphShape": null,
+      "graphAxes": null,
+      "graphDays": [],
+      "title": "22日生まれあるある5選",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-09-06/birthday-day-aruaru-22-20260906/birthday-day-aruaru-22-20260906.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n22日生まれあるある5選\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n22日生まれあるある5選\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-09-06/birthday-day-aruaru-22-20260906/birthday-day-aruaru-22-20260906-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-09-06/birthday-day-aruaru-22-20260906/birthday-day-aruaru-22-20260906-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 22,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+          }
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_preview_contact_sheet_review",
+          "checkedBy": "auto-prepare-approved-reels",
+          "checkedAt": "2026-09-05T15:31:02.071Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-09-06/birthday-day-aruaru-22-20260906/birthday-day-aruaru-22-20260906-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-09-06/birthday-day-aruaru-22-20260906/birthday-day-aruaru-22-20260906-preview.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-09-06/birthday-day-aruaru-22-20260906/birthday-day-aruaru-22-20260906-contact.jpg"
+          ]
+        },
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-09-06/birthday-day-aruaru-22-20260906/birthday-day-aruaru-22-20260906.mp4"
+    },
+    {
+      "id": "birthday_reel_20260906_1900_birthday_day_aruaru_23_20260906",
+      "kind": "birthday_reel",
+      "date": "2026-09-06",
+      "time": "19:00",
+      "topicType": "birthday_day_aruaru",
+      "researchTarget": "birthday_day_aruaru_manual",
+      "contentDays": [
+        23
+      ],
+      "graphShape": null,
+      "graphAxes": null,
+      "graphDays": [],
+      "title": "23日生まれあるある5選",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-09-06/birthday-day-aruaru-23-20260906/birthday-day-aruaru-23-20260906.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n23日生まれあるある5選\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n23日生まれあるある5選\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-09-06/birthday-day-aruaru-23-20260906/birthday-day-aruaru-23-20260906-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-09-06/birthday-day-aruaru-23-20260906/birthday-day-aruaru-23-20260906-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 23,
+            "family": 5,
+            "asset": "birthday-family-5-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
+          }
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_preview_contact_sheet_review",
+          "checkedBy": "auto-prepare-approved-reels",
+          "checkedAt": "2026-09-05T15:31:02.071Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-09-06/birthday-day-aruaru-23-20260906/birthday-day-aruaru-23-20260906-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-09-06/birthday-day-aruaru-23-20260906/birthday-day-aruaru-23-20260906-preview.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-09-06/birthday-day-aruaru-23-20260906/birthday-day-aruaru-23-20260906-contact.jpg"
+          ]
+        },
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-09-06/birthday-day-aruaru-23-20260906/birthday-day-aruaru-23-20260906.mp4"
+    },
+    {
+      "id": "birthday_reel_20260906_2000_daiji_na_hito_ni_amaku_naru_top5",
+      "kind": "birthday_reel",
+      "date": "2026-09-06",
+      "time": "20:00",
+      "topicType": "birthday_top5",
+      "researchTarget": "birthday_top5",
+      "contentDays": [
+        20,
+        17,
+        21,
+        22,
+        23
+      ],
+      "graphShape": null,
+      "graphAxes": null,
+      "graphDays": [],
+      "title": "大事な人に少し甘くなれる生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-09-06/daiji-na-hito-ni-amaku-naru-top5/daiji-na-hito-ni-amaku-naru-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n大事な人に少し甘くなれる生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n大事な人に少し甘くなれる生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-09-06/daiji-na-hito-ni-amaku-naru-top5/daiji-na-hito-ni-amaku-naru-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-09-06/daiji-na-hito-ni-amaku-naru-top5/daiji-na-hito-ni-amaku-naru-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 20,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 17,
+            "family": 8,
+            "asset": "birthday-family-8-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-8-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 21,
+            "family": 3,
+            "asset": "birthday-family-3-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-3-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 22,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 23,
+            "family": 5,
+            "asset": "birthday-family-5-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
+          }
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_preview_contact_sheet_review",
+          "checkedBy": "auto-prepare-approved-reels",
+          "checkedAt": "2026-09-05T15:31:02.072Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-09-06/daiji-na-hito-ni-amaku-naru-top5/daiji-na-hito-ni-amaku-naru-top5-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-09-06/daiji-na-hito-ni-amaku-naru-top5/daiji-na-hito-ni-amaku-naru-top5-preview.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-09-06/daiji-na-hito-ni-amaku-naru-top5/daiji-na-hito-ni-amaku-naru-top5-contact.jpg"
+          ]
+        },
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-09-06/daiji-na-hito-ni-amaku-naru-top5/daiji-na-hito-ni-amaku-naru-top5.mp4"
+    }
+  ],
+  "sourceCandidate": "output/social-approved-reels-candidates/2026-09-06-approved-candidate.json"
+}
