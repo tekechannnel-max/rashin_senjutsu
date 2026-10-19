@@ -1,0 +1,275 @@
+{
+  "approvalStatus": "approved",
+  "approvedBy": "automation",
+  "approvedAt": "2026-10-19T13:10:47.892Z",
+  "approvalText": "User requested fully automated SNS research, production, approval-manifest preparation, and scheduled posting on 2026-06-25.",
+  "approvalScope": "threads,instagram",
+  "note": "Auto-approved by local Rashin SNS automation. Posting remains limited to due windows and approved birthday_reel manifests.",
+  "posts": [
+    {
+      "id": "birthday_reel_20261019_1800_kimochi_isogazu_kotoba_eraberu_top5",
+      "kind": "birthday_reel",
+      "date": "2026-10-19",
+      "time": "18:00",
+      "topicType": "birthday_top5",
+      "researchTarget": "birthday_top5",
+      "contentDays": [
+        7,
+        4,
+        2,
+        3,
+        5
+      ],
+      "graphShape": null,
+      "graphAxes": null,
+      "graphDays": [],
+      "title": "気持ちを急がず言葉を選べる生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-10-19/kimochi-isogazu-kotoba-eraberu-top5/kimochi-isogazu-kotoba-eraberu-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n気持ちを急がず言葉を選べる生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n気持ちを急がず言葉を選べる生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-10-19/kimochi-isogazu-kotoba-eraberu-top5/kimochi-isogazu-kotoba-eraberu-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-10-19/kimochi-isogazu-kotoba-eraberu-top5/kimochi-isogazu-kotoba-eraberu-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 7,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 4,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 2,
+            "family": 2,
+            "asset": "birthday-family-2-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-2-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 3,
+            "family": 3,
+            "asset": "birthday-family-3-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-3-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 5,
+            "family": 5,
+            "asset": "birthday-family-5-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
+          }
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_preview_contact_sheet_review",
+          "checkedBy": "auto-prepare-approved-reels",
+          "checkedAt": "2026-10-19T13:10:46.230Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-10-19/kimochi-isogazu-kotoba-eraberu-top5/kimochi-isogazu-kotoba-eraberu-top5-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-10-19/kimochi-isogazu-kotoba-eraberu-top5/kimochi-isogazu-kotoba-eraberu-top5-preview.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-10-19/kimochi-isogazu-kotoba-eraberu-top5/kimochi-isogazu-kotoba-eraberu-top5-contact.jpg"
+          ]
+        },
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-10-19/kimochi-isogazu-kotoba-eraberu-top5/kimochi-isogazu-kotoba-eraberu-top5.mp4"
+    },
+    {
+      "id": "birthday_reel_20261019_1900_chiisana_tassei_jibun_de_mitsukeru_top5",
+      "kind": "birthday_reel",
+      "date": "2026-10-19",
+      "time": "19:00",
+      "topicType": "birthday_top5",
+      "researchTarget": "birthday_top5",
+      "contentDays": [
+        6,
+        1,
+        31,
+        8,
+        9
+      ],
+      "graphShape": null,
+      "graphAxes": null,
+      "graphDays": [],
+      "title": "小さな達成を自分で見つけられる生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-10-19/chiisana-tassei-jibun-de-mitsukeru-top5/chiisana-tassei-jibun-de-mitsukeru-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n小さな達成を自分で見つけられる生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n小さな達成を自分で見つけられる生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-10-19/chiisana-tassei-jibun-de-mitsukeru-top5/chiisana-tassei-jibun-de-mitsukeru-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-10-19/chiisana-tassei-jibun-de-mitsukeru-top5/chiisana-tassei-jibun-de-mitsukeru-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 6,
+            "family": 6,
+            "asset": "birthday-family-6-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-6-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 1,
+            "family": 1,
+            "asset": "birthday-family-1-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 31,
+            "family": 4,
+            "asset": "birthday-family-4-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-4-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 8,
+            "family": 8,
+            "asset": "birthday-family-8-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-8-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 9,
+            "family": 9,
+            "asset": "birthday-family-9-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-9-chibi.png"
+          }
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_preview_contact_sheet_review",
+          "checkedBy": "auto-prepare-approved-reels",
+          "checkedAt": "2026-10-19T13:10:46.230Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-10-19/chiisana-tassei-jibun-de-mitsukeru-top5/chiisana-tassei-jibun-de-mitsukeru-top5-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-10-19/chiisana-tassei-jibun-de-mitsukeru-top5/chiisana-tassei-jibun-de-mitsukeru-top5-preview.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-10-19/chiisana-tassei-jibun-de-mitsukeru-top5/chiisana-tassei-jibun-de-mitsukeru-top5-contact.jpg"
+          ]
+        },
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-10-19/chiisana-tassei-jibun-de-mitsukeru-top5/chiisana-tassei-jibun-de-mitsukeru-top5.mp4"
+    },
+    {
+      "id": "birthday_reel_20261019_2000_kyou_no_tsukare_ashita_ni_mochikoshanai_top5",
+      "kind": "birthday_reel",
+      "date": "2026-10-19",
+      "time": "20:00",
+      "topicType": "birthday_top5",
+      "researchTarget": "birthday_top5",
+      "contentDays": [
+        23,
+        9,
+        16,
+        17,
+        19
+      ],
+      "graphShape": null,
+      "graphAxes": null,
+      "graphDays": [],
+      "title": "今日の疲れを明日に持ち越しにくい生まれ日TOP5",
+      "videoPath": "videos/social/instagram/【インスタ】あるある・ランキング系/2026-10-19/kyou-no-tsukare-ashita-ni-mochikoshanai-top5/kyou-no-tsukare-ashita-ni-mochikoshanai-top5.mp4",
+      "platforms": "threads,instagram",
+      "captions": {
+        "instagram": "＼無料占いはプロフィールURLから／\n\n今日の疲れを明日に持ち越しにくい生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#羅針占術 #誕生日占い #数秘 #誕生日数 #占い好きな人と繋がりたい",
+        "threads": "無料占いはプロフィールURLから👀✨\n\n今日の疲れを明日に持ち越しにくい生まれ日TOP5\n\n保存していつでも思い出してください。\nもっと深く見たい方は羅針占術へ。\n無料鑑定から、必要な方だけ深掘り鑑定できます。\n\n#誕生日占い"
+      },
+      "designReview": {
+        "screenshots": [
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-10-19/kyou-no-tsukare-ashita-ni-mochikoshanai-top5/kyou-no-tsukare-ashita-ni-mochikoshanai-top5-poster.jpg",
+          "videos/social/instagram/【インスタ】あるある・ランキング系/2026-10-19/kyou-no-tsukare-ashita-ni-mochikoshanai-top5/kyou-no-tsukare-ashita-ni-mochikoshanai-top5-contact.jpg"
+        ],
+        "saveCueText": "保存していつでも思い出してください。",
+        "miniCharacters": [
+          {
+            "rank": 1,
+            "day": 23,
+            "family": 5,
+            "asset": "birthday-family-5-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-5-chibi.png"
+          },
+          {
+            "rank": 2,
+            "day": 9,
+            "family": 9,
+            "asset": "birthday-family-9-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-9-chibi.png"
+          },
+          {
+            "rank": 3,
+            "day": 16,
+            "family": 7,
+            "asset": "birthday-family-7-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-7-chibi.png"
+          },
+          {
+            "rank": 4,
+            "day": 17,
+            "family": 8,
+            "asset": "birthday-family-8-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-8-chibi.png"
+          },
+          {
+            "rank": 5,
+            "day": 19,
+            "family": 1,
+            "asset": "birthday-family-1-chibi.png",
+            "assetPath": "images/social/instagram/birthday-mini/birthday-family-1-chibi.png"
+          }
+        ],
+        "visualInspection": {
+          "status": "passed",
+          "method": "generated_video_poster_preview_contact_sheet_review",
+          "checkedBy": "auto-prepare-approved-reels",
+          "checkedAt": "2026-10-19T13:10:46.230Z",
+          "reviewArtifacts": [
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-10-19/kyou-no-tsukare-ashita-ni-mochikoshanai-top5/kyou-no-tsukare-ashita-ni-mochikoshanai-top5-poster.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-10-19/kyou-no-tsukare-ashita-ni-mochikoshanai-top5/kyou-no-tsukare-ashita-ni-mochikoshanai-top5-preview.jpg",
+            "videos/social/instagram/【インスタ】あるある・ランキング系/2026-10-19/kyou-no-tsukare-ashita-ni-mochikoshanai-top5/kyou-no-tsukare-ashita-ni-mochikoshanai-top5-contact.jpg"
+          ]
+        },
+        "checks": {
+          "safeArea": true,
+          "readability": true,
+          "noTextPatternOverlap": true,
+          "saveCue": true,
+          "minicharaByNumber": true
+        }
+      },
+      "videoUrl": "https://raw.githubusercontent.com/tekechannnel-max/rashin_senjutsu/refs/heads/codex/sns-approved-reels-guardrails/videos/social/instagram/%E3%80%90%E3%82%A4%E3%83%B3%E3%82%B9%E3%82%BF%E3%80%91%E3%81%82%E3%82%8B%E3%81%82%E3%82%8B%E3%83%BB%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0%E7%B3%BB/2026-10-19/kyou-no-tsukare-ashita-ni-mochikoshanai-top5/kyou-no-tsukare-ashita-ni-mochikoshanai-top5.mp4"
+    }
+  ],
+  "sourceCandidate": "output/social-approved-reels-candidates/2026-10-19-approved-candidate.json"
+}
