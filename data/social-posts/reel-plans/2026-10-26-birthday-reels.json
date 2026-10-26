@@ -1,0 +1,339 @@
+{
+  "date": "2026-10-26",
+  "reviewTitle": "2026-10-26 夜枠 誕生日リール自動生成候補",
+  "schedulePolicy": {
+    "dailyBirthdayReelTimes": [
+      "18:00",
+      "19:00",
+      "20:00"
+    ],
+    "thursdayComparisonTime": "20:00",
+    "birthdayGraph": {
+      "effectiveDate": "2026-07-23",
+      "daysOfMonth": [
+        7,
+        17,
+        27
+      ],
+      "maxPerMonth": 3,
+      "scheduledForDate": false,
+      "nonGraphReplacement": "○○な生まれ日TOP5 または 特定の生まれ日あるある/取説5選"
+    }
+  },
+  "sourceNotes": [
+    {
+      "sourceAccount": "Instagram Creators / Meta",
+      "sourceUrl": "https://creators.instagram.com/grow/algorithms-and-ranking?locale=en_GB",
+      "observedPattern": "Instagramのランキングは視聴維持・反応・シェアされやすさを強く見るため、短く分かる1テーマ構成にする。",
+      "usedAs": "毎日リールの設計原則",
+      "transformationNote": "広告色を強めず、保存したくなる自己理解Top5として再構成する。",
+      "duplicateCheck": "外部投稿本文・画像・ランキングはコピーせず、羅針占術の誕生日数Top5へ変換する。"
+    },
+    {
+      "sourceAccount": "Meta Transparency Center",
+      "sourceUrl": "https://transparency.meta.com/features/explaining-ranking/ig-reels-chaining/",
+      "observedPattern": "Reels面は次に見たい可能性が高い動画を予測して並べるため、冒頭で内容がすぐ分かる構成を優先する。",
+      "usedAs": "タイトル・リードの設計根拠",
+      "transformationNote": "1枚目で「自分の誕生日があるか」を即確認できる見出しにする。",
+      "duplicateCheck": "トレンド音源や他者動画素材には依存しない。"
+    },
+    {
+      "sourceAccount": "羅針占術 internal",
+      "sourceUrl": "docs/sns-runbook.md",
+      "observedPattern": "Threads + Instagram、InstagramはReels、Threadsは動画投稿。木曜20:00は比較カルーセル優先。",
+      "usedAs": "2026-10-26 の投稿時刻と媒体制約",
+      "transformationNote": "木曜20:00は比較カルーセル優先。日次リールは木曜18:00/19:00、他曜日18:00/19:00/20:00だけにする。",
+      "duplicateCheck": "承認済みmanifestと投稿済みledgerの既存タイトルを避ける。"
+    },
+    {
+      "sourceAccount": "羅針占術 video insights PDCA",
+      "sourceUrl": "data/social-posts/pdca/video-insights-feedback.json",
+      "observedPattern": "投稿済み動画の保存・シェア・返信/コメント・プロフィール訪問をスコア化し、次回のリサーチ候補順へ反映する。",
+      "usedAs": "2026-10-26 のネタ型と投稿時刻の改善材料",
+      "transformationNote": "月内では3系統を維持し、グラフは月3回上限の指定日だけ、強かったネタ型は残りの枠内で優先する。",
+      "duplicateCheck": "PDCAは型と時刻の優先度だけに使い、本文・順位・画像・動画はコピーしない。"
+    }
+  ],
+  "pdcaFeedback": {
+    "updatedAt": "2026-08-20T02:18:08.752Z",
+    "sourceReport": "output/social-pdca/video-pdca-2026-08-20.json",
+    "preferredTopicTypes": [
+      "birthday_day_manual",
+      "birthday_top5",
+      "birthday_graph_1_31"
+    ],
+    "preferredTimes": [
+      "19:00",
+      "18:00",
+      "20:00"
+    ],
+    "topicTypeWeights": {
+      "birthday_top5": 1.075,
+      "birthday_day_aruaru": 0.884,
+      "birthday_day_manual": 1.137,
+      "birthday_graph_1_31": 0.905
+    },
+    "nextResearchDirectives": [
+      "birthday_day_manual を次回候補の優先型にします。保存・プロフィール訪問・返信/コメントの合算スコアが最も高いです。",
+      "19:00 枠を強めます。冒頭1秒で生まれ日が見える構成を維持してください。"
+    ]
+  },
+  "requiredResearchTargets": [
+    "生まれ日あるある/取説: 1日〜31日のいずれかを毎日自動選定",
+    "生まれ日グラフ: 毎月7日・17日・27日の月3回まで、1日〜31日をすべて網羅",
+    "グラフなし日の代替: ○○な生まれ日TOP5 または 特定の生まれ日あるある/取説5選"
+  ],
+  "avoidedTopics": [
+    "予定を詰めすぎず整える生まれ日TOP5",
+    "一言で空気を明るくする生まれ日TOP5",
+    "29日生まれあるある5選",
+    "4日生まれ取説5選",
+    "気づきを次に活かせる生まれ日TOP5",
+    "17日生まれあるある5選",
+    "3日生まれ取説5選",
+    "自分の味方に戻れる生まれ日TOP5",
+    "5日生まれ取説5選",
+    "気持ちを短く伝えられる生まれ日TOP5",
+    "20日生まれあるある5選",
+    "6日生まれ取説5選",
+    "頑張りのやめどきを見つける生まれ日TOP5",
+    "7日生まれ取説5選",
+    "人の心を雑に扱わない生まれ日TOP5",
+    "気持ちの余白を作れる生まれ日TOP5",
+    "22日生まれあるある5選",
+    "23日生まれあるある5選",
+    "大事な人に少し甘くなれる生まれ日TOP5",
+    "30日生まれあるある5選",
+    "予定のない日に回復する生まれ日TOP5",
+    "深呼吸して本音を選べる生まれ日TOP5",
+    "小さな違和感を言葉にできる生まれ日TOP5",
+    "頼まれごとの優先順位を整える生まれ日TOP5",
+    "静かな場所で自分に戻れる生まれ日TOP5",
+    "やさしい断り方が上手な生まれ日TOP5",
+    "会話の余白を大切にできる生まれ日TOP5",
+    "焦る前に確認できる生まれ日TOP5",
+    "気持ちをメモにすると整う生まれ日TOP5",
+    "一度寝かせて答えを選べる生まれ日TOP5",
+    "人と比べず進める生まれ日TOP5",
+    "気持ちの波を読める生まれ日TOP5",
+    "言葉にする前に整える生まれ日TOP5",
+    "小さな喜びをためられる生まれ日TOP5",
+    "小さな約束を守り続ける生まれ日TOP5",
+    "気持ちの居場所を作れる生まれ日TOP5",
+    "繰り返しの中で気づける生まれ日TOP5",
+    "小さな疑問をそのままにしない生まれ日TOP5",
+    "予定の合間に休憩を入れられる生まれ日TOP5",
+    "言い直す勇気を持てる生まれ日TOP5",
+    "話す前に気持ちを整えられる生まれ日TOP5",
+    "好きなことを自分のペースで育てる生まれ日TOP5",
+    "心の温度を自分で戻せる生まれ日TOP5",
+    "気持ちを急がず言葉を選べる生まれ日TOP5",
+    "小さな達成を自分で見つけられる生まれ日TOP5",
+    "今日の疲れを明日に持ち越しにくい生まれ日TOP5",
+    "人の話を最後まで聞ける生まれ日TOP5",
+    "迷った時ほど基本に戻れる生まれ日TOP5",
+    "ひとり時間で回復できる生まれ日TOP5",
+    "言葉にしなくても安心を作れる生まれ日TOP5",
+    "小さな変化を味方にできる生まれ日TOP5",
+    "自分の気持ちを丁寧に受け取れる生まれ日TOP5",
+    "迷った時に人へ相談できる生まれ日TOP5",
+    "本音をメモに残せる生まれ日TOP5",
+    "人の長所を見つけられる生まれ日TOP5",
+    "静かな場所でひらめく生まれ日TOP5",
+    "やることを小さく分けられる生まれ日TOP5",
+    "人の小さな変化に気づける生まれ日TOP5",
+    "言葉を急がず選び直せる生まれ日TOP5",
+    "自分のペースを守れる生まれ日TOP5",
+    "相手の言葉をゆっくり受け取れる生まれ日TOP5",
+    "比べて不安になりすぎない生まれ日TOP5",
+    "迷った時に立ち止まれる生まれ日TOP5",
+    "勢いで予定を決めがちな生まれ日TOP5",
+    "甘え下手な生まれ日TOP5",
+    "限界まで助けを呼ばない生まれ日TOP5",
+    "心を開くまで慎重な生まれ日TOP5",
+    "返信待ちでそわそわする生まれ日TOP5",
+    "私生活が謎に見られがちな生まれ日TOP5",
+    "人前で弱音を見せにくい生まれ日TOP5",
+    "場の温度を整えがちな生まれ日TOP5",
+    "雰囲気で惹きつける生まれ日TOP5",
+    "気持ちの切り替えが早い生まれ日TOP5",
+    "言葉より行動で示す生まれ日TOP5",
+    "実は照れ屋な生まれ日TOP5",
+    "距離感を大切にする生まれ日TOP5",
+    "頼られると燃える生まれ日TOP5",
+    "変化の前に静かになる生まれ日TOP5",
+    "直感で危険を避ける生まれ日TOP5",
+    "大事な人ほど遠慮する生まれ日TOP5"
+  ],
+  "posts": [
+    {
+      "time": "18:00",
+      "topicType": "birthday_top5",
+      "researchTarget": "birthday_top5",
+      "slug": "yaruki-nai-hi-chisaku-hajimeru-top5",
+      "title": "やる気がない日も小さく始められる生まれ日TOP5",
+      "titleLines": [
+        "やる気がない日も小さく始められる",
+        "生まれ日TOP5"
+      ],
+      "lead": "気分が乗らない時でも、できる一歩まで作業を小さくして始められるタイプです。",
+      "sourceUrl": "https://www.instagram.com/uranai.kitsune/?hl=ja",
+      "theme": {
+        "accent": "#315f7d",
+        "accent2": "#b65b5b",
+        "ink": "#172a3a",
+        "bg1": "#eef6ff",
+        "bg2": "#fffaf5",
+        "bg3": "#ece8f6",
+        "glow": "#dceeff"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 5,
+          "miniFamily": 5,
+          "reason": "動き出すための段取りを作る力が特に出やすい日です。やることが多くて手が止まりそうな時でも、小さな着手を続けることを大切にできます。"
+        },
+        {
+          "rank": 2,
+          "day": 9,
+          "miniFamily": 9,
+          "reason": "一見ゆっくりでも観察は細かいです。焦らず、最初の二分だけ取りかかることができます。"
+        },
+        {
+          "rank": 3,
+          "day": 26,
+          "miniFamily": 8,
+          "reason": "無理に目立たなくても伝わります。近くの人ほど、あとから始めるための軽さが効いてきます。"
+        },
+        {
+          "rank": 4,
+          "day": 28,
+          "miniFamily": 1,
+          "reason": "気持ちを整理してから動くタイプです。勢いより、小さな着手を続けることを大切にします。"
+        },
+        {
+          "rank": 5,
+          "day": 29,
+          "miniFamily": 2,
+          "reason": "表では控えめでも芯があります。大事な場面で最初の二分だけ取りかかる力が出やすい日です。"
+        }
+      ],
+      "summary": "小さく始められる日は、やる気を待つよりも、二分だけ手を動かすことで自然に流れを作れます。",
+      "fallbackFromTopicKind": "single_day",
+      "fallbackReason": "Single-day あるある/取説 titles are exhausted across existing approved/candidate plans."
+    },
+    {
+      "time": "19:00",
+      "topicType": "birthday_top5",
+      "researchTarget": "birthday_top5",
+      "slug": "fuan-wo-kotoba-ni-shite-chisaku-dekiru-top5",
+      "title": "不安を言葉にして小さくできる生まれ日TOP5",
+      "titleLines": [
+        "不安を言葉にして小さくできる",
+        "生まれ日TOP5"
+      ],
+      "lead": "ぼんやりした不安をそのまま抱え込まず、何が気になっているか整理できるタイプです。",
+      "sourceUrl": "https://www.instagram.com/uranai.kitsune/?hl=ja",
+      "theme": {
+        "accent": "#596c2f",
+        "accent2": "#b85f40",
+        "ink": "#202816",
+        "bg1": "#f5faec",
+        "bg2": "#fffdf7",
+        "bg3": "#e8f0f6",
+        "glow": "#ecf7b7"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 12,
+          "miniFamily": 3,
+          "reason": "気がかりを整理する落ち着きが特に出やすい日です。理由のない焦りが続く時でも、不安を一人で大きくしないことを大切にできます。"
+        },
+        {
+          "rank": 2,
+          "day": 10,
+          "miniFamily": 1,
+          "reason": "一見ゆっくりでも観察は細かいです。焦らず、気がかりを一つだけ書き出すことができます。"
+        },
+        {
+          "rank": 3,
+          "day": 2,
+          "miniFamily": 2,
+          "reason": "無理に目立たなくても伝わります。近くの人ほど、あとから次の一歩が見える安心が効いてきます。"
+        },
+        {
+          "rank": 4,
+          "day": 4,
+          "miniFamily": 4,
+          "reason": "気持ちを整理してから動くタイプです。勢いより、不安を一人で大きくしないことを大切にします。"
+        },
+        {
+          "rank": 5,
+          "day": 5,
+          "miniFamily": 5,
+          "reason": "表では控えめでも芯があります。大事な場面で気がかりを一つだけ書き出す力が出やすい日です。"
+        }
+      ],
+      "summary": "不安を小さくできる日は、心配の正体を一つ書き出すことで、今できることを選びやすくなります。",
+      "fallbackFromTopicKind": "single_day",
+      "fallbackReason": "Single-day あるある/取説 titles are exhausted across existing approved/candidate plans."
+    },
+    {
+      "time": "20:00",
+      "topicType": "birthday_top5",
+      "researchTarget": "birthday_top5",
+      "slug": "aite-no-yosa-wo-kotoba-ni-dekiru-top5",
+      "title": "相手の良さを言葉にできる生まれ日TOP5",
+      "titleLines": [
+        "相手の良さを言葉にできる",
+        "生まれ日TOP5"
+      ],
+      "lead": "気づいた相手の魅力を、照れずに具体的な言葉で伝えられるタイプです。",
+      "sourceUrl": "https://www.instagram.com/uranai.kitsune/?hl=ja",
+      "theme": {
+        "accent": "#80536b",
+        "accent2": "#2c746d",
+        "ink": "#2c1d28",
+        "bg1": "#fff1f7",
+        "bg2": "#fffdf8",
+        "bg3": "#e6f4f0",
+        "glow": "#ffd9ed"
+      },
+      "rows": [
+        {
+          "rank": 1,
+          "day": 20,
+          "miniFamily": 2,
+          "reason": "相手の魅力を見つけて伝える力が特に出やすい日です。誰かの頑張りに気づいた時でも、気づいた良さを言葉にすることを大切にできます。"
+        },
+        {
+          "rank": 2,
+          "day": 17,
+          "miniFamily": 8,
+          "reason": "一見ゆっくりでも観察は細かいです。焦らず、良かったところを一つ具体的に伝えることができます。"
+        },
+        {
+          "rank": 3,
+          "day": 9,
+          "miniFamily": 9,
+          "reason": "無理に目立たなくても伝わります。近くの人ほど、あとから自信につながる言葉が効いてきます。"
+        },
+        {
+          "rank": 4,
+          "day": 10,
+          "miniFamily": 1,
+          "reason": "気持ちを整理してから動くタイプです。勢いより、気づいた良さを言葉にすることを大切にします。"
+        },
+        {
+          "rank": 5,
+          "day": 12,
+          "miniFamily": 3,
+          "reason": "表では控えめでも芯があります。大事な場面で良かったところを一つ具体的に伝える力が出やすい日です。"
+        }
+      ],
+      "summary": "相手の良さを言葉にできる日は、短い一言でも相手の自信や関係の安心につながります。"
+    }
+  ]
+}
